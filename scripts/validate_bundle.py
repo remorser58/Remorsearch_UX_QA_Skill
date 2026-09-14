@@ -283,10 +283,52 @@ def _validate_semantics(
             errors.append(f"records.figma[{figma_id}].defect_class is invalid")
 
 
+def _input_shapes(bundle: dict[str, Any]) -> list[str]:
+    """Reject malformed optional fields before set membership / reference lookups."""
+    errors: list[str] = []
+    permissions = bundle.get("permissions", {})
+    if isinstance(permissions, dict):
+        for name in ("requested", "granted"):
+            values = permissions.get(name, [])
+            if isinstance(values, list) and any(not isinstance(x, str) for x in values):
+                errors.append(f"permissions.{name} entries must be strings")
+        blocked = permissions.get("blocked", [])
+        if isinstance(blocked, list):
+            for item in blocked:
+                if isinstance(item, dict) and not isinstance(item.get("capability"), str):
+                    errors.append("permissions.blocked capability must be a string")
+    records = bundle.get("records", {})
+    if not isinstance(records, dict):
+        return errors
+    string_fields = {"id", "source_id", "persona_id", "scenario_id", "run_id", "figma_id",
+                     "epistemic_status", "verification_status", "claim_kind", "support_basis",
+                     "basis", "retention_status", "design_status", "defect_class",
+                     "baseline_version", "readback_version", "severity", "readback_artifact_ref",
+                     "file_key", "branch_key", "read_at", "status"}
+    list_fields = {"evidence_ids", "persona_ids", "observation_ids", "claim_ids", "finding_ids", "node_ids"}
+    for name in RECORD_NAMES:
+        values = records.get(name, [])
+        if not isinstance(values, list):
+            continue
+        for i, item in enumerate(values):
+            if not isinstance(item, dict):
+                continue
+            for key in string_fields & item.keys():
+                if not isinstance(item[key], str):
+                    errors.append(f"records.{name}[{i}].{key} must be a string")
+            for key in list_fields & item.keys():
+                if not isinstance(item[key], list) or any(not isinstance(x, str) for x in item[key]):
+                    errors.append(f"records.{name}[{i}].{key} must be an array of strings")
+    return errors
+
+
 def validate_bundle(bundle: Any) -> list[str]:
     errors: list[str] = []
     if not isinstance(bundle, dict):
         return ["bundle must be a JSON object"]
+    shape_errors = _input_shapes(bundle)
+    if shape_errors:
+        return shape_errors
     if bundle.get("schema_version") != "ux-evidence-bundle.v1":
         errors.append("schema_version must be ux-evidence-bundle.v1")
     if not isinstance(bundle.get("bundle_id"), str) or not bundle.get("bundle_id", "").strip():
@@ -297,6 +339,21 @@ def validate_bundle(bundle: Any) -> list[str]:
         return errors
     _validate_permissions(bundle, errors)
     indexed = {name: _index(bundle, name, errors) for name in RECORD_NAMES}
+    all_ids = [record_id for records in indexed.values() for record_id in records]
+    if len(set(all_ids)) != len(all_ids):
+        errors.append("record ids must be globally unique")
+    for finding_id, finding in indexed["findings"].items():
+        status = finding.get("verification_status", "unverified")
+        if status not in VERIFIED_STATUSES:
+            errors.append(f"records.findings[{finding_id}].verification_status is invalid")
+        if status == "verified":
+            if finding.get("epistemic_status") != "observed":
+                errors.append(f"records.findings[{finding_id}] requires observed epistemic status")
+            for observation_id in finding.get("observation_ids", []):
+                observation = indexed["observations"].get(observation_id, {})
+                run = indexed["runs"].get(observation.get("run_id"), {})
+                if run.get("status") != "completed" or run.get("scenario_id") != finding.get("scenario_id"):
+                    errors.append(f"records.findings[{finding_id}] requires a completed same-scenario run")
     _validate_sources(indexed["sources"], errors)
     _validate_personas(indexed["personas"], errors)
     _validate_links(*(indexed[name] for name in RECORD_NAMES), errors)
@@ -319,7 +376,7 @@ def main() -> int:
     args = parser.parse_args()
     try:
         bundle = json.loads(args.bundle.read_text(encoding="utf-8"))
-    except FileNotFoundError:
+    except (OSError, UnicodeError):
         print(f"ERROR: bundle not found: {args.bundle}", file=sys.stderr)
         return 2
     except json.JSONDecodeError as error:

@@ -1,2 +1,6 @@
 __pycache__/
 *.py[cod]
+
+# Local checkpoints, test sandboxes and CLI-generated reports
+.ux-loop/
+.ux-loop-*.txt
