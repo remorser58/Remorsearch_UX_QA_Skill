@@ -198,6 +198,14 @@ Use `references/qa-report-template.md`. A deep report must contain:
 8. Validation and regression results.
 9. Unverified claims and next evidence needed.
 
+## Evidence and permission contract
+
+Use `references/evidence-bundle-contract.md` for reusable QA artifacts. Record `read_only`, `design_write`, `test_data_write`, and `code_write` separately, including blocked permissions and reasons. QA normally requests `read_only`; changing fixtures, design files, or product code needs an explicit capability grant.
+
+Keep `observed`, `inferred`, and `unknown` distinct. A verified finding must reference at least one observed product observation, and that observation must link to a completed run and scenario. A synthetic persona is a bounded test input. It cannot directly prove a real user's preference, prevalence, or discomfort. Preserve the persona adapter revision, schema fingerprint, seed, shard or config, read bounds, timeout, selected record IDs, strata, and stop reason so a scenario can be reproduced without reading the full population.
+
+When Figma is part of the comparison, record the file key, branch key, baseline version, node IDs, read time, readback artifact reference, design status, and defect class. Treat `implementation_defect`, `design_defect`, `spec_conflict`, and `approved_deviation` as different remediation paths. Validate the finished bundle offline when the repository tooling is available.
+
 ## Completion gate
 
 Do not report completion until:

@@ -34,6 +34,14 @@ Every deep run should produce:
 
 For a short request, compress the same structure. Do not silently remove evidence boundaries.
 
+## Evidence and permission contract
+
+Use `references/evidence-bundle-contract.md` when the run produces a reusable artifact. Start every run by recording the requested and granted capabilities. Keep blocked capabilities with a reason. The default research capability is `read_only`; `design_write`, `test_data_write`, and `code_write` require separate authorization and must not be implied by a design recommendation.
+
+Every source, evidence item, claim, persona, scenario, run, observation, finding, proposal, and Figma record receives a stable ID. Use those IDs for every cross-reference. Mark each statement as `observed`, `inferred`, or `unknown`. A verified claim needs observed support from an eligible source or product observation. A synthetic persona may shape a scenario and its test data; it cannot be cited as direct evidence of real-user preference, prevalence, or discomfort.
+
+When a bundle is complete, validate it with the repository's offline validator if that tooling is available. A failed validation keeps the bundle unverified until the broken reference, permission record, evidence status, or missing provenance is repaired.
+
 ## Research workflow
 
 ### 1. Frame the product problem
