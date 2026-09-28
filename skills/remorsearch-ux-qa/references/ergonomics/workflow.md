@@ -1,7 +1,4 @@
----
-name: ergonomic-persona-swarm-qa
-description: Research who uses the product, compose a diverse persona set from that research, record real runs of the product (web, mobile web and browser games in Chromium; Android via uiautomator; iOS/desktop/native games via annotated screenshots), and score each persona's reach, handedness, touch accuracy, feedback noticing, contrast, colour vision, text size, reading time, timing windows and flashing with deterministic human-factors models. Optional LLM persona agents can drive exploratory runs; that layer is not yet validated. Reports P0-P3 problem units as coverage over simulated profiles, never as prevalence.
----
+<!-- Mode: ergonomics, experimental (formerly the `ergonomic-persona-swarm-qa` skill). Entry point: `SKILL.md`. -->
 
 # Ergonomic Persona Swarm QA
 
@@ -65,9 +62,9 @@ No MiroFish code is used.
 ### 0. Research who uses the product (Stage 0)
 
 Personas come from research on the product's actual audience, not from random
-sampling. Follow `references/audience-research.md`. Use analytics, surveys,
-official statistics, store reviews and communities (with
-`aside-community-ux-research`), and comparable products. From those, write an
+sampling. Follow `references/ergonomics/audience-research.md`. Use analytics, surveys,
+official statistics, store reviews and communities (with the research mode,
+`references/research/workflow.md`), and comparable products. From those, write an
 `ergo-audience.v1` file with the following, each with cited evidence:
 
 - segments, with share and basis, priority and confidence;
@@ -83,7 +80,7 @@ sources.
 
 Record the surface (URL, app id, build), platform, devices and orientations,
 the task goals, and whether real data could change. Write an
-`ergo-scenario.v1` file (see `references/platform-drivers.md` and
+`ergo-scenario.v1` file (see `references/ergonomics/platform-drivers.md` and
 `docs/ergonomic-swarm-spec.md`). Declare element roles instead of letting the
 tool guess: `primary`, `destructive`, `irreversible` (only after checking in a
 sandbox that there is no confirm/undo), `critical_message`, `error_message`,
@@ -140,7 +137,7 @@ persona is useful; record the dataset revision (HF vs NGC variants differ).
 - **Interactive persona agents:** `ergo_drive.mjs serve` exposes
   `GET /snapshot`, `POST /act`, `POST /note`, `POST /finish` on 127.0.0.1. Each
   persona agent reads the PNG, decides the next action toward the goal, acts, and
-  writes a note. Follow `references/persona-agent-protocol.md`.
+  writes a note. Follow `references/ergonomics/persona-agent-protocol.md`.
 - **Android apps:** `adb exec-out uiautomator dump` + `screencap`, then
   `scripts/ergo_qa.py android-snapshot`. Inputs are sent as argv lists
   (`ergoqa/drivers/android.py`).
@@ -172,7 +169,7 @@ triggered profile and by no untriggered one (e.g. `grip=one_hand_left`,
 
 ### 5. Judgment layer (LLM or human)
 
-Review what models cannot decide (`references/human-factors-checks.md`, section
+Review what models cannot decide (`references/ergonomics/human-factors-checks.md`, section
 "Judgment"): WCAG 2.5.8 exceptions, whether an action is truly irreversible,
 whether a destructive button reads as primary, banner-blindness look-alikes,
 game design intent (QTE/mashing), left-handed HUD options, and heuristic
@@ -181,14 +178,14 @@ observation with the screenshot and step.
 
 ### 6. Optional experience board and interviews
 
-Use `references/swarm-and-social-layer.md` to let persona agents post
+Use `references/ergonomics/swarm-and-social-layer.md` to let persona agents post
 evidence-linked notes and to interview individual agents. The output is
 simulated discourse used to write hypotheses and Aside search queries; it is not
 a forecast of real reactions.
 
 ### 7. Report, fix, replay
 
-Use `references/report-template.md`. Order findings by severity and confidence,
+Use `references/ergonomics/report-template.md`. Order findings by severity and confidence,
 separate measured from modelled, state the differential condition and coverage,
 propose the smallest fix at the deepest confirmed layer, and list what was not
 tested. After a fix, replay the same scenario, device and profiles and compare.
@@ -237,11 +234,11 @@ Do not report completion until:
 
 ## References
 
-- `references/audience-research.md` — Stage 0: researching who uses the product, evidence rules, `ergo-audience.v1`, composition.
-- `references/human-factors-checks.md` — each check's formula, threshold, severity rule, source and limit.
-- `references/persona-agent-protocol.md` — how an LLM persona agent looks, acts and writes notes.
-- `references/swarm-and-social-layer.md` — MiroFish mapping, experience board, interviews, labelling.
-- `references/platform-drivers.md` — web, Android, iOS, desktop and game capture paths and what each proves.
-- `references/validation-and-limits.md` — blind benchmark method, calibration protocol and known limits.
-- `references/report-template.md` — report structure.
+- `references/ergonomics/audience-research.md` — Stage 0: researching who uses the product, evidence rules, `ergo-audience.v1`, composition.
+- `references/ergonomics/human-factors-checks.md` — each check's formula, threshold, severity rule, source and limit.
+- `references/ergonomics/persona-agent-protocol.md` — how an LLM persona agent looks, acts and writes notes.
+- `references/ergonomics/swarm-and-social-layer.md` — MiroFish mapping, experience board, interviews, labelling.
+- `references/ergonomics/platform-drivers.md` — web, Android, iOS, desktop and game capture paths and what each proves.
+- `references/ergonomics/validation-and-limits.md` — blind benchmark method, calibration protocol and known limits.
+- `references/ergonomics/report-template.md` — report structure.
 - Repository docs: `docs/ergonomic-swarm-spec.md` (contracts), `docs/human-factors/` (research briefs).

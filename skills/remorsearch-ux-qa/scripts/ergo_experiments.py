@@ -6,8 +6,8 @@ Runs are recorded once per scenario and device by ``scripts/ergo_bench.py``
 screen and the profile, so every experiment here re-analyses the same runs
 offline:
 
-    python3 scripts/ergo_experiments.py analyse --exp .ergo-bench/exp
-    python3 scripts/ergo_experiments.py run --exp .ergo-bench/exp --out docs/validation/experiments/ablation.json
+    python3 skills/remorsearch-ux-qa/scripts/ergo_experiments.py analyse --exp .ergo-bench/exp
+    python3 skills/remorsearch-ux-qa/scripts/ergo_experiments.py run --exp .ergo-bench/exp --out docs/validation/experiments/ablation.json
 
 ``analyse`` evaluates every run under a one-factor-at-a-time profile pool
 (each core grip x each single condition) plus the benchmark's own stratified
@@ -39,7 +39,8 @@ import time
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]  # skill folder
+REPO = ROOT.parents[1]  # repository checkout (benchmarks are not shipped with the skill)
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 
@@ -108,7 +109,7 @@ CONDITION_MATCH: dict[str, dict[str, Any]] = {
 
 
 def load_suite(suite: str, exp: Path) -> dict[str, Any]:
-    suite_dir = ROOT / "benchmarks" / suite
+    suite_dir = REPO / "benchmarks" / suite
     work = exp / suite
     scenarios = {}
     for f in sorted((suite_dir / "scenarios").glob("*.json")):

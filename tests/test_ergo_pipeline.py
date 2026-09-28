@@ -8,9 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "scripts"))
+from _paths import SKILL as ROOT  # noqa: E402,F401  (puts the skill folder on sys.path)
 
 from ergoqa import analyze, bench, bundle, png, report, swarm  # noqa: E402
 from ergoqa.profiles import sample_profiles  # noqa: E402

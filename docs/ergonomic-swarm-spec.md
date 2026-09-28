@@ -296,7 +296,7 @@ Additive fields and rules (2026-09-28):
 - proposals: one per swarm finding with a recommendation, `finding_ids` = its bundle findings.
 - sources/evidence/claims/figma: empty arrays unless supplied.
 
-## 9. CLI (`scripts/ergo_qa.py` → `ergoqa/cli.py`)
+## 9. CLI (`skills/remorsearch-ux-qa/scripts/ergo_qa.py` → `ergoqa/cli.py`)
 
 ```
 ergo_qa.py devices [--json]
@@ -313,8 +313,8 @@ Exit codes: 0 ok, 1 findings at/above `--fail-on` severity, 2 usage/input error.
 ## 10. Web driver (`drivers/web/ergo_drive.mjs`)
 
 ```
-node drivers/web/ergo_drive.mjs run --scenario sc.json --profile p.json --out runs/ [--run-id R-x]
-node drivers/web/ergo_drive.mjs serve --scenario sc.json --profile p.json --out runs/ --port 9477
+node skills/remorsearch-ux-qa/drivers/web/ergo_drive.mjs run --scenario sc.json --profile p.json --out runs/ [--run-id R-x]
+node skills/remorsearch-ux-qa/drivers/web/ergo_drive.mjs serve --scenario sc.json --profile p.json --out runs/ --port 9477
    POST /act   {"action":"tap","target":"#pay"}  -> {"snapshot": ".../S-..json", "png": ".../S-..png", "result": "ok"}
    GET  /snapshot                               -> same, without acting
    POST /note  {"intent":..,"expected":..,"observed":..,"confusion":bool}

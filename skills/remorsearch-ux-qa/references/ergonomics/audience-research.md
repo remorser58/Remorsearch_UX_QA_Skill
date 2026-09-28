@@ -1,7 +1,7 @@
 # Stage 0: Audience Research
 
 Before any persona exists, find out **who uses the product under test**. The
-output is one `ergo-audience.v1` file (contract: `docs/ergonomic-swarm-spec.md`
+output is one `ergo-audience.v1` file (contract: repository `docs/ergonomic-swarm-spec.md`
 section 13). Personas are then composed from it with `ergo_qa.py personas
 --audience`, so every persona can be traced to a segment and to the evidence
 behind it. Nothing is sampled at random.
@@ -53,7 +53,7 @@ resources, environment.
 | --- | --- | --- |
 | `product_analytics`, `survey`, `interview`, `usability_test`, `support_tickets` | Real segment sizes, devices, tasks, failures | Best evidence. Ask the team; cite version and date. |
 | `official_statistics` | Age/sex structure, disability, digital divide. Korean sources: 행정안전부 주민등록 인구, KOSIS, 과기정통부·NIA 디지털정보격차 실태조사, 방송통신위원회 방송매체 이용행태조사, 보건복지부 장애인 실태조사, 한국콘텐츠진흥원 게임이용자 실태조사 | Population-level. It bounds a segment; it is not the product's user base. |
-| `app_store_reviews`, `community` | Who complains, in which context, about what. Use `aside-community-ux-research` for public communities. | Self-selected and skewed toward problems. Firsthand quotes support existence, never size. |
+| `app_store_reviews`, `community` | Who complains, in which context, about what. Use the research mode (`references/research/workflow.md`) for public communities. | Self-selected and skewed toward problems. Firsthand quotes support existence, never size. |
 | `competitor`, `market_report` | Audience of comparable products, device mix | Estimated; state the comparable product and its date. |
 | `official_docs`, `product_brief` | Intended users, legal duties (accessibility law, 전자상거래법) | Intent, not evidence of actual use. |
 | `research_paper` | Condition effects and prevalence (CVD, presbyopia, handedness) | Check the country and year. |

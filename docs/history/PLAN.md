@@ -4,7 +4,7 @@
 
 Linux sandbox; all authored source lives in `/mnt/data/workdir`. The requested
 macOS checkout `/private/tmp/ux-research-qa-pro-auto/worktree` and OMO installation
-`/Users/r3m0r5e/.codex/plugins/cache/sisyphuslabs/omo/4.19.4` are unavailable.
+`~/.codex/plugins/cache/sisyphuslabs/omo/4.19.4` are unavailable.
 Use the supplied repository ZIP as the implementation baseline and read the
 supplied OMO ZIP without modifying it. No upstream branch/history is included;
 local commits on `sandbox/ux-loop-implementation` are sandbox-only commits, not

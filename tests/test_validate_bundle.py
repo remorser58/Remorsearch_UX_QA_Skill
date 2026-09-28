@@ -2,6 +2,7 @@ import json
 import unittest
 from pathlib import Path
 
+import _paths  # noqa: F401  (puts the skill folder on sys.path)
 from scripts.validate_bundle import validate_bundle
 
 

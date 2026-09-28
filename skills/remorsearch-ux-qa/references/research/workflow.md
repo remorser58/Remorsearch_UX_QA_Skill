@@ -1,7 +1,4 @@
----
-name: aside-community-ux-research
-description: Research real user experiences through Aside across communities, comments, reviews, and official sources; trace causes and outcomes, then propose evidence-based UX flows and Figma-ready designs.
----
+<!-- Mode: research (formerly the `aside-community-ux-research` skill). Entry point: `SKILL.md`. -->
 
 # Aside Community UX Research
 
@@ -9,7 +6,7 @@ Use this skill when a product, feature, dashboard, or service needs UX research 
 
 ## Non-negotiable operating rules
 
-- Use Aside as the primary research and browser path.
+- Use Aside as the primary research and browser path when it is installed. Without it, use the host's web search and browser tools and record the substitution as a coverage limit.
 - Before any Aside research, run `aside --update` and then `aside guide`; follow the current guide rather than guessing CLI behavior.
 - Prefer the user's existing browser session and preserve its tabs, login state, filters, and scroll context.
 - Keep research read-only. Do not post, comment, like, recommend, follow, message, report, purchase, subscribe, or change account settings unless the user explicitly requests that separate action.

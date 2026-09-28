@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+import _paths  # noqa: E402,F401  (puts the skill folder on sys.path)
 
 from ergoqa import bench, checks, swarm  # noqa: E402
 from ergoqa.devices import get_device  # noqa: E402

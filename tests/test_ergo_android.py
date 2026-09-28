@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import _paths  # noqa: F401  (puts the skill folder on sys.path)
 from ergoqa import png
 from ergoqa.drivers import android
 from ergoqa.drivers.android import AdbArgError

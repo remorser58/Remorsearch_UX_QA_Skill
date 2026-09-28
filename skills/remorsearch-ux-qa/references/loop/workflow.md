@@ -1,29 +1,26 @@
----
-name: ux-improvement-loop
-description: Compose independently owned UX research and product QA into a bounded, resumable evidence-backed goal with explicit write permissions, Figma-first visual checks and mandatory same-scenario regression replay.
----
+<!-- Mode: loop (formerly the `ux-improvement-loop` skill). Entry point: `SKILL.md`. -->
 
 # UX Improvement Loop
 
-Use this optional entry when a finished product needs an evidence-backed
-improvement cycle. Do not replace or merge the two standalone skills. Research
-owns source/evidence/claim/hypothesis records. Persona-driven UX QA owns actual
-reproduction, observations, findings and regression results. The coordinator owns
-the goal, ordered gates and stop decision; a narrow patcher owns authorized code
-writes. Keep observed, inferred and unknown separate throughout.
+Use this mode when a finished product needs an evidence-backed improvement
+cycle. It composes the research and persona-qa modes without merging their
+ownership. Research owns source/evidence/claim/hypothesis records. Persona-qa
+owns actual reproduction, observations, findings and regression results. The
+coordinator owns the goal, ordered gates and stop decision; a narrow patcher owns
+authorized code writes. Keep observed, inferred and unknown separate throughout.
 
 ## Entry and bounded continuation
 
-Use the repository-root command `python3 scripts/ux_loop.py run PACKET --workspace
-PRODUCT --evidence-root EVIDENCE --checkpoint CHECKPOINT`, then `resume` with the
-same checkpoint. The CLI is available only when the repository-level `uxloop/`,
-`scripts/` and `schemas/` are present. Copying this skill alone does not install an
-executable, connect a browser or activate a Figma integration. When the CLI is
-unavailable, use the original standalone skills and disclose the missing
-composition runtime; do not manufacture a persisted completion state.
+Run `python3 scripts/ux_loop.py run PACKET --workspace PRODUCT --evidence-root
+EVIDENCE --checkpoint CHECKPOINT` from this skill folder, then `resume` with the
+same checkpoint. The CLI (`scripts/`, `uxloop/`, `schemas/`) ships in this folder;
+it does not connect a browser or activate a Figma integration. If it cannot run
+(for example no Python 3.10+), use the research and persona-qa modes directly and
+disclose the missing composition runtime; do not manufacture a persisted
+completion state.
 
-The goal contract is `ux-loop.v1`; see `docs/provider-contract.md` and the synthetic
-example at `examples/loop/packet.json` from the repository root. The command
+The goal contract is `ux-loop.v1`; see `references/loop/provider-contract.md` and
+the synthetic example at `examples/loop/packet.json`. The command
 consumes provider receipts, never launches agents/browsers/Aside or executes
 commands from packet content. The intended phases are research -> plan -> browser
 -> fix -> replay -> decision. Persist at each boundary and stop on blocked,
@@ -32,7 +29,7 @@ foreground resume; never install hidden hooks or promise unattended work.
 
 ## Research and design preflight
 
-Delegate research to `aside-community-ux-research`, respecting its Aside-first
+Delegate research to the research mode, respecting its Aside-first
 preflight, read-only collection, sampling limitations and source provenance.
 Keep minimized summaries, not raw community archives. Community signals and
 synthetic personas suggest scenarios/hypotheses; they do not establish measured
@@ -47,7 +44,7 @@ equivalent decorative rails.
 
 ## QA, authorization and fixes
 
-Delegate real product scenarios to `persona-driven-ux-qa`. Keep the research
+Delegate real product scenarios to the persona-qa mode. Keep the research
 session intact; use isolated QA sessions/accounts/fixtures. Record exact route,
 viewport/device/input method, deterministic scenario identity, tool/browser
 versions, step evidence, console/network/runtime errors, keyboard/focus/semantics

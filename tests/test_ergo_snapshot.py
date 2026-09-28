@@ -11,6 +11,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import _paths  # noqa: F401  (puts the skill folder on sys.path)
 from ergoqa import png
 from ergoqa.drivers.annotation import annotation_to_snapshot, validate_annotation
 from ergoqa.snapshot import (SnapshotError, box_contains, box_edges, box_gap, box_overlap_area, element_by_id,

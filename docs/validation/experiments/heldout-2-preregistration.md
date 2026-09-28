@@ -41,7 +41,7 @@ the end, with the reason, and the original analysis must still be reported.
 
 Stage 0 is run blind to defects. For each product, one Opus agent reads only
 `products/<slug>/brief.md` and public sources, following
-`references/audience-research.md`, and writes `audience.json`. That file is
+`skills/remorsearch-ux-qa/references/ergonomics/audience-research.md`, and writes `audience.json`. That file is
 committed before any recording.
 
 ## Scorer settings

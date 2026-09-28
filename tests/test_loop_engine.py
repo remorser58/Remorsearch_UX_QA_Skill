@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from loop_factory import ROOT, append_recovery_round, make_packet, replace_artifact
+from loop_factory import ROOT, SKILL, append_recovery_round, make_packet, replace_artifact
 from uxloop.contracts import validate_packet
 from uxloop.engine import create_state, report, run
 from uxloop.io import ContractError, digest, load_json
@@ -25,7 +25,7 @@ class LoopTests(unittest.TestCase):
         self.evidence_root = self.root / 'evidence'
         self.workspace = self.root / 'site'
         self.workspace.mkdir()
-        shutil.copy2(ROOT / 'examples/loop/site/index.html', self.workspace / 'index.html')
+        shutil.copy2(SKILL / 'examples/loop/site/index.html', self.workspace / 'index.html')
         self.checkpoint = self.root / 'checkpoint.json'
         self.packet = make_packet(self.evidence_root)
         self.original = (self.workspace / 'index.html').read_text()
@@ -311,7 +311,7 @@ class LoopTests(unittest.TestCase):
         self.assert_not_complete(self.go(), 'blocked')
 
     def test_cli_reports_nonzero_blocked_not_success(self):
-        command = [sys.executable, str(ROOT / 'scripts/ux_loop.py'), 'run', str(self.evidence_root / 'packet.json'),
+        command = [sys.executable, str(SKILL / 'scripts/ux_loop.py'), 'run', str(self.evidence_root / 'packet.json'),
                    '--workspace', str(self.workspace), '--evidence-root', str(self.evidence_root), '--checkpoint', str(self.checkpoint)]
         process = subprocess.run(command, cwd=ROOT, text=True, capture_output=True, timeout=10)
         self.assertEqual(process.returncode, 3, process.stdout + process.stderr)
@@ -340,7 +340,7 @@ class LoopTests(unittest.TestCase):
         artifact = self.evidence_root / 'artifacts/artifact-figma.json'
         original = artifact.read_bytes()
         for target in [artifact, self.checkpoint.with_suffix('.lock'), self.workspace / '.ux-loop/workspace.lock', self.workspace / 'index.html']:
-            process = subprocess.run([sys.executable, str(ROOT / 'scripts/ux_loop.py'), 'resume',
+            process = subprocess.run([sys.executable, str(SKILL / 'scripts/ux_loop.py'), 'resume',
                 '--checkpoint', str(self.checkpoint), '--report', str(target)], cwd=ROOT,
                 text=True, capture_output=True, timeout=10)
             self.assertEqual(process.returncode, 2, process.stdout + process.stderr)
@@ -364,7 +364,7 @@ class LoopTests(unittest.TestCase):
     def test_cli_rejects_duplicate_json_keys(self):
         file = self.root / 'invalid.json'
         file.write_text('{"schema_version":"ux-loop.v1","schema_version":"unsafe"}')
-        process = subprocess.run([sys.executable, str(ROOT / 'scripts/ux_loop.py'), 'validate', str(file)],
+        process = subprocess.run([sys.executable, str(SKILL / 'scripts/ux_loop.py'), 'validate', str(file)],
                                  cwd=ROOT, text=True, capture_output=True, timeout=10)
         self.assertEqual(process.returncode, 2)
         self.assertFalse(json.loads(process.stdout)['product_complete'])

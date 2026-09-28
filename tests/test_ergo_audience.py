@@ -9,12 +9,12 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+import _paths  # noqa: E402,F401  (puts the skill folder on sys.path)
 
 from ergoqa import audience, report, swarm  # noqa: E402
 from ergoqa.profiles import validate_profile  # noqa: E402
 
-EXAMPLE = ROOT / "examples" / "audience" / "transit-card.audience.json"
+EXAMPLE = _paths.SKILL / "examples" / "audience" / "transit-card.audience.json"
 
 
 def load() -> dict:

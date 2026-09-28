@@ -4,6 +4,7 @@ import math
 import unittest
 from dataclasses import replace
 
+import _paths  # noqa: F401  (puts the skill folder on sys.path)
 from ergoqa.devices import (FORM_FACTORS, INPUTS, REQUIRED_IDS, body_mm_to_css_point, css_px_to_mm,
                             css_to_body_mm_point, css_to_display_mm_point, device_for_snapshot,
                             display_mm_from_diagonal, display_offset_mm, get_device, list_devices,

@@ -5,7 +5,7 @@
 Inspection was performed in the Linux sandbox from the supplied archives. The
 requested macOS checkout and plugin installation were not mounted here:
 `/private/tmp/ux-research-qa-pro-auto/worktree` and
-`/Users/r3m0r5e/.codex/plugins/cache/sisyphuslabs/omo/4.19.4`. No file in that
+`~/.codex/plugins/cache/sisyphuslabs/omo/4.19.4`. No file in that
 installation or another repository was edited. This does not assert that the
 user's current installed plugin or remote HEAD matches the supplied snapshot.
 

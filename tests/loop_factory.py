@@ -10,9 +10,9 @@ import difflib
 import json
 from pathlib import Path
 
+from _paths import REPO as ROOT, SKILL  # noqa: F401  (puts the skill folder on sys.path)
 from uxloop.io import digest, sha
 
-ROOT = Path(__file__).resolve().parents[1]
 START = '2026-09-14T00:00:00+00:00'
 CAPTURE = '2026-09-14T00:01:00+00:00'
 END = '2026-09-14T00:02:00+00:00'
@@ -31,7 +31,7 @@ def make_packet(root: Path, case: str = 'happy') -> dict:
     """Write a fresh synthetic packet and supporting test fixtures under root."""
     root.mkdir(parents=True, exist_ok=True)
     (root / 'artifacts').mkdir(exist_ok=True)
-    original = (ROOT / 'examples/loop/site/index.html').read_text()
+    original = (SKILL / 'examples/loop/site/index.html').read_text()
     fixed = original.replace('>다음</a>', '>상품 상세 보기</a>')
     before, after = digest({'index.html': original}), digest({'index.html': fixed})
     bundle = json.loads((ROOT / 'tests/fixtures/valid-bundle.json').read_text())
