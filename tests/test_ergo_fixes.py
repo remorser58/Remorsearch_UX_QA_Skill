@@ -196,14 +196,18 @@ class RuleFixes(unittest.TestCase):
         self.assertIn("p", hits)
 
     def test_single_use_game_control_not_held_to_serial_size(self) -> None:
-        pause = el("hs-pause", "hotspot", (335, 54, 44, 44), interactive=True, roles=("game_control",), tag="hotspot")
+        pause = el("hs-pause", "hotspot", (335, 54, 44, 44), name="일시정지", interactive=True, roles=("game_control",), tag="hotspot")
         pause["selector"] = "hotspot:hs-pause"
         run = {"run_id": "R-1", "steps": [{"action": {"action": "tap", "target": "hotspot:hs-pause"}, "target_element_id": "hs-pause"}]}
         obs = checks.check_game_controls(ctx([pause], device_id="iphone-15", prof=profile(device_id="iphone-15"), run=run))
         self.assertTrue(all(o.passed for o in obs))
-        run["steps"].append(dict(run["steps"][0]))
-        obs = checks.check_game_controls(ctx([pause], device_id="iphone-15", prof=profile(device_id="iphone-15"), run=run))
-        self.assertTrue(any(not o.passed and o.severity == "P3" for o in obs))
+        jump = el("hs-jump", "hotspot", (300, 600, 44, 44), name="점프", interactive=True, roles=("game_control",), tag="hotspot")
+        obs = checks.check_game_controls(ctx([jump], device_id="iphone-15", prof=profile(device_id="iphone-15"), run=run))
+        self.assertTrue(any(not o.passed and o.severity == "P3" for o in obs))  # a gameplay control is serial
+
+    def test_switch_keeps_boundary_contrast_even_with_label(self) -> None:
+        sw = el("sw", "switch", (280, 100, 52, 32), text="알림 받기", interactive=True, tag="button", border="#eeeeee", container="#ffffff")
+        self.assertTrue([o for o in checks.check_contrast(ctx([sw])) if o.check_id == "PC-02"])
 
     def test_toast_at_the_floor_is_not_flagged_for_jitter(self) -> None:
         run = {"run_id": "R-1", "steps": [], "timing_windows": [{"id": "toast", "selector": "#toast", "visible_ms": 3995.2, "kind": "transient_text", "text": "저장했어요"}]}

@@ -391,8 +391,9 @@ def check_reach(ctx: Context) -> list[Observation]:
             far = cost["travel_mm"] > params.LANDSCAPE_TRAVEL_MAX_MM
             # Apple HIG: frequent controls near the thumbs, secondary controls (pause, menus)
             # at the top. Only controls the play uses repeatedly are held to the thumb rule.
-            frequent = _tap_count(ctx.run, element) >= 2 or "timed" in roles
-            if not frequent:
+            # A scripted run's tap count reflects the script, not real play, so gameplay
+            # controls are frequent unless they are secondary (pause, menu, settings).
+            if _secondary_control(element) and "timed" not in roles:
                 continue
             failed = cost["top_band"] or far
             severity = ("P2" if cost["top_band"] else "P3") if failed else None
@@ -641,6 +642,16 @@ def check_pointer_separation(ctx: Context) -> list[Observation]:
     return out
 
 
+SECONDARY_CONTROL_WORDS = ("pause", "menu", "setting", "option", "help", "close", "back", "exit", "home",
+                           "일시정지", "메뉴", "설정", "옵션", "도움말", "닫기", "뒤로", "나가기", "홈")
+
+
+def _secondary_control(element: dict[str, Any]) -> bool:
+    """Pause, menu, settings and similar controls: occasional, placed at the top by convention (Apple HIG)."""
+    label = f"{element.get('name') or ''} {element.get('text') or ''} {element.get('selector') or ''}".lower()
+    return any(word in label for word in SECONDARY_CONTROL_WORDS)
+
+
 def _tap_count(run: dict[str, Any], element: dict[str, Any]) -> int:
     sel = element.get("selector")
     count = 0
@@ -669,7 +680,7 @@ def check_game_controls(ctx: Context) -> list[Observation]:
         edge_mm = _point_mm(ctx, max(0.0, edge_css), 0)[0]
         severity = None
         reasons = []
-        serial = _tap_count(ctx.run, element) >= 2 or "timed" in _roles(element)
+        serial = not _secondary_control(element) or "timed" in _roles(element) or _tap_count(ctx.run, element) >= 2
         if side < params.TOUCH_TARGET_MIN_MM:
             severity = "P2"
             reasons.append(f"{side:.1f}mm < 44pt(약 {params.TOUCH_TARGET_MIN_MM}mm)")
@@ -993,7 +1004,9 @@ def check_contrast(ctx: Context) -> list[Observation]:
         native = tag in ("input", "select", "textarea")
         # A text-labelled custom radio/checkbox card is identified by its text; WCAG 1.4.11
         # then concerns the state indicator, not the card outline (adjudication 2026-09-28).
-        form_control = native or (role in ("checkbox", "switch", "radio", "slider", "textbox", "combobox", "searchbox", "spinbutton") and not labelled)
+        # A switch's track and a slider's thumb are the state indicator itself, so their
+        # boundary matters even with a text label.
+        form_control = native or role in ("switch", "slider") or (role in ("checkbox", "radio", "textbox", "combobox", "searchbox", "spinbutton") and not labelled)
         icon_only = tag in ("button", "a") and not labelled
         if not (form_control or icon_only):
             continue  # WCAG 1.4.11 does not require a boundary when text identifies the control
@@ -1180,7 +1193,11 @@ def check_text_size(ctx: Context) -> list[Observation]:
 def check_choice_overload(ctx: Context) -> list[Observation]:
     out: list[Observation] = []
     groups: dict[tuple, list[dict[str, Any]]] = {}
-    for element in _interactive(ctx):
+    # The choice set is the whole rendered group the user scrolls through, including
+    # members below the fold or under a sticky bar; only a modal hides the rest.
+    members_all = [e for e in ctx.elements if e.get("interactive") and e.get("visible", True) and e.get("enabled", True)
+                   and not e.get("inert_by_modal") and e["box"].get("w", 0) > 0 and e["box"].get("h", 0) > 0]
+    for element in members_all:
         box = element["box"]
         # Same look, not just a similar size: unrelated controls (a back chevron, date
         # chips and a stepper) were merged by size buckets alone (adjudication 2026-09-28).
