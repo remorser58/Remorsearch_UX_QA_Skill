@@ -997,6 +997,18 @@ def check_text_size(ctx: Context) -> list[Observation]:
                     "xag-101-floor",
                 ))
         check_id = "GM-01" if hud else "PC-04"
+        if form in ("phone", "foldable", "tablet", "handheld_console") and float(size) < params.TEXT_PLATFORM_MIN_CSS_PX_MOBILE:
+            severity = "P2" if (hud or critical) else "P3"
+            out.append(Observation(
+                check_id, ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
+                [element["id"]], element_key(element),
+                {"name": "font_size_css_px", "value": size, "unit": "css_px", "threshold": params.TEXT_PLATFORM_MIN_CSS_PX_MOBILE, "comparator": ">=",
+                 "tier": "platform_minimum"},
+                False, severity,
+                f"'{text[:30]}' 글자 {size}px가 모바일 플랫폼 최소 글자 크기(Apple HIG 11pt)보다 작습니다.",
+                "platform-min-text",
+            ))
+            continue
         if angle < params.TEXT_FLOOR_ARCMIN:
             severity, threshold, tier = ("P1" if critical and _roles(element) & {"error_message", "critical_message"} else "P2"), params.TEXT_FLOOR_ARCMIN, "floor"
         elif angle < comfortable and not hud and len(text) >= params.BODY_TEXT_MIN_CHARS:
@@ -1223,9 +1235,13 @@ def _dom_flash(measured: dict[str, Any], element: dict[str, Any] | None, viewpor
     """
     starts = [float(t) for t in (measured.get("starts_ms") or []) if isinstance(t, (int, float))]
     appearances = int(measured.get("appearances") or len(starts))
-    if appearances < 4 or element is None:
+    if appearances < 4 or len(starts) < 4:
         return None
-    if len(starts) < 4:
+    if element is None and isinstance(measured.get("appear_box"), dict):
+        # Captured by the driver's poll at appearance (the element flashed between snapshots).
+        element = {"id": "", "selector": measured.get("selector"), "box": measured["appear_box"],
+                   "color_bg": measured.get("appear_bg"), "container_bg": None}
+    if element is None:
         return None
     best = 0
     for i, t0 in enumerate(starts):
@@ -1266,9 +1282,10 @@ def _mash_bursts(run: dict[str, Any]) -> list[tuple[str, int, float]]:
         action = step.get("action") or {}
         if action.get("action") in ("wait", "snapshot"):
             continue  # waits between scripted presses do not break a burst
+        # Scripted pacing reflects the driver, not the game's demand, so bursts are
+        # counted by consecutive presses on one target (waits/snapshots ignored).
         same = current and action.get("action") in ("tap", "click", "press", "gamepad") and action.get("target") == (current[-1].get("action") or {}).get("target")
-        close = current and (float(step.get("t_start_ms") or 0) - float(current[-1].get("t_start_ms") or 0)) <= params.MASH_MAX_INTERVAL_MS + 1000
-        if same and close:
+        if same:
             current.append(step)
             continue
         flush()

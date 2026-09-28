@@ -82,11 +82,20 @@ export function pageInit(cfg) {
     for (const w of windows) {
       let v = false;
       let text = null;
+      let box = null;
+      let bg = null;
       try {
         for (const el of document.querySelectorAll(w.selector)) {
           if (shown(el)) {
             v = true;
-            if (last.get(w.id) !== true) text = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 500);
+            if (last.get(w.id) !== true) {
+              text = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 500);
+              // Geometry and own fill at appearance: elements that flash between
+              // snapshots are never captured by them.
+              const r = el.getBoundingClientRect();
+              box = { x: r.left, y: r.top, w: r.width, h: r.height };
+              bg = getComputedStyle(el).backgroundColor || null;
+            }
             break;
           }
         }
@@ -96,7 +105,7 @@ export function pageInit(cfg) {
       if (!last.has(w.id) || last.get(w.id) !== v) {
         last.set(w.id, v);
         try {
-          Promise.resolve(fn({ id: w.id, v, t, text })).catch(() => {});
+          Promise.resolve(fn({ id: w.id, v, t, text, box, bg })).catch(() => {});
         } catch (e) { /* binding gone during unload */ }
       }
     }

@@ -124,6 +124,7 @@ CVD_CONFUSABLE_DE = 5.0          # [snippet+policy] below: confusable after simu
 CVD_MARGINAL_DE = 10.0           # [snippet+policy] 5-10: marginal; >= 10 distinct
 CVD_STATE_CONTRAST_EXEMPT = 3.0  # [recalled] WCAG technique G183: >= 3:1 luminance contrast between states is a non-colour cue
 # Text size, compared with FONT SIZE (em) visual angle, two tiers:
+TEXT_PLATFORM_MIN_CSS_PX_MOBILE = 11.0  # [recalled] Apple HIG minimum text size 11 pt (Material Body Small 12 sp)
 TEXT_FLOOR_ARCMIN = 16.0         # [recalled] ISO 9241-303 / ANSI-HFES 100 minimum character height -> P2 (P1 critical)
 TEXT_MIN_ARCMIN = 24.6           # [snippet] Hangul critical print size, young adults 0.41 deg (KJCP 2015; metric unconfirmed) -> P3
 TEXT_MIN_ARCMIN_PRESBYOPIA = 31.2  # [snippet] Hangul critical print size, older adults 0.52 deg -> P3
@@ -187,7 +188,6 @@ FLASH_EXTENDED_WINDOW_MS = 5000.0   # [code] EA IRIS "extended failure": 2-3 fla
 FLASH_EXTENDED_MIN_FLASHES = 10.0   # [derived] >= 2 flashes/s over the 5 s window
 FLASH_RED_RATIO = 0.8              # [standard] WCAG 2.2 red flash: R/(R+G+B) >= 0.8 (saturated red)
 MASH_MIN_PRESSES = 8               # [policy] repeated presses on one target needed to progress (XAG 107 / GAG: avoid mashing)
-MASH_MAX_INTERVAL_MS = 700         # [policy] presses closer than this count as one burst
 QTE_MOTOR_MS = 100.0           # [assumption] provisional; game brief
 RT_CV = 0.2                    # [assumption] provisional coefficient of variation of RT
 INPUT_LATENCY_MS = {"touch": 80.0, "mouse": 20.0, "keyboard": 20.0, "gamepad": 50.0, "remote": 100.0}  # [assumption]

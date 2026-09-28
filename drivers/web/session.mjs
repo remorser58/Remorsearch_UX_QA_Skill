@@ -277,6 +277,14 @@ export class WebSession {
     }
     if (typeof payload.v !== 'boolean' || typeof payload.t !== 'number' || !Number.isFinite(payload.t)) return;
     const text = typeof payload.text === 'string' ? payload.text.slice(0, 500) : null;
+    const b = payload.box;
+    if (payload.v && b && [b.x, b.y, b.w, b.h].every((n) => typeof n === 'number' && Number.isFinite(n))) {
+      const area = b.w * b.h;
+      if (!w.appearBox || area > w.appearBox.w * w.appearBox.h) {
+        w.appearBox = { x: Math.round(b.x * 100) / 100, y: Math.round(b.y * 100) / 100, w: Math.round(b.w * 100) / 100, h: Math.round(b.h * 100) / 100 };
+        w.appearBg = typeof payload.bg === 'string' ? payload.bg.slice(0, 64) : null;
+      }
+    }
     this.applyTransition(w, payload.v, payload.t - this.clockOffset, text);
   }
 
@@ -339,6 +347,7 @@ export class WebSession {
         appearances: w.appearances,
         // Appearance start times relative to run start (flash-rate estimation).
         starts_ms: w.starts.map((t) => round1(this.rel(t))),
+        ...(w.appearBox ? { appear_box: w.appearBox, appear_bg: w.appearBg } : {}),
         open_interval_ms: open,
         first_visible_t_ms: w.firstVisible !== null ? this.rel(w.firstVisible) : null,
         poll_interval_ms: TW_POLL_MS,
