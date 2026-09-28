@@ -104,3 +104,11 @@
   - `docs/human-factors/ux-design-discipline.md` 7행: `skills/persona-driven-ux-qa/references/evidence-and-severity.md` → `skills/remorsearch-ux-qa/references/persona-qa/evidence-and-severity.md`
 - 스킬 폴더 안 문서의 `scripts/...`, `node drivers/web/...`는 스킬 폴더 기준이라 그대로 두면 됩니다(SKILL.md에 규칙 명시).
 - 새로 쓰는 `references/ergonomics/*.md`에서 다른 모드 파일을 가리킬 때는 `references/persona-qa/...`처럼 스킬 폴더 기준 전체 경로를 써 주세요.
+
+## 배포 세션 업데이트 (커밋 작성자)
+
+- 사용자 지시: **앞으로 모든 커밋의 작성자는 사용자 본인**입니다. 이 브랜치 최신 커밋의 작성자 정보를 그대로 쓰세요.
+  `git config user.name "$(git log -1 --format=%an origin/claude/admiring-goldberg-llu3f5)"` 와
+  `git config user.email "$(git log -1 --format=%ae origin/claude/admiring-goldberg-llu3f5)"` (레포 로컬 설정).
+  Claude는 커밋 메시지 끝의 `Co-Authored-By` 줄로만 남깁니다. 이미 푸시한 커밋은 다시 쓰지 않습니다.
+- 저작권자: `SeongJu Kim (김성주, remorser58)`, MIT.
