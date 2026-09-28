@@ -36,6 +36,8 @@ def render(
     composed = any(p.get("audience_ref") for p in profiles)
     from .swarm import units as make_units
 
+    hypotheses = [f for f in findings if f.get("tier") == "hypothesis"]
+    findings = [f for f in findings if f.get("tier") != "hypothesis"]
     problem_units = make_units(findings)
     ucounts = severity_counts(problem_units)
     analyses = list(analyses)
@@ -54,9 +56,15 @@ def render(
         "- 엄지 도달 모델은 보정 전 휴리스틱(thumb-reach-v3-uncalibrated)이므로 단독으로 P2를 넘기지 않습니다.",
         "",
     ]
+    unhealthy = [a for a in analyses if a.get("health") in ("failed", "degraded")]
+    if unhealthy:
+        lines.append(f"- **실행 상태 경고:** {len(unhealthy)}개 실행이 실패했거나 불완전합니다. 해당 실행의 '발견 없음'은 통과가 아닙니다.")
+    for a in analyses:
+        for note in a.get("limitations", []):
+            lines.append(f"- {note}")
     for item in limitations:
         lines.append(f"- {item}")
-    if limitations:
+    if limitations or unhealthy or any(a.get("limitations") for a in analyses):
         lines.append("")
     lines += ["## 2. 실행 목록", "", "| run | 시나리오 | 기기 | 상태 | 성공 | 평가 프로필 |", "|---|---|---|---|---|---|"]
     for a in analyses:
@@ -87,9 +95,6 @@ def render(
         missing = [name for name in wanted if name not in covered]
         lines.append(f"- 이번 실행에서 다루지 않은 커버리지 층: {', '.join(missing) if missing else '없음'}")
     lines.append("- 페르소나 데이터셋에 없는 인간공학 속성(손잡이·파지·손 크기·시력·운동·기기)은 모두 시나리오 가정입니다.")
-    limits = [n for a in analyses for n in a.get("limitations", [])]
-    if limits:
-        lines += ["", "실행 한계(에이전트 한계/환경 문제로 분류되어 발견에서 제외):"] + [f"- {n}" for n in limits]
     lines += ["", "## 4. 문제 단위 (분류·수정 우선순위용)", "", "| ID | 심각도 | 체크 | 시나리오 | 조건 | 요소 수 | 발견 ID |", "|---|---|---|---|---|---|---|"]
     for u in problem_units:
         lines.append(f"| {u['id']} | {u['severity']} | {u['check_id']} {u['title_ko']} | {u['scenario_id']} | {u['condition']} | {len(u['instances'])} | {', '.join(u['instances'][:6])}{' …' if len(u['instances']) > 6 else ''} |")
@@ -128,6 +133,12 @@ def render(
             f"- 증거 ID: {', '.join(f['observation_ids'][:6])}" + (" …" if len(f["observation_ids"]) > 6 else ""),
             "",
         ]
+    if hypotheses:
+        lines += ["## 5-1. 검토용 가설 (결함으로 세지 않음)", "",
+                  "검증에서 고유 탐지가 없고 판정 타당도가 낮았던 모델 체크입니다(GZ-01, GZ-04, PC-05). 디자인 검토의 단서로만 쓰세요.", ""]
+        for u in make_units(hypotheses):
+            lines.append(f"- {u['check_id']} {u['title_ko']} · {u['scenario_id']} · 조건 {u['condition']} · 요소 {len(u['instances'])}개 ({', '.join(e.split('|')[0] for e in u['elements'][:4])})")
+        lines.append("")
     lines += [
         "## 6. 자동화하지 않은 판단 (사람/비전 LLM 확인 필요)",
         "",

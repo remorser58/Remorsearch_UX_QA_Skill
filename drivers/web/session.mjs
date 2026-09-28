@@ -285,6 +285,7 @@ export class WebSession {
         w.appearBg = typeof payload.bg === 'string' ? payload.bg.slice(0, 64) : null;
       }
     }
+    if (payload.v && payload.off === true && !w.cur) w.offscreenAppearances = (w.offscreenAppearances || 0) + 1;
     this.applyTransition(w, payload.v, payload.t - this.clockOffset, text);
   }
 
@@ -345,6 +346,8 @@ export class WebSession {
         min_visible_ms: closed.length ? Math.min(...closed) : null,
         max_visible_ms: closed.length ? Math.max(...closed) : null,
         appearances: w.appearances,
+        // Appearances whose whole box was outside the viewport (could not be read there).
+        offscreen_appearances: w.offscreenAppearances || 0,
         // Appearance start times relative to run start (flash-rate estimation).
         starts_ms: w.starts.map((t) => round1(this.rel(t))),
         ...(w.appearBox ? { appear_box: w.appearBox, appear_bg: w.appearBg } : {}),

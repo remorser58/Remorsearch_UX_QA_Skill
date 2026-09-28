@@ -64,7 +64,9 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
             evaluated_by_run.setdefault(run_id, [])
             evaluated_by_run[run_id] += [p for p in analysis["profiles_evaluated"] if p not in evaluated_by_run[run_id]]
         for obs in analysis["observations"]:
-            key = (scenario_id, obs["check_id"], obs["element_key"])
+            # Group by the element's selector, not its current text: a countdown or score
+            # whose text changes every snapshot is one element (cross-review 2026-09-28).
+            key = (scenario_id, obs["check_id"], obs["element_key"].split("|", 1)[0])
             group = groups.setdefault(key, {"tested": set(), "triggered": set(), "failed": [], "runs": set()})
             group["tested"].add(obs["profile_id"])
             group["runs"].add(obs["run_id"])
@@ -72,9 +74,10 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
                 group["triggered"].add(obs["profile_id"])
                 group["failed"].append(obs)
     findings: list[dict[str, Any]] = []
-    for (scenario_id, check_id, element_key), group in sorted(groups.items()):
+    for (scenario_id, check_id, _selector), group in sorted(groups.items()):
         if not group["failed"]:
             continue
+        element_key = group["failed"][0]["element_key"]
         spec = checks.CATALOG[check_id]
         if check_id != "PJ-01":
             # Denominator: every evaluated profile the check applies to, not only the ones
@@ -95,6 +98,7 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
         differential = _differential([profiles_by_id[p] for p in triggered if p in profiles_by_id], untriggered)
         findings.append({
             "check_id": check_id,
+            "tier": checks.tier(check_id),
             "category": spec.category,
             "scenario_id": scenario_id,
             "element_key": element_key,
@@ -156,6 +160,7 @@ def units(findings: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
         out.append({
             "scenario_id": scenario_id,
             "check_id": check_id,
+            "tier": checks.tier(check_id),
             "category": worst["category"],
             "basis": worst["basis"],
             "severity": worst["severity"],

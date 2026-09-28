@@ -192,7 +192,7 @@ QTE_MOTOR_MS = 100.0           # [assumption] provisional; game brief
 RT_CV = 0.2                    # [assumption] provisional coefficient of variation of RT
 INPUT_LATENCY_MS = {"touch": 80.0, "mouse": 20.0, "keyboard": 20.0, "gamepad": 50.0, "remote": 100.0}  # [assumption]
 
-CHOICE_RT_MS_BY_AGE = {  # [paper] provisional; game brief (Der & Deary 2006)
+CHOICE_RT_MS_BY_AGE = {  # [assumption] per-decade values were not retrieved from Der & Deary 2006 (game brief); provisional
     "10s": 420, "20s": 420, "30s": 440, "40s": 460, "50s": 490, "60s": 530, "70s+": 580,
 }
 
@@ -219,3 +219,7 @@ SCREEN_CHANGE_FRACTION = 0.6
 # Measured visible durations carry polling jitter (16 ms poll plus capture); a toast
 # hidden by setTimeout(4000) measured 3995 ms. [policy]
 TIMING_JITTER_MS = 50
+
+# Reach is scored at the easiest point of a target, inset this far from its edges so
+# the finger pad fits inside the target. [policy]
+REACH_TARGET_INSET_MM = 3.0

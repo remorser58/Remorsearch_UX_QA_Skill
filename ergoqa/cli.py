@@ -13,7 +13,7 @@ from .devices import get_device, list_devices
 from .profiles import sample_profiles, validate_profile
 from .snapshot import SnapshotError, load_json
 
-EXIT_OK, EXIT_FINDINGS, EXIT_USAGE = 0, 1, 2
+EXIT_OK, EXIT_FINDINGS, EXIT_USAGE, EXIT_DEGRADED = 0, 1, 2, 3
 
 
 def _write_json(path: Path, data: Any) -> None:
@@ -138,7 +138,7 @@ def cmd_swarm(args: argparse.Namespace) -> int:
     findings = swarm.aggregate(analyses, profiles)
     out = Path(args.out)
     _write_json(out / "analyses.json", {"analyses": analyses})
-    problem_units = swarm.units(findings)
+    problem_units = swarm.units([f for f in findings if f.get("tier") != "hypothesis"])
     _write_json(out / "findings.json", {"findings": findings, "units": problem_units, "severity_counts": swarm.severity_counts(findings),
                                         "unit_severity_counts": swarm.severity_counts(problem_units)})
     audience_doc = load_json(args.audience) if getattr(args, "audience", None) else None
@@ -154,10 +154,17 @@ def cmd_swarm(args: argparse.Namespace) -> int:
     ucounts = swarm.severity_counts(problem_units)
     print(f"problem units: {len(problem_units)} (P0 {ucounts['P0']}, P1 {ucounts['P1']}, P2 {ucounts['P2']}, P3 {ucounts['P3']}); "
           f"element findings: {len(findings)} (P0 {counts['P0']}, P1 {counts['P1']}, P2 {counts['P2']}, P3 {counts['P3']}) -> {out}")
+    unhealthy = [a for a in analyses if a.get("health") in ("failed", "degraded")]
+    if unhealthy:
+        print(f"run health: {len(unhealthy)} run(s) failed or degraded — see report section 1", file=sys.stderr)
     if args.fail_on:
         limit = checks.SEVERITY_ORDER[args.fail_on]
-        if any(checks.SEVERITY_ORDER.get(f["severity"], 3) <= limit for f in findings):
+        gate = [f for f in findings if checks.SEVERITY_ORDER.get(f["severity"], 3) <= limit and f.get("tier") != "hypothesis"
+                and (not args.fail_on_basis or f["basis"] in args.fail_on_basis.split(","))]
+        if gate:
             return EXIT_FINDINGS
+    if unhealthy and not args.allow_degraded:
+        return EXIT_DEGRADED
     return EXIT_OK
 
 
@@ -293,6 +300,8 @@ def build_parser() -> argparse.ArgumentParser:
             p.add_argument("--bundle-id")
             p.add_argument("--title", default="인간공학 페르소나 스웜 QA 보고서")
             p.add_argument("--fail-on", choices=("P0", "P1", "P2", "P3"))
+            p.add_argument("--fail-on-basis", help="comma-separated bases the --fail-on gate counts (e.g. measured)")
+            p.add_argument("--allow-degraded", action="store_true", help="exit 0 even when a run failed or was degraded")
             p.add_argument("--audience", help="ergo-audience.v1 file the profiles were composed from (segment names in the report)")
         p.set_defaults(func=func)
 
@@ -340,6 +349,9 @@ def main(argv: list[str] | None = None) -> int:
         return int(args.func(args))
     except (ValueError, KeyError, OSError, SnapshotError) as error:
         print(f"ERROR: {error}", file=sys.stderr)
+        return EXIT_USAGE
+    except Exception as error:  # noqa: BLE001 - exit 1 is reserved for "findings at or above --fail-on"
+        print(f"ERROR: unexpected {type(error).__name__}: {error}", file=sys.stderr)
         return EXIT_USAGE
 
 

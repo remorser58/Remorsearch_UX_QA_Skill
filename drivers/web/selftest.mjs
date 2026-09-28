@@ -606,6 +606,9 @@ async function layersTest(base, tmp) {
   const covered = bySel(s0, '#covered-btn');
   check('layers: a button under a translucent cover has occluded_fraction 1 and occluded_by #cover',
     covered && covered.occluded_fraction === 1 && covered.occluded_by === '#cover', covered);
+  const hud = bySel(s0, '#hud');
+  check('layers: a pointer-events:none HUD over a canvas has unknown (null) occlusion, not "covered by the canvas"',
+    hud && hud.occluded_fraction === null && hud.occluded_by === null, hud);
   const free = bySel(s0, '#behind');
   check('layers: an uncovered button has occluded_fraction 0 and is not inert', free && free.occluded_fraction === 0 && free.inert_by_modal === false, free);
   check('layers: <li> without its own text node is not listed; its button is (20px)',

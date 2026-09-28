@@ -110,6 +110,43 @@ def _dedupe(observations: list[checks.Observation]) -> list[checks.Observation]:
     return [best[k] for k in order]
 
 
+def run_health(run: dict[str, Any], snapshots: list[dict[str, Any]], scenario: dict[str, Any] | None) -> tuple[str, list[str]]:
+    """``ok``, ``degraded`` or ``failed`` plus human-readable reasons.
+
+    A run that failed a step, lost off-origin resources, hit the element cap, or never
+    saw a declared timing window cannot support a clean result; the report and the CI
+    gate must say so (cross-review 2026-09-28).
+    """
+    rid = run.get("run_id")
+    notes: list[str] = []
+    health = "ok"
+    if run.get("status") not in (None, "completed") or run.get("success") is False:
+        health = "failed"
+        bad = [s for s in run.get("steps", []) if s.get("result") not in (None, "ok")]
+        where = f" (step {bad[0].get('step_index')}: {bad[0].get('result')})" if bad else ""
+        notes.append(f"{rid}: 실행 상태 {run.get('status')}, 성공 {run.get('success')}{where} — 이후 화면은 검사되지 않았습니다.")
+    driver = run.get("driver") or {}
+    blocked = ((driver.get("network_policy") or {}).get("blocked_requests") or 0) if isinstance(driver, dict) else 0
+    if blocked:
+        health = "degraded" if health == "ok" else health
+        notes.append(f"{rid}: 다른 출처 요청 {blocked}건을 차단했습니다(스타일/스크립트가 빠졌을 수 있음; 필요하면 --allow-origin).")
+    capped = [n for snap in snapshots for n in (snap.get("notes") or []) if "capped" in str(n)]
+    if capped:
+        health = "degraded" if health == "ok" else health
+        notes.append(f"{rid}: 요소 수 상한으로 일부 요소를 검사하지 못했습니다({capped[0]}).")
+    declared = {w.get("id") for w in (scenario or {}).get("timing_windows", [])}
+    for w in run.get("timing_windows", []):
+        if w.get("id") in declared and not w.get("appearances") and not w.get("error"):
+            notes.append(f"{rid}: 선언된 시간 창 '{w.get('id')}'이(가) 한 번도 나타나지 않았습니다(시나리오 경로 또는 선택자 확인).")
+        if w.get("error"):
+            health = "degraded" if health == "ok" else health
+            notes.append(f"{rid}: 시간 창 '{w.get('id')}' 측정 오류: {w.get('error')}")
+    game = (run.get("surface") or {}).get("kind") == "game" or any(w.get("kind") == "qte" for w in (scenario or {}).get("timing_windows", []))
+    if game and not (run.get("flash_sampling") or {}).get("enabled"):
+        notes.append(f"{rid}: 섬광(광과민성) 프레임 검사를 하지 않았습니다(--flash-sample-ms 없음). GM-04 결과가 없다는 것은 통과가 아닙니다.")
+    return health, notes
+
+
 def analyze_run(
     run_dir: str | Path,
     profiles: Iterable[dict[str, Any]],
@@ -184,7 +221,10 @@ def analyze_run(
         f"{run['run_id']} step {n.get('step_index')}: {n.get('failure_class')} — {n.get('observed', '')}"
         for n in run.get("persona_notes", []) if n.get("confusion") and n.get("failure_class") in ("agent_limitation", "environment")
     ]
+    health, health_notes = run_health(run, snapshots, scenario)
+    limitations += health_notes
     return {
+        "health": health,
         "limitations": limitations,
         "agent": run.get("agent", {}),
         "run_id": run["run_id"],

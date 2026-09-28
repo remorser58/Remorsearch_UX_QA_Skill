@@ -61,8 +61,13 @@ def wilson(k: int, n: int, z: float = 1.96) -> list[float]:
 
 
 def score(answer_key: dict[str, Any], findings: Iterable[dict[str, Any]], profiles: Iterable[dict[str, Any]],
-          exact_viewport: bool = False) -> dict[str, Any]:
+          exact_viewport: bool = False, include_hypotheses: bool = False) -> dict[str, Any]:
     findings = list(findings)
+    hypotheses = [f for f in findings if f.get("tier") == "hypothesis"]
+    if not include_hypotheses:
+        # Hypotheses are listed for review, not reported as defects: they neither count as
+        # detections nor as false alarms.
+        findings = [f for f in findings if f.get("tier") != "hypothesis"]
     profiles_by_id = {p["profile_id"]: p for p in profiles}
     defects = answer_key.get("defects", [])
     decoys = answer_key.get("decoys", [])
@@ -143,6 +148,7 @@ def score(answer_key: dict[str, Any], findings: Iterable[dict[str, Any]], profil
         "effectiveness_lb": round(detected / n * validity_lb, 3) if validity_lb is not None else None,
         "false_alarm_units_per_clean_scenario": round(len(clean_units) / clean_scenarios, 2),
         "exact_viewport_matching": exact_viewport,
+        "hypotheses_excluded": 0 if include_hypotheses else len(hypotheses),
         "per_defect": per_defect,
         "decoy_hits": decoy_hits,
         "clean_findings": [{"id": f["id"], "scenario_id": f["scenario_id"], "check_id": f["check_id"], "severity": f["severity"], "element_key": f["element_key"]} for f in clean_findings],

@@ -165,10 +165,21 @@ class RuleFixes(unittest.TestCase):
                     bg=("#ffffff" if i % 2 else "#eeeeee"), border=("#dddddd" if i % 3 else None)) for i in range(11)]
         self.assertEqual(checks.check_choice_overload(ctx(mixed)), [])
 
+    def test_choices_group_by_container_even_when_one_is_selected(self) -> None:
+        methods = [el(f"m{i}", "button", (10, 100 + i * 50, 340, 44), text=f"결제수단 {i}", interactive=True, tag="button",
+                      bg=("#e8f0fe" if i == 0 else "#ffffff"), ancestor_ids=["pay-methods"]) for i in range(10)]
+        self.assertEqual(len(checks.check_choice_overload(ctx(methods))), 1)
+        mixed = [el("back", "button", (8, 8, 44, 44), text="<", interactive=True, tag="button", ancestor_ids=["header"])]
+        mixed += [el(f"d{i}", "button", (10 + i * 48, 100, 44, 44), text=f"{i + 1}", interactive=True, tag="button", ancestor_ids=["dates"]) for i in range(7)]
+        mixed += [el(f"s{i}", "button", (10 + i * 48, 200, 44, 44), text="+-"[i], interactive=True, tag="button", ancestor_ids=["people"]) for i in range(2)]
+        self.assertEqual(checks.check_choice_overload(ctx(mixed)), [])
+
     def test_text_labelled_custom_radio_is_exempt_from_boundary_contrast(self) -> None:
         card = el("opt", "radio", (10, 100, 300, 60), text="③ _count", interactive=True, tag="button", border="#eeeeee", container="#ffffff")
-        icon = el("icon", "button", (10, 200, 44, 44), interactive=True, tag="button", border="#eeeeee", container="#ffffff")
-        ids = {o.element_ids[0] for o in checks.check_contrast(ctx([card, icon])) if o.check_id == "PC-02"}
+        faint_icon = el("icon", "button", (10, 200, 44, 44), interactive=True, tag="button", fg="#cccccc", border="#eeeeee", container="#ffffff")
+        dark_icon = el("icon2", "button", (60, 200, 44, 44), interactive=True, tag="button", fg="#374151", border="#eeeeee", container="#ffffff")
+        ids = {o.element_ids[0] for o in checks.check_contrast(ctx([card, faint_icon, dark_icon])) if o.check_id == "PC-02"}
+        # The glyph identifies an icon-only button: a dark icon passes without a boundary.
         self.assertEqual(ids, {"icon"})
 
     def test_signed_amounts_are_a_state_cue(self) -> None:
@@ -217,6 +228,18 @@ class FeedbackNoticing(unittest.TestCase):
         salient, info = checks._salient_change(c, err, new=True)
         self.assertTrue(salient)
         self.assertTrue(info["text_salient"])
+
+    def test_toast_shown_with_a_new_screen_is_still_checked(self) -> None:
+        before = {"surface": {"url": "http://x/a"}, "elements": [el(f"e{i}", "button", (10, 10 + i * 50, 100, 44)) for i in range(10)]}
+        toast = el("toast", "status", (20, 700, 320, 60), text="평소보다 큰 금액이에요. 받는 분을 다시 확인해 주세요.", roles=("critical_message",),
+                   fg="#ffffff", bg="#333333", container="#ffffff")
+        now = [el("h", "heading", (10, 10, 200, 30), text="확인")] + [toast]
+        c = ctx(now, previous=before, focus={"x": 180, "y": 120})
+        c.snapshot["surface"] = {"url": "http://x/a"}
+        c.scenario = {"timing_windows": [{"id": "t", "selector": "#toast", "kind": "transient_text"}]}
+        self.assertTrue([o for o in checks.check_gaze(c) if o.check_id == "GZ-02"])
+        c.scenario = {"timing_windows": []}
+        self.assertFalse([o for o in checks.check_gaze(c) if o.check_id == "GZ-02"])
 
     def test_screen_replacement_skips_feedback_noticing(self) -> None:
         before = {"surface": {"url": "http://x/a"}, "elements": [el(f"e{i}", "button", (10, 10 + i * 50, 100, 44)) for i in range(10)]}

@@ -64,10 +64,11 @@ export function pageInit(cfg) {
 
   const windows = Array.isArray(cfg.windows) ? cfg.windows : [];
   if (!windows.length || !cfg.binding) return;
+  // Rendered, whether or not it is inside the viewport: a message that appears
+  // off-screen is itself a finding (it cannot be read), so it must be recorded.
   const shown = (el) => {
     const r = el.getBoundingClientRect();
     if (r.width <= 0 || r.height <= 0) return false;
-    if (r.bottom <= 0 || r.right <= 0 || r.top >= window.innerHeight || r.left >= window.innerWidth) return false;
     if (typeof el.checkVisibility === 'function') {
       return el.checkVisibility({ opacityProperty: true, visibilityProperty: true });
     }
@@ -84,6 +85,7 @@ export function pageInit(cfg) {
       let text = null;
       let box = null;
       let bg = null;
+      let off = null;
       try {
         for (const el of document.querySelectorAll(w.selector)) {
           if (shown(el)) {
@@ -95,6 +97,7 @@ export function pageInit(cfg) {
               const r = el.getBoundingClientRect();
               box = { x: r.left, y: r.top, w: r.width, h: r.height };
               bg = getComputedStyle(el).backgroundColor || null;
+              off = r.bottom <= 0 || r.right <= 0 || r.top >= window.innerHeight || r.left >= window.innerWidth;
             }
             break;
           }
@@ -105,7 +108,7 @@ export function pageInit(cfg) {
       if (!last.has(w.id) || last.get(w.id) !== v) {
         last.set(w.id, v);
         try {
-          Promise.resolve(fn({ id: w.id, v, t, text, box, bg })).catch(() => {});
+          Promise.resolve(fn({ id: w.id, v, t, text, box, bg, off })).catch(() => {});
         } catch (e) { /* binding gone during unload */ }
       }
     }
@@ -546,6 +549,9 @@ export function extractSnapshot(args) {
   // Fraction of sample points inside the visible box where another element is on top
   // (not the element, a descendant or an ancestor): a sheet, scrim or overlay.
   const occlusion = (el, r) => {
+    // Hit testing cannot see elements that ignore pointer events (HUD and subtitle
+    // overlays): elementFromPoint returns what lies BELOW them, so their occlusion is unknown.
+    if (style(el).pointerEvents === 'none') return { fraction: null, by: null };
     const x0 = Math.max(0, r.left), x1 = Math.min(vw, r.right), y0 = Math.max(0, r.top), y1 = Math.min(vh, r.bottom);
     if (x1 - x0 < 1 || y1 - y0 < 1) return { fraction: null, by: null };
     const pts = [[0.5, 0.5], [0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]];
@@ -623,9 +629,14 @@ export function extractSnapshot(args) {
     if (api && typeof api.hotspots === 'function') {
       const list = api.hotspots();
       if (Array.isArray(list)) {
+        const live = new Set();
         for (const h of list.slice(0, 200)) {
           if (!addSpot(h, 'page')) pageHotspotError = 'some page hotspots were malformed and skipped';
+          else live.add(h.id);
         }
+        // The page reports its live hotspots; a scenario fallback it does not list is not
+        // on screen in this state (e.g. attack/jump on a menu screen).
+        for (const s of spots.values()) if (s.origin === 'scenario' && !live.has(s.id)) s.visible = false;
       } else {
         pageHotspotError = 'window.__ergoqa__.hotspots() did not return an array';
       }
@@ -688,6 +699,17 @@ export function extractSnapshot(args) {
       border_color: border.color,
       border_width_px: border.width,
       opacity: Math.round(cumOpacity * 1000) / 1000,
+      // Associated <label> boxes accept the same click (HTML activation behaviour),
+      // so they are part of the control's target (WCAG 2.5.8 "target").
+      ...(() => {
+        if (!el.labels || !el.labels.length) return {};
+        const boxes = [];
+        for (const lab of el.labels) {
+          const lr = lab.getBoundingClientRect();
+          if (lr.width > 0 && lr.height > 0) boxes.push({ x: round2(lr.left), y: round2(lr.top), w: round2(lr.width), h: round2(lr.height) });
+        }
+        return boxes.length ? { hit_boxes: boxes.slice(0, 4) } : {};
+      })(),
       ...(() => {
         const o = g.vis && g.inVp ? occlusion(el, g.r) : { fraction: null, by: null };
         return {

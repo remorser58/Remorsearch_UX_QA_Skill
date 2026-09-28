@@ -223,7 +223,7 @@ def evaluate(entry: dict[str, Any], profile_ids: set[str] | None = None, check_f
         evaluated = [pid for pid in a.get("profiles_evaluated", []) if profile_ids is None or pid in profile_ids]
         analyses.append({"scenario_id": a["scenario_id"], "run_id": a.get("run_id"), "profiles_evaluated": evaluated, "observations": obs})
     used = [p for pid, p in entry["profiles"].items() if profile_ids is None or pid in profile_ids]
-    findings = swarm.aggregate(analyses, used)
+    findings = [f for f in swarm.aggregate(analyses, used) if f.get("tier") != "hypothesis"]
     score = bench.score(entry["key"], findings, used)
     clean_ids = {f["id"] for f in score["clean_findings"]}
     exact = bench.score(entry["key"], findings, used, exact_viewport=True)
