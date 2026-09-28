@@ -9,10 +9,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 import _paths  # noqa: E402,F401  (puts the skill folder on sys.path)
 
-from ergoqa import bench, checks, swarm  # noqa: E402
+from ergoqa import bench, checks, params, swarm  # noqa: E402
 from ergoqa.devices import get_device  # noqa: E402
 from ergoqa.hf import reach  # noqa: E402
-from ergoqa.profiles import _finalise, sample_profiles  # noqa: E402
+from ergoqa.profiles import _finalise, sample_profiles, touch_sigma_multiplier  # noqa: E402
 
 
 def el(eid, role, box, *, text="", name="", interactive=False, roles=(), fg="#111111", bg="#ffffff", size=16, weight=400,
@@ -275,6 +275,47 @@ class RuleFixes(unittest.TestCase):
         snaps = {"S-6": {"elements": [boost]}, "S-7": {"elements": [boost]}}
         obs = checks.check_run_timing(run, profile(device_id="iphone-15"), get_device("iphone-15"), snaps, None)
         self.assertFalse([o for o in obs if o.check_id == "CG-03" and not o.passed])
+
+
+class SituationalTouch(unittest.TestCase):
+    """Situational brief SIT-01..03 (decision log round 8)."""
+
+    def walker(self, device_id="galaxy-s24"):
+        p = profile("EP-W", device_id=device_id, grip="one_hand_right")
+        p["attributes"]["context"]["mobility"] = "walking"
+        return _finalise(p, get_device(device_id))
+
+    def pt04(self, box, prof):
+        pay = el("pay", "button", box, text="결제", interactive=True, roles=("primary",), tag="button")
+        return [o for o in checks.check_touch_accuracy(ctx([pay], prof=prof)) if o.check_id == "PT-04"][0]
+
+    def test_platform_size_target_is_p3_at_most_from_inflation_alone(self) -> None:
+        # 44 x 44 CSS px on a Galaxy S24 is 8.1 mm: fine at k = 1, flagged only by thumb x walking.
+        o = self.pt04((150, 600, 44, 44), self.walker())
+        self.assertTrue(o.measurement["profile_only"])
+        self.assertEqual(o.severity, "P3")
+        saved = params.TOUCH_PROFILE_ONLY_P3_MIN_MM
+        try:
+            params.TOUCH_PROFILE_ONLY_P3_MIN_MM = None
+            self.assertEqual(self.pt04((150, 600, 44, 44), self.walker()).severity, "P2")
+        finally:
+            params.TOUCH_PROFILE_ONLY_P3_MIN_MM = saved
+
+    def test_target_below_platform_size_keeps_p2(self) -> None:
+        o = self.pt04((150, 600, 34, 34), self.walker())  # 6.2 mm
+        self.assertEqual(o.severity, "P2")
+
+    def test_factors_multiply_by_default_and_add_in_variance_as_a_switch(self) -> None:
+        p = self.walker()
+        thumb, walk = params.TOUCH_SIGMA_MULT["one_hand_thumb"], params.TOUCH_SIGMA_MULT["mobility_walking"]
+        self.assertAlmostEqual(touch_sigma_multiplier(p), thumb * walk)
+        saved = params.TOUCH_SIGMA_COMBINE
+        try:
+            params.TOUCH_SIGMA_COMBINE = "additive"
+            self.assertAlmostEqual(touch_sigma_multiplier(p), (1 + (thumb ** 2 - 1) + (walk ** 2 - 1)) ** 0.5)
+            self.assertAlmostEqual(touch_sigma_multiplier(profile("EP-S", grip="cradle_right")), 1.0)
+        finally:
+            params.TOUCH_SIGMA_COMBINE = saved
 
 
 class FeedbackNoticing(unittest.TestCase):

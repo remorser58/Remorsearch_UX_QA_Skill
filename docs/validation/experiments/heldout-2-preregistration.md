@@ -224,3 +224,19 @@ H1–H7 verdicts are still computed and reported. What is added:
      both arms on primary defects. Otherwise the gain is attributed to floors and
      stratification.
    - `C4-rep` (repeated Stage 0) is not run before the freeze.
+
+### Amendment 4 (2026-09-28, before the freeze and before any heldout-2 recording)
+
+1. **Detector changes from dev round 8** (`decisions.md`): SIT-01 (profile-only
+   PT-03/PT-04 on targets of at least 7.0 mm are P3 at most) and SIT-03
+   (multiplier values and citations). SIT-02 was not adopted. Both changes were
+   judged on dev recordings only, before the freeze.
+2. **SIT-04, a conditional cut decided once on heldout-2.** It is exploratory and
+   changes no confirmatory verdict. After scoring, compute for C3 and C4@14 the
+   `recall_condition_attributed` of defects conditioned on walking, tremor or age
+   60+ that are detected through PT-03/PT-04, and the clean-control units that only
+   those multipliers produce (multipliers-off re-analysis of the same recordings).
+   - **Cut** (after this evaluation, not in the frozen detector) if both hold:
+     attributed detections = 0 and clean-control units from those multipliers ≥ 3.
+     Profile-only PT-04 then moves to the hypothesis tier. `one_hand_thumb` stays.
+   - Otherwise the multipliers stay, with the observed numbers reported.

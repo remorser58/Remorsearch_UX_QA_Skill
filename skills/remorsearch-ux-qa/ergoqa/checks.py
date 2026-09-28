@@ -630,16 +630,25 @@ def check_touch_accuracy(ctx: Context) -> list[Observation]:
         p_base = 1.0 - pointing.dual_gaussian_hit_probability(rect["w"], rect["h"], 1.0)
         p_miss = 1.0 - pointing.dual_gaussian_hit_probability(rect["w"], rect["h"], k)
         severity = _miss_severity(p_base)
+        platform_size = params.TOUCH_PROFILE_ONLY_P3_MIN_MM is not None and min(rect["w"], rect["h"]) >= params.TOUCH_PROFILE_ONLY_P3_MIN_MM
+        profile_only = False
         if k > 1.0 and small:
             # Profile inflation is an assumption: P2 only for the primary action or a
             # control the task actually used; otherwise P3 (MP-02, adjudication 2026-09-28).
+            # A target that meets the platform size gets P3 at most from inflation alone
+            # (SIT-01: walking and tremor studies find 7-8 mm targets usable; dev round 8).
             cap = "P2" if ("primary" in roles or element.get("id") in ctx.path_element_ids) else "P3"
-            severity = _worse(severity, _cap(_miss_severity(p_miss), cap))
+            if severity is None and platform_size:
+                cap = "P3"
+            inflated = _worse(severity, _cap(_miss_severity(p_miss), cap))
+            profile_only = severity is None and inflated is not None
+            severity = inflated
         out.append(Observation(
             "PT-04", ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
             [element["id"]], element_key(element),
             {"name": "miss_probability", "value": round(p_miss, 4), "unit": "probability", "threshold": params.MISS_PROBABILITY_SEVERITY[-1][0], "comparator": "<",
-             "sigma_multiplier": k, "baseline_miss_probability": round(p_base, 4), "target_mm": [round(rect["w"], 2), round(rect["h"], 2)]},
+             "sigma_multiplier": k, "baseline_miss_probability": round(p_base, 4), "target_mm": [round(rect["w"], 2), round(rect["h"], 2)],
+             "profile_only": profile_only},
             severity is None, severity,
             f"'{element.get('name') or element.get('text')}' 예측 오터치 확률 {p_miss*100:.1f}% (기준 인구 {p_base*100:.1f}%, σ배수 {k:.2f}, {rect['w']:.1f}×{rect['h']:.1f}mm).",
             "bi-zhai-2016-dual-gaussian",
@@ -656,7 +665,8 @@ def check_touch_accuracy(ctx: Context) -> list[Observation]:
             irreversible = "irreversible" in _roles(bad)
             severity = _misfire_severity(p_bad_base, irreversible)
             if k > 1.0:
-                severity = _worse(severity, _cap(_misfire_severity(p_bad, irreversible), "P2"))
+                cap = "P3" if (severity is None and platform_size and not irreversible) else "P2"  # SIT-01
+                severity = _worse(severity, _cap(_misfire_severity(p_bad, irreversible), cap))
             if severity is None and gap_mm < params.DESTRUCTIVE_MIN_GAP_MM:
                 severity = "P3"
             out.append(Observation(

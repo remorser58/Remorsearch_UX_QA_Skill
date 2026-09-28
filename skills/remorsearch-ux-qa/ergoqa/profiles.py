@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import random
 from typing import Any, Iterable
 
@@ -210,16 +211,21 @@ def touch_sigma_multiplier(profile: dict[str, Any]) -> float:
     for sensitivity analysis (docs/human-factors/motor-pointing.md MP-11/12).
     """
     attrs = profile["attributes"]
-    k = 1.0
+    factors = []
     grip = attrs.get("grip", "")
     if grip.startswith("one_hand") or grip == "two_thumbs":
-        k *= params.TOUCH_SIGMA_MULT["one_hand_thumb"]
+        factors.append(params.TOUCH_SIGMA_MULT["one_hand_thumb"])
     tremor = _get_path(attrs, "motor.tremor") or "none"
-    k *= params.TOUCH_SIGMA_MULT.get(f"tremor_{tremor}", 1.0)
+    factors.append(params.TOUCH_SIGMA_MULT.get(f"tremor_{tremor}", 1.0))
     mobility = _get_path(attrs, "context.mobility") or "seated"
-    k *= params.TOUCH_SIGMA_MULT.get(f"mobility_{mobility}", 1.0)
+    factors.append(params.TOUCH_SIGMA_MULT.get(f"mobility_{mobility}", 1.0))
     age = attrs.get("age_band", "30s")
-    k *= params.TOUCH_SIGMA_MULT.get(f"age_{age}", 1.0)
+    factors.append(params.TOUCH_SIGMA_MULT.get(f"age_{age}", 1.0))
+    if params.TOUCH_SIGMA_COMBINE == "additive":
+        return math.sqrt(1.0 + sum(f * f - 1.0 for f in factors))
+    k = 1.0
+    for f in factors:
+        k *= f
     return k
 
 

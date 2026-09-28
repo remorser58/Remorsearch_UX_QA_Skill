@@ -45,14 +45,27 @@ TOUCH_SIGMA_MULT = {
     # the box includes location-dependent offsets, so 1.3 is used [assumption].
     "one_hand_thumb": 1.3,
     "mobility_seated": 1.0,
-    "mobility_walking": 1.4,    # Ng, Brewster & Williamson 2014: +40 % thumb error walking [paper->assumption]
-    "mobility_transit": 1.4,    # [assumption] treated like walking
+    # [derived] back-calculated from Conradi et al. 2015 (walking vs standing error at
+    # 5-8 mm targets): 1.27-1.74 by baseline posture (situational brief SIT-03, MP-11).
+    # Ng, Brewster & Williamson 2014's +40 % is an encumbrance effect, not walking.
+    "mobility_walking": 1.4,
+    "mobility_transit": 1.4,    # [assumption] an alias of walking (no separate data)
+    "encumbered": 1.4,          # [paper] Ng et al. 2014, thumb with a carried object (not used by the strata yet)
     "tremor_none": 1.0,
-    "tremor_mild": 1.5,         # [assumption] MP-12 sensitivity value
-    "tremor_moderate": 2.25,    # [assumption] MP-12 sensitivity value (2.0-2.5)
-    "age_60s": 1.15,            # [assumption] older adults err more (Sultana & Moffatt 2019); magnitude unconfirmed
-    "age_70s+": 1.3,            # [assumption]
+    "tremor_mild": 1.3,         # [derived] essential-tremor amplitude and Findlater & Zhang 2020 open data (self-reported tremor 1.07-1.15); was 1.5
+    "tremor_moderate": 1.8,     # [derived] as above; was 2.25
+    "age_60s": 1.10,            # [derived] Findlater & Zhang 2020 open data, 60-70 vs young: 1.10 (95 % CI 0.99-1.21); was 1.15
+    "age_70s+": 1.3,            # [assumption] no data for 70+ in the open dataset
 }
+# How profile factors combine. "multiplicative": product of the factors. "additive":
+# independent noise adds in variance, k = sqrt(1 + sum(k_i^2 - 1)) (situational brief
+# SIT-02). A sensitivity switch: additive changed no dev finding (round 8), so the
+# default stays multiplicative.
+TOUCH_SIGMA_COMBINE = "multiplicative"
+# SIT-01: profile-only PT-03/PT-04 findings (none at k = 1) on targets whose label-
+# inclusive short side meets the platform size are P3 at most; smaller critical
+# targets already get P2 from PT-02. None turns the cap off. [policy; dev round 8]
+TOUCH_PROFILE_ONLY_P3_MIN_MM: float | None = TOUCH_TARGET_MIN_MM
 TOUCH_SIGMA_BASE_MM = 1.30  # [derived] sqrt(1.68) absolute x-term of Bi & Zhai 2016
 
 # PT-04 severity by predicted miss probability on a critical/path target. [policy]

@@ -150,3 +150,38 @@ Undetected by design (not in the snapshot): zero-size links and buttons,
 image-map areas, images whose source fails to load. AUT-20 (apply name rules to
 focusable elements of any size) and AUT-07 (200 % zoom re-render) are post-freeze
 candidates.
+
+## Round 8: situational touch effects (SIT-01..03, exp5 re-analysis)
+
+From `docs/qa-discipline/situational-and-age-effects-on-touch.md`. The stratified
+swarm was re-analysed on the exp5 recordings once per variant with the current
+detector (`touch-variants-dev.json`; `ergo_experiments.py touch-variants`). The
+reference row ("before") uses the multiplier values before SIT-03, with factors
+multiplied and no cap. 53 dev defects, 10 clean scenarios.
+
+| Variant | Strict | P0–P2 | Attributed | Findings | Units | Clean units (P2) | PT-04 findings | Profile-only PT-04 at P2 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| before | 0.906 | 0.736 | 0.755 | 213 | 108 | 30 (7) | 25 | 148 |
+| SIT-03 values | 0.906 | 0.736 | 0.755 | 213 | 108 | 30 (7) | 25 | 154 |
+| SIT-03 values − 0.1 | 0.906 | 0.736 | 0.755 | 213 | 108 | 30 (7) | 25 | 60 |
+| SIT-03 values + 0.1 | 0.906 | 0.736 | 0.755 | 213 | 108 | 30 (7) | 25 | 171 |
+| SIT-01 + SIT-03 | 0.906 | 0.736 | 0.755 | 213 | 108 | 30 (3) | 25 | 72 |
+| SIT-01 + SIT-02 + SIT-03 | 0.906 | 0.736 | 0.755 | 213 | 108 | 30 (3) | 25 | 78 |
+| SIT-02 + SIT-03 | 0.906 | 0.736 | 0.755 | 213 | 108 | 30 (7) | 25 | 160 |
+| multipliers off | 0.906 | 0.736 | 0.755 | 194 | 98 | 24 (3) | 6 | 0 |
+
+"Profile-only" counts observations (profile × snapshot × element) that fail only
+because of the σ multiplier. These counts can move either way when values fall,
+because PT-04 applies only to targets that are harder to hit than a 9.2 mm square
+at the same multiplier.
+
+| Item | Pass rule (brief) | Result | Decision |
+| --- | --- | --- | --- |
+| SIT-01: profile-only PT-04/PT-03 on targets ≥ 7.0 mm (`TOUCH_TARGET_MIN_MM`) are P3 at most | no dev defect lost at any operating point; clean-control P2 units ≤ 3 | 0 lost (strict, P0–P2 and attributed recall unchanged). Clean P2 units 7 → 3. The four removed are the 44 × 44 CSS px targets flagged only for walking or tremor (booking date, promo close, marketing toggle, amount clear); they stay listed at P3. The three left are CG-02, SM-02 (game radar) and RH-01. | **Adopted.** The cap uses `TOUCH_TARGET_MIN_MM`. Critical targets below it already get P2 from PT-02, so a separate 44 CSS px path (6.9 mm on Flip 6 and Pixel 8) was tried, changed nothing, and was removed. The brief's audience-linked P2 exception is not implemented: no dev data can test it, and it would let a weak Stage 0 raise severity. |
+| SIT-02: factors add in variance instead of multiplying | 0 lost, PT-04 findings −30 % or more, Kendall τ ≥ 0.9 | 0 lost, τ = 0.92 against SIT-01 + SIT-03, PT-04 findings **0 %** (25 → 25). The swarm rarely stacks conditions, and each element is already flagged by some single-condition profile. | **Not adopted.** Kept as a sensitivity switch (`TOUCH_SIGMA_COMBINE`), default multiplicative. |
+| SIT-03: multiplier values and citations | the same defects are detected under every value set | Identical detection under {before, recommended, recommended ± 0.1}. | **Adopted.** The values are a documentation matter: walking 1.4 re-cited to Conradi et al. 2015 (Ng et al. 2014's +40 % is an encumbrance effect), tremor 1.3 / 1.8, age 60s 1.10 from the Findlater & Zhang open data, age 70+ 1.3 marked as an assumption, `encumbered` 1.4 added (unused). |
+| Multipliers off (SIT-04 evidence) | – | 0 dev defects lost again; −19 findings, −6 clean units (all P3 after SIT-01). Attributed recall is the same, so the condition names come from other models (reach, colour, grip), not from σ. | SIT-04 is decided once on heldout-2 (amendment 4). |
+
+EVD-05 noise gate on dev (P0–P2 clean units per clean scenario ≤ 0.35, no P0–P1):
+0.70 before, **0.30** with SIT-01. This is the effect the evaluating-detectors
+brief predicted.
