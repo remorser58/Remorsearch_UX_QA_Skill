@@ -65,3 +65,32 @@
 
 - 모델 실험 결과(모델별 과업 성공률, 그라운딩 실패 유형, `failure_class` 분포)를 이 파일이나 `docs/`에 남겨 주시면 `persona-agent-protocol.md`에 반영하겠습니다.
 - 재편 커밋을 푸시하면 이 파일에 해시를 적어 주세요. 제가 바로 병합하고 제 쪽 새 파일을 새 위치로 옮기겠습니다.
+
+## 배포 세션 업데이트 (2026-09-28, 재편 1단계 푸시)
+
+### 확정
+- 이름: **Remorsearch UX QA**, 스킬 폴더와 이름은 `skills/remorsearch-ux-qa/` (`/remorsearch-ux-qa`).
+- 그쪽 브랜치 `31dc53d`까지 이쪽에 병합했습니다(`5ee7a27`).
+
+### 병합할 커밋
+- `48c48ad`: 내용 변경 없는 순수 이동(97개 파일, 0 추가/0 삭제).
+- `e20f7bb`: 경로 수정. 테스트 194, 스모크 15, 드라이버 selftest 138 모두 통과.
+
+### 새 위치 규칙
+| 예전 | 지금 |
+| --- | --- |
+| `scripts/`, `uxloop/`, `ergoqa/`, `schemas/`, `drivers/`, `examples/` | `skills/remorsearch-ux-qa/` 아래 (상대 위치 그대로) |
+| `skills/ergonomic-persona-swarm-qa/references/*` | `skills/remorsearch-ux-qa/references/ergonomics/*` |
+| `skills/ergonomic-persona-swarm-qa/SKILL.md` | `skills/remorsearch-ux-qa/references/ergonomics/workflow.md` |
+| 다른 두 스킬 | `references/research/`, `references/persona-qa/` (각자 `workflow.md`) |
+| `skills/ux-improvement-loop/SKILL.md` | `references/loop/workflow.md` |
+| `tests/`, `benchmarks/`, `docs/` | 레포 루트 그대로 (스킬과 함께 배포하지 않음) |
+
+- **새 테스트 파일**은 `ergoqa`/`uxloop`/`scripts` import 전에 `import _paths`를 넣어 주세요(`tests/_paths.py`가 스킬 폴더를 `sys.path`에 넣습니다).
+- 스킬 폴더 안 개발 스크립트는 `ROOT`(스킬 폴더)와 `REPO`(레포 루트, `tests/`·`benchmarks/`)를 구분합니다. `ergo_experiments.py`의 `suite_dir`는 `REPO / "benchmarks"`로 바꿨습니다.
+- 명령은 레포 루트에서 `python3 skills/remorsearch-ux-qa/scripts/ergo_qa.py ...`처럼 실행합니다.
+
+### 다음 단계 (이쪽)
+- `skills/remorsearch-ux-qa/SKILL.md`(모드 라우터와 첫 실행 에이전트 설정)를 새로 쓰고, 각 `workflow.md`의 YAML 머리말(name/description)을 모드 설명으로 바꿉니다. **`workflow.md` 맨 위 머리말은 건드리지 말아 주세요.** 본문 수정은 괜찮습니다.
+- 옛 `skills/*/agents/openai.yaml` 3개를 지우고 하나(`skills/remorsearch-ux-qa/agents/openai.yaml`)만 남깁니다.
+- 모델 실험 결과는 끝나는 대로 이 파일과 `docs/`에 남기겠습니다.
