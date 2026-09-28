@@ -667,26 +667,41 @@ async function focusTest(base, tmp) {
     task_goal_ko: '포커스 표시를 본다',
     device_ids: ['desktop-1920'],
     targets: {},
-    steps: [{ action: 'wait', ms: 100 }],
+    steps: [{ action: 'type', target: '#pw', text: 'hunter2secret' }, { action: 'wait', ms: 100 }],
     success: { url_contains: 'focus' },
   };
   writeJson(path.join(tmp, 'focus.json'), sc);
   const outDir = path.join(tmp, 'runs');
+  const t0 = Date.now();
   const r = await runDriver(['run', '--scenario', path.join(tmp, 'focus.json'), '--device', 'desktop-1920',
     '--out', outDir, '--run-id', 'R-focus', '--base', base]);
-  if (!check('focus desktop-1920: exit 0', r.code === 0, `${r.code} ${r.err} ${JSON.stringify((() => { try { const d = JSON.parse(fs.readFileSync(path.join(outDir, 'R-focus', 'run.json'), 'utf8')); return [d.blocked_reasons, d.warnings]; } catch (e) { return String(e); } })())}`)) return;
+  if (!check('focus desktop-1920: exit 0', r.code === 0, `${r.code} ${r.err}`)) return;
   const { run } = loadRun(path.join(outDir, 'R-focus'));
   const walks = run.focus_walks || [];
-  check('focus: walks recorded at load (fresh context) and at the end', walks.map((w) => w.phase).join() === 'load,end'
-    && walks[0].snapshot_id === run.snapshots[0].snapshot_id, walks.map((w) => [w.phase, w.snapshot_id, w.ended]));
-  const stop = (sel) => walks[0]?.stops.find((s) => s.selector === sel);
-  check('focus: the default ring and a custom ring change pixels; outline:none changes none',
+  const load = walks.find((w) => w.phase === 'load');
+  const end = walks.find((w) => w.phase === 'end');
+  check('focus: walks recorded after the run (end state, then the initial screen in a fresh context)',
+    walks.map((w) => w.phase).join() === 'end,load' && load.snapshot_id === run.snapshots[0].snapshot_id && run.steps[0].t_start_ms < 3000,
+    walks.map((w) => [w.phase, w.snapshot_id, w.ended, w.stops.length]));
+  const stop = (sel) => load?.stops.find((s) => s.selector === sel);
+  check('focus: the walk starts at the top even with an autofocused field in the middle', load?.stops[0]?.selector === '#under',
+    load?.stops.slice(0, 3).map((s) => s.selector));
+  check('focus: default and custom rings change pixels; outline:none changes none',
     stop('#plain')?.indicator_px > 50 && stop('#ring')?.indicator_px > 50 && stop('#nofocus')?.indicator_px === 0,
     ['#plain', '#ring', '#nofocus'].map((k) => [k, stop(k)?.indicator_px]));
-  check('focus: an element behind a fixed bar is fully obscured by it', stop('#under')?.obscured_fraction === 1 && stop('#under')?.obscured_by === '#bar',
+  check("focus: a neighbour's ring does not count as the next element's indicator", stop('#adj1')?.indicator_px > 20 && stop('#adj2')?.indicator_px === 0,
+    [stop('#adj1')?.indicator_px, stop('#adj2')?.indicator_px]);
+  check('focus: the walk enters a same-origin iframe and continues after it',
+    load?.stops.some((s) => s.frame === 'iframe') && !!stop('#after-frame'), load?.stops.map((s) => [s.selector, s.frame]));
+  check('focus: an element behind the fixed bar is fully obscured by it', stop('#under')?.obscured_fraction === 1 && stop('#under')?.obscured_by === '#bar',
     stop('#under'));
+  check('focus: a field inside a fixed dialog under its floating label is not obscured', stop('#dlg-in')?.obscured_fraction === 0, stop('#dlg-in'));
+  check('focus: below the fold with smooth scrolling the element is measured in view', stop('#deep')?.in_viewport === true && stop('#deep')?.indicator_px === 0,
+    stop('#deep'));
+  const names = walks.flatMap((w) => w.stops.map((s) => s.name)).join('|');
+  check('focus: stop names never contain a typed value', !names.includes('hunter2') && stop('#pw')?.name === '비밀번호', names);
   check('focus: the walk does not disturb the run (steps ok, success measured)', run.status === 'completed' && run.success === true,
-    { status: run.status, success: run.success });
+    { status: run.status, success: run.success, ms: Date.now() - t0 });
   const touch = loadRun(path.join(outDir, 'R-layers')).run;
   check('focus: no walk on touch devices by default', Array.isArray(touch.focus_walks) && touch.focus_walks.length === 0, touch.focus_walks);
 }

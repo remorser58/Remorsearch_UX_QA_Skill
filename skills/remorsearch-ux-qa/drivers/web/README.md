@@ -158,14 +158,19 @@ they belong to (0 = initial load), so a step can own two snapshots.
   `truncated` (sampling stops at about 6 MB of samples so `run.json` stays below
   ergoqa's input limit).
 - **Keyboard focus walk** (mouse and keyboard devices by default; `--focus-walk`
-  / `--no-focus-walk`): Tab through up to 40 stops at load (in a separate browser
-  context, so the run's page keeps its state) and at the end of the run. Per stop,
-  `run.focus_walks[].stops[]` records the focused element (`selector`, `dom_id`,
-  `role`, `name`, `box`), `indicator_px` (pixels that change by >= 24/255 inside the
-  element box + 4 px between the focused and unfocused states, compared by
-  Shift+Tab and Tab back) and `obscured_fraction` / `obscured_by` (share of nine
-  sample points covered by a fixed or sticky layer). `ended` says why the walk
-  stopped (`cycle`, `left_document`, `max_stops`, `refocus_failed`).
+  / `--no-focus-walk`): after the task, when the run ended normally, the driver
+  Tabs through up to 40 stops of the end state and then of the initial screen (in a
+  separate browser context with the same network policy), each walk within 8 s. It
+  resets the sequential focus starting point to the top, turns smooth scrolling off
+  and waits for scrolling to settle, and follows focus into open shadow roots and
+  same-origin iframes. Per stop, `run.focus_walks[].stops[]` records the focused
+  element (`selector`, `dom_id`, `role`, `name` — never a field's value — `box`,
+  `frame`), `indicator_px` (pixels that change by >= 24/255 in the element box, its
+  small wrappers and 4 px around them, between the focused state and the same
+  element blurred at the same scroll position) and `obscured_fraction` /
+  `obscured_by` (share of nine sample points covered by a painting fixed or sticky
+  layer that does not contain the element). `ended` says why a walk stopped
+  (`cycle`, `left_document`, `max_stops`, `time_budget`, `opaque_frame`).
 - **Console**: `console.error` and uncaught page errors, per snapshot (since the
   previous one) and in `run.json`. Errors caused by the driver's own network block
   are counted separately, not reported as page errors.

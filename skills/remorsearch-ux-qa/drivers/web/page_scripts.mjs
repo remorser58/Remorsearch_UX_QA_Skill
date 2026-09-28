@@ -374,10 +374,21 @@ export function extractSnapshot(args) {
   // Accessible name and where it came from (accname 1.2 order, simplified): the
   // source lets checks tell a label-in-name mismatch (aria-label overriding the
   // visible text) from a placeholder-only field or an unnamed icon button.
+  // Ids resolve in the element's own tree (document or shadow root).
+  const byId = (el, id) => {
+    const root = el.getRootNode();
+    return (root && typeof root.getElementById === 'function' ? root.getElementById(id) : null) || document.getElementById(id);
+  };
+  // SVG has no innerText; its textContent includes <style> and <script>. Its name comes
+  // from a <title> child only.
+  const svgTitle = (el) => {
+    const t = [...el.children].find((c) => c.tagName && c.tagName.toLowerCase() === 'title');
+    return t ? t.textContent.replace(/\s+/g, ' ').trim() : '';
+  };
   const accNameSrc = (el) => {
     const lb = el.getAttribute('aria-labelledby');
     if (lb) {
-      const t = lb.split(/\s+/).map((id) => document.getElementById(id)).filter(Boolean).map(text).join(' ').trim();
+      const t = lb.split(/\s+/).map((id) => byId(el, id)).filter(Boolean).map(text).join(' ').trim();
       if (t) return [t, 'aria-labelledby'];
     }
     const al = (el.getAttribute('aria-label') || '').trim();
@@ -389,15 +400,21 @@ export function extractSnapshot(args) {
       if (alt) return [alt, 'alt'];
     }
     if (tag === 'input' && ['submit', 'button', 'reset'].includes(type)) {
-      return [(el.value || (type === 'submit' ? 'Submit' : type === 'reset' ? 'Reset' : '')).trim(), 'value'];
-    }
-    if (['input', 'select', 'textarea'].includes(tag)) {
+      const v = (el.value || (type === 'submit' ? 'Submit' : type === 'reset' ? 'Reset' : '')).trim();
+      if (v) return [v, 'value'];
+    } else if (['input', 'select', 'textarea'].includes(tag)) {
       if (el.labels && el.labels.length) {
         const t = [...el.labels].map(text).join(' ').trim();
         if (t) return [t, 'label'];
       }
+      // HTML-AAM order: title before placeholder.
+      const ti = (el.getAttribute('title') || '').trim();
+      if (ti) return [ti, 'title'];
       const ph = (el.getAttribute('placeholder') || '').trim();
       if (ph) return [ph, 'placeholder'];
+    } else if (typeof SVGElement !== 'undefined' && el instanceof SVGElement) {
+      const t = svgTitle(el);
+      if (t) return [t, 'content'];
     } else {
       const t = text(el);
       if (t) return [t.slice(0, 300), 'content'];
@@ -414,7 +431,7 @@ export function extractSnapshot(args) {
   // Programmatic state a check can read without a screen reader (WCAG 4.1.2, 3.3.1).
   const a11yOf = (el) => {
     const tag = el.tagName.toLowerCase();
-    const ids = (attr) => (el.getAttribute(attr) || '').split(/\s+/).filter((id) => id && document.getElementById(id));
+    const ids = (attr) => (el.getAttribute(attr) || '').split(/\s+/).filter((id) => id && byId(el, id));
     const tabAttr = el.getAttribute('tabindex');
     const native = NATIVE_FOCUSABLE.has(tag) && !(tag === 'a' && !el.hasAttribute('href'));
     let disabled = false;
@@ -433,7 +450,15 @@ export function extractSnapshot(args) {
           return false;
         }
       })(),
-      described_by: ids('aria-describedby').slice(0, 4),
+      described_by: ids('aria-describedby').slice(0, 8),
+      // Hidden from assistive technology (aria-hidden or inert on it or an ancestor).
+      hidden: !!(el.closest && (el.closest('[aria-hidden="true"]') || el.closest('[inert]'))),
+      // Visible text drawn by an icon font (ligatures such as "menu"): not a text label.
+      icon_font: (() => {
+        const ICON = /icon|material|awesome|symbol|glyph|fontello|ionicon|bootstrap-icons/i;
+        const nodes = [el, ...el.querySelectorAll('span, i, em')].slice(0, 6);
+        return nodes.some((n) => n.textContent && n.textContent.trim() && ICON.test(style(n).fontFamily || ''));
+      })(),
       error_message: ids('aria-errormessage')[0] || null,
       required: el.required === true || el.getAttribute('aria-required') === 'true',
       focusable: !disabled && (tabAttr !== null ? parseInt(tabAttr, 10) >= 0 : native || el.isContentEditable),
@@ -445,7 +470,20 @@ export function extractSnapshot(args) {
     const hide = (v) => v === 'hidden' || v === 'clip';
     const x = hide(cs.overflowX) && el.scrollWidth > el.clientWidth + 1;
     const y = hide(cs.overflowY) && el.scrollHeight > el.clientHeight + 1;
-    return x || y ? { x, y, ellipsis: cs.textOverflow === 'ellipsis' } : null;
+    if (!x && !y) return null;
+    const clamp = cs.webkitLineClamp && cs.webkitLineClamp !== 'none';
+    // Tickers and marquees clip by design: text that moves (CSS animation on the element
+    // or a close ancestor, or <marquee>) is recorded as animated.
+    let animated = false;
+    for (let n = el, i = 0; n && n.nodeType === 1 && i < 4; n = n.parentElement, i++) {
+      const ncs = style(n);
+      if (n.tagName.toLowerCase() === 'marquee' || (ncs.animationName && ncs.animationName !== 'none')
+        || (typeof n.getAnimations === 'function' && n.getAnimations().length)) {
+        animated = true;
+        break;
+      }
+    }
+    return { x, y, ellipsis: cs.textOverflow === 'ellipsis' || !!clamp, line_clamp: !!clamp, animated };
   };
   const visibleText = (el) => {
     const tag = el.tagName.toLowerCase();

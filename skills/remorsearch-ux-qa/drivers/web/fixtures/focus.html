@@ -6,24 +6,46 @@
 <title>focus fixture</title>
 <!--
   Focus walk fixture (driver self-test):
-  #plain has the browser's default focus ring; #nofocus removes it (outline: none)
-  with no replacement (WCAG 2.4.7); #ring has a custom visible ring; #under sits
-  entirely behind the fixed #bar when focused (WCAG 2.4.11).
+  #plain default ring; #nofocus outline:none, no replacement (WCAG 2.4.7);
+  #ring custom ring; #adj1/#adj2 2 px apart, #adj2 has no indicator (the
+  neighbour's ring must not count); #auto autofocus in the middle (the walk still
+  starts at the top); a same-origin iframe with three buttons, then #after-frame;
+  #pw password field (its value must never be recorded); #dlg-in inside a fixed
+  dialog under a floating label (its own layer, not a cover); #under behind the
+  fixed top #bar (WCAG 2.4.11); #deep below the fold with smooth scrolling and no
+  indicator.
 -->
 <style>
-  body { margin: 0; font-family: sans-serif; background: #ffffff; color: #202124; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; padding-top: 120px; font-family: sans-serif; background: #ffffff; color: #202124; }
   button, input { font-size: 16px; margin: 16px; padding: 8px 12px; }
-  #nofocus:focus { outline: none; }
-  #ring:focus { outline: 3px solid #1a73e8; outline-offset: 2px; }
-  #under { position: absolute; left: 16px; bottom: 30px; margin: 0; }
-  #bar { position: fixed; left: 0; right: 0; bottom: 0; height: 110px; background: #333333; color: #ffffff; z-index: 10; }
+  #nofocus:focus, #adj2:focus, #deep:focus { outline: none; }
+  #ring:focus, #adj1:focus { outline: 3px solid #1a73e8; outline-offset: 0; }
+  .pair { display: inline-block; margin: 16px; }
+  .pair button { margin: 0 2px 0 0; }
+  #under { position: absolute; left: 16px; top: 20px; margin: 0; }
+  #bar { position: fixed; left: 0; right: 0; top: 0; height: 110px; background: #333333; color: #ffffff; z-index: 10; }
+  #dlg { position: fixed; right: 20px; top: 300px; width: 260px; padding: 8px; background: #ffffff; border: 1px solid #999999; z-index: 20; }
+  #dlg label { position: absolute; left: 22px; top: 22px; color: #666666; }
+  #dlg input { margin: 0; width: 200px; }
+  iframe { width: 320px; height: 70px; border: 1px solid #cccccc; margin: 16px; }
+  .spacer { height: 1600px; }
 </style>
 </head>
 <body>
+<div id="bar">고정 바</div>
+<input id="under" type="text" aria-label="가려진 칸">
 <button id="plain" type="button">기본 버튼</button>
 <button id="nofocus" type="button">표시 없는 버튼</button>
 <button id="ring" type="button">링 버튼</button>
-<input id="under" type="text" aria-label="가려진 칸">
-<div id="bar">고정 바</div>
+<span class="pair"><button id="adj1" type="button">이전</button><button id="adj2" type="button">다음</button></span>
+<input id="auto" type="text" aria-label="자동 포커스 칸" autofocus>
+<iframe id="fr" title="프레임" srcdoc="<button>안1</button><button>안2</button><button>안3</button>"></iframe>
+<button id="after-frame" type="button">프레임 뒤</button>
+<input id="pw" type="password" aria-label="비밀번호">
+<div id="dlg"><label for="dlg-in">이름</label><input id="dlg-in" type="text"></div>
+<div class="spacer"></div>
+<button id="deep" type="button">깊은 버튼</button>
+<div style="height: 200px"></div>
 </body>
 </html>

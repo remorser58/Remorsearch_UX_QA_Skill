@@ -40,6 +40,7 @@ const MAX_CONSOLE = 500;
 const FOCUS_WALK_MAX = 40;
 const FOCUS_DIFF_LEVEL = 24;
 const FOCUS_SETTLE_MS = 80;
+const FOCUS_WALK_BUDGET_MS = 8000;
 
 const MEASURED = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'type', 'press', 'scroll', 'gamepad']);
 const POINTER = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'scroll']);
@@ -62,20 +63,54 @@ function stripQuery(url) {
 }
 
 /**
- * In-page: the focused element's identity, box, and how much of it a fixed or
- * sticky layer covers (9 sample points). Null when focus left the document.
+ * In-page: the deepest focused element (through open shadow roots and same-origin
+ * iframes), its identity, box in top-viewport CSS px, and how much of it a painting
+ * fixed or sticky layer that does not contain it covers (9 sample points). Null when
+ * focus is on the document itself. The name never reads a field's value.
  */
 function focusInfo() {
-  const el = document.activeElement;
+  let el = document.activeElement;
   if (!el || el === document.body || el === document.documentElement) return null;
-  const r = el.getBoundingClientRect();
+  let ox = 0;
+  let oy = 0;
+  let doc = document;
+  const chain = [];
+  for (let depth = 0; depth < 8; depth++) {
+    chain.push(el);
+    if (el.shadowRoot && el.shadowRoot.activeElement) {
+      el = el.shadowRoot.activeElement;
+      continue;
+    }
+    if (el.tagName === 'IFRAME') {
+      let inner = null;
+      try {
+        inner = el.contentDocument && el.contentDocument.activeElement;
+      } catch (e) {
+        inner = null; // cross-origin frame: stop at the frame element
+      }
+      if (inner && inner !== el.contentDocument.body) {
+        const fr = el.getBoundingClientRect();
+        ox += fr.left + el.clientLeft;
+        oy += fr.top + el.clientTop;
+        doc = el.contentDocument;
+        el = inner;
+        continue;
+      }
+    }
+    break;
+  }
+  const view = doc.defaultView || window;
+  const r0 = el.getBoundingClientRect();
+  const r = { left: r0.left + ox, top: r0.top + oy, width: r0.width, height: r0.height };
+  r.right = r.left + r.width;
+  r.bottom = r.top + r.height;
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   const esc = (v) => (window.CSS && CSS.escape ? CSS.escape(v) : v);
   let sel = el.id ? `#${esc(el.id)}` : null;
   if (!sel) {
     const parts = [];
-    for (let n = el; n && n.nodeType === 1 && n !== document.body && parts.length < 6; n = n.parentElement) {
+    for (let n = el; n && n.nodeType === 1 && n !== doc.body && parts.length < 6; n = n.parentElement) {
       const tag = n.tagName.toLowerCase();
       if (n.id) {
         parts.unshift(`#${esc(n.id)}`);
@@ -86,18 +121,37 @@ function focusInfo() {
     }
     sel = parts.join(' > ');
   }
-  const path = [];
-  for (let n = el; n && n.nodeType === 1; n = n.parentElement) path.unshift(n.parentElement ? [...n.parentElement.children].indexOf(n) : 0);
+  const pathOf = (n) => {
+    const out = [];
+    for (let m = n; m && m.nodeType === 1; m = m.parentElement) out.unshift(m.parentElement ? [...m.parentElement.children].indexOf(m) : 0);
+    return out.join('.');
+  };
+  const path = chain.map(pathOf).join('/');
   const inVp = r.width > 0 && r.height > 0 && r.right > 0 && r.bottom > 0 && r.left < vw && r.top < vh;
+  const paints = (n) => {
+    const cs = view.getComputedStyle(n);
+    const bg = cs.backgroundColor || '';
+    const alpha = /rgba\(.*,\s*([\d.]+)\)/.exec(bg);
+    if (bg && bg !== 'transparent' && !(alpha && parseFloat(alpha[1]) === 0)) return true;
+    if (cs.backgroundImage && cs.backgroundImage !== 'none') return true;
+    if (['IMG', 'SVG', 'CANVAS', 'VIDEO'].includes(n.tagName.toUpperCase())) return true;
+    for (const c of n.childNodes) if (c.nodeType === 3 && c.nodeValue.trim()) return true;
+    return false;
+  };
   let covered = 0;
   let coveredBy = null;
-  if (inVp) {
+  if (inVp && doc === document) {
     for (const fx of [0.15, 0.5, 0.85]) {
       for (const fy of [0.2, 0.5, 0.8]) {
         const px = Math.min(vw - 1, Math.max(0, r.left + r.width * fx));
         const py = Math.min(vh - 1, Math.max(0, r.top + r.height * fy));
-        const hit = document.elementFromPoint(px, py);
-        if (!hit || hit === el || el.contains(hit) || hit.contains(el)) continue;
+        let hit = document.elementFromPoint(px, py);
+        while (hit && hit.shadowRoot) {
+          const inner = hit.shadowRoot.elementFromPoint(px, py);
+          if (!inner || inner === hit) break;
+          hit = inner;
+        }
+        if (!hit || hit === el || el.contains(hit) || hit.contains(el) || chain.includes(hit)) continue;
         let layer = null;
         for (let n = hit; n && n.nodeType === 1; n = n.parentElement) {
           const pos = getComputedStyle(n).position;
@@ -106,19 +160,37 @@ function focusInfo() {
             break;
           }
         }
-        if (layer) {
+        // A fixed dialog or sticky header that contains the focused element is its own
+        // layer, not a cover; transparent click-catchers do not hide anything.
+        if (layer && !layer.contains(el) && !chain.some((c) => layer.contains(c)) && (paints(hit) || paints(layer))) {
           covered += 1;
           if (!coveredBy) coveredBy = layer.id ? `#${esc(layer.id)}` : layer.tagName.toLowerCase();
         }
       }
     }
   }
-  const role = el.getAttribute('role') || el.tagName.toLowerCase();
-  const name = (el.getAttribute('aria-label') || el.innerText || el.value || el.getAttribute('placeholder') || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+  const tag = el.tagName.toLowerCase();
+  const field = ['input', 'select', 'textarea'].includes(tag);
+  const txt = (n) => (n ? (n.innerText ?? n.textContent ?? '') : '').replace(/\s+/g, ' ').trim();
+  const lb = (el.getAttribute('aria-labelledby') || '').split(/\s+/).map((id) => id && (el.getRootNode().getElementById
+    ? el.getRootNode().getElementById(id) : doc.getElementById(id))).filter(Boolean).map(txt).join(' ').trim();
+  const labels = el.labels && el.labels.length ? [...el.labels].map(txt).join(' ').trim() : '';
+  const name = (lb || (el.getAttribute('aria-label') || '').trim() || labels || (el.getAttribute('title') || '').trim()
+    || (field ? (el.getAttribute('placeholder') || '').trim() : el.isContentEditable ? '' : txt(el))).slice(0, 80);
+  // Wrappers that draw the focus style (:focus-within borders): the nearest ancestors
+  // up to 4x the element's area, so the indicator region includes them.
+  const wraps = [];
+  for (let n = el.parentElement, i = 0; n && n.nodeType === 1 && i < 3; n = n.parentElement, i++) {
+    const a = n.getBoundingClientRect();
+    if (a.width * a.height > 4 * Math.max(1, r0.width * r0.height)) break;
+    wraps.push({ x: a.left + ox, y: a.top + oy, w: a.width, h: a.height });
+  }
   return {
-    selector: sel, dom_id: el.id || null, tag: el.tagName.toLowerCase(), role, name, path: path.join('.'),
+    selector: sel, dom_id: el.id || null, tag, role: el.getAttribute('role') || tag, name, path,
+    frame: doc === document ? null : 'iframe',
     box: { x: Math.round(r.left * 100) / 100, y: Math.round(r.top * 100) / 100, w: Math.round(r.width * 100) / 100, h: Math.round(r.height * 100) / 100 },
-    in_viewport: inVp, obscured_fraction: inVp ? Math.round((covered / 9) * 1000) / 1000 : null, obscured_by: coveredBy, vw, vh,
+    wrap_boxes: wraps,
+    in_viewport: inVp, obscured_fraction: inVp && doc === document ? Math.round((covered / 9) * 1000) / 1000 : null, obscured_by: coveredBy, vw, vh,
   };
 }
 
@@ -275,12 +347,25 @@ export class WebSession {
       await this.probeFrames({ dispatch: epochNow(), stepIndex: 0, flashMs: this.opts.flashSampleMs, visual: null, fb: { done: true } });
     }
     await this.snapshot(0, []);
-    if (this.focusWalkEnabled() && !this.blockReasons.length) await this.focusWalkFresh();
   }
 
   focusWalkEnabled() {
     if (this.opts.focusWalk === true || this.opts.focusWalk === false) return this.opts.focusWalk;
-    return !!this.dev && this.dev.base.input !== 'touch';
+    return !!this.dev && ['mouse', 'keyboard'].includes(this.dev.base.input);
+  }
+
+  /** Network policy for a context: HTTP and WebSocket. `count` = add blocks to run.json. */
+  async installNetworkPolicy(context, count) {
+    if (count) {
+      await context.route('**/*', (route) => this.onRoute(route));
+      await context.routeWebSocket(/.*/, (ws) => this.onWebSocket(ws));
+      return;
+    }
+    await context.route('**/*', (route) => (this.isAllowed(route.request().url()) ? route.continue() : route.abort('blockedbyclient')).catch(() => {}));
+    await context.routeWebSocket(/.*/, (ws) => {
+      if (this.isAllowed(ws.url().replace(/^ws/, 'http'))) ws.connectToServer();
+      else ws.close({ code: 1008, reason: 'blocked by ergoqa network policy' }).catch(() => {});
+    });
   }
 
   /** Focus walk of the initial screen in a separate context, so the run's page keeps its state. */
@@ -291,11 +376,11 @@ export class WebSession {
         ...this.dev.contextOptions, locale: this.opts.locale, timezoneId: this.opts.timezoneId, colorScheme: 'light',
         reducedMotion: 'no-preference', serviceWorkers: 'block', acceptDownloads: false,
       });
-      await context.route('**/*', (route) => this.onRoute(route));
+      await this.installNetworkPolicy(context, false);
       const page = await context.newPage();
       await page.goto(this.scenario.url, { waitUntil: 'load', timeout: 30000 });
       await sleep(this.opts.settleMs);
-      await this.focusWalk(page, 'load', this.lastSnapshotId);
+      await this.focusWalk(page, 'load', this.snapshots.length ? this.snapshots[0].snapshot_id : null);
     } catch (err) {
       this.warnings.push(`focus walk (load) failed: ${firstLine(err.message)}`);
     } finally {
@@ -310,58 +395,115 @@ export class WebSession {
   }
 
   /**
-   * Tab through the page from the top: per stop, the focused element, whether focus
-   * changed anything visible in its box, and whether a fixed or sticky layer covers it.
+   * Tab through the page from the top: per stop, the focused element, how many pixels
+   * its focus changes (focused vs blurred, same scroll position) in its box and its
+   * small wrappers, and whether a painting fixed or sticky layer covers it. Bounded by
+   * FOCUS_WALK_MAX stops and FOCUS_WALK_BUDGET_MS.
    */
   async focusWalk(page, phase, snapshotId) {
     const stops = [];
     let ended = 'max_stops';
+    const deadline = epochNow() + FOCUS_WALK_BUDGET_MS;
+    // Smooth scrolling would leave focused elements mid-animation when measured.
+    await page.addStyleTag({ content: 'html, body { scroll-behavior: auto !important; }' }).catch(() => {});
+    // Reset the sequential focus navigation starting point to the top of the document
+    // (blur alone keeps it at the last focused or autofocused element).
     await page.evaluate(() => {
-      if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
       window.scrollTo(0, 0);
+      const b = document.body;
+      if (!b) return;
+      const had = b.getAttribute('tabindex');
+      b.tabIndex = -1;
+      b.focus({ preventScroll: true });
+      b.blur();
+      if (had === null) b.removeAttribute('tabindex');
+      else b.setAttribute('tabindex', had);
     });
     const seen = new Set();
+    let lastPath = null;
+    let repeats = 0;
     for (let i = 0; i < FOCUS_WALK_MAX; i++) {
+      if (epochNow() > deadline) {
+        ended = 'time_budget';
+        break;
+      }
       await page.keyboard.press('Tab');
-      await sleep(FOCUS_SETTLE_MS);
+      await this.settleScroll(page);
       const info = await page.evaluate(focusInfo);
       if (!info) {
         ended = 'left_document';
         break;
       }
+      if (info.path === lastPath) {
+        // Focus moved inside a cross-origin frame (the frame element stays active).
+        if (++repeats >= 3) {
+          ended = 'opaque_frame';
+          break;
+        }
+        continue;
+      }
+      repeats = 0;
+      lastPath = info.path;
       if (seen.has(info.path)) {
         ended = 'cycle';
         break;
       }
       seen.add(info.path);
-      const b = info.box;
-      const x0 = Math.max(0, Math.floor(b.x - 4));
-      const y0 = Math.max(0, Math.floor(b.y - 4));
-      const x1 = Math.min(info.vw, Math.ceil(b.x + b.w + 4));
-      const y1 = Math.min(info.vh, Math.ceil(b.y + b.h + 4));
-      let changed = null;
+      const boxes = [info.box, ...(info.wrap_boxes || [])];
+      const x0 = Math.max(0, Math.floor(Math.min(...boxes.map((b) => b.x)) - 4));
+      const y0 = Math.max(0, Math.floor(Math.min(...boxes.map((b) => b.y)) - 4));
+      const x1 = Math.min(info.vw, Math.ceil(Math.max(...boxes.map((b) => b.x + b.w)) + 4));
+      const y1 = Math.min(info.vh, Math.ceil(Math.max(...boxes.map((b) => b.y + b.h)) + 4));
+      const stop = { ...info, path: undefined, wrap_boxes: undefined, vw: undefined, vh: undefined, indicator_px: null, clip_px: null };
       if (info.in_viewport && x1 - x0 >= 2 && y1 - y0 >= 2) {
         const clip = { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
         const on = await this.clipFrame(page, clip);
-        await page.keyboard.press('Shift+Tab');
-        await sleep(FOCUS_SETTLE_MS);
-        const off = await this.clipFrame(page, clip);
-        await page.keyboard.press('Tab');
-        await sleep(FOCUS_SETTLE_MS);
-        const back = await page.evaluate(focusInfo);
-        const frac = visualDiffFraction(on, off, FOCUS_DIFF_LEVEL);
-        changed = frac === null ? null : Math.round(frac * on.width * on.height);
-        if (!back || back.path !== info.path) {
-          stops.push({ ...info, path: undefined, indicator_px: changed, clip_px: [clip.width, clip.height] });
-          ended = 'refocus_failed';
-          break;
-        }
-        stops.push({ ...info, path: undefined, indicator_px: changed, clip_px: [clip.width, clip.height] });
-      } else {
-        stops.push({ ...info, path: undefined, indicator_px: null, clip_px: null });
+        const restored = await page.evaluate(() => {
+          let el = document.activeElement;
+          while (el && el.shadowRoot && el.shadowRoot.activeElement) el = el.shadowRoot.activeElement;
+          if (!el || el === document.body) return false;
+          el.blur();
+          window.__ergoFocusEl = el;
+          return true;
+        });
+        const off = restored ? await this.clipFrame(page, clip) : null;
+        await page.evaluate(() => {
+          const el = window.__ergoFocusEl;
+          if (el) el.focus({ preventScroll: true });
+          window.__ergoFocusEl = null;
+        });
+        const frac = off ? visualDiffFraction(on, off, FOCUS_DIFF_LEVEL) : null;
+        stop.indicator_px = frac === null ? null : Math.round(frac * on.width * on.height);
+        stop.clip_px = [clip.width, clip.height];
       }
+      stops.push(stop);
     }
     this.focusWalks.push({ phase, snapshot_id: snapshotId, url: page.url(), ended, stops });
+  }
+
+  /** Wait until the page stops scrolling after a focus move (max ~600 ms). */
+  async settleScroll(page) {
+    let prev = null;
+    for (let i = 0; i < 12; i++) {
+      await sleep(i === 0 ? FOCUS_SETTLE_MS : 50);
+      const pos = await page.evaluate(() => [window.scrollX, window.scrollY]).catch(() => null);
+      if (pos && prev && pos[0] === prev[0] && pos[1] === prev[1]) return;
+      prev = pos;
+    }
+  }
+
+  /** Run a walk with a hard deadline; a hung page cannot stop run.json from being written. */
+  async boundedWalk(fn, phase) {
+    let timer = null;
+    try {
+      await Promise.race([fn(), new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error('deadline')), FOCUS_WALK_BUDGET_MS + 5000);
+      })]);
+    } catch (err) {
+      this.warnings.push(`focus walk (${phase}) stopped: ${firstLine(err.message)}`);
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   async calibrate() {
@@ -1415,12 +1557,11 @@ export class WebSession {
       } catch (err) {
         this.warnings.push(`success evaluation failed: ${firstLine(err.message)}`);
       }
-      if (this.focusWalkEnabled() && !this.crashed && this.page) {
-        try {
-          await this.focusWalk(this.page, 'end', this.lastSnapshotId);
-        } catch (err) {
-          this.warnings.push(`focus walk (end) failed: ${firstLine(err.message)}`);
-        }
+      // Focus walks run after the task (so they never delay step 1) and only when the
+      // run ended normally: at the end state, then the initial screen in a fresh context.
+      if (this.focusWalkEnabled() && !reason && !this.crashed && this.page && !this.blockReasons.length) {
+        await this.boundedWalk(() => this.focusWalk(this.page, 'end', this.lastSnapshotId), 'end');
+        await this.boundedWalk(() => this.focusWalkFresh(), 'load');
       }
       if (success === null && !detail && typeof personaSuccess === 'boolean') {
         success = personaSuccess;

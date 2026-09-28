@@ -1686,6 +1686,19 @@ def _dom_id(element: dict[str, Any]) -> str | None:
     return sel[1:] if re.fullmatch(r"#[A-Za-z][\w-]*", sel) else None
 
 
+def _names_field(field_name: str | None, text: str | None) -> bool:
+    """Whether an error text names the field: Hangul names of 2+ syllables anywhere,
+    Latin names of 4+ letters as whole words (so "id" does not match "invalid")."""
+    name = (field_name or "").strip()
+    if not name:
+        return False
+    if re.search(r"[\uac00-\ud7a3]", name):
+        core = _norm_label(name)
+        return sum(1 for ch in core if "\uac00" <= ch <= "\ud7a3") >= 2 and core in _norm_label(text)
+    words = re.sub(r"[\W_]+", " ", name.lower()).strip()
+    return len(words.replace(" ", "")) >= 4 and re.search(rf"\b{re.escape(words)}\b", re.sub(r"[\W_]+", " ", (text or "").lower())) is not None
+
+
 def _edge_distance(a: dict[str, float], b: dict[str, float]) -> float:
     dx = max(0.0, a["x"] - (b["x"] + b["w"]), b["x"] - (a["x"] + a["w"]))
     dy = max(0.0, a["y"] - (b["y"] + b["h"]), b["y"] - (a["y"] + a["h"]))
@@ -1723,6 +1736,8 @@ def check_semantics(ctx: Context) -> list[Observation]:
             continue
         if not e.get("interactive") or e.get("tag") == "canvas":
             continue
+        if a.get("hidden"):
+            continue  # hidden from assistive technology (a duplicate card-image link, an inert region)
         name = (e.get("name") or "").strip()
         if a.get("name_source") == "none" or not name:
             out.append(Observation(
@@ -1733,7 +1748,8 @@ def check_semantics(ctx: Context) -> list[Observation]:
             ))
             continue
         visible = (e.get("text") or "").strip()
-        if a.get("name_source") in ("aria-label", "aria-labelledby") and _letters(visible) >= 2 and len(visible) <= 40 and len(visible.split()) <= 6:
+        if a.get("name_source") in ("aria-label", "aria-labelledby") and not a.get("icon_font") and _letters(visible) >= 2 \
+                and len(visible) <= 40 and len(visible.split()) <= 6:
             if _norm_label(visible) not in _norm_label(name):
                 out.append(Observation(
                     "SM-02", *base, [e["id"]], element_key(e),
@@ -1743,16 +1759,19 @@ def check_semantics(ctx: Context) -> list[Observation]:
                 ))
     # Input errors only: declared error_message, or role=alert that is not declared as a
     # system notice (critical_message/status without error_message).
+    # An error signal is needed: a declared error message, or a role=alert while some
+    # field is invalid. A "담았습니다" toast with role=alert is not an input error.
+    any_invalid = any(f["a11y"].get("invalid") or f["a11y"].get("user_invalid") for f in fields)
     errors = [e for e in dom if (e.get("text") or "").strip() and (
-        "error_message" in _roles(e) or (e.get("role") == "alert" and not (_roles(e) & {"critical_message", "status"})))]
-    field_names = [n for n in (_norm_label(f.get("name")) for f in fields) if _letters(n) >= 2]
+        "error_message" in _roles(e)
+        or (e.get("role") == "alert" and any_invalid and not (_roles(e) & {"critical_message", "status"})))]
     if errors and fields:
         for err in errors:
-            eid = _dom_id(err)
-            linked = bool(eid) and any(eid in (f["a11y"].get("described_by") or []) or f["a11y"].get("error_message") == eid for f in fields)
+            targets = {i for i in [_dom_id(err), *(err.get("ancestor_ids") or [])] if i}
+            linked = any(targets & set(f["a11y"].get("described_by") or []) or f["a11y"].get("error_message") in targets for f in fields)
             nearest = min(_edge_distance(err["box"], f["box"]) for f in fields)
             # WCAG 3.3.1 is met when the text identifies the item in error, wherever it is.
-            names_field = any(n in _norm_label(err.get("text")) for n in field_names)
+            names_field = any(_names_field(f.get("name"), err.get("text")) for f in fields)
             if linked or nearest <= ERROR_NEAR_CSS_PX or names_field:
                 continue
             out.append(Observation(
@@ -1766,11 +1785,14 @@ def check_semantics(ctx: Context) -> list[Observation]:
         box = e.get("box") or {}
         if not isinstance(clip, dict) or e.get("interactive") or box.get("w", 0) < 4 or box.get("h", 0) < 4 or not (e.get("text") or "").strip():
             continue
+        if clip.get("animated"):
+            continue  # tickers and marquees clip by design
         out.append(Observation(
             "LY-01", *base, [e["id"]], element_key(e),
             {"name": "text_clipped", "value": True, "unit": "flag", "threshold": False, "comparator": "==", "axis": "x" if clip.get("x") else "y", "ellipsis": bool(clip.get("ellipsis"))},
             False, "P3" if clip.get("ellipsis") else "P2",
-            f"'{(e.get('text') or '')[:30]}' 글자가 상자에 잘립니다" + (" (말줄임표로 줄임)." if clip.get("ellipsis") else ". 글자를 키우거나 번역되면 더 많이 잘립니다."),
+            f"'{(e.get('text') or '')[:30]}' 글자가 상자에 잘립니다" + ((" (여러 줄 말줄임으로 줄임)." if clip.get("line_clamp") else " (말줄임표로 줄임).")
+                                                                    if clip.get("ellipsis") else ". 글자를 키우거나 번역되면 더 많이 잘립니다."),
         ))
     return out
 
@@ -1778,43 +1800,80 @@ def check_semantics(ctx: Context) -> list[Observation]:
 FOCUS_INDICATOR_MIN_PX = 4  # changed pixels (>= 24/255 per channel) inside the element box + 4 px
 
 
-def check_focus_walks(run: dict[str, Any], profile: dict[str, Any]) -> list[Observation]:
+def _stop_element(stop: dict[str, Any], snapshot: dict[str, Any] | None) -> dict[str, Any] | None:
+    """The snapshot element a focus stop landed on: same DOM id, else the best box overlap."""
+    if not snapshot:
+        return None
+    elements = [e for e in snapshot.get("elements") or [] if e.get("source", "dom") == "dom"]
+    if stop.get("dom_id"):
+        hit = next((e for e in elements if e.get("dom_id") == stop["dom_id"] or e.get("selector") == f"#{stop['dom_id']}"), None)
+        if hit:
+            return hit
+    b = stop.get("box") or {}
+    best, score = None, 0.0
+    for e in elements:
+        eb = e.get("box") or {}
+        ix = max(0.0, min(b.get("x", 0) + b.get("w", 0), eb.get("x", 0) + eb.get("w", 0)) - max(b.get("x", 0), eb.get("x", 0)))
+        iy = max(0.0, min(b.get("y", 0) + b.get("h", 0), eb.get("y", 0) + eb.get("h", 0)) - max(b.get("y", 0), eb.get("y", 0)))
+        inter = ix * iy
+        union = b.get("w", 0) * b.get("h", 0) + eb.get("w", 0) * eb.get("h", 0) - inter
+        iou = inter / union if union > 0 else 0.0
+        if iou > score:
+            best, score = e, iou
+    return best if score >= 0.7 else None
+
+
+def check_focus_walks(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[str, dict[str, Any]] | None = None) -> list[Observation]:
     """Keyboard focus walk results recorded by the web driver (SM-05, SM-06).
 
-    SM-05: focusing the element changes nothing visible in or around its box
-    (WCAG 2.4.7). SM-06: a fixed or sticky layer covers all nine sample points of
-    the focused element (WCAG 2.4.11 AA, "entirely hidden"); partial cover is P3
-    (2.4.12 AAA). A covered element is not also reported as SM-05.
+    SM-05: focusing the element changes fewer than FOCUS_INDICATOR_MIN_PX pixels in and
+    around its box (WCAG 2.4.7). SM-06: a painting fixed or sticky layer covers all nine
+    sample points of the focused element (WCAG 2.4.11 AA); partly covered is P3
+    (2.4.12 AAA). A fully covered element is not also reported as SM-05. Each element is
+    reported once with its worst result over the walks, tied to the snapshot element
+    when the stop can be matched (DOM id or box overlap).
     """
-    out: list[Observation] = []
-    seen: set[tuple[str, str]] = set()
+    worst: dict[str, dict[str, Any]] = {}
     for walk in run.get("focus_walks") or []:
         for stop in walk.get("stops") or []:
             sel = stop.get("selector") or "?"
-            key = f"{sel}|{(stop.get('name') or '')[:40]}"
-            base = (run["run_id"], profile["profile_id"], walk.get("snapshot_id"), None, [], key)
+            w = worst.setdefault(sel, {"stop": stop, "walk": walk, "covered": 0.0, "covered_walk": walk, "covered_by": None, "min_px": None})
             covered = stop.get("obscured_fraction")
-            full = isinstance(covered, (int, float)) and covered >= 0.999
-            if isinstance(covered, (int, float)) and covered > 0 and ("SM-06", sel) not in seen:
-                seen.add(("SM-06", sel))
-                out.append(Observation(
-                    "SM-06", *base,
-                    {"name": "focus_obscured_fraction", "value": covered, "unit": "fraction", "threshold": 1.0, "comparator": "<", "by": stop.get("obscured_by"), "phase": walk.get("phase")},
-                    False, "P2" if full else "P3",
-                    f"키보드 포커스가 '{stop.get('name') or sel}'에 있을 때 {stop.get('obscured_by') or '고정 영역'}이(가) 요소를 "
-                    + ("완전히 가립니다(WCAG 2.4.11)." if full else f"{covered * 100:.0f}% 가립니다(WCAG 2.4.12)."),
-                ))
+            if isinstance(covered, (int, float)) and covered > w["covered"]:
+                w.update(covered=covered, covered_walk=walk, covered_by=stop.get("obscured_by"))
+            px = stop.get("indicator_px")
+            if stop.get("in_viewport") and isinstance(px, int) and (covered or 0) < 0.999 and (w["min_px"] is None or px < w["min_px"]):
+                w.update(min_px=px, stop=stop, walk=walk)
+    out: list[Observation] = []
+    for sel, w in worst.items():
+        stop = w["stop"]
+        name = (stop.get("name") or "")[:40]
+        if w["covered"] > 0:
+            snap = (snapshots or {}).get(w["covered_walk"].get("snapshot_id"))
+            element = _stop_element(stop, snap)
+            full = w["covered"] >= 0.999
+            out.append(Observation(
+                "SM-06", run["run_id"], profile["profile_id"], w["covered_walk"].get("snapshot_id"), None,
+                [element["id"]] if element else [], element_key(element) if element else f"{sel}|{name}",
+                {"name": "focus_obscured_fraction", "value": w["covered"], "unit": "fraction", "threshold": 1.0, "comparator": "<",
+                 "by": w["covered_by"], "phase": w["covered_walk"].get("phase")},
+                False, "P2" if full else "P3",
+                f"키보드 포커스가 '{name or sel}'에 있을 때 {w['covered_by'] or '고정 영역'}이(가) 요소를 "
+                + ("완전히 가립니다(WCAG 2.4.11)." if full else f"{w['covered'] * 100:.0f}% 가립니다(WCAG 2.4.12)."),
+            ))
             if full:
                 continue
-            px = stop.get("indicator_px")
-            if stop.get("in_viewport") and isinstance(px, int) and px < FOCUS_INDICATOR_MIN_PX and ("SM-05", sel) not in seen:
-                seen.add(("SM-05", sel))
-                out.append(Observation(
-                    "SM-05", *base,
-                    {"name": "focus_indicator_px", "value": px, "unit": "px", "threshold": FOCUS_INDICATOR_MIN_PX, "comparator": ">=", "phase": walk.get("phase")},
-                    False, "P2",
-                    f"Tab으로 '{stop.get('name') or sel}'에 포커스가 가도 화면에 표시가 생기지 않습니다(WCAG 2.4.7). 키보드 사용자는 현재 위치를 모릅니다.",
-                ))
+        if w["min_px"] is not None and w["min_px"] < FOCUS_INDICATOR_MIN_PX:
+            snap = (snapshots or {}).get(w["walk"].get("snapshot_id"))
+            element = _stop_element(stop, snap)
+            out.append(Observation(
+                "SM-05", run["run_id"], profile["profile_id"], w["walk"].get("snapshot_id"), None,
+                [element["id"]] if element else [], element_key(element) if element else f"{sel}|{name}",
+                {"name": "focus_indicator_px", "value": w["min_px"], "unit": "px", "threshold": FOCUS_INDICATOR_MIN_PX, "comparator": ">=",
+                 "phase": w["walk"].get("phase")},
+                False, "P2",
+                f"Tab으로 '{name or sel}'에 포커스가 가도 화면에 표시가 생기지 않습니다(WCAG 2.4.7). 키보드 사용자는 현재 위치를 모릅니다.",
+            ))
     return out
 
 

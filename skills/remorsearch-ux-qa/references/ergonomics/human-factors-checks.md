@@ -108,13 +108,13 @@ precision; a full audit still needs axe-core or a manual WCAG review.
 
 | ID | Basis | Rule | Severity |
 | --- | --- | --- | --- |
-| SM-01 | measured | A control (button, link, role control) has no accessible name (WCAG 4.1.2; axe `button-name`/`link-name`). Name order: aria-labelledby, aria-label, alt, value, own text, title. | P1 on the task path or primary, else P2 |
-| SM-02 | measured | The control's name comes from aria-label/labelledby and does not contain its visible text (WCAG 2.5.3 Label in Name). Only labels of 2+ letters, ≤ 40 characters and ≤ 6 words count as labels (card links with long content are not checked). | P2 on the path, else P3 |
+| SM-01 | measured | A control (button, link, role control) that is not hidden from assistive technology has no accessible name (WCAG 4.1.2; axe `button-name`/`link-name`). Name order: aria-labelledby (resolved in the element's own tree), aria-label, alt, value, label, title, placeholder (fields), own text (SVG: its `<title>`). | P1 on the task path or primary, else P2 |
+| SM-02 | measured | The control's name comes from aria-label/labelledby and does not contain its visible text (WCAG 2.5.3 Label in Name). Only labels of 2+ letters, ≤ 40 characters and ≤ 6 words count; text drawn by an icon font (ligatures such as "menu") is not a label. | P2 on the path, else P3 |
 | SM-03 | measured | A form field has no programmatic label: name from placeholder or title only, or none (WCAG 1.3.1, 3.3.2, 4.1.2). | none: P1 on the path, else P2; placeholder/title: P2 on the path, else P3 |
-| SM-04 | measured | An error message (declared `error_message` or `role=alert`) is more than 48 CSS px from every field on the screen and no field points to it with aria-describedby or aria-errormessage (WCAG 3.3.1; LAT-09 ER-01). An error next to its field passes. | P2 |
-| SM-05 | measured | Keyboard focus walk (desktop and keyboard devices; at load in a separate browser context and at the end of the run): focusing the element changes fewer than 4 pixels in its box + 4 px (WCAG 2.4.7). | P2 |
-| SM-06 | measured | The focused element is behind a fixed or sticky layer at all nine sample points (WCAG 2.4.11); partly covered is P3 (2.4.12). Not also reported as SM-05. | P2 / P3 |
-| LY-01 | measured | Text is cut off by its own box (overflow hidden or clip and scroll size > client size; XCTest `textClipped`, a symptom for WCAG 1.4.4 and 1.4.12). Boxes under 4 px (screen-reader-only text) are skipped. | P2; P3 with an ellipsis |
+| SM-04 | measured | An input error (declared `error_message`, or `role=alert` while a field is invalid) names no field, is more than 48 CSS px from every field, and no field points to it or its wrapper with aria-describedby or aria-errormessage (WCAG 3.3.1; LAT-09 ER-01). Field names match as Hangul (2+ syllables) or whole Latin words (4+ letters). System notices declared `critical_message`/`status` are skipped. | P2 |
+| SM-05 | measured | Keyboard focus walk (mouse and keyboard devices, after the run: end state and initial screen): focusing the element changes fewer than 4 pixels in its box, its small wrappers and 4 px around them, compared with the element blurred at the same scroll position (WCAG 2.4.7). | P2 |
+| SM-06 | measured | The focused element is behind a painting fixed or sticky layer that does not contain it, at all nine sample points (WCAG 2.4.11); partly covered is P3 (2.4.12). Worst result over the walks; not also reported as SM-05. | P2 / P3 |
+| LY-01 | measured | Text is cut off by its own box (overflow hidden or clip and scroll size > client size; XCTest `textClipped`, a symptom for WCAG 1.4.4 and 1.4.12). Boxes under 4 px (screen-reader-only text) and moving text (tickers, marquees) are skipped. | P2; P3 with an ellipsis or line clamp |
 
 ## Judgment (not automated)
 
