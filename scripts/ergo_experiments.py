@@ -1,0 +1,597 @@
+#!/usr/bin/env python3
+"""Ablation and add-one experiments over recorded benchmark runs.
+
+Runs are recorded once per scenario and device by ``scripts/ergo_bench.py``
+(real Chromium input). Ergonomic models are pure functions of the recorded
+screen and the profile, so every experiment here re-analyses the same runs
+offline:
+
+    python3 scripts/ergo_experiments.py analyse --exp .ergo-bench/exp
+    python3 scripts/ergo_experiments.py run --exp .ergo-bench/exp --out docs/validation/experiments/ablation.json
+
+``analyse`` evaluates every run under a one-factor-at-a-time profile pool
+(each core grip x each single condition) plus the benchmark's own stratified
+swarm and default persona, and caches the observations. ``run`` then scores
+variants against each suite's answer key:
+
+- check leave-one-out and category leave-one-out on the current swarm;
+- condition and grip leave-one-out on the pool;
+- swarm size discovery curves (random, stratified, and a greedy upper bound);
+- model toggles that need re-analysis (touch multipliers, gaze);
+- severity agreement per check.
+
+Answer keys are read by this script only for scoring. Outputs name defects by
+ID; do not use them to tune a held-out suite (the three suites analysed here
+are development suites; the frozen held-out result is in docs/validation/).
+"""
+
+from __future__ import annotations
+
+import argparse
+import copy
+import json
+import math
+import pickle
+import random
+import statistics
+import sys
+import time
+from pathlib import Path
+from typing import Any, Callable, Iterable
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from ergoqa import analyze, bench, checks, params, swarm  # noqa: E402
+from ergoqa.devices import get_device  # noqa: E402
+from ergoqa.profiles import _finalise, _set_path, matches_condition  # noqa: E402
+
+SUITES = ("mobile-commerce", "game-desktop", "heldout-mixed")
+
+TOUCH_GRIPS = (
+    ("one_hand_right", {"handedness": "right", "grip": "one_hand_right"}),
+    ("one_hand_left", {"handedness": "left", "grip": "one_hand_left"}),
+    ("cradle_right", {"handedness": "right", "grip": "cradle_right"}),
+    ("two_thumbs", {"handedness": "right", "grip": "two_thumbs"}),
+)
+LANDSCAPE_TOUCH_GRIPS = (("two_thumbs", {"handedness": "right", "grip": "two_thumbs"}),
+                         ("two_thumbs_left", {"handedness": "left", "grip": "two_thumbs"}))
+POINTER_GRIPS = (
+    ("mouse_right", {"handedness": "right", "grip": "mouse_right"}),
+    ("mouse_left", {"handedness": "left", "grip": "mouse_left"}),
+    ("keyboard_only", {"handedness": "right", "grip": "keyboard_only"}),
+)
+# One factor at a time around a 30s, no-impairment baseline.
+CONDITIONS: tuple[tuple[str, dict[str, Any]], ...] = (
+    ("baseline", {}),
+    ("age_20s", {"age_band": "20s"}),
+    ("age_50s", {"age_band": "50s", "vision.presbyopia": True}),
+    ("presbyopia_60s", {"age_band": "60s", "vision.presbyopia": True}),
+    ("age_70s_plus", {"age_band": "70s+", "vision.presbyopia": True}),
+    ("cvd_deutan", {"vision.cvd": "deutan"}),
+    ("cvd_protan", {"vision.cvd": "protan"}),
+    ("cvd_tritan", {"vision.cvd": "tritan"}),
+    ("tremor_mild", {"motor.tremor": "mild"}),
+    ("tremor_moderate", {"motor.tremor": "moderate"}),
+    ("walking", {"context.mobility": "walking"}),
+    ("transit", {"context.mobility": "transit"}),
+    ("bright_sun", {"context.lighting": "bright_sun"}),
+    ("dark", {"context.lighting": "dark"}),
+    ("first_use", {"cognition.familiarity": "first_use"}),
+    ("small_hand", {"hand_percentile": 5}),
+    ("large_hand", {"hand_percentile": 95}),
+)
+# Which profile attribute values define a condition when filtering any profile.
+CONDITION_MATCH: dict[str, dict[str, Any]] = {
+    "age_20s": {"age_band": ["10s", "20s"]},
+    "age_50s": {"age_band": "50s"},
+    "presbyopia_60s": {"age_band": "60s"},
+    "age_70s_plus": {"age_band": "70s+"},
+    "cvd_deutan": {"vision.cvd": "deutan"},
+    "cvd_protan": {"vision.cvd": "protan"},
+    "cvd_tritan": {"vision.cvd": "tritan"},
+    "tremor_mild": {"motor.tremor": "mild"},
+    "tremor_moderate": {"motor.tremor": "moderate"},
+    "walking": {"context.mobility": "walking"},
+    "transit": {"context.mobility": "transit"},
+    "bright_sun": {"context.lighting": "bright_sun"},
+    "dark": {"context.lighting": "dark"},
+    "first_use": {"cognition.familiarity": "first_use"},
+    "small_hand": {"hand_percentile": 5},
+    "large_hand": {"hand_percentile": 95},
+}
+
+
+# ---------------------------------------------------------------------------
+# Loading
+
+
+def load_suite(suite: str, exp: Path) -> dict[str, Any]:
+    suite_dir = ROOT / "benchmarks" / suite
+    work = exp / suite
+    scenarios = {}
+    for f in sorted((suite_dir / "scenarios").glob("*.json")):
+        doc = json.loads(f.read_text(encoding="utf-8"))
+        scenarios[doc["scenario_id"]] = doc
+    key = json.loads((suite_dir / "answer_key.json").read_text(encoding="utf-8"))
+    swarm_profiles = json.loads((work / "profiles.json").read_text(encoding="utf-8"))["profiles"]
+    runs = sorted(p for p in (work / "runs").iterdir() if (p / "run.json").is_file())
+    return {"suite": suite, "scenarios": scenarios, "key": key, "swarm_profiles": swarm_profiles, "runs": runs, "work": work}
+
+
+def group_key(profile: dict[str, Any]) -> str:
+    a = profile["attributes"]
+    return f"{a['device_id']}|{a['orientation']}"
+
+
+def pool_for(device_id: str, orientation: str) -> list[dict[str, Any]]:
+    """One-factor-at-a-time pool: every core grip x every single condition."""
+    from ergo_bench import default_profile
+
+    device = get_device(device_id)
+    if device.input == "touch":
+        grips = LANDSCAPE_TOUCH_GRIPS if orientation == "landscape" else TOUCH_GRIPS
+    else:
+        grips = POINTER_GRIPS
+    out = []
+    for grip_name, grip in grips:
+        for cond_name, cond in CONDITIONS:
+            profile = default_profile(device_id, orientation)
+            attrs = profile["attributes"]
+            for k, v in {**grip, **cond}.items():
+                _set_path(attrs, k, v)
+            if grip["grip"].startswith("one_hand"):
+                attrs["context"]["free_hands"] = 1
+            # _finalise fills derived values only when they are empty.
+            attrs["motor"]["touch_sigma_multiplier"] = 1.0
+            attrs["cognition"]["reading_wpm_ko"] = 0
+            attrs["reaction_time_ms"] = 0
+            attrs["vision"]["viewing_distance_mm"] = 0
+            profile["profile_id"] = f"XP-{grip_name}-{cond_name}@{device_id}-{orientation[0]}"
+            profile["origin"] = "experiment_pool"
+            profile["pool"] = {"grip": grip_name, "condition": cond_name}
+            out.append(_finalise(profile, device))
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Analysis cache
+
+LEAN_PASSED = ("check_id", "element_key", "profile_id", "passed", "run_id")
+
+
+def _lean(obs: dict[str, Any]) -> dict[str, Any]:
+    if obs["passed"]:
+        return {k: obs[k] for k in LEAN_PASSED}
+    keep = dict(obs)
+    keep.pop("refs", None)
+    keep.pop("message_en", None)
+    return keep
+
+
+def analyse(exp: Path, suites: Iterable[str], extra_profiles: Callable[[dict[str, Any]], list[dict[str, Any]]] | None = None,
+            tag: str = "pool") -> dict[str, Any]:
+    cache: dict[str, Any] = {}
+    for suite in suites:
+        data = load_suite(suite, exp)
+        profiles_by_group: dict[str, list[dict[str, Any]]] = {}
+        for p in data["swarm_profiles"]:
+            profiles_by_group.setdefault(group_key(p), []).append(p)
+        analyses = []
+        all_profiles: dict[str, dict[str, Any]] = {p["profile_id"]: p for p in data["swarm_profiles"]}
+        started = time.time()
+        for run_dir in data["runs"]:
+            run_doc = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
+            own = all_profiles[run_doc["profile_id"]]
+            gk = group_key(own)
+            device_id, orientation = gk.split("|")
+            from ergo_bench import default_profile
+
+            base = default_profile(device_id, orientation)
+            pool = pool_for(device_id, orientation)
+            extra = extra_profiles(data) if extra_profiles else []
+            evaluated = [own] + [p for p in profiles_by_group[gk] if p is not own] + [base] + pool + extra
+            for p in evaluated:
+                all_profiles[p["profile_id"]] = p
+            result = analyze.analyze_run(run_dir, evaluated, data["scenarios"].get(run_doc["scenario_id"]), cross_profile=True)
+            result["observations"] = [_lean(o) for o in result["observations"]]
+            result.pop("coverage", None)
+            analyses.append(result)
+            print(f"  {suite} {run_dir.name}: {len(result['profiles_evaluated'])} profiles, {len(result['observations'])} obs, {time.time() - started:.0f}s", flush=True)
+        cache[suite] = {"analyses": analyses, "profiles": all_profiles, "key": data["key"], "swarm_ids": [p["profile_id"] for p in data["swarm_profiles"]]}
+    return cache
+
+
+# ---------------------------------------------------------------------------
+# Variant scoring
+
+
+def evaluate(entry: dict[str, Any], profile_ids: set[str] | None = None, check_filter: Callable[[str], bool] | None = None,
+             basis: str | None = None) -> dict[str, Any]:
+    analyses = []
+    for a in entry["analyses"]:
+        obs = a["observations"]
+        if profile_ids is not None:
+            obs = [o for o in obs if o["profile_id"] in profile_ids]
+        if check_filter is not None:
+            obs = [o for o in obs if check_filter(o["check_id"])]
+        if basis is not None:
+            obs = [o for o in obs if checks.CATALOG[o["check_id"]].basis == basis]
+        analyses.append({"scenario_id": a["scenario_id"], "observations": obs})
+    used = [p for pid, p in entry["profiles"].items() if profile_ids is None or pid in profile_ids]
+    findings = swarm.aggregate(analyses, used)
+    score = bench.score(entry["key"], findings, used)
+    return {
+        "strict": {d["id"] for d in score["per_defect"] if d["detected_strict"]},
+        "lenient": {d["id"] for d in score["per_defect"] if d["detected_lenient"]},
+        "severity_ok": {d["id"] for d in score["per_defect"] if d["severity_ok"]},
+        "findings": len(findings),
+        "clean": score["clean_control_findings"],
+        "clean_by_severity": score["clean_control_by_severity"],
+        "decoys": score["decoys_flagged"],
+        "unlabeled": score["unlabeled_findings_in_defect_variants"],
+        "per_defect": score["per_defect"],
+        "clean_findings": score["clean_findings"],
+        "unlabeled_list": score["unlabeled"],
+        "findings_list": findings,
+    }
+
+
+def combine(results: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    out = {"strict": set(), "lenient": set(), "severity_ok": set(), "findings": 0, "clean": 0, "decoys": 0, "unlabeled": 0}
+    for suite, r in results.items():
+        out["strict"] |= {f"{suite}:{d}" for d in r["strict"]}
+        out["lenient"] |= {f"{suite}:{d}" for d in r["lenient"]}
+        out["severity_ok"] |= {f"{suite}:{d}" for d in r["severity_ok"]}
+        for k in ("findings", "clean", "decoys", "unlabeled"):
+            out[k] += r[k]
+    return out
+
+
+def mcnemar_exact(b: int, c: int) -> float:
+    """Two-sided exact McNemar p-value on b and c discordant pairs."""
+    n = b + c
+    if n == 0:
+        return 1.0
+    k = min(b, c)
+    tail = sum(math.comb(n, i) for i in range(0, k + 1)) / 2 ** n
+    return min(1.0, 2 * tail)
+
+
+def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    if n == 0:
+        return (0.0, 0.0)
+    p = k / n
+    denom = 1 + z * z / n
+    centre = (p + z * z / (2 * n)) / denom
+    half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / denom
+    return (round(max(0.0, centre - half), 3), round(min(1.0, centre + half), 3))
+
+
+def summarise(name: str, combined: dict[str, Any], baseline: dict[str, Any] | None, n_defects: int) -> dict[str, Any]:
+    row = {
+        "variant": name,
+        "recall_strict": round(len(combined["strict"]) / n_defects, 3),
+        "recall_strict_ci95": wilson(len(combined["strict"]), n_defects),
+        "recall_lenient": round(len(combined["lenient"]) / n_defects, 3),
+        "severity_agreement": round(len(combined["severity_ok"]) / n_defects, 3),
+        "findings": combined["findings"],
+        "clean_control_findings": combined["clean"],
+        "decoys_flagged": combined["decoys"],
+        "unlabeled": combined["unlabeled"],
+    }
+    if baseline is not None:
+        lost = sorted(baseline["strict"] - combined["strict"])
+        gained = sorted(combined["strict"] - baseline["strict"])
+        row.update({
+            "lost_strict": lost,
+            "gained_strict": gained,
+            "mcnemar_p": round(mcnemar_exact(len(lost), len(gained)), 4),
+            "delta_findings": combined["findings"] - baseline["findings"],
+            "delta_clean": combined["clean"] - baseline["clean"],
+            "delta_decoys": combined["decoys"] - baseline["decoys"],
+            "delta_unlabeled": combined["unlabeled"] - baseline["unlabeled"],
+        })
+    return row
+
+
+# ---------------------------------------------------------------------------
+# Experiments
+
+
+def pool_ids(entry: dict[str, Any]) -> set[str]:
+    return {pid for pid, p in entry["profiles"].items() if p.get("origin") == "experiment_pool"}
+
+
+def default_ids(entry: dict[str, Any]) -> set[str]:
+    return {pid for pid in entry["profiles"] if pid.startswith("EP-BASE-")}
+
+
+def run_variant(cache, name, profile_sel, check_filter=None, basis=None, baseline=None, n_defects=0):
+    per_suite = {s: evaluate(e, profile_sel(e), check_filter, basis) for s, e in cache.items()}
+    return per_suite, summarise(name, combine(per_suite), baseline, n_defects)
+
+
+def matches(profile: dict[str, Any], condition: str) -> bool:
+    return matches_condition(profile, CONDITION_MATCH[condition])
+
+
+def experiments(cache: dict[str, Any], seed: int, resamples: int) -> dict[str, Any]:
+    n_defects = sum(len(e["key"]["defects"]) for e in cache.values())
+    swarm_sel = lambda e: set(e["swarm_ids"])  # noqa: E731
+    out: dict[str, Any] = {"n_defects": n_defects, "suites": {s: len(e["key"]["defects"]) for s, e in cache.items()}}
+
+    configs = {}
+    base_suites, base_row = run_variant(cache, "swarm (current, 14 stratified per touch device)", swarm_sel, n_defects=n_defects)
+    base = combine(base_suites)
+    configs["swarm"] = base_row
+    _, configs["single_default"] = run_variant(cache, "single default persona", default_ids, baseline=base, n_defects=n_defects)
+    _, configs["measured_only"] = run_variant(cache, "measured checks, default persona", default_ids, basis="measured", baseline=base, n_defects=n_defects)
+    pool_suites, configs["pool"] = run_variant(cache, "full OFAT pool", pool_ids, baseline=base, n_defects=n_defects)
+    pool = combine(pool_suites)
+    _, configs["pool_plus_swarm"] = run_variant(cache, "pool + swarm", lambda e: pool_ids(e) | set(e["swarm_ids"]), baseline=base, n_defects=n_defects)
+    out["configs"] = configs
+
+    # Which checks and profiles produce each detected defect (current swarm).
+    attribution = {}
+    for s, r in base_suites.items():
+        for d in r["per_defect"]:
+            if d["detected_strict"]:
+                fids = set(d["matched_findings"])
+                matched = [f for f in r["findings_list"] if f["id"] in fids and f["category"] == d["category"]]
+                attribution[f"{s}:{d['id']}"] = {
+                    "checks": sorted({f["check_id"] for f in matched}),
+                    "category": d["category"],
+                    "profile_condition": d["profile_condition"],
+                }
+    out["attribution"] = attribution
+
+    # E1: check leave-one-out on the current swarm.
+    present = sorted({o["check_id"] for e in cache.values() for a in e["analyses"] for o in a["observations"] if not o["passed"]})
+    loo = []
+    for cid in present:
+        _, row = run_variant(cache, f"without {cid}", swarm_sel, check_filter=lambda c, cid=cid: c != cid, baseline=base, n_defects=n_defects)
+        row["check_id"] = cid
+        row["category"] = checks.CATALOG[cid].category
+        row["basis"] = checks.CATALOG[cid].basis
+        own_suites = {s: evaluate(e, swarm_sel(e), lambda c, cid=cid: c == cid) for s, e in cache.items()}
+        own = combine(own_suites)
+        row["alone_strict"] = sorted(own["strict"])
+        row["alone_findings"] = own["findings"]
+        row["alone_clean"] = own["clean"]
+        row["alone_clean_by_severity"] = {k: sum(r["clean_by_severity"][k] for r in own_suites.values()) for k in ("P0", "P1", "P2", "P3")}
+        row["alone_unlabeled"] = own["unlabeled"]
+        row["alone_decoys"] = own["decoys"]
+        loo.append(row)
+    out["check_leave_one_out"] = loo
+
+    # E2: category leave-one-out.
+    cats = sorted({checks.CATALOG[c].category for c in present})
+    out["category_leave_one_out"] = [
+        run_variant(cache, f"without category {cat}", swarm_sel, check_filter=lambda c, cat=cat: checks.CATALOG[c].category != cat, baseline=base, n_defects=n_defects)[1]
+        for cat in cats
+    ]
+
+    # E3: condition / grip leave-one-out on the pool (baseline = full pool).
+    cond_rows = []
+    for cond in CONDITION_MATCH:
+        sel = lambda e, cond=cond: {pid for pid in pool_ids(e) if not matches(e["profiles"][pid], cond)}  # noqa: E731
+        _, row = run_variant(cache, f"pool without {cond}", sel, baseline=pool, n_defects=n_defects)
+        row["condition"] = cond
+        cond_rows.append(row)
+    grips = sorted({e["profiles"][pid]["pool"]["grip"] for e in cache.values() for pid in pool_ids(e)})
+    for grip in grips:
+        sel = lambda e, grip=grip: {pid for pid in pool_ids(e) if e["profiles"][pid]["pool"]["grip"] != grip}  # noqa: E731
+        _, row = run_variant(cache, f"pool without grip {grip}", sel, baseline=pool, n_defects=n_defects)
+        row["grip"] = grip
+        cond_rows.append(row)
+    out["condition_leave_one_out"] = cond_rows
+
+    # E3b: condition leave-one-out on the current swarm.
+    swarm_rows = []
+    for cond in CONDITION_MATCH:
+        sel = lambda e, cond=cond: {pid for pid in e["swarm_ids"] if not matches(e["profiles"][pid], cond)}  # noqa: E731
+        _, row = run_variant(cache, f"swarm without {cond}", sel, baseline=base, n_defects=n_defects)
+        row["condition"] = cond
+        row["profiles_removed"] = sum(1 for e in cache.values() for pid in e["swarm_ids"] if matches(e["profiles"][pid], cond))
+        swarm_rows.append(row)
+    for side in ("one_hand_left", "one_hand_right"):
+        sel = lambda e, side=side: {pid for pid in e["swarm_ids"] if e["profiles"][pid]["attributes"]["grip"] != side}  # noqa: E731
+        _, row = run_variant(cache, f"swarm without grip {side}", sel, baseline=base, n_defects=n_defects)
+        row["grip"] = side
+        swarm_rows.append(row)
+    out["swarm_condition_leave_one_out"] = swarm_rows
+
+    # E4: discovery curves. N profiles per device group.
+    rng = random.Random(seed)
+    curve = []
+    sizes = (1, 2, 3, 4, 6, 8, 10, 14, 20, 28, 40)
+    for n in sizes:
+        recalls, cleans, findings = [], [], []
+        for _ in range(resamples):
+            def sel(e, n=n):
+                chosen: set[str] = set()
+                groups: dict[str, list[str]] = {}
+                for pid in sorted(pool_ids(e)):
+                    groups.setdefault(group_key(e["profiles"][pid]), []).append(pid)
+                for pids in groups.values():
+                    chosen |= set(rng.sample(pids, min(n, len(pids))))
+                return chosen
+            per = {s: evaluate(e, sel(e)) for s, e in cache.items()}
+            comb = combine(per)
+            recalls.append(len(comb["strict"]) / n_defects)
+            cleans.append(comb["clean"])
+            findings.append(comb["findings"])
+        curve.append({"n_per_device": n, "strategy": "random_pool", "recall_mean": round(statistics.mean(recalls), 3),
+                      "recall_sd": round(statistics.pstdev(recalls), 3), "clean_mean": round(statistics.mean(cleans), 1),
+                      "findings_mean": round(statistics.mean(findings), 1)})
+        # Stratified: core grips first, then single conditions in the coverage order.
+        def strat(e, n=n):
+            chosen: set[str] = set()
+            groups: dict[str, list[dict[str, Any]]] = {}
+            for pid in sorted(pool_ids(e)):
+                groups.setdefault(group_key(e["profiles"][pid]), []).append(e["profiles"][pid])
+            order_conds = ["baseline", "cvd_deutan", "presbyopia_60s", "tremor_mild", "walking", "bright_sun", "first_use",
+                           "cvd_protan", "age_70s_plus", "small_hand", "large_hand", "tremor_moderate", "transit", "age_50s",
+                           "cvd_tritan", "dark", "age_20s"]
+            for profs in groups.values():
+                grips_here = sorted({p["pool"]["grip"] for p in profs}, key=lambda g: ["one_hand_right", "one_hand_left", "two_thumbs", "cradle_right", "mouse_right", "mouse_left", "keyboard_only", "two_thumbs_left"].index(g))
+                ordered = []
+                for g in grips_here:
+                    ordered.append(next(p for p in profs if p["pool"] == {"grip": g, "condition": "baseline"}))
+                one_hand = ([g for g in grips_here if g.startswith("one_hand")]
+                            or [g for g in grips_here if g.startswith("mouse")]
+                            or grips_here)
+                i = 0
+                for cond in order_conds[1:]:
+                    g = one_hand[i % len(one_hand)]
+                    i += 1
+                    ordered.append(next(p for p in profs if p["pool"] == {"grip": g, "condition": cond}))
+                rest = [p for p in profs if p not in ordered]
+                ordered += rest
+                chosen |= {p["profile_id"] for p in ordered[:n]}
+            return chosen
+        per = {s: evaluate(e, strat(e)) for s, e in cache.items()}
+        comb = combine(per)
+        curve.append({"n_per_device": n, "strategy": "stratified_pool", "recall_mean": round(len(comb["strict"]) / n_defects, 3),
+                      "recall_sd": 0.0, "clean_mean": comb["clean"], "findings_mean": comb["findings"]})
+    out["discovery_curve"] = curve
+
+    # Greedy upper bound: which pool profiles are needed to reach the pool's recall.
+    greedy = []
+    chosen: dict[str, set[str]] = {s: set() for s in cache}
+    remaining = set(pool["strict"])
+    candidates = {s: sorted(pool_ids(e)) for s, e in cache.items()}
+    detect_by_profile: dict[tuple[str, str], set[str]] = {}
+    for s, e in cache.items():
+        for pid in candidates[s]:
+            r = evaluate(e, {pid})
+            detect_by_profile[(s, pid)] = {f"{s}:{d}" for d in r["strict"]}
+    covered: set[str] = set()
+    while True:
+        best = max(detect_by_profile.items(), key=lambda kv: len(kv[1] - covered), default=None)
+        if not best or not (best[1] - covered):
+            break
+        (s, pid), dets = best
+        new = dets - covered
+        covered |= dets
+        greedy.append({"suite": s, "profile": pid, "new_defects": sorted(new), "cumulative_recall": round(len(covered) / n_defects, 3)})
+    out["greedy_single_profile_cover"] = greedy
+    out["pool_defects_needing_combined_profiles"] = sorted(pool["strict"] - covered)
+
+    # E6: severity agreement per check on the current swarm.
+    sev = {}
+    for s, r in base_suites.items():
+        for d in r["per_defect"]:
+            if not d["detected_strict"]:
+                continue
+            for cid in attribution[f"{s}:{d['id']}"]["checks"]:
+                row = sev.setdefault(cid, {"n": 0, "ok": 0, "under": 0, "pairs": []})
+                row["n"] += 1
+                ok = d["severity_ok"]
+                row["ok"] += int(ok)
+                row["under"] += int(not ok)
+                row["pairs"].append(f"{s}:{d['id']} expected>={d['severity_expected_min']} found={d['severity_found']}")
+    out["severity_by_check"] = sev
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Model toggles (need re-analysis on the current swarm only)
+
+
+def toggles(exp: Path, suites: Iterable[str]) -> list[dict[str, Any]]:
+    variants: list[tuple[str, Callable[[], None], Callable[[], None]]] = []
+    saved_mult = dict(params.TOUCH_SIGMA_MULT)
+
+    def mult_off() -> None:
+        for k in params.TOUCH_SIGMA_MULT:
+            params.TOUCH_SIGMA_MULT[k] = 1.0
+
+    def mult_restore() -> None:
+        params.TOUCH_SIGMA_MULT.clear()
+        params.TOUCH_SIGMA_MULT.update(saved_mult)
+
+    variants.append(("touch_multipliers_off", mult_off, mult_restore))
+    rows = []
+    loaded = {s: load_suite(s, exp) for s in suites}
+    n_defects = sum(len(d["key"]["defects"]) for d in loaded.values())
+
+    def score_all(gaze_enabled: bool = True) -> dict[str, Any]:
+        per = {}
+        for s, data in loaded.items():
+            analyses = []
+            profiles = data["swarm_profiles"]
+            fresh = copy.deepcopy(profiles)
+            by_id = {p["profile_id"]: p for p in fresh}
+            for p in fresh:
+                device = get_device(p["attributes"]["device_id"])
+                p["attributes"]["motor"]["touch_sigma_multiplier"] = 1.0
+                _finalise(p, device)
+            for run_dir in data["runs"]:
+                run_doc = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
+                analyses.append(analyze.analyze_run(run_dir, fresh, data["scenarios"].get(run_doc["scenario_id"]), cross_profile=True, gaze_enabled=gaze_enabled))
+            entry = {"analyses": analyses, "profiles": by_id, "key": data["key"], "swarm_ids": list(by_id)}
+            per[s] = evaluate(entry)
+        return per
+
+    baseline = combine(score_all())
+    rows.append(summarise("swarm (re-analysed)", baseline, None, n_defects))
+    for name, apply, restore in variants:
+        apply()
+        try:
+            rows.append(summarise(name, combine(score_all()), baseline, n_defects))
+        finally:
+            restore()
+    rows.append(summarise("gaze_disabled (no conspicuity map)", combine(score_all(gaze_enabled=False)), baseline, n_defects))
+    return rows
+
+
+# ---------------------------------------------------------------------------
+
+
+def _jsonable(obj: Any) -> Any:
+    if isinstance(obj, set):
+        return sorted(obj)
+    if isinstance(obj, dict):
+        return {k: _jsonable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_jsonable(v) for v in obj]
+    return obj
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = parser.add_subparsers(dest="cmd", required=True)
+    a = sub.add_parser("analyse")
+    a.add_argument("--exp", type=Path, required=True)
+    a.add_argument("--suites", default=",".join(SUITES))
+    r = sub.add_parser("run")
+    r.add_argument("--exp", type=Path, required=True)
+    r.add_argument("--out", type=Path, required=True)
+    r.add_argument("--seed", type=int, default=5)
+    r.add_argument("--resamples", type=int, default=60)
+    r.add_argument("--toggles", action="store_true", help="also run model toggles (re-analysis)")
+    args = parser.parse_args()
+    exp = args.exp.resolve()
+    cache_path = exp / "pool-cache.pickle"
+    if args.cmd == "analyse":
+        cache = analyse(exp, [s for s in args.suites.split(",") if s])
+        with cache_path.open("wb") as fh:
+            pickle.dump(cache, fh)
+        print(f"cached {cache_path}")
+        return 0
+    with cache_path.open("rb") as fh:
+        cache = pickle.load(fh)
+    result = experiments(cache, args.seed, args.resamples)
+    if args.toggles:
+        result["model_toggles"] = toggles(exp, list(cache))
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(_jsonable(result), ensure_ascii=False, indent=1), encoding="utf-8")
+    print(json.dumps(_jsonable(result["configs"]), ensure_ascii=False, indent=1))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

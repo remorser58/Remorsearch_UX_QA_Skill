@@ -16,6 +16,32 @@ UX QA that combines Korean synthetic persona scenarios, Aside community signals,
 
 File: [`skills/persona-driven-ux-qa/SKILL.md`](skills/persona-driven-ux-qa/SKILL.md)
 
+### `/ergonomic-persona-swarm-qa`
+
+A MiroFish-style swarm of ergonomic persona profiles that operates the **real
+screen** (web, mobile web and browser games through a Playwright driver; Android
+via uiautomator; iOS/desktop/native games via annotated screenshots) and scores
+the human body and senses with deterministic human-factors models: thumb reach by
+grip and handedness (left/right mirrored), dual-Gaussian touch accuracy and
+destructive misfire, gaze priority and feedback noticing, WCAG contrast, colour
+vision deficiency (Machado + CIEDE2000), text visual angle for presbyopia, Korean
+reading time for toasts, reaction windows, flashing, and game input demands.
+Findings carry the differential condition (for example `grip=one_hand_left`) and
+are reported as coverage over simulated profiles, never as prevalence. LLM persona
+agents look at screenshots and act; they never role-play ergonomics.
+
+File: [`skills/ergonomic-persona-swarm-qa/SKILL.md`](skills/ergonomic-persona-swarm-qa/SKILL.md) ·
+research: [`docs/human-factors/`](docs/human-factors/) · contracts:
+[`docs/ergonomic-swarm-spec.md`](docs/ergonomic-swarm-spec.md) · validation:
+[`docs/validation/`](docs/validation/)
+
+```sh
+python3 scripts/ergo_qa.py profiles --count 16 --seed 7 --devices galaxy-s24,iphone-15 --out work/profiles.json
+node drivers/web/ergo_drive.mjs run --scenario scenario.json --profile work/ep-01.json --out runs/ --base http://127.0.0.1:8765
+python3 scripts/ergo_qa.py swarm --runs runs/ --profiles work/profiles.json --scenario scenarios/ --cross-profile --bundle --out report/
+python3 scripts/ergo_bench.py --suite benchmarks/heldout-mixed --out .ergo-bench/heldout   # blind benchmark scoring
+```
+
 ## Design boundary
 
 - Synthetic personas generate plausible test situations. They do not represent measured user prevalence.
