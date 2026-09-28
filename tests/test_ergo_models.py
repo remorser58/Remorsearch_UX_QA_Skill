@@ -7,7 +7,7 @@ import sys
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import _paths  # noqa: E402,F401  (puts the skill folder on sys.path)
 
 from ergoqa.devices import get_device, rotate  # noqa: E402
 from ergoqa.hf import cognition, game, gaze, perception, pointing, reach  # noqa: E402

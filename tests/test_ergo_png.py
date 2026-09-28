@@ -6,6 +6,7 @@ import unittest
 import zlib
 from pathlib import Path
 
+import _paths  # noqa: F401  (puts the skill folder on sys.path)
 from ergoqa import png
 from ergoqa.png import Image, PNGError
 

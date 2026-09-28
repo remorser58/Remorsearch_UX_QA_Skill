@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run a benchmark suite end to end on the real browser and score it blind.
 
-    python3 scripts/ergo_bench.py --suite benchmarks/mobile-commerce --out .ergo-bench/mobile
+    python3 skills/remorsearch-ux-qa/scripts/ergo_bench.py --suite benchmarks/mobile-commerce --out .ergo-bench/mobile
 
 For each scenario and device the web driver records one scripted run in
 Chromium (real touch/mouse events). The run is analysed under every ergonomic

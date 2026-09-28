@@ -8,9 +8,10 @@ import sys
 import tempfile
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]  # skill folder: scripts, uxloop, examples
+REPO = ROOT.parents[1]  # repository checkout: tests and fixtures (not shipped with the skill)
 sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / 'tests'))
+sys.path.insert(0, str(REPO / 'tests'))
 
 from loop_factory import make_packet  # Authored fixtures, never live provider output.
 from uxloop.io import load_json
@@ -18,7 +19,7 @@ from uxloop.io import load_json
 
 def main() -> int:
     outcomes = []
-    runtime = ROOT / '.ux-loop'
+    runtime = REPO / '.ux-loop'
     runtime.mkdir(exist_ok=True)
 
     def command(arguments: list[str], expected: int) -> dict:
@@ -30,9 +31,9 @@ def main() -> int:
         return json.loads(result.stdout) if result.stdout.lstrip().startswith('{') else {}
 
     try:
-        command(['scripts/validate_bundle.py', 'tests/fixtures/valid-bundle.json'], 0)
-        for path in sorted((ROOT / 'tests/fixtures').glob('invalid-*.json')):
-            command(['scripts/validate_bundle.py', str(path.relative_to(ROOT))], 1)
+        command(['scripts/validate_bundle.py', str(REPO / 'tests/fixtures/valid-bundle.json')], 0)
+        for path in sorted((REPO / 'tests/fixtures').glob('invalid-*.json')):
+            command(['scripts/validate_bundle.py', str(path)], 1)
         value = command(['scripts/ux_loop.py', 'validate', 'examples/loop/packet.json', '--evidence-root', 'examples/loop'], 0)
         assert value['valid'] and value['completion_assessed'] is False
         with tempfile.TemporaryDirectory(dir=runtime, prefix='smoke-') as temporary:
