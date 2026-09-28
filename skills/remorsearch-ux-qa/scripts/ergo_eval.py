@@ -430,14 +430,74 @@ def score_all(data: dict[str, Any], out: Path, show_open: bool) -> dict[str, Any
     return agg
 
 
+def _listify(value: Any) -> list[Any]:
+    return value if isinstance(value, list) else [value]
+
+
+def score_agents(data: dict[str, Any], agent_dir: Path) -> dict[str, Any]:
+    """C6: persona-agent runs (serve mode) scored on ``agent_judgment`` defects.
+
+    ``agent_dir`` holds ``runs/<run_id>/run.json`` and ``profiles.json`` (the composed
+    operator profiles). Each run is analysed under its own profile only. PJ-01 units
+    are hypotheses unless runs on another model family or input channel noted the
+    same anchor (computed in swarm.aggregate). A judgment note has no category, so
+    matching is lenient (scenario, selector, condition); strict matching is reported
+    too. Aggregates only.
+    """
+    profiles = json.loads((agent_dir / "profiles.json").read_text(encoding="utf-8"))["profiles"]
+    by_id = {p["profile_id"]: p for p in profiles}
+    analyses, runs = [], []
+    for run_dir in sorted(p for p in (agent_dir / "runs").iterdir() if (p / "run.json").is_file()):
+        run_doc = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
+        own = by_id.get(run_doc["profile_id"])
+        if own is None:
+            continue
+        result = analyze.analyze_run(run_dir, [own], data["scenarios"].get(run_doc["scenario_id"]), cross_profile=False)
+        result["observations"] = [_lean(o) for o in result["observations"]]
+        analyses.append(result)
+        notes = run_doc.get("persona_notes") or []
+        runs.append({"success": run_doc.get("success"), "steps": len(run_doc.get("steps") or []), "health": result.get("health"),
+                     "channel": (run_doc.get("agent") or {}).get("input_channel"),
+                     "notes": len(notes), "confusion": sum(1 for n in notes if n.get("confusion")),
+                     "failure_class": {c: sum(1 for n in notes if n.get("confusion") and n.get("failure_class") == c)
+                                       for c in ("ux_issue", "agent_limitation", "environment", "unknown")}})
+    findings = swarm.aggregate(analyses, profiles)
+    key = data["key"]
+    judgment = [d for d in key["defects"] if "agent_judgment" in _listify(d.get("detectable_by"))]
+    subkey = {**key, "defects": judgment}
+    pj = [f for f in findings if f["check_id"] == "PJ-01"]
+    out: dict[str, Any] = {"runs": len(runs), "agent_judgment_defects": len(judgment),
+                           "task_success_rate": round(sum(1 for r in runs if r["success"]) / len(runs), 3) if runs else None,
+                           "steps_mean": round(statistics.fmean(r["steps"] for r in runs), 1) if runs else None,
+                           "confusion_notes": sum(r["confusion"] for r in runs),
+                           "confusion_by_class": {c: sum(r["failure_class"][c] for r in runs) for c in ("ux_issue", "agent_limitation", "environment", "unknown")},
+                           "run_health": {s: sum(1 for r in runs if r["health"] == s) for s in {r["health"] for r in runs}}}
+    for name, fs, include in (("pj_corroborated", pj, False), ("pj_including_hypotheses", pj, True), ("all_checks_on_agent_runs", findings, False)):
+        sc = bench.score(subkey, fs, profiles, exact_viewport=True, include_hypotheses=include)
+        lenient = sum(d["detected_lenient"] for d in sc["per_defect"])
+        strict = sum(d["detected_strict"] for d in sc["per_defect"])
+        clean_n = len({c["scenario_id"] for c in key.get("clean_controls", [])}) or 1
+        out[name] = {"recall_lenient": _rate(lenient, len(judgment)), "recall_strict": _rate(strict, len(judgment)),
+                     "units": sc["units"], "clean_control_units": sc["clean_control_units"],
+                     "clean_units_per_clean_scenario": round(sc["clean_control_units"] / clean_n, 2), "unlabeled_units": sc["unlabeled_units"]}
+    hyp = out["pj_corroborated"]["recall_lenient"]
+    out["H6"] = {"threshold": 0.30, "verdict": _verdict(hyp["rate"], hyp["ci95"], 0.30),
+                 "note": "the clean-scenario part (<= 1 invalid corroborated PJ-01 unit per clean scenario) needs round-2 adjudication"}
+    sealed = agent_dir / "sealed"
+    sealed.mkdir(exist_ok=True)
+    (sealed / "c6-findings.json").write_text(json.dumps({"findings": findings}, ensure_ascii=False, indent=1), encoding="utf-8")
+    (agent_dir / "aggregate-c6.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+    return out
+
+
 def main() -> int:
     global C5_SEEDS
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="cmd", required=True)
-    for name in ("record", "analyse", "score", "plan"):
+    for name in ("record", "analyse", "score", "plan", "score-agents"):
         p = sub.add_parser(name)
         p.add_argument("--suite", required=True, type=Path)
-        p.add_argument("--out", required=True, type=Path)
+        p.add_argument("--out", required=True, type=Path, help="work folder (score-agents: the agent-run folder with runs/ and profiles.json)")
         p.add_argument("--c5-seeds", type=int, default=C5_SEEDS, help="pre-registered: 20; fewer only for pipeline tests")
         if name == "score":
             p.add_argument("--open", action="store_true", help="also list per-defect misses (development suites only)")
@@ -454,6 +514,8 @@ def main() -> int:
         record(data, out)
     elif args.cmd == "analyse":
         analyse_all(data, out)
+    elif args.cmd == "score-agents":
+        print(json.dumps(score_agents(data, out), ensure_ascii=False, indent=1))
     else:
         agg = score_all(data, out, args.open)
         print(json.dumps({k: v for k, v in agg.items() if k not in ("provenance_analysis", "provenance_score")}, ensure_ascii=False, indent=1))
