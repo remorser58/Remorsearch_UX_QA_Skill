@@ -7,9 +7,19 @@ The contract is [`docs/ergonomic-swarm-spec.md`](../../docs/ergonomic-swarm-spec
 sections 3, 5 and 10. The driver measures; it never scores ergonomics and never
 role-plays a user.
 
-Requirements: Node.js 22 and the globally installed `playwright@1.56.1` with its
-Chromium (resolved by normal module resolution, then each `NODE_PATH` entry, then
-`/opt/node22/lib/node_modules/playwright`). Nothing is installed by the driver.
+Requirements: Node.js 22 and `playwright@1.56.1` with its Chromium. Install once:
+
+```sh
+cd drivers/web
+npm install                 # playwright 1.56.1 into drivers/web/node_modules
+npx playwright install chromium
+node selftest.mjs           # ~1 minute; expects "138 passed"
+```
+
+The package is resolved by normal module resolution (so `drivers/web/node_modules`
+or a global install both work), then each `NODE_PATH` entry, then
+`/opt/node22/lib/node_modules/playwright` (a pre-installed cloud container path).
+The driver itself never installs anything.
 
 ## Commands
 

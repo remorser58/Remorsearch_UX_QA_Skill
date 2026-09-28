@@ -9,3 +9,4 @@ __pycache__/
 .ergo-bench/
 .ergo-runs/
 .ergo-bench-*.log
+node_modules/
