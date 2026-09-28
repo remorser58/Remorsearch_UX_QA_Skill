@@ -322,13 +322,6 @@ def _present(element: dict[str, Any]) -> bool:
     return bool(element.get("visible", True)) and box.get("w", 0) > 0 and box.get("h", 0) > 0 and _usable(element)
 
 
-def _escalate(severity: str, element: dict[str, Any]) -> str:
-    """Raise one level (not above P1) for primary/destructive targets."""
-    if _roles(element) & {"primary", "destructive"} and SEVERITY_ORDER[severity] > 1:
-        return f"P{SEVERITY_ORDER[severity] - 1}"
-    return severity
-
-
 def _box_mm(ctx: Context, box: dict[str, float]) -> tuple[float, float]:
     from .devices import css_px_to_mm
     return css_px_to_mm(ctx.device, box["w"], "x"), css_px_to_mm(ctx.device, box["h"], "y")
@@ -1526,11 +1519,22 @@ SNAPSHOT_CHECKS: tuple[Callable[[Context], list[Observation]], ...] = (
 # defect that no other check found and were judged valid in 0/6 and 1/6 sampled cases;
 # PC-05 found no unique defect and judges split (1 valid, 3 split). They stay computed
 # and listed under "hypotheses" (docs/validation/experiments/decisions.md).
-HYPOTHESIS_CHECKS = frozenset({"GZ-01", "GZ-04", "PC-05"})
+# PT-05 (Fitts ID > 6 bits) has no normative threshold and produced no finding on the
+# development suites (STF-22).
+HYPOTHESIS_CHECKS = frozenset({"GZ-01", "GZ-04", "PC-05", "PT-05"})
+
+# Checks that read no profile attribute: one verdict per snapshot, reported as
+# "profile-independent" instead of a k/n coverage (STF-08).
+PROFILE_INVARIANT_CHECKS = frozenset({"PT-01", "PT-05", "PT-06", "PC-01", "PC-02", "CG-01", "CG-03", "GZ-03", "GM-04", "GM-05", "GM-06"})
 
 
-def tier(check_id: str) -> str:
-    return "hypothesis" if check_id in HYPOTHESIS_CHECKS else "finding"
+def tier(check_id: str, measurement: dict[str, Any] | None = None) -> str:
+    """``hypothesis`` for demoted checks and for persona notes nobody corroborated (STF-23)."""
+    if check_id in HYPOTHESIS_CHECKS:
+        return "hypothesis"
+    if check_id == "PJ-01" and not (measurement or {}).get("corroborated"):
+        return "hypothesis"
+    return "finding"
 
 
 def applicable(check_id: str, profile: dict[str, Any], device: Any) -> bool:

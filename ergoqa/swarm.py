@@ -98,7 +98,7 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
         differential = _differential([profiles_by_id[p] for p in triggered if p in profiles_by_id], untriggered)
         findings.append({
             "check_id": check_id,
-            "tier": checks.tier(check_id),
+            "tier": checks.tier(check_id, worst.get("measurement")),
             "category": spec.category,
             "scenario_id": scenario_id,
             "element_key": element_key,
@@ -108,7 +108,8 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
             "model": worst.get("model"),
             "triggered_profiles": triggered,
             "tested_profiles": tested,
-            "coverage_label": f"{len(triggered)}/{len(tested)} simulated profiles (coverage, not prevalence)",
+            "coverage_label": ("profile-independent (measured on the screen; coverage, not prevalence)" if check_id in checks.PROFILE_INVARIANT_CHECKS
+                               else f"{len(triggered)}/{len(tested)} simulated profiles (coverage, not prevalence)"),
             "profile_specific": differential,
             "segments_affected": _segments(triggered, profiles_by_id),
             "observation_ids": [o["id"] for o in group["failed"]],
@@ -160,7 +161,7 @@ def units(findings: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
         out.append({
             "scenario_id": scenario_id,
             "check_id": check_id,
-            "tier": checks.tier(check_id),
+            "tier": worst.get("tier", checks.tier(check_id)),
             "category": worst["category"],
             "basis": worst["basis"],
             "severity": worst["severity"],
