@@ -4,3 +4,7 @@ __pycache__/
 # Local checkpoints, test sandboxes and CLI-generated reports
 .ux-loop/
 .ux-loop-*.txt
+
+# Ergonomic swarm benchmark outputs and scratch runs
+.ergo-bench/
+.ergo-runs/

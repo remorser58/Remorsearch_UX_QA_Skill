@@ -1,0 +1,102 @@
+"""Score swarm findings against a blind benchmark answer key (spec section 12).
+
+Matching is by scenario, category, element selector and profile condition; check
+IDs are deliberately not part of the key. Findings on clean controls or decoys
+are false-positive candidates. Unmatched findings in defect variants are
+"unlabeled" and need manual adjudication (they may be real, unseeded issues).
+"""
+
+from __future__ import annotations
+
+from typing import Any, Iterable
+
+from .profiles import matches_condition
+
+SEVERITY_ORDER = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
+
+
+def _selector_matches(finding: dict[str, Any], selector: str) -> bool:
+    selector = (selector or "").strip()
+    if not selector:
+        return False
+    candidates = list(finding.get("selectors") or [])
+    candidates.append(finding.get("element_key", "").split("|", 1)[0])
+    if finding.get("element_key", "").startswith("viewport|"):
+        return True
+    for candidate in candidates:
+        if not candidate:
+            continue
+        if candidate == selector or candidate.endswith(selector) or selector.endswith(candidate) and candidate.startswith("#"):
+            return True
+        if selector in candidate.split() or selector in candidate.split(">"):
+            return True
+    return False
+
+
+def _profile_ok(finding: dict[str, Any], condition: dict[str, Any], profiles_by_id: dict[str, dict[str, Any]]) -> bool:
+    if not condition:
+        return True
+    return any(matches_condition(profiles_by_id[p], condition) for p in finding["triggered_profiles"] if p in profiles_by_id)
+
+
+def score(answer_key: dict[str, Any], findings: Iterable[dict[str, Any]], profiles: Iterable[dict[str, Any]]) -> dict[str, Any]:
+    findings = list(findings)
+    profiles_by_id = {p["profile_id"]: p for p in profiles}
+    defects = answer_key.get("defects", [])
+    decoys = answer_key.get("decoys", [])
+    clean_ids = {c["scenario_id"] for c in answer_key.get("clean_controls", [])}
+    defect_scenarios = {d["scenario_id"] for d in defects}
+    matched_finding_ids: set[str] = set()
+    per_defect = []
+    for d in defects:
+        in_scenario = [f for f in findings if f["scenario_id"] == d["scenario_id"] and _selector_matches(f, d.get("element_selector", ""))]
+        strict = [f for f in in_scenario if f["category"] == d["category"] and _profile_ok(f, d.get("profile_condition") or {}, profiles_by_id)]
+        lenient = [f for f in in_scenario if _profile_ok(f, d.get("profile_condition") or {}, profiles_by_id)]
+        best = min(strict, key=lambda f: SEVERITY_ORDER.get(f["severity"], 3)) if strict else None
+        severity_ok = bool(best) and SEVERITY_ORDER.get(best["severity"], 3) <= SEVERITY_ORDER.get(d.get("severity_min", "P3"), 3)
+        specific_ok = None
+        if best and d.get("profile_condition"):
+            specific_ok = all(best["profile_specific"].get(k) == v for k, v in d["profile_condition"].items())
+        for f in strict or lenient:
+            matched_finding_ids.add(f["id"])
+        per_defect.append({
+            "id": d["id"],
+            "scenario_id": d["scenario_id"],
+            "category": d["category"],
+            "selector": d.get("element_selector"),
+            "profile_condition": d.get("profile_condition") or {},
+            "detected_strict": bool(strict),
+            "detected_lenient": bool(lenient),
+            "severity_expected_min": d.get("severity_min"),
+            "severity_found": best["severity"] if best else None,
+            "severity_ok": severity_ok,
+            "differential_matches_condition": specific_ok,
+            "matched_findings": [f["id"] for f in (strict or lenient)],
+            "matched_checks": sorted({f["check_id"] for f in (strict or lenient)}),
+        })
+    decoy_hits = []
+    for n in decoys:
+        hits = [f for f in findings if f["scenario_id"] == n["scenario_id"] and f["category"] == n.get("category") and _selector_matches(f, n.get("element_selector", "")) and not f["element_key"].startswith("viewport|")]
+        decoy_hits.append({"id": n["id"], "hit": bool(hits), "findings": [f["id"] for f in hits], "checks": sorted({f["check_id"] for f in hits})})
+    clean_findings = [f for f in findings if f["scenario_id"] in clean_ids]
+    unlabeled = [f for f in findings if f["scenario_id"] in defect_scenarios and f["id"] not in matched_finding_ids]
+    n = len(defects) or 1
+    tp_findings = len(matched_finding_ids)
+    fp_findings = sum(len(h["findings"]) for h in decoy_hits) + len(clean_findings)
+    return {
+        "suite": answer_key.get("suite"),
+        "defects": len(defects),
+        "recall_strict": round(sum(d["detected_strict"] for d in per_defect) / n, 3),
+        "recall_lenient": round(sum(d["detected_lenient"] for d in per_defect) / n, 3),
+        "severity_agreement": round(sum(d["severity_ok"] for d in per_defect) / n, 3),
+        "decoys": len(decoys),
+        "decoys_flagged": sum(h["hit"] for h in decoy_hits),
+        "clean_control_findings": len(clean_findings),
+        "clean_control_by_severity": {s: sum(1 for f in clean_findings if f["severity"] == s) for s in ("P0", "P1", "P2", "P3")},
+        "precision_labeled": round(tp_findings / (tp_findings + fp_findings), 3) if (tp_findings + fp_findings) else None,
+        "unlabeled_findings_in_defect_variants": len(unlabeled),
+        "per_defect": per_defect,
+        "decoy_hits": decoy_hits,
+        "clean_findings": [{"id": f["id"], "scenario_id": f["scenario_id"], "check_id": f["check_id"], "severity": f["severity"], "element_key": f["element_key"]} for f in clean_findings],
+        "unlabeled": [{"id": f["id"], "scenario_id": f["scenario_id"], "check_id": f["check_id"], "severity": f["severity"], "element_key": f["element_key"]} for f in unlabeled],
+    }

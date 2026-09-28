@@ -1,0 +1,3 @@
+interface:
+  display_name: "Ergonomic Persona Swarm QA"
+  short_description: "Real-screen persona swarm with reach, handedness, gaze, contrast and timing models"

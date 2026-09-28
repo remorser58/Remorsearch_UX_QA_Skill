@@ -1,0 +1,346 @@
+# ergoqa — Ergonomic Persona Swarm QA: interface specification (v1)
+
+Status: authoritative contract for all implementers. Do not change names or shapes
+without updating this file. Python is standard-library only (3.10+). The live web
+driver is Node.js + the globally installed `playwright` package (Chromium at
+/opt/pw-browsers). Nothing reaches the network except the local page under test.
+
+## 0. Principles that are hard rules
+
+1. Deterministic human-factors models compute ergonomics (reach, pointing, gaze
+   priority, contrast, colour-vision, reading time, reaction windows). LLM persona
+   agents never role-play these numbers ("my thumb hurts"); they only look at the
+   screen, choose actions toward the task goal, and record expectation vs. outcome.
+2. Every observation carries `basis`:
+   - `measured` — geometry, colour, timing read from the real surface (epistemic `observed`);
+   - `model` — a published-model prediction applied to measured inputs (epistemic `inferred`, with `model` id and version);
+   - `judgment` — an LLM/human qualitative judgment on a screenshot (epistemic `inferred`).
+3. A swarm result reports "k of n simulated profiles triggered the check" as
+   COVERAGE, never as prevalence/percent of real users.
+4. Ergonomic attributes not present in the persona dataset (handedness, grip, hand
+   size, vision, motor, device) are scenario assumptions and are listed in
+   `assumption_fields` of the profile.
+5. Stratified coverage sampling (guarantee left-handed, one-handed, CVD, presbyopia,
+   tremor, walking, etc. appear) is the default. Base-rate sampling exists only to
+   choose plausible combinations; it must not be reported as population estimates.
+6. Research and QA stay read-only on real products. The driver only performs the
+   declared scenario actions on the declared surface.
+
+## 1. Device catalog (`ergoqa/devices.py`)
+
+`Device` dataclass:
+```
+id: str                    # e.g. "galaxy-s24"
+label: str
+form_factor: "phone" | "tablet" | "foldable" | "desktop" | "laptop" | "tv" | "handheld_console"
+viewport_css: (w, h)       # portrait CSS px (or landscape for desktop/tv)
+dpr: float
+physical_mm: (w, h)        # body width/height of the device (for grip/reach)
+display_mm: (w, h)         # active display area width/height in mm
+input: "touch" | "mouse" | "keyboard" | "gamepad" | "remote"
+viewing_distance_mm: int   # typical
+playwright_device: str|None   # name in playwright.devices, if any
+source: str                # spec source note
+```
+Functions: `get_device(id)`, `list_devices()`, `css_px_to_mm(device, px, axis)`,
+`mm_to_css_px(...)`, `rotate(device)` for landscape.
+Catalog MUST include at least: galaxy-s24, galaxy-s24-ultra, galaxy-a55, galaxy-z-flip6,
+galaxy-z-fold6-inner, iphone-15, iphone-15-pro-max, pixel-8, galaxy-tab-s9,
+desktop-1920 (24" monitor), laptop-1440 (14"), tv-55-1080 (10-foot UI),
+switch-handheld (handheld console, gamepad).
+
+## 2. Ergonomic profile (`ergo-profile.v1`, `ergoqa/profiles.py`)
+
+```json
+{
+  "schema_version": "ergo-profile.v1",
+  "profile_id": "EP-01",
+  "origin": "stratified_coverage | base_rate_sample | manual",
+  "persona_ref": {"dataset": "nvidia/Nemotron-Personas-Korea", "revision": "...", "record_id": "..."} ,
+  "label_ko": "왼손잡이 · 한 손 파지 · 이동 중",
+  "attributes": {
+    "age_band": "10s|20s|30s|40s|50s|60s|70s+",
+    "handedness": "right|left|mixed",
+    "grip": "one_hand_right|one_hand_left|cradle_right|cradle_left|two_thumbs|mouse_right|mouse_left|keyboard_only|gamepad|remote",
+    "thumb_length_mm": 62.0,
+    "hand_percentile": 50,
+    "device_id": "galaxy-s24",
+    "orientation": "portrait|landscape",
+    "vision": {"acuity": "normal|reduced|low", "presbyopia": false, "cvd": "none|protan|deutan|tritan", "cvd_severity": 1.0, "viewing_distance_mm": 300},
+    "motor": {"tremor": "none|mild|moderate", "touch_sigma_mm": 1.5},
+    "context": {"mobility": "seated|walking|transit", "lighting": "indoor|bright_sun|dark", "free_hands": 1, "interruptions": false},
+    "cognition": {"familiarity": "first_use|returning|expert", "time_pressure": "low|high", "reading_wpm_ko": 0},
+    "reaction_time_ms": 250
+  },
+  "assumption_fields": ["handedness", "grip", "thumb_length_mm", "vision", "motor", "context", "device_id"],
+  "base_rate_refs": {"handedness": "REF-..."}
+}
+```
+Functions:
+- `sample_profiles(count, seed, device_ids, strategy="stratified_coverage", persona_records=None) -> list[dict]`
+  Deterministic for a seed. Stratified coverage fills these strata before anything
+  else when count allows: right one-hand, left one-hand, two-thumbs, cradle,
+  cvd≠none, presbyopia, tremor≠none, walking, bright_sun, first_use, 60s+.
+- `validate_profile(p) -> list[str]` errors.
+- `effective_touch_sigma_mm(p)` combines base σ, tremor, walking multipliers.
+- `persona_to_profile(persona_record, ...)` keeps persona fields as `persona_ref`,
+  never infers handedness/vision from demographics.
+
+## 3. Snapshot (`ergo-snapshot.v1`) — produced by every driver
+
+```json
+{
+  "schema_version": "ergo-snapshot.v1",
+  "snapshot_id": "S-r1-003",
+  "run_id": "R-...",
+  "step_index": 3,
+  "captured_at": "2026-09-28T12:00:00Z",
+  "surface": {"kind": "web|android|ios|desktop|game", "url": "...", "title": "...", "app_id": null},
+  "device": {"id": "galaxy-s24", "viewport_css": [360, 780], "dpr": 3.0, "orientation": "portrait"},
+  "screenshot": {"path": "S-r1-003.png", "sha256": "...", "width_px": 1080, "height_px": 2340},
+  "elements": [
+    {
+      "id": "el-12",
+      "role": "button",
+      "name": "결제하기",
+      "text": "결제하기",
+      "tag": "button",
+      "selector": "#pay",
+      "box": {"x": 16, "y": 700, "w": 328, "h": 48},
+      "interactive": true, "visible": true, "enabled": true, "in_viewport": true,
+      "font_size_px": 16, "font_weight": 700,
+      "color_fg": "#ffffff", "color_bg": "#1a73e8",
+      "border_color": null,
+      "roles": ["primary"],
+      "source": "dom|uiautomator|a11y|vision|manual"
+    }
+  ],
+  "focus_point": {"x": 180, "y": 724},
+  "console_errors": [],
+  "notes": []
+}
+```
+- `box` is in CSS px relative to the viewport's top-left (visible area).
+- `roles` values: `primary`, `destructive`, `irreversible`, `critical_message`, `error_message`,
+  `status`, `navigation`, `ad_like`, `hud`, `game_control`, `timed`.
+  `irreversible` marks a destructive/payment action that cannot be undone and has no
+  confirmation (declared by the scenario author after checking it in a sandbox).
+  Roles come from the scenario's `targets` (selectors/text), from
+  `data-ergo-role` attributes, or from an annotation; never guessed silently.
+- `focus_point` = where the user's attention/finger was at the last action (for
+  feedback-noticing checks); null on the first snapshot.
+- Colours are hex; `color_bg` is the effective opaque background behind the element
+  (driver walks ancestors; null if unknown/image).
+
+## 4. Scenario (`ergo-scenario.v1`)
+
+```json
+{
+  "schema_version": "ergo-scenario.v1",
+  "scenario_id": "SC-checkout-01",
+  "surface": {"kind": "web", "url": "http://127.0.0.1:8765/shop/index.html"},
+  "task_goal_ko": "장바구니 상품을 결제한다",
+  "device_ids": ["galaxy-s24"],
+  "targets": {
+    "primary": ["#pay"],
+    "destructive": ["#delete-all"],
+    "critical_message": ["#error"],
+    "ad_like": [], "hud": [], "game_control": [], "timed": []
+  },
+  "steps": [
+    {"action": "tap", "target": "#add"},
+    {"action": "wait", "ms": 300},
+    {"action": "tap", "target": "text=결제하기"}
+  ],
+  "timing_windows": [{"id": "qte-1", "selector": "#qte", "measure": "visible_duration", "kind": "qte"},
+                     {"id": "toast-1", "selector": "#toast", "measure": "visible_duration", "kind": "transient_text"}],
+  "success": {"selector_visible": "#done"},
+  "hotspots": [{"id": "hs-jump", "name": "jump", "box": {"x": 300, "y": 600, "w": 64, "h": 64}, "roles": ["game_control"]}]
+}
+```
+Actions: `tap`, `click`, `double_tap`, `long_press`, `swipe`, `drag`, `type`,
+`press` (key), `scroll`, `wait`, `snapshot`, `gamepad` (web: keyboard mapping).
+`target` is a Playwright selector or `hotspot:<id>` or `{x,y}`.
+
+## 5. Run (`ergo-run.v1`) — directory layout
+
+```
+runs/<run_id>/run.json
+runs/<run_id>/S-<run>-000.json + .png
+...
+```
+`run.json`:
+```json
+{
+  "schema_version": "ergo-run.v1",
+  "run_id": "R-...",
+  "scenario_id": "...",
+  "profile_id": "EP-01",
+  "driver": {"name": "playwright-web", "version": "1.56.1", "browser": "chromium"},
+  "device": {...snapshot device...},
+  "mode": "scripted|interactive",
+  "started_at": "...", "ended_at": "...",
+  "status": "completed|failed|blocked",
+  "success": true,
+  "steps": [
+    {"step_index": 1, "action": {...}, "target_element_id": "el-12", "point": {"x": 180, "y": 724},
+     "before": "S-...-000", "after": "S-...-001", "t_start_ms": 0, "t_end_ms": 120,
+     "feedback_latency_ms": 80, "result": "ok|error|no_target", "error": null}
+  ],
+  "timing_windows": [{"id": "qte-1", "selector": "#qte", "kind": "qte", "visible_ms": 400,
+                      "intervals_ms": [400], "text": "지금 누르세요!"}],
+  "flash_samples": [{"t_ms": 0, "mean_luminance": 0.3}],
+  "persona_notes": [{"step_index": 1, "intent": "...", "expected": "...", "observed": "...", "confusion": false}]
+}
+```
+`persona_notes` are written by the LLM persona agent in interactive mode (basis judgment).
+
+## 6. Observation (`ergoqa/checks.py`, produced by `analyze`)
+
+```json
+{
+  "id": "OB-...",
+  "check_id": "RH-01",
+  "category": "reach|pointing|gaze|perception|cognition|game|heuristic",
+  "run_id": "R-...", "profile_id": "EP-01", "snapshot_id": "S-...", "step_index": 3,
+  "element_ids": ["el-12"], "element_key": "#pay|결제하기",
+  "basis": "measured|model|judgment",
+  "epistemic_status": "observed|inferred",
+  "model": "thumb-reach-v1",
+  "measurement": {"name": "reach_difficulty", "value": 0.82, "unit": "0-1", "threshold": 0.66, "comparator": ">"},
+  "passed": false,
+  "severity": "P0|P1|P2|P3|null",
+  "message_ko": "...", "message_en": "...",
+  "refs": ["REF-bergstrom2014"]
+}
+```
+`passed: true` observations are kept only in verbose mode (for coverage accounting).
+
+## 7. Aggregated finding (swarm)
+
+```json
+{
+  "id": "EF-001",
+  "check_id": "RH-01",
+  "element_key": "#pay|결제하기",
+  "screen_key": "url-or-title + step",
+  "severity": "P1",
+  "basis": "model",
+  "epistemic_status": "inferred",
+  "triggered_profiles": ["EP-02", "EP-05"],
+  "tested_profiles": ["EP-01", "EP-02", "EP-05", "EP-07"],
+  "coverage_label": "2/4 simulated profiles (coverage, not prevalence)",
+  "profile_specific": {"handedness": "left"},
+  "observation_ids": ["OB-..."],
+  "summary_ko": "...",
+  "fix_layer": "interaction|visual|ia|content|accessibility|service",
+  "recommendation_ko": "...",
+  "refs": ["REF-..."]
+}
+```
+`profile_specific` = attribute values shared by ALL triggered profiles and by NONE of
+the tested-but-untriggered ones (the differential condition). Severity = max
+observation severity, raised by one level (max P1 via this rule) when the element is
+`primary` or `destructive` on a critical path; never lowered below any observation.
+
+## 8. Evidence bundle export
+
+`ergoqa/bundle.py:to_evidence_bundle(...)` emits `ux-evidence-bundle.v1` that passes
+`scripts/validate_bundle.py` (import `validate_bundle` from it in tests):
+- permissions: requested ["read_only"], granted ["read_only"], blocked [].
+- personas: one per ergonomic profile, `basis: "synthetic"`, with ALL fields that the
+  validator requires for synthetic personas (adapter_revision "ergoqa-profiles/1",
+  schema_fingerprint = sha256 of sorted profile keys, seed, shard_or_config =
+  strategy, max_scanned_rows/max_bytes_read/timeout_ms integers (0 when no dataset
+  read), selected_record_ids (persona_ref record ids or []), filled_strata,
+  unfilled_strata, stop_reason, original_attributes = persona_ref fields or {},
+  scenario_assumptions = the ergonomic attributes listed in assumption_fields).
+- scenarios: one per (scenario_id, profile_id) pair: id `"{scenario_id}@{profile_id}"`,
+  `persona_id` = profile id record.
+- runs: id = run_id, `scenario_id` = the pair id, `status` = run status.
+- observations: failed checks only; `epistemic_status` from basis; `run_id`.
+- findings: one bundle finding per (swarm finding × triggered pair): id
+  `"{EF-id}@{profile_id}"`, `scenario_id` = pair id, `observation_ids` of that pair,
+  `severity`, `swarm_finding_id`; `verification_status` "verified" ONLY when every
+  linked observation is basis `measured` (observed) from a completed run of that same
+  pair; otherwise "unverified" with epistemic `inferred`.
+- proposals: one per swarm finding with a recommendation, `finding_ids` = its bundle findings.
+- sources/evidence/claims/figma: empty arrays unless supplied.
+
+## 9. CLI (`scripts/ergo_qa.py` → `ergoqa/cli.py`)
+
+```
+ergo_qa.py devices [--json]
+ergo_qa.py profiles --count N --seed S --devices galaxy-s24,iphone-15 [--strategy stratified_coverage] --out profiles.json
+ergo_qa.py analyze --run runs/R-x [--profiles profiles.json] --out obs.json
+ergo_qa.py swarm --runs runs/ --profiles profiles.json --out report_dir [--bundle]
+      -> report_dir/findings.json, report_dir/report.md (Korean), report_dir/bundle.json
+ergo_qa.py heatmap --snapshot runs/R-x/S-..json --profile EP-01 --kind reach|gaze|touch --out map.png
+ergo_qa.py bench --key benchmarks/.../answer_key.json --findings report_dir/findings.json
+ergo_qa.py android-snapshot --xml dump.xml --png screen.png --device galaxy-s24 --out snap.json
+```
+Exit codes: 0 ok, 1 findings at/above `--fail-on` severity, 2 usage/input error.
+
+## 10. Web driver (`drivers/web/ergo_drive.mjs`)
+
+```
+node drivers/web/ergo_drive.mjs run --scenario sc.json --profile p.json --out runs/ [--run-id R-x]
+node drivers/web/ergo_drive.mjs serve --scenario sc.json --profile p.json --out runs/ --port 9477
+   POST /act   {"action":"tap","target":"#pay"}  -> {"snapshot": ".../S-..json", "png": ".../S-..png", "result": "ok"}
+   GET  /snapshot                               -> same, without acting
+   POST /note  {"intent":..,"expected":..,"observed":..,"confusion":bool}
+   POST /finish {"success": true}               -> writes run.json, exits
+```
+Resolves `playwright` via normal resolution, then NODE_PATH, then
+`/opt/node22/lib/node_modules/playwright`. Emulates the profile's device (viewport,
+dpr, hasTouch, isMobile, orientation) and uses real touch/mouse/keyboard events.
+Element extraction: interactive elements (a, button, input, select, textarea,
+[role=button|link|tab|checkbox|radio|switch|menuitem|slider], [onclick],
+[tabindex>=0], canvas) + elements matched by scenario targets + `data-ergo-role`,
+plus visible text blocks (p, h1-h6, li, label, span with direct text, [role=alert|status])
+with `interactive:false`. For canvas games, hotspots from the scenario and
+`window.__ergoqa__?.hotspots?.()` become elements with `source:"manual"`.
+Timing windows: poll selector visibility every 16 ms. Flash sampling: optional
+`--flash-sample-ms 1000` captures mean luminance at ~20 fps via screenshots.
+
+## 11. Android and annotation drivers
+
+- `ergoqa/drivers/android.py`: parse `uiautomator dump` XML (`bounds="[x1,y1][x2,y2]"`
+  device px) → elements in CSS-equivalent dp using density; build snapshot; build
+  `adb` argv lists for tap/swipe/text/keyevent (never via shell string). Unit-tested
+  with fixture XML only; mark live execution as not exercised.
+- `ergoqa/drivers/annotation.py`: convert a vision/human annotation JSON
+  (screenshot + boxes + roles) into a snapshot with `source:"vision"`; every
+  observation from such geometry gets epistemic `inferred`.
+
+## 12. Benchmark (validation) — written blind by a separate agent
+
+```
+benchmarks/<suite>/site/...            fixture pages/games (defect and clean variants)
+benchmarks/<suite>/scenarios/*.json    ergo-scenario.v1 (url may use "{BASE}" placeholder = http://127.0.0.1:<port>)
+benchmarks/<suite>/answer_key.json
+```
+`answer_key.json`:
+```json
+{
+  "suite": "mobile-commerce",
+  "defects": [
+    {"id": "D-01", "scenario_id": "SC-...", "category": "reach|pointing|gaze|perception|cognition|game",
+     "element_selector": "#pay", "profile_condition": {"grip": "one_hand_left"},
+     "severity_min": "P2", "description": "...", "human_factors_basis": "..."}
+  ],
+  "decoys": [
+    {"id": "N-01", "scenario_id": "SC-...", "category": "pointing", "element_selector": "#icon",
+     "description": "looks risky but is acceptable, e.g. 20px icon with >=24px spacing (WCAG 2.5.8 spacing exception)"}
+  ],
+  "clean_controls": [{"scenario_id": "SC-...-clean", "notes": "same flow with defects fixed"}]
+}
+```
+Scoring matches by scenario_id + category + element (finding element_key or element
+selector equals / contains the key's selector) + profile condition (at least one
+triggered profile satisfies it). Check IDs are NOT part of the key, so the key does
+not depend on detector internals. Findings on clean controls, on decoys, or unmatched
+in defect variants are false-positive candidates that need manual adjudication (a
+detector may find a real, unseeded issue).
+Implementers of ergoqa MUST NOT read `benchmarks/` until the benchmark is scored.
+Benchmark authors MUST NOT read `ergoqa/` or `drivers/`.
