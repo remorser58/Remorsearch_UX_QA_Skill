@@ -154,3 +154,21 @@ have not been opened by the tool author. Development used the three dev suites
 6. **Runner:** `skills/remorsearch-ux-qa/scripts/ergo_eval.py` (record,
    analyse, score, agents-plan, score-agents) implements C1-C6 and H1-H7 as
    written here; it prints aggregates only and seals per-defect results.
+
+### Amendment 2 (2026-09-28, before the freeze and before any heldout-2 recording)
+
+1. **C6 operators mix Opus and Sonnet** (the user asked to mix Sonnet into the
+   subagents). Four composed profiles per product cover {Opus, Sonnet} ×
+   {screenshot, screenshot+a11y}. Both models are one family (`claude`), so a
+   note is corroborated only by another input channel; agreement between Opus
+   and Sonnet on the same channel does not count. Results are also reported per
+   model.
+2. **Stage-0 composition fixes** found while running Stage 0 on the heldout-2
+   briefs (no defect content involved): the walking floor attaches only to a
+   phone or foldable; scenario stubs skip segments that do not operate the
+   product; `evidence[].quote_basis` records whether a quote was read on the page
+   or only in a search snippet (this environment's network policy blocks most
+   public sites, so Stage-0 quotes are largely snippets and are listed as
+   unverified in each persona plan).
+3. **Round-2 adjudication judges:** one Opus and one Sonnet judge per unit
+   (instead of two Opus judges), to reduce correlated errors within one model.

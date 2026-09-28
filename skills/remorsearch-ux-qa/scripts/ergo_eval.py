@@ -496,7 +496,8 @@ def agents_plan(data: dict[str, Any], agent_dir: Path, budget: int, sessions_per
     Profiles come from ``audience.compose`` (budget per product), or, for a product
     without an audience file, from stratified sampling on the scenarios' devices.
     Input channels alternate (screenshot, screenshot+a11y) so notes can be
-    corroborated across channels under a one-family rule. Every profile runs every
+    corroborated across channels under a one-family rule; operator models alternate
+    between Opus and Sonnet in pairs. Every profile runs every
     scenario of its product in a separate session. Writes ``profiles.json``,
     ``agents/*.json`` and ``sessions.json``; no scenario content is read here
     beyond ids and devices.
@@ -522,8 +523,12 @@ def agents_plan(data: dict[str, Any], agent_dir: Path, budget: int, sessions_per
         for i, prof in enumerate(chosen):
             prof = dict(prof)
             prof["profile_id"] = f"OP-{slug}-{i + 1:02d}@{prof['attributes']['device_id']}"
+            # Channels alternate every profile, models every two profiles, so four
+            # profiles cover {opus, sonnet} x {screenshot, screenshot+a11y}. Both models
+            # are one family: corroboration still needs another input channel.
             channel = "screenshot" if i % 2 == 0 else "screenshot+a11y"
-            agent = {"model_family": "claude", "model": "opus", "input_channel": channel, "persona_arm": "full", "seed": i + 1,
+            model = "opus" if (i // 2) % 2 == 0 else "sonnet"
+            agent = {"model_family": "claude", "model": model, "input_channel": channel, "persona_arm": "full", "seed": i + 1,
                      "description": f"C6 operator {slug} {i + 1} ({origin})"}
             (agent_dir / "profiles" / f"{prof['profile_id']}.json").write_text(json.dumps(prof, ensure_ascii=False), encoding="utf-8")
             (agent_dir / "agents" / f"{prof['profile_id']}.json").write_text(json.dumps(agent, ensure_ascii=False), encoding="utf-8")
@@ -532,12 +537,13 @@ def agents_plan(data: dict[str, Any], agent_dir: Path, budget: int, sessions_per
                 sessions.append({"product": slug, "scenario_id": sid, "scenario_path": str(data["paths"][sid]),
                                  "profile_path": str(agent_dir / "profiles" / f"{prof['profile_id']}.json"),
                                  "agent_json": str(agent_dir / "agents" / f"{prof['profile_id']}.json"),
-                                 "run_id": f"R-{sid}-{prof['profile_id'].split('@')[0]}", "port": port, "channel": channel,
+                                 "run_id": f"R-{sid}-{prof['profile_id'].split('@')[0]}", "port": port, "channel": channel, "model": model,
                                  "label_ko": prof.get("label_ko") or ""})
                 port += 1
     (agent_dir / "profiles.json").write_text(json.dumps({"profiles": profiles}, ensure_ascii=False, indent=1), encoding="utf-8")
     (agent_dir / "sessions.json").write_text(json.dumps(sessions, ensure_ascii=False, indent=1), encoding="utf-8")
-    return {"profiles": len(profiles), "sessions": len(sessions), "by_channel": {c: sum(1 for x in sessions if x["channel"] == c) for c in ("screenshot", "screenshot+a11y")}}
+    return {"profiles": len(profiles), "sessions": len(sessions), "by_channel": {c: sum(1 for x in sessions if x["channel"] == c) for c in ("screenshot", "screenshot+a11y")},
+            "by_model": {m: sum(1 for x in sessions if x["model"] == m) for m in ("opus", "sonnet")}}
 
 
 def main() -> int:
