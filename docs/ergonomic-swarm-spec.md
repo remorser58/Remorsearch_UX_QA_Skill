@@ -368,3 +368,91 @@ overlapping elements, content lost at 320 CSS px reflow or 200 % zoom). Task-flo
 problems found by operating the task use the existing `heuristic` category.
 
 Suite-level answer-key field `products`: `[{"product": "...", "brief": "products/<product>/brief.md", "scenarios": ["SC-..."]}]`.
+
+## 13. Audience (`ergo-audience.v1`, `ergoqa/audience.py`) — Stage 0 target-user research
+
+The swarm is composed from research on **who uses the product under test**, not
+sampled at random. Stage 0 writes one `ergo-audience.v1` file; `ergo_qa.py
+personas --audience` turns it into profiles, deterministically.
+
+```json
+{
+  "schema_version": "ergo-audience.v1",
+  "audience_id": "AU-<product>-<yyyymm>",
+  "product": {"name": "...", "category": "...", "surface": "web|android|ios|desktop|game", "locale": "ko-KR", "brief_ref": "..."},
+  "researched_at": "YYYY-MM-DD",
+  "method": {"summary": "...", "limitations": ["..."]},
+  "sources": [{"source_id": "SRC-01", "type": "official_statistics", "title": "...", "url": "...", "accessed_at": "YYYY-MM-DD"}],
+  "segments": [{
+    "segment_id": "SEG-...", "name_ko": "...", "summary": "...",
+    "priority": "primary|secondary|edge",
+    "share": {"value": 0.55, "basis": "measured|estimated|unknown", "source_ids": ["SRC-01"]},
+    "confidence": "high|medium|low",
+    "evidence": [{"source_id": "SRC-02", "claim": "...", "kind": "firsthand|statistic|official|inference"}],
+    "age_bands": {"60s": 0.6, "70s+": 0.4},
+    "devices": {"galaxy-a55": 0.7, "iphone-15": 0.3},
+    "orientation": "portrait",
+    "left_hand_share": null,
+    "grips": {"one_hand": 0.5, "cradle": 0.35, "two_thumbs": 0.15},
+    "familiarity": {"first_use": 0.3, "returning": 0.6, "expert": 0.1},
+    "conditions": [{"condition": "presbyopia", "share": 0.9, "stakes": "normal", "source_ids": ["SRC-01"], "why": "..."}],
+    "contexts": [{"context_id": "CTX-walk", "mobility": "seated|standing|walking|transit", "lighting": "indoor|bright_sun|dark",
+                  "one_handed": true, "interruptions": false, "time_pressure": "low|high", "share": 0.5, "source_ids": ["SRC-02"]}],
+    "tasks": [{"task_id": "T-...", "goal_ko": "...", "jtbd": "When ..., I want to ..., so I can ...",
+               "frequency": "daily|weekly|monthly|rare|once", "criticality": "safety|health|money|legal|data|access|convenience",
+               "concrete_data": {"amount": "20,000원"}, "success_ko": "...", "source_ids": ["SRC-03"]}],
+    "pain_points": [{"text": "...", "source_ids": ["SRC-02"], "kind": "firsthand|inference"}]
+  }],
+  "exclusions": [{"group": "...", "why": "..."}],
+  "floors": ["left_hand", "cvd_deutan", "presbyopia"]
+}
+```
+
+Rules (validated by `audience-check`):
+
+- `sources[].type` ∈ official_statistics, product_analytics, app_store_reviews,
+  community, survey, interview, usability_test, support_tickets, official_docs,
+  competitor, market_report, research_paper, product_brief, expert_judgment.
+- Every segment has at least one evidence item; every share, condition, context
+  and task cites known `source_id`s. `share.value` is null exactly when
+  `basis` is `unknown`.
+- `age_bands` keys come from the profile's age bands; `devices` keys must exist in
+  the device catalog (add a device with its source first).
+- `conditions[].condition` ∈ presbyopia, low_vision, reduced_acuity, cvd_deutan,
+  cvd_protan, cvd_tritan, tremor_mild, tremor_moderate, first_use, expert,
+  time_pressure, small_hand, large_hand. `stakes: high` marks a small group
+  whose failure is costly (it is tried before other minority conditions).
+- Every task has `concrete_data`: the values an agent must type or pick. Goals
+  without data leave branches untested (persona trial, 2026-09-28).
+- `floors` (optional) overrides the inclusive floors; `[]` disables them.
+
+Composition (`audience.compose(audience, budget, floors)`):
+
+1. One **typical member** per segment: modal age band, top device, dominant grip,
+   modal context, and every condition with share ≥ 0.5. Ages 50s+ are
+   presbyopic unless the segment says otherwise. If the budget is smaller than
+   the number of segments, segments are taken by priority, then weight.
+2. Segment weight = `share.value`, or a priority default (primary 0.5, secondary
+   0.3, edge 0.2) scaled into the share mass left unclaimed.
+3. Up to a third of the remaining budget is reserved for unmet floors.
+4. **D'Hondt:** the next profile goes to the segment with the highest
+   weight / (profiles + 1) that still has an untried facet. Each extra profile
+   varies **one facet** of the typical member, in this order: high-stakes
+   minority conditions, the left-hand mirror, the typical member on another
+   device with ≥ 30 % of the segment, contexts with share ≥ 0.15, other minority
+   conditions, first use (≥ 20 %), other age bands (≥ 20 %), other grips
+   (≥ 25 %). One facet at a time keeps the differential condition attributable.
+5. **Floors:** a left-hand profile per input kind (touch, pointer) and one
+   profile per other floor condition across the swarm. A floor is met by the
+   most plausible segment's own facet when it has one, otherwise by a profile
+   labelled `inclusive floor (coverage guarantee, not segment evidence)`.
+   Unused reserve returns to step 4.
+6. Output `ergo-persona-plan.v1`: `profiles` (each with `origin:
+   "audience_composed"` and `audience_ref` {audience_id, segment_id,
+   segment_priority, context_id, task_ids, facet, floor, reasons, source_ids}),
+   `segments` (weight, profiles), `floors_used`, and `untested` (facets and
+   segments the budget did not reach — listed in the report).
+
+Findings gain `segments_affected` (segments whose composed profiles triggered
+them). Segment weights steer allocation only; they are never reported as the
+share of users affected by a finding.
