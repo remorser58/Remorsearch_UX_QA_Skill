@@ -294,6 +294,29 @@ export function extractSnapshot(args) {
         containerC = mix(outer.groups[i].backdrop, containerC, outer.groups[i].alpha);
       }
     }
+    if (start === 0 && chain.length > 1) {
+      // The element's own fill is opaque, so the loop above started at the element and
+      // `outer` fell back to the page base colour. Composite the layers below it instead.
+      let below = chain.length - 1;
+      let blocked = false;
+      for (let i = 1; i < chain.length; i++) {
+        const n = chain[i];
+        const tag = n.tagName ? n.tagName.toLowerCase() : '';
+        const ncs = style(n);
+        if (MEDIA.has(tag) || (ncs.backgroundImage && ncs.backgroundImage !== 'none')) { blocked = true; break; }
+        const bg = parseColor(ncs.backgroundColor);
+        if (bg && bg.a >= 0.999) { below = i; break; }
+      }
+      if (blocked) containerC = null;
+      else {
+        let c = baseColor();
+        for (let i = below; i >= 1; i--) {
+          const bg = parseColor(style(chain[i]).backgroundColor);
+          if (bg && bg.a > 0) c = over(bg, c);
+        }
+        containerC = c;
+      }
+    }
     return { fg: fgC, bg: bgC, container: containerC };
   };
 
@@ -510,6 +533,38 @@ export function extractSnapshot(args) {
     return g;
   };
 
+  // Open modal layers: <dialog> opened with showModal() or a visible [aria-modal="true"].
+  const modals = all.filter((el) => {
+    try {
+      if (el.matches(':modal')) return true;
+    } catch (e) { /* :modal unsupported */ }
+    if (el.getAttribute('aria-modal') !== 'true') return false;
+    const g = geo(el);
+    return g.vis && g.inVp;
+  });
+  const inertByModal = (el) => modals.length > 0 && !modals.some((m) => m === el || m.contains(el) || el.contains(m));
+  // Fraction of sample points inside the visible box where another element is on top
+  // (not the element, a descendant or an ancestor): a sheet, scrim or overlay.
+  const occlusion = (el, r) => {
+    const x0 = Math.max(0, r.left), x1 = Math.min(vw, r.right), y0 = Math.max(0, r.top), y1 = Math.min(vh, r.bottom);
+    if (x1 - x0 < 1 || y1 - y0 < 1) return { fraction: null, by: null };
+    const pts = [[0.5, 0.5], [0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]];
+    let covered = 0;
+    let by = null;
+    for (const [fx, fy] of pts) {
+      let top = null;
+      try {
+        top = document.elementFromPoint(x0 + (x1 - x0) * fx, y0 + (y1 - y0) * fy);
+      } catch (e) {
+        top = null;
+      }
+      if (!top || top === el || el.contains(top) || top.contains(el)) continue;
+      covered += 1;
+      if (!by) by = top;
+    }
+    return { fraction: covered / pts.length, by };
+  };
+
   const candidates = [];
   for (const el of all) {
     const tag = el.tagName.toLowerCase();
@@ -522,7 +577,9 @@ export function extractSnapshot(args) {
     if (tagged) group = 0;
     else if (interactive) group = 1;
     else if (alertStatus) group = 2;
-    else if (ALWAYS_TEXT.has(tag) || (DIRECT_TEXT.has(tag) && hasDirectText(el))) {
+    else if ((ALWAYS_TEXT.has(tag) || DIRECT_TEXT.has(tag)) && hasDirectText(el)) {
+      // Only elements that own a text node: a <li> whose text sits in a child button
+      // would otherwise report the child's text with its own (inherited) font size.
       const host = el.parentElement ? el.parentElement.closest(INTERACTIVE) : null;
       if (host) continue; // text inside a control is reported through the control
       group = 3;
@@ -631,6 +688,14 @@ export function extractSnapshot(args) {
       border_color: border.color,
       border_width_px: border.width,
       opacity: Math.round(cumOpacity * 1000) / 1000,
+      ...(() => {
+        const o = g.vis && g.inVp ? occlusion(el, g.r) : { fraction: null, by: null };
+        return {
+          occluded_fraction: o.fraction,
+          occluded_by: o.by ? uniqueSelector(o.by) : null,
+          inert_by_modal: inertByModal(el),
+        };
+      })(),
       roles: roleMap.has(el) ? [...roleMap.get(el)].sort() : [],
       // Ids of the nearest ancestors (grouping context such as a toolbar or chip row).
       ancestor_ids: (() => {

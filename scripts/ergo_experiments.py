@@ -208,10 +208,12 @@ def analyse(exp: Path, suites: Iterable[str], extra_profiles: Callable[[dict[str
 
 
 def evaluate(entry: dict[str, Any], profile_ids: set[str] | None = None, check_filter: Callable[[str], bool] | None = None,
-             basis: str | None = None) -> dict[str, Any]:
+             basis: str | None = None, obs_filter: Callable[[dict[str, Any]], bool] | None = None) -> dict[str, Any]:
     analyses = []
     for a in entry["analyses"]:
         obs = a["observations"]
+        if obs_filter is not None:
+            obs = [o for o in obs if o["passed"] or obs_filter(o)]
         if profile_ids is not None:
             obs = [o for o in obs if o["profile_id"] in profile_ids]
         if check_filter is not None:
@@ -222,7 +224,10 @@ def evaluate(entry: dict[str, Any], profile_ids: set[str] | None = None, check_f
     used = [p for pid, p in entry["profiles"].items() if profile_ids is None or pid in profile_ids]
     findings = swarm.aggregate(analyses, used)
     score = bench.score(entry["key"], findings, used)
+    clean_ids = {f["id"] for f in score["clean_findings"]}
     return {
+        "elements_flagged": len({(f["scenario_id"], f["element_key"]) for f in findings}),
+        "clean_elements_flagged": len({(f["scenario_id"], f["element_key"]) for f in findings if f["id"] in clean_ids}),
         "strict": {d["id"] for d in score["per_defect"] if d["detected_strict"]},
         "lenient": {d["id"] for d in score["per_defect"] if d["detected_lenient"]},
         "severity_ok": {d["id"] for d in score["per_defect"] if d["severity_ok"]},
@@ -239,12 +244,13 @@ def evaluate(entry: dict[str, Any], profile_ids: set[str] | None = None, check_f
 
 
 def combine(results: dict[str, dict[str, Any]]) -> dict[str, Any]:
-    out = {"strict": set(), "lenient": set(), "severity_ok": set(), "findings": 0, "clean": 0, "decoys": 0, "unlabeled": 0}
+    out = {"strict": set(), "lenient": set(), "severity_ok": set(), "findings": 0, "clean": 0, "decoys": 0, "unlabeled": 0,
+           "elements_flagged": 0, "clean_elements_flagged": 0}
     for suite, r in results.items():
         out["strict"] |= {f"{suite}:{d}" for d in r["strict"]}
         out["lenient"] |= {f"{suite}:{d}" for d in r["lenient"]}
         out["severity_ok"] |= {f"{suite}:{d}" for d in r["severity_ok"]}
-        for k in ("findings", "clean", "decoys", "unlabeled"):
+        for k in ("findings", "clean", "decoys", "unlabeled", "elements_flagged", "clean_elements_flagged"):
             out[k] += r[k]
     return out
 
@@ -280,6 +286,8 @@ def summarise(name: str, combined: dict[str, Any], baseline: dict[str, Any] | No
         "clean_control_findings": combined["clean"],
         "decoys_flagged": combined["decoys"],
         "unlabeled": combined["unlabeled"],
+        "elements_flagged": combined["elements_flagged"],
+        "clean_elements_flagged": combined["clean_elements_flagged"],
     }
     if baseline is not None:
         lost = sorted(baseline["strict"] - combined["strict"])
@@ -292,6 +300,8 @@ def summarise(name: str, combined: dict[str, Any], baseline: dict[str, Any] | No
             "delta_clean": combined["clean"] - baseline["clean"],
             "delta_decoys": combined["decoys"] - baseline["decoys"],
             "delta_unlabeled": combined["unlabeled"] - baseline["unlabeled"],
+            "delta_elements_flagged": combined["elements_flagged"] - baseline["elements_flagged"],
+            "delta_clean_elements_flagged": combined["clean_elements_flagged"] - baseline["clean_elements_flagged"],
         })
     return row
 
@@ -308,8 +318,8 @@ def default_ids(entry: dict[str, Any]) -> set[str]:
     return {pid for pid in entry["profiles"] if pid.startswith("EP-BASE-")}
 
 
-def run_variant(cache, name, profile_sel, check_filter=None, basis=None, baseline=None, n_defects=0):
-    per_suite = {s: evaluate(e, profile_sel(e), check_filter, basis) for s, e in cache.items()}
+def run_variant(cache, name, profile_sel, check_filter=None, basis=None, baseline=None, n_defects=0, obs_filter=None):
+    per_suite = {s: evaluate(e, profile_sel(e), check_filter, basis, obs_filter) for s, e in cache.items()}
     return per_suite, summarise(name, combine(per_suite), baseline, n_defects)
 
 
@@ -498,6 +508,55 @@ def experiments(cache: dict[str, Any], seed: int, resamples: int) -> dict[str, A
 
 
 # ---------------------------------------------------------------------------
+# Rule variants (CHANGE candidates) on the current swarm
+
+
+def _tier(o: dict[str, Any]) -> str | None:
+    return (o.get("measurement") or {}).get("tier")
+
+
+RULE_VARIANTS: dict[str, dict[str, Any]] = {
+    "PC-04 without critical-print-size P3": {"obs": lambda o: not (o["check_id"] == "PC-04" and _tier(o) == "critical_print_size")},
+    "PC-04 without platform-minimum P3": {"obs": lambda o: not (o["check_id"] == "PC-04" and _tier(o) == "platform_minimum" and o["severity"] == "P3")},
+    "PT-02 without one-hand 9.2 mm P3": {"obs": lambda o: not (o["check_id"] == "PT-02" and o["severity"] == "P3")},
+    "RH-01 without P3": {"obs": lambda o: not (o["check_id"] == "RH-01" and o["severity"] == "P3")},
+    "GZ-02 without P3": {"obs": lambda o: not (o["check_id"] == "GZ-02" and o["severity"] == "P3")},
+    "PT-04 profile-only findings removed": {"obs": lambda o: not (o["check_id"] == "PT-04" and ((o.get("measurement") or {}).get("baseline_miss_probability") or 0) < params.MISS_PROBABILITY_SEVERITY[-1][0])},
+    "without GZ-01, GZ-04, PC-05": {"check": lambda c: c not in ("GZ-01", "GZ-04", "PC-05")},
+    "swarm without bright_sun profiles": {"profiles": "no_bright_sun"},
+}
+
+
+def rule_variants(cache: dict[str, Any], names: Iterable[str] | None = None, lean: Iterable[str] = ()) -> list[dict[str, Any]]:
+    n_defects = sum(len(e["key"]["defects"]) for e in cache.values())
+    base_suites = {s: evaluate(e, set(e["swarm_ids"])) for s, e in cache.items()}
+    base = combine(base_suites)
+    rows = [summarise("swarm (current)", base, None, n_defects)]
+
+    def selector(kind: str | None):
+        if kind == "no_bright_sun":
+            return lambda e: {pid for pid in e["swarm_ids"] if not matches(e["profiles"][pid], "bright_sun")}
+        return lambda e: set(e["swarm_ids"])
+
+    chosen = list(names) if names else list(RULE_VARIANTS)
+    for name in chosen:
+        v = RULE_VARIANTS[name]
+        _, row = run_variant(cache, name, selector(v.get("profiles")), check_filter=v.get("check"), baseline=base, n_defects=n_defects, obs_filter=v.get("obs"))
+        rows.append(row)
+    lean = list(lean)
+    if lean:
+        obs_filters = [RULE_VARIANTS[n]["obs"] for n in lean if "obs" in RULE_VARIANTS[n]]
+        check_filters = [RULE_VARIANTS[n]["check"] for n in lean if "check" in RULE_VARIANTS[n]]
+        profile_kind = next((RULE_VARIANTS[n]["profiles"] for n in lean if "profiles" in RULE_VARIANTS[n]), None)
+        _, row = run_variant(cache, "lean: " + " + ".join(lean), selector(profile_kind),
+                             check_filter=(lambda c: all(f(c) for f in check_filters)) if check_filters else None,
+                             baseline=base, n_defects=n_defects,
+                             obs_filter=(lambda o: all(f(o) for f in obs_filters)) if obs_filters else None)
+        rows.append(row)
+    return rows
+
+
+# ---------------------------------------------------------------------------
 # Model toggles (need re-analysis on the current swarm only)
 
 
@@ -573,6 +632,10 @@ def main() -> int:
     r.add_argument("--seed", type=int, default=5)
     r.add_argument("--resamples", type=int, default=60)
     r.add_argument("--toggles", action="store_true", help="also run model toggles (re-analysis)")
+    v = sub.add_parser("variants", help="rule CHANGE candidates on the current swarm")
+    v.add_argument("--exp", type=Path, required=True)
+    v.add_argument("--out", type=Path, required=True)
+    v.add_argument("--lean", default="", help="'|'-separated variant names to combine")
     args = parser.parse_args()
     exp = args.exp.resolve()
     cache_path = exp / "pool-cache.pickle"
@@ -584,6 +647,13 @@ def main() -> int:
         return 0
     with cache_path.open("rb") as fh:
         cache = pickle.load(fh)
+    if args.cmd == "variants":
+        rows = rule_variants(cache, lean=[n for n in args.lean.split("|") if n])
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(json.dumps(_jsonable(rows), ensure_ascii=False, indent=1), encoding="utf-8")
+        for row in rows:
+            print(json.dumps({k: row.get(k) for k in ("variant", "recall_strict", "severity_agreement", "findings", "clean_control_findings", "elements_flagged", "clean_elements_flagged", "lost_strict", "gained_strict", "delta_findings", "delta_clean", "delta_clean_elements_flagged")}, ensure_ascii=False))
+        return 0
     result = experiments(cache, args.seed, args.resamples)
     if args.toggles:
         result["model_toggles"] = toggles(exp, list(cache))

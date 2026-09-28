@@ -40,6 +40,8 @@ class ReachParams:
     rho_max: float = 0.85   # d/L above -> out of reach
     th_comf: float = 80.0   # deg from 'up the grip edge' toward the far side/down
     th_max: float = 135.0
+    tablet_g_frac: float = 0.5  # [assumption] HGR-9: tablets are held near the middle of the sides
+    tablet_min_short_side_mm: float = 120.0  # body short side above this -> tablet-like (tablets, unfolded foldables)
 
 
 DEFAULT = ReachParams()
@@ -66,8 +68,16 @@ def geometry_for_device(device) -> Geometry:
     return Geometry(body_w, body_h, ox, oy, screen_w, screen_h)
 
 
+def tablet_like(geom: Geometry, p: ReachParams = DEFAULT) -> bool:
+    """Handheld tablets and unfolded foldables (HGR-9): side grips, no one-hand thumb model."""
+    return min(geom.body_w, geom.body_h) > p.tablet_min_short_side_mm
+
+
 def _pivot(geom: Geometry, p: ReachParams) -> tuple[float, float]:
-    g = min(p.g_max, max(p.g_min, p.g_frac * geom.body_h))
+    if tablet_like(geom, p):
+        g = p.tablet_g_frac * geom.body_h
+    else:
+        g = min(p.g_max, max(p.g_min, p.g_frac * geom.body_h))
     px_body = geom.body_w + p.e_x
     py_body = geom.body_h - g
     return px_body - geom.screen_x0, py_body - geom.screen_y0

@@ -130,7 +130,17 @@ Functions:
 - `focus_point` = where the user's attention/finger was at the last action (for
   feedback-noticing checks); null on the first snapshot.
 - Colours are hex; `color_bg` is the effective opaque background behind the element
-  (driver walks ancestors; null if unknown/image).
+  (driver walks ancestors; null if unknown/image). `container_bg` is the composited
+  background of the layers below the element (what its boundary is seen against).
+- Layer fields (web driver, additive): `occluded_fraction` (0–1, share of five sample
+  points inside the visible box where another element — not the element, a
+  descendant or an ancestor — is on top, e.g. a bottom sheet or scrim; null when
+  off-screen), `occluded_by` (selector of the covering element), `inert_by_modal`
+  (true when an open modal — `dialog:modal` or a visible `[aria-modal="true"]` — does
+  not contain the element). Checks skip elements that are inert or ≥ 50 % covered in
+  that snapshot; they are evaluated in the snapshots where they are usable.
+- Text elements are listed only when they own a text node, so a `<li>` whose text is
+  inside a child button does not report the child's text with its own font size.
 
 ## 4. Scenario (`ergo-scenario.v1`)
 

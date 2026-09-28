@@ -203,3 +203,19 @@ def reading_rate_for_age(age_band: str) -> int:
 
 def choice_reaction_ms_for_age(age_band: str) -> int:
     return int(CHOICE_RT_MS_BY_AGE.get(age_band, CHOICE_RT_MS_BY_AGE["30s"]))
+
+# Elements covered at >= this fraction of sample points (sheet, scrim, overlay) are
+# not evaluated in that snapshot. [policy] (adjudication 2026-09-28: wrong-state findings)
+OCCLUDED_MIN_FRACTION = 0.5
+
+# GZ-02 salience of new messages: bold or icon-led text at >= 4.5:1 counts as a salient
+# object (abrupt onsets capture attention; Yantis & Jonides 1984) [policy].
+SALIENT_TEXT_MIN_CONTRAST = 4.5
+SALIENT_ICON_CHARS = "⚠✓✔✗✕!❗ⓘ✅❌"
+# An action that removes >= 60 % of the visible elements replaced the screen; feedback
+# there is not peripheral (GZ-02 skipped). [policy]
+SCREEN_CHANGE_FRACTION = 0.6
+
+# Measured visible durations carry polling jitter (16 ms poll plus capture); a toast
+# hidden by setTimeout(4000) measured 3995 ms. [policy]
+TIMING_JITTER_MS = 50

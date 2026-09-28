@@ -43,6 +43,11 @@ CORE_TOUCH_STRATA: tuple[tuple[str, dict[str, Any]], ...] = (
     ("two_thumbs", {"grip": "two_thumbs"}),
     ("cradle", {"grip": "cradle_right"}),
 )
+TABLET_STRATA: tuple[tuple[str, dict[str, Any]], ...] = (
+    ("two_thumbs", {"handedness": "right", "grip": "two_thumbs"}),
+    ("cradle_right", {"handedness": "right", "grip": "cradle_right"}),
+    ("cradle_left", {"handedness": "left", "grip": "cradle_left"}),
+)
 CORE_POINTER_STRATA: tuple[tuple[str, dict[str, Any]], ...] = (
     ("mouse_right", {"handedness": "right", "grip": "mouse_right"}),
     ("mouse_left", {"handedness": "left", "grip": "mouse_left"}),
@@ -157,8 +162,19 @@ def _base_profile(index: int, rng: random.Random, device_id: str, input_kind: st
     return profile
 
 
+def tablet_like(device: Any) -> bool:
+    """Handheld tablets and unfolded foldables: held at the sides or set down (HGR-9)."""
+    mm = getattr(device, "physical_mm", None)
+    return bool(mm) and min(mm) > 120.0 and getattr(device, "input", "") == "touch"
+
+
 def _finalise(profile: dict[str, Any], device: Any) -> dict[str, Any]:
     attrs = profile["attributes"]
+    if tablet_like(device) and attrs["grip"].startswith("one_hand"):
+        # Nobody operates a tablet with the thumb of the holding hand: the one-hand
+        # stratum becomes "hold with one hand, tap with the other" on the same side.
+        attrs["grip"] = "cradle_left" if attrs["grip"].endswith("_left") else "cradle_right"
+        attrs["context"]["free_hands"] = 0
     grip = attrs["grip"]
     if grip in ("one_hand_right", "one_hand_left"):
         attrs["context"]["free_hands"] = 1
@@ -244,6 +260,8 @@ def coverage_plan(devices: list[Any], count: int) -> list[tuple[Any, str | None,
     plan: list[tuple[Any, str | None, dict[str, Any]]] = []
     for device in devices:
         core = CORE_TOUCH_STRATA if device.input == "touch" else CORE_POINTER_STRATA if device.input in ("mouse", "keyboard") else ()
+        if tablet_like(device):
+            core = TABLET_STRATA
         for name, overrides in core:
             plan.append((device, name, dict(overrides)))
     for index, (name, overrides) in enumerate(CONDITION_STRATA):

@@ -54,6 +54,11 @@ function startFixtureServer() {
       res.end(html);
       return;
     }
+    if (req.method === 'GET' && pathname === '/layers.html') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), 'layers.html')));
+      return;
+    }
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('not found');
   });
@@ -577,6 +582,40 @@ function deviceTableTest() {
   check('device table mirrors ergoqa.devices (ids, viewport, dpr, input, touch/mobile, descriptor)', diffs.length === 0, diffs);
 }
 
+async function layersTest(base, tmp) {
+  const sc = {
+    schema_version: 'ergo-scenario.v1',
+    scenario_id: 'SC-driver-layers-01',
+    surface: { kind: 'web', url: '{BASE}/layers.html' },
+    task_goal_ko: '모달을 연다',
+    device_ids: ['galaxy-s24'],
+    targets: {},
+    steps: [{ action: 'tap', target: '#open-modal' }],
+    success: { selector_visible: '#in-modal' },
+  };
+  writeJson(path.join(tmp, 'layers.json'), sc);
+  const outDir = path.join(tmp, 'runs');
+  const r = await runDriver(['run', '--scenario', path.join(tmp, 'layers.json'), '--profile', path.join(tmp, 'p-s24.json'),
+    '--out', outDir, '--run-id', 'R-layers', '--base', base]);
+  if (!check('layers galaxy-s24: exit 0', r.code === 0, `${r.code} ${r.err}`)) return;
+  const { run, snaps } = loadRun(path.join(outDir, 'R-layers'));
+  const s0 = snaps.get(run.snapshots[0].snapshot_id);
+  const s1 = snaps.get(run.steps[0].after);
+  const field = bySel(s0, '#wfield');
+  check('layers: opaque input on a tinted card reports the card as container_bg (#fffbe6)', field && field.container_bg === '#fffbe6', field);
+  const covered = bySel(s0, '#covered-btn');
+  check('layers: a button under a translucent cover has occluded_fraction 1 and occluded_by #cover',
+    covered && covered.occluded_fraction === 1 && covered.occluded_by === '#cover', covered);
+  const free = bySel(s0, '#behind');
+  check('layers: an uncovered button has occluded_fraction 0 and is not inert', free && free.occluded_fraction === 0 && free.inert_by_modal === false, free);
+  check('layers: <li> without its own text node is not listed; its button is (20px)',
+    !bySel(s0, '#li-owner') && bySel(s0, '#li-btn')?.font_size_px === 20, bySel(s0, '#li-owner'));
+  const behind1 = bySel(s1, '#behind');
+  const inModal = bySel(s1, '#in-modal');
+  check('layers: after showModal() the page behind is inert_by_modal and the dialog content is not',
+    behind1 && behind1.inert_by_modal === true && inModal && inModal.inert_by_modal === false, [behind1, inModal]);
+}
+
 async function main() {
   const keep = process.argv.includes('--keep');
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ergo-web-selftest-'));
@@ -621,6 +660,7 @@ async function main() {
       }
     }
 
+    await layersTest(base, tmp);
     await serveTest(base, tmp);
     await exitCodeTests(base, tmp);
   } finally {

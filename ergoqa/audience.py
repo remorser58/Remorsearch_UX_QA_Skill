@@ -314,6 +314,8 @@ def _grip_for(device: Any, orientation: str, grip_kind: str, left: bool) -> tupl
     if device.input == "touch":
         if orientation == "landscape" or grip_kind == "two_thumbs":
             return "two_thumbs", side
+        if min(getattr(device, "physical_mm", (0, 0))) > 120.0:
+            return f"cradle_{side}", side  # tablets: held with one hand, tapped with the other (HGR-9)
         return (f"cradle_{side}" if grip_kind == "cradle" else f"one_hand_{side}"), side
     if device.input == "mouse":
         return f"mouse_{side}", side

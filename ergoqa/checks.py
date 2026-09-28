@@ -15,6 +15,7 @@ Basis/epistemic mapping:
 from __future__ import annotations
 
 import math
+import re
 import zlib
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable
@@ -296,8 +297,18 @@ def _roles(element: dict[str, Any]) -> set[str]:
     return set(element.get("roles") or [])
 
 
+def _usable(element: dict[str, Any]) -> bool:
+    """Not covered by a sheet, scrim or overlay and not inert behind an open modal.
+
+    Elements under a modal are evaluated in the snapshots where they are usable;
+    judging them while covered produced wrong-state findings (adjudication 2026-09-28).
+    """
+    occluded = element.get("occluded_fraction")
+    return not element.get("inert_by_modal") and not (isinstance(occluded, (int, float)) and occluded >= params.OCCLUDED_MIN_FRACTION)
+
+
 def _visible(element: dict[str, Any]) -> bool:
-    return bool(element.get("visible", True)) and element.get("in_viewport", True) is not False
+    return bool(element.get("visible", True)) and element.get("in_viewport", True) is not False and _usable(element)
 
 
 def _present(element: dict[str, Any]) -> bool:
@@ -308,7 +319,7 @@ def _present(element: dict[str, Any]) -> bool:
     ``_visible``.
     """
     box = element.get("box") or {}
-    return bool(element.get("visible", True)) and box.get("w", 0) > 0 and box.get("h", 0) > 0
+    return bool(element.get("visible", True)) and box.get("w", 0) > 0 and box.get("h", 0) > 0 and _usable(element)
 
 
 def _escalate(severity: str, element: dict[str, Any]) -> str:
@@ -346,6 +357,8 @@ def check_reach(ctx: Context) -> list[Observation]:
         return []
     out: list[Observation] = []
     geom = reach.geometry_for_device(ctx.device)
+    if reach.tablet_like(geom) and grip.startswith("one_hand"):
+        return []  # HGR-9: nobody operates a tablet with the holding thumb; the phone model does not apply
     thumb = float(ctx.attrs.get("thumb_length_mm") or params.THUMB_LENGTH_MM["all"][0])
     for element in ctx.elements:
         roles = _roles(element)
@@ -528,7 +541,10 @@ def check_touch_accuracy(ctx: Context) -> list[Observation]:
         p_miss = 1.0 - pointing.dual_gaussian_hit_probability(rect["w"], rect["h"], k)
         severity = _miss_severity(p_base)
         if k > 1.0 and small:
-            severity = _worse(severity, _cap(_miss_severity(p_miss), "P2"))
+            # Profile inflation is an assumption: P2 only for the primary action or a
+            # control the task actually used; otherwise P3 (MP-02, adjudication 2026-09-28).
+            cap = "P2" if ("primary" in roles or element.get("id") in ctx.path_element_ids) else "P3"
+            severity = _worse(severity, _cap(_miss_severity(p_miss), cap))
         out.append(Observation(
             "PT-04", ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
             [element["id"]], element_key(element),
@@ -588,6 +604,18 @@ def check_pointer_separation(ctx: Context) -> list[Observation]:
     return out
 
 
+def _tap_count(run: dict[str, Any], element: dict[str, Any]) -> int:
+    sel = element.get("selector")
+    count = 0
+    for step in run.get("steps", []):
+        action = step.get("action") or {}
+        if action.get("action") not in ("tap", "click", "double_tap", "long_press"):
+            continue
+        if step.get("target_element_id") == element.get("id") or (sel and action.get("target") == sel):
+            count += 1
+    return count
+
+
 def check_game_controls(ctx: Context) -> list[Observation]:
     """GM-05: touch game controls below platform size or flush to the screen edge (HGR-11)."""
     if not ctx.is_touch:
@@ -604,10 +632,12 @@ def check_game_controls(ctx: Context) -> list[Observation]:
         edge_mm = _point_mm(ctx, max(0.0, edge_css), 0)[0]
         severity = None
         reasons = []
+        serial = _tap_count(ctx.run, element) >= 2 or "timed" in _roles(element)
         if side < params.TOUCH_TARGET_MIN_MM:
             severity = "P2"
             reasons.append(f"{side:.1f}mm < 44pt(약 {params.TOUCH_TARGET_MIN_MM}mm)")
-        elif side < params.TOUCH_TARGET_SERIAL_MM:
+        elif side < params.TOUCH_TARGET_SERIAL_MM and serial:
+            # Parhi's 9.6 mm is for serial thumb tapping; an occasional control (pause) is not serial.
             severity = "P3"
             reasons.append(f"{side:.1f}mm < 연속 입력 권장 {params.TOUCH_TARGET_SERIAL_MM}mm")
         if 0 <= edge_mm < params.GAME_CONTROL_EDGE_MIN_MM:
@@ -663,6 +693,8 @@ def _gaze_kind(ctx: Context) -> str:
 def _priorities(ctx: Context) -> dict[str, float]:
     enriched = []
     for e in ctx.elements:
+        if not _usable(e):
+            continue
         item = dict(e)
         fg, bg = perception.parse_color(e.get("color_fg")), perception.parse_color(e.get("color_bg"))
         if fg and bg:
@@ -701,8 +733,31 @@ def _salient_change(ctx: Context, element: dict[str, Any], new: bool) -> tuple[b
         contrast = perception.contrast_ratio(bg, container)
     elif fg and bg:
         contrast = perception.contrast_ratio(fg, bg)
-    salient = new and size_deg >= params.SALIENT_CHANGE_MIN_DEG and contrast >= params.SALIENT_CHANGE_MIN_CONTRAST
-    return salient, {"size_deg": round(size_deg, 2), "contrast": round(contrast, 2), "new_object": new}
+    # A new message whose own text stands out (bold or with a warning/status icon, and
+    # at least 4.5:1) is a salient object even when its box barely differs from the page.
+    text = (element.get("text") or "").strip()
+    text_contrast = perception.contrast_ratio(fg, bg) if fg and bg else 1.0
+    emphatic = (element.get("font_weight") or 400) >= 600 or text[:1] in params.SALIENT_ICON_CHARS
+    text_salient = text_contrast >= params.SALIENT_TEXT_MIN_CONTRAST and emphatic
+    salient = new and size_deg >= params.SALIENT_CHANGE_MIN_DEG and (contrast >= params.SALIENT_CHANGE_MIN_CONTRAST or text_salient)
+    return salient, {"size_deg": round(size_deg, 2), "contrast": round(contrast, 2), "text_contrast": round(text_contrast, 2),
+                     "text_salient": text_salient, "new_object": new}
+
+
+def _screen_changed(previous: dict[str, Any] | None, current: dict[str, Any]) -> bool:
+    """True when an action replaced the screen (navigation or a full re-render).
+
+    Feedback on a new screen is where the user re-orients, not a peripheral change.
+    """
+    if previous is None:
+        return False
+    if (previous.get("surface") or {}).get("url") != (current.get("surface") or {}).get("url"):
+        return True
+    before = {e.get("selector") or e.get("id") for e in previous.get("elements", []) if _visible(e)}
+    after = {e.get("selector") or e.get("id") for e in current.get("elements", []) if _visible(e)}
+    if not before:
+        return False
+    return len(before - after) / len(before) >= params.SCREEN_CHANGE_FRACTION
 
 
 def check_gaze(ctx: Context) -> list[Observation]:
@@ -724,7 +779,7 @@ def check_gaze(ctx: Context) -> list[Observation]:
     mm_px = mm_per_css_px(ctx.device, "x")
     viewing = _viewing_distance(ctx)
     centres = {e["id"]: pointing.centre(e["box"]) for e in ctx.elements if e["id"] in priorities}
-    visible_primary = [e for e in ctx.elements if "primary" in _roles(e) and _visible(e) and e["id"] in priorities]
+    visible_primary = [e for e in ctx.elements if "primary" in _roles(e) and _visible(e) and e.get("enabled", True) and e["id"] in priorities]
     if visible_primary:
         cache_key = (ctx.snapshot.get("snapshot_id"), ctx.run.get("run_id"), round(viewing), round(start[0], 1), round(start[1], 1), round(mm_px, 5))
         probs = _FIXATION_CACHE.get(cache_key)
@@ -757,12 +812,13 @@ def check_gaze(ctx: Context) -> list[Observation]:
                 gaze.MODEL_ID,
             ))
     # GZ-02: feedback noticing after an action (change blindness + thumb occlusion).
-    if ctx.previous is not None and focus:
+    if ctx.previous is not None and focus and not _screen_changed(ctx.previous, ctx.snapshot):
         before = {e.get("selector") or e.get("id"): e for e in ctx.previous.get("elements", []) if _visible(e)}
         scale = _notice_scale(ctx)
         grip = ctx.attrs.get("grip", "")
         geom = reach.geometry_for_device(ctx.device) if ctx.is_touch else None
         thumb = float(ctx.attrs.get("thumb_length_mm") or params.THUMB_LENGTH_MM["all"][0])
+        feedback = []
         for element in ctx.elements:
             roles = _roles(element)
             is_feedback = roles & {"error_message", "critical_message", "status"} or element.get("role") in ("alert", "status")
@@ -780,12 +836,21 @@ def check_gaze(ctx: Context) -> list[Observation]:
             occluded = False
             if geom is not None and grip.startswith("one_hand"):
                 occluded = reach.occluded_by_thumb(_point_mm(ctx, focus["x"], focus["y"]), _point_mm(ctx, *centre_css), geom, grip, thumb, params.OCCLUSION_WEDGE_DEG)
+            feedback.append((element, roles, prior, theta, salient, sal, band, occluded))
+        # Redundant feedback: when another new, salient message appears where the user is
+        # looking (likely noticed, not occluded), a far secondary label is not missed feedback.
+        noticed = [f for f in feedback if f[6] == "likely" and f[4] and not f[7]]
+        for element, roles, prior, theta, salient, sal, band, occluded in feedback:
             critical = bool(roles & {"error_message", "critical_message"}) or element.get("role") == "alert"
+            redundant = any(n[0] is not element for n in noticed)
             severity = None
-            if band == "likely_missed" or occluded:
+            if redundant:
+                severity = None
+            elif band == "likely_missed" or occluded:
                 severity = "P2" if critical else "P3"
             elif band == "uncertain" and critical:
                 severity = "P3"
+            sal = {**sal, "redundant_with_noticed_feedback": redundant}
             out.append(Observation(
                 "GZ-02", *base, [element["id"]], element_key(element),
                 {"name": "feedback_eccentricity_deg", "value": round(theta, 1), "unit": "deg", "threshold": params.NOTICE_BANDS_DEG["salient" if salient else "non_salient"],
@@ -860,8 +925,12 @@ def check_contrast(ctx: Context) -> list[Observation]:
     for element in _interactive(ctx, whole_page=True):
         tag = element.get("tag")
         role = element.get("role")
-        form_control = tag in ("input", "select", "textarea") or role in ("checkbox", "switch", "radio", "slider", "textbox", "combobox", "searchbox", "spinbutton")
-        icon_only = tag in ("button", "a") and not (element.get("text") or "").strip()
+        labelled = bool((element.get("text") or "").strip())
+        native = tag in ("input", "select", "textarea")
+        # A text-labelled custom radio/checkbox card is identified by its text; WCAG 1.4.11
+        # then concerns the state indicator, not the card outline (adjudication 2026-09-28).
+        form_control = native or (role in ("checkbox", "switch", "radio", "slider", "textbox", "combobox", "searchbox", "spinbutton") and not labelled)
+        icon_only = tag in ("button", "a") and not labelled
         if not (form_control or icon_only):
             continue  # WCAG 1.4.11 does not require a boundary when text identifies the control
         border = perception.parse_color(element.get("border_color"))
@@ -890,13 +959,15 @@ def check_contrast(ctx: Context) -> list[Observation]:
 STATE_WORDS = (
     "가능", "불가", "마감", "매진", "완료", "실패", "성공", "오류", "에러", "정상", "위험", "경고", "주의",
     "선택됨", "사용 중", "품절", "예약됨", "비활성", "활성", "없음", "있음", "아군", "적군",
+    "입금", "출금", "승인", "취소", "거절", "대기", "진행 중", "만료",
     "available", "full", "sold out", "error", "success", "warning", "ok", "fail", "done", "✓", "✔", "✕", "✗", "!",
 )
+_SIGNED_AMOUNT = re.compile(r"(^|\s)[+\-−]\s?\d")
 
 
 def _state_cue(text: str) -> bool:
     lower = text.lower()
-    return any(word in lower for word in STATE_WORDS)
+    return any(word in lower for word in STATE_WORDS) or bool(_SIGNED_AMOUNT.search(text))
 
 
 def _colour_groups(ctx: Context) -> list[list[dict[str, Any]]]:
@@ -1011,7 +1082,8 @@ def check_text_size(ctx: Context) -> list[Observation]:
             continue
         if angle < params.TEXT_FLOOR_ARCMIN:
             severity, threshold, tier = ("P1" if critical and _roles(element) & {"error_message", "critical_message"} else "P2"), params.TEXT_FLOOR_ARCMIN, "floor"
-        elif angle < comfortable and not hud and len(text) >= params.BODY_TEXT_MIN_CHARS:
+        elif (angle < comfortable and not hud and len(text) >= params.BODY_TEXT_MIN_CHARS
+              and not element.get("interactive") and element.get("role") not in ("heading", "button", "link")):
             # Critical print size concerns reading speed of continuous text, not labels.
             severity, threshold, tier = "P3", comfortable, "critical_print_size"
         else:
@@ -1036,11 +1108,17 @@ def check_choice_overload(ctx: Context) -> list[Observation]:
     groups: dict[tuple, list[dict[str, Any]]] = {}
     for element in _interactive(ctx):
         box = element["box"]
-        key = (element.get("tag"), element.get("role"), round(box["w"] / 8), round(box["h"] / 8), element.get("font_weight"))
+        # Same look, not just a similar size: unrelated controls (a back chevron, date
+        # chips and a stepper) were merged by size buckets alone (adjudication 2026-09-28).
+        key = (element.get("tag"), element.get("role"), round(box["w"] / 8), round(box["h"] / 8), element.get("font_weight"),
+               element.get("font_size_px"), element.get("color_bg"), element.get("border_color"))
         groups.setdefault(key, []).append(element)
     for members in groups.values():
         if len(members) <= params.CHOICE_OVERLOAD_MAX:
             continue
+        labels = [(m.get("text") or m.get("name") or "").strip() for m in members]
+        if sum(1 for t in labels if len(t) == 1 and t.isdigit()) >= 8:
+            continue  # a numeric keypad: recall of a known code, not a choice among options
         decision_ms = cognition.hick_hyman_ms(len(members))
         out.append(Observation(
             "CG-01", ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
@@ -1066,6 +1144,13 @@ def check_run_timing(run: dict[str, Any], profile: dict[str, Any], device: Any, 
         latency = step.get("feedback_latency_ms")
         band = cognition.latency_band(latency)
         target_id = step.get("target_element_id") or ""
+        before_snap = snapshots.get(step.get("before") or "", {})
+        before_target = next((e for e in before_snap.get("elements", []) if e.get("id") == target_id), None)
+        if before_target is not None and (before_target.get("enabled") is False or before_target.get("visible") is False or not _usable(before_target)):
+            continue  # the target was not actionable (closed timed prompt, disabled, covered): no feedback is expected
+        target_roles = set((before_target or {}).get("roles") or [])
+        if band == "no_feedback" and _window_closed_at(run, (step.get("action") or {}).get("target"), step.get("t_start_ms"), target_roles):
+            continue  # the tap came after the timed prompt closed: silence is the game's correct response
         after = snapshots.get(step.get("after") or "", {})
         target = next((e for e in after.get("elements", []) if e.get("id") == target_id), None)
         key = element_key(target) if target else f"{target_id}|{(step.get('action') or {}).get('target', '')}"
@@ -1132,7 +1217,7 @@ def check_run_timing(run: dict[str, Any], profile: dict[str, Any], device: Any, 
             text = declared.get("text") or measured.get("text") or ""
             has_action = bool(declared.get("has_action") or measured.get("has_action"))
             need = cognition.min_display_ms(text, reading_rate) if text else params.TOAST_FLOOR_MS
-            failed = shortest < need or has_action
+            failed = shortest + params.TIMING_JITTER_MS < need or has_action
             severity = ("P1" if has_action else "P2") if failed else None
             out.append(Observation(
                 "CG-02", run_id, pid, None, None, [], key,
@@ -1188,6 +1273,30 @@ def check_run_timing(run: dict[str, Any], profile: dict[str, Any], device: Any, 
             {"agent": run.get("agent", {})},
         ))
     return out
+
+
+def _window_closed_at(run: dict[str, Any], target: Any, t_ms: Any, target_roles: set[str] | None = None) -> bool:
+    """True when the timed prompt the tap answered had already closed at ``t_ms``.
+
+    A window matches the tap when it is bound to the same selector, or when the target
+    is a timed/game control and the window is a QTE.
+    """
+    if not isinstance(target, str) or not isinstance(t_ms, (int, float)):
+        return False
+    timed_target = bool((target_roles or set()) & {"timed", "game_control"})
+    matched = False
+    for w in run.get("timing_windows", []):
+        bound = w.get("selector") == target or w.get("id") == target or f"hotspot:{w.get('id')}" == target
+        if not (bound or (timed_target and w.get("kind") == "qte")):
+            continue
+        starts = w.get("starts_ms") or []
+        durations = w.get("intervals_ms") or ([w["visible_ms"]] if isinstance(w.get("visible_ms"), (int, float)) else [])
+        if not starts or not durations:
+            continue
+        matched = True
+        if any(s <= t_ms <= s + d for s, d in zip(starts, durations)):
+            return False
+    return matched
 
 
 def _element_for_selector(snapshots: dict[str, dict[str, Any]], selector: str | None) -> dict[str, Any] | None:
