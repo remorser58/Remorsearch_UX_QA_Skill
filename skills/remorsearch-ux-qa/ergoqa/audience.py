@@ -48,6 +48,28 @@ SOURCE_TYPES = (
 # its size (references/research/source-grading.md, packaging session design).
 EXISTENCE_ONLY_TYPES = ("community", "app_store_reviews", "news")
 EVIDENCE_KINDS = ("firsthand", "statistic", "official", "inference")
+# How the quote was read: the page itself, a document the team supplied, or only a
+# search-result snippet (the page could not be opened). Snippet quotes are listed as
+# unverified in the plan and must be checked before anyone relies on them.
+QUOTE_BASIS = ("page", "document", "snippet")
+
+
+def quote_basis_kind(value: Any) -> str | None:
+    """Normalise ``quote_basis``: the enum values, or free text classified
+    conservatively (anything that is not clearly a page or a full document read
+    counts as a snippet)."""
+    if value is None:
+        return None
+    text = str(value).strip().lower()
+    if text in QUOTE_BASIS:
+        return text
+    if any(w in text for w in ("snippet", "search", "extract", "excerpt", "headline", "title")):
+        return "snippet"
+    if "document" in text or "read in full" in text or "pdf" in text:
+        return "document"
+    if "page" in text:
+        return "page"
+    return "snippet"
 FREQUENCIES = ("daily", "weekly", "monthly", "rare", "once")
 CRITICALITY = ("safety", "health", "money", "legal", "data", "access", "convenience")
 STAKES = ("high", "normal")
@@ -211,6 +233,8 @@ def validate_audience(doc: Any) -> list[str]:
                     errors.append(f"{where}.evidence[{j}].quote must quote the source's number for statistic evidence")
                 elif ev["kind"] == "official" and not str(ev.get("quote") or "").strip():
                     errors.append(f"{where}.evidence[{j}].quote must quote the official text")
+                if ev.get("quote_basis") is not None and (not isinstance(ev["quote_basis"], str) or not ev["quote_basis"].strip()):
+                    errors.append(f"{where}.evidence[{j}].quote_basis must be a non-empty string ({', '.join(QUOTE_BASIS)} or a description)")
                 refs_ok([ev.get("source_id")], f"{where}.evidence[{j}].source_id")
                 if ev.get("kind") == "statistic" and existence_only([ev.get("source_id")]):
                     errors.append(f"{where}.evidence[{j}] is a statistic from a community, review or news source; record it as firsthand (existence only)")
@@ -491,6 +515,19 @@ def _input_kind(device_id: str) -> str:
     return "pointer" if kind in ("mouse", "keyboard") else kind
 
 
+HANDHELD_FORM_FACTORS = ("phone", "foldable")
+
+
+def _kind_ok(device_id: str, kind: str | None) -> bool:
+    """Whether a device fits a floor's requirement: an input kind, or ``handheld``
+    (walking is only plausible with a phone in the hand, not a tablet on a stand)."""
+    if kind is None:
+        return True
+    if kind == "handheld":
+        return get_device(device_id).form_factor in HANDHELD_FORM_FACTORS
+    return _input_kind(device_id) == kind
+
+
 def _is_left(profile: dict[str, Any]) -> bool:
     a = profile["attributes"]
     return a["grip"] in ("one_hand_left", "cradle_left", "mouse_left") or (a["grip"] == "two_thumbs" and a["handedness"] == "left")
@@ -513,15 +550,15 @@ def _floor_requirements(floor_list: list[str], segments: list[dict[str, Any]]) -
         if floor == "left_hand":
             reqs += [(floor, kind) for kind in kinds]
         elif floor == "walking":
-            if "touch" in kinds:
-                reqs.append((floor, "touch"))  # walking only changes handheld touch use
+            if any(_kind_ok(d, "handheld") for s in segments for d in s["devices"]):
+                reqs.append((floor, "handheld"))  # walking only changes handheld touch use
         else:
             reqs.append((floor, None))
     return reqs
 
 
 def _floor_met(floor: str, kind: str | None, profiles: list[dict[str, Any]]) -> bool:
-    pool = [p for p in profiles if kind is None or _input_kind(p["attributes"]["device_id"]) == kind]
+    pool = [p for p in profiles if _kind_ok(p["attributes"]["device_id"], kind)]
     if floor == "left_hand":
         return any(_is_left(p) for p in pool)
     if floor == "walking":
@@ -531,7 +568,7 @@ def _floor_met(floor: str, kind: str | None, profiles: list[dict[str, Any]]) -> 
 
 def _floor_segment(floor: str, kind: str | None, segments: list[dict[str, Any]], weights: dict[str, float]) -> tuple[dict[str, Any], str]:
     """The segment where a floor is most plausible, and its top device of the needed input kind."""
-    users = [s for s in segments if kind is None or any(_input_kind(d) == kind for d in s["devices"])] or segments
+    users = [s for s in segments if any(_kind_ok(d, kind) for d in s["devices"])] or segments
 
     def share_of(s: dict[str, Any], bands: tuple[str, ...]) -> float:
         ages = s.get("age_bands") or {}
@@ -549,8 +586,8 @@ def _floor_segment(floor: str, kind: str | None, segments: list[dict[str, Any]],
         seg = max(users, key=lambda s: (left_share(s) * weights[s["segment_id"]], weights[s["segment_id"]]))
     else:
         seg = max(users, key=lambda s: weights[s["segment_id"]])
-    devices = [d for d in sorted(seg["devices"], key=lambda d: -seg["devices"][d]) if kind is None or _input_kind(d) == kind]
-    return seg, devices[0]
+    devices = [d for d in sorted(seg["devices"], key=lambda d: -seg["devices"][d]) if _kind_ok(d, kind)]
+    return seg, (devices or sorted(seg["devices"], key=lambda d: -seg["devices"][d]))[0]
 
 
 def _segment_state(seg: dict[str, Any]) -> dict[str, Any]:
@@ -636,7 +673,7 @@ def compose(audience: dict[str, Any], budget: int, floors: Iterable[str] | None 
         same = next((f for f in queue if (floor == "left_hand" and f["kind"] == "left_mirror")
                      or (floor == "walking" and f["kind"] == "context" and f["context"].get("mobility") == "walking")
                      or f.get("condition") == floor), None)
-        if same is not None and (kind is None or _input_kind(state[seg["segment_id"]]["top_device"]) == kind):
+        if same is not None and _kind_ok(state[seg["segment_id"]]["top_device"], kind):
             # The segment's own facet satisfies the floor: use it (evidence-backed) instead of a floor-only profile.
             queue.remove(same)
             add(seg, same)
@@ -677,6 +714,8 @@ def scenario_stubs(audience: dict[str, Any]) -> list[dict[str, Any]]:
         raise AudienceError("; ".join(errors))
     by_task: dict[str, dict[str, Any]] = {}
     for seg in audience["segments"]:
+        if seg.get("role", "operator") != "operator":
+            continue  # buyers and people served by staff do not operate the product
         for task in seg.get("tasks") or []:
             entry = by_task.setdefault(task["task_id"], {"task": task, "segments": [], "devices": set()})
             entry["segments"].append(seg["segment_id"])
@@ -719,6 +758,13 @@ def plan_markdown(plan: dict[str, Any], audience: dict[str, Any]) -> str:
     for p in plan["profiles"]:
         ref = p["audience_ref"]
         lines.append(f"| {p['profile_id']} | {p['label_ko']} | {p['attributes']['device_id']} | {'; '.join(ref['reasons'])} | {', '.join(ref['source_ids']) or '-'} |")
+    snippets = [ev for s in audience["segments"] for ev in s.get("evidence") or [] if quote_basis_kind(ev.get("quote_basis")) == "snippet"]
+    if snippets:
+        lines += ["", f"주의: 증거 {len(snippets)}건은 원문을 열지 못하고 검색 결과 발췌로만 인용했습니다(quote_basis=snippet). 원문으로 확인하기 전에는 근거로 쓰지 마세요."]
+    unrecorded = [ev for s in audience["segments"] for ev in s.get("evidence") or []
+                  if ev.get("kind") in ("statistic", "official", "firsthand") and not ev.get("quote_basis")]
+    if unrecorded:
+        lines += ["", f"주의: 인용 증거 {len(unrecorded)}건은 원문을 읽었는지(quote_basis)가 기록되지 않았습니다."]
     if plan["untested"]:
         lines += ["", "## 예산 밖이라 시험하지 않은 조건", ""]
         for u in plan["untested"]:

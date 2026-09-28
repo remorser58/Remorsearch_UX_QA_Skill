@@ -77,6 +77,13 @@ Rules:
   apart. An inference never becomes a statistic by repetition.
 - Record access dates. Community sources keep their access basis and public
   scope, as in the evidence-bundle contract.
+- Record how each quote was read in `evidence[].quote_basis`: `page` (the page
+  itself), `document` (a file read in full) or `snippet` (only a search-result
+  excerpt, because the page could not be opened). Snippet quotes are listed as
+  unverified in the persona plan; check them against the source before anyone
+  relies on them.
+- Community, app-store review and news sources support existence only: never a
+  share and never `statistic` evidence (`audience-check` rejects both).
 - Synthetic personas and LLM output are **never** sources for the audience file.
 
 ## Workflow
@@ -106,6 +113,9 @@ See spec section 13 for the exact rules.
   a minority condition, the left-hand mirror, another device, a context, first
   use, another age band or another grip. Changing one thing at a time keeps
   "which condition caused this finding" answerable.
+- The walking floor attaches only to a handheld device (phone or foldable); a
+  tablet on a counter stand is never "walking". Scenario stubs are written only
+  for segments that operate the product.
 - **Inclusive floors** are coverage guarantees for conditions whose removal
   lost unique defects in at least two of the three development suites: a
   left-hand profile per input kind, deuteranomaly, presbyopia, and walking (touch

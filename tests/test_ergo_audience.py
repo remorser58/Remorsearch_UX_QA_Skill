@@ -159,6 +159,37 @@ class ResearchRules(unittest.TestCase):
         doc["sources"][-1]["bundle_ref"] = ""
         self.assertTrue(any("bundle_ref must be a non-empty string" in e for e in audience.validate_audience(doc)))
 
+    def test_walking_floor_only_on_handheld_devices(self) -> None:
+        doc = load()
+        for seg in doc["segments"]:
+            seg["devices"] = {"galaxy-tab-s9": 1.0}
+            for c in seg.get("contexts") or []:
+                c["mobility"] = "standing"
+        plan = audience.compose(doc, 8)
+        self.assertFalse(any(p["attributes"]["context"]["mobility"] == "walking" for p in plan["profiles"]))
+        self.assertFalse(any(f["floor"] == "walking" for f in plan["floors_used"]))
+        doc["segments"][2]["devices"] = {"galaxy-tab-s9": 0.5, "galaxy-s24": 0.5}
+        plan = audience.compose(doc, 16)
+        walkers = [p for p in plan["profiles"] if p["attributes"]["context"]["mobility"] == "walking"]
+        self.assertTrue(walkers)
+        self.assertTrue(all(p["attributes"]["device_id"] == "galaxy-s24" for p in walkers))
+
+    def test_stubs_only_for_operators_and_quote_basis(self) -> None:
+        doc = load()
+        payer = {**copy.deepcopy(doc["segments"][1]), "segment_id": "SEG-payer", "name_ko": "보호자(결제만)", "role": "customer"}
+        payer["tasks"] = [{**copy.deepcopy(doc["segments"][1]["tasks"][0]), "task_id": "T-pay-only"}]
+        doc["segments"].append(payer)
+        self.assertNotIn("SC-T-pay-only", {s["scenario_id"] for s in audience.scenario_stubs(doc)})
+        doc["segments"][0]["evidence"][0]["quote_basis"] = ""
+        self.assertTrue(any("quote_basis must be a non-empty string" in e for e in audience.validate_audience(doc)))
+        self.assertEqual(audience.quote_basis_kind("search tool's extract of the page (may paraphrase)"), "snippet")
+        self.assertEqual(audience.quote_basis_kind("document (read in full)"), "document")
+        self.assertEqual(audience.quote_basis_kind("page"), "page")
+        doc["segments"][0]["evidence"][0]["quote_basis"] = "snippet"
+        self.assertEqual(audience.validate_audience(doc), [])
+        text = audience.plan_markdown(audience.compose(doc, 4), doc)
+        self.assertIn("quote_basis=snippet", text)
+
     def test_age_facet_does_not_switch_presbyopia(self) -> None:
         plan = audience.compose(load(), 16)
         base = next(p for p in plan["profiles"] if p["audience_ref"]["segment_id"] == "SEG-commuter" and p["audience_ref"]["facet"] == "typical")
