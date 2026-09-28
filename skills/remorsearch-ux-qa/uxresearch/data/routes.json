@@ -1,0 +1,267 @@
+{
+  "schema_version": "ux-research-routes.v1",
+  "version": "2026-09-28.1",
+  "note": "The only place platform names appear in the reader. Every entry is unverified (verified_at null) until a manual live check and a human review; an unverified route that fails simply falls through to the next rung. hosts: exact names or '*.suffix'. path: a regular expression on the URL path; its named groups become template variables, and query parameters are available as {q_<name>}. Other template variables: {scheme} {host} {port_suffix} {path} {query} {url_enc}, and {key} for a user key read from the environment variable named in 'env' (the value is never stored or logged). official: kind 'feed' (scope 'item' keeps only the entry that links to the page; scope 'all' keeps every entry, such as a thread or review feed), 'oembed', or 'api' (documented here, used by a later phase). alternates: the site's own mobile or AMP twins. author_from: subdomain | path_segment | page. login_hosts: a redirect there is an auth_gate stop. Verify every note live before relying on it.",
+  "platforms": [
+    {
+      "id": "naver-blog",
+      "hosts": ["blog.naver.com", "m.blog.naver.com"],
+      "platform_family": "blog",
+      "path": "^/(?P<author>[A-Za-z0-9_-]{1,40})/(?P<post>[0-9]{1,20})/?$",
+      "author_from": "path_segment",
+      "official": [
+        {"kind": "feed", "scope": "item", "url": "https://rss.blog.naver.com/{author}.xml", "auth": "none"}
+      ],
+      "alternates": [{"kind": "mobile", "url": "https://m.blog.naver.com/{author}/{post}"}],
+      "login_hosts": ["nid.naver.com"],
+      "terms_note": "Public posts only. The desktop page is a frame shell; the mobile twin carries the text. Comments load separately and need a render.",
+      "verified_at": null
+    },
+    {
+      "id": "naver-blog-postview",
+      "hosts": ["blog.naver.com", "m.blog.naver.com"],
+      "platform_family": "blog",
+      "path": "^/PostView\\.(naver|nhn)$",
+      "author_from": "page",
+      "official": [
+        {"kind": "feed", "scope": "item", "url": "https://rss.blog.naver.com/{q_blogId}.xml", "auth": "none"}
+      ],
+      "alternates": [{"kind": "mobile", "url": "https://m.blog.naver.com/{q_blogId}/{q_logNo}"}],
+      "login_hosts": ["nid.naver.com"],
+      "terms_note": "Older post URL form with blogId and logNo query parameters.",
+      "verified_at": null
+    },
+    {
+      "id": "naver-cafe",
+      "hosts": ["cafe.naver.com", "m.cafe.naver.com"],
+      "platform_family": "community",
+      "path": "^/(?P<cafe>[A-Za-z0-9_-]{1,40})/(?P<article>[0-9]{1,20})/?$",
+      "author_from": "page",
+      "official": [],
+      "alternates": [{"kind": "mobile", "url": "https://m.cafe.naver.com/{cafe}/{article}"}],
+      "login_hosts": ["nid.naver.com"],
+      "terms_note": "Public boards only. A member-only board is an auth_gate coverage gap; never capture it from a signed-in browser.",
+      "verified_at": null
+    },
+    {
+      "id": "naver-kin",
+      "hosts": ["kin.naver.com", "m.kin.naver.com"],
+      "platform_family": "qna",
+      "path": "^/qna/detail\\.naver$",
+      "author_from": "page",
+      "official": [],
+      "alternates": [{"kind": "mobile", "url": "https://m.kin.naver.com/qna/detail.naver?{query}"}],
+      "login_hosts": ["nid.naver.com"],
+      "terms_note": "Question and answers on one page; answerer names must be scrubbed.",
+      "verified_at": null
+    },
+    {
+      "id": "tistory",
+      "hosts": ["*.tistory.com"],
+      "platform_family": "blog",
+      "path": "^/(?P<post>[0-9]{1,12})/?$",
+      "author_from": "subdomain",
+      "official": [
+        {"kind": "feed", "scope": "item", "url": "https://{host}/rss", "auth": "none"}
+      ],
+      "alternates": [{"kind": "mobile", "url": "https://{host}/m/{post}"}],
+      "login_hosts": [],
+      "terms_note": "Each subdomain is a separate author. The feed holds recent posts only.",
+      "verified_at": null
+    },
+    {
+      "id": "dcinside",
+      "hosts": ["gall.dcinside.com"],
+      "platform_family": "community",
+      "path": "^/(mgallery/|mini/)?board/view/?$",
+      "author_from": "page",
+      "official": [],
+      "alternates": [{"kind": "mobile", "url": "https://m.dcinside.com/board/{q_id}/{q_no}"}],
+      "login_hosts": [],
+      "terms_note": "Anonymous posters show partial IP addresses; they are scrubbed. Count anonymous replies per thread.",
+      "verified_at": null
+    },
+    {
+      "id": "ppomppu",
+      "hosts": ["www.ppomppu.co.kr", "ppomppu.co.kr"],
+      "platform_family": "community",
+      "path": "^/zboard/view\\.php$",
+      "author_from": "page",
+      "official": [],
+      "alternates": [{"kind": "mobile", "url": "https://m.ppomppu.co.kr/new/bbs_view.php?id={q_id}&no={q_no}"}],
+      "login_hosts": [],
+      "terms_note": "Deal boards mix promotion and experience; check promotion markers.",
+      "verified_at": null
+    },
+    {
+      "id": "ruliweb",
+      "hosts": ["bbs.ruliweb.com"],
+      "platform_family": "community",
+      "path": "^/(?P<rest>[A-Za-z0-9_/-]{1,120}/read/[0-9]{1,12})/?$",
+      "author_from": "page",
+      "official": [],
+      "alternates": [{"kind": "mobile", "url": "https://m.ruliweb.com/{rest}"}],
+      "login_hosts": [],
+      "terms_note": "Mobile twin keeps the board path.",
+      "verified_at": null
+    },
+    {
+      "id": "fmkorea",
+      "hosts": ["www.fmkorea.com", "fmkorea.com"],
+      "platform_family": "community",
+      "path": "^/(?P<post>[0-9]{1,12})/?$",
+      "author_from": "page",
+      "official": [],
+      "alternates": [{"kind": "mobile", "url": "https://m.fmkorea.com/{post}"}],
+      "login_hosts": [],
+      "terms_note": "Often behind a bot filter; expect unread results that need a render.",
+      "verified_at": null
+    },
+    {
+      "id": "clien",
+      "hosts": ["www.clien.net", "clien.net"],
+      "platform_family": "community",
+      "author_from": "page",
+      "official": [],
+      "alternates": [],
+      "login_hosts": [],
+      "terms_note": "No known twin; use a render (R3) when the plain read fails.",
+      "verified_at": null
+    },
+    {
+      "id": "theqoo",
+      "hosts": ["theqoo.net", "www.theqoo.net"],
+      "platform_family": "community",
+      "author_from": "page",
+      "official": [],
+      "alternates": [],
+      "login_hosts": [],
+      "terms_note": "No known twin; use a render (R3) when the plain read fails. Some boards are member-only.",
+      "verified_at": null
+    },
+    {
+      "id": "youtube",
+      "hosts": ["www.youtube.com", "youtube.com", "m.youtube.com"],
+      "platform_family": "video",
+      "path": "^/watch$",
+      "author_from": "page",
+      "official": [
+        {"kind": "api", "doc": "YouTube Data API v3 commentThreads.list", "auth": "user_key", "env": "YOUTUBE_API_KEY",
+         "url": "https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&maxResults=50&textFormat=plainText&videoId={q_v}&key={key}"}
+      ],
+      "alternates": [],
+      "login_hosts": ["accounts.google.com"],
+      "terms_note": "Comments need the Data API with the user's own key, or a render, which cannot expand replies without clicks.",
+      "verified_at": null
+    },
+    {
+      "id": "app-store",
+      "hosts": ["apps.apple.com"],
+      "platform_family": "app_store_reviews",
+      "path": "^/(?P<country>[a-z]{2})/app/(?:[^/]{1,200}/)?id(?P<app>[0-9]{5,12})/?$",
+      "author_from": "page",
+      "official": [
+        {"kind": "feed", "scope": "all", "auth": "none",
+         "url": "https://itunes.apple.com/{country}/rss/customerreviews/page=1/id={app}/sortby=mostrecent/xml"}
+      ],
+      "alternates": [],
+      "login_hosts": [],
+      "terms_note": "The public reviews feed returns recent reviews for one country.",
+      "verified_at": null
+    },
+    {
+      "id": "google-play",
+      "hosts": ["play.google.com"],
+      "platform_family": "app_store_reviews",
+      "author_from": "page",
+      "official": [],
+      "alternates": [],
+      "login_hosts": ["accounts.google.com"],
+      "terms_note": "Reviews sit behind clicks; a render shows only the first few. Prefer the team's own Play Console export (team_provided).",
+      "verified_at": null
+    },
+    {
+      "id": "reddit",
+      "hosts": ["www.reddit.com", "reddit.com", "old.reddit.com"],
+      "platform_family": "community",
+      "path": "^/r/(?P<sub>[A-Za-z0-9_]{1,40})/comments/(?P<id>[a-z0-9]{1,12})(?:/(?P<slug>[^/]{0,200}))?/?$",
+      "author_from": "page",
+      "official": [
+        {"kind": "feed", "scope": "all", "url": "https://www.reddit.com/r/{sub}/comments/{id}/.rss", "auth": "none"}
+      ],
+      "alternates": [],
+      "login_hosts": [],
+      "terms_note": "The thread feed carries the post and top comments.",
+      "verified_at": null
+    },
+    {
+      "id": "hacker-news",
+      "hosts": ["news.ycombinator.com"],
+      "platform_family": "community",
+      "path": "^/item$",
+      "author_from": "page",
+      "official": [
+        {"kind": "api", "doc": "Algolia items API", "auth": "none", "url": "https://hn.algolia.com/api/v1/items/{q_id}"}
+      ],
+      "alternates": [],
+      "login_hosts": [],
+      "terms_note": "The plain page is readable; the items API is a later-phase option.",
+      "verified_at": null
+    },
+    {
+      "id": "x",
+      "hosts": ["x.com", "twitter.com", "mobile.twitter.com"],
+      "platform_family": "microblog",
+      "path": "^/[A-Za-z0-9_]{1,15}/status/[0-9]{1,25}/?$",
+      "author_from": "page",
+      "official": [
+        {"kind": "oembed", "scope": "item", "auth": "none",
+         "url": "https://publish.twitter.com/oembed?url={url_enc}&omit_script=true&dnt=true"}
+      ],
+      "alternates": [],
+      "login_hosts": [],
+      "terms_note": "oEmbed of single posts only; no timelines and no search.",
+      "verified_at": null
+    },
+    {
+      "id": "bluesky",
+      "hosts": ["bsky.app"],
+      "platform_family": "microblog",
+      "path": "^/profile/(?P<handle>[^/]{1,100})/post/(?P<post>[a-z0-9]{1,20})/?$",
+      "author_from": "page",
+      "official": [
+        {"kind": "api", "doc": "Public AppView getPostThread", "auth": "none",
+         "url": "https://public.api.bsky.app/xrpc/app.bsky.feed.getPostThread?uri=at://{handle}/app.bsky.feed.post/{post}"}
+      ],
+      "alternates": [],
+      "login_hosts": [],
+      "terms_note": "Public API, no key.",
+      "verified_at": null
+    }
+  ],
+  "out_of_scope": [
+    {"host": "discord.com", "path_prefix": "", "reason": "private chat servers"},
+    {"host": "discord.gg", "path_prefix": "", "reason": "private chat invitations"},
+    {"host": "open.kakao.com", "path_prefix": "", "reason": "open chat rooms are joined, not published"},
+    {"host": "band.us", "path_prefix": "", "reason": "member-only groups"},
+    {"host": "t.me", "path_prefix": "", "reason": "chat channels and groups"},
+    {"host": "www.facebook.com", "path_prefix": "/groups", "reason": "groups are member-only"},
+    {"host": "facebook.com", "path_prefix": "/groups", "reason": "groups are member-only"}
+  ],
+  "discovery": [
+    {
+      "id": "naver-search-open-api",
+      "doc": "Naver Search Open API (blog, cafearticle, kin, news)",
+      "endpoints": {
+        "blog": "https://openapi.naver.com/v1/search/blog.json",
+        "cafearticle": "https://openapi.naver.com/v1/search/cafearticle.json",
+        "kin": "https://openapi.naver.com/v1/search/kin.json",
+        "news": "https://openapi.naver.com/v1/search/news.json"
+      },
+      "auth": {"type": "user_key", "env": ["NAVER_CLIENT_ID", "NAVER_CLIENT_SECRET"],
+               "headers": {"X-Naver-Client-Id": "NAVER_CLIENT_ID", "X-Naver-Client-Secret": "NAVER_CLIENT_SECRET"}},
+      "returns": "leads only (titles, snippets, links); never quoted as evidence",
+      "verified_at": null
+    }
+  ]
+}

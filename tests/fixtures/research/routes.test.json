@@ -1,0 +1,119 @@
+{
+  "schema_version": "ux-research-routes.v1",
+  "version": "fixture",
+  "note": "Test route table. Only reserved .test names; served by the local fixture server in tests/test_ux_read.py.",
+  "platforms": [
+    {
+      "id": "fixture-blog",
+      "hosts": [
+        "feedsite.test"
+      ],
+      "platform_family": "blog",
+      "path": "^/(?P<author>[a-z]{1,20})/(?P<post>[0-9]{1,6})$",
+      "author_from": "path_segment",
+      "official": [
+        {
+          "kind": "feed",
+          "scope": "item",
+          "url": "{scheme}://rss.feedsite.test{port_suffix}/{author}.xml",
+          "auth": "none"
+        }
+      ],
+      "alternates": [],
+      "login_hosts": [],
+      "terms_note": "fixture",
+      "verified_at": null
+    },
+    {
+      "id": "fixture-keyed",
+      "hosts": [
+        "keyed.test"
+      ],
+      "platform_family": "video",
+      "path": "^/watch$",
+      "author_from": "page",
+      "official": [
+        {
+          "kind": "feed",
+          "scope": "all",
+          "auth": "user_key",
+          "env": "REMORSEARCH_FIXTURE_KEY",
+          "url": "{scheme}://api.keyed.test{port_suffix}/comments.xml?video={q_v}&key={key}"
+        },
+        {
+          "kind": "api",
+          "doc": "a JSON API used by a later phase",
+          "auth": "none",
+          "url": "{scheme}://api.keyed.test{port_suffix}/v1/{q_v}"
+        }
+      ],
+      "alternates": [],
+      "login_hosts": [],
+      "terms_note": "fixture",
+      "verified_at": null
+    },
+    {
+      "id": "fixture-gallery",
+      "hosts": [
+        "gallery.test"
+      ],
+      "platform_family": "community",
+      "path": "^/board/view$",
+      "author_from": "page",
+      "official": [],
+      "alternates": [
+        {
+          "kind": "mobile",
+          "url": "{scheme}://m.gallery.test{port_suffix}/board/{q_id}/{q_no}"
+        }
+      ],
+      "login_hosts": [],
+      "terms_note": "fixture",
+      "verified_at": null
+    },
+    {
+      "id": "fixture-community",
+      "hosts": [
+        "auth.test"
+      ],
+      "platform_family": "community",
+      "author_from": "page",
+      "official": [],
+      "alternates": [],
+      "login_hosts": [
+        "login.test"
+      ],
+      "terms_note": "fixture",
+      "verified_at": null
+    },
+    {
+      "id": "fixture-oembed",
+      "hosts": [
+        "embed.test"
+      ],
+      "platform_family": "microblog",
+      "path": "^/[a-z]{1,20}/status/[0-9]{1,20}$",
+      "author_from": "page",
+      "official": [
+        {
+          "kind": "oembed",
+          "scope": "item",
+          "auth": "none",
+          "url": "{scheme}://oembed.embed.test{port_suffix}/oembed?url={url_enc}&omit_script=true"
+        }
+      ],
+      "alternates": [],
+      "login_hosts": [],
+      "terms_note": "fixture",
+      "verified_at": null
+    }
+  ],
+  "out_of_scope": [
+    {
+      "host": "chat.test",
+      "path_prefix": "",
+      "reason": "private chat rooms"
+    }
+  ],
+  "discovery": []
+}

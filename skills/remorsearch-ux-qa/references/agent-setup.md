@@ -22,8 +22,10 @@ Read `${XDG_CONFIG_HOME:-~/.config}/remorsearch-ux-qa/config.json` if it exists:
 }
 ```
 
-- `operator`: persona agents that drive the real screen, and research readers.
-- `judge`: verification, matching findings to evidence, and severity review.
+- `operator`: persona agents that drive the real screen, research readers, and
+  counter-searchers.
+- `judge`: verification (including research verifiers that sample excerpts),
+  matching findings to evidence, and severity review.
 
 If the file is valid and the user did not ask to change it, use it and go to
 step 4. If the user says something like "change the agent model" or "에이전트
@@ -79,6 +81,10 @@ profile (16 in the default sample), so the model choice multiplies.
 Judges and verifiers default to the strongest model the user allows. Ask about
 them separately only if the user raises cost.
 
+In a research audience run, the brief questions (A0 in
+`references/research/audience-pipeline.md`) may go in the same selection prompt,
+so the user is asked once.
+
 Save the answers with `"source": "user"`. Create the folder if needed. Never
 write secrets or tokens to this file.
 
@@ -91,6 +97,23 @@ write secrets or tokens to this file.
 - Record in every report which model and effort each role used. Persona agents
   from one model count as one correlated rater
   (`references/ergonomics/persona-agent-protocol.md`, replication rule).
+
+## 5. Research readers
+
+These rules add to the steps above. They do not change how the model is chosen.
+
+- Research readers and counter-searchers use the `operator` settings. Verifiers
+  use the `judge` settings.
+- Run readers 2-3 per batch, or 5-6 when the host enforces the return schema
+  (schema-forced fan-out). Never start 10 or more at once. The research run ledger
+  caps the load on each host, whatever the concurrency.
+- Readers return `ux-reader-return.v1` (planned schema) and never write their own
+  fetch code. They read through `scripts/ux_research.py` and the browser tools in
+  `references/research/public-page-access.md`.
+- Harvest rule: the orchestrator does not finish until every reader has returned
+  or has been recorded as a missing axis. A missing return is re-run in batch mode.
+- Readers from one model share blind spots. When the user allows it, prefer a
+  different model for verifiers than for readers, and record the choice.
 
 ## Evidence for the recommendation
 

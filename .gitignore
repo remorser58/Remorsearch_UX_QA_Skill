@@ -5,6 +5,10 @@ __pycache__/
 .ux-loop/
 .ux-loop-*.txt
 
+# Public-page reader run folders used in development and tests. The default run
+# folder is outside the project (${XDG_STATE_HOME:-~/.local/state}/remorsearch-ux-qa).
+.ux-research/
+
 # Ergonomic swarm benchmark outputs and scratch runs
 .ergo-bench/
 .ergo-runs/

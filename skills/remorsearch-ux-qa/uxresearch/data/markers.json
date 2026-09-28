@@ -1,0 +1,223 @@
+{
+  "schema_version": "ux-research-markers.v1",
+  "version": "2026-09-28.1",
+  "verified_at": null,
+  "note": "Compiled for Remorsearch UX QA; not transcribed from any other project. Words match case-insensitively; ASCII markers match only at identifier boundaries (a letter or digit may not touch either end), a space inside a marker matches any run of whitespace (none for Korean). Word markers count only on pages with thin main content; structural markers (widgets, inputs, script sources, password fields) are checked first. Injection patterns are regular expressions.",
+  "thresholds": {
+    "thin_main_chars": 200,
+    "shell_visible_chars": 200,
+    "suspect_main_chars": 60,
+    "standalone_line_chars": 24
+  },
+  "chrome_idents": [
+    "header", "footer", "gnb", "lnb", "snb", "nav", "navbar", "navigation", "menu", "sidebar", "side", "aside",
+    "side_menu", "sidemenu", "util", "utility", "topbar", "top_menu", "topmenu", "site-header", "site-footer",
+    "global-header", "global-footer", "header_wrap", "header-wrap", "footer_wrap", "footer-wrap", "copyright",
+    "breadcrumb", "breadcrumbs", "login_box", "login-box", "loginbox", "login_area", "login-area", "member_box",
+    "gnb_wrap", "lnb_wrap", "skip_nav", "skipnav", "quick_menu", "quickmenu", "banner", "ad", "ads", "advertisement"
+  ],
+  "spa_root": {
+    "ids": ["root", "app", "__next", "__nuxt", "___gatsby", "svelte", "main-app", "app-root"],
+    "attrs": ["ng-version", "ng-app", "data-reactroot", "data-v-app", "data-server-rendered"],
+    "tags": ["app-root"],
+    "noscript_words": {
+      "en": ["enable javascript", "javascript is required", "javascript is disabled", "requires javascript",
+             "turn on javascript", "need javascript"],
+      "ko": ["자바스크립트를 활성화", "자바스크립트를 사용", "자바스크립트가 필요", "JavaScript를 활성화",
+             "JavaScript를 사용", "스크립트를 허용"]
+    }
+  },
+  "human_check": {
+    "src": ["recaptcha", "hcaptcha", "turnstile", "captcha-delivery", "funcaptcha", "arkoselabs", "geetest", "captcha"],
+    "idents": ["g-recaptcha", "h-captcha", "cf-turnstile", "px-captcha", "frc-captcha", "geetest_panel", "captcha",
+               "captcha_box", "captcha-box", "captcha_image", "captcha-image"],
+    "inputs": ["captcha", "captchacode", "captcha_code", "captcha_text", "g-recaptcha-response",
+               "h-captcha-response", "cf-turnstile-response"],
+    "words": {
+      "en": ["captcha", "i'm not a robot", "i am not a robot", "verify you are human", "verify that you are human",
+             "are you a robot", "are you human", "press and hold", "prove you are human", "human verification",
+             "complete the security check"],
+      "ko": ["보안문자", "보안 문자", "자동입력 방지", "자동 입력 방지", "로봇이 아닙니다", "사람인지 확인", "사람임을 확인",
+             "캡차", "캡챠", "그림에 표시된 문자", "화면에 보이는 문자"]
+    }
+  },
+  "js_check": {
+    "src": ["challenge-platform", "_incapsula_resource", "ddos-guard", "jschallenge"],
+    "idents": ["challenge-form", "challenge-running", "challenge-stage", "cf-browser-verification", "cf-challenge",
+               "cf-please-wait", "js-challenge", "browser-check"],
+    "words": {
+      "en": ["just a moment", "checking your browser", "checking if the site connection is secure",
+             "enable javascript and cookies to continue", "please wait while we verify", "verifying your browser",
+             "ddos protection by", "one more step", "please stand by", "this process is automatic"],
+      "ko": ["잠시만 기다려 주세요", "브라우저를 확인하고", "브라우저 확인 중", "접속 확인 중", "보안 확인 중",
+             "자동으로 이동합니다"]
+    }
+  },
+  "login": {
+    "words": {
+      "en": ["log in", "login", "sign in", "signin", "log on", "password"],
+      "ko": ["로그인", "로그 인", "비밀번호", "아이디"]
+    },
+    "url_path": [
+      "(^|[/._-])(login|log-in|log_in|signin|sign-in|sign_in|logon|sso|oauth2?|authorize)([/._?=&-]|$)",
+      "(^|[/._-])(member|members|account|accounts|user|users|auth)/(login|signin|sign_in|sign-in)"
+    ]
+  },
+  "logged_in": {
+    "href": ["logout", "log-out", "log_out", "signout", "sign-out", "sign_out", "logoff"],
+    "lines": {
+      "en": ["logout", "log out", "sign out", "my account"],
+      "ko": ["로그아웃", "마이페이지", "내 정보", "회원정보 수정"]
+    }
+  },
+  "membership": {
+    "words": {
+      "en": ["members only", "member-only", "members-only", "for members only", "join to view", "join this group to",
+             "you must be a member", "you must be logged in", "log in to view", "sign in to view",
+             "sign in to continue", "private group", "this group is private", "this content is private",
+             "request to join"],
+      "ko": ["회원만", "회원 전용", "멤버만", "멤버 전용", "카페 멤버", "가입 후 이용", "가입한 회원", "가입해야",
+             "등급 이상", "열람 권한", "읽기 권한", "권한이 없습니다", "권한이 없어", "비공개 게시", "비공개 카페",
+             "비공개 그룹", "초대받은", "로그인 후 이용", "로그인이 필요", "로그인 후 열람", "로그인 후 확인",
+             "로그인 후 보실"]
+    }
+  },
+  "age_identity": {
+    "words": {
+      "en": ["age verification", "verify your age", "confirm your age", "you must be 18", "you must be 19",
+             "age-restricted", "age restricted", "identity verification", "adults only"],
+      "ko": ["성인인증", "성인 인증", "본인인증", "본인 인증", "본인확인", "19세 이상", "19세 미만", "청소년 유해",
+             "연령 확인", "나이 확인", "실명인증", "실명 인증"]
+    }
+  },
+  "paywall": {
+    "words": {
+      "en": ["subscribe to read", "subscribe to continue", "subscribers only", "subscriber-only", "for subscribers",
+             "premium content", "to continue reading", "continue reading with", "purchase to read",
+             "unlock this article"],
+      "ko": ["유료 기사", "유료 회원", "유료 구독", "구독자 전용", "구독 후 이용", "구독하고 전체", "구독하면 전체",
+             "결제 후 이용", "결제 후 열람", "멤버십 전용", "프리미엄 콘텐츠", "이용권이 필요"]
+    }
+  },
+  "deleted": {
+    "words": {
+      "en": ["[deleted]", "[removed]", "this post has been deleted", "this post was deleted",
+             "this post has been removed", "this post was removed", "post not found", "page not found",
+             "no longer available", "has been removed", "this page does not exist", "content not found"],
+      "ko": ["삭제된 게시물", "삭제된 글", "삭제된 게시글", "존재하지 않는 게시물", "존재하지 않는 게시글",
+             "존재하지 않는 글", "게시물이 삭제", "게시글이 삭제", "글이 삭제", "삭제되었거나", "찾을 수 없는 게시물",
+             "게시물을 찾을 수", "게시글을 찾을 수", "페이지를 찾을 수 없", "삭제 또는 이동"]
+    }
+  },
+  "rate_limit": {
+    "words": {
+      "en": ["too many requests", "rate limit", "rate-limit", "rate limited", "request limit exceeded",
+             "quota exceeded", "slow down"],
+      "ko": ["요청이 너무 많", "너무 많은 요청", "과도한 요청", "과도한 접속", "접속이 일시적으로 제한", "일시적으로 차단",
+             "트래픽이 많아"]
+    }
+  },
+  "geo": {
+    "words": {
+      "en": ["not available in your country", "not available in your region", "unavailable in your country",
+             "unavailable in your region", "not available in your location", "geo-restricted", "geo restricted",
+             "your country is not supported"],
+      "ko": ["해외에서는 이용", "해외에서 접속", "해외 접속", "해외 IP", "국내에서만 이용", "국내에서만 접속",
+             "해당 국가에서는", "해당 지역에서는 이용"]
+    }
+  },
+  "legal": {
+    "hosts": ["warning.or.kr"],
+    "words": {
+      "en": ["unavailable for legal reasons", "removed for legal reasons", "court order",
+             "copyright infringement claim", "dmca"],
+      "ko": ["임시조치", "임시 조치", "게시중단", "게시 중단", "권리침해 신고", "권리 침해 신고", "법원의 명령",
+             "방송통신심의위원회", "접속이 차단된 사이트"]
+    }
+  },
+  "bot_filter": {
+    "words": {
+      "en": ["access denied", "access to this page has been denied", "request blocked", "the request is blocked",
+             "you have been blocked", "forbidden", "unusual traffic", "automated requests", "automated access",
+             "bot detected", "suspected bot"],
+      "ko": ["비정상적인 접근", "비정상적인 접속", "접근이 차단", "접근이 거부", "접속이 차단", "차단된 요청",
+             "자동화된 접근", "자동화된 요청", "봇으로 의심", "매크로 의심", "허용되지 않은 접근"]
+    }
+  },
+  "promotion": {
+    "ko": ["체험단", "협찬", "원고료", "제품을 제공받아", "제품을 제공 받아", "제품을 무상으로 제공", "무상으로 제공받",
+           "업체로부터 지원", "업체로부터 제공", "지원받아 작성", "제공받아 작성", "소정의 원고료", "소정의 수수료",
+           "수수료를 제공받", "쿠팡 파트너스 활동", "파트너스 활동을 통해", "일정액의 수수료", "유료 광고", "광고 포함",
+           "#광고", "[광고]", "(광고)", "광고비를 받", "대가를 받고", "서포터즈"],
+    "en": ["sponsored", "#ad", "#sponsored", "paid partnership", "affiliate link", "affiliate links",
+           "earn a commission", "this post contains affiliate", "provided by the brand", "received this product for free",
+           "in exchange for a review"]
+  },
+  "injection": {
+    "instruction_override": {
+      "en": [
+        "\\b(ignore|disregard|forget|skip)\\b.{0,20}\\b(all|any|the|your|previous|prior|above|earlier|preceding)\\b.{0,20}\\b(instructions?|prompts?|rules|directions|guidelines|messages)\\b",
+        "\\bnew (system )?instructions?\\s*:",
+        "\\boverride (your|the|all) (instructions|rules|guidelines)\\b",
+        "\\bfrom now on,? you (are|will|must)\\b"
+      ],
+      "ko": [
+        "(이전|앞의|앞선|위의|기존)\\s*(모든\\s*)?(지시|명령|지침|규칙|프롬프트)\\S{0,3}\\s*(모두\\s*|전부\\s*)?(무시|잊어)",
+        "(지시|명령|지침)\\S{0,3}\\s*(무시하고|무시해)",
+        "지금부터\\s*(너는|당신은|넌)",
+        "새로운\\s*(지시|명령|지침)\\s*:"
+      ]
+    },
+    "agent_address": {
+      "en": [
+        "\\b(dear|hey|hello|attention|note to)\\s+(ai|assistant|chatbot|language model|llm|agent|gpt|chatgpt|claude|gemini|copilot)\\b",
+        "\\bsystem prompt\\b",
+        "\\byou are (an? )?(ai|assistant|language model|llm|chatbot)\\b",
+        "\\b(ai|llm) (agents?|assistants?|crawlers?|models?) (reading|processing|summari[sz]ing) this\\b"
+      ],
+      "ko": [
+        "시스템\\s*프롬프트",
+        "(AI|인공지능|챗봇|에이전트|어시스턴트|GPT|챗GPT|클로드)\\s*(야|님|에게|한테)",
+        "(너는|당신은)\\s*(이제\\s*)?(AI|인공지능|어시스턴트|챗봇)",
+        "이\\s*글을\\s*(읽는|요약하는|처리하는)\\s*(AI|인공지능|에이전트|모델)"
+      ]
+    },
+    "tool_execution": {
+      "en": [
+        "\\b(run|execute|eval)\\b.{0,20}\\b(command|commands|code|script|shell|terminal)\\b",
+        "\\brm\\s+-rf\\b",
+        "\\bcurl\\s+[^|\\n]{0,200}\\|\\s*(sh|bash)\\b",
+        "\\bsudo\\s+\\w",
+        "\\bos\\.system\\s*\\(",
+        "\\bsubprocess\\."
+      ],
+      "ko": [
+        "(명령어|명령|코드|스크립트|터미널)\\S{0,3}\\s*(실행|입력|돌려)",
+        "(아래|다음)\\s*(명령|코드)\\S{0,3}\\s*(실행|복사)"
+      ]
+    },
+    "credential_request": {
+      "en": [
+        "\\b(send|give|share|enter|paste|reveal|post|email)\\b.{0,20}\\b(password|passcode|api[ _-]?key|access token|secret key|credentials|private key|seed phrase|otp)\\b",
+        "\\b(api[_ -]?key|access[_ -]?token|password)\\s*[:=]\\s*\\S+"
+      ],
+      "ko": [
+        "(비밀번호|패스워드|암호|API\\s*키|토큰|인증번호|OTP|계좌번호|주민등록번호)\\S{0,3}\\s*(보내|알려|입력해|공유|적어)"
+      ]
+    },
+    "review_steering": {
+      "en": [
+        "\\b(rate|give|leave)\\b.{0,15}\\b(5|five)[ -]?stars?\\b",
+        "\\b(write|leave|post|give)\\b.{0,15}\\b(a )?(positive|good|great|5-star|five-star) (review|rating|feedback)\\b",
+        "\\b(summari[sz]e|describe|report|present)\\b.{0,30}\\b(positively|favou?rably|as (positive|excellent|perfect))\\b",
+        "\\bdo not mention\\b.{0,30}\\b(complaints?|problems?|issues?|bugs?)\\b"
+      ],
+      "ko": [
+        "(별점|평점)\\s*(5|다섯)\\s*(점|개)",
+        "(좋은|긍정적인|좋게)\\s*(리뷰|후기|평가)\\S{0,3}\\s*(남겨|써|작성)",
+        "(요약|정리|평가)\\S{0,5}\\s*(긍정적으로|좋게|호의적으로)",
+        "(불만|문제|단점)\\S{0,3}\\s*(언급하지|말하지)\\s*(마|말)"
+      ]
+    }
+  }
+}
