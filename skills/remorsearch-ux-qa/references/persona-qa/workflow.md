@@ -1,7 +1,4 @@
----
-name: persona-driven-ux-qa
-description: Run evidence-driven UX QA with Korean synthetic personas, Aside community research, Figma comparison, and real browser scenarios; report root causes, user impact, and actionable fixes.
----
+<!-- Mode: persona-qa (formerly the `persona-driven-ux-qa` skill). Entry point: `SKILL.md`. -->
 
 # Persona-Driven UX QA
 
@@ -18,7 +15,7 @@ Synthetic personas generate plausible situations. They are not evidence that rea
 
 ## Non-negotiable rules
 
-- Use Aside as the primary browser and community-research path.
+- Use Aside as the primary browser and community-research path when it is installed. Without it, use the host's browser tools or the bundled live web driver (`drivers/web/`) and the host's web search, and record the substitution.
 - Before using Aside, run `aside --update` and then `aside guide`; follow the current guide instead of guessing commands.
 - Preserve the user's existing browser tabs, login state, filters, and context.
 - Keep QA read-only by default. Do not post, comment, like, recommend, follow, message, report, purchase, subscribe, or modify account data unless the user separately authorizes that action.

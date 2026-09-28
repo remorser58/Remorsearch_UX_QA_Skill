@@ -1,7 +1,4 @@
----
-name: ergonomic-persona-swarm-qa
-description: Run a MiroFish-style swarm of ergonomic persona agents that actually operate a web app, mobile app or game on the real screen, then score reach, handedness, touch accuracy, gaze, contrast, colour-vision, reading time, timing windows and flashing with deterministic human-factors models; report P0-P3 findings as coverage over simulated profiles, never as prevalence.
----
+<!-- Mode: ergonomics, experimental (formerly the `ergonomic-persona-swarm-qa` skill). Entry point: `SKILL.md`. -->
 
 # Ergonomic Persona Swarm QA
 
