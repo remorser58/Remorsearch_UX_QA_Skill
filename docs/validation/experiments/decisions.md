@@ -56,7 +56,7 @@ them. The out-of-sample test is `heldout-2`, pre-registered in
 | GM-02 landscape reach | 2 | pause flagged in the top band, where Apple HIG puts it | secondary controls (pause, menu, settings) exempt by name |
 | GM-03 QTE window | 2 | model-only P1; declared QTE chains routed to flash screening | P1 only when a typical young adult misses the window, else P2; declared QTEs are always scored by GM-03 |
 | GM-05 game control size | 1 | 9.6 mm serial size applied to pause | serial size for gameplay controls only |
-| GM-04 flash | 1 | whole-frame mean luminance misses local, counter-phase and red flashes; no sampling during waits | rework in progress (per-block tracking, 10° windows, sampling during waits, capture jitter) |
+| GM-04 flash | 1 | whole-frame mean luminance misses local, counter-phase and red flashes; no sampling during waits; a 3 Hz flicker counted as 3.5 flashes; red tested on gamma-encoded values | per-block tracking summed within 10° fields, sampling during waits, capture jitter, half-open 1 s window with 50 ms sampling tolerance, linear red test, `inconclusive` on poor sampling. Live check 30/30 (`docs/validation/flash-screening/`) |
 
 ## Profile plan
 
