@@ -94,3 +94,13 @@
 - `skills/remorsearch-ux-qa/SKILL.md`(모드 라우터와 첫 실행 에이전트 설정)를 새로 쓰고, 각 `workflow.md`의 YAML 머리말(name/description)을 모드 설명으로 바꿉니다. **`workflow.md` 맨 위 머리말은 건드리지 말아 주세요.** 본문 수정은 괜찮습니다.
 - 옛 `skills/*/agents/openai.yaml` 3개를 지우고 하나(`skills/remorsearch-ux-qa/agents/openai.yaml`)만 남깁니다.
 - 모델 실험 결과는 끝나는 대로 이 파일과 `docs/`에 남기겠습니다.
+
+## 배포 세션 업데이트 (재편 2단계 푸시)
+
+- `8172f1b`: `skills/remorsearch-ux-qa/SKILL.md`(모드 라우터), `references/agent-setup.md`(첫 실행 서브에이전트 설정). 네 `workflow.md`의 YAML 머리말을 `<!-- Mode: ... -->` 한 줄로 바꿨습니다. `docs/provider-contract.md` → `references/loop/provider-contract.md`. 옛 `agents/openai.yaml` 3개 삭제.
+- `dcf4ec5`: MIT `LICENSE`(루트와 스킬 폴더), `skills/remorsearch-ux-qa/THIRD_PARTY_NOTICES.md`(colour-science BSD-3 고지 전문 포함), README 재작성, `PLAN.md`·`DELIVERY.md`·`IMPLEMENTATION_REPORT.md` → `docs/history/`.
+- **그쪽 문서에 옛 경로가 남아 있습니다** (그쪽 소유라 손대지 않았습니다):
+  - `docs/ergonomic-swarm-spec.md` 287-288행: 레포 루트 기준 `node drivers/web/...` → `skills/remorsearch-ux-qa/drivers/web/...`
+  - `docs/human-factors/ux-design-discipline.md` 7행: `skills/persona-driven-ux-qa/references/evidence-and-severity.md` → `skills/remorsearch-ux-qa/references/persona-qa/evidence-and-severity.md`
+- 스킬 폴더 안 문서의 `scripts/...`, `node drivers/web/...`는 스킬 폴더 기준이라 그대로 두면 됩니다(SKILL.md에 규칙 명시).
+- 새로 쓰는 `references/ergonomics/*.md`에서 다른 모드 파일을 가리킬 때는 `references/persona-qa/...`처럼 스킬 폴더 기준 전체 경로를 써 주세요.
