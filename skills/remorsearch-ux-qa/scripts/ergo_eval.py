@@ -38,6 +38,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import pickle
 import random
 import re
@@ -124,19 +125,25 @@ def _base(gk: str) -> dict[str, Any]:
     return p
 
 
-def configurations(data: dict[str, Any]) -> tuple[dict[str, set[str]], dict[str, dict[str, Any]], dict[str, set[str]], list[str]]:
-    """Profile sets per configuration, the profile registry, device groups per scenario, notes."""
+def configurations(data: dict[str, Any]) -> tuple[dict[str, dict[str, set[str]]], dict[str, dict[str, Any]], dict[str, set[str]], list[str]]:
+    """Profile sets per configuration and product, the profile registry, device groups per
+    scenario, notes.
+
+    Membership is per product: the pre-registered budgets are per product, so a run of
+    product B is scored only with the profiles composed or sampled for product B, even
+    when product A shares its device group (review 2026-09-28, E1).
+    """
     registry: dict[str, dict[str, Any]] = {}
-    configs: dict[str, set[str]] = {}
+    configs: dict[str, dict[str, set[str]]] = {}
     notes: list[str] = []
 
-    def add(config: str, profile: dict[str, Any], canonical: bool = True) -> None:
+    def add(config: str, product: str, profile: dict[str, Any], canonical: bool = True) -> None:
         pid = _canonical(profile) if canonical else profile["profile_id"]
         if pid not in registry:
             keep = dict(profile)
             keep["profile_id"] = pid
             registry[pid] = keep
-        configs.setdefault(config, set()).add(pid)
+        configs.setdefault(config, {}).setdefault(product, set()).add(pid)
 
     groups_of: dict[str, set[str]] = {sid: set(_scenario_groups(sc)) for sid, sc in data["scenarios"].items()}
     products: dict[str, list[str]] = {}
@@ -147,12 +154,12 @@ def configurations(data: dict[str, Any]) -> tuple[dict[str, set[str]], dict[str,
         product_groups = sorted({g for sid in sids for g in groups_of[sid]})
         for gk in product_groups:
             base = _base(gk)
-            add("C1", base, canonical=False)
-            add("C2", base, canonical=False)
+            add("C1", slug, base, canonical=False)
+            add("C2", slug, base, canonical=False)
             device_id, orientation = gk.split("|")
             count = C3_TOUCH if get_device(device_id).input == "touch" else C3_POINTER
             for p in sample_profiles(count, 11, [device_id], orientation=orientation):
-                add("C3", p)
+                add("C3", slug, p)
         doc = data["audiences"].get(slug)
         if doc is None:
             notes.append(f"{slug}: no audience file, C4 not run")
@@ -160,13 +167,13 @@ def configurations(data: dict[str, Any]) -> tuple[dict[str, set[str]], dict[str,
             if doc is not None:
                 plan = audience.compose(doc, budget)
                 for p in plan["profiles"]:
-                    add(f"C4@{budget}", p)
+                    add(f"C4@{budget}", slug, p)
                     for sid in sids:
                         groups_of[sid].add(_group(p))
             devices = sorted({g.split("|")[0] for g in product_groups})
             for seed in range(C5_SEEDS):
                 for p in sample_profiles(budget, 1000 + seed, devices, strategy="base_rate_sample"):
-                    add(f"C5@{budget}#{seed}", p)
+                    add(f"C5@{budget}#{seed}", slug, p)
                     for sid in sids:
                         groups_of[sid].add(_group(p))
     return configs, registry, groups_of, notes
@@ -218,27 +225,35 @@ def _lean(obs: dict[str, Any]) -> dict[str, Any]:
 
 def analyse_all(data: dict[str, Any], out: Path) -> dict[str, Any]:
     configs, registry, _, _ = configurations(data)
-    by_group: dict[str, list[dict[str, Any]]] = {}
-    for p in registry.values():
-        by_group.setdefault(_group(p), []).append(p)
+    of_product: dict[str, set[str]] = {}
+    for by_product in configs.values():
+        for product, ids in by_product.items():
+            of_product.setdefault(product, set()).update(ids)
     analyses, health = [], []
     started = time.time()
     for run_dir in sorted(p for p in (out / "runs").iterdir() if (p / "run.json").is_file()):
         run_doc = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
         dev = run_doc.get("device") or {}
         gk = f"{dev.get('id')}|{dev.get('orientation')}"
+        product = data["product_of"].get(run_doc["scenario_id"])
         # The recorder is the default persona; groups that only C4/C5 need are not in
         # C1/C2, so the recorder is evaluated but belongs to no configuration there.
         own = registry.get(run_doc["profile_id"]) or {**_base(gk), "profile_id": run_doc["profile_id"]}
-        evaluated = [own] + [p for p in by_group.get(gk, []) if p["profile_id"] != own["profile_id"]]
-        result = analyze.analyze_run(run_dir, evaluated, data["scenarios"].get(run_doc["scenario_id"]), cross_profile=True)
+        mine = [registry[pid] for pid in sorted(of_product.get(product, set())) if _group(registry[pid]) == gk]
+        evaluated = [own] + [p for p in mine if p["profile_id"] != own["profile_id"]]
+        try:
+            result = analyze.analyze_run(run_dir, evaluated, data["scenarios"].get(run_doc["scenario_id"]), cross_profile=True)
+        except Exception as err:  # noqa: BLE001 - one broken run must not stop the evaluation
+            health.append({"run_id": run_doc.get("run_id"), "status": "failed", "error": str(err)[:200]})
+            print(f"  {run_dir.name}: analysis failed: {err}", flush=True)
+            continue
         health.append({"run_id": result.get("run_id"), "status": result.get("health")})
         result["observations"] = [_lean(o) for o in result["observations"]]
         result.pop("coverage", None)
         analyses.append(result)
         print(f"  {run_dir.name}: {len(result['profiles_evaluated'])} profiles, {len(result['observations'])} obs, {time.time() - started:.0f}s", flush=True)
-    cache = {"analyses": analyses, "registry": registry, "configs": {k: sorted(v) for k, v in configs.items()}, "health": health,
-             "provenance": provenance()}
+    cache = {"analyses": analyses, "registry": registry, "configs": {c: {prod: sorted(ids) for prod, ids in v.items()} for c, v in configs.items()},
+             "product_of": data["product_of"], "health": health, "provenance": provenance()}
     with (out / "analysis-cache.pickle").open("wb") as fh:
         pickle.dump(cache, fh)
     return cache
@@ -248,22 +263,24 @@ def analyse_all(data: dict[str, Any], out: Path) -> dict[str, Any]:
 # Scoring
 
 
-def _findings(cache: dict[str, Any], profile_ids: set[str], basis: str | None = None) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+def _findings(cache: dict[str, Any], ids_by_product: dict[str, list[str]], basis: str | None = None) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     analyses = []
+    all_ids: set[str] = set()
     for a in cache["analyses"]:
+        profile_ids = set(ids_by_product.get(cache["product_of"].get(a["scenario_id"]), []))
+        all_ids |= profile_ids
         obs = [o for o in a["observations"] if o["profile_id"] in profile_ids]
         if basis is not None:
             obs = [o for o in obs if checks.CATALOG[o["check_id"]].basis == basis]
         evaluated = [pid for pid in a.get("profiles_evaluated", []) if pid in profile_ids]
         if evaluated:
             analyses.append({"scenario_id": a["scenario_id"], "run_id": a.get("run_id"), "profiles_evaluated": evaluated, "observations": obs})
-    used = [cache["registry"][pid] for pid in sorted(profile_ids)]
+    used = [cache["registry"][pid] for pid in sorted(all_ids)]
     return swarm.aggregate(analyses, used), used
 
 
 def score_config(cache: dict[str, Any], key: dict[str, Any], config: str) -> dict[str, Any]:
-    ids = set(cache["configs"][config])
-    findings, used = _findings(cache, ids, basis="measured" if config == "C1" else None)
+    findings, used = _findings(cache, cache["configs"][config], basis="measured" if config == "C1" else None)
     return bench.score(key, findings, used, exact_viewport=True, include_hypotheses=False)
 
 
@@ -348,10 +365,12 @@ def hypotheses(scores: dict[str, dict[str, Any]], key: dict[str, Any]) -> dict[s
 
     semantic = [d["id"] for d in defects if d.get("category") in ("semantics", "layout")]
     out["H1"] = {c: _rate(int(sum(hit[c][i] for i in semantic)), len(semantic)) for c in ("C3", "C4@14") if c in hit}
+    out["H1"].update({f"{c}_lenient": _rate(sum(1 for d in scores[c]["per_defect"] if d["id"] in semantic and d["detected_lenient"]), len(semantic))
+                      for c in ("C3", "C4@14") if c in scores})
     out["H1"]["verdict"] = "reported"
 
-    if "C4@10" in hit:
-        c5 = [c for c in hit if c.startswith("C5@10#")]
+    c5 = [c for c in hit if c.startswith("C5@10#")]
+    if "C4@10" in hit and c5:
         c5_mean = {i: statistics.fmean(hit[c][i] for c in c5) for i in ids}
         prim = _paired_diff(hit["C4@10"], c5_mean, primary)
         overall = _paired_diff(hit["C4@10"], c5_mean, ids)
@@ -362,23 +381,28 @@ def hypotheses(scores: dict[str, dict[str, Any]], key: dict[str, Any]) -> dict[s
     else:
         out["H2"] = {"verdict": "not_run"}
 
-    if "C4@14" in hit:
+    clean_scenarios = len({c["scenario_id"] for c in key.get("clean_controls", [])})
+    if "C4@14" in hit and "C3" in hit:
         d = _paired_diff(hit["C4@14"], hit["C3"], ids)
         out["H3"] = {"c4_14_minus_c3": d, "verdict": _verdict(d["diff"], d["ci95"], -0.05)}
+    else:
+        out["H3"] = {"verdict": "not_run"}
+    if "C4@14" in scores and clean_scenarios:
         by_sev = scores["C4@14"]["clean_control_units_by_severity"]
-        clean_n = len({c["scenario_id"] for c in key.get("clean_controls", [])}) or 1
-        p01 = (by_sev["P0"] + by_sev["P1"]) / clean_n
-        p02 = (by_sev["P0"] + by_sev["P1"] + by_sev["P2"]) / clean_n
+        p01 = (by_sev["P0"] + by_sev["P1"]) / clean_scenarios
+        p02 = (by_sev["P0"] + by_sev["P1"] + by_sev["P2"]) / clean_scenarios
         out["H4"] = {"p0_p1_per_clean_scenario": round(p01, 2), "p0_p2_per_clean_scenario": round(p02, 2),
                      "verdict": "pass" if p01 <= 1 and p02 <= 5 else "fail"}
     else:
-        out["H3"] = out["H4"] = {"verdict": "not_run"}
+        out["H4"] = {"verdict": "not_run"}
 
     h5 = {}
     for c in ("C3", "C4@14"):
         if c not in scores:
             continue
         cond = [d for d in scores[c]["per_defect"] if d["profile_condition"]]
+        if not cond:
+            continue
         k = sum(1 for d in cond if d["differential_matches_condition"])
         r = _rate(k, len(cond))
         r["verdict"] = _verdict(r["rate"], r["ci95"], 0.5)
@@ -387,8 +411,11 @@ def hypotheses(scores: dict[str, dict[str, Any]], key: dict[str, Any]) -> dict[s
     out["H5"]["verdict"] = ("pass" if all(v["verdict"] == "pass" for v in h5.values()) else
                            "fail" if any(v["verdict"] == "fail" for v in h5.values()) else "inconclusive") if h5 else "not_run"
 
-    d7 = _paired_diff(hit["C3"], hit["C2"], unconditioned)
-    out["H7"] = {"c3_minus_c2_unconditioned": d7, "verdict": _verdict(d7["diff"], d7["ci95"], 0.0)}
+    if "C3" in hit and "C2" in hit and unconditioned:
+        d7 = _paired_diff(hit["C3"], hit["C2"], unconditioned)
+        out["H7"] = {"c3_minus_c2_unconditioned": d7, "verdict": _verdict(d7["diff"], d7["ci95"], 0.0)}
+    else:
+        out["H7"] = {"verdict": "not_run"}
     out["H6"] = {"verdict": "scored separately (persona agents, C6)"}
     return out
 
@@ -411,10 +438,13 @@ def score_all(data: dict[str, Any], out: Path, show_open: bool) -> dict[str, Any
         seeds = [scores[c] for c in scores if c.startswith(f"C5@{budget}#")]
         if not seeds:
             continue
-        rec = [s["recall_strict"] for s in seeds]
+        rec = sorted(s["recall_strict"] for s in seeds)
         clean = [s["clean_control_units"] for s in seeds]
+        lo = rec[int(0.025 * len(rec))]
+        hi = rec[max(0, math.ceil(0.975 * len(rec)) - 1)]
         agg["configs"][f"C5@{budget}"] = {"seeds": len(seeds), "recall_strict_mean": round(statistics.fmean(rec), 3),
-                                          "recall_strict_range95": [round(sorted(rec)[0], 3), round(sorted(rec)[-1], 3)],
+                                          "recall_strict_p2_5_p97_5": [round(lo, 3), round(hi, 3)],
+                                          "recall_strict_min_max": [round(rec[0], 3), round(rec[-1], 3)],
                                           "clean_control_units_mean": round(statistics.fmean(clean), 2)}
     agg["hypotheses"] = hypotheses(scores, key)
     (out / "aggregate.json").write_text(json.dumps(agg, ensure_ascii=False, indent=1), encoding="utf-8")
@@ -452,21 +482,32 @@ def score_agents(data: dict[str, Any], agent_dir: Path) -> dict[str, Any]:
         own = by_id.get(run_doc["profile_id"])
         if own is None:
             continue
-        result = analyze.analyze_run(run_dir, [own], data["scenarios"].get(run_doc["scenario_id"]), cross_profile=False)
+        try:
+            result = analyze.analyze_run(run_dir, [own], data["scenarios"].get(run_doc["scenario_id"]), cross_profile=False)
+        except Exception as err:  # noqa: BLE001 - a run that never took a snapshot is counted, not fatal
+            runs.append({"success": False, "steps": 0, "health": "failed", "channel": (run_doc.get("agent") or {}).get("input_channel"),
+                         "model": (run_doc.get("agent") or {}).get("model"), "notes": 0, "confusion": 0,
+                         "failure_class": {c: 0 for c in ("ux_issue", "agent_limitation", "environment", "unknown")}, "error": str(err)[:200]})
+            continue
         result["observations"] = [_lean(o) for o in result["observations"]]
         analyses.append(result)
         notes = run_doc.get("persona_notes") or []
         runs.append({"success": run_doc.get("success"), "steps": len(run_doc.get("steps") or []), "health": result.get("health"),
-                     "channel": (run_doc.get("agent") or {}).get("input_channel"),
+                     "channel": (run_doc.get("agent") or {}).get("input_channel"), "model": (run_doc.get("agent") or {}).get("model"),
                      "notes": len(notes), "confusion": sum(1 for n in notes if n.get("confusion")),
                      "failure_class": {c: sum(1 for n in notes if n.get("confusion") and n.get("failure_class") == c)
                                        for c in ("ux_issue", "agent_limitation", "environment", "unknown")}})
     findings = swarm.aggregate(analyses, profiles)
     key = data["key"]
-    judgment = [d for d in key["defects"] if "agent_judgment" in _listify(d.get("detectable_by"))]
-    subkey = {**key, "defects": judgment}
+    covered = {a["scenario_id"] for a in analyses}
+    products = {data["product_of"].get(sid) for sid in covered}
+    judgment = [d for d in key["defects"] if "agent_judgment" in _listify(d.get("detectable_by")) and data["product_of"].get(d["scenario_id"]) in products]
+    subkey = {**key, "defects": judgment, "clean_controls": [c for c in key.get("clean_controls", []) if c["scenario_id"] in covered],
+              "decoys": [d for d in key.get("decoys", []) if data["product_of"].get(d["scenario_id"]) in products]}
     pj = [f for f in findings if f["check_id"] == "PJ-01"]
-    out: dict[str, Any] = {"runs": len(runs), "agent_judgment_defects": len(judgment),
+    out: dict[str, Any] = {"runs": len(runs), "products": sorted(p for p in products if p), "agent_judgment_defects": len(judgment),
+                           "by_model_channel": {f"{m}/{c}": sum(1 for r in runs if r.get("model") == m and r.get("channel") == c)
+                                                for m in ("opus", "sonnet") for c in ("screenshot", "screenshot+a11y")},
                            "task_success_rate": round(sum(1 for r in runs if r["success"]) / len(runs), 3) if runs else None,
                            "steps_mean": round(statistics.fmean(r["steps"] for r in runs), 1) if runs else None,
                            "confusion_notes": sum(r["confusion"] for r in runs),
@@ -476,7 +517,7 @@ def score_agents(data: dict[str, Any], agent_dir: Path) -> dict[str, Any]:
         sc = bench.score(subkey, fs, profiles, exact_viewport=True, include_hypotheses=include)
         lenient = sum(d["detected_lenient"] for d in sc["per_defect"])
         strict = sum(d["detected_strict"] for d in sc["per_defect"])
-        clean_n = len({c["scenario_id"] for c in key.get("clean_controls", [])}) or 1
+        clean_n = len({c["scenario_id"] for c in subkey.get("clean_controls", [])}) or 1
         out[name] = {"recall_lenient": _rate(lenient, len(judgment)), "recall_strict": _rate(strict, len(judgment)),
                      "units": sc["units"], "clean_control_units": sc["clean_control_units"],
                      "clean_units_per_clean_scenario": round(sc["clean_control_units"] / clean_n, 2), "unlabeled_units": sc["unlabeled_units"]}
@@ -566,7 +607,7 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
     if args.cmd == "plan":
         configs, registry, groups_of, notes = configurations(data)
-        print(json.dumps({"configs": {c: len(v) for c, v in configs.items() if not c.startswith("C5@") or c.endswith("#0")},
+        print(json.dumps({"configs": {c: {prod: len(ids) for prod, ids in v.items()} for c, v in configs.items() if not c.startswith("C5@") or c.endswith("#0")},
                           "distinct_profiles": len(registry), "recordings": sum(len(g) for g in groups_of.values()), "notes": notes}, indent=1))
     elif args.cmd == "record":
         record(data, out)

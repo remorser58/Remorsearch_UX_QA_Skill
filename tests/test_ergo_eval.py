@@ -1,0 +1,86 @@
+"""Pre-registered evaluation runner: per-product configurations and verdict guards."""
+
+from __future__ import annotations
+
+import copy
+import json
+import unittest
+from pathlib import Path
+
+import _paths  # noqa: F401  (puts the skill folder and its scripts on sys.path)
+
+import ergo_eval  # noqa: E402
+
+EXAMPLE = _paths.SKILL / "examples" / "audience" / "transit-card.audience.json"
+
+
+def suite_two_products_one_device() -> dict:
+    doc_a = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    doc_b = copy.deepcopy(doc_a)
+    doc_b["audience_id"] = "AU-b"
+    for seg in doc_b["segments"]:
+        seg["age_bands"] = {"60s": 0.5, "70s+": 0.5}
+    scenarios = {}
+    for slug in ("alpha", "beta"):
+        for v in ("a", "b"):
+            sid = f"SC-x-{slug}-{v}"
+            scenarios[sid] = {"scenario_id": sid, "device_ids": ["galaxy-s24"], "surface": {"kind": "web"}}
+    return {"suite": Path("/tmp/x"), "scenarios": scenarios, "paths": {}, "keys": {},
+            "key": {"defects": [], "decoys": [], "clean_controls": []},
+            "product_of": {sid: sid.split("-")[2] for sid in scenarios}, "audiences": {"alpha": doc_a, "beta": doc_b}}
+
+
+class Configurations(unittest.TestCase):
+    def test_budgets_are_per_product_even_on_a_shared_device(self) -> None:
+        old = ergo_eval.C5_SEEDS
+        ergo_eval.C5_SEEDS = 2
+        try:
+            configs, registry, groups, _ = ergo_eval.configurations(suite_two_products_one_device())
+        finally:
+            ergo_eval.C5_SEEDS = old
+        for budget in ergo_eval.BUDGETS:
+            for product in ("alpha", "beta"):
+                self.assertLessEqual(len(configs[f"C4@{budget}"][product]), budget)
+                self.assertLessEqual(len(configs[f"C5@{budget}#0"][product]), budget)
+        self.assertNotEqual(configs["C4@6"]["alpha"], configs["C4@6"]["beta"])
+        self.assertEqual(configs["C1"]["alpha"], configs["C1"]["beta"])  # the default persona of the shared device
+        self.assertTrue(all(pid in registry for by in configs.values() for ids in by.values() for pid in ids))
+
+    def test_findings_use_only_the_runs_product_profiles(self) -> None:
+        cache = {"analyses": [{"scenario_id": "SC-x-beta-a", "run_id": "R1", "profiles_evaluated": ["P-a", "P-b"],
+                               "observations": [{"id": "O1", "check_id": "PT-01", "profile_id": "P-a", "passed": False, "run_id": "R1",
+                                                 "element_key": "#x|x", "severity": "P2", "measurement": {}, "message_ko": "", "selectors": ["#x"]}]}],
+                 "product_of": {"SC-x-beta-a": "beta"},
+                 "registry": {"P-a": {"profile_id": "P-a", "attributes": {"device_id": "galaxy-s24", "orientation": "portrait"}},
+                              "P-b": {"profile_id": "P-b", "attributes": {"device_id": "galaxy-s24", "orientation": "portrait"}}}}
+        findings, used = ergo_eval._findings(cache, {"alpha": ["P-a"], "beta": ["P-b"]})
+        self.assertEqual(findings, [])  # P-a belongs to product alpha, the run is product beta
+        self.assertEqual([p["profile_id"] for p in used], ["P-b"])
+
+
+class Verdicts(unittest.TestCase):
+    def test_interval_rule(self) -> None:
+        self.assertEqual(ergo_eval._verdict(0.6, [0.52, 0.7], 0.5), "pass")
+        self.assertEqual(ergo_eval._verdict(0.3, [0.2, 0.45], 0.5), "fail")
+        self.assertEqual(ergo_eval._verdict(0.55, [0.4, 0.7], 0.5), "inconclusive")
+        self.assertEqual(ergo_eval._verdict(None, [None, None], 0.5), "not_run")
+
+    def test_degenerate_inputs_are_not_run(self) -> None:
+        per = [{"id": "D-1", "detected_strict": True, "detected_lenient": True, "profile_condition": {}, "differential_matches_condition": None}]
+        score = {"per_defect": per, "clean_control_units_by_severity": {"P0": 0, "P1": 0, "P2": 0, "P3": 0}}
+        key = {"defects": [{"id": "D-1", "scenario_id": "S", "category": "reach"}], "clean_controls": []}
+        h = ergo_eval.hypotheses({"C2": score, "C4@10": score, "C4@14": score}, key)
+        self.assertEqual(h["H2"]["verdict"], "not_run")  # no C5 seeds
+        self.assertEqual(h["H3"]["verdict"], "not_run")  # no C3
+        self.assertEqual(h["H4"]["verdict"], "not_run")  # no clean scenarios
+        self.assertEqual(h["H5"]["verdict"], "not_run")  # no conditioned defects
+        self.assertEqual(h["H7"]["verdict"], "not_run")  # no C3
+
+    def test_paired_bootstrap_is_symmetric_for_constant_differences(self) -> None:
+        d = ergo_eval._paired_diff({"a": 1.0, "b": 1.0}, {"a": 0.0, "b": 0.0}, ["a", "b"])
+        self.assertEqual(d["diff"], 1.0)
+        self.assertEqual(d["ci95"], [1.0, 1.0])
+
+
+if __name__ == "__main__":
+    unittest.main()
