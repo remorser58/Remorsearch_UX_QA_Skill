@@ -172,8 +172,24 @@ def _lean(obs: dict[str, Any]) -> dict[str, Any]:
 
 
 def analyse(exp: Path, suites: Iterable[str], extra_profiles: Callable[[dict[str, Any]], list[dict[str, Any]]] | None = None,
-            tag: str = "pool") -> dict[str, Any]:
+            tag: str = "pool", checkpoint: Path | None = None) -> dict[str, Any]:
+    """Analyse every run under the pool. With ``checkpoint``, finished runs are saved
+    after each run and skipped on the next call (the container can restart mid-way).
+    Delete the checkpoint when the detector changes."""
     cache: dict[str, Any] = {}
+    done: dict[str, dict[str, Any]] = {}
+    from ergo_bench import provenance
+
+    code = provenance()["code_sha256"]
+    if checkpoint is not None and checkpoint.is_file():
+        with checkpoint.open("rb") as fh:
+            saved = pickle.load(fh)
+        if saved.get("__code__") == code:
+            done = saved
+            print(f"  resuming: {sum(len(v) for k, v in done.items() if k != '__code__')} runs already analysed", flush=True)
+        else:
+            print("  checkpoint from other detector code ignored", flush=True)
+    done["__code__"] = code
     for suite in suites:
         data = load_suite(suite, exp)
         profiles_by_group: dict[str, list[dict[str, Any]]] = {}
@@ -195,10 +211,19 @@ def analyse(exp: Path, suites: Iterable[str], extra_profiles: Callable[[dict[str
             evaluated = [own] + [p for p in profiles_by_group[gk] if p is not own] + [base] + pool + extra
             for p in evaluated:
                 all_profiles[p["profile_id"]] = p
+            if run_dir.name in done.get(suite, {}):
+                analyses.append(done[suite][run_dir.name])
+                continue
             result = analyze.analyze_run(run_dir, evaluated, data["scenarios"].get(run_doc["scenario_id"]), cross_profile=True)
             result["observations"] = [_lean(o) for o in result["observations"]]
             result.pop("coverage", None)
             analyses.append(result)
+            if checkpoint is not None:
+                done.setdefault(suite, {})[run_dir.name] = result
+                tmp = checkpoint.with_suffix(".tmp")
+                with tmp.open("wb") as fh:
+                    pickle.dump(done, fh)
+                tmp.replace(checkpoint)
             print(f"  {suite} {run_dir.name}: {len(result['profiles_evaluated'])} profiles, {len(result['observations'])} obs, {time.time() - started:.0f}s", flush=True)
         cache[suite] = {"analyses": analyses, "profiles": all_profiles, "key": data["key"], "swarm_ids": [p["profile_id"] for p in data["swarm_profiles"]]}
     return cache
@@ -654,9 +679,11 @@ def main() -> int:
     exp = args.exp.resolve()
     cache_path = exp / "pool-cache.pickle"
     if args.cmd == "analyse":
-        cache = analyse(exp, [s for s in args.suites.split(",") if s])
+        checkpoint = exp / "pool-cache.partial.pickle"
+        cache = analyse(exp, [s for s in args.suites.split(",") if s], checkpoint=checkpoint)
         with cache_path.open("wb") as fh:
             pickle.dump(cache, fh)
+        checkpoint.unlink(missing_ok=True)
         print(f"cached {cache_path}")
         return 0
     with cache_path.open("rb") as fh:
