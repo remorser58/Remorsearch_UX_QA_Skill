@@ -1348,21 +1348,10 @@ def check_run_timing(run: dict[str, Any], profile: dict[str, Any], device: Any, 
             ))
     samples = run.get("flash_samples") or []
     if samples:
-        stats = game.count_general_flashes(samples)
-        display = getattr(device, "display_mm", None) or (0, 0)
-        viewing = float(attrs.get("vision", {}).get("viewing_distance_mm") or getattr(device, "viewing_distance_mm", 300))
-        big = game.flash_area_exceeds(stats["max_area_fraction"], display[0], display[1], viewing) if display[0] else stats["max_area_fraction"] > 0.25
-        failed = stats["max_flashes_per_window"] > 3 and big
-        extended = not failed and stats.get("extended", False) and big
+        flash = _frame_flash(run, samples, device, attrs)
         out.append(Observation(
             "GM-04", run_id, pid, None, None, [], "viewport|flash",
-            {"name": "flashes_per_second", "value": stats["max_flashes_per_window"], "unit": "flashes/s", "threshold": 3, "comparator": "<=",
-             "area_fraction": round(stats["max_area_fraction"], 3), "area_exceeds": big,
-             "flashes_per_5s": stats.get("max_flashes_per_5s", 0.0), "extended_failure": extended},
-            not (failed or extended), "P0" if failed else ("P1" if extended else None),
-            f"1초 창에서 최대 {stats['max_flashes_per_window']:.1f}회 섬광(5초 창 {stats.get('max_flashes_per_5s', 0.0):.1f}회), 변화 면적 {stats['max_area_fraction']*100:.0f}%."
-            + (" 인증 도구(EA IRIS/Harding)로 재검사가 필요합니다." if failed or extended else ""),
-            "general-flash-screen-v1",
+            flash["measurement"], flash["severity"] is None, flash["severity"], flash["message"], flash["model"],
         ))
     mash = _mash_bursts(run)
     for target, count, span in mash:
@@ -1462,6 +1451,15 @@ def _infer_window_kind(element: dict[str, Any] | None, measured: dict[str, Any],
     return "decorative"
 
 
+def _saturated_red(colour: tuple[float, float, float] | None) -> bool:
+    """WCAG saturated red on linear R, G, B (as the driver's pixel test): R/(R+G+B) >= 0.8 and (R-G-B)*320 > 20."""
+    if not colour:
+        return False
+    r, g, b = (perception.srgb_to_linear(c) for c in colour)
+    total = r + g + b
+    return total > 0 and r >= params.FLASH_RED_RATIO * total and r - g - b > params.FLASH_RED_EXCESS
+
+
 def _dom_flash(measured: dict[str, Any], element: dict[str, Any] | None, viewport_area: float, device: Any, attrs: dict[str, Any]) -> dict[str, Any] | None:
     """WCAG 2.3.1 screening from DOM visibility toggles (in-page 16 ms polling).
 
@@ -1491,7 +1489,7 @@ def _dom_flash(measured: dict[str, Any], element: dict[str, Any] | None, viewpor
     big = game.flash_area_exceeds(fraction, display[0], display[1], viewing) if display[0] else fraction > 0.25
     colour = perception.parse_color(element.get("color_bg"))
     below = perception.parse_color(element.get("container_bg"))
-    red = bool(colour) and sum(colour) > 0 and colour[0] / sum(colour) >= params.FLASH_RED_RATIO
+    red = _saturated_red(colour)
     lum_delta = abs(perception.relative_luminance(colour) - perception.relative_luminance(below)) if colour and below else None
     strong = red or lum_delta is None or lum_delta >= params.FLASH_DELTA
     failed = best > 3 and big and strong
@@ -1511,6 +1509,91 @@ def _input_identity(action: dict[str, Any]) -> str:
     if action.get("action") in ("press", "gamepad"):
         return f"{action.get('action')}:{action.get('key') or action.get('keys') or action.get('button') or action.get('target')}"
     return str(action.get("target"))
+
+
+def _frame_flash(run: dict[str, Any], samples: list[dict[str, Any]], device: Any, attrs: dict[str, Any]) -> dict[str, Any]:
+    """WCAG 2.3.1 screening from the driver's flash samples (GM-04, whole run).
+
+    Runs with a block grid (``flash_sampling.block_grid``) get block-based general-
+    and red-flash detection within 10 degree fields (game.analyse_block_flashes);
+    older runs fall back to the whole-viewport mean luminance. A pass is reported
+    as ``inconclusive`` when the sampling did not observe the run well enough
+    (capture rate, unsampled waits, truncation).
+    """
+    sampling = run.get("flash_sampling") if isinstance(run.get("flash_sampling"), dict) else {}
+    coverage = game.sampling_coverage(samples, run.get("steps") or [], sampling)
+    problems = game.coverage_problems(coverage)
+    viewing = float(attrs.get("vision", {}).get("viewing_distance_mm") or getattr(device, "viewing_distance_mm", 300))
+    grid = sampling.get("block_grid")
+    extended = False
+    if game.has_block_grid(samples, grid):
+        try:
+            from .devices import mm_per_css_px
+            pitch: tuple[float, float] | None = (mm_per_css_px(device, "x"), mm_per_css_px(device, "y"))
+        except (KeyError, TypeError, ValueError, ZeroDivisionError, AttributeError):
+            pitch = None  # unknown panel geometry: WCAG 341 x 256 px proxy for the 10 degree field
+        res = game.analyse_block_flashes(samples, grid, pitch, viewing)
+        failed, extended = res["failed"], res["extended"]
+        kind = max(("general", "red"), key=lambda k: (res[k]["failed"], res[k]["extended_failed"], res[k]["area_sr"]))
+        worst = res[kind]
+        value = worst["field_flashes_per_s"] if worst["area_sr"] > 0 else max(res["general"]["max_flashes_per_s"], res["red"]["max_flashes_per_s"])
+        field_sr = 2.0 * math.pi * (1.0 - math.cos(math.radians(params.FLASH_FIELD_DEG / 2.0)))
+        measurement: dict[str, Any] = {
+            "name": "flashes_per_second", "value": value, "unit": "flashes/s", "threshold": 3, "comparator": "<=",
+            "method": res["method"], "flash_kind": kind if worst["area_sr"] > 0 else None,
+            "area_sr": worst["area_sr"], "area_threshold_sr": params.FLASH_AREA_SR, "area_exceeds": failed,
+            "field_fraction": round(worst["area_sr"] / field_sr, 3), "red_flash": res["red"]["failed"],
+            "extended_failure": extended, "general": res["general"], "red": res["red"],
+            "grid": res["grid"], "block_css": res["block_css"], "geometry": res["geometry"],
+            "viewing_distance_mm": res["viewing_distance_mm"], "motion_samples": res["moved_samples"],
+        }
+        where = ""
+        if worst["at_ms"] is not None:
+            step = next((s.get("step_index") for s in run.get("steps") or []
+                         if isinstance(s.get("t_start_ms"), (int, float)) and s["t_start_ms"] <= worst["at_ms"] <= (s.get("t_end_ms") or s["t_start_ms"])), 0)
+            measurement["step_index"] = step
+            where = f", {worst['at_ms'] / 1000:.1f}초({step}단계) 화면 ({worst['field_center_css'][0]:.0f}, {worst['field_center_css'][1]:.0f}) px 부근"
+        label = "적색 섬광" if kind == "red" else "일반 섬광"
+        if failed or extended:
+            rate = "초당 3회 초과" if failed else "5초 동안 초당 2회 이상"
+            detail = (f"{label}: {rate} 깜빡이는 영역이 10° 시야 안에서 {worst['area_sr']:.4f} sr"
+                      f"(기준 {params.FLASH_AREA_SR} sr, 시야의 {measurement['field_fraction'] * 100:.0f}%)를 차지함{where}.")
+        else:
+            detail = (f"초당 3회를 넘게 깜빡이는 영역이 10° 시야 기준 면적을 넘지 않음(최대 {worst['area_sr']:.4f} sr / 기준 {params.FLASH_AREA_SR} sr, "
+                      f"국소 최대 초당 {max(res['general']['max_flashes_per_s'], res['red']['max_flashes_per_s']):.1f}회).")
+        model = "block-flash-screen-v1"
+    else:
+        stats = game.count_general_flashes(samples)
+        display = getattr(device, "display_mm", None) or (0, 0)
+        big = game.flash_area_exceeds(stats["max_area_fraction"], display[0], display[1], viewing) if display[0] else stats["max_area_fraction"] > 0.25
+        failed = stats["max_flashes_per_window"] > 3 and big
+        extended = not failed and stats["extended"] and big
+        measurement = {"name": "flashes_per_second", "value": stats["max_flashes_per_window"], "unit": "flashes/s", "threshold": 3, "comparator": "<=",
+                       "method": "viewport-mean-v1", "area_fraction": round(stats["max_area_fraction"], 3), "area_exceeds": big,
+                       "flashes_per_5s": stats["max_flashes_per_5s"], "extended_failure": extended}
+        detail = (f"1초 창에서 최대 {stats['max_flashes_per_window']:.1f}회 섬광(5초 창 {stats['max_flashes_per_5s']:.1f}회), 변화 면적 "
+                  f"{stats['max_area_fraction']*100:.0f}% — 블록 격자가 없는 실행이라 화면 전체 평균 휘도로만 판정(국소·역위상·적색 섬광은 못 봄).")
+        model = "general-flash-screen-v1"
+    verdict = "fail" if failed else ("extended_fail" if extended else ("inconclusive" if problems else "pass"))
+    measurement["verdict"] = verdict
+    measurement["coverage"] = coverage
+    if problems:
+        measurement["coverage_problems"] = problems
+    gap = coverage["max_gap_ms"]
+    sampled = (f" 표본 {coverage['sampled_ms'] / 1000:.1f}초·평균 {coverage['mean_fps'] or 0:.0f} fps·최대 간격 {gap or 0:.0f} ms"
+               + (f"(>{params.FLASH_MAX_GAP_MS:.0f} ms: 그 사이의 짧은 섬광은 놓칠 수 있음)" if gap and gap > params.FLASH_MAX_GAP_MS else "") + ".")
+    message = detail + sampled
+    if verdict == "inconclusive":
+        reasons = {
+            "low_fps": f"평균 표본 {coverage['mean_fps'] or 0:.0f} fps < {params.FLASH_MIN_FPS:.0f} fps",
+            "unsampled_steps": f"{', '.join(str(s) for s in coverage['unsampled_animating_steps'])}단계(대기·움직이는 화면) 동안 표본 없음",
+            "truncated": "드라이버 용량 한도로 표본 수집이 중간에 멈춤",
+        }
+        message = ("판정 불가(inconclusive, 통과 아님): " + "; ".join(reasons[p] for p in problems)
+                   + ". 관찰한 구간에서는 " + detail + sampled)
+    if failed or extended:
+        message += " 인증 도구(EA IRIS/Harding)로 재검사가 필요합니다."
+    return {"measurement": measurement, "severity": "P0" if failed else ("P1" if extended else None), "message": message, "model": model}
 
 
 def _mash_bursts(run: dict[str, Any]) -> list[tuple[str, int, float]]:

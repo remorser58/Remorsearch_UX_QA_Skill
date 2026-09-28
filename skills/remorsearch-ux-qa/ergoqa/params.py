@@ -187,6 +187,15 @@ FLASH_AREA_SR = 0.006          # [standard] WCAG 2.3.1 combined area threshold (
 FLASH_EXTENDED_WINDOW_MS = 5000.0   # [code] EA IRIS "extended failure": 2-3 flashes/s sustained over 5 s -> P1
 FLASH_EXTENDED_MIN_FLASHES = 10.0   # [derived] >= 2 flashes/s over the 5 s window
 FLASH_RED_RATIO = 0.8              # [standard] WCAG 2.2 red flash: R/(R+G+B) >= 0.8 (saturated red)
+# Block-grid screening (flash samples with block_lum/block_red; docs/human-factors/game-ux-ergonomics.md 2.1).
+FLASH_WINDOW_MS = 1000.0           # [standard] "any one-second period"
+FLASH_WINDOW_TOLERANCE_MS = 50.0  # [policy] sampling sees a transition up to one capture interval late; a 3 Hz flicker must not fail on that lag
+FLASH_FAIL_TRANSITIONS = 7         # [standard] more than 3 flashes = more than 6 transitions (Trace wording)
+FLASH_FIELD_DEG = 10.0             # [standard] the 0.006 sr limit applies within any 10 degree visual field
+FLASH_RED_SHARE_DELTA = 0.10       # [policy] a red transition moves >= 10 % of a block into/out of saturated red
+FLASH_RED_EXCESS = 20.0 / 320.0    # [standard] WCAG 2.0 red flash note: (R-G-B)*320 > 20 on linear RGB (driver pixel test)
+FLASH_MIN_FPS = 20.0               # [policy] below 20 samples/s (Nyquist 10 Hz) a pass is reported as inconclusive
+FLASH_MAX_GAP_MS = 100.0           # [policy] a longer gap inside a sampling window is reported (can hide one 5 Hz flash pair)
 MASH_MIN_PRESSES = 8               # [policy] repeated presses on one target needed to progress (XAG 107 / GAG: avoid mashing)
 QTE_MOTOR_MS = 100.0           # [assumption] provisional; game brief
 RT_CV = 0.2                    # [assumption] provisional coefficient of variation of RT

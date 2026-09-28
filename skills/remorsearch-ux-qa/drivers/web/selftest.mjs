@@ -379,6 +379,21 @@ function checkScripted(label, runDir, dev, { flash }) {
       && samples.every((s) => s.mean_luminance >= 0 && s.mean_luminance <= 1 && Number.isInteger(s.frame_index) && s.changed_fraction >= 0 && s.changed_fraction <= 1),
       { n: samples.length, sampling: run.flash_sampling });
     check(`${label}: 10 Hz black/white flicker shows >= 4 frames with >10% changed area`, changed >= 4, burst.map((s) => [s.t_ms, s.mean_luminance, s.changed_fraction]));
+    const grid = run.flash_sampling.block_grid;
+    const blocks = grid ? grid.cols * grid.rows : 0;
+    const gridOk = grid && grid.cols >= 16 && grid.rows >= 8 && blocks <= 820
+      && samples.every((s) => Buffer.from(s.block_lum || '', 'base64').length === blocks && Buffer.from(s.block_red || '', 'base64').length === blocks);
+    check(`${label}: flash samples carry a block grid (block_lum, block_red: one byte per block)`, gridOk,
+      grid && { cols: grid.cols, rows: grid.rows, block_css: grid.block_css, first: samples[0] && Object.keys(samples[0]) });
+    const longWait = run.steps.find((s) => s.action?.action === 'wait' && s.action.ms >= 1000);
+    const inWait = samples.filter((s) => s.step_index === longWait?.step_index);
+    const waitSpan = inWait.length ? inWait[inWait.length - 1].t_ms - inWait[0].t_ms : 0;
+    check(`${label}: flash sampling covers a wait step for its duration`, inWait.length >= 10 && waitSpan >= 0.7 * longWait.action.ms,
+      { step: longWait?.step_index, n: inWait.length, span: waitSpan });
+    const fs = run.flash_sampling;
+    check(`${label}: flash_sampling records coverage and capture jitter`,
+      fs.sampled_ms > 0 && fs.mean_fps > 0 && fs.max_gap_ms > 0 && Array.isArray(fs.jitter_ms) && fs.jitter_ms[1] > 0 && fs.truncated === null,
+      { sampled_ms: fs.sampled_ms, mean_fps: fs.mean_fps, max_gap_ms: fs.max_gap_ms, jitter_ms: fs.jitter_ms, truncated: fs.truncated });
   } else {
     check(`${label}: flash sampling off by default`, run.flash_samples.length === 0 && run.flash_sampling.enabled === false);
   }

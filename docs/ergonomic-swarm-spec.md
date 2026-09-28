@@ -339,7 +339,22 @@ plus visible text blocks (p, h1-h6, li, label, span with direct text, [role=aler
 with `interactive:false`. For canvas games, hotspots from the scenario and
 `window.__ergoqa__?.hotspots?.()` become elements with `source:"manual"`.
 Timing windows: poll selector visibility every 16 ms. Flash sampling: optional
-`--flash-sample-ms 1000` captures mean luminance at ~20 fps via screenshots.
+`--flash-sample-ms 1000` captures the viewport at ~25 fps via screenshots after
+load and each input (N ms), during snapshot steps (N ms) and for the whole of
+each wait step, with a random 0-15 ms pause between captures (breaks phase lock
+with flicker). Additive sample fields: `block_lum` and `block_red` (base64, one
+byte per block of `flash_sampling.block_grid`: round(255 x mean relative
+luminance), round(255 x share of saturated-red pixels, linear R/(R+G+B) >= 0.8
+and (R-G-B) x 320 > 20)), `block_moved` (bitmask of blocks whose change is
+explained by content motion) and `motion_css`. Additive `flash_sampling`
+fields: `during`, `jitter_ms`, `bursts`, `sampled_ms`, `mean_fps`,
+`max_gap_ms`, `run_ms`, `truncated` (null, or where the 6 MB sample cap
+stopped sampling), `caps`, `block_grid` (`cols`, `rows`, `block_css`,
+`viewport_css`, `frame_px`). GM-04 tracks each block's transitions, counts
+flashes per block in any 1 s (50 ms sampling tolerance) and sums the area of
+concurrently flashing blocks within any 10 degree field (0.006 sr); a pass with
+mean fps < 20, an unsampled wait or truncated sampling is `inconclusive`.
+Runs without `block_grid` fall back to the whole-viewport mean.
 
 ## 11. Android and annotation drivers
 

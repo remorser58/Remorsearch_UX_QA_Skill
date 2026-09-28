@@ -10,7 +10,10 @@ import path from 'node:path';
 
 import { resolveDevice } from './devices.mjs';
 import { STATE_KEY, TW_BINDING, extractSnapshot, hitTest, idAtPoint, idForElement, pageInit } from './page_scripts.mjs';
-import { cssScaleCopy, decodePng, frameFromImage, frameStats, visualDiffFraction } from './png.mjs';
+import {
+  BLOCK_MIN_H_CSS, BLOCK_MIN_W_CSS, MOTION_MATCH, RED_EXCESS, RED_RATIO,
+  blockStats, cssScaleCopy, decodePng, frameFromImage, frameStats, makeBlockGrid, visualDiffFraction,
+} from './png.mjs';
 import { KNOWN_ROLES } from './validate.mjs';
 import {
   DriverFailure, epochNow, isoNow, pngSize, round1, sha256, sleep, truncate, writeFileAtomic, writeJsonAtomic,
@@ -23,6 +26,13 @@ const VISUAL_LEVEL = 16; // per-channel change (0-255) that counts as a changed 
 const TW_POLL_MS = 16;
 const DEFAULT_TARGET_TIMEOUT_MS = 5000;
 const MAX_FLASH_SAMPLES = 50000;
+// Flash samples carry a block grid (~0.4-2.2 KB of base64 each): sampling stops
+// (flash_sampling.truncated) once they would push run.json towards ergoqa's
+// 8 MB input limit. ~4,500 phone or ~2,000 desktop samples (1.5-3 min at ~24 fps).
+const MAX_FLASH_BYTES = 6_000_000;
+// Random pause between flash captures: CDP captures are otherwise phase-locked
+// to the compositor (~33 ms), so a 30 Hz flicker would alias to a still image.
+const FLASH_JITTER_MS = 15;
 const MAX_CONSOLE = 500;
 
 const MEASURED = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'type', 'press', 'scroll', 'gamepad']);
@@ -67,6 +77,10 @@ export class WebSession {
     this.navEvents = [];
     this.navRequestPending = false;
     this.flashSamples = [];
+    this.flashBytes = 0;
+    this.flashTruncated = null;
+    this.flashGrid = null;
+    this.flashPrev = null; // last flash frame (across bursts) for block motion
     this.frameIndex = 0;
     this.blocked = [];
     this.blockedCount = 0;
@@ -436,9 +450,9 @@ export class WebSession {
         const d = visualDiffFraction(frame, visual.pre, VISUAL_LEVEL);
         if (d !== null && d >= this.visualThreshold(frame)) fb.visual = t0;
       }
-      if (wantFlash && this.flashSamples.length < MAX_FLASH_SAMPLES) {
+      if (wantFlash && this.flashSamples.length < MAX_FLASH_SAMPLES && this.flashBytes < MAX_FLASH_BYTES) {
         const st = frameStats(frame, prev);
-        this.flashSamples.push({
+        const sample = {
           t_ms: this.rel(tm),
           mean_luminance: r4(st.mean_luminance),
           changed_fraction: prev ? r4(st.changed_fraction) : 0,
@@ -447,10 +461,74 @@ export class WebSession {
           frame_index: this.frameIndex++,
           step_index: stepIndex,
           capture_ms: round1(t1 - t0),
-        });
+        };
+        this.addBlockStats(sample, frame);
+        this.flashSamples.push(sample);
+        this.flashBytes += JSON.stringify(sample).length + 160; // + pretty-print indentation in run.json
         prev = frame;
+        this.flashPrev = frame;
+      } else if (wantFlash && !this.flashTruncated) {
+        this.flashTruncated = { t_ms: this.rel(tm), step_index: stepIndex, samples: this.flashSamples.length };
+      }
+      if (wantFlash) await sleep(Math.random() * FLASH_JITTER_MS);
+    }
+  }
+
+  /** Block grid statistics of a flash frame (png.mjs blockStats), base64 encoded into the sample. */
+  addBlockStats(sample, frame) {
+    if (!this.flashGrid) this.flashGrid = makeBlockGrid(frame.width, frame.height, this.vw, this.vh);
+    const bs = blockStats(frame, this.flashGrid, this.flashPrev);
+    if (!bs) return; // frame size changed: no grid for this sample
+    sample.block_lum = Buffer.from(bs.lum).toString('base64');
+    sample.block_red = Buffer.from(bs.red).toString('base64');
+    if (bs.moved) {
+      sample.block_moved = Buffer.from(bs.moved).toString('base64');
+      sample.motion_css = [round1((bs.shift[0] * this.vw) / frame.width), round1((bs.shift[1] * this.vh) / frame.height)];
+    }
+  }
+
+  /** Sampling coverage: bursts are runs of samples of one step (one sampling window). */
+  flashCoverage() {
+    const s = this.flashSamples;
+    const gaps = [];
+    let sampled = 0;
+    let bursts = s.length ? 1 : 0;
+    let first = s.length ? s[0].t_ms : 0;
+    for (let i = 1; i <= s.length; i++) {
+      if (i === s.length || s[i].step_index !== s[i - 1].step_index) {
+        sampled += s[i - 1].t_ms - first;
+        if (i < s.length) {
+          bursts++;
+          first = s[i].t_ms;
+        }
+      } else {
+        gaps.push(s[i].t_ms - s[i - 1].t_ms);
       }
     }
+    return {
+      bursts,
+      sampled_ms: round1(sampled),
+      mean_fps: sampled > 0 ? round1((gaps.length * 1000) / sampled) : null,
+      max_gap_ms: gaps.length ? round1(Math.max(...gaps)) : null,
+      mean_interval_ms: gaps.length ? round1(gaps.reduce((a, b) => a + b, 0) / gaps.length) : null,
+    };
+  }
+
+  flashGridOut() {
+    const g = this.flashGrid;
+    if (!g) return null;
+    return {
+      cols: g.cols,
+      rows: g.rows,
+      block_css: [Math.round(g.blockCss[0] * 100) / 100, Math.round(g.blockCss[1] * 100) / 100],
+      viewport_css: [g.viewportW, g.viewportH],
+      frame_px: [g.frameW, g.frameH],
+      min_block_css: [BLOCK_MIN_W_CSS, BLOCK_MIN_H_CSS],
+      order: 'row-major: block index = row * cols + col, from the viewport top-left',
+      block_lum: 'base64, one byte per block: round(255 * mean WCAG relative luminance)',
+      block_red: `base64, one byte per block: round(255 * share of saturated-red pixels: linear R/(R+G+B) >= ${RED_RATIO} and (R-G-B)*320 > ${Math.round(RED_EXCESS * 320)})`,
+      block_moved: `base64 bitmask, bit (b & 7) of byte (b >> 3): block b changed since the previous flash frame only because the content moved by motion_css (mean luminance and red share match the shifted previous frame within ${MOTION_MATCH}, or the content entered the viewport); absent when no content shift was detected`,
+    };
   }
 
   // ------------------------------------------------------------------ snapshots
@@ -956,11 +1034,19 @@ export class WebSession {
       if (kind === 'wait') {
         const t0 = epochNow();
         step.t_start_ms = this.rel(t0);
-        await sleep(action.ms);
+        if (this.opts.flashSampleMs > 0) {
+          // Flash sampling covers the whole wait: effects often play while the user waits.
+          await this.probeFrames({ dispatch: t0, stepIndex, flashMs: action.ms, visual: null, fb: { done: true } });
+        }
+        await sleep(t0 + action.ms - epochNow());
         step.t_end_ms = Math.max(step.t_start_ms, this.rel(epochNow()));
       } else if (kind === 'snapshot') {
-        step.t_start_ms = this.rel(epochNow());
-        step.t_end_ms = step.t_start_ms;
+        const t0 = epochNow();
+        step.t_start_ms = this.rel(t0);
+        if (this.opts.flashSampleMs > 0) {
+          await this.probeFrames({ dispatch: t0, stepIndex, flashMs: this.opts.flashSampleMs, visual: null, fb: { done: true } });
+        }
+        step.t_end_ms = Math.max(step.t_start_ms, this.rel(epochNow()));
       } else {
         if (action.target !== undefined) {
           const timeout = action.timeout_ms ?? DEFAULT_TARGET_TIMEOUT_MS;
@@ -1187,11 +1273,7 @@ export class WebSession {
       let status = 'completed';
       if (this.blockReasons.length) status = 'blocked';
       else if (this.mode === 'scripted' && this.steps.some((s) => s.result !== 'ok')) status = 'failed';
-      const flashFrames = this.flashSamples.length;
-      const gaps = [];
-      for (let i = 1; i < this.flashSamples.length; i++) {
-        if (this.flashSamples[i].step_index === this.flashSamples[i - 1].step_index) gaps.push(this.flashSamples[i].t_ms - this.flashSamples[i - 1].t_ms);
-      }
+      const flashCov = this.flashCoverage();
       const run = {
         schema_version: 'ergo-run.v1',
         run_id: this.runId,
@@ -1238,10 +1320,22 @@ export class WebSession {
         flash_sampling: this.opts.flashSampleMs > 0 ? {
           enabled: true,
           per_step_ms: this.opts.flashSampleMs,
-          method: 'CDP Page.captureScreenshot, viewport downscaled to ~160 CSS px wide, optimizeForSpeed',
-          frames: flashFrames,
-          mean_interval_ms: gaps.length ? round1(gaps.reduce((a, b) => a + b, 0) / gaps.length) : null,
-          max_interval_ms: gaps.length ? round1(Math.max(...gaps)) : null,
+          // After page load, after each input and during snapshot steps for per_step_ms;
+          // during wait steps for the whole wait.
+          during: ['load', 'input', 'snapshot', 'wait'],
+          method: `CDP Page.captureScreenshot, viewport downscaled to ~${FRAME_WIDTH} CSS px wide, optimizeForSpeed, random 0-${FLASH_JITTER_MS} ms pause between captures`,
+          jitter_ms: [0, FLASH_JITTER_MS],
+          frames: this.flashSamples.length,
+          bursts: flashCov.bursts,
+          sampled_ms: flashCov.sampled_ms,
+          mean_fps: flashCov.mean_fps,
+          max_gap_ms: flashCov.max_gap_ms,
+          run_ms: this.rel(end),
+          mean_interval_ms: flashCov.mean_interval_ms,
+          max_interval_ms: flashCov.max_gap_ms,
+          truncated: this.flashTruncated,
+          caps: { samples: MAX_FLASH_SAMPLES, bytes: MAX_FLASH_BYTES },
+          block_grid: this.flashGridOut(),
           changed_fraction: 'share of pixels with |delta relative luminance| >= 0.10 vs the previous frame of the same burst (0 for the first frame)',
           flash_fraction: 'changed pixels whose darker state is < 0.80 (WCAG 2.3.1 general-flash pair condition)',
         } : { enabled: false },

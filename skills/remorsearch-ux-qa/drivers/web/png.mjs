@@ -159,6 +159,248 @@ export function frameStats(frame, prev) {
   return out;
 }
 
+// ---------------------------------------------------------------------------
+// Block grid for photosensitivity screening. WCAG 2.3.1 counts flashes per
+// region (0.006 sr within any 10 degree field), so a local flash or two regions
+// flashing in counter-phase must not be averaged away by the whole-viewport
+// mean. Each flash sample records, per block: mean relative luminance and the
+// share of saturated-red pixels (u8, base64), plus which blocks changed only
+// because the page content moved (scrolling is motion, not flashing).
+//
+// Block size: at least 22 x 40 CSS px (>= 16 columns on a 360 px phone; 40 px
+// is about two lines of body text, so text scrolling through a block barely
+// changes its mean), enlarged on big viewports so a grid has <= ~820 blocks
+// (run.json must stay under ergoqa's 8 MB input limit). The WCAG area threshold
+// then spans >= ~13 blocks on every catalogued device at its typical distance.
+
+export const BLOCK_MIN_W_CSS = 22;
+export const BLOCK_MIN_H_CSS = 40;
+export const BLOCK_MAX = 820;
+// Saturated red (WCAG 2.2 red flash: R/(R+G+B) >= 0.8; WCAG 2.0 note: the
+// change of (R-G-B)*320 must exceed 20), on linear R, G, B as in the relative
+// luminance definition. The excess term keeps near-black pixels out.
+export const RED_RATIO = 0.8;
+export const RED_EXCESS = 20 / 320;
+// A block's change is explained by motion when its mean luminance and red share
+// match the previous frame shifted by the global motion within this tolerance.
+export const MOTION_MATCH = 0.05;
+
+/**
+ * Grid over a downscaled frame (frameW x frameH px) of a viewport (CSS px).
+ * Block b = row * cols + col covers frame px [xEdges[col], xEdges[col+1]) x
+ * [yEdges[row], yEdges[row+1]) and viewport CSS px of size blockCss.
+ */
+export function makeBlockGrid(frameW, frameH, viewportW, viewportH) {
+  let bw = BLOCK_MIN_W_CSS;
+  let bh = BLOCK_MIN_H_CSS;
+  const wanted = (viewportW / bw) * (viewportH / bh);
+  if (wanted > BLOCK_MAX) {
+    const s = Math.sqrt(wanted / BLOCK_MAX);
+    bw *= s;
+    bh *= s;
+  }
+  const cols = Math.max(1, Math.min(frameW, Math.round(viewportW / bw)));
+  const rows = Math.max(1, Math.min(frameH, Math.round(viewportH / bh)));
+  const xEdges = Int32Array.from({ length: cols + 1 }, (_, c) => Math.round((c * frameW) / cols));
+  const yEdges = Int32Array.from({ length: rows + 1 }, (_, r) => Math.round((r * frameH) / rows));
+  const colOf = new Int32Array(frameW);
+  const rowOf = new Int32Array(frameH);
+  for (let c = 0; c < cols; c++) for (let x = xEdges[c]; x < xEdges[c + 1]; x++) colOf[x] = c;
+  for (let r = 0; r < rows; r++) for (let y = yEdges[r]; y < yEdges[r + 1]; y++) rowOf[y] = r;
+  return {
+    cols, rows, frameW, frameH, viewportW, viewportH, blockCss: [viewportW / cols, viewportH / rows], xEdges, yEdges, colOf, rowOf,
+  };
+}
+
+/** Per-pixel saturated-red flags (cached on the frame). */
+function redMask(frame) {
+  if (!frame.red) {
+    const n = frame.lum.length;
+    const m = new Uint8Array(n);
+    const rgb = frame.rgb;
+    for (let i = 0; i < n; i++) {
+      const r = LIN[rgb[i * 3]];
+      const g = LIN[rgb[i * 3 + 1]];
+      const b = LIN[rgb[i * 3 + 2]];
+      const s = r + g + b;
+      if (s > 0 && r >= RED_RATIO * s && r - g - b > RED_EXCESS) m[i] = 1;
+    }
+    frame.red = m;
+  }
+  return frame.red;
+}
+
+/** Row and column mean-luminance profiles (cached on the frame). */
+function profiles(frame) {
+  if (!frame.rowProfile) {
+    const { width: w, height: h, lum } = frame;
+    const rowP = new Float64Array(h);
+    const colP = new Float64Array(w);
+    for (let y = 0; y < h; y++) {
+      let s = 0;
+      for (let x = 0; x < w; x++) {
+        const v = lum[y * w + x];
+        s += v;
+        colP[x] += v;
+      }
+      rowP[y] = s / w;
+    }
+    for (let x = 0; x < w; x++) colP[x] /= h;
+    frame.rowProfile = rowP;
+    frame.colProfile = colP;
+  }
+  return { rows: frame.rowProfile, cols: frame.colProfile };
+}
+
+/** Summed-area tables of luminance and red flags (cached on the frame). */
+function integrals(frame) {
+  if (!frame.integralLum) {
+    const { width: w, height: h, lum } = frame;
+    const red = redMask(frame);
+    const il = new Float64Array((w + 1) * (h + 1));
+    const ir = new Float64Array((w + 1) * (h + 1));
+    for (let y = 0; y < h; y++) {
+      let sl = 0;
+      let sr = 0;
+      for (let x = 0; x < w; x++) {
+        sl += lum[y * w + x];
+        sr += red[y * w + x];
+        il[(y + 1) * (w + 1) + x + 1] = il[y * (w + 1) + x + 1] + sl;
+        ir[(y + 1) * (w + 1) + x + 1] = ir[y * (w + 1) + x + 1] + sr;
+      }
+    }
+    frame.integralLum = il;
+    frame.integralRed = ir;
+  }
+  return { lum: frame.integralLum, red: frame.integralRed };
+}
+
+function rectSum(table, w, x0, y0, x1, y1) {
+  const W = w + 1;
+  return table[y1 * W + x1] - table[y0 * W + x1] - table[y1 * W + x0] + table[y0 * W + x0];
+}
+
+/**
+ * Shift d (content moved by d px: cur[i] = prev[i - d]) minimising the mean
+ * profile difference, with the errors at no shift and at the mirrored shift -d.
+ */
+function bestShift(cur, prev) {
+  const L = cur.length;
+  const max = Math.floor(L / 2);
+  const errs = new Float64Array(2 * max + 1);
+  for (let d = -max; d <= max; d++) {
+    const lo = Math.max(0, d);
+    const hi = Math.min(L, L + d);
+    let e = 0;
+    for (let i = lo; i < hi; i++) e += Math.abs(cur[i] - prev[i - d]);
+    errs[d + max] = e / (hi - lo);
+  }
+  let best = 0;
+  for (let d = -max; d <= max; d++) {
+    const e = errs[d + max];
+    const b = errs[best + max];
+    if (e < b - 1e-9 || (e <= b + 1e-9 && Math.abs(d) < Math.abs(best))) best = d;
+  }
+  return { d: best, err: errs[best + max], err0: errs[max], mirror: errs[max - best] };
+}
+
+/**
+ * Dominant translation of the frame content since `prev` (page scrolling,
+ * carousels), in frame px, or null when no shift explains the change clearly
+ * better than no shift (static content, flashes, cross-fades). A shift that the
+ * mirrored shift explains about as well is rejected: that is a phase reversal
+ * (counter-phase halves, stripes or checkerboards swapping colours), i.e.
+ * flicker, not motion.
+ */
+export function globalShift(cur, prev) {
+  if (!prev || prev.width !== cur.width || prev.height !== cur.height) return null;
+  const pc = profiles(cur);
+  const pp = profiles(prev);
+  const cands = [];
+  const accept = (s) => s.d !== 0 && s.err0 > 0.002 && s.err <= 0.5 * s.err0 && s.mirror > 2 * s.err + 0.002;
+  const v = bestShift(pc.rows, pp.rows);
+  if (accept(v)) cands.push({ dx: 0, dy: v.d, q: v.err / v.err0 });
+  const hz = bestShift(pc.cols, pp.cols);
+  if (accept(hz)) cands.push({ dx: hz.d, dy: 0, q: hz.err / hz.err0 });
+  if (!cands.length) return null;
+  cands.sort((a, b) => a.q - b.q);
+  return [cands[0].dx, cands[0].dy];
+}
+
+/**
+ * Per-block statistics of one frame for the grid (see makeBlockGrid):
+ *  - lum:   Uint8Array, round(255 * mean relative luminance) per block
+ *  - red:   Uint8Array, round(255 * share of saturated-red pixels) per block
+ *  - moved: bitmask (bit b of byte b >> 3) of blocks whose change since `prev`
+ *           is explained by the global shift (or whose content entered the
+ *           viewport with it); null when no shift was detected
+ *  - shift: [dx, dy] frame px of that global shift ([0, 0] if none)
+ */
+export function blockStats(frame, grid, prev) {
+  const { cols, rows, colOf, rowOf, xEdges, yEdges } = grid;
+  const w = frame.width;
+  const h = frame.height;
+  if (w !== grid.frameW || h !== grid.frameH) return null;
+  const n = cols * rows;
+  const lumSum = new Float64Array(n);
+  const redSum = new Float64Array(n);
+  const count = new Float64Array(n);
+  const lum = frame.lum;
+  const red = redMask(frame);
+  for (let y = 0; y < h; y++) {
+    const base = rowOf[y] * cols;
+    const o = y * w;
+    for (let x = 0; x < w; x++) {
+      const b = base + colOf[x];
+      lumSum[b] += lum[o + x];
+      redSum[b] += red[o + x];
+      count[b] += 1;
+    }
+  }
+  const lumU8 = new Uint8Array(n);
+  const redU8 = new Uint8Array(n);
+  const lumMean = new Float64Array(n);
+  const redShare = new Float64Array(n);
+  for (let b = 0; b < n; b++) {
+    lumMean[b] = count[b] ? lumSum[b] / count[b] : 0;
+    redShare[b] = count[b] ? redSum[b] / count[b] : 0;
+    lumU8[b] = Math.round(255 * Math.min(1, Math.max(0, lumMean[b])));
+    redU8[b] = Math.round(255 * redShare[b]);
+  }
+  const out = { lum: lumU8, red: redU8, moved: null, shift: [0, 0] };
+  const shift = globalShift(frame, prev);
+  if (!shift) return out;
+  const [dx, dy] = shift;
+  const ip = integrals(prev);
+  const moved = new Uint8Array(Math.ceil(n / 8));
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const b = r * cols + c;
+      const x0 = xEdges[c];
+      const x1 = xEdges[c + 1];
+      const y0 = yEdges[r];
+      const y1 = yEdges[r + 1];
+      const sx0 = Math.max(0, x0 - dx);
+      const sx1 = Math.min(w, x1 - dx);
+      const sy0 = Math.max(0, y0 - dy);
+      const sy1 = Math.min(h, y1 - dy);
+      const area = Math.max(0, sx1 - sx0) * Math.max(0, sy1 - sy0);
+      let explained;
+      if (area < 0.5 * (x1 - x0) * (y1 - y0)) {
+        explained = true; // new content entered the viewport with the motion
+      } else {
+        const cl = rectSum(ip.lum, w, sx0, sy0, sx1, sy1) / area;
+        const cr = rectSum(ip.red, w, sx0, sy0, sx1, sy1) / area;
+        explained = Math.abs(lumMean[b] - cl) <= MOTION_MATCH && Math.abs(redShare[b] - cr) <= MOTION_MATCH;
+      }
+      if (explained) moved[b >> 3] |= 1 << (b & 7);
+    }
+  }
+  out.moved = moved;
+  out.shift = shift;
+  return out;
+}
+
 /**
  * Visual difference between two frames: share of pixels whose max RGB channel
  * difference is >= `level` (default 16/255). Returns null if sizes differ.

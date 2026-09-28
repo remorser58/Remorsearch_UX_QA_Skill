@@ -42,7 +42,7 @@ node drivers/web/selftest.mjs [--keep]
 | `--device-json F` | a device object (`ergoqa.devices.Device.to_dict()`) instead of the built-in table |
 | `--orientation O` | `portrait`/`landscape`; only phones, tablets and foldables rotate (width/height swap) |
 | `--base URL` | replaces `{BASE}` in `surface.url` and `success.url_contains` |
-| `--flash-sample-ms N` | after page load and after each step, sample viewport luminance for N ms |
+| `--flash-sample-ms N` | sample the viewport for N ms after page load, after each input and during snapshot steps, and for the whole of each wait step |
 | `--feedback-timeout-ms N` | max wait for the first feedback after an input (default 3000; per-step `feedback_timeout_ms`) |
 | `--settle-ms N` | wait after the first feedback before the after-snapshot (default 300; per-step `settle_ms`) |
 | `--allow-origin O` | extra origin the page may load (repeatable). Default: only the scenario's origin |
@@ -147,6 +147,16 @@ they belong to (0 = initial load), so a step can own two snapshots.
   `changed_fraction` (share of pixels whose luminance changed by >= 0.10 vs the
   previous frame of the burst), `flash_fraction` (same, with the darker state <
   0.80: the WCAG 2.3.1 pair condition) and `red_fraction` (saturated red).
+  Each sample also carries a block grid for local and counter-phase flashes:
+  `block_lum` and `block_red` (base64, one byte per block: mean relative
+  luminance and share of saturated-red pixels, linear R/(R+G+B) >= 0.8 and
+  (R-G-B) x 320 > 20), and `block_moved` + `motion_css` when the content moved
+  (scrolling is motion, not flashing). Blocks are at least 22 x 40 CSS px and at
+  most 820 per frame; the layout is in `run.flash_sampling.block_grid`. A random
+  0-15 ms pause between captures breaks phase lock with fast flicker, and
+  `flash_sampling` records `sampled_ms`, `mean_fps`, `max_gap_ms`, `bursts` and
+  `truncated` (sampling stops at about 6 MB of samples so `run.json` stays below
+  ergoqa's input limit).
 - **Console**: `console.error` and uncaught page errors, per snapshot (since the
   previous one) and in `run.json`. Errors caused by the driver's own network block
   are counted separately, not reported as page errors.
@@ -220,9 +230,10 @@ session; the persona can try something else. `status` is `completed` after
 - Feedback latency counts any DOM mutation (including unrelated timers; see the
   ambient flags); CSS-only or canvas feedback is detected only visually at ~30 ms
   resolution; the `:active` state of a touch tap is usually too brief to capture.
-- Flash sampling is ~30 fps (can resolve flicker up to ~15 Hz), on a downscaled
-  frame, and only during the sampled windows; it is an input to the WCAG 2.3.1
-  check, not a certification.
+- Flash sampling is ~25 fps with capture jitter, on a downscaled frame, and only
+  during the sampled windows (after inputs, snapshot steps, whole waits); flicker
+  faster than ~12 Hz is seen as flashing at an aliased rate, not its true rate.
+  It is an input to the WCAG 2.3.1 check, not a certification.
 - `window.__ergoqa__.hotspots()` and scenario hotspots are trusted as declared;
   scenario hotspot boxes are fixed viewport coordinates (only page-provided
   hotspots follow scrolling).
