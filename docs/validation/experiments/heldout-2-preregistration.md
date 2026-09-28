@@ -117,4 +117,40 @@ family and per basis.
 
 ## Amendments
 
-None yet.
+### Amendment 1 (2026-09-28, before the freeze and before any heldout-2 recording)
+
+Nothing here was informed by heldout-2 content: its keys, pages and scenarios
+have not been opened by the tool author. Development used the three dev suites
+(exp4) and the new development suite `benchmarks/dev-2`.
+
+1. **Detector changes since this document was written:** GM-04 flash screening
+   rework (block grid, sampling during waits, capture jitter; live check 30/30);
+   RH-01 treats pause, menu and settings game controls as secondary; new
+   semantics and layout checks SM-01 (unnamed control), SM-02 (label in name),
+   SM-03 (unlabelled field), SM-04 (error neither near nor linked to a field) and
+   LY-01 (clipped text); screenshot-channel operators get no DOM data from the
+   driver.
+2. **H1 reinterpreted.** H1 assumed no semantics or layout checks. With SM and
+   LY checks, H1 reports their recall, but it is not evidence of blind
+   discovery: the tool author wrote the heldout-2 authoring prompt, whose
+   examples of rule sets (WCAG 4.1.2, 2.4.3, 2.4.7, 2.4.11, 1.4.10, 1.4.4, ATF,
+   XCTest) overlap the rules these checks implement. The checks were built from
+   public rule sets and tuned only on dev-2.
+3. **Secondary metric added:** `recall_condition_attributed` (a conditioned
+   defect counts only when the finding's differential names its condition).
+   exp4 showed that strict matching credits condition presence: a finding that
+   fires for every profile matches a walking-only defect when a walking profile
+   is present. The headline stays `recall_strict`.
+4. **Intervals for comparisons** (H2, H3, H7): paired bootstrap over defects,
+   2 000 resamples, seed 7; single rates use Wilson intervals. Verdict rule as
+   above (pass when the whole interval clears the threshold, fail when it is
+   entirely below, otherwise inconclusive).
+5. **C6 details:** operators are Opus only (the user's Claude-only rule).
+   Four composed profiles per product; input channels alternate between
+   `screenshot` and `screenshot+a11y`, so notes can be corroborated across
+   channels. Every profile runs both variants of its product in separate
+   sessions. A judgment note has no category, so C6 recall uses lenient matching
+   (scenario, selector, condition); strict matching is reported too.
+6. **Runner:** `skills/remorsearch-ux-qa/scripts/ergo_eval.py` (record,
+   analyse, score, agents-plan, score-agents) implements C1-C6 and H1-H7 as
+   written here; it prints aggregates only and seals per-defect results.
