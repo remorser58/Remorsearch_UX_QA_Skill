@@ -59,15 +59,23 @@ class Errors(unittest.TestCase):
         return el("card", "textbox", (10, 300, 340, 44), interactive=True, tag="input", name="카드 번호", a11y=a11y("label", **kw))
 
     def test_far_unlinked_error_fails(self) -> None:
-        err = el("err", "alert", (10, 60, 340, 40), text="카드 번호를 확인하세요", roles=("error_message",))
+        err = el("err", "alert", (10, 60, 340, 40), text="입력 내용을 확인하세요", roles=("error_message",))
         self.assertEqual(ids(checks.check_semantics(ctx([self.field(), err])), "SM-04"), ["#err"])
 
     def test_near_or_linked_error_passes(self) -> None:
         near = el("err", "alert", (10, 350, 340, 20), text="카드 번호를 확인하세요", roles=("error_message",))
         self.assertEqual(ids(checks.check_semantics(ctx([self.field(), near])), "SM-04"), [])
-        far = el("err", "alert", (10, 60, 340, 40), text="카드 번호를 확인하세요", roles=("error_message",))
+        far = el("err", "alert", (10, 60, 340, 40), text="입력 내용을 확인하세요", roles=("error_message",))
         linked = self.field(described_by=["err"], invalid=True)
         self.assertEqual(ids(checks.check_semantics(ctx([linked, far])), "SM-04"), [])
+
+    def test_error_naming_its_field_passes_and_system_notices_are_skipped(self) -> None:
+        names = el("err", "alert", (10, 60, 340, 40), text="⚠ 카드 번호를 확인해 주세요.", roles=("error_message",))
+        self.assertEqual(ids(checks.check_semantics(ctx([self.field(), names])), "SM-04"), [])
+        notice = el("notice", "alert", (10, 60, 340, 40), text="결제 모듈 동기화 실패", roles=("critical_message",))
+        self.assertEqual(ids(checks.check_semantics(ctx([self.field(), notice])), "SM-04"), [])
+        vague = el("err", "alert", (10, 60, 340, 40), text="일부 항목이 올바르지 않아요", roles=("error_message",))
+        self.assertEqual(ids(checks.check_semantics(ctx([self.field(), vague])), "SM-04"), ["#err"])
 
     def test_no_fields_no_finding(self) -> None:
         err = el("err", "alert", (10, 60, 340, 40), text="네트워크 오류", roles=("error_message",))

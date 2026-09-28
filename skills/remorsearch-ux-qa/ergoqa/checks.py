@@ -1741,19 +1741,25 @@ def check_semantics(ctx: Context) -> list[Observation]:
                     False, "P2" if critical else "P3",
                     f"보이는 문구 '{visible[:30]}'이(가) 접근 가능한 이름 '{name[:30]}'에 없습니다. 음성 제어로 보이는 문구를 말해도 작동하지 않습니다.",
                 ))
-    errors = [e for e in dom if (("error_message" in _roles(e)) or e.get("role") == "alert") and (e.get("text") or "").strip()]
+    # Input errors only: declared error_message, or role=alert that is not declared as a
+    # system notice (critical_message/status without error_message).
+    errors = [e for e in dom if (e.get("text") or "").strip() and (
+        "error_message" in _roles(e) or (e.get("role") == "alert" and not (_roles(e) & {"critical_message", "status"})))]
+    field_names = [n for n in (_norm_label(f.get("name")) for f in fields) if _letters(n) >= 2]
     if errors and fields:
         for err in errors:
             eid = _dom_id(err)
             linked = bool(eid) and any(eid in (f["a11y"].get("described_by") or []) or f["a11y"].get("error_message") == eid for f in fields)
             nearest = min(_edge_distance(err["box"], f["box"]) for f in fields)
-            if linked or nearest <= ERROR_NEAR_CSS_PX:
+            # WCAG 3.3.1 is met when the text identifies the item in error, wherever it is.
+            names_field = any(n in _norm_label(err.get("text")) for n in field_names)
+            if linked or nearest <= ERROR_NEAR_CSS_PX or names_field:
                 continue
             out.append(Observation(
                 "SM-04", *base, [err["id"]], element_key(err),
                 {"name": "error_field_distance_css_px", "value": round(nearest, 1), "unit": "css_px", "threshold": ERROR_NEAR_CSS_PX, "comparator": "<=", "linked": False},
                 False, "P2",
-                f"오류 문구 '{(err.get('text') or '')[:30]}'이(가) 가장 가까운 입력 칸에서 {nearest:.0f}px 떨어져 있고, 어느 칸과도 aria-describedby/aria-errormessage로 연결되지 않았습니다. 어느 칸이 틀렸는지 알기 어렵습니다.",
+                f"오류 문구 '{(err.get('text') or '')[:30]}'이(가) 어느 칸이 틀렸는지 적지 않았고, 가장 가까운 입력 칸에서 {nearest:.0f}px 떨어져 있으며, aria-describedby/aria-errormessage로 연결되지도 않았습니다(WCAG 3.3.1).",
             ))
     for e in dom:
         clip = e.get("clipped")

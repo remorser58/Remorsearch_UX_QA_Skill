@@ -115,3 +115,15 @@ PC-04 6, PT-02 4, CG-01 1, CG-02 1, GM-05 1; seven are P2, none P0-P1.
 | RH-01 on secondary game controls | A pause hotspot out of one-thumb reach was P2 on a clean page; GM-02 already treats pause, menu and settings as secondary (Apple HIG). | Secondary game controls are not key controls in RH-01: out of reach is P3. |
 | small_hand stratum | 0 unique defects in exp4 (was 1-2); 2-4 extra findings | Kept (low noise, reach model input); re-check on heldout-2. |
 | GM-05 | 0 unique in exp4 (PT-04 covers the same controls); 1 clean-control unit | Kept (normative, low noise). |
+
+## Round 6: semantics and layout checks on the dev suites (exp5, before dev-2)
+
+The dev suites carry no semantics or layout keys, so this only measures noise and
+cross-category hits. Single-profile analysis (the checks are profile-independent).
+
+| Check | Defect variants | Clean controls | Review | Decision |
+| --- | --- | --- | --- | --- |
+| SM-04 (first rule: error > 48 px from every field and unlinked) | 4 (all real defects keyed as gaze/cognition: errors shown far from the user or generic) | 4 | 3 clean hits named their field in the text ("휴대폰 번호를 확인해 주세요"), which meets WCAG 3.3.1; 1 was a system notice declared `critical_message` | Narrowed: the text must name no field, and declared system notices are skipped. Result: 2 defect-variant hits, 0 clean. |
+| SM-03 | 4 (unlabelled required checkboxes, keyed as a pointing defect) | 0 | real | Keep |
+| SM-02 | 0 | 1 (a game radar item: visible "아군", aria-label "대상 2") | plausible true positive the key does not list | Keep; count as unlabelled |
+| SM-01, LY-01 | 0 | 0 | – | Keep; recall is measured on dev-2 |
