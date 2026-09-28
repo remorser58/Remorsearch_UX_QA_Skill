@@ -203,6 +203,36 @@ PT06 = _register(CheckSpec(
     ("REF-win32-touch", "REF-apple-hig-44pt"), ("web", "desktop"), "interaction",
     "파괴적 동작을 주요 동작과 떨어뜨리고(8px 이상, 권장 더 멀리) 확인/실행 취소를 두세요.",
 ))
+SM01 = _register(CheckSpec(
+    "SM-01", "semantics", "measured", "이름 없는 조작 요소(스크린리더·음성 제어로 식별 불가)",
+    "Control without an accessible name",
+    ("REF-wcag22-412", "REF-wcag22-244"), ("web", "desktop"), "accessibility",
+    "아이콘 버튼·링크에 보이는 텍스트나 aria-label을 주세요.",
+))
+SM02 = _register(CheckSpec(
+    "SM-02", "semantics", "measured", "보이는 레이블이 접근 가능한 이름에 없음(음성 제어 불일치)",
+    "Visible label not contained in the accessible name",
+    ("REF-wcag22-253",), ("web", "desktop"), "accessibility",
+    "aria-label을 지우거나 보이는 문구로 시작하게 바꾸세요.",
+))
+SM03 = _register(CheckSpec(
+    "SM-03", "semantics", "measured", "입력 칸에 프로그램적 레이블이 없음(placeholder만)",
+    "Form field without a programmatic label",
+    ("REF-wcag22-131", "REF-wcag22-332", "REF-wcag22-412"), ("web", "desktop"), "accessibility",
+    "<label for> 또는 aria-labelledby로 보이는 레이블을 연결하고, placeholder를 레이블 대신 쓰지 마세요.",
+))
+SM04 = _register(CheckSpec(
+    "SM-04", "semantics", "measured", "오류 문구가 입력 칸과 떨어져 있고 연결되지 않음",
+    "Error message neither next to nor linked to a field",
+    ("REF-wcag22-331", "REF-wcag22-131", "REF-aria21"), ("web", "desktop"), "content",
+    "오류 문구를 해당 칸 바로 아래에 두고 aria-describedby·aria-invalid로 연결하세요.",
+))
+LY01 = _register(CheckSpec(
+    "LY-01", "layout", "measured", "상자에 잘린 텍스트",
+    "Text clipped by its own box",
+    ("REF-xctest-textclipped", "REF-wcag22-144", "REF-wcag22-1412"), ("web", "desktop"), "visual",
+    "고정 높이·너비와 overflow:hidden을 풀어 글자가 늘어나도 다 보이게 하세요.",
+))
 PJ01 = _register(CheckSpec(
     "PJ-01", "heuristic", "judgment", "페르소나 에이전트가 기대와 다른 결과/혼란을 기록",
     "Persona agent recorded an expectation mismatch or confusion",
@@ -1625,6 +1655,108 @@ def _mash_bursts(run: dict[str, Any]) -> list[tuple[str, int, float]]:
     return bursts
 
 
+_LABEL_NOISE = re.compile(r"[\W_]+", re.UNICODE)
+ERROR_NEAR_CSS_PX = 48.0  # LAT-09 ER-01: an error further than this from every field needs a programmatic link
+
+
+def _norm_label(text: str | None) -> str:
+    return _LABEL_NOISE.sub("", (text or "").lower())
+
+
+def _letters(text: str | None) -> int:
+    return sum(1 for ch in text or "" if ch.isalpha())
+
+
+def _dom_id(element: dict[str, Any]) -> str | None:
+    if element.get("dom_id"):
+        return str(element["dom_id"])
+    sel = element.get("selector") or ""
+    return sel[1:] if re.fullmatch(r"#[A-Za-z][\w-]*", sel) else None
+
+
+def _edge_distance(a: dict[str, float], b: dict[str, float]) -> float:
+    dx = max(0.0, a["x"] - (b["x"] + b["w"]), b["x"] - (a["x"] + a["w"]))
+    dy = max(0.0, a["y"] - (b["y"] + b["h"]), b["y"] - (a["y"] + a["h"]))
+    return math.hypot(dx, dy)
+
+
+def check_semantics(ctx: Context) -> list[Observation]:
+    """Names, labels, error association and clipped text (SM-01..04, LY-01).
+
+    Measured from the DOM and profile-independent. They matter most to people the
+    swarm does not simulate (screen-reader and voice-control users) and are reported
+    for them; the rules follow axe-core / ATF / XCTest practice and are kept narrow
+    for precision (automated-ui-accessibility-testing brief).
+    """
+    out: list[Observation] = []
+    base = (ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"))
+    dom = [e for e in ctx.elements if e.get("source", "dom") == "dom" and _present(e)]
+    fields = [e for e in dom if e.get("tag") in ("input", "select", "textarea") and e.get("role") != "button" and isinstance(e.get("a11y"), dict)]
+    for e in dom:
+        a = e.get("a11y")
+        if not isinstance(a, dict) or not e.get("enabled", True):
+            continue
+        critical = _critical(ctx, e)
+        where = e.get("selector") or e.get("id")
+        if e in fields:
+            source = a.get("name_source")
+            if source in ("placeholder", "title", "none"):
+                severity = ("P1" if critical else "P2") if source == "none" else ("P2" if critical else "P3")
+                out.append(Observation(
+                    "SM-03", *base, [e["id"]], element_key(e),
+                    {"name": "label_source", "value": source, "unit": "enum", "threshold": "label|aria-labelledby|aria-label", "comparator": "in"},
+                    False, severity,
+                    f"입력 칸 '{where}'에 연결된 레이블이 없습니다(이름 출처: {source}). 스크린리더는 칸의 용도를 알리지 못하고, placeholder는 입력하면 사라집니다.",
+                ))
+            continue
+        if not e.get("interactive") or e.get("tag") == "canvas":
+            continue
+        name = (e.get("name") or "").strip()
+        if a.get("name_source") == "none" or not name:
+            out.append(Observation(
+                "SM-01", *base, [e["id"]], element_key(e),
+                {"name": "accessible_name", "value": "", "unit": "text", "threshold": "non-empty", "comparator": "!="},
+                False, "P1" if critical else "P2",
+                f"조작 요소 '{where}'에 접근 가능한 이름이 없습니다. 스크린리더·음성 제어 사용자는 무엇을 하는 버튼인지 알 수 없습니다(시뮬레이션하지 않는 사용자군).",
+            ))
+            continue
+        visible = (e.get("text") or "").strip()
+        if a.get("name_source") in ("aria-label", "aria-labelledby") and _letters(visible) >= 2 and len(visible) <= 40 and len(visible.split()) <= 6:
+            if _norm_label(visible) not in _norm_label(name):
+                out.append(Observation(
+                    "SM-02", *base, [e["id"]], element_key(e),
+                    {"name": "label_in_name", "value": False, "unit": "flag", "threshold": True, "comparator": "==", "visible": visible[:60], "accessible_name": name[:60]},
+                    False, "P2" if critical else "P3",
+                    f"보이는 문구 '{visible[:30]}'이(가) 접근 가능한 이름 '{name[:30]}'에 없습니다. 음성 제어로 보이는 문구를 말해도 작동하지 않습니다.",
+                ))
+    errors = [e for e in dom if (("error_message" in _roles(e)) or e.get("role") == "alert") and (e.get("text") or "").strip()]
+    if errors and fields:
+        for err in errors:
+            eid = _dom_id(err)
+            linked = bool(eid) and any(eid in (f["a11y"].get("described_by") or []) or f["a11y"].get("error_message") == eid for f in fields)
+            nearest = min(_edge_distance(err["box"], f["box"]) for f in fields)
+            if linked or nearest <= ERROR_NEAR_CSS_PX:
+                continue
+            out.append(Observation(
+                "SM-04", *base, [err["id"]], element_key(err),
+                {"name": "error_field_distance_css_px", "value": round(nearest, 1), "unit": "css_px", "threshold": ERROR_NEAR_CSS_PX, "comparator": "<=", "linked": False},
+                False, "P2",
+                f"오류 문구 '{(err.get('text') or '')[:30]}'이(가) 가장 가까운 입력 칸에서 {nearest:.0f}px 떨어져 있고, 어느 칸과도 aria-describedby/aria-errormessage로 연결되지 않았습니다. 어느 칸이 틀렸는지 알기 어렵습니다.",
+            ))
+    for e in dom:
+        clip = e.get("clipped")
+        box = e.get("box") or {}
+        if not isinstance(clip, dict) or e.get("interactive") or box.get("w", 0) < 4 or box.get("h", 0) < 4 or not (e.get("text") or "").strip():
+            continue
+        out.append(Observation(
+            "LY-01", *base, [e["id"]], element_key(e),
+            {"name": "text_clipped", "value": True, "unit": "flag", "threshold": False, "comparator": "==", "axis": "x" if clip.get("x") else "y", "ellipsis": bool(clip.get("ellipsis"))},
+            False, "P3" if clip.get("ellipsis") else "P2",
+            f"'{(e.get('text') or '')[:30]}' 글자가 상자에 잘립니다" + (" (말줄임표로 줄임)." if clip.get("ellipsis") else ". 글자를 키우거나 번역되면 더 많이 잘립니다."),
+        ))
+    return out
+
+
 SNAPSHOT_CHECKS: tuple[Callable[[Context], list[Observation]], ...] = (
     check_reach,
     check_game_controls,
@@ -1637,6 +1769,7 @@ SNAPSHOT_CHECKS: tuple[Callable[[Context], list[Observation]], ...] = (
     check_colour_only,
     check_text_size,
     check_choice_overload,
+    check_semantics,
 )
 
 
@@ -1653,7 +1786,8 @@ HYPOTHESIS_CHECKS = frozenset({"GZ-01", "GZ-04", "PC-05", "PT-05", "GM-06"})
 
 # Checks that read no profile attribute: one verdict per snapshot, reported as
 # "profile-independent" instead of a k/n coverage (STF-08).
-PROFILE_INVARIANT_CHECKS = frozenset({"PT-01", "PT-05", "PT-06", "PC-01", "PC-02", "CG-01", "CG-03", "GZ-03", "GM-05", "GM-06"})
+PROFILE_INVARIANT_CHECKS = frozenset({"PT-01", "PT-05", "PT-06", "PC-01", "PC-02", "CG-01", "CG-03", "GZ-03", "GM-05", "GM-06",
+                                      "SM-01", "SM-02", "SM-03", "SM-04", "LY-01"})
 
 
 def tier(check_id: str, measurement: dict[str, Any] | None = None) -> str:

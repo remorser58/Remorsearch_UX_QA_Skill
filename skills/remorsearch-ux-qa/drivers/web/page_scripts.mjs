@@ -745,6 +745,7 @@ export function extractSnapshot(args) {
       text: visibleText(el),
       tag,
       selector: uniqueSelector(el),
+      dom_id: el.id ? String(el.id).slice(0, 120) : null,
       box: { x: round2(g.r.left), y: round2(g.r.top), w: round2(g.r.width), h: round2(g.r.height) },
       interactive: c.interactive,
       visible: g.vis,
