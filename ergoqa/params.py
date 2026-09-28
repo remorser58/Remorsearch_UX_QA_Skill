@@ -30,6 +30,9 @@ TOUCH_TARGET_PLATFORM_FLOOR_MM = 4.4   # [derived] iOS HIG minimum 28 pt at ~0.1
 TOUCH_TARGET_ONE_HAND_MM = 9.2         # [paper] Parhi, Karlson & Bederson 2006 (discrete thumb taps)
 TOUCH_TARGET_MOTOR_IMPAIRED_MM = 18.0  # [paper] Findlater et al. 2017 (upper-body motor impairment)
 PLATFORM_SPACING_MM = 1.27             # [standard] Material 8 dp between targets (8/160 in)
+TOUCH_TARGET_SERIAL_MM = 9.6           # [paper] Parhi et al. 2006 (serial thumb taps)
+GAME_CONTROL_EDGE_MIN_MM = 2.0         # [policy] HGR-11/MP-05: small non-zero edge gaps and system-gesture insets
+POINTER_DESTRUCTIVE_MIN_GAP_CSS_PX = 8.0  # [standard] Material 8 dp spacing; Win32: separate destructive commands
 
 # Dual-Gaussian tap model constants (Bi & Zhai 2016): sigma^2 = a*W^2 + b (mm^2).
 DUAL_GAUSSIAN = {"x": (0.0075, 1.68), "y": (0.0108, 1.33)}  # [paper]
@@ -124,7 +127,8 @@ CVD_STATE_CONTRAST_EXEMPT = 3.0  # [recalled] WCAG technique G183: >= 3:1 lumina
 TEXT_FLOOR_ARCMIN = 16.0         # [recalled] ISO 9241-303 / ANSI-HFES 100 minimum character height -> P2 (P1 critical)
 TEXT_MIN_ARCMIN = 24.6           # [snippet] Hangul critical print size, young adults 0.41 deg (KJCP 2015; metric unconfirmed) -> P3
 TEXT_MIN_ARCMIN_PRESBYOPIA = 31.2  # [snippet] Hangul critical print size, older adults 0.52 deg -> P3
-PRESBYOPIA_VIEWING_DISTANCE_MM = 400  # [assumption] presbyopic users hold phones farther (Hofstetter near point 15-0.25*age D); corrected-vision users may not
+# Presbyopia is represented by the older-adult critical print size at the normal
+# viewing distance (Hofstetter: near point 15 - 0.25*age D, usually corrected).
 HUD_MIN_ARCMIN = 16.0            # [recalled] ISO 9241-303 / ANSI-HFES 100 character-height minimum (~16', 20-22' preferred); verify
 HUD_PLATFORM_MIN_PX_1080 = {"tv": 26.0, "handheld_console": 26.0, "desktop": 18.0, "laptop": 18.0}  # [snippet] XAG 101 console 26 px @1080p; PC 18 px @1080p
 BODY_TEXT_MIN_CHARS = 12         # [policy] strings at least this long count as body text
@@ -181,6 +185,9 @@ FLASH_DARK_LIMIT = 0.80        # [standard] darker image below 0.80
 FLASH_AREA_SR = 0.006          # [standard] WCAG 2.3.1 combined area threshold (25 % of any 10 deg field)
 FLASH_EXTENDED_WINDOW_MS = 5000.0   # [code] EA IRIS "extended failure": 2-3 flashes/s sustained over 5 s -> P1
 FLASH_EXTENDED_MIN_FLASHES = 10.0   # [derived] >= 2 flashes/s over the 5 s window
+FLASH_RED_RATIO = 0.8              # [standard] WCAG 2.2 red flash: R/(R+G+B) >= 0.8 (saturated red)
+MASH_MIN_PRESSES = 8               # [policy] repeated presses on one target needed to progress (XAG 107 / GAG: avoid mashing)
+MASH_MAX_INTERVAL_MS = 700         # [policy] presses closer than this count as one burst
 QTE_MOTOR_MS = 100.0           # [assumption] provisional; game brief
 RT_CV = 0.2                    # [assumption] provisional coefficient of variation of RT
 INPUT_LATENCY_MS = {"touch": 80.0, "mouse": 20.0, "keyboard": 20.0, "gamepad": 50.0, "remote": 100.0}  # [assumption]

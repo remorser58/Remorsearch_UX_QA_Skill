@@ -164,10 +164,15 @@ def analyze_run(
         (snap["snapshot_id"], e.get("id")): e.get("selector")
         for snap in snapshots for e in snap.get("elements", []) if e.get("selector")
     }
+    context_of = {
+        (snap["snapshot_id"], e.get("id")): [f"#{a}" for a in (e.get("ancestor_ids") or []) if isinstance(a, str) and a]
+        for snap in snapshots for e in snap.get("elements", [])
+    }
     dicts = []
     for index, obs in enumerate(observations):
         record = obs.to_dict(index)
         record["selectors"] = [s for s in (selector_of.get((obs.snapshot_id, eid)) for eid in obs.element_ids) if s]
+        record["context_selectors"] = sorted({c for eid in obs.element_ids for c in context_of.get((obs.snapshot_id, eid), [])})
         record["scenario_id"] = run.get("scenario_id")
         dicts.append(record)
     coverage: dict[str, list[str]] = {}

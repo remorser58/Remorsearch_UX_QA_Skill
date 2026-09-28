@@ -261,7 +261,7 @@ def sample_profiles(
     device_ids: Iterable[str],
     strategy: str = "stratified_coverage",
     persona_records: list[dict[str, Any]] | None = None,
-    orientation: str = "portrait",
+    orientation: str | None = None,
 ) -> list[dict[str, Any]]:
     """Deterministically sample ergonomic profiles.
 
@@ -286,7 +286,9 @@ def sample_profiles(
         plan = [(devices[i % len(devices)], None, {}) for i in range(count)]
     profiles: list[dict[str, Any]] = []
     for index, (device, stratum_name, overrides) in enumerate(plan):
-        profile = _base_profile(index + 1, rng, device.id, device.input, orientation)
+        # Default to the device's natural orientation (portrait phones/tablets,
+        # landscape desktop/TV/handheld console).
+        profile = _base_profile(index + 1, rng, device.id, device.input, orientation or device.orientation)
         attrs = profile["attributes"]
         if stratum_name is None:
             profile["origin"] = "base_rate_sample"

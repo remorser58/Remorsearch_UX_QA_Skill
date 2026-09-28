@@ -155,7 +155,8 @@ export function normalizeScenario(doc, { base, requireSteps }) {
   if (typeof doc.scenario_id !== 'string' || !doc.scenario_id.trim() || doc.scenario_id.length > 200) usage('scenario_id must be a non-empty string');
   const surface = doc.surface;
   if (!isPlainObject(surface)) usage('scenario.surface must be an object');
-  if (surface.kind !== 'web') usage(`this driver only drives web surfaces (surface.kind=${JSON.stringify(surface.kind)})`);
+  // Browser-hosted games (canvas/WebGL) are driven like web pages; native apps are not.
+  if (surface.kind !== 'web' && surface.kind !== 'game') usage(`this driver only drives web pages and browser games (surface.kind=${JSON.stringify(surface.kind)})`);
   if (typeof surface.url !== 'string' || !surface.url) usage('scenario.surface.url must be a string');
   const subst = (s) => {
     if (!s.includes('{BASE}')) return s;
@@ -262,6 +263,7 @@ export function normalizeScenario(doc, { base, requireSteps }) {
   return {
     scenario: {
       scenario_id: doc.scenario_id,
+      surface_kind: surface.kind,
       url,
       origin: parsed,
       task_goal_ko: typeof doc.task_goal_ko === 'string' ? doc.task_goal_ko : '',

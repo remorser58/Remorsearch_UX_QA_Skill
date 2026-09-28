@@ -23,6 +23,8 @@ def _selector_matches(finding: dict[str, Any], selector: str) -> bool:
     candidates.append(finding.get("element_key", "").split("|", 1)[0])
     if finding.get("element_key", "").startswith("viewport|"):
         return True
+    if selector in (finding.get("context_selectors") or []):
+        return True  # the key names the container (toolbar, chip row) of the flagged element
     for candidate in candidates:
         if not candidate:
             continue

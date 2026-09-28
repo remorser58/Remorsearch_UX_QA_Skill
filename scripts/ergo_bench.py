@@ -156,8 +156,8 @@ def main() -> int:
     bases: dict[str, dict[str, Any]] = {}
     profiles: list[dict[str, Any]] = []
     for sid, sc in scenarios.items():
-        orientation = sc.get("orientation", "portrait")
         for device_id in sc["device_ids"]:
+            orientation = sc.get("orientation") or get_device(device_id).orientation
             gk = f"{device_id}|{orientation}"
             if gk not in groups:
                 device = get_device(device_id)
@@ -178,8 +178,8 @@ def main() -> int:
     run_records = []
     with static_server(suite.parent) as base:
         for sid, sc in scenarios.items():
-            orientation = sc.get("orientation", "portrait")
             for device_id in sc["device_ids"]:
+                orientation = sc.get("orientation") or get_device(device_id).orientation
                 recorder = groups[f"{device_id}|{orientation}"][0]
                 run_id = f"R-{sid}-{device_id}"
                 if args.reuse_runs and (runs_dir / run_id / "run.json").is_file():

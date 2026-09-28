@@ -85,7 +85,7 @@ export class WebSession {
     this.httpStatus = null;
     this.twPollers = [];
     this.tw = new Map(scenario.timing_windows.map((w) => [w.id, {
-      def: w, cur: null, intervals: [], appearances: 0, firstVisible: null, text: null, method: 'in-page-poll', fallback: false, error: null,
+      def: w, cur: null, intervals: [], starts: [], appearances: 0, firstVisible: null, text: null, method: 'in-page-poll', fallback: false, error: null,
     }]));
     const allowed = new Set(['http:', 'https:'].includes(scenario.origin.protocol) ? [scenario.origin.origin] : []);
     for (const o of options.allowOrigins || []) allowed.add(o);
@@ -284,6 +284,7 @@ export class WebSession {
     if (visible && !w.cur) {
       w.cur = { since: t };
       w.appearances++;
+      if (w.starts.length < 2000) w.starts.push(t);
       if (w.firstVisible === null) w.firstVisible = t;
       if (text && !w.text) w.text = text;
     } else if (!visible && w.cur) {
@@ -336,6 +337,8 @@ export class WebSession {
         min_visible_ms: closed.length ? Math.min(...closed) : null,
         max_visible_ms: closed.length ? Math.max(...closed) : null,
         appearances: w.appearances,
+        // Appearance start times relative to run start (flash-rate estimation).
+        starts_ms: w.starts.map((t) => round1(this.rel(t))),
         open_interval_ms: open,
         first_visible_t_ms: w.firstVisible !== null ? this.rel(w.firstVisible) : null,
         poll_interval_ms: TW_POLL_MS,
@@ -531,7 +534,7 @@ export class WebSession {
       run_id: this.runId,
       step_index: stepIndex,
       captured_at: capturedAt,
-      surface: { kind: 'web', url: this.page.url(), title, app_id: null, scroll: ex.scroll },
+      surface: { kind: this.scenario.surface_kind === 'game' ? 'game' : 'web', url: this.page.url(), title, app_id: null, scroll: ex.scroll },
       device: this.dev.snapshotDevice,
       screenshot: {
         path: `${id}.png`, sha256: sha256(png), width_px: width, height_px: height,

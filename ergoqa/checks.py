@@ -161,13 +161,13 @@ CG03 = _register(CheckSpec(
     recommendation_ko="100ms 안에 눌림 피드백, 1초 이상 걸리면 진행 표시를 보여주세요.",
 ))
 GM01 = _register(CheckSpec(
-    "GM-01", "game", "model", "HUD/자막 글자가 시청 거리 대비 작음",
+    "GM-01", "perception", "model", "HUD/자막 글자가 시청 거리 대비 작음",
     "HUD or subtitle text too small for viewing distance",
     ("REF-xag", "REF-gag"), ("game", "web", "android", "ios"), "visual",
     "HUD/자막 크기를 키우고 크기 조절 옵션을 제공하세요.",
 ))
 GM02 = _register(CheckSpec(
-    "GM-02", "game", "model", "가로 두 엄지 파지에서 닿기 어려운 게임 조작부",
+    "GM-02", "reach", "model", "가로 두 엄지 파지에서 닿기 어려운 게임 조작부",
     "Game control hard to reach in landscape two-thumb grip",
     ("REF-bergstrom2014",), ("game", "web", "android", "ios"), "interaction",
     "자주 쓰는 조작부를 하단 좌우 엄지 영역에 두고 위치/크기 커스터마이즈를 제공하세요.",
@@ -183,6 +183,24 @@ GM04 = _register(CheckSpec(
     "More than three flashes in one second over a large area",
     ("REF-wcag22-231", "REF-itu-bt1702"), ("game", "web", "android", "ios", "desktop"), "visual",
     "섬광 빈도를 초당 3회 이하로 낮추고 면적을 줄이세요. 인증된 도구(PEAT/Harding)로 재검사하세요.",
+))
+GM05 = _register(CheckSpec(
+    "GM-05", "game", "measured", "터치 게임 조작부가 작거나 화면 가장자리에 붙어 있음",
+    "Touch game control below platform size or flush against the screen edge",
+    ("REF-apple-hig-game-controls", "REF-parhi2006"), ("game", "web", "android", "ios"), "interaction",
+    "가상 조이스틱·액션 버튼을 44pt(약 7mm) 이상, 연속 입력용은 9.6mm 이상으로 키우고 화면 가장자리·시스템 제스처 영역에서 떼어 두세요.",
+))
+GM06 = _register(CheckSpec(
+    "GM-06", "game", "measured", "진행에 빠른 반복 입력(연타)이 필요함",
+    "Progress requires rapid repeated presses (button mashing)",
+    ("REF-xag", "REF-gag"), ("game", "web", "android", "ios"), "service",
+    "연타 대신 길게 누르기/토글/자동 진행 옵션을 제공하고 입력 재매핑을 지원하세요.",
+))
+PT06 = _register(CheckSpec(
+    "PT-06", "pointing", "measured", "파괴적 동작이 주요 동작에 간격 없이 붙어 있음(포인터)",
+    "Destructive action placed against a primary/path action without separation (pointer devices)",
+    ("REF-win32-touch", "REF-apple-hig-44pt"), ("web", "desktop"), "interaction",
+    "파괴적 동작을 주요 동작과 떨어뜨리고(8px 이상, 권장 더 멀리) 확인/실행 취소를 두세요.",
 ))
 PJ01 = _register(CheckSpec(
     "PJ-01", "heuristic", "judgment", "페르소나 에이전트가 기대와 다른 결과/혼란을 기록",
@@ -282,6 +300,17 @@ def _visible(element: dict[str, Any]) -> bool:
     return bool(element.get("visible", True)) and element.get("in_viewport", True) is not False
 
 
+def _present(element: dict[str, Any]) -> bool:
+    """Rendered (not hidden), whether or not it is inside the current viewport.
+
+    Measured checks (contrast, target size) apply to the whole rendered page, as a
+    standard accessibility scan does; position-dependent models (reach, gaze) use
+    ``_visible``.
+    """
+    box = element.get("box") or {}
+    return bool(element.get("visible", True)) and box.get("w", 0) > 0 and box.get("h", 0) > 0
+
+
 def _escalate(severity: str, element: dict[str, Any]) -> str:
     """Raise one level (not above P1) for primary/destructive targets."""
     if _roles(element) & {"primary", "destructive"} and SEVERITY_ORDER[severity] > 1:
@@ -363,13 +392,14 @@ def check_reach(ctx: Context) -> list[Observation]:
             ))
             continue
         severity = None
+        key_control = bool(roles & {"primary", "game_control"})
         if score["zone"] == "out":
-            severity = "P2"
-        elif score["zone"] == "stretch":
-            severity = "P3" if not (roles & {"primary"} or on_path) else "P2"
-            if difficulty < params.REACH_HARD:
-                severity = "P3"
-        elif score["cramped"] and min(_box_mm(ctx, element["box"])) < params.TOUCH_TARGET_CORNER_MM:
+            # Critical controls out of one-thumb reach: P2 (model cap). Other controls the
+            # task happens to use (fields, tabs): P3, since reaching them is expected.
+            severity = "P2" if key_control else "P3"
+        elif score["zone"] == "stretch" and key_control:
+            severity = "P2" if difficulty >= params.REACH_HARD else "P3"
+        elif score["cramped"] and key_control and min(_box_mm(ctx, element["box"])) < params.TOUCH_TARGET_CORNER_MM:
             severity = "P3"
         zone_ko = {"out": "파지를 바꿔야 닿는", "stretch": "엄지를 크게 뻗어야 하는", "mild": "약간 불편한", "natural": "편한"}[score["zone"]]
         out.append(Observation(
@@ -385,8 +415,9 @@ def check_reach(ctx: Context) -> list[Observation]:
 
 # ---------------------------------------------------------------- pointing
 
-def _interactive(ctx: Context) -> list[dict[str, Any]]:
-    return [e for e in ctx.elements if (e.get("interactive") or "game_control" in _roles(e)) and _visible(e) and e.get("enabled", True)]
+def _interactive(ctx: Context, whole_page: bool = False) -> list[dict[str, Any]]:
+    present = _present if whole_page else _visible
+    return [e for e in ctx.elements if (e.get("interactive") or "game_control" in _roles(e)) and present(e) and e.get("enabled", True)]
 
 
 def _critical(ctx: Context, element: dict[str, Any]) -> bool:
@@ -395,7 +426,7 @@ def _critical(ctx: Context, element: dict[str, Any]) -> bool:
 
 def check_target_size(ctx: Context) -> list[Observation]:
     out: list[Observation] = []
-    targets = _interactive(ctx)
+    targets = _interactive(ctx, whole_page=True)
     boxes = [t["box"] for t in targets]
     one_handed = str(ctx.attrs.get("grip", "")).startswith("one_hand")
     for element in targets:
@@ -412,7 +443,9 @@ def check_target_size(ctx: Context) -> list[Observation]:
                 False, "P1" if critical else "P2",
                 f"'{label}' 크기 {element['box']['w']:.0f}×{element['box']['h']:.0f}px로 WCAG 2.5.8 최소 24px 미달, 간격 예외도 불충족({reason}).",
             ))
-        if ctx.is_touch:
+        if ctx.is_touch and critical and "game_control" not in _roles(element):
+            # Platform size guidance (44 pt / 48 dp / 9.2 mm one-thumb) is applied to the
+            # controls a task depends on; small secondary targets are covered by PT-01.
             w_mm, h_mm = _box_mm(ctx, element["box"])
             side = min(w_mm, h_mm)
             severity = None
@@ -440,7 +473,45 @@ def _box_mm_rect(ctx: Context, box: dict[str, float]) -> dict[str, float]:
     return {"x": x, "y": y, "w": w, "h": h}
 
 
+def _miss_severity(p_miss: float) -> str | None:
+    for limit, sev in params.MISS_PROBABILITY_SEVERITY:
+        if p_miss >= limit:
+            return sev
+    return None
+
+
+def _misfire_severity(p_bad: float, irreversible: bool) -> str | None:
+    if p_bad >= params.DESTRUCTIVE_NEIGHBOUR_PROB and irreversible:
+        return "P0"
+    if p_bad >= params.DESTRUCTIVE_NEIGHBOUR_PROB_HIGH:
+        return "P1"
+    if p_bad >= params.DESTRUCTIVE_NEIGHBOUR_PROB:
+        return "P2"
+    return None
+
+
+def _worse(a: str | None, b: str | None) -> str | None:
+    if a is None:
+        return b
+    if b is None:
+        return a
+    return a if SEVERITY_ORDER[a] <= SEVERITY_ORDER[b] else b
+
+
+def _cap(severity: str | None, cap: str) -> str | None:
+    if severity is None:
+        return None
+    return severity if SEVERITY_ORDER[severity] >= SEVERITY_ORDER[cap] else cap
+
+
 def check_touch_accuracy(ctx: Context) -> list[Observation]:
+    """Dual-Gaussian miss and misfire probabilities (MP-02/03/11/12).
+
+    Severity from the published model at k=1 (young able-bodied baseline) can reach
+    P1 (P0 for declared irreversible misfires). Inflation by profile multipliers is a
+    declared assumption: it adds findings only for targets below the one-thumb
+    research size (9.2 mm) and is capped at P2.
+    """
     if not ctx.is_touch:
         return []
     out: list[Observation] = []
@@ -452,47 +523,104 @@ def check_touch_accuracy(ctx: Context) -> list[Observation]:
         if not _critical(ctx, element) or "destructive" in roles and element.get("id") not in ctx.path_element_ids:
             continue
         rect = _box_mm_rect(ctx, element["box"])
+        small = min(rect["w"], rect["h"]) < params.TOUCH_TARGET_ONE_HAND_MM
+        p_base = 1.0 - pointing.dual_gaussian_hit_probability(rect["w"], rect["h"], 1.0)
         p_miss = 1.0 - pointing.dual_gaussian_hit_probability(rect["w"], rect["h"], k)
-        severity = None
-        for limit, sev in params.MISS_PROBABILITY_SEVERITY:
-            if p_miss >= limit:
-                severity = sev
-                break
+        severity = _miss_severity(p_base)
+        if k > 1.0 and small:
+            severity = _worse(severity, _cap(_miss_severity(p_miss), "P2"))
         out.append(Observation(
             "PT-04", ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
             [element["id"]], element_key(element),
-            {"name": "miss_probability", "value": round(p_miss, 4), "unit": "probability", "threshold": params.MISS_PROBABILITY_SEVERITY[-1][0], "comparator": "<", "sigma_multiplier": k,
-             "target_mm": [round(rect["w"], 2), round(rect["h"], 2)]},
+            {"name": "miss_probability", "value": round(p_miss, 4), "unit": "probability", "threshold": params.MISS_PROBABILITY_SEVERITY[-1][0], "comparator": "<",
+             "sigma_multiplier": k, "baseline_miss_probability": round(p_base, 4), "target_mm": [round(rect["w"], 2), round(rect["h"], 2)]},
             severity is None, severity,
-            f"'{element.get('name') or element.get('text')}' 예측 오터치 확률 {p_miss*100:.1f}% (이중 가우시안, σ배수 {k:.2f}, {rect['w']:.1f}×{rect['h']:.1f}mm).",
+            f"'{element.get('name') or element.get('text')}' 예측 오터치 확률 {p_miss*100:.1f}% (기준 인구 {p_base*100:.1f}%, σ배수 {k:.2f}, {rect['w']:.1f}×{rect['h']:.1f}mm).",
             "bi-zhai-2016-dual-gaussian",
         ))
         for bad in destructive:
             if bad is element:
                 continue
             bad_rect = _box_mm_rect(ctx, bad["box"])
+            p_bad_base = pointing.dual_gaussian_neighbour_probability(rect, bad_rect, 1.0)
             p_bad = pointing.dual_gaussian_neighbour_probability(rect, bad_rect, k)
             gap_mm = _point_mm(ctx, pointing.box_gap(element["box"], bad["box"]), 0)[0]
             if gap_mm > 20 and p_bad < 1e-4:
                 continue
-            severity = None
-            if p_bad >= params.DESTRUCTIVE_NEIGHBOUR_PROB and "irreversible" in _roles(bad):
-                severity = "P0"
-            elif p_bad >= params.DESTRUCTIVE_NEIGHBOUR_PROB_HIGH:
-                severity = "P1"
-            elif p_bad >= params.DESTRUCTIVE_NEIGHBOUR_PROB:
-                severity = "P2"
-            elif gap_mm < params.DESTRUCTIVE_MIN_GAP_MM:
+            irreversible = "irreversible" in _roles(bad)
+            severity = _misfire_severity(p_bad_base, irreversible)
+            if k > 1.0:
+                severity = _worse(severity, _cap(_misfire_severity(p_bad, irreversible), "P2"))
+            if severity is None and gap_mm < params.DESTRUCTIVE_MIN_GAP_MM:
                 severity = "P3"
             out.append(Observation(
                 "PT-03", ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
                 [element["id"], bad["id"]], element_key(bad),
-                {"name": "destructive_misfire", "value": {"p_misfire": round(p_bad, 5), "gap_mm": round(gap_mm, 2)}, "unit": "probability/mm",
-                 "threshold": {"p": params.DESTRUCTIVE_NEIGHBOUR_PROB, "gap_mm": params.DESTRUCTIVE_MIN_GAP_MM}, "comparator": "<", "sigma_multiplier": k},
+                {"name": "destructive_misfire", "value": {"p_misfire": round(p_bad, 5), "p_misfire_baseline": round(p_bad_base, 5), "gap_mm": round(gap_mm, 2)},
+                 "unit": "probability/mm", "threshold": {"p": params.DESTRUCTIVE_NEIGHBOUR_PROB, "gap_mm": params.DESTRUCTIVE_MIN_GAP_MM}, "comparator": "<", "sigma_multiplier": k},
                 severity is None, severity,
-                f"'{element.get('name') or element.get('text')}'을(를) 누르려다 '{bad.get('name') or bad.get('text')}'을(를) 누를 확률 {p_bad*100:.2f}%, 간격 {gap_mm:.1f}mm.",
+                f"'{element.get('name') or element.get('text')}'을(를) 누르려다 '{bad.get('name') or bad.get('text')}'을(를) 누를 확률 {p_bad*100:.2f}% (기준 인구 {p_bad_base*100:.2f}%), 간격 {gap_mm:.1f}mm.",
                 "bi-zhai-2016-dual-gaussian",
             ))
+    return out
+
+
+def check_pointer_separation(ctx: Context) -> list[Observation]:
+    """PT-06: destructive action against a primary/path action on pointer devices."""
+    if ctx.is_touch:
+        return []
+    out: list[Observation] = []
+    targets = _interactive(ctx, whole_page=True)
+    for bad in [t for t in targets if "destructive" in _roles(t)]:
+        for good in targets:
+            if good is bad or "destructive" in _roles(good) or not _critical(ctx, good):
+                continue
+            gap = pointing.box_gap(good["box"], bad["box"])
+            if gap >= params.POINTER_DESTRUCTIVE_MIN_GAP_CSS_PX:
+                continue
+            out.append(Observation(
+                "PT-06", ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
+                [good["id"], bad["id"]], element_key(bad),
+                {"name": "destructive_gap_css_px", "value": round(gap, 1), "unit": "css_px", "threshold": params.POINTER_DESTRUCTIVE_MIN_GAP_CSS_PX, "comparator": ">="},
+                False, "P2",
+                f"파괴적 동작 '{bad.get('name') or bad.get('text')}'이(가) '{good.get('name') or good.get('text')}'에 {gap:.0f}px 간격으로 붙어 있습니다.",
+            ))
+    return out
+
+
+def check_game_controls(ctx: Context) -> list[Observation]:
+    """GM-05: touch game controls below platform size or flush to the screen edge (HGR-11)."""
+    if not ctx.is_touch:
+        return []
+    out: list[Observation] = []
+    vw, vh = ctx.viewport
+    for element in ctx.elements:
+        if "game_control" not in _roles(element) or not _visible(element):
+            continue
+        box = element["box"]
+        w_mm, h_mm = _box_mm(ctx, box)
+        side = min(w_mm, h_mm)
+        edge_css = min(box["x"], box["y"], vw - (box["x"] + box["w"]), vh - (box["y"] + box["h"]))
+        edge_mm = _point_mm(ctx, max(0.0, edge_css), 0)[0]
+        severity = None
+        reasons = []
+        if side < params.TOUCH_TARGET_MIN_MM:
+            severity = "P2"
+            reasons.append(f"{side:.1f}mm < 44pt(약 {params.TOUCH_TARGET_MIN_MM}mm)")
+        elif side < params.TOUCH_TARGET_SERIAL_MM:
+            severity = "P3"
+            reasons.append(f"{side:.1f}mm < 연속 입력 권장 {params.TOUCH_TARGET_SERIAL_MM}mm")
+        if 0 <= edge_mm < params.GAME_CONTROL_EDGE_MIN_MM:
+            severity = _worse(severity, "P3")
+            reasons.append(f"가장자리에서 {edge_mm:.1f}mm (시스템 제스처/베젤 간섭)")
+        out.append(Observation(
+            "GM-05", ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
+            [element["id"]], element_key(element),
+            {"name": "game_control_mm", "value": [round(w_mm, 1), round(h_mm, 1)], "unit": "mm", "threshold": params.TOUCH_TARGET_SERIAL_MM,
+             "comparator": ">=", "edge_mm": round(edge_mm, 1)},
+            severity is None, severity,
+            f"게임 조작 '{element.get('name') or element.get('selector')}': " + ("; ".join(reasons) if reasons else "기준 충족"),
+        ))
     return out
 
 
@@ -606,11 +734,9 @@ def check_gaze(ctx: Context) -> list[Observation]:
         k = params.GAZE_EARLY_FIXATIONS
         for element in visible_primary:
             p_seen = probs.get(element["id"], [0.0] * k)[k - 1]
-            severity = None
-            if p_seen < params.GAZE_PRIMARY_P2:
-                severity = "P2"
-            elif p_seen < params.GAZE_PRIMARY_PASS:
-                severity = "P3"
+            # Free-viewing eye-tracking priors do not model goal-directed search, so this
+            # heuristic stays at P3 (a prompt to check hierarchy, not a defect by itself).
+            severity = "P3" if p_seen < params.GAZE_PRIMARY_P2 else None
             out.append(Observation(
                 "GZ-01", *base, [element["id"]], element_key(element),
                 {"name": "p_fixated_within_k", "value": round(p_seen, 3), "unit": "probability", "threshold": params.GAZE_PRIMARY_PASS,
@@ -699,7 +825,7 @@ def check_contrast(ctx: Context) -> list[Observation]:
     lighting = ctx.attrs.get("context", {}).get("lighting")
     for element in ctx.elements:
         text = (element.get("text") or "").strip()
-        if not text or not _visible(element) or element.get("enabled", True) is False:
+        if not text or not _present(element) or element.get("enabled", True) is False:
             continue
         fg, bg = perception.parse_color(element.get("color_fg")), perception.parse_color(element.get("color_bg"))
         if not fg or not bg:
@@ -721,7 +847,7 @@ def check_contrast(ctx: Context) -> list[Observation]:
                 f"'{text[:30]}' 대비 {ratio:.2f}:1 (기준 {need}:1).",
             ))
         elif lighting == "bright_sun" and ratio < params.CONTRAST_BRIGHT_LIGHT:
-            if not (_roles(element) & {"primary", "critical_message", "error_message", "status"} or element.get("interactive")):
+            if not (_roles(element) & {"primary", "critical_message", "error_message", "status"}):
                 continue
             out.append(Observation(
                 "PC-05", ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
@@ -731,7 +857,13 @@ def check_contrast(ctx: Context) -> list[Observation]:
                 f"햇빛 환경에서 '{text[:30]}' 대비 {ratio:.2f}:1은 여유가 부족할 수 있습니다.",
                 "situational-contrast-v1",
             ))
-    for element in _interactive(ctx):
+    for element in _interactive(ctx, whole_page=True):
+        tag = element.get("tag")
+        role = element.get("role")
+        form_control = tag in ("input", "select", "textarea") or role in ("checkbox", "switch", "radio", "slider", "textbox", "combobox", "searchbox", "spinbutton")
+        icon_only = tag in ("button", "a") and not (element.get("text") or "").strip()
+        if not (form_control or icon_only):
+            continue  # WCAG 1.4.11 does not require a boundary when text identifies the control
         border = perception.parse_color(element.get("border_color"))
         bg = perception.parse_color(element.get("container_bg") or element.get("color_bg"))
         fill = perception.parse_color(element.get("color_bg"))
@@ -744,24 +876,34 @@ def check_contrast(ctx: Context) -> list[Observation]:
         if not candidates:
             continue
         best_kind, best = max(candidates, key=lambda c: c[1])
-        if best < params.NON_TEXT_CONTRAST_MIN and element.get("tag") in ("input", "select", "textarea", "button") and element.get("enabled", True):
+        if best < params.NON_TEXT_CONTRAST_MIN and element.get("enabled", True):
             out.append(Observation(
                 "PC-02", ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
                 [element["id"]], element_key(element),
                 {"name": "non_text_contrast", "value": round(best, 2), "unit": "ratio", "threshold": params.NON_TEXT_CONTRAST_MIN, "comparator": ">=", "kind": best_kind},
-                False, _escalate("P2", element) if element.get("tag") != "button" else "P3",
+                False, "P2",
                 f"'{element.get('name') or element.get('selector')}' 경계 대비 {best:.2f}:1 (기준 3:1).",
             ))
     return out
 
 
+STATE_WORDS = (
+    "가능", "불가", "마감", "매진", "완료", "실패", "성공", "오류", "에러", "정상", "위험", "경고", "주의",
+    "선택됨", "사용 중", "품절", "예약됨", "비활성", "활성", "없음", "있음", "아군", "적군",
+    "available", "full", "sold out", "error", "success", "warning", "ok", "fail", "done", "✓", "✔", "✕", "✗", "!",
+)
+
+
+def _state_cue(text: str) -> bool:
+    lower = text.lower()
+    return any(word in lower for word in STATE_WORDS)
+
+
 def _colour_groups(ctx: Context) -> list[list[dict[str, Any]]]:
+    """Same-shaped siblings (tag, role, size bucket, roles) that could encode state."""
     groups: dict[tuple, list[dict[str, Any]]] = {}
     for element in ctx.elements:
-        if not _visible(element):
-            continue
-        colour = element.get("color_bg") if element.get("color_bg") and not (element.get("text") or "").strip() else element.get("color_fg")
-        if not perception.parse_color(colour):
+        if not _present(element):
             continue
         box = element["box"]
         key = (element.get("tag"), element.get("role"), round(box["w"] / 4), round(box["h"] / 4), tuple(sorted(_roles(element) - {"primary"})))
@@ -770,6 +912,15 @@ def _colour_groups(ctx: Context) -> list[list[dict[str, Any]]]:
 
 
 def check_colour_only(ctx: Context) -> list[Observation]:
+    """PC-03: states encoded by colour alone collapse under simulated CVD.
+
+    Within a group of same-shaped elements, each colour channel (fill, border,
+    text) is examined: when members split into clearly different colours under
+    normal vision (dE00 >= 20) the colour is treated as a state code. Different
+    labels (times, names) do not count as a state cue; explicit state words or
+    icons do. Pairs are exempt when a >= 3:1 luminance difference separates them
+    (WCAG G183).
+    """
     kind = ctx.attrs.get("vision", {}).get("cvd", "none")
     if kind in (None, "none"):
         return []
@@ -777,39 +928,37 @@ def check_colour_only(ctx: Context) -> list[Observation]:
     out: list[Observation] = []
     seen: set[tuple[str, str]] = set()
     for group in _colour_groups(ctx):
-        for i, a in enumerate(group):
-            for b in group[i + 1:]:
-                text_a = (a.get("text") or a.get("name") or "").strip()
-                text_b = (b.get("text") or b.get("name") or "").strip()
-                if text_a != text_b and text_a and text_b:
-                    continue  # a textual cue distinguishes them
-                use_bg = not text_a
-                ca = perception.parse_color(a.get("color_bg") if use_bg else a.get("color_fg"))
-                cb = perception.parse_color(b.get("color_bg") if use_bg else b.get("color_fg"))
-                if not ca or not cb:
-                    continue
-                normal = perception.color_difference(ca, cb)
-                if normal < params.CVD_DISTINCT_NORMAL_DE:
-                    continue  # not meant to be different colours
-                simulated = perception.cvd_difference(ca, cb, kind, severity_level)
-                pair = tuple(sorted((a["id"], b["id"])))
-                if pair in seen:
-                    continue
-                seen.add(pair)
-                state_contrast = perception.contrast_ratio(ca, cb)
-                if simulated >= params.CVD_MARGINAL_DE or state_contrast >= params.CVD_STATE_CONTRAST_EXEMPT:
-                    continue  # distinct after simulation, or a >= 3:1 luminance cue separates the states (G183)
-                marginal = simulated >= params.CVD_CONFUSABLE_DE
-                out.append(Observation(
-                    "PC-03", ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
-                    [a["id"], b["id"]], element_key(a),
-                    {"name": "cvd_delta_e2000", "value": round(simulated, 1), "unit": "dE00", "threshold": params.CVD_MARGINAL_DE, "comparator": ">=",
-                     "normal_delta_e2000": round(normal, 1), "cvd": kind, "state_contrast": round(state_contrast, 2),
-                     "confidence": "low" if kind == "tritan" else "model"},
-                    False, "P3" if marginal else "P2",
-                    f"'{text_a or a.get('selector')}'와 '{text_b or b.get('selector')}'은(는) 색으로만 구분되며 {kind} 시뮬레이션에서 ΔE00 {simulated:.1f}로 거의 같아 보입니다.",
-                    "machado2009-ciede2000-v1",
-                ))
+        for channel in ("color_bg", "border_color", "color_fg"):
+            coloured = [(e, perception.parse_color(e.get(channel))) for e in group]
+            coloured = [(e, c) for e, c in coloured if c is not None]
+            for i, (a, ca) in enumerate(coloured):
+                for b, cb in coloured[i + 1:]:
+                    pair = tuple(sorted((a["id"], b["id"])))
+                    if pair in seen:
+                        continue
+                    normal = perception.color_difference(ca, cb)
+                    if normal < params.CVD_DISTINCT_NORMAL_DE:
+                        continue
+                    text_a = (a.get("text") or a.get("name") or "").strip()
+                    text_b = (b.get("text") or b.get("name") or "").strip()
+                    if _state_cue(text_a) or _state_cue(text_b):
+                        continue
+                    state_contrast = perception.contrast_ratio(ca, cb)
+                    simulated = perception.cvd_difference(ca, cb, kind, severity_level)
+                    if simulated >= params.CVD_MARGINAL_DE or state_contrast >= params.CVD_STATE_CONTRAST_EXEMPT:
+                        continue
+                    seen.add(pair)
+                    marginal = simulated >= params.CVD_CONFUSABLE_DE
+                    out.append(Observation(
+                        "PC-03", ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
+                        [a["id"], b["id"]], element_key(a),
+                        {"name": "cvd_delta_e2000", "value": round(simulated, 1), "unit": "dE00", "threshold": params.CVD_MARGINAL_DE, "comparator": ">=",
+                         "normal_delta_e2000": round(normal, 1), "cvd": kind, "channel": channel, "state_contrast": round(state_contrast, 2),
+                         "confidence": "low" if kind == "tritan" else "model"},
+                        False, "P3" if marginal else "P2",
+                        f"'{text_a or a.get('selector')}'와 '{text_b or b.get('selector')}'의 {channel.replace('color_', '').replace('_color', '')} 색 차이가 {kind} 시뮬레이션에서 ΔE00 {simulated:.1f}로 사라집니다(색 외 상태 단서 확인 필요).",
+                        "machado2009-ciede2000-v1",
+                    ))
     return out
 
 
@@ -818,15 +967,15 @@ def check_text_size(ctx: Context) -> list[Observation]:
     out: list[Observation] = []
     vision = ctx.attrs.get("vision", {})
     presbyopic = bool(vision.get("presbyopia")) or vision.get("acuity") in ("reduced", "low")
+    # The older-adult critical print size already reflects ageing at a normal reading
+    # distance; it is not combined with a longer viewing distance (no double counting).
     viewing = _viewing_distance(ctx)
-    if presbyopic and ctx.is_touch:
-        viewing = max(viewing, float(params.PRESBYOPIA_VIEWING_DISTANCE_MM))
     comfortable = params.TEXT_MIN_ARCMIN_PRESBYOPIA if presbyopic or ctx.attrs.get("age_band") in ("60s", "70s+") else params.TEXT_MIN_ARCMIN
     is_game_surface = ctx.surface_kind == "game"
     for element in ctx.elements:
         text = (element.get("text") or "").strip()
         size = element.get("font_size_px")
-        if not text or not size or not _visible(element):
+        if not text or not size or not _present(element):
             continue
         size_mm = _point_mm(ctx, float(size), 0)[0]
         angle = perception.visual_angle_arcmin(size_mm, viewing)
@@ -850,7 +999,8 @@ def check_text_size(ctx: Context) -> list[Observation]:
         check_id = "GM-01" if hud else "PC-04"
         if angle < params.TEXT_FLOOR_ARCMIN:
             severity, threshold, tier = ("P1" if critical and _roles(element) & {"error_message", "critical_message"} else "P2"), params.TEXT_FLOOR_ARCMIN, "floor"
-        elif angle < comfortable and not hud:
+        elif angle < comfortable and not hud and len(text) >= params.BODY_TEXT_MIN_CHARS:
+            # Critical print size concerns reading speed of continuous text, not labels.
             severity, threshold, tier = "P3", comfortable, "critical_print_size"
         else:
             continue
@@ -926,8 +1076,22 @@ def check_run_timing(run: dict[str, Any], profile: dict[str, Any], device: Any, 
     age = attrs.get("age_band", "30s")
     reading_rate = float(params.READING_SLOW_SYLLABLES_PER_MIN.get(age, 330))
     windows = {w.get("id"): w for w in (scenario or {}).get("timing_windows", [])}
+    surface_game = any(s.get("surface", {}).get("kind") == "game" for s in snapshots.values())
+    viewport_area = 0.0
+    for snap in snapshots.values():
+        vp = snap.get("device", {}).get("viewport_css") or [0, 0]
+        viewport_area = max(viewport_area, float(vp[0]) * float(vp[1]))
     for measured in run.get("timing_windows", []):
         declared = windows.get(measured.get("id"), {})
+        selector = declared.get("selector") or measured.get("selector")
+        element = _element_for_selector(snapshots, selector)
+        flash = _dom_flash(measured, element, viewport_area, device, attrs)
+        if flash is not None:
+            out.append(Observation(
+                "GM-04", run_id, pid, None, None, [element["id"]] if element else [], f"{selector}|{measured.get('id')}",
+                flash["measurement"], flash["severity"] is None, flash["severity"], flash["message"], "dom-flash-rate-v1",
+            ))
+            continue
         durations = measured.get("intervals_ms") or measured.get("visible_ms")
         if isinstance(durations, (int, float)):
             durations = [durations]
@@ -935,8 +1099,10 @@ def check_run_timing(run: dict[str, Any], profile: dict[str, Any], device: Any, 
         if not durations:
             continue
         shortest = min(durations)
-        kind = declared.get("kind") or measured.get("kind") or "transient_text"
-        key = f"{declared.get('selector') or measured.get('selector') or measured.get('id')}|{measured.get('id')}"
+        kind = declared.get("kind") or measured.get("kind") or _infer_window_kind(element, measured, run, selector, surface_game)
+        if kind not in ("qte", "transient_text"):
+            continue  # decorative effects (score pop-ups, sparkles) are not messages or inputs
+        key = f"{selector or measured.get('id')}|{measured.get('id')}"
         if kind == "qte":
             rt = float(attrs.get("reaction_time_ms") or params.choice_reaction_ms_for_age("30s"))
             rt95 = game.reaction_time_quantile_ms(rt, rt * params.RT_CV, 0.95)
@@ -983,6 +1149,14 @@ def check_run_timing(run: dict[str, Any], profile: dict[str, Any], device: Any, 
             + (" 인증 도구(EA IRIS/Harding)로 재검사가 필요합니다." if failed or extended else ""),
             "general-flash-screen-v1",
         ))
+    mash = _mash_bursts(run)
+    for target, count, span in mash:
+        out.append(Observation(
+            "GM-06", run_id, pid, None, None, [], f"{target}|mash",
+            {"name": "rapid_presses", "value": count, "unit": "presses", "threshold": params.MASH_MIN_PRESSES, "comparator": "<", "span_ms": round(span)},
+            False, "P2",
+            f"진행에 '{target}'을(를) {count}회 연속으로 빠르게 눌러야 했습니다({span/1000:.1f}초). 길게 누르기/토글/자동 진행 대안이 있는지 확인이 필요합니다.",
+        ))
     for note in run.get("persona_notes", []):
         if not note.get("confusion"):
             continue
@@ -1004,10 +1178,111 @@ def check_run_timing(run: dict[str, Any], profile: dict[str, Any], device: Any, 
     return out
 
 
+def _element_for_selector(snapshots: dict[str, dict[str, Any]], selector: str | None) -> dict[str, Any] | None:
+    """The largest visible rendering of selector across the run's snapshots."""
+    if not selector:
+        return None
+    best = None
+    for snap in snapshots.values():
+        for element in snap.get("elements", []):
+            if element.get("selector") != selector:
+                continue
+            box = element.get("box") or {}
+            area = float(box.get("w", 0)) * float(box.get("h", 0))
+            if best is None or area > best[0]:
+                best = (area, element)
+    return best[1] if best else None
+
+
+def _infer_window_kind(element: dict[str, Any] | None, measured: dict[str, Any], run: dict[str, Any], selector: str | None, game_surface: bool) -> str:
+    """Kind for a timing window declared without one.
+
+    A window the run had to act on (tapped/clicked target) or an interactive/timed
+    element on a game surface is a timed input; a window showing a readable message
+    (>= 8 characters) is transient text; anything else is decorative.
+    """
+    acted = any((s.get("action") or {}).get("target") == selector for s in run.get("steps", []))
+    roles = set((element or {}).get("roles") or [])
+    interactive = bool((element or {}).get("interactive"))
+    text = (measured.get("text") or (element or {}).get("text") or "").strip()
+    if acted or (game_surface and (interactive or "timed" in roles) and len(text) < 8):
+        return "qte"
+    if len(text) >= 8:
+        return "transient_text"
+    return "decorative"
+
+
+def _dom_flash(measured: dict[str, Any], element: dict[str, Any] | None, viewport_area: float, device: Any, attrs: dict[str, Any]) -> dict[str, Any] | None:
+    """WCAG 2.3.1 screening from DOM visibility toggles (in-page 16 ms polling).
+
+    Frame sampling can alias fast flashes; an element that appears and disappears
+    repeatedly is a measured flash source. A pair of opposing transitions (appear +
+    disappear) is one flash. The element must cover the WCAG area (25 % of a 10 deg
+    field, i.e. 0.006 sr, or the whole viewport fraction on unknown geometry) and be
+    either saturated red (red flash) or differ in luminance by >= 10 % from what it covers.
+    """
+    starts = [float(t) for t in (measured.get("starts_ms") or []) if isinstance(t, (int, float))]
+    appearances = int(measured.get("appearances") or len(starts))
+    if appearances < 4 or element is None:
+        return None
+    if len(starts) < 4:
+        return None
+    best = 0
+    for i, t0 in enumerate(starts):
+        best = max(best, sum(1 for t in starts[i:] if t - t0 < 1000.0))
+    box = element.get("box") or {}
+    fraction = (float(box.get("w", 0)) * float(box.get("h", 0))) / viewport_area if viewport_area else 0.0
+    display = getattr(device, "display_mm", None) or (0, 0)
+    viewing = float(attrs.get("vision", {}).get("viewing_distance_mm") or getattr(device, "viewing_distance_mm", 300))
+    big = game.flash_area_exceeds(fraction, display[0], display[1], viewing) if display[0] else fraction > 0.25
+    colour = perception.parse_color(element.get("color_bg"))
+    below = perception.parse_color(element.get("container_bg"))
+    red = bool(colour) and sum(colour) > 0 and colour[0] / sum(colour) >= params.FLASH_RED_RATIO
+    lum_delta = abs(perception.relative_luminance(colour) - perception.relative_luminance(below)) if colour and below else None
+    strong = red or lum_delta is None or lum_delta >= params.FLASH_DELTA
+    failed = best > 3 and big and strong
+    severity = "P0" if failed else None
+    return {
+        "severity": severity,
+        "measurement": {"name": "flashes_per_second", "value": best, "unit": "flashes/s", "threshold": 3, "comparator": "<=",
+                        "area_fraction": round(fraction, 3), "area_exceeds": big, "red_flash": red,
+                        "luminance_delta": round(lum_delta, 3) if lum_delta is not None else None, "source": "dom-visibility-poll"},
+        "message": f"'{element.get('selector')}'이(가) 1초 안에 최대 {best}회 나타났다 사라짐(화면의 {fraction*100:.0f}%"
+        + (", 채도 높은 빨강" if red else "") + ")." + (" 광과민성 발작 위험 — 인증 도구로 재검사하세요." if failed else ""),
+    }
+
+
+def _mash_bursts(run: dict[str, Any]) -> list[tuple[str, int, float]]:
+    """Runs of rapid presses on one target that the task needed (XAG 107 / GAG)."""
+    bursts: list[tuple[str, int, float]] = []
+    current: list[dict[str, Any]] = []
+
+    def flush() -> None:
+        if len(current) >= params.MASH_MIN_PRESSES:
+            span = float(current[-1].get("t_start_ms") or 0) - float(current[0].get("t_start_ms") or 0)
+            bursts.append((str((current[0].get("action") or {}).get("target")), len(current), span))
+
+    for step in run.get("steps", []):
+        action = step.get("action") or {}
+        if action.get("action") in ("wait", "snapshot"):
+            continue  # waits between scripted presses do not break a burst
+        same = current and action.get("action") in ("tap", "click", "press", "gamepad") and action.get("target") == (current[-1].get("action") or {}).get("target")
+        close = current and (float(step.get("t_start_ms") or 0) - float(current[-1].get("t_start_ms") or 0)) <= params.MASH_MAX_INTERVAL_MS + 1000
+        if same and close:
+            current.append(step)
+            continue
+        flush()
+        current = [step] if action.get("action") in ("tap", "click", "press", "gamepad") else []
+    flush()
+    return bursts
+
+
 SNAPSHOT_CHECKS: tuple[Callable[[Context], list[Observation]], ...] = (
     check_reach,
+    check_game_controls,
     check_target_size,
     check_touch_accuracy,
+    check_pointer_separation,
     check_fitts_sequence,
     check_gaze,
     check_contrast,

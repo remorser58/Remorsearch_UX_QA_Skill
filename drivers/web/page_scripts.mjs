@@ -237,7 +237,23 @@ export function extractSnapshot(args) {
     let color = baseColor();
     const groups = [];
     let outer = null;
-    for (let i = chain.length - 1; i >= 0; i--) {
+    // Start at the topmost fully opaque solid layer at or below the element when no
+    // translucent group sits above it: whatever is under an opaque fill (canvas,
+    // image, gradient) cannot show through, so it must not null the colour.
+    let start = chain.length - 1;
+    for (let i = 0; i < chain.length; i++) {
+      const n = chain[i];
+      const tag = n.tagName ? n.tagName.toLowerCase() : '';
+      const ncs = style(n);
+      if (MEDIA.has(tag) || (ncs.backgroundImage && ncs.backgroundImage !== 'none')) break;
+      if ((parseFloat(ncs.opacity) || 0) < 1) break;
+      const bg = parseColor(ncs.backgroundColor);
+      if (bg && bg.a >= 0.999) {
+        start = i;
+        break;
+      }
+    }
+    for (let i = start; i >= 0; i--) {
       const n = chain[i];
       const tag = n.tagName ? n.tagName.toLowerCase() : '';
       if (MEDIA.has(tag)) return null;
@@ -607,6 +623,14 @@ export function extractSnapshot(args) {
       border_width_px: border.width,
       opacity: Math.round(cumOpacity * 1000) / 1000,
       roles: roleMap.has(el) ? [...roleMap.get(el)].sort() : [],
+      // Ids of the nearest ancestors (grouping context such as a toolbar or chip row).
+      ancestor_ids: (() => {
+        const ids = [];
+        for (let p = el.parentElement; p && ids.length < 3; p = p.parentElement) {
+          if (p.id && p !== document.body && p !== document.documentElement) ids.push(p.id);
+        }
+        return ids;
+      })(),
       source: 'dom',
     });
   }

@@ -75,6 +75,7 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
             "observation_ids": [o["id"] for o in group["failed"]],
             "run_ids": sorted(group["runs"]),
             "selectors": sorted({sel for o in group["failed"] for sel in o.get("selectors", [])}),
+            "context_selectors": sorted({sel for o in group["failed"] for sel in o.get("context_selectors", [])}),
             "measurement": worst["measurement"],
             "title_ko": spec.title_ko,
             "summary_ko": worst["message_ko"],

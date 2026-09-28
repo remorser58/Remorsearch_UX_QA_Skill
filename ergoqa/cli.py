@@ -212,7 +212,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--seed", type=int, default=7)
     p.add_argument("--devices", required=True, help="comma-separated device ids")
     p.add_argument("--strategy", default="stratified_coverage", choices=("stratified_coverage", "base_rate_sample"))
-    p.add_argument("--orientation", default="portrait", choices=("portrait", "landscape"))
+    p.add_argument("--orientation", choices=("portrait", "landscape"), help="default: each device's natural orientation")
     p.add_argument("--personas", help="optional JSON list of persona records (dataset, revision, record_id, age_band)")
     p.add_argument("--out", required=True)
     p.set_defaults(func=cmd_profiles)
