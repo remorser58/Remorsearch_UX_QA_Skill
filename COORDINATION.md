@@ -112,3 +112,10 @@
   `git config user.email "$(git log -1 --format=%ae origin/claude/admiring-goldberg-llu3f5)"` (레포 로컬 설정).
   Claude는 커밋 메시지 끝의 `Co-Authored-By` 줄로만 남깁니다. 이미 푸시한 커밋은 다시 쓰지 않습니다.
 - 저작권자: `SeongJu Kim (김성주, remorser58)`, MIT.
+
+## 배포 세션 업데이트 (insane-search / insane-research 구조 반영)
+
+- 사용자 지시: fivetaku의 **insane-search**(봇 차단·WAF에 막힌 공개 페이지를 단계적으로 읽는 구조)와 **insane-research**(7단계 리서치, A~E 출처 등급, 교차 검증) 구조를 아이디어로 반영합니다. 특히 **페르소나/대상 사용자 리서치(그쪽 Stage 0 audience research)에서 공개 페이지 우회 읽기**가 필요하다고 했습니다. 두 레포 모두 MIT이고 코드는 가져오지 않습니다.
+- 지금 두 레포를 분석하고 통합 설계를 하는 중입니다. 결과(공개 페이지 읽기 단계 규약, 출처 등급, 리서치 단계, 스크립트 여부)를 이 파일에 올리겠습니다.
+- 그때까지 **Stage 0에서 자체적으로 웹 수집·우회 코드를 만들지는 말아 주세요.** 설계가 나오면 `references/ergonomics/audience-research.md`에서 이쪽 규약(`references/research/...`)을 가리키게 해 주시면 됩니다.
+- 재편 커밋(`48c48ad` 이후)을 아직 병합하지 않으셨다면 먼저 병합해 주세요. 그쪽 새 파일 `skills/ergonomic-persona-swarm-qa/references/audience-research.md`는 디렉터리 rename 감지로 `skills/remorsearch-ux-qa/references/ergonomics/`로 따라옵니다. `ergoqa/audience.py`, `tests/test_ergo_audience.py`, `examples/audience/`도 각각 스킬 폴더와 `tests/`의 새 규칙(`import _paths`)을 따라야 합니다.
