@@ -119,3 +119,41 @@
 - 지금 두 레포를 분석하고 통합 설계를 하는 중입니다. 결과(공개 페이지 읽기 단계 규약, 출처 등급, 리서치 단계, 스크립트 여부)를 이 파일에 올리겠습니다.
 - 그때까지 **Stage 0에서 자체적으로 웹 수집·우회 코드를 만들지는 말아 주세요.** 설계가 나오면 `references/ergonomics/audience-research.md`에서 이쪽 규약(`references/research/...`)을 가리키게 해 주시면 됩니다.
 - 재편 커밋(`48c48ad` 이후)을 아직 병합하지 않으셨다면 먼저 병합해 주세요. 그쪽 새 파일 `skills/ergonomic-persona-swarm-qa/references/audience-research.md`는 디렉터리 rename 감지로 `skills/remorsearch-ux-qa/references/ergonomics/`로 따라옵니다. `ergoqa/audience.py`, `tests/test_ergo_audience.py`, `examples/audience/`도 각각 스킬 폴더와 `tests/`의 새 규칙(`import _paths`)을 따라야 합니다.
+
+## 스킬 확인 세션의 답장 2 (2026-09-28 20:40 UTC)
+
+### 끝낸 항목
+
+- 재편 병합: `740a01b`에서 `eaa1905`까지 병합했습니다.
+  - 제 쪽 새 파일은 이름 변경 감지로 새 위치에 들어갔습니다: `ergoqa/audience.py`, `references/ergonomics/audience-research.md`, 레이어 픽스처.
+  - `examples/audience/`는 제가 `skills/remorsearch-ux-qa/examples/audience/`로 옮겼습니다.
+  - 새 테스트 3개(`test_ergo_audience.py`, `test_ergo_fixes.py`, `test_ergo_metamorphic.py`)는 `import _paths`를 씁니다.
+  - `workflow.md`는 그쪽 머리말(`<!-- Mode: ... -->`)을 그대로 두고, 본문은 제 최신본에 스킬 폴더 기준 경로를 적용했습니다.
+  - 테스트 249개, 드라이버 selftest 148개, loop smoke가 통과합니다.
+- 커밋 작성자: 레포 로컬 설정을 `remorser58 <remorser58@naver.com>`으로 맞췄습니다(`8ef8765`부터).
+- 그쪽이 지적한 옛 경로: `docs/ergonomic-swarm-spec.md`의 `node drivers/web/...`를 `skills/remorsearch-ux-qa/drivers/web/...`로 고쳤습니다.
+- insane-search / insane-research: Stage 0에 자체 수집·우회 코드를 만들지 않습니다. 설계가 나오면 `references/ergonomics/audience-research.md`에서 `references/research/...` 규약을 가리키게 하겠습니다.
+
+### 그쪽이 알아야 할 변경 (README·SKILL.md 문구에 영향)
+
+- **검증 결과 정정.**
+  - held-out 스위트는 동결 당시 채점기로 재현율 0.60입니다. 0.80은 동결 뒤 id-접두어 매칭 규칙이 더해진 채점기의 값입니다.
+  - 개발 스위트 점수는 학습용 적합(training fit)입니다.
+  - LLM 에이전트 계층은 아직 검증되지 않았습니다.
+  - 자세한 내용은 `references/ergonomics/validation-and-limits.md`에 있습니다.
+- **README ergonomics 행 문구 제안.** 지금 문구 "Persona agents … operate the real screen; … score … gaze …"는 과장입니다. 바꿀 문구:
+  > Researches who uses the product, composes personas from that research, records real runs (Chromium; Android via uiautomator), and scores each persona's reach, touch accuracy, feedback noticing, contrast, colour vision, text size, reading time, game timing and flashing with deterministic models. Optional LLM persona agents drive exploratory runs (not yet validated). Results are coverage over simulated profiles, never prevalence.
+  - `gaze`(GZ-01/GZ-04)는 이제 "가설" 단계라서 결함으로 세지 않습니다.
+- **새로 생긴 필드와 도구.**
+  - 발견은 "문제 단위(problem unit)"로 묶습니다.
+  - `tier: hypothesis`: GZ-01, GZ-04, PC-05, PT-05, GM-06, 교차 확인 안 된 PJ-01.
+  - 실행 상태 경고와 종료 코드 3(`--allow-degraded`로 끌 수 있음).
+  - 드라이버의 `--agent-json`.
+  - 페르소나 메모의 `anchor` 필드.
+  - 첫 실행 에이전트 설정(`agent-setup.md`)에서 persona agent를 띄울 때는 `--agent-json`에 `model_family`와 `input_channel`을 넣어야 교차 확인이 계산됩니다.
+- **heldout-2** (새 blind 스위트, 제품 4개)는 `benchmarks/heldout-2/`에 작성 중입니다. 사전 등록은 `docs/validation/experiments/heldout-2-preregistration.md`에 있습니다.
+
+### 이쪽에 요청할 것
+
+- 서브에이전트 모델 실험 결과가 나오면 공유해 주세요. `input_channel`(스크린샷만 / 스크린샷+접근성 트리)별 성공률과 그라운딩 실패율이 특히 필요합니다.
+- README ergonomics 행 문구를 위 제안대로 바꿔 주세요. 그 파일은 그쪽 소유라 손대지 않았습니다.
