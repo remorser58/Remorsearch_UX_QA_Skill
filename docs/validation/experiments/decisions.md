@@ -98,5 +98,20 @@ them. The out-of-sample test is `heldout-2`, pre-registered in
 | exp2 (round 1) | `782a15c` | 0.811 | 354 | 143 | 148 | 57 |
 | exp3 (round 2) | `4dbdc37` | 0.849 | 186 | 51 | 96 | 26 |
 
-Rounds 3 and 4 (the fixes after exp3) are re-recorded together with the flash
-rework and added here.
+| exp4 (rounds 3-4, flash rework) | `a11ef18` | 0.906 (95 % CI 0.80-0.96) | 193 | 53 | 97 | 26 |
+
+exp4 detail (`ablation-dev-def157e.json`): single default persona 0.642, measured
+checks only 0.302. Stratified coverage reaches 0.906 at 8 profiles per device;
+random draws need 40 (0.904). Clean-control units by check: RH-01 7, PT-04 6,
+PC-04 6, PT-02 4, CG-01 1, CG-02 1, GM-05 1; seven are P2, none P0-P1.
+
+## Round 5 (from exp4)
+
+| Item | Evidence | Decision |
+| --- | --- | --- |
+| Strict matching credits condition presence | The walking-conditioned defects (mobile D-07, mixed D-03) and one right-hand defect (mobile D-10) are found by PT-02/PT-04/RH-01 findings that fire for every profile (14/14, 13/13; no differential). The condition's profile only satisfies the key's condition. Deutan (PC-03 at 1/14) and left one-hand (RH-01 at 5/13) are real model contributions. | Add `recall_condition_attributed` (a conditioned defect counts only when the finding names its condition). Reported next to strict recall; the headline stays as pre-registered. The walking floor's dev evidence was presence, not modelling. |
+| Touch σ multipliers | Off: 0 dev defects lost, 19 fewer findings, 6 fewer clean-control units. Four of the seven clean-control P2 units are 44 × 44 CSS px (8.1 mm) targets flagged only for walking or tremor profiles (miss probability 6-16 %). | Pending `situational-and-age-effects-on-touch.md` (calibrate, cap or cut). |
+| Gaze conspicuity map | Disabling it (cache fixed) changes no counted finding; it feeds only the hypothesis-tier GZ-01 and GZ-04. | Keep for the hypothesis list; no effect on counted results. Candidate to switch off by default for speed. |
+| RH-01 on secondary game controls | A pause hotspot out of one-thumb reach was P2 on a clean page; GM-02 already treats pause, menu and settings as secondary (Apple HIG). | Secondary game controls are not key controls in RH-01: out of reach is P3. |
+| small_hand stratum | 0 unique defects in exp4 (was 1-2); 2-4 extra findings | Kept (low noise, reach model input); re-check on heldout-2. |
+| GM-05 | 0 unique in exp4 (PT-04 covers the same controls); 1 clean-control unit | Kept (normative, low noise). |

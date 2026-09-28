@@ -176,6 +176,12 @@ def score(answer_key: dict[str, Any], findings: Iterable[dict[str, Any]], profil
         "recall_strict_unconditioned": round(sum(d["detected_strict"] for d in unconditioned) / len(unconditioned), 3) if unconditioned else None,
         "unconditioned_defects": len(unconditioned),
         "condition_identified": round(sum(1 for d in conditioned if d["differential_matches_condition"]) / len(conditioned), 3) if conditioned else None,
+        # Strict matching credits a conditioned defect when a profile with the condition
+        # is among the triggered ones, even if every profile triggered it. Attributed
+        # recall also requires the finding to name the condition, so it measures what
+        # the profile models add rather than which profiles were present (exp4 review).
+        "recall_condition_attributed": round(sum(1 for d in per_defect if d["detected_strict"]
+                                                 and (not d["profile_condition"] or d["differential_matches_condition"])) / n, 3),
         "conditioned_defects": len(conditioned),
         "effectiveness_lb": round(detected / n * validity_lb, 3) if validity_lb is not None else None,
         "false_alarm_units_per_clean_scenario": round(len(clean_units) / clean_scenarios, 2),

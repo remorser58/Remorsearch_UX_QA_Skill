@@ -427,7 +427,10 @@ def check_reach(ctx: Context) -> list[Observation]:
             ))
             continue
         severity = None
-        key_control = bool(roles & {"primary", "game_control"})
+        # Secondary game controls (pause, menu, settings) are occasional and belong at the
+        # top by convention (Apple HIG), as in GM-02: out of reach is P3, a stretch is fine.
+        secondary = is_game and "primary" not in roles and "timed" not in roles and _secondary_control(element)
+        key_control = bool(roles & {"primary", "game_control"}) and not secondary
         if score["zone"] == "out":
             # Critical controls out of one-thumb reach: P2 (model cap). Other controls the
             # task happens to use (fields, tabs): P3, since reaching them is expected.

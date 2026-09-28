@@ -294,6 +294,7 @@ def aggregate(sc: dict[str, Any], key: dict[str, Any]) -> dict[str, Any]:
         "recall_strict_by_operating_point": sc["recall_strict_by_operating_point"],
         "recall_strict_unconditioned": sc["recall_strict_unconditioned"],
         "condition_identified": sc["condition_identified"],
+        "recall_condition_attributed": sc["recall_condition_attributed"],
         "conditioned_defects": sc["conditioned_defects"],
         "recall_lenient": sc["recall_lenient"],
         "severity_agreement": sc["severity_agreement"],

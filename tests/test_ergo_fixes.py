@@ -200,6 +200,14 @@ class Bench(unittest.TestCase):
 
 
 class RuleFixes(unittest.TestCase):
+    def test_secondary_game_control_out_of_reach_is_not_p2(self) -> None:
+        # Top-left corner of a phone: out of reach for a right one-hand grip.
+        pause = el("pause", "button", (8, 8, 44, 44), text="일시정지", interactive=True, roles=("game_control",), tag="button")
+        jump = el("jump", "button", (8, 60, 44, 44), text="점프", interactive=True, roles=("game_control",), tag="button")
+        obs = {o.element_key.split("|")[0]: o for o in checks.check_reach(ctx([pause, jump])) if o.check_id == "RH-01"}
+        self.assertEqual(obs["#jump"].severity, "P2")
+        self.assertEqual(obs["#pause"].severity, "P3")
+
     def test_numeric_keypad_is_not_choice_overload(self) -> None:
         keys = [el(f"k{i}", "button", (10 + (i % 3) * 110, 400 + (i // 3) * 50, 100, 44), text=str(i % 10), interactive=True, tag="button")
                 for i in range(12)]
