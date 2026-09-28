@@ -344,3 +344,27 @@ in defect variants are false-positive candidates that need manual adjudication (
 detector may find a real, unseeded issue).
 Implementers of ergoqa MUST NOT read `benchmarks/` until the benchmark is scored.
 Benchmark authors MUST NOT read `ergoqa/` or `drivers/`.
+
+### 12.1 Suite format v2 (additive; used from `heldout-2`)
+
+Each product in a v2 suite also ships a `benchmarks/<suite>/products/<product>/brief.md`:
+what the product is, who it is sold to, the business context and the main tasks,
+written like a real product brief. It never mentions seeded defects. Stage-0
+audience research reads only the brief plus public sources about real users of
+that product category.
+
+Additional answer-key fields per defect (all optional for v1 suites):
+
+| Field | Values | Meaning |
+| --- | --- | --- |
+| `product` | product slug | which brief the scenario belongs to |
+| `detectable_by` | `measurement` \| `model` \| `agent_judgment` | the cheapest evidence that can reveal the defect: a fixed standard on measured geometry/colour/timing, a human-factors model, or an agent operating the task and noticing (dead end, unclear error, missing feedback) |
+| `audience_relevance` | `primary` \| `secondary` \| `edge` \| `none` | how much the defect matters to the product's intended users according to the brief (`edge` = small group with high stakes) |
+| `taxonomy_ref` | string | the published rule or defect taxonomy the defect instantiates (WCAG SC, Android ATF check, XCTest audit type, ODC/app-review complaint type, game accessibility guideline, human-factors paper) |
+
+Additional categories: `semantics` (accessible name, role, state, focus order,
+focus visibility, focus obscured) and `layout` (clipped or truncated text,
+overlapping elements, content lost at 320 CSS px reflow or 200 % zoom). Task-flow
+problems found by operating the task use the existing `heuristic` category.
+
+Suite-level answer-key field `products`: `[{"product": "...", "brief": "products/<product>/brief.md", "scenarios": ["SC-..."]}]`.
