@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>focus fixture</title>
+<!--
+  Focus walk fixture (driver self-test):
+  #plain has the browser's default focus ring; #nofocus removes it (outline: none)
+  with no replacement (WCAG 2.4.7); #ring has a custom visible ring; #under sits
+  entirely behind the fixed #bar when focused (WCAG 2.4.11).
+-->
+<style>
+  body { margin: 0; font-family: sans-serif; background: #ffffff; color: #202124; }
+  button, input { font-size: 16px; margin: 16px; padding: 8px 12px; }
+  #nofocus:focus { outline: none; }
+  #ring:focus { outline: 3px solid #1a73e8; outline-offset: 2px; }
+  #under { position: absolute; left: 16px; bottom: 30px; margin: 0; }
+  #bar { position: fixed; left: 0; right: 0; bottom: 0; height: 110px; background: #333333; color: #ffffff; z-index: 10; }
+</style>
+</head>
+<body>
+<button id="plain" type="button">기본 버튼</button>
+<button id="nofocus" type="button">표시 없는 버튼</button>
+<button id="ring" type="button">링 버튼</button>
+<input id="under" type="text" aria-label="가려진 칸">
+<div id="bar">고정 바</div>
+</body>
+</html>

@@ -34,6 +34,12 @@ const MAX_FLASH_BYTES = 6_000_000;
 // to the compositor (~33 ms), so a 30 Hz flicker would alias to a still image.
 const FLASH_JITTER_MS = 15;
 const MAX_CONSOLE = 500;
+// Keyboard focus walk (WCAG 2.4.7 focus visible, 2.4.11 focus not obscured): Tab
+// through up to this many stops; a stop's indicator is the pixel change inside its
+// box (+4 px) between focused and unfocused states.
+const FOCUS_WALK_MAX = 40;
+const FOCUS_DIFF_LEVEL = 24;
+const FOCUS_SETTLE_MS = 80;
 
 const MEASURED = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'type', 'press', 'scroll', 'gamepad']);
 const POINTER = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'scroll']);
@@ -53,6 +59,67 @@ function stripQuery(url) {
   } catch {
     return truncate(url, 200);
   }
+}
+
+/**
+ * In-page: the focused element's identity, box, and how much of it a fixed or
+ * sticky layer covers (9 sample points). Null when focus left the document.
+ */
+function focusInfo() {
+  const el = document.activeElement;
+  if (!el || el === document.body || el === document.documentElement) return null;
+  const r = el.getBoundingClientRect();
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const esc = (v) => (window.CSS && CSS.escape ? CSS.escape(v) : v);
+  let sel = el.id ? `#${esc(el.id)}` : null;
+  if (!sel) {
+    const parts = [];
+    for (let n = el; n && n.nodeType === 1 && n !== document.body && parts.length < 6; n = n.parentElement) {
+      const tag = n.tagName.toLowerCase();
+      if (n.id) {
+        parts.unshift(`#${esc(n.id)}`);
+        break;
+      }
+      const sib = n.parentElement ? [...n.parentElement.children].filter((c) => c.tagName === n.tagName) : [];
+      parts.unshift(sib.length > 1 ? `${tag}:nth-of-type(${sib.indexOf(n) + 1})` : tag);
+    }
+    sel = parts.join(' > ');
+  }
+  const path = [];
+  for (let n = el; n && n.nodeType === 1; n = n.parentElement) path.unshift(n.parentElement ? [...n.parentElement.children].indexOf(n) : 0);
+  const inVp = r.width > 0 && r.height > 0 && r.right > 0 && r.bottom > 0 && r.left < vw && r.top < vh;
+  let covered = 0;
+  let coveredBy = null;
+  if (inVp) {
+    for (const fx of [0.15, 0.5, 0.85]) {
+      for (const fy of [0.2, 0.5, 0.8]) {
+        const px = Math.min(vw - 1, Math.max(0, r.left + r.width * fx));
+        const py = Math.min(vh - 1, Math.max(0, r.top + r.height * fy));
+        const hit = document.elementFromPoint(px, py);
+        if (!hit || hit === el || el.contains(hit) || hit.contains(el)) continue;
+        let layer = null;
+        for (let n = hit; n && n.nodeType === 1; n = n.parentElement) {
+          const pos = getComputedStyle(n).position;
+          if (pos === 'fixed' || pos === 'sticky') {
+            layer = n;
+            break;
+          }
+        }
+        if (layer) {
+          covered += 1;
+          if (!coveredBy) coveredBy = layer.id ? `#${esc(layer.id)}` : layer.tagName.toLowerCase();
+        }
+      }
+    }
+  }
+  const role = el.getAttribute('role') || el.tagName.toLowerCase();
+  const name = (el.getAttribute('aria-label') || el.innerText || el.value || el.getAttribute('placeholder') || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+  return {
+    selector: sel, dom_id: el.id || null, tag: el.tagName.toLowerCase(), role, name, path: path.join('.'),
+    box: { x: Math.round(r.left * 100) / 100, y: Math.round(r.top * 100) / 100, w: Math.round(r.width * 100) / 100, h: Math.round(r.height * 100) / 100 },
+    in_viewport: inVp, obscured_fraction: inVp ? Math.round((covered / 9) * 1000) / 1000 : null, obscured_by: coveredBy, vw, vh,
+  };
 }
 
 export class WebSession {
@@ -81,6 +148,7 @@ export class WebSession {
     this.flashTruncated = null;
     this.flashGrid = null;
     this.flashPrev = null; // last flash frame (across bursts) for block motion
+    this.focusWalks = [];
     this.frameIndex = 0;
     this.blocked = [];
     this.blockedCount = 0;
@@ -207,6 +275,93 @@ export class WebSession {
       await this.probeFrames({ dispatch: epochNow(), stepIndex: 0, flashMs: this.opts.flashSampleMs, visual: null, fb: { done: true } });
     }
     await this.snapshot(0, []);
+    if (this.focusWalkEnabled() && !this.blockReasons.length) await this.focusWalkFresh();
+  }
+
+  focusWalkEnabled() {
+    if (this.opts.focusWalk === true || this.opts.focusWalk === false) return this.opts.focusWalk;
+    return !!this.dev && this.dev.base.input !== 'touch';
+  }
+
+  /** Focus walk of the initial screen in a separate context, so the run's page keeps its state. */
+  async focusWalkFresh() {
+    let context = null;
+    try {
+      context = await this.browser.newContext({
+        ...this.dev.contextOptions, locale: this.opts.locale, timezoneId: this.opts.timezoneId, colorScheme: 'light',
+        reducedMotion: 'no-preference', serviceWorkers: 'block', acceptDownloads: false,
+      });
+      await context.route('**/*', (route) => this.onRoute(route));
+      const page = await context.newPage();
+      await page.goto(this.scenario.url, { waitUntil: 'load', timeout: 30000 });
+      await sleep(this.opts.settleMs);
+      await this.focusWalk(page, 'load', this.lastSnapshotId);
+    } catch (err) {
+      this.warnings.push(`focus walk (load) failed: ${firstLine(err.message)}`);
+    } finally {
+      if (context) await context.close().catch(() => {});
+    }
+  }
+
+  /** Clip of the page at CSS scale, decoded (focus indicator comparison). */
+  async clipFrame(page, clip) {
+    const buf = await page.screenshot({ clip, scale: 'css', animations: 'disabled', caret: 'hide', timeout: 5000 });
+    return frameFromImage(decodePng(buf));
+  }
+
+  /**
+   * Tab through the page from the top: per stop, the focused element, whether focus
+   * changed anything visible in its box, and whether a fixed or sticky layer covers it.
+   */
+  async focusWalk(page, phase, snapshotId) {
+    const stops = [];
+    let ended = 'max_stops';
+    await page.evaluate(() => {
+      if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+      window.scrollTo(0, 0);
+    });
+    const seen = new Set();
+    for (let i = 0; i < FOCUS_WALK_MAX; i++) {
+      await page.keyboard.press('Tab');
+      await sleep(FOCUS_SETTLE_MS);
+      const info = await page.evaluate(focusInfo);
+      if (!info) {
+        ended = 'left_document';
+        break;
+      }
+      if (seen.has(info.path)) {
+        ended = 'cycle';
+        break;
+      }
+      seen.add(info.path);
+      const b = info.box;
+      const x0 = Math.max(0, Math.floor(b.x - 4));
+      const y0 = Math.max(0, Math.floor(b.y - 4));
+      const x1 = Math.min(info.vw, Math.ceil(b.x + b.w + 4));
+      const y1 = Math.min(info.vh, Math.ceil(b.y + b.h + 4));
+      let changed = null;
+      if (info.in_viewport && x1 - x0 >= 2 && y1 - y0 >= 2) {
+        const clip = { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+        const on = await this.clipFrame(page, clip);
+        await page.keyboard.press('Shift+Tab');
+        await sleep(FOCUS_SETTLE_MS);
+        const off = await this.clipFrame(page, clip);
+        await page.keyboard.press('Tab');
+        await sleep(FOCUS_SETTLE_MS);
+        const back = await page.evaluate(focusInfo);
+        const frac = visualDiffFraction(on, off, FOCUS_DIFF_LEVEL);
+        changed = frac === null ? null : Math.round(frac * on.width * on.height);
+        if (!back || back.path !== info.path) {
+          stops.push({ ...info, path: undefined, indicator_px: changed, clip_px: [clip.width, clip.height] });
+          ended = 'refocus_failed';
+          break;
+        }
+        stops.push({ ...info, path: undefined, indicator_px: changed, clip_px: [clip.width, clip.height] });
+      } else {
+        stops.push({ ...info, path: undefined, indicator_px: null, clip_px: null });
+      }
+    }
+    this.focusWalks.push({ phase, snapshot_id: snapshotId, url: page.url(), ended, stops });
   }
 
   async calibrate() {
@@ -1260,6 +1415,13 @@ export class WebSession {
       } catch (err) {
         this.warnings.push(`success evaluation failed: ${firstLine(err.message)}`);
       }
+      if (this.focusWalkEnabled() && !this.crashed && this.page) {
+        try {
+          await this.focusWalk(this.page, 'end', this.lastSnapshotId);
+        } catch (err) {
+          this.warnings.push(`focus walk (end) failed: ${firstLine(err.message)}`);
+        }
+      }
       if (success === null && !detail && typeof personaSuccess === 'boolean') {
         success = personaSuccess;
         basis = 'judgment';
@@ -1317,6 +1479,7 @@ export class WebSession {
         steps: this.steps,
         timing_windows: this.timingWindowsOut(end),
         flash_samples: this.flashSamples,
+        focus_walks: this.focusWalks,
         flash_sampling: this.opts.flashSampleMs > 0 ? {
           enabled: true,
           per_step_ms: this.opts.flashSampleMs,

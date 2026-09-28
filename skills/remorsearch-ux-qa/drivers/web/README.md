@@ -157,6 +157,15 @@ they belong to (0 = initial load), so a step can own two snapshots.
   `flash_sampling` records `sampled_ms`, `mean_fps`, `max_gap_ms`, `bursts` and
   `truncated` (sampling stops at about 6 MB of samples so `run.json` stays below
   ergoqa's input limit).
+- **Keyboard focus walk** (mouse and keyboard devices by default; `--focus-walk`
+  / `--no-focus-walk`): Tab through up to 40 stops at load (in a separate browser
+  context, so the run's page keeps its state) and at the end of the run. Per stop,
+  `run.focus_walks[].stops[]` records the focused element (`selector`, `dom_id`,
+  `role`, `name`, `box`), `indicator_px` (pixels that change by >= 24/255 inside the
+  element box + 4 px between the focused and unfocused states, compared by
+  Shift+Tab and Tab back) and `obscured_fraction` / `obscured_by` (share of nine
+  sample points covered by a fixed or sticky layer). `ended` says why the walk
+  stopped (`cycle`, `left_document`, `max_stops`, `refocus_failed`).
 - **Console**: `console.error` and uncaught page errors, per snapshot (since the
   previous one) and in `run.json`. Errors caused by the driver's own network block
   are counted separately, not reported as page errors.

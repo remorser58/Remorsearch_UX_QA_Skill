@@ -60,6 +60,11 @@ function startFixtureServer() {
       res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), 'layers.html')));
       return;
     }
+    if (req.method === 'GET' && pathname === '/focus.html') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), 'focus.html')));
+      return;
+    }
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('not found');
   });
@@ -654,6 +659,38 @@ async function layersTest(base, tmp) {
     behind1 && behind1.inert_by_modal === true && inModal && inModal.inert_by_modal === false, [behind1, inModal]);
 }
 
+async function focusTest(base, tmp) {
+  const sc = {
+    schema_version: 'ergo-scenario.v1',
+    scenario_id: 'SC-driver-focus-01',
+    surface: { kind: 'web', url: '{BASE}/focus.html' },
+    task_goal_ko: '포커스 표시를 본다',
+    device_ids: ['desktop-1920'],
+    targets: {},
+    steps: [{ action: 'wait', ms: 100 }],
+    success: { url_contains: 'focus' },
+  };
+  writeJson(path.join(tmp, 'focus.json'), sc);
+  const outDir = path.join(tmp, 'runs');
+  const r = await runDriver(['run', '--scenario', path.join(tmp, 'focus.json'), '--device', 'desktop-1920',
+    '--out', outDir, '--run-id', 'R-focus', '--base', base]);
+  if (!check('focus desktop-1920: exit 0', r.code === 0, `${r.code} ${r.err} ${JSON.stringify((() => { try { const d = JSON.parse(fs.readFileSync(path.join(outDir, 'R-focus', 'run.json'), 'utf8')); return [d.blocked_reasons, d.warnings]; } catch (e) { return String(e); } })())}`)) return;
+  const { run } = loadRun(path.join(outDir, 'R-focus'));
+  const walks = run.focus_walks || [];
+  check('focus: walks recorded at load (fresh context) and at the end', walks.map((w) => w.phase).join() === 'load,end'
+    && walks[0].snapshot_id === run.snapshots[0].snapshot_id, walks.map((w) => [w.phase, w.snapshot_id, w.ended]));
+  const stop = (sel) => walks[0]?.stops.find((s) => s.selector === sel);
+  check('focus: the default ring and a custom ring change pixels; outline:none changes none',
+    stop('#plain')?.indicator_px > 50 && stop('#ring')?.indicator_px > 50 && stop('#nofocus')?.indicator_px === 0,
+    ['#plain', '#ring', '#nofocus'].map((k) => [k, stop(k)?.indicator_px]));
+  check('focus: an element behind a fixed bar is fully obscured by it', stop('#under')?.obscured_fraction === 1 && stop('#under')?.obscured_by === '#bar',
+    stop('#under'));
+  check('focus: the walk does not disturb the run (steps ok, success measured)', run.status === 'completed' && run.success === true,
+    { status: run.status, success: run.success });
+  const touch = loadRun(path.join(outDir, 'R-layers')).run;
+  check('focus: no walk on touch devices by default', Array.isArray(touch.focus_walks) && touch.focus_walks.length === 0, touch.focus_walks);
+}
+
 async function main() {
   const keep = process.argv.includes('--keep');
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ergo-web-selftest-'));
@@ -699,6 +736,7 @@ async function main() {
     }
 
     await layersTest(base, tmp);
+    await focusTest(base, tmp);
     await serveTest(base, tmp);
     await exitCodeTests(base, tmp);
   } finally {
