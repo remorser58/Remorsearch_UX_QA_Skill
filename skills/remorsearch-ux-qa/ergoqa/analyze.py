@@ -205,9 +205,15 @@ def analyze_run(
         (snap["snapshot_id"], e.get("id")): [f"#{a}" for a in (e.get("ancestor_ids") or []) if isinstance(a, str) and a]
         for snap in snapshots for e in snap.get("elements", [])
     }
+    estimated = {snap["snapshot_id"] for snap in snapshots if snap.get("geometry_basis") == "estimated"}
+    vision_elements = {(snap["snapshot_id"], e.get("id")) for snap in snapshots for e in snap.get("elements", []) if e.get("source") == "vision"}
     dicts = []
     for index, obs in enumerate(observations):
         record = obs.to_dict(index)
+        if obs.snapshot_id in estimated or any((obs.snapshot_id, eid) in vision_elements for eid in obs.element_ids):
+            # Geometry or colours estimated from a screenshot (spec section 11): never observed.
+            record["epistemic_status"] = "inferred"
+            record["geometry_basis"] = "estimated"
         record["selectors"] = [s for s in (selector_of.get((obs.snapshot_id, eid)) for eid in obs.element_ids) if s]
         record["context_selectors"] = sorted({c for eid in obs.element_ids for c in context_of.get((obs.snapshot_id, eid), [])})
         record["scenario_id"] = run.get("scenario_id")

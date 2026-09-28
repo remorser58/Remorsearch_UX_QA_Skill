@@ -184,10 +184,6 @@ def main() -> int:
                 prefix = f"{device_id}-{orientation[0]}"
                 for p in sampled:
                     p["profile_id"] = f"{p['profile_id']}@{prefix}"
-                    if orientation == "landscape" and device.input == "touch" and p["attributes"]["grip"].startswith(("one_hand", "cradle")):
-                        # Landscape play is two-thumb; keep the stratum's other conditions.
-                        p["attributes"]["grip"] = "two_thumbs"
-                        p["label_ko"] = label_ko(p)
                 groups[gk] = sampled
                 profiles.extend(sampled)
                 bases[gk] = default_profile(device_id, orientation)

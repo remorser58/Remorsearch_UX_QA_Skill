@@ -108,7 +108,8 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
             "element_key": element_key,
             "severity": worst["severity"],
             "basis": spec.basis,
-            "epistemic_status": "observed" if spec.basis == "measured" else "inferred",
+            # Measured on estimated geometry (vision annotation) is still inferred.
+            "epistemic_status": "observed" if spec.basis == "measured" and not any(o.get("epistemic_status") == "inferred" for o in group["failed"]) else "inferred",
             "model": worst.get("model"),
             "triggered_profiles": triggered,
             "tested_profiles": tested,

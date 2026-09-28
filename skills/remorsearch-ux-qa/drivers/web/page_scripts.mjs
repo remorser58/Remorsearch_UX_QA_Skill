@@ -565,10 +565,27 @@ export function extractSnapshot(args) {
         top = null;
       }
       if (!top || top === el || el.contains(top) || top.contains(el)) continue;
+      // Hit testing also returns transparent layers (stretched-link ::after, click
+      // catchers, input layers). Only a layer that paints, or a modal, hides the element.
+      if (!paintsOver(top, el)) continue;
       covered += 1;
       if (!by) by = top;
     }
     return { fraction: covered / pts.length, by };
+  };
+  const paintsOver = (top, el) => {
+    for (let n = top; n && !n.contains(el); n = parentOf(n)) {
+      if (n.nodeType !== 1) continue;
+      const tag = n.tagName.toLowerCase();
+      const cs = style(n);
+      if ((parseFloat(cs.opacity) || 0) <= 0.01 || cs.visibility !== 'visible') continue;
+      if (tag === 'dialog' || n.getAttribute('aria-modal') === 'true') return true;
+      if (MEDIA.has(tag)) return true;
+      if (cs.backgroundImage && cs.backgroundImage !== 'none') return true;
+      const bg = parseColor(cs.backgroundColor);
+      if (bg && bg.a > 0.05) return true;
+    }
+    return false;
   };
 
   const candidates = [];

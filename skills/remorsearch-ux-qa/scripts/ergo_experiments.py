@@ -590,6 +590,8 @@ def toggles(exp: Path, suites: Iterable[str]) -> list[dict[str, Any]]:
     n_defects = sum(len(d["key"]["defects"]) for d in loaded.values())
 
     def score_all(gaze_enabled: bool = True) -> dict[str, Any]:
+        checks._FIXATION_CACHE.clear()
+        analyze._CONSPICUITY_CACHE.clear()
         per = {}
         for s, data in loaded.items():
             analyses = []

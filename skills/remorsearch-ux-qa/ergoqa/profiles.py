@@ -43,6 +43,10 @@ CORE_TOUCH_STRATA: tuple[tuple[str, dict[str, Any]], ...] = (
     ("two_thumbs", {"grip": "two_thumbs"}),
     ("cradle", {"grip": "cradle_right"}),
 )
+LANDSCAPE_STRATA: tuple[tuple[str, dict[str, Any]], ...] = (
+    ("two_thumbs_right", {"handedness": "right", "grip": "two_thumbs"}),
+    ("two_thumbs_left", {"handedness": "left", "grip": "two_thumbs"}),
+)
 TABLET_STRATA: tuple[tuple[str, dict[str, Any]], ...] = (
     ("two_thumbs", {"handedness": "right", "grip": "two_thumbs"}),
     ("cradle_right", {"handedness": "right", "grip": "cradle_right"}),
@@ -257,13 +261,22 @@ def label_ko(profile: dict[str, Any]) -> str:
     return " · ".join(parts)
 
 
-def coverage_plan(devices: list[Any], count: int) -> list[tuple[Any, str | None, dict[str, Any]]]:
+def core_strata(device: Any, orientation: str | None = None) -> tuple[tuple[str, dict[str, Any]], ...]:
+    """Input strata for a device: phone portrait grips, landscape two-thumb, tablet side grips, pointer."""
+    if device.input == "touch":
+        if tablet_like(device):
+            return TABLET_STRATA
+        if (orientation or device.orientation) == "landscape":
+            return LANDSCAPE_STRATA
+        return CORE_TOUCH_STRATA
+    return CORE_POINTER_STRATA if device.input in ("mouse", "keyboard") else ()
+
+
+def coverage_plan(devices: list[Any], count: int, orientation: str | None = None) -> list[tuple[Any, str | None, dict[str, Any]]]:
     """Ordered (device, stratum, overrides) slots for stratified coverage."""
     plan: list[tuple[Any, str | None, dict[str, Any]]] = []
     for device in devices:
-        core = CORE_TOUCH_STRATA if device.input == "touch" else CORE_POINTER_STRATA if device.input in ("mouse", "keyboard") else ()
-        if tablet_like(device):
-            core = TABLET_STRATA
+        core = core_strata(device, orientation)
         for name, overrides in core:
             plan.append((device, name, dict(overrides)))
     for index, (name, overrides) in enumerate(CONDITION_STRATA):
@@ -271,7 +284,8 @@ def coverage_plan(devices: list[Any], count: int) -> list[tuple[Any, str | None,
         slot = dict(overrides)
         if device.input == "touch":
             left = (index // len(devices)) % 2 == 1
-            slot.setdefault("grip", "one_hand_left" if left else "one_hand_right")
+            landscape = (orientation or device.orientation) == "landscape"
+            slot.setdefault("grip", "two_thumbs" if landscape else ("one_hand_left" if left else "one_hand_right"))
             slot.setdefault("handedness", "left" if left else "right")
         plan.append((device, name, slot))
     while len(plan) < count:
@@ -305,7 +319,7 @@ def sample_profiles(
         raise ValueError("at least one device is required")
     rng = random.Random(seed)
     if strategy == "stratified_coverage":
-        plan = coverage_plan(devices, count)
+        plan = coverage_plan(devices, count, orientation)
     else:
         plan = [(devices[i % len(devices)], None, {}) for i in range(count)]
     profiles: list[dict[str, Any]] = []
@@ -327,6 +341,10 @@ def sample_profiles(
             if "grip" in overrides and "handedness" not in overrides and overrides["grip"] != "two_thumbs":
                 attrs["handedness"] = "left" if overrides["grip"].endswith("_left") else attrs["handedness"]
             profile["coverage_stratum"] = stratum_name
+        if device.input == "touch" and profile["attributes"]["orientation"] == "landscape" and not tablet_like(device) \
+                and attrs["grip"].startswith(("one_hand", "cradle")):
+            # Landscape phone use (games, video) is two-thumb; keep the stratum's other conditions.
+            attrs["grip"] = "two_thumbs"
         if persona_records and index < len(persona_records):
             record = persona_records[index]
             profile["persona_ref"] = {
@@ -336,6 +354,9 @@ def sample_profiles(
             }
             if record.get("age_band") in AGE_BANDS and "age_band" not in overrides:
                 attrs["age_band"] = record["age_band"]
+                # Re-derive what the base profile derived from the discarded sampled age.
+                if "vision.presbyopia" not in overrides:
+                    attrs["vision"]["presbyopia"] = record["age_band"] in ("50s", "60s", "70s+")
         _finalise(profile, device)
         profiles.append(profile)
     return profiles

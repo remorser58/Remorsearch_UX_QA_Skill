@@ -251,9 +251,9 @@ runs/<run_id>/S-<run>-000.json + .png
 }
 ```
 `profile_specific` = attribute values shared by ALL triggered profiles and by NONE of
-the tested-but-untriggered ones (the differential condition). Severity = max
-observation severity, raised by one level (max P1 via this rule) when the element is
-`primary` or `destructive` on a critical path; never lowered below any observation.
+the evaluated-but-untriggered ones (the differential condition). Severity = max
+observation severity; each check's own rule already accounts for the element's role
+(primary, destructive, path), so there is no separate escalation step.
 
 Additive fields and rules (2026-09-28):
 

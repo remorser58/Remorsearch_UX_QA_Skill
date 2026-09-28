@@ -204,7 +204,7 @@ def cmd_heatmap(args: argparse.Namespace) -> int:
             for c in range(cols):
                 xf, yf = (c + 0.5) / cols, (r + 0.5) / rows
                 bottom_up = grid[min(gh - 1, int(yf * gh))][min(gw - 1, int(xf * gw))] if gh else 0.0
-                row.append(0.5 * bottom_up + 0.5 * gaze.position_prior(xf, yf, "phone" if form in ("phone", "foldable") else form))
+                row.append(0.5 * bottom_up + 0.5 * gaze.position_prior(xf, yf, gaze.prior_kind(form, snapshot.get("surface", {}).get("kind", "web"))))
             values.append(row)
     overlay = png.heat_overlay(image, values, alpha=0.45)
     png.write_png(args.out, overlay)

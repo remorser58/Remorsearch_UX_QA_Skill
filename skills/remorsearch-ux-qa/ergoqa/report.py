@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Iterable
 
 from . import checks
-from .profiles import CONDITION_STRATA, CORE_POINTER_STRATA, CORE_TOUCH_STRATA
+from .profiles import CONDITION_STRATA
 from .swarm import severity_counts
 
 BASIS_KO = {
@@ -89,9 +89,15 @@ def render(
         if untested:
             lines.append("- 예산 밖이라 시험하지 않은 조건: " + "; ".join(f"{names.get(u['segment_id'], u['segment_id'])}: {u['reason']}" for u in untested))
     else:
+        from .devices import get_device
+        from .profiles import core_strata
+
         covered = {p.get("coverage_stratum") for p in profiles}
-        touch = any(p["attributes"]["grip"] in ("one_hand_right", "one_hand_left", "two_thumbs", "cradle_right", "cradle_left") for p in profiles)
-        wanted = [name for name, _ in (CORE_TOUCH_STRATA if touch else CORE_POINTER_STRATA) + CONDITION_STRATA]
+        groups = {(p["attributes"]["device_id"], p["attributes"].get("orientation")) for p in profiles}
+        wanted = []
+        for device_id, orientation in sorted(groups):
+            wanted += [name for name, _ in core_strata(get_device(device_id), orientation) if name not in wanted]
+        wanted += [name for name, _ in CONDITION_STRATA]
         missing = [name for name in wanted if name not in covered]
         lines.append(f"- 이번 실행에서 다루지 않은 커버리지 층: {', '.join(missing) if missing else '없음'}")
     lines.append("- 페르소나 데이터셋에 없는 인간공학 속성(손잡이·파지·손 크기·시력·운동·기기)은 모두 시나리오 가정입니다.")

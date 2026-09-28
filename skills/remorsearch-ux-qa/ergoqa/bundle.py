@@ -92,7 +92,7 @@ def to_evidence_bundle(
                 per_pair.setdefault(obs_pair[obs_id], []).append(obs_id)
         ids = []
         for pair_id, obs_ids in sorted(per_pair.items()):
-            verified = all(
+            verified = finding.get("tier") != "hypothesis" and all(
                 observations[o]["epistemic_status"] == "observed" and obs_run_status[o] == "completed" and observations[o]["basis"] == "measured"
                 for o in obs_ids
             )

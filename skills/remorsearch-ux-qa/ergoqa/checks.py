@@ -659,7 +659,8 @@ def _tap_count(run: dict[str, Any], element: dict[str, Any]) -> int:
         action = step.get("action") or {}
         if action.get("action") not in ("tap", "click", "double_tap", "long_press"):
             continue
-        if step.get("target_element_id") == element.get("id") or (sel and action.get("target") == sel):
+        # Match by selector: element ids are renumbered in every snapshot.
+        if sel and (action.get("target") == sel or step.get("target_selector") == sel):
             count += 1
     return count
 
@@ -711,7 +712,10 @@ def check_fitts_sequence(ctx: Context) -> list[Observation]:
         return []
     point = step.get("point")
     prev_point = prev.get("focus_point")
-    target = next((e for e in ctx.elements if e.get("id") == step.get("target_element_id")), None)
+    # Element ids are renumbered per snapshot: resolve the step's target in its before
+    # snapshot (the previous one here) and match it in this snapshot by selector.
+    before_target = next((e for e in prev.get("elements", []) if e.get("id") == step.get("target_element_id")), None)
+    target = next((e for e in ctx.elements if before_target is not None and e.get("selector") == before_target.get("selector")), before_target)
     if not point or not prev_point or not target:
         return []
     distance = math.hypot(point["x"] - prev_point["x"], point["y"] - prev_point["y"])
@@ -829,7 +833,10 @@ def check_gaze(ctx: Context) -> list[Observation]:
     centres = {e["id"]: pointing.centre(e["box"]) for e in ctx.elements if e["id"] in priorities}
     visible_primary = [e for e in ctx.elements if "primary" in _roles(e) and _visible(e) and e.get("enabled", True) and e["id"] in priorities]
     if visible_primary:
-        cache_key = (ctx.snapshot.get("snapshot_id"), ctx.run.get("run_id"), round(viewing), round(start[0], 1), round(start[1], 1), round(mm_px, 5))
+        # Key on every Monte Carlo input, not just the snapshot: priorities change with
+        # the conspicuity map and the usable element set (code review 2026-09-28).
+        inputs = tuple(sorted((k, round(v, 6), round(centres[k][0], 2), round(centres[k][1], 2)) for k, v in priorities.items() if k in centres))
+        cache_key = (ctx.snapshot.get("snapshot_id"), ctx.run.get("run_id"), round(viewing), round(start[0], 1), round(start[1], 1), round(mm_px, 5), hash(inputs))
         probs = _FIXATION_CACHE.get(cache_key)
         if probs is None:
             probs = gaze.fixation_probabilities(centres, priorities, start, mm_px, viewing, seed=zlib.crc32(str(ctx.snapshot.get("snapshot_id")).encode()) & 0xFFFF)
@@ -1250,8 +1257,8 @@ def check_run_timing(run: dict[str, Any], profile: dict[str, Any], device: Any, 
         if band == "no_feedback" and _window_closed_at(run, (step.get("action") or {}).get("target"), step.get("t_start_ms"), target_roles):
             continue  # the tap came after the timed prompt closed: silence is the game's correct response
         after = snapshots.get(step.get("after") or "", {})
-        target = next((e for e in after.get("elements", []) if e.get("id") == target_id), None)
-        key = element_key(target) if target else f"{target_id}|{(step.get('action') or {}).get('target', '')}"
+        target = before_target  # ids belong to the step's before snapshot
+        key = element_key(target) if target else f"{(step.get('action') or {}).get('target', '')}|step-target"
         severity = None
         if band == "needs_progress_indicator":
             severity = "P2"
@@ -1280,7 +1287,9 @@ def check_run_timing(run: dict[str, Any], profile: dict[str, Any], device: Any, 
         declared = windows.get(measured.get("id"), {})
         selector = declared.get("selector") or measured.get("selector")
         element = _element_for_selector(snapshots, selector)
-        flash = _dom_flash(measured, element, viewport_area, device, attrs)
+        # A declared timed input is scored by GM-03 even when it appears many times
+        # (QTE chains); only undeclared or decorative windows are screened as flashes.
+        flash = None if (declared.get("kind") or measured.get("kind")) == "qte" else _dom_flash(measured, element, viewport_area, device, attrs)
         if flash is not None:
             out.append(Observation(
                 "GM-04", run_id, pid, None, None, [element["id"]] if element else [], f"{selector}|{measured.get('id')}",
@@ -1344,14 +1353,14 @@ def check_run_timing(run: dict[str, Any], profile: dict[str, Any], device: Any, 
         viewing = float(attrs.get("vision", {}).get("viewing_distance_mm") or getattr(device, "viewing_distance_mm", 300))
         big = game.flash_area_exceeds(stats["max_area_fraction"], display[0], display[1], viewing) if display[0] else stats["max_area_fraction"] > 0.25
         failed = stats["max_flashes_per_window"] > 3 and big
-        extended = not failed and stats["extended"] and big
+        extended = not failed and stats.get("extended", False) and big
         out.append(Observation(
             "GM-04", run_id, pid, None, None, [], "viewport|flash",
             {"name": "flashes_per_second", "value": stats["max_flashes_per_window"], "unit": "flashes/s", "threshold": 3, "comparator": "<=",
              "area_fraction": round(stats["max_area_fraction"], 3), "area_exceeds": big,
-             "flashes_per_5s": stats["max_flashes_per_5s"], "extended_failure": extended},
+             "flashes_per_5s": stats.get("max_flashes_per_5s", 0.0), "extended_failure": extended},
             not (failed or extended), "P0" if failed else ("P1" if extended else None),
-            f"1초 창에서 최대 {stats['max_flashes_per_window']:.1f}회 섬광(5초 창 {stats['max_flashes_per_5s']:.1f}회), 변화 면적 {stats['max_area_fraction']*100:.0f}%."
+            f"1초 창에서 최대 {stats['max_flashes_per_window']:.1f}회 섬광(5초 창 {stats.get('max_flashes_per_5s', 0.0):.1f}회), 변화 면적 {stats['max_area_fraction']*100:.0f}%."
             + (" 인증 도구(EA IRIS/Harding)로 재검사가 필요합니다." if failed or extended else ""),
             "general-flash-screen-v1",
         ))
@@ -1490,6 +1499,13 @@ def _dom_flash(measured: dict[str, Any], element: dict[str, Any] | None, viewpor
     }
 
 
+def _input_identity(action: dict[str, Any]) -> str:
+    """What was pressed: the target for pointer actions, the key or button for press/gamepad."""
+    if action.get("action") in ("press", "gamepad"):
+        return f"{action.get('action')}:{action.get('key') or action.get('keys') or action.get('button') or action.get('target')}"
+    return str(action.get("target"))
+
+
 def _mash_bursts(run: dict[str, Any]) -> list[tuple[str, int, float]]:
     """Runs of rapid presses on one target that the task needed (XAG 107 / GAG)."""
     bursts: list[tuple[str, int, float]] = []
@@ -1498,7 +1514,7 @@ def _mash_bursts(run: dict[str, Any]) -> list[tuple[str, int, float]]:
     def flush() -> None:
         if len(current) >= params.MASH_MIN_PRESSES:
             span = float(current[-1].get("t_start_ms") or 0) - float(current[0].get("t_start_ms") or 0)
-            bursts.append((str((current[0].get("action") or {}).get("target")), len(current), span))
+            bursts.append((_input_identity(current[0].get("action") or {}), len(current), span))
 
     for step in run.get("steps", []):
         action = step.get("action") or {}
@@ -1506,7 +1522,7 @@ def _mash_bursts(run: dict[str, Any]) -> list[tuple[str, int, float]]:
             continue  # waits between scripted presses do not break a burst
         # Scripted pacing reflects the driver, not the game's demand, so bursts are
         # counted by consecutive presses on one target (waits/snapshots ignored).
-        same = current and action.get("action") in ("tap", "click", "press", "gamepad") and action.get("target") == (current[-1].get("action") or {}).get("target")
+        same = current and action.get("action") in ("tap", "click", "press", "gamepad") and _input_identity(action) == _input_identity(current[-1].get("action") or {})
         if same:
             current.append(step)
             continue
@@ -1538,11 +1554,13 @@ SNAPSHOT_CHECKS: tuple[Callable[[Context], list[Observation]], ...] = (
 # and listed under "hypotheses" (docs/validation/experiments/decisions.md).
 # PT-05 (Fitts ID > 6 bits) has no normative threshold and produced no finding on the
 # development suites (STF-22).
-HYPOTHESIS_CHECKS = frozenset({"GZ-01", "GZ-04", "PC-05", "PT-05"})
+# GM-06 counts presses the script needed, which measures the script, not what the game
+# requires (game review 2026-09-28): a hypothesis until a press-rate sweep confirms it.
+HYPOTHESIS_CHECKS = frozenset({"GZ-01", "GZ-04", "PC-05", "PT-05", "GM-06"})
 
 # Checks that read no profile attribute: one verdict per snapshot, reported as
 # "profile-independent" instead of a k/n coverage (STF-08).
-PROFILE_INVARIANT_CHECKS = frozenset({"PT-01", "PT-05", "PT-06", "PC-01", "PC-02", "CG-01", "CG-03", "GZ-03", "GM-04", "GM-05", "GM-06"})
+PROFILE_INVARIANT_CHECKS = frozenset({"PT-01", "PT-05", "PT-06", "PC-01", "PC-02", "CG-01", "CG-03", "GZ-03", "GM-05", "GM-06"})
 
 
 def tier(check_id: str, measurement: dict[str, Any] | None = None) -> str:
@@ -1575,10 +1593,8 @@ def applicable(check_id: str, profile: dict[str, Any], device: Any) -> bool:
         return touch
     if check_id in ("PT-05", "PT-06"):
         return not touch
-    if check_id == "PC-03":
-        return (attrs.get("vision", {}) or {}).get("cvd") not in (None, "none")
-    if check_id == "PC-05":
-        return (attrs.get("context", {}) or {}).get("lighting") == "bright_sun"
+    # PC-03 (CVD) and PC-05 (bright sun) evaluate every profile: normal vision and indoor
+    # profiles pass implicitly, so coverage reads e.g. 2/14 with the condition named.
     return True
 
 

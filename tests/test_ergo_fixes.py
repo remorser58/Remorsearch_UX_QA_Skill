@@ -119,13 +119,14 @@ class Denominators(unittest.TestCase):
                 "run_id": "R-1", "measurement": {"name": "cvd_delta_e2000", "value": 3, "unit": "dE00", "threshold": 10, "comparator": ">="},
                 "message_ko": "구분 안 됨", "model": "m", "selectors": ["#dot"], "context_selectors": []}]
         finding = swarm.aggregate([{"scenario_id": "SC-1", "run_id": "R-1", "profiles_evaluated": ["EP-N", "EP-D"], "observations": obs}], [normal, deutan])[0]
-        self.assertEqual(finding["tested_profiles"], ["EP-D"])  # coverage within the check's scope
-        self.assertEqual(finding["profile_specific"].get("vision.cvd"), "deutan")  # but the condition is named
+        self.assertEqual(finding["tested_profiles"], ["EP-D", "EP-N"])  # normal vision is tested and passes
+        self.assertEqual(finding["coverage_label"].split(" ")[0], "1/2")
+        self.assertEqual(finding["profile_specific"].get("vision.cvd"), "deutan")  # the condition is named
 
     def test_applicability(self) -> None:
         s24, desk = get_device("galaxy-s24"), get_device("desktop-1920")
         self.assertTrue(checks.applicable("PC-03", profile(cvd="deutan"), s24))
-        self.assertFalse(checks.applicable("PC-03", profile(), s24))
+        self.assertTrue(checks.applicable("PC-03", profile(), s24))  # normal vision is evaluated and passes
         self.assertFalse(checks.applicable("PT-04", profile("EP-M", device_id="desktop-1920", grip="mouse_right"), desk))
         self.assertFalse(checks.applicable("RH-01", profile(grip="cradle_right"), s24))
 
