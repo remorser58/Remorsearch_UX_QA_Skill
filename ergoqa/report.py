@@ -29,8 +29,11 @@ def render(
     analyses: Iterable[dict[str, Any]],
     title: str = "인간공학 페르소나 스웜 QA 보고서",
     limitations: Iterable[str] = (),
+    audience: dict[str, Any] | None = None,
+    plan: dict[str, Any] | None = None,
 ) -> str:
     profiles = list(profiles)
+    composed = any(p.get("audience_ref") for p in profiles)
     analyses = list(analyses)
     counts = severity_counts(findings)
     lines: list[str] = [f"# {title}", ""]
@@ -59,13 +62,25 @@ def render(
         if p.get("coverage_stratum"):
             origin += f" ({p['coverage_stratum']})"
         lines.append(f"| {p['profile_id']} | {p.get('label_ko', '')} | {a.get('device_id')} | {origin} |")
-    covered = {p.get("coverage_stratum") for p in profiles}
-    touch = any(p["attributes"]["grip"] in ("one_hand_right", "one_hand_left", "two_thumbs", "cradle_right", "cradle_left") for p in profiles)
-    wanted = [name for name, _ in (CORE_TOUCH_STRATA if touch else CORE_POINTER_STRATA) + CONDITION_STRATA]
-    missing = [name for name in wanted if name not in covered]
     devices = sorted({p["attributes"]["device_id"] for p in profiles})
-    lines += ["", f"- 테스트한 기기: {', '.join(devices)}", f"- 이번 실행에서 다루지 않은 커버리지 층: {', '.join(missing) if missing else '없음'}",
-              "- 페르소나 데이터셋에 없는 인간공학 속성(손잡이·파지·손 크기·시력·운동·기기)은 모두 시나리오 가정입니다."]
+    lines += ["", f"- 테스트한 기기: {', '.join(devices)}"]
+    if composed:
+        names = {s["segment_id"]: s["name_ko"] for s in (audience or {}).get("segments", [])}
+        lines.append("- 프로필은 대상 사용자 리서치(ergo-audience.v1)의 세그먼트에서 구성했습니다. 세그먼트 비중은 배분에만 썼고 실제 사용자 비율이 아닙니다.")
+        for p in profiles:
+            ref = p.get("audience_ref") or {}
+            if ref:
+                lines.append(f"  - {p['profile_id']}: {names.get(ref.get('segment_id'), ref.get('segment_id'))} — {'; '.join(ref.get('reasons', []))}")
+        untested = (plan or {}).get("untested", [])
+        if untested:
+            lines.append("- 예산 밖이라 시험하지 않은 조건: " + "; ".join(f"{names.get(u['segment_id'], u['segment_id'])}: {u['reason']}" for u in untested))
+    else:
+        covered = {p.get("coverage_stratum") for p in profiles}
+        touch = any(p["attributes"]["grip"] in ("one_hand_right", "one_hand_left", "two_thumbs", "cradle_right", "cradle_left") for p in profiles)
+        wanted = [name for name, _ in (CORE_TOUCH_STRATA if touch else CORE_POINTER_STRATA) + CONDITION_STRATA]
+        missing = [name for name in wanted if name not in covered]
+        lines.append(f"- 이번 실행에서 다루지 않은 커버리지 층: {', '.join(missing) if missing else '없음'}")
+    lines.append("- 페르소나 데이터셋에 없는 인간공학 속성(손잡이·파지·손 크기·시력·운동·기기)은 모두 시나리오 가정입니다.")
     limits = [n for a in analyses for n in a.get("limitations", [])]
     if limits:
         lines += ["", "실행 한계(에이전트 한계/환경 문제로 분류되어 발견에서 제외):"] + [f"- {n}" for n in limits]
@@ -74,6 +89,15 @@ def render(
         diff = ", ".join(f"{k}={v}" for k, v in f["profile_specific"].items()) or "-"
         target = f["element_key"].replace("|", " / ")[:48]
         lines.append(f"| {f['id']} | {f['severity']} | {f['category']} | {BASIS_KO[f['basis']].split('(')[0]} | {target} | {f['coverage_label'].split(' (')[0]} | {diff} |")
+    if composed:
+        names = {s["segment_id"]: s["name_ko"] for s in (audience or {}).get("segments", [])}
+        seg_ids = sorted({(p.get("audience_ref") or {}).get("segment_id") for p in profiles} - {None})
+        lines += ["", "### 세그먼트별 발견", "", "| 세그먼트 | P0 | P1 | P2 | P3 | 이 세그먼트에서만 발생 |", "|---|---|---|---|---|---|"]
+        for sid in seg_ids:
+            hits = [f for f in findings if sid in f.get("segments_affected", [])]
+            only = [f["id"] for f in hits if f.get("segments_affected") == [sid]]
+            sev = {k: sum(1 for f in hits if f["severity"] == k) for k in ("P0", "P1", "P2", "P3")}
+            lines.append(f"| {names.get(sid, sid)} ({sid}) | {sev['P0']} | {sev['P1']} | {sev['P2']} | {sev['P3']} | {', '.join(only[:8]) or '-'}{' …' if len(only) > 8 else ''} |")
     lines += ["", "## 5. 발견 상세", ""]
     for f in findings:
         lines += [
@@ -87,6 +111,8 @@ def render(
         ]
         if f["profile_specific"]:
             lines.append("- 차이 조건(발생 프로필에만 공통): " + ", ".join(f"`{k}={v}`" for k, v in f["profile_specific"].items()))
+        if f.get("segments_affected"):
+            lines.append("- 영향 세그먼트(구성 프로필 기준, 비율 아님): " + ", ".join(f["segments_affected"]))
         lines += [
             f"- 권장 수정({f['fix_layer']}): {f['recommendation_ko']}",
             f"- 근거 문헌: {', '.join(f['refs'])}",

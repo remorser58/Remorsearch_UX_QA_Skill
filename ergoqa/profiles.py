@@ -219,6 +219,10 @@ def label_ko(profile: dict[str, Any]) -> str:
     v = a.get("vision", {})
     if v.get("cvd") and v["cvd"] != "none":
         parts.append({"protan": "적색약", "deutan": "녹색약", "tritan": "청색약"}[v["cvd"]])
+    if v.get("acuity") == "low":
+        parts.append("저시력")
+    elif v.get("acuity") == "reduced":
+        parts.append("시력 저하")
     if v.get("presbyopia"):
         parts.append("노안")
     if a.get("motor", {}).get("tremor") not in (None, "none"):

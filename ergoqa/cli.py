@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from . import analyze, bench, bundle, checks, report, swarm
+from . import analyze, audience, bench, bundle, checks, report, swarm
 from .devices import get_device, list_devices
 from .profiles import sample_profiles, validate_profile
 from .snapshot import SnapshotError, load_json
@@ -71,6 +71,43 @@ def cmd_profiles(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def cmd_audience_check(args: argparse.Namespace) -> int:
+    doc = load_json(args.audience)
+    errors = audience.validate_audience(doc)
+    for error in errors:
+        print(f"ERROR: {error}", file=sys.stderr)
+    if errors:
+        return EXIT_USAGE
+    segs = doc["segments"]
+    print(f"ok: {doc['audience_id']} — {len(segs)} segments, {len(doc['sources'])} sources, "
+          f"{sum(len(s.get('tasks') or []) for s in segs)} tasks")
+    return EXIT_OK
+
+
+def cmd_personas(args: argparse.Namespace) -> int:
+    doc = load_json(args.audience)
+    floors = None if args.floors is None else [f for f in args.floors.split(",") if f]
+    plan = audience.compose(doc, args.budget, floors)
+    _write_json(Path(args.out), {"strategy": "audience_composed", "audience_id": doc["audience_id"], "plan": {k: v for k, v in plan.items() if k != "profiles"}, "profiles": plan["profiles"]})
+    if args.plan:
+        Path(args.plan).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.plan).write_text(audience.plan_markdown(plan, doc), encoding="utf-8")
+    for p in plan["profiles"]:
+        print(f"{p['profile_id']}  {p['label_ko']}  [{p['attributes']['device_id']}]  ({p['audience_ref']['facet']})")
+    if plan["untested"]:
+        print(f"untested within budget: {len(plan['untested'])} (see plan)")
+    return EXIT_OK
+
+
+def cmd_scenario_stubs(args: argparse.Namespace) -> int:
+    doc = load_json(args.audience)
+    out = Path(args.out)
+    for stub in audience.scenario_stubs(doc):
+        _write_json(out / f"{stub['scenario_id']}.json", stub)
+        print(f"{stub['scenario_id']}: {stub['task_goal_ko']}  devices={','.join(stub['device_ids'])}")
+    return EXIT_OK
+
+
 def _analyses(args: argparse.Namespace, profiles: list[dict[str, Any]], scenarios: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     runs_root = Path(args.runs)
     run_dirs = [runs_root] if (runs_root / "run.json").is_file() else sorted(p for p in runs_root.iterdir() if (p / "run.json").is_file())
@@ -102,7 +139,12 @@ def cmd_swarm(args: argparse.Namespace) -> int:
     out = Path(args.out)
     _write_json(out / "analyses.json", {"analyses": analyses})
     _write_json(out / "findings.json", {"findings": findings, "severity_counts": swarm.severity_counts(findings)})
-    (out / "report.md").write_text(report.render(findings, profiles, analyses, title=args.title), encoding="utf-8")
+    audience_doc = load_json(args.audience) if getattr(args, "audience", None) else None
+    plan = None
+    raw = load_json(args.profiles)
+    if isinstance(raw, dict) and isinstance(raw.get("plan"), dict):
+        plan = raw["plan"]
+    (out / "report.md").write_text(report.render(findings, profiles, analyses, title=args.title, audience=audience_doc, plan=plan), encoding="utf-8")
     if args.bundle:
         bundle_doc = bundle.to_evidence_bundle(args.bundle_id or f"ergo-{out.name}", analyses, findings, profiles)
         _write_json(out / "bundle.json", bundle_doc)
@@ -217,6 +259,23 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--out", required=True)
     p.set_defaults(func=cmd_profiles)
 
+    p = sub.add_parser("audience-check", help="validate an ergo-audience.v1 file (Stage 0 target-user research)")
+    p.add_argument("audience")
+    p.set_defaults(func=cmd_audience_check)
+
+    p = sub.add_parser("personas", help="compose ergonomic profiles from an ergo-audience.v1 file")
+    p.add_argument("--audience", required=True)
+    p.add_argument("--budget", type=int, required=True, help="number of profiles to compose")
+    p.add_argument("--floors", help=f"comma-separated inclusive floors (default: {','.join(audience.FLOOR_DEFAULTS)}; empty string for none)")
+    p.add_argument("--plan", help="write a Korean Markdown table explaining why each persona exists")
+    p.add_argument("--out", required=True)
+    p.set_defaults(func=cmd_personas)
+
+    p = sub.add_parser("scenario-stubs", help="write ergo-scenario.v1 skeletons for the audience's key tasks")
+    p.add_argument("--audience", required=True)
+    p.add_argument("--out", required=True, help="directory")
+    p.set_defaults(func=cmd_scenario_stubs)
+
     for name, func, helptext in (("analyze", cmd_analyze, "analyze recorded runs"), ("swarm", cmd_swarm, "analyze runs and aggregate a swarm report")):
         p = sub.add_parser(name, help=helptext)
         p.add_argument("--runs", required=True, help="a run directory or a directory of run directories")
@@ -230,6 +289,7 @@ def build_parser() -> argparse.ArgumentParser:
             p.add_argument("--bundle-id")
             p.add_argument("--title", default="인간공학 페르소나 스웜 QA 보고서")
             p.add_argument("--fail-on", choices=("P0", "P1", "P2", "P3"))
+            p.add_argument("--audience", help="ergo-audience.v1 file the profiles were composed from (segment names in the report)")
         p.set_defaults(func=func)
 
     p = sub.add_parser("heatmap", help="render a reach or gaze-priority heatmap over a snapshot")

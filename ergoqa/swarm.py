@@ -36,6 +36,12 @@ def _differential(triggered: list[dict[str, Any]], untriggered: list[dict[str, A
     return out
 
 
+def _segments(profile_ids: list[str], profiles_by_id: dict[str, dict[str, Any]]) -> list[str]:
+    """Audience segments (ergo-audience.v1) whose composed profiles triggered the finding."""
+    found = {((profiles_by_id.get(pid) or {}).get("audience_ref") or {}).get("segment_id") for pid in profile_ids}
+    return sorted(s for s in found if s)
+
+
 def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     profiles_by_id = {p["profile_id"]: p for p in profiles}
     groups: dict[tuple[str, str, str], dict[str, Any]] = {}
@@ -72,6 +78,7 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
             "tested_profiles": tested,
             "coverage_label": f"{len(triggered)}/{len(tested)} simulated profiles (coverage, not prevalence)",
             "profile_specific": differential,
+            "segments_affected": _segments(triggered, profiles_by_id),
             "observation_ids": [o["id"] for o in group["failed"]],
             "run_ids": sorted(group["runs"]),
             "selectors": sorted({sel for o in group["failed"] for sel in o.get("selectors", [])}),

@@ -1,0 +1,163 @@
+"""Tests for ergo-audience.v1 validation and audience-based persona composition."""
+
+from __future__ import annotations
+
+import copy
+import json
+import sys
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from ergoqa import audience, report, swarm  # noqa: E402
+from ergoqa.profiles import validate_profile  # noqa: E402
+
+EXAMPLE = ROOT / "examples" / "audience" / "transit-card.audience.json"
+
+
+def load() -> dict:
+    return json.loads(EXAMPLE.read_text(encoding="utf-8"))
+
+
+class ValidateAudience(unittest.TestCase):
+    def test_example_is_valid(self) -> None:
+        self.assertEqual(audience.validate_audience(load()), [])
+
+    def test_segment_needs_evidence_and_known_sources(self) -> None:
+        doc = load()
+        doc["segments"][0]["evidence"] = []
+        doc["segments"][1]["conditions"][0]["source_ids"] = ["SRC-missing"]
+        errors = audience.validate_audience(doc)
+        self.assertTrue(any("evidence must be a non-empty array" in e for e in errors))
+        self.assertTrue(any("unknown source_id 'SRC-missing'" in e for e in errors))
+
+    def test_tasks_need_concrete_data(self) -> None:
+        doc = load()
+        doc["segments"][0]["tasks"][0]["concrete_data"] = {}
+        errors = audience.validate_audience(doc)
+        self.assertTrue(any("concrete_data" in e for e in errors))
+
+    def test_unknown_device_and_share_rules(self) -> None:
+        doc = load()
+        doc["segments"][0]["devices"] = {"nokia-3310": 1.0}
+        doc["segments"][2]["share"] = {"value": 0.1, "basis": "unknown"}
+        errors = audience.validate_audience(doc)
+        self.assertTrue(any("unknown device id 'nokia-3310'" in e for e in errors))
+        self.assertTrue(any("share.value must be null when basis is unknown" in e for e in errors))
+
+
+class Compose(unittest.TestCase):
+    def test_budget_respected_and_profiles_valid(self) -> None:
+        doc = load()
+        for budget in (1, 2, 3, 5, 8, 12, 16):
+            plan = audience.compose(doc, budget)
+            self.assertLessEqual(len(plan["profiles"]), budget)
+            for p in plan["profiles"]:
+                self.assertEqual(validate_profile(p), [], p["profile_id"])
+                self.assertEqual(p["origin"], "audience_composed")
+                self.assertTrue(p["audience_ref"]["reasons"])
+
+    def test_every_segment_first_then_priority_when_budget_is_small(self) -> None:
+        doc = load()
+        plan = audience.compose(doc, 3)
+        self.assertEqual({p["audience_ref"]["segment_id"] for p in plan["profiles"]}, {"SEG-commuter", "SEG-senior", "SEG-lowvision"})
+        plan = audience.compose(doc, 2)
+        self.assertEqual({p["audience_ref"]["segment_id"] for p in plan["profiles"]}, {"SEG-commuter", "SEG-senior"})
+        self.assertTrue(any(u["facet"] == "segment" for u in plan["untested"]))
+
+    def test_heavier_segment_gets_more_profiles(self) -> None:
+        plan = audience.compose(load(), 12)
+        counts = plan["segments"]
+        self.assertGreater(counts["SEG-commuter"]["profiles"], counts["SEG-senior"]["profiles"])
+        self.assertGreaterEqual(counts["SEG-senior"]["profiles"], counts["SEG-lowvision"]["profiles"])
+
+    def test_typical_member_carries_majority_conditions_and_modal_context(self) -> None:
+        plan = audience.compose(load(), 3)
+        by_seg = {p["audience_ref"]["segment_id"]: p for p in plan["profiles"]}
+        self.assertTrue(by_seg["SEG-senior"]["attributes"]["vision"]["presbyopia"])
+        self.assertEqual(by_seg["SEG-lowvision"]["attributes"]["vision"]["acuity"], "low")
+        self.assertEqual(by_seg["SEG-commuter"]["attributes"]["context"]["mobility"], "walking")
+        self.assertEqual(by_seg["SEG-commuter"]["audience_ref"]["facet"], "typical")
+
+    def test_facets_vary_one_thing(self) -> None:
+        plan = audience.compose(load(), 12)
+        typical = next(p for p in plan["profiles"] if p["audience_ref"]["segment_id"] == "SEG-commuter" and p["audience_ref"]["facet"] == "typical")
+        for p in plan["profiles"]:
+            ref = p["audience_ref"]
+            if ref["segment_id"] != "SEG-commuter" or ref["facet"] == "typical" or ref["floor"]:
+                continue
+            a, t = p["attributes"], typical["attributes"]
+            diffs = [k for k in ("age_band", "device_id") if a[k] != t[k]]
+            diffs += ["grip"] if a["grip"] != t["grip"] else []
+            diffs += [k for k in ("cvd", "presbyopia", "acuity") if a["vision"][k] != t["vision"][k]]
+            diffs += [k for k in ("mobility", "lighting") if a["context"][k] != t["context"][k]]
+            diffs += ["tremor"] if a["motor"]["tremor"] != t["motor"]["tremor"] else []
+            diffs += ["familiarity"] if a["cognition"]["familiarity"] != t["cognition"]["familiarity"] else []
+            if ref["facet"] == "context":
+                self.assertTrue(set(diffs) <= {"mobility", "lighting"}, (p["profile_id"], diffs))
+            else:
+                self.assertLessEqual(len(diffs), 1, (p["profile_id"], diffs))
+
+    def test_left_hand_and_deutan_floors_are_met_without_duplicates(self) -> None:
+        plan = audience.compose(load(), 8)
+        grips = [p["attributes"]["grip"] for p in plan["profiles"]]
+        self.assertIn("one_hand_left", grips)
+        self.assertTrue(any(p["attributes"]["vision"]["cvd"] == "deutan" for p in plan["profiles"]))
+        keys = [json.dumps(p["attributes"], sort_keys=True) for p in plan["profiles"]]
+        self.assertEqual(len(keys), len(set(keys)), "duplicate profiles")
+
+    def test_no_floors_when_disabled(self) -> None:
+        doc = load()
+        doc["segments"][0]["conditions"] = []
+        plan = audience.compose(doc, 4, floors=[])
+        self.assertFalse(any(p["audience_ref"]["floor"] for p in plan["profiles"]))
+        self.assertFalse(any(p["attributes"]["vision"]["cvd"] == "deutan" for p in plan["profiles"]))
+
+    def test_deterministic(self) -> None:
+        a = audience.compose(load(), 10)
+        b = audience.compose(load(), 10)
+        self.assertEqual(json.dumps(a, sort_keys=True), json.dumps(b, sort_keys=True))
+
+    def test_unknown_share_gets_priority_default_inside_unclaimed_mass(self) -> None:
+        weights = audience.segment_weights(load()["segments"])
+        self.assertAlmostEqual(weights["SEG-commuter"], 0.55)
+        self.assertAlmostEqual(weights["SEG-lowvision"], 0.15)
+
+    def test_invalid_audience_raises(self) -> None:
+        doc = copy.deepcopy(load())
+        doc["segments"] = []
+        with self.assertRaises(audience.AudienceError):
+            audience.compose(doc, 4)
+
+
+class StubsAndReport(unittest.TestCase):
+    def test_scenario_stubs_embed_concrete_data(self) -> None:
+        stubs = audience.scenario_stubs(load())
+        ids = {s["scenario_id"] for s in stubs}
+        self.assertEqual(ids, {"SC-T-topup", "SC-T-balance"})
+        topup = next(s for s in stubs if s["scenario_id"] == "SC-T-topup")
+        self.assertIn("20,000원", topup["task_goal_ko"])
+        self.assertEqual(sorted(topup["audience_ref"]["segment_ids"]), ["SEG-commuter", "SEG-senior"])
+
+    def test_segments_affected_and_report(self) -> None:
+        doc = load()
+        plan = audience.compose(doc, 6)
+        profiles = plan["profiles"]
+        target = next(p for p in profiles if p["audience_ref"]["segment_id"] == "SEG-senior")
+        others = [p for p in profiles if p["attributes"]["device_id"] == target["attributes"]["device_id"] and p is not target]
+        obs = [{"id": "OB-1", "check_id": "PC-04", "element_key": "#amount|p", "profile_id": target["profile_id"], "passed": False,
+                "severity": "P2", "run_id": "R-1", "measurement": {"name": "arcmin", "value": 14, "unit": "arcmin", "threshold": 16, "comparator": ">="},
+                "message_ko": "작음", "model": None, "selectors": ["#amount"], "context_selectors": []}]
+        obs += [{"id": f"OB-{i + 2}", "check_id": "PC-04", "element_key": "#amount|p", "profile_id": p["profile_id"], "passed": True, "run_id": "R-1"}
+                for i, p in enumerate(others)]
+        findings = swarm.aggregate([{"scenario_id": "SC-T-topup", "observations": obs}], profiles)
+        self.assertEqual(findings[0]["segments_affected"], ["SEG-senior"])
+        text = report.render(findings, profiles, [], audience=doc, plan=plan)
+        self.assertIn("세그먼트별 발견", text)
+        self.assertIn("지하철 이용 고령층", text)
+
+
+if __name__ == "__main__":
+    unittest.main()
