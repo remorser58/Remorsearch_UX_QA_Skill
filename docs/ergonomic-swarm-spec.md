@@ -414,7 +414,7 @@ personas --audience` turns it into profiles, deterministically.
     "pain_points": [{"text": "...", "source_ids": ["SRC-02"], "kind": "firsthand|inference"}]
   }],
   "exclusions": [{"group": "...", "why": "..."}],
-  "floors": ["left_hand", "cvd_deutan", "presbyopia"]
+  "floors": ["left_hand", "cvd_deutan", "presbyopia", "walking"]
 }
 ```
 
@@ -452,8 +452,10 @@ Composition (`audience.compose(audience, budget, floors)`):
    device with ≥ 30 % of the segment, contexts with share ≥ 0.15, other minority
    conditions, first use (≥ 20 %), other age bands (≥ 20 %), other grips
    (≥ 25 %). One facet at a time keeps the differential condition attributable.
-5. **Floors:** a left-hand profile per input kind (touch, pointer) and one
-   profile per other floor condition across the swarm. A floor is met by the
+5. **Floors** (default `left_hand`, `cvd_deutan`, `presbyopia`, `walking`: the
+   conditions whose removal lost unique seeded defects in ≥ 2 of 3 development
+   suites): a left-hand profile per input kind (touch, pointer), a walking profile
+   on touch devices, and one profile per other floor condition across the swarm. A floor is met by the
    most plausible segment's own facet when it has one, otherwise by a profile
    labelled `inclusive floor (coverage guarantee, not segment evidence)`.
    Unused reserve returns to step 4.

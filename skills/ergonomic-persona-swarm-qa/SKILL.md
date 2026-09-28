@@ -1,6 +1,6 @@
 ---
 name: ergonomic-persona-swarm-qa
-description: Run a MiroFish-style swarm of ergonomic persona agents that actually operate a web app, mobile app or game on the real screen, then score reach, handedness, touch accuracy, gaze, contrast, colour-vision, reading time, timing windows and flashing with deterministic human-factors models; report P0-P3 findings as coverage over simulated profiles, never as prevalence.
+description: Research who uses the product, compose a diverse persona swarm from that research, then run a MiroFish-style swarm of ergonomic persona agents that actually operate a web app, mobile app or game on the real screen and score reach, handedness, touch accuracy, gaze, contrast, colour-vision, reading time, timing windows and flashing with deterministic human-factors models; report P0-P3 findings as coverage over simulated profiles, never as prevalence.
 ---
 
 # Ergonomic Persona Swarm QA
@@ -62,6 +62,23 @@ No MiroFish code is used.
 
 ## Workflow
 
+### 0. Research who uses the product (Stage 0)
+
+Personas come from research on the product's actual audience, not from random
+sampling. Follow `references/audience-research.md`. Use analytics, surveys,
+official statistics, store reviews and communities (with
+`aside-community-ux-research`), and comparable products. From those, write an
+`ergo-audience.v1` file with the following, each with cited evidence:
+
+- segments, with share and basis, priority and confidence;
+- age and device mix;
+- conditions and contexts of use;
+- key tasks with concrete data (amounts, dates, names).
+
+Validate it with `python3 scripts/ergo_qa.py audience-check audience.json`.
+Unknown shares stay `unknown`. Synthetic personas and LLM output are never
+sources.
+
 ### 1. Frame the surface and declare roles
 
 Record the surface (URL, app id, build), platform, devices and orientations,
@@ -73,7 +90,31 @@ sandbox that there is no confirm/undo), `critical_message`, `error_message`,
 `status`, `hud`, `game_control`, `timed`, `ad_like`. Declare timing windows for
 toasts (`kind: transient_text`) and QTEs (`kind: qte`).
 
-### 2. Generate ergonomic profiles
+### 2. Compose ergonomic profiles from the audience
+
+```sh
+python3 scripts/ergo_qa.py personas --audience audience.json --budget 12 \
+  --plan work/persona-plan.md --out work/profiles.json
+python3 scripts/ergo_qa.py scenario-stubs --audience audience.json --out scenarios/
+```
+
+Composition works in three steps:
+
+1. Each segment gets its typical member.
+2. Extra profiles go to segments by weight (D'Hondt). Each varies one facet:
+   a minority condition, the left-hand mirror, another device, a context, first
+   use, an age band or a grip.
+3. Inclusive floors (left hand per input kind, deuteranomaly, presbyopia,
+   walking on touch devices) guarantee the conditions whose removal lost unique
+   defects in at least two development suites.
+
+`persona-plan.md` explains why each persona exists and lists the facets the
+budget did not reach. Report those as untested. On the development suites,
+principled composition reached the same recall as random sampling with about a
+third of the profiles (`docs/validation/experiments/`).
+
+Without audience research (for example, a quick scan), fall back to stratified
+coverage:
 
 ```sh
 python3 scripts/ergo_qa.py profiles --count 16 --seed 7 \
@@ -113,8 +154,12 @@ per persona agent when behaviour (choices, confusion) matters.
 
 ```sh
 python3 scripts/ergo_qa.py swarm --runs runs/ --profiles work/profiles.json \
-  --scenario scenarios/ --cross-profile --bundle --out report/
+  --scenario scenarios/ --cross-profile --bundle --audience audience.json --out report/
 ```
+
+With `--audience`, the report groups findings by segment. Each finding lists
+`segments_affected`, the segments whose profiles triggered it; this is never the
+share of users affected.
 
 Outputs `findings.json`, `report.md` (Korean), `analyses.json`, and a
 `ux-evidence-bundle.v1` that passes `scripts/validate_bundle.py`. Each finding
@@ -177,6 +222,8 @@ Numbers, sources and validity limits live in `ergoqa/params.py` and
 
 Do not report completion until:
 
+- personas were composed from an `ergo-audience.v1` file with cited evidence, or
+  the report says why the stratified fallback was used;
 - every reported run was executed on the real surface, or the blocker is stated;
 - profiles list which attributes are assumptions and how they were sampled;
 - measured, model and judgment findings are separated, with model IDs;
@@ -188,6 +235,7 @@ Do not report completion until:
 
 ## References
 
+- `references/audience-research.md` — Stage 0: researching who uses the product, evidence rules, `ergo-audience.v1`, composition.
 - `references/human-factors-checks.md` — each check's formula, threshold, severity rule, source and limit.
 - `references/persona-agent-protocol.md` — how an LLM persona agent looks, acts and writes notes.
 - `references/swarm-and-social-layer.md` — MiroFish mapping, experience board, interviews, labelling.

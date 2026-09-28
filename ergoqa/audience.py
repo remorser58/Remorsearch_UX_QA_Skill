@@ -67,8 +67,11 @@ CONDITIONS: dict[str, dict[str, Any]] = {
 CONTEXT_KEYS = ("mobility", "lighting", "one_handed", "interruptions", "time_pressure")
 MOBILITY = ("seated", "standing", "walking", "transit")
 LIGHTING = ("indoor", "bright_sun", "dark")
-FLOOR_DEFAULTS = ("left_hand", "cvd_deutan", "presbyopia")
-FLOOR_CHOICES = ("left_hand",) + tuple(CONDITIONS)
+# Inclusive floors: conditions whose removal lost unique seeded defects in >= 2 of the
+# 3 development suites (docs/validation/experiments/ablation-dev-8707b70.json):
+# deutan 4 defects/3 suites, left one-hand 3/2, presbyopia 3/3 (PC-04), walking 2/2.
+FLOOR_DEFAULTS = ("left_hand", "cvd_deutan", "presbyopia", "walking")
+FLOOR_CHOICES = ("left_hand", "walking") + tuple(CONDITIONS)
 MAJORITY = 0.5            # a condition shared by >= 50 % of a segment is applied to its typical member
 MINOR_CONTEXT_SHARE = 0.15  # contexts at or above this share get their own profile when slots allow
 EXTRA_AGE_SHARE = 0.2     # a second age band at or above this share gets its own profile
@@ -418,7 +421,9 @@ def _make_profile(audience: dict[str, Any], seg: dict[str, Any], device_id: str,
     if facet and facet.get("kind") == "condition":
         for k, v in CONDITIONS[facet["condition"]].items():
             _set_path(attrs, k, v)
-    if floor and floor != "left_hand":
+    if floor == "walking":
+        _apply_context(attrs, {"context_id": "floor-walking", "mobility": "walking", "lighting": attrs["context"]["lighting"], "one_handed": True}, device, orient)
+    elif floor and floor != "left_hand":
         for k, v in CONDITIONS[floor].items():
             _set_path(attrs, k, v)
     if facet:
@@ -477,6 +482,9 @@ def _floor_requirements(floor_list: list[str], segments: list[dict[str, Any]]) -
     for floor in floor_list:
         if floor == "left_hand":
             reqs += [(floor, kind) for kind in kinds]
+        elif floor == "walking":
+            if "touch" in kinds:
+                reqs.append((floor, "touch"))  # walking only changes handheld touch use
         else:
             reqs.append((floor, None))
     return reqs
@@ -486,6 +494,8 @@ def _floor_met(floor: str, kind: str | None, profiles: list[dict[str, Any]]) -> 
     pool = [p for p in profiles if kind is None or _input_kind(p["attributes"]["device_id"]) == kind]
     if floor == "left_hand":
         return any(_is_left(p) for p in pool)
+    if floor == "walking":
+        return any(p["attributes"]["context"]["mobility"] == "walking" for p in pool)
     return any(all(_get(p["attributes"], k) == v for k, v in CONDITIONS[floor].items()) for p in pool)
 
 
@@ -590,7 +600,9 @@ def compose(audience: dict[str, Any], budget: int, floors: Iterable[str] | None 
             untested.append({"segment_id": seg["segment_id"], "facet": "floor", "reason": f"inclusive floor {floor}" + (f" ({kind})" if kind else "") + " — budget exhausted"})
             continue
         queue = state[seg["segment_id"]]["queue"]
-        same = next((f for f in queue if (floor == "left_hand" and f["kind"] == "left_mirror") or f.get("condition") == floor), None)
+        same = next((f for f in queue if (floor == "left_hand" and f["kind"] == "left_mirror")
+                     or (floor == "walking" and f["kind"] == "context" and f["context"].get("mobility") == "walking")
+                     or f.get("condition") == floor), None)
         if same is not None and (kind is None or _input_kind(state[seg["segment_id"]]["top_device"]) == kind):
             # The segment's own facet satisfies the floor: use it (evidence-backed) instead of a floor-only profile.
             queue.remove(same)
