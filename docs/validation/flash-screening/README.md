@@ -63,5 +63,7 @@ fast. The verdict does not depend on the exact rate above 3/s.
 
 Limits: frames are downscaled to ~160 CSS px wide, so patterns finer than a
 block (22 × 40 CSS px on phones) average out; spatial-pattern rules (IRIS
-pattern check) are not screened. This is screening, not certification: confirm
-failures with EA IRIS or Harding FPA.
+pattern check) are not screened. This is screening, not certification. EA IRIS
+is not a certification either: its defaults need 25 % of the frame to change, so
+a local flash that fails here can pass IRIS, and that pass does not clear it.
+For broadcast or certification, use a certified process such as Harding FPA.

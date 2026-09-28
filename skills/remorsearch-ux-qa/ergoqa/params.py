@@ -197,8 +197,17 @@ LATENCY_ATTENTION_MS = 10000.0  # [paper]
 FLASH_DELTA = 0.10             # [standard] WCAG general flash: 10 % of max relative luminance
 FLASH_DARK_LIMIT = 0.80        # [standard] darker image below 0.80
 FLASH_AREA_SR = 0.006          # [standard] WCAG 2.3.1 combined area threshold (25 % of any 10 deg field)
-FLASH_EXTENDED_WINDOW_MS = 5000.0   # [code] EA IRIS "extended failure": 2-3 flashes/s sustained over 5 s -> P1
-FLASH_EXTENDED_MIN_FLASHES = 10.0   # [derived] >= 2 flashes/s over the 5 s window
+FLASH_EXTENDED_WINDOW_MS = 5000.0   # [policy] sustained rule: 10 or more flashes within 5 s -> P1
+FLASH_EXTENDED_MIN_FLASHES = 10.0   # [derived] 2 flashes/s held over the 5 s window
+# EA IRIS extended failure (src/TransitionTracker.cpp, config/appsettings.json at d96978a):
+# a frame counts when its 1 s transition count is MinTransitions..MaxTransitions; the
+# failure is a frame whose count is >= MinTransitions after ExtendedFailSeconds of such
+# frames within the last ExtendedFailWindow seconds. [code]
+FLASH_IRIS_MIN_TRANSITIONS = 4
+FLASH_IRIS_MAX_TRANSITIONS = 6
+FLASH_IRIS_EXTENDED_SECONDS = 4.0
+FLASH_IRIS_EXTENDED_WINDOW_S = 5.0
+FLASH_IRIS_FRAME_MS = 10.0          # [policy] virtual frame clock for IRIS's frame-based counters
 FLASH_RED_RATIO = 0.8              # [standard] WCAG 2.2 red flash: R/(R+G+B) >= 0.8 (saturated red)
 # Block-grid screening (flash samples with block_lum/block_red; docs/human-factors/game-ux-ergonomics.md 2.1).
 FLASH_WINDOW_MS = 1000.0           # [standard] "any one-second period"

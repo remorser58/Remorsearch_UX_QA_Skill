@@ -184,7 +184,7 @@ GM04 = _register(CheckSpec(
     "GM-04", "game", "measured", "초당 3회 초과 섬광(광과민성 발작 위험)",
     "More than three flashes in one second over a large area",
     ("REF-wcag22-231", "REF-itu-bt1702"), ("game", "web", "android", "ios", "desktop"), "visual",
-    "섬광 빈도를 초당 3회 이하로 낮추고 면적을 줄이세요. 인증된 도구(PEAT/Harding)로 재검사하세요.",
+    "섬광 빈도를 초당 3회 이하로 낮추고 면적을 줄이세요. 방송·인증이 필요하면 Harding FPA 같은 인증 절차를 따로 밟으세요.",
 ))
 GM05 = _register(CheckSpec(
     "GM-05", "game", "measured", "터치 게임 조작부가 작거나 화면 가장자리에 붙어 있음",
@@ -1597,6 +1597,7 @@ def _frame_flash(run: dict[str, Any], samples: list[dict[str, Any]], device: Any
         res = game.analyse_block_flashes(samples, grid, pitch, viewing)
         failed, extended = res["failed"], res["extended"]
         kind = max(("general", "red"), key=lambda k: (res[k]["failed"], res[k]["extended_failed"], res[k]["area_sr"]))
+        ext_sr = max(res[kind]["sustained_5s_area_sr"], res[kind]["iris_extended_area_sr"])
         worst = res[kind]
         value = worst["field_flashes_per_s"] if worst["area_sr"] > 0 else max(res["general"]["max_flashes_per_s"], res["red"]["max_flashes_per_s"])
         field_sr = 2.0 * math.pi * (1.0 - math.cos(math.radians(params.FLASH_FIELD_DEG / 2.0)))
@@ -1605,7 +1606,8 @@ def _frame_flash(run: dict[str, Any], samples: list[dict[str, Any]], device: Any
             "method": res["method"], "flash_kind": kind if worst["area_sr"] > 0 else None,
             "area_sr": worst["area_sr"], "area_threshold_sr": params.FLASH_AREA_SR, "area_exceeds": failed,
             "field_fraction": round(worst["area_sr"] / field_sr, 3), "red_flash": res["red"]["failed"],
-            "extended_failure": extended, "general": res["general"], "red": res["red"],
+            "extended_failure": extended, "sustained_5s": res["sustained_5s"], "iris_extended": res["iris_extended"],
+            "iris_warning": res["iris_warning"], "general": res["general"], "red": res["red"],
             "grid": res["grid"], "block_css": res["block_css"], "geometry": res["geometry"],
             "viewing_distance_mm": res["viewing_distance_mm"], "motion_samples": res["moved_samples"],
         }
@@ -1616,10 +1618,14 @@ def _frame_flash(run: dict[str, Any], samples: list[dict[str, Any]], device: Any
             measurement["step_index"] = step
             where = f", {worst['at_ms'] / 1000:.1f}초({step}단계) 화면 ({worst['field_center_css'][0]:.0f}, {worst['field_center_css'][1]:.0f}) px 부근"
         label = "적색 섬광" if kind == "red" else "일반 섬광"
-        if failed or extended:
-            rate = "초당 3회 초과" if failed else "5초 동안 초당 2회 이상"
-            detail = (f"{label}: {rate} 깜빡이는 영역이 10° 시야 안에서 {worst['area_sr']:.4f} sr"
+        if failed:
+            detail = (f"{label}: 초당 3회 초과 깜빡이는 영역이 10° 시야 안에서 {worst['area_sr']:.4f} sr"
                       f"(기준 {params.FLASH_AREA_SR} sr, 시야의 {measurement['field_fraction'] * 100:.0f}%)를 차지함{where}.")
+        elif extended:
+            rules = [r for r, on in (("5초 안에 10회 이상(초당 2회 이상 지속)", worst["sustained_5s"]),
+                                     ("최근 5초 중 4초 이상 초당 2–3회(1초 전이 4–6회, EA IRIS 확장 실패 규칙)", worst["iris_extended"])) if on]
+            detail = (f"{label}: {' 또는 '.join(rules)} 깜빡이는 영역이 10° 시야 안에서 {ext_sr:.4f} sr"
+                      f"(기준 {params.FLASH_AREA_SR} sr)를 차지함{where}.")
         else:
             detail = (f"초당 3회를 넘게 깜빡이는 영역이 10° 시야 기준 면적을 넘지 않음(최대 {worst['area_sr']:.4f} sr / 기준 {params.FLASH_AREA_SR} sr, "
                       f"국소 최대 초당 {max(res['general']['max_flashes_per_s'], res['red']['max_flashes_per_s']):.1f}회).")
@@ -1654,7 +1660,8 @@ def _frame_flash(run: dict[str, Any], samples: list[dict[str, Any]], device: Any
         message = ("판정 불가(inconclusive, 통과 아님): " + "; ".join(reasons[p] for p in problems)
                    + ". 관찰한 구간에서는 " + detail + sampled)
     if failed or extended:
-        message += " 인증 도구(EA IRIS/Harding)로 재검사가 필요합니다."
+        message += (" EA IRIS는 인증 도구가 아니며(README 면책), 기본 설정은 화면의 25 % 이상이 바뀌어야 전이로 세므로 국소 섬광은 IRIS를 통과할 수 있습니다."
+                    " IRIS 통과가 이 판정을 뒤집지 않습니다. 방송·인증 목적이면 Harding FPA 같은 인증 절차를 따로 밟으세요.")
     return {"measurement": measurement, "severity": "P0" if failed else ("P1" if extended else None), "message": message, "model": model}
 
 

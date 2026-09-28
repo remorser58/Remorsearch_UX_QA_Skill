@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import base64
+import collections
+import random
 import unittest
 
 import _paths  # noqa: F401  (puts the skill folder on sys.path)
@@ -136,6 +138,74 @@ class BlockFlash(unittest.TestCase):
         self.assertTrue(res["extended"])
 
 
+def train(flash_hz: float, seconds: float, start: float = 0.0) -> tuple[float, ...]:
+    """Transition times of a flicker: two transitions per flash."""
+    step = 500.0 / flash_hz
+    return tuple(start + k * step for k in range(int(round(seconds * 2 * flash_hz))))
+
+
+def iris_reference(times, frame=10.0, window=1000.0):
+    """Frame-by-frame restatement of EA IRIS TransitionTracker (d96978a) for the test:
+    per frame, transitions in the last second; a frame is in band at 4-6; it fails when
+    in band with at least 4 s of in-band frames among the last 5 s."""
+    fails, history = [], collections.deque(maxlen=int(5000 / frame))
+    base = times[0] - frame
+    f = 0
+    while True:
+        f += 1
+        t = base + f * frame
+        if t > times[-1] + window + frame:
+            return fails
+        n = sum(1 for x in times if t - window < x <= t + 1e-9)
+        band = 4 <= n <= 6
+        history.append(band)
+        if band and sum(history) >= int(4000 / frame):
+            fails.append(round(t, 6))
+
+
+class IrisExtended(unittest.TestCase):
+    """GQA-03: EA IRIS's extended-failure rule next to the sustained 5 s rule."""
+
+    def fail_times(self, times):
+        return [round(base + k * 10.0, 6) for r0, r1 in game.iris_extended_runs(times) for base in [r0] for k in range(int(round((r1 - r0) / 10.0)) + 1)]
+
+    def test_brief_boundary_trains(self) -> None:
+        cases = {(2, 4): False, (3, 3.4): False, (2.5, 5): True, (2, 3): False, (2, 5): True}
+        for (hz, sec), expected in cases.items():
+            with self.subTest(hz=hz, seconds=sec):
+                self.assertEqual(bool(game.iris_extended_runs(train(hz, sec))), expected)
+
+    def test_matches_the_frame_by_frame_restatement(self) -> None:
+        rng = random.Random(7)
+        trains = [train(hz, sec) for hz in (1.5, 2, 2.5, 3) for sec in (3, 4, 4.8, 5, 6)]
+        for _ in range(40):
+            t, out = 0.0, []
+            while t < 7000:
+                out.append(round(t, 3))
+                t += rng.uniform(120, 420)
+            trains.append(tuple(out))
+        for times in trains:
+            with self.subTest(n=len(times), first=times[:3]):
+                self.assertEqual(self.fail_times(times), iris_reference(times))
+
+    def test_rules_differ_on_an_uneven_train(self) -> None:
+        # 3 flashes/s for 2.5 s, then 1 flash/s: 10 flashes within 5 s (sustained rule)
+        # but only about 3 s at 4-6 transitions per second (IRIS rule).
+        times = train(3, 2.5) + train(1, 2.5, start=2500.0)
+        self.assertLess(times[-1] - times[0], params.FLASH_EXTENDED_WINDOW_MS)
+        self.assertGreaterEqual(len(times) / 2, params.FLASH_EXTENDED_MIN_FLASHES)
+        self.assertEqual(game.iris_extended_runs(times), ())
+
+    def test_block_grid_reports_both_rules(self) -> None:
+        res = analyse(samples(box_flash((0, 0, VW, VH), 2), even(30, seconds=6)))
+        self.assertFalse(res["failed"])
+        self.assertTrue(res["iris_extended"])
+        self.assertTrue(res["extended"])
+        short = analyse(samples(box_flash((0, 0, VW, VH), 2), even(30, seconds=3.5)))
+        self.assertFalse(short["extended"])
+        self.assertTrue(short["iris_warning"])
+
+
 class GM04Observation(unittest.TestCase):
     def run_with(self, smp, *, steps=None, fps_ok=True):
         return {"run_id": "R-F", "steps": steps or [], "flash_samples": smp,
@@ -166,6 +236,13 @@ class GM04Observation(unittest.TestCase):
         (obs,) = self.observe(self.run_with(samples(lambda t, c, r: (0.5, 0.0), even(30, seconds=0.9)), steps=steps))
         self.assertEqual(obs.measurement["coverage"]["unsampled_animating_steps"], [1])
         self.assertEqual(obs.measurement["verdict"], "inconclusive")
+
+    def test_extended_failure_names_its_rule_and_does_not_defer_to_iris(self) -> None:
+        (obs,) = self.observe(self.run_with(samples(box_flash((0, 0, VW, VH), 2), even(30, seconds=6))))
+        self.assertEqual(obs.severity, "P1")
+        self.assertTrue(obs.measurement["iris_extended"])
+        self.assertIn("IRIS 확장 실패 규칙", obs.message_ko)
+        self.assertIn("IRIS 통과가 이 판정을 뒤집지 않습니다", obs.message_ko)
 
     def test_runs_without_a_block_grid_use_the_viewport_mean(self) -> None:
         smp = [{k: v for k, v in s.items() if not k.startswith("block_")} for s in samples(box_flash((0, 0, VW, VH), 5), even(30))]

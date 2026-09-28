@@ -185,3 +185,11 @@ at the same multiplier.
 EVD-05 noise gate on dev (P0–P2 clean units per clean scenario ≤ 0.35, no P0–P1):
 0.70 before, **0.30** with SIT-01. This is the effect the evaluating-detectors
 brief predicted.
+
+## Round 9: game brief items before the freeze (GQA-02, GQA-03)
+
+| Item | Evidence | Decision |
+| --- | --- | --- |
+| GQA-03 (a) IRIS wording | The GM-04 message told users to "re-test with a certified tool (EA IRIS/Harding)". IRIS's README says it does not certify, and its default `FlashDetection.AreaProportion` 0.25 counts a transition only when a quarter of the frame changes, so a local flash that fails the 10° field rule can pass IRIS. | Message and reference text changed: an IRIS pass does not overturn GM-04; certification goes through a certified process such as Harding FPA. |
+| GQA-03 (b, c) extended failure | The P1 rule was described as IRIS's but was a count rule (10 flashes within 5 s). IRIS's rule, read from `src/TransitionTracker.cpp` and `config/appsettings.json` at `d96978a` (BSD-3), is frame-based: a frame is in band at 4–6 transitions in the last second; failure when 4 s of the last 5 s are in band and the current count is ≥ 4. | Both rules kept and named: `sustained_5s` and `iris_extended` (ported on a 10 ms frame clock with IRIS's exact 1 s window; the WCAG rule's 50 ms tolerance would make a 2 Hz flicker read 3 transitions a fifth of the time). Either gives P1. `iris_warning` is recorded only. Pass rule met: the port equals an independent frame-by-frame restatement on 60 trains (regular 1.5–3 flashes/s × 3–6 s and 40 random), and the brief's boundary trains give 2 × 4 s no, 3 × 3.4 s no, 2.5 × 5 s yes, 2 × 3 s no, 2 × 5 s yes. The rules differ on uneven trains (3 flashes/s for 2.5 s then 1/s: sustained yes, IRIS no). Dev recordings: GM-04 verdicts unchanged (game-run P0, clean pass). |
+| GQA-02 GM-06 | Already hypothesis-tier since round 1 (counts script presses). | No change before the freeze; the press-rate and hold-time sweep is post-freeze. Reference row now says hypothesis. |
