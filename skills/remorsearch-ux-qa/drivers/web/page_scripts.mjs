@@ -416,7 +416,7 @@ export function extractSnapshot(args) {
       const t = svgTitle(el);
       if (t) return [t, 'content'];
     } else {
-      const t = text(el);
+      const t = nameFromContent(el) || text(el);
       if (t) return [t.slice(0, 300), 'content'];
       const img = el.querySelector && el.querySelector('img[alt]');
       if (img && img.alt.trim()) return [img.alt.trim(), 'content'];
@@ -427,6 +427,70 @@ export function extractSnapshot(args) {
     return title ? [title, 'title'] : ['', 'none'];
   };
   const accName = (el) => accNameSrc(el)[0];
+  // Visually hidden (the "visually-hidden" pattern, display:none, visibility:hidden).
+  const visuallyHidden = (n) => {
+    const cs = style(n);
+    if (cs.display === 'none' || cs.visibility === 'hidden' || cs.visibility === 'collapse') return true;
+    if (/inset\(\s*50%/.test(cs.clipPath || '') || /rect\(\s*0(px)?,?\s*0(px)?,?\s*0(px)?,?\s*0(px)?\s*\)/.test(cs.clip || '')) return true;
+    const r = n.getBoundingClientRect();
+    return r.width <= 1 && r.height <= 1 && (cs.overflow === 'hidden' || cs.overflow === 'clip');
+  };
+  // ACT "visible inner text": text a sighted user sees inside the element.
+  const visibleInnerText = (el) => {
+    const out = [];
+    let budget = 400;
+    const walk = (n) => {
+      for (const c of n.childNodes) {
+        if (budget-- <= 0) return;
+        if (c.nodeType === 3) out.push(c.nodeValue);
+        else if (c.nodeType === 1 && !visuallyHidden(c) && c.tagName.toLowerCase() !== 'style' && c.tagName.toLowerCase() !== 'script') {
+          // Inline boxes join their text ("A", "C", "T" reads "ACT"); block boxes and
+          // <br> break words, as innerText does.
+          const block = c.tagName.toLowerCase() === 'br' || !/^inline/.test(style(c).display || 'inline');
+          if (block) out.push(' ');
+          walk(c);
+          if (block) out.push(' ');
+        }
+      }
+    };
+    walk(el);
+    return out.join('').replace(/\s+/g, ' ').trim().slice(0, 300);
+  };
+  // Name from content (accname 1.2 step 2F, simplified): text, plus the names of
+  // descendant images and labelled elements; hidden descendants contribute nothing.
+  const nameFromContent = (el) => {
+    const out = [];
+    let budget = 400;
+    const walk = (n) => {
+      for (const c of n.childNodes) {
+        if (budget-- <= 0) return;
+        if (c.nodeType === 3) {
+          out.push(c.nodeValue);
+          continue;
+        }
+        if (c.nodeType !== 1) continue;
+        const tag = c.tagName.toLowerCase();
+        if (tag === 'style' || tag === 'script') continue;
+        const cs = style(c);
+        if (cs.display === 'none' || cs.visibility === 'hidden' || c.getAttribute('aria-hidden') === 'true') continue;
+        const lb = c.getAttribute('aria-labelledby');
+        const lbText = lb ? lb.split(/\s+/).map((id) => byId(c, id)).filter(Boolean).map(text).join(' ').trim() : '';
+        const al = (c.getAttribute('aria-label') || '').trim();
+        if (lbText) out.push(lbText);
+        else if (al) out.push(al);
+        else if (tag === 'img' || (tag === 'input' && (c.getAttribute('type') || '').toLowerCase() === 'image')) {
+          out.push((c.getAttribute('alt') || '').trim() || (c.getAttribute('title') || '').trim());
+        } else if (typeof SVGElement !== 'undefined' && c instanceof SVGElement) out.push(svgTitle(c) || (c.getAttribute('title') || ''));
+        else {
+          const before = out.length;
+          walk(c);
+          if (out.slice(before).join('').trim() === '' && c.getAttribute('title')) out.push(c.getAttribute('title').trim());
+        }
+      }
+    };
+    walk(el);
+    return out.join(' ').replace(/\s+/g, ' ').trim();
+  };
   const NATIVE_FOCUSABLE = new Set(['a', 'button', 'input', 'select', 'textarea', 'summary']);
   // Programmatic state a check can read without a screen reader (WCAG 4.1.2, 3.3.1).
   const a11yOf = (el) => {
@@ -451,6 +515,7 @@ export function extractSnapshot(args) {
         }
       })(),
       described_by: ids('aria-describedby').slice(0, 8),
+      visible_label: visibleInnerText(el),
       // Hidden from assistive technology (aria-hidden or inert on it or an ancestor).
       hidden: !!(el.closest && (el.closest('[aria-hidden="true"]') || el.closest('[inert]'))),
       // Visible text drawn by an icon font (ligatures such as "menu"): not a text label.
@@ -557,7 +622,9 @@ export function extractSnapshot(args) {
   // ---------- candidates
   const INTERACTIVE = 'a, button, input:not([type="hidden"]), select, textarea, summary, canvas, '
     + '[role="button"], [role="link"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"], '
-    + '[role="menuitem"], [role="slider"], [onclick], [contenteditable=""], [contenteditable="true"]';
+    + '[role="menuitem"], [role="slider"], [role="textbox"], [role="searchbox"], [role="combobox"], [role="listbox"], '
+    + '[role="spinbutton"], [role="option"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="treeitem"], '
+    + '[role="gridcell"][tabindex], [onclick], [contenteditable=""], [contenteditable="true"]';
   const isInteractive = (el) => {
     try {
       if (el.matches(INTERACTIVE)) return true;

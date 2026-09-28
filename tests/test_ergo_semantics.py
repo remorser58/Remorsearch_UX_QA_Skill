@@ -38,7 +38,16 @@ class Names(unittest.TestCase):
         glyph = el("x", "button", (300, 10, 44, 44), text="×", name="닫기", interactive=True, tag="button", a11y=a11y("aria-label"))
         card = el("card", "link", (10, 100, 340, 120), text="여름 세일 원피스 39,000원 무료배송 오늘 출발 리뷰 1,204개", name="여름 세일 원피스",
                   interactive=True, tag="a", a11y=a11y("aria-label"))
-        self.assertEqual(ids(checks.check_semantics(ctx([mismatch, contains, glyph, card])), "SM-02"), ["#buy"])
+        # ACT 2ee8b8: a card link whose aria-label drops most of its visible text fails too.
+        self.assertEqual(ids(checks.check_semantics(ctx([mismatch, contains, glyph, card])), "SM-02"), ["#buy", "#card"])
+
+    def test_act_label_in_name_algorithm(self) -> None:
+        self.assertTrue(checks._label_in_name("Search by date (YYYY-MM-DD)", "Search by date"))
+        self.assertTrue(checks._label_in_name("Download specification", "Download gizmo specification"[:9] + " specification"))
+        self.assertFalse(checks._label_in_name("Download specification", "Download the specification"))  # not contiguous
+        self.assertTrue(checks._label_in_name("장바구니", "장바구니에 담기"))  # Korean particle relaxation
+        self.assertTrue(checks._label_in_name("X", "닫기"))  # the close symbol is not text
+        self.assertTrue(checks._label_in_name("Next →", "Next page"))
 
 
 class Fields(unittest.TestCase):
@@ -48,9 +57,9 @@ class Fields(unittest.TestCase):
         ok = el("card", "textbox", (10, 320, 340, 44), interactive=True, tag="input", name="카드 번호", a11y=a11y("label"))
         submit = el("go", "button", (10, 400, 340, 44), interactive=True, tag="input", text="제출", name="제출", a11y=a11y("value"))
         obs = checks.check_semantics(ctx([ph, none, ok, submit], path_ids=("phone",)))
-        self.assertEqual(ids(obs, "SM-03"), ["#memo", "#phone"])
-        sev = {o.element_key.split("|")[0]: o.severity for o in obs if o.check_id == "SM-03"}
-        self.assertEqual(sev, {"#phone": "P2", "#memo": "P2"})
+        self.assertEqual(ids(obs, "SM-03"), ["#memo"])  # no accessible name at all (WCAG 4.1.2)
+        self.assertEqual(ids(obs, "SM-07"), ["#phone"])  # placeholder only: best practice, P3
+        self.assertEqual({o.check_id: o.severity for o in obs if o.check_id in ("SM-03", "SM-07")}, {"SM-03": "P2", "SM-07": "P3"})
         self.assertEqual(ids(obs, "SM-01"), [])
 
 

@@ -128,3 +128,25 @@ cross-category hits. Single-profile analysis (the checks are profile-independent
 | SM-03 | 4 (unlabelled required checkboxes, keyed as a pointing defect) | 0 | real | Keep |
 | SM-02 | 0 | 1 (a game radar item: visible "아군", aria-label "대상 2") | plausible true positive the key does not list | Keep; count as unlabelled |
 | SM-01, LY-01 | 0 | 0 | – | Keep; recall is measured on dev-2 |
+
+## Round 7: external precision gate (W3C ACT rule examples)
+
+`skills/remorsearch-ux-qa/scripts/ergo_act.py` opens every example of seven ACT
+rules (act-rules.github.io at `7e46818`, examples written by the ACT task force)
+in the real driver and analyses it with the default persona. An implementation
+is correct for a rule only if no Passed or Inapplicable example is reported.
+
+| Rule | Check | First run: false alarms | Fixes | Final: false alarms | Final: detected (Failed examples) |
+| --- | --- | --- | --- | --- | --- |
+| 97a4e1 button name | SM-01 | 0/12 | – | 0/12 | 4/5 |
+| c487ae link name | SM-01 | 3/17 (names of child images with aria-label, title, aria-labelledby) | name from content includes descendant image and labelled-element names | 0/17 | 7/11 |
+| e086e5 field name | SM-03 | 1/12 (placeholder is an accessible name) | SM-03 only for no name; placeholder/title-only moved to SM-07 (best practice, P3); role-based fields (div role=textbox) collected; disabled fields at P3; presentational non-focusable skipped | 0/12 | 6/9 |
+| 2ee8b8 label in name | SM-02 | 2/22 (visually hidden text; parenthesised text) | ACT label-in-name algorithm; visible inner text; abbreviations and hyphenation out of scope as ACT defines | 0/22 | 16/16 |
+| 59br37 clipped text | LY-01 | 0/9 | – | 0/9 | 2/5 (the rest clip only at 200 % zoom, which is not rendered yet) |
+| oj04fd focus visible | SM-05 | 0/6 | test assets served | 0/6 | 1/1 |
+| 36b590 error text (informational) | SM-04 | 0/4 | – | 0/4 | 0/5 (SM-04 checks location and linkage, not wording) |
+
+Undetected by design (not in the snapshot): zero-size links and buttons,
+image-map areas, images whose source fails to load. AUT-20 (apply name rules to
+focusable elements of any size) and AUT-07 (200 % zoom re-render) are post-freeze
+candidates.

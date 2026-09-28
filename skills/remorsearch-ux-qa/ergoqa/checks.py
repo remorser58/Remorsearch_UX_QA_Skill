@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import math
 import re
+import unicodedata
 import zlib
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable
@@ -220,6 +221,12 @@ SM03 = _register(CheckSpec(
     "Form field without a programmatic label",
     ("REF-wcag22-131", "REF-wcag22-332", "REF-wcag22-412"), ("web", "desktop"), "accessibility",
     "<label for> 또는 aria-labelledby로 보이는 레이블을 연결하고, placeholder를 레이블 대신 쓰지 마세요.",
+))
+SM07 = _register(CheckSpec(
+    "SM-07", "semantics", "measured", "입력 칸 이름이 placeholder·title뿐(모범 사례)",
+    "Form field named only by its placeholder or title (best practice)",
+    ("REF-wcag22-332", "REF-nngroup-placeholders"), ("web", "desktop"), "accessibility",
+    "보이는 <label>을 두고 연결하세요. placeholder는 입력하면 사라져 무엇을 적는 칸인지 잊게 됩니다.",
 ))
 SM04 = _register(CheckSpec(
     "SM-04", "semantics", "measured", "오류 문구가 입력 칸과 떨어져 있고 연결되지 않음",
@@ -1668,6 +1675,8 @@ def _mash_bursts(run: dict[str, Any]) -> list[tuple[str, int, float]]:
 
 
 _LABEL_NOISE = re.compile(r"[\W_]+", re.UNICODE)
+# Roles that are form fields even on a <div> (ACT e086e5 applicability).
+FIELD_ROLES = frozenset({"textbox", "searchbox", "combobox", "listbox", "spinbutton", "slider"})
 ERROR_NEAR_CSS_PX = 48.0  # LAT-09 ER-01: an error further than this from every field needs a programmatic link
 
 
@@ -1684,6 +1693,39 @@ def _dom_id(element: dict[str, Any]) -> str | None:
         return str(element["dom_id"])
     sel = element.get("selector") or ""
     return sel[1:] if re.fullmatch(r"#[A-Za-z][\w-]*", sel) else None
+
+
+def _label_tokens(text: str | None) -> list[str]:
+    """ACT label-in-name tokenizer: drop (parenthesised) text, case-fold, NFKD, keep
+    letters and digits, split on whitespace. A lone "x" is the close symbol, not text."""
+    t = re.sub(r"\([^)]*\)", " ", text or "")
+    t = unicodedata.normalize("NFKD", t.casefold())
+    t = "".join(ch if unicodedata.category(ch)[0] in "LN" else " " for ch in t)
+    tokens = t.split()
+    return [] if tokens == ["x"] else tokens
+
+
+def _label_in_name(label: str | None, name: str | None) -> bool:
+    """Whether the visible label's tokens are a contiguous run of the name's tokens.
+    Korean relaxation (AUT-04): a Hangul label token also matches a name token that
+    starts with it, so a trailing particle ("장바구니" / "장바구니에") still counts."""
+    lt, nt = _label_tokens(label), _label_tokens(name)
+    if not lt:
+        return True
+    # ACT leaves abbreviations and spelling or hyphenation differences out of scope
+    # ("Ave." / "Avenue", "non-standard" / "nonstandard"): treat them as contained.
+    if "".join(lt) == "".join(nt) and "-" in f"{label or ''}{name or ''}":
+        return True
+    abbrev = {w.casefold() for w in re.findall(r"([^\W\d_]+)\.", f"{label or ''} {name or ''}")}
+
+    def same(a: str, b: str) -> bool:
+        if a == b:
+            return True
+        if re.search(r"[\u1100-\u11ff\uac00-\ud7a3]", a) is not None and b.startswith(a):
+            return True
+        return (a in abbrev and b.startswith(a)) or (b in abbrev and a.startswith(b))
+
+    return any(all(same(lt[j], nt[i + j]) for j in range(len(lt))) for i in range(len(nt) - len(lt) + 1))
 
 
 def _names_field(field_name: str | None, text: str | None) -> bool:
@@ -1716,22 +1758,37 @@ def check_semantics(ctx: Context) -> list[Observation]:
     out: list[Observation] = []
     base = (ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"))
     dom = [e for e in ctx.elements if e.get("source", "dom") == "dom" and _present(e)]
-    fields = [e for e in dom if e.get("tag") in ("input", "select", "textarea") and e.get("role") != "button" and isinstance(e.get("a11y"), dict)]
+    fields = [e for e in dom if isinstance(e.get("a11y"), dict) and (
+        (e.get("tag") in ("input", "select", "textarea") and e.get("role") != "button") or e.get("role") in FIELD_ROLES)]
     for e in dom:
         a = e.get("a11y")
-        if not isinstance(a, dict) or not e.get("enabled", True):
+        if not isinstance(a, dict) or (not e.get("enabled", True) and e not in fields):
             continue
+        if e.get("role") in ("none", "presentation") and not a.get("focusable"):
+            continue  # presentational and not focusable: not in the accessibility tree (ACT e086e5)
         critical = _critical(ctx, e)
         where = e.get("selector") or e.get("id")
         if e in fields:
             source = a.get("name_source")
-            if source in ("placeholder", "title", "none"):
-                severity = ("P1" if critical else "P2") if source == "none" else ("P2" if critical else "P3")
+            if a.get("hidden"):
+                continue
+            if source == "none":
+                # WCAG 4.1.2 / ACT e086e5: no accessible name at all (disabled fields too, at P3).
                 out.append(Observation(
                     "SM-03", *base, [e["id"]], element_key(e),
+                    {"name": "label_source", "value": source, "unit": "enum", "threshold": "any accessible name", "comparator": "!=",
+                     "disabled": not e.get("enabled", True)},
+                    False, "P3" if not e.get("enabled", True) else ("P1" if critical else "P2"),
+                    f"입력 칸 '{where}'에 접근 가능한 이름이 없습니다. 스크린리더는 칸의 용도를 알리지 못합니다(WCAG 4.1.2).",
+                ))
+            elif source in ("placeholder", "title"):
+                # A placeholder or title is an accessible name (ACT e086e5 passes it); a
+                # visible label is still better practice, so this is P3 and not a WCAG failure.
+                out.append(Observation(
+                    "SM-07", *base, [e["id"]], element_key(e),
                     {"name": "label_source", "value": source, "unit": "enum", "threshold": "label|aria-labelledby|aria-label", "comparator": "in"},
-                    False, severity,
-                    f"입력 칸 '{where}'에 연결된 레이블이 없습니다(이름 출처: {source}). 스크린리더는 칸의 용도를 알리지 못하고, placeholder는 입력하면 사라집니다.",
+                    False, "P3",
+                    f"입력 칸 '{where}'의 이름이 {source}뿐입니다. 입력하면 안내가 사라져 무엇을 적는 칸인지 잊기 쉽습니다(모범 사례, WCAG 실패 아님).",
                 ))
             continue
         if not e.get("interactive") or e.get("tag") == "canvas":
@@ -1747,10 +1804,9 @@ def check_semantics(ctx: Context) -> list[Observation]:
                 f"조작 요소 '{where}'에 접근 가능한 이름이 없습니다. 스크린리더·음성 제어 사용자는 무엇을 하는 버튼인지 알 수 없습니다(시뮬레이션하지 않는 사용자군).",
             ))
             continue
-        visible = (e.get("text") or "").strip()
-        if a.get("name_source") in ("aria-label", "aria-labelledby") and not a.get("icon_font") and _letters(visible) >= 2 \
-                and len(visible) <= 40 and len(visible.split()) <= 6:
-            if _norm_label(visible) not in _norm_label(name):
+        visible = (a.get("visible_label") if a.get("visible_label") is not None else e.get("text") or "").strip()
+        if a.get("name_source") in ("aria-label", "aria-labelledby") and not a.get("icon_font") and _label_tokens(visible):
+            if not _label_in_name(visible, name):
                 out.append(Observation(
                     "SM-02", *base, [e["id"]], element_key(e),
                     {"name": "label_in_name", "value": False, "unit": "flag", "threshold": True, "comparator": "==", "visible": visible[:60], "accessible_name": name[:60]},
@@ -1907,7 +1963,7 @@ HYPOTHESIS_CHECKS = frozenset({"GZ-01", "GZ-04", "PC-05", "PT-05", "GM-06"})
 # Checks that read no profile attribute: one verdict per snapshot, reported as
 # "profile-independent" instead of a k/n coverage (STF-08).
 PROFILE_INVARIANT_CHECKS = frozenset({"PT-01", "PT-05", "PT-06", "PC-01", "PC-02", "CG-01", "CG-03", "GZ-03", "GM-05", "GM-06",
-                                      "SM-01", "SM-02", "SM-03", "SM-04", "SM-05", "SM-06", "LY-01"})
+                                      "SM-01", "SM-02", "SM-03", "SM-04", "SM-05", "SM-06", "SM-07", "LY-01"})
 
 
 def tier(check_id: str, measurement: dict[str, Any] | None = None) -> str:

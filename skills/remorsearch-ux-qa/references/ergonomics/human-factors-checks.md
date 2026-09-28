@@ -101,7 +101,9 @@ game-ux-ergonomics.md; subtitle coverage and audio cues are not automated here.
 
 ## Semantics and layout (profile-independent, web DOM)
 
-These are measured once per screen and reported as profile-independent. They
+These are measured once per screen and reported as profile-independent. Their
+precision is gated on the W3C ACT rule examples (`scripts/ergo_act.py`, pinned
+ACT commit): no Passed or Inapplicable example may be reported. They
 matter most to people the swarm does not simulate (screen-reader, voice-control
 and keyboard users), so the report names them. The rules are kept narrow for
 precision; a full audit still needs axe-core or a manual WCAG review.
@@ -109,8 +111,9 @@ precision; a full audit still needs axe-core or a manual WCAG review.
 | ID | Basis | Rule | Severity |
 | --- | --- | --- | --- |
 | SM-01 | measured | A control (button, link, role control) that is not hidden from assistive technology has no accessible name (WCAG 4.1.2; axe `button-name`/`link-name`). Name order: aria-labelledby (resolved in the element's own tree), aria-label, alt, value, label, title, placeholder (fields), own text (SVG: its `<title>`). | P1 on the task path or primary, else P2 |
-| SM-02 | measured | The control's name comes from aria-label/labelledby and does not contain its visible text (WCAG 2.5.3 Label in Name). Only labels of 2+ letters, ≤ 40 characters and ≤ 6 words count; text drawn by an icon font (ligatures such as "menu") is not a label. | P2 on the path, else P3 |
-| SM-03 | measured | A form field has no programmatic label: name from placeholder or title only, or none (WCAG 1.3.1, 3.3.2, 4.1.2). | none: P1 on the path, else P2; placeholder/title: P2 on the path, else P3 |
+| SM-02 | measured | The control's name comes from aria-label/labelledby and its visible inner text (visually hidden text excluded, inline boxes joined) is not contained in the name by the ACT label-in-name algorithm: parenthesised text dropped, case-folded, NFKD, letters and digits only, contiguous token run. A lone "x", icon-font text, abbreviations ("Ave.") and hyphenation differences count as contained; a Hangul label token also matches a name token that starts with it (particles). | P2 on the path, else P3 |
+| SM-03 | measured | A form field (input, select, textarea, or role textbox, searchbox, combobox, listbox, spinbutton, slider) has no accessible name at all (WCAG 4.1.2; ACT e086e5). Disabled fields too; presentational, non-focusable ones are skipped. | P1 on the path, else P2; disabled P3 |
+| SM-07 | measured | A form field is named only by its placeholder or title. That is an accessible name (ACT passes it) but not a visible label: best practice, not a WCAG failure. | P3 |
 | SM-04 | measured | An input error (declared `error_message`, or `role=alert` while a field is invalid) names no field, is more than 48 CSS px from every field, and no field points to it or its wrapper with aria-describedby or aria-errormessage (WCAG 3.3.1; LAT-09 ER-01). Field names match as Hangul (2+ syllables) or whole Latin words (4+ letters). System notices declared `critical_message`/`status` are skipped. | P2 |
 | SM-05 | measured | Keyboard focus walk (mouse and keyboard devices, after the run: end state and initial screen): focusing the element changes fewer than 4 pixels in its box, its small wrappers and 4 px around them, compared with the element blurred at the same scroll position (WCAG 2.4.7). | P2 |
 | SM-06 | measured | The focused element is behind a painting fixed or sticky layer that does not contain it, at all nine sample points (WCAG 2.4.11); partly covered is P3 (2.4.12). Worst result over the walks; not also reported as SM-05. | P2 / P3 |
