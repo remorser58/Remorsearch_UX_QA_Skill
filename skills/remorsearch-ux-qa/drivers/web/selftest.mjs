@@ -365,6 +365,11 @@ function checkScripted(label, runDir, dev, { flash }) {
     st9.target_element_id === bySel(snaps.get(st9.before), '#pay')?.id, st9.target_element_id);
   const last = snaps.get(run.steps[run.steps.length - 1].after);
   check(`${label}: success element #done is visible at the end`, bySel(last, '#done')?.visible === true);
+  const payA = bySel(last, '#pay')?.a11y;
+  const cardA = bySel(last, '#card')?.a11y;
+  check(`${label}: controls carry a11y state (name source, focusable, ARIA links)`,
+    payA && payA.name_source === 'content' && payA.focusable === true && payA.invalid === false && Array.isArray(payA.described_by)
+    && cardA && cardA.name_source === 'label' && cardA.focusable === true, { payA, cardA });
   check(`${label}: off-origin image and WebSocket blocked by the network policy, no console noise`,
     run.driver.network_policy.blocked_requests >= 2
     && ['image', 'websocket'].every((t) => run.driver.network_policy.blocked_sample.some((b) => b.resource_type === t))

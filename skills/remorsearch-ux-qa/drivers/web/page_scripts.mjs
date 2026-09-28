@@ -371,39 +371,81 @@ export function extractSnapshot(args) {
     const explicit = (el.getAttribute('role') || '').trim().split(/\s+/)[0];
     return explicit || implicitRole(el);
   };
-  const accName = (el) => {
+  // Accessible name and where it came from (accname 1.2 order, simplified): the
+  // source lets checks tell a label-in-name mismatch (aria-label overriding the
+  // visible text) from a placeholder-only field or an unnamed icon button.
+  const accNameSrc = (el) => {
     const lb = el.getAttribute('aria-labelledby');
     if (lb) {
       const t = lb.split(/\s+/).map((id) => document.getElementById(id)).filter(Boolean).map(text).join(' ').trim();
-      if (t) return t;
+      if (t) return [t, 'aria-labelledby'];
     }
     const al = (el.getAttribute('aria-label') || '').trim();
-    if (al) return al;
+    if (al) return [al, 'aria-label'];
     const tag = el.tagName.toLowerCase();
     const type = (el.getAttribute('type') || '').toLowerCase();
     if (tag === 'img' || (tag === 'input' && type === 'image')) {
       const alt = (el.getAttribute('alt') || '').trim();
-      if (alt) return alt;
+      if (alt) return [alt, 'alt'];
     }
     if (tag === 'input' && ['submit', 'button', 'reset'].includes(type)) {
-      return (el.value || (type === 'submit' ? 'Submit' : type === 'reset' ? 'Reset' : '')).trim();
+      return [(el.value || (type === 'submit' ? 'Submit' : type === 'reset' ? 'Reset' : '')).trim(), 'value'];
     }
     if (['input', 'select', 'textarea'].includes(tag)) {
       if (el.labels && el.labels.length) {
         const t = [...el.labels].map(text).join(' ').trim();
-        if (t) return t;
+        if (t) return [t, 'label'];
       }
       const ph = (el.getAttribute('placeholder') || '').trim();
-      if (ph) return ph;
+      if (ph) return [ph, 'placeholder'];
     } else {
       const t = text(el);
-      if (t) return t.slice(0, 300);
+      if (t) return [t.slice(0, 300), 'content'];
       const img = el.querySelector && el.querySelector('img[alt]');
-      if (img && img.alt.trim()) return img.alt.trim();
+      if (img && img.alt.trim()) return [img.alt.trim(), 'content'];
       const svgTitle = el.querySelector && el.querySelector('svg title');
-      if (svgTitle && svgTitle.textContent.trim()) return svgTitle.textContent.trim();
+      if (svgTitle && svgTitle.textContent.trim()) return [svgTitle.textContent.trim(), 'content'];
     }
-    return (el.getAttribute('title') || '').trim();
+    const title = (el.getAttribute('title') || '').trim();
+    return title ? [title, 'title'] : ['', 'none'];
+  };
+  const accName = (el) => accNameSrc(el)[0];
+  const NATIVE_FOCUSABLE = new Set(['a', 'button', 'input', 'select', 'textarea', 'summary']);
+  // Programmatic state a check can read without a screen reader (WCAG 4.1.2, 3.3.1).
+  const a11yOf = (el) => {
+    const tag = el.tagName.toLowerCase();
+    const ids = (attr) => (el.getAttribute(attr) || '').split(/\s+/).filter((id) => id && document.getElementById(id));
+    const tabAttr = el.getAttribute('tabindex');
+    const native = NATIVE_FOCUSABLE.has(tag) && !(tag === 'a' && !el.hasAttribute('href'));
+    let disabled = false;
+    try {
+      disabled = el.matches(':disabled');
+    } catch (e) {
+      disabled = false;
+    }
+    return {
+      name_source: accNameSrc(el)[1],
+      invalid: el.getAttribute('aria-invalid') === 'true',
+      user_invalid: (() => {
+        try {
+          return el.matches(':user-invalid');
+        } catch (e) {
+          return false;
+        }
+      })(),
+      described_by: ids('aria-describedby').slice(0, 4),
+      error_message: ids('aria-errormessage')[0] || null,
+      required: el.required === true || el.getAttribute('aria-required') === 'true',
+      focusable: !disabled && (tabAttr !== null ? parseInt(tabAttr, 10) >= 0 : native || el.isContentEditable),
+      tabindex: tabAttr !== null && Number.isFinite(parseInt(tabAttr, 10)) ? parseInt(tabAttr, 10) : null,
+    };
+  };
+  // Text cut off by its own box (XCTest textClipped; WCAG 1.4.4/1.4.12 symptoms).
+  const clippedOf = (el, cs) => {
+    const hide = (v) => v === 'hidden' || v === 'clip';
+    const x = hide(cs.overflowX) && el.scrollWidth > el.clientWidth + 1;
+    const y = hide(cs.overflowY) && el.scrollHeight > el.clientHeight + 1;
+    return x || y ? { x, y, ellipsis: cs.textOverflow === 'ellipsis' } : null;
   };
   const visibleText = (el) => {
     const tag = el.tagName.toLowerCase();
@@ -734,6 +776,11 @@ export function extractSnapshot(args) {
           occluded_by: o.by ? uniqueSelector(o.by) : null,
           inert_by_modal: inertByModal(el),
         };
+      })(),
+      ...(c.interactive || ['input', 'select', 'textarea'].includes(tag) ? { a11y: a11yOf(el) } : {}),
+      ...(() => {
+        const clip = !c.interactive && hasDirectText(el) ? clippedOf(el, cs) : null;
+        return clip ? { clipped: clip } : {};
       })(),
       roles: roleMap.has(el) ? [...roleMap.get(el)].sort() : [],
       // Ids of the nearest ancestors (grouping context such as a toolbar or chip row).
