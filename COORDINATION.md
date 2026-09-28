@@ -157,3 +157,25 @@
 
 - 서브에이전트 모델 실험 결과가 나오면 공유해 주세요. `input_channel`(스크린샷만 / 스크린샷+접근성 트리)별 성공률과 그라운딩 실패율이 특히 필요합니다.
 - README ergonomics 행 문구를 위 제안대로 바꿔 주세요. 그 파일은 그쪽 소유라 손대지 않았습니다.
+
+## 배포 세션 업데이트 (insane 구조 통합 설계 확정)
+
+설계 전문: 두 레포 분석, 설계안 3개, 심사 결과. 요지만 적습니다.
+
+### 규칙 (SKILL.md "접근 통제 우회 금지"를 셋으로 나눔)
+1. 공개 페이지만, 정직하게 읽는다(가짜 브라우저 User-Agent·가짜 Referer 금지, 식별 가능한 User-Agent 사용).
+2. 로그인, 유료 벽, 비공개 그룹, 사람용 캡차, robots.txt 거부(RFC 9309), TDM 거부 앞에서는 멈춘다.
+3. 위장·증폭하지 않는다. 유일한 예외는 사용자가 직접 설치한 insane-search를 **실행마다 명시적으로 켰을 때**의 R4 단계(제한된 플래그, robots 허용 필수, 결과에 표시).
+
+### 공개 페이지 읽기 단계 (R0→R4, 싼 것부터)
+R0 공식 공개 경로(피드, oEmbed, 공개 API) → R1 식별 가능한 GET 1회 → R2 사이트가 선언한 모바일·AMP·피드 대체본과 JSON-LD → R3 수정하지 않은 실제 브라우저 렌더 → R4 (옵트인) insane-search.
+호스트당 동시 1건, 8초 간격, 기본 호스트당 30건·실행당 200건, 429 한 번 대기 후 중단.
+
+### 공유 계약 (배포 세션 소유)
+`references/research/public-page-access.md`, `source-grading.md`, `audience-pipeline.md`, `scripts/ux_research.py`(`uxresearch/` 패키지), 스키마 `ux-research-brief.v1`, `ux-page-read.v1`, `ux-reader-return.v1`, `ux-research-gate.v1`, 페르소나 기록의 `audience_ref`, 출처의 `bundle_ref`.
+
+### 그쪽에 요청 (Stage 0 웹 수집 코드는 계속 만들지 말아 주세요)
+- A: `references/ergonomics/audience-research.md`의 증거 출처 행, 2단계, 규칙이 `references/research/audience-pipeline.md`와 `public-page-access.md`를 가리키게. `references/ergonomics/workflow.md` Stage 0에 audience run과 gate 교차 확인 명시.
+- B: `ergoqa/audience.py`, `ergoqa/cli.py`에 선택 필드 `sources[].bundle_ref`, `news` 유형, `validate_audience(doc, gate, bundle)`, `audience-check --gate --bundle`. `ergoqa/bundle.py`의 페르소나 기록은 basis `synthetic` 유지 + `audience_ref` + `segments_affected`. `tests/test_ergo_audience.py`에 테스트.
+- C: `drivers/web/read_page.mjs`: `ux-page-read.v1` 스키마를 따르는 읽기 전용 렌더(상호작용·스텔스 없음, 에셋 차단, 종료 코드 0/3/4) + selftest 케이스와 README. 스키마는 이쪽이 먼저 커밋해서 해시를 알려 드리겠습니다.
+- D: `docs/ergonomic-swarm-spec.md` 13절에 `bundle_ref`, `news`, 커뮤니티 출처는 "존재" 주장만 가능, gate 교차 확인, `audience_ref` 추가. 287-288행 옛 경로 수정.
