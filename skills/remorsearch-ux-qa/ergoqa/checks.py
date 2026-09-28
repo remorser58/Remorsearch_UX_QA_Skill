@@ -227,6 +227,18 @@ SM04 = _register(CheckSpec(
     ("REF-wcag22-331", "REF-wcag22-131", "REF-aria21"), ("web", "desktop"), "content",
     "오류 문구를 해당 칸 바로 아래에 두고 aria-describedby·aria-invalid로 연결하세요.",
 ))
+SM05 = _register(CheckSpec(
+    "SM-05", "semantics", "measured", "키보드 포커스가 보이지 않음",
+    "Keyboard focus not visible",
+    ("REF-wcag22-247",), ("web", "desktop"), "visual",
+    "outline을 지우지 말고, 지웠다면 3:1 이상 대비의 포커스 표시(:focus-visible)를 주세요.",
+))
+SM06 = _register(CheckSpec(
+    "SM-06", "semantics", "measured", "포커스된 요소가 고정 영역에 가려짐",
+    "Focused element hidden behind a fixed or sticky layer",
+    ("REF-wcag22-2411",), ("web", "desktop"), "visual",
+    "고정 헤더·푸터 높이만큼 scroll-padding을 주거나 포커스 시 가리지 않게 배치하세요.",
+))
 LY01 = _register(CheckSpec(
     "LY-01", "layout", "measured", "상자에 잘린 텍스트",
     "Text clipped by its own box",
@@ -1757,6 +1769,49 @@ def check_semantics(ctx: Context) -> list[Observation]:
     return out
 
 
+FOCUS_INDICATOR_MIN_PX = 4  # changed pixels (>= 24/255 per channel) inside the element box + 4 px
+
+
+def check_focus_walks(run: dict[str, Any], profile: dict[str, Any]) -> list[Observation]:
+    """Keyboard focus walk results recorded by the web driver (SM-05, SM-06).
+
+    SM-05: focusing the element changes nothing visible in or around its box
+    (WCAG 2.4.7). SM-06: a fixed or sticky layer covers all nine sample points of
+    the focused element (WCAG 2.4.11 AA, "entirely hidden"); partial cover is P3
+    (2.4.12 AAA). A covered element is not also reported as SM-05.
+    """
+    out: list[Observation] = []
+    seen: set[tuple[str, str]] = set()
+    for walk in run.get("focus_walks") or []:
+        for stop in walk.get("stops") or []:
+            sel = stop.get("selector") or "?"
+            key = f"{sel}|{(stop.get('name') or '')[:40]}"
+            base = (run["run_id"], profile["profile_id"], walk.get("snapshot_id"), None, [], key)
+            covered = stop.get("obscured_fraction")
+            full = isinstance(covered, (int, float)) and covered >= 0.999
+            if isinstance(covered, (int, float)) and covered > 0 and ("SM-06", sel) not in seen:
+                seen.add(("SM-06", sel))
+                out.append(Observation(
+                    "SM-06", *base,
+                    {"name": "focus_obscured_fraction", "value": covered, "unit": "fraction", "threshold": 1.0, "comparator": "<", "by": stop.get("obscured_by"), "phase": walk.get("phase")},
+                    False, "P2" if full else "P3",
+                    f"키보드 포커스가 '{stop.get('name') or sel}'에 있을 때 {stop.get('obscured_by') or '고정 영역'}이(가) 요소를 "
+                    + ("완전히 가립니다(WCAG 2.4.11)." if full else f"{covered * 100:.0f}% 가립니다(WCAG 2.4.12)."),
+                ))
+            if full:
+                continue
+            px = stop.get("indicator_px")
+            if stop.get("in_viewport") and isinstance(px, int) and px < FOCUS_INDICATOR_MIN_PX and ("SM-05", sel) not in seen:
+                seen.add(("SM-05", sel))
+                out.append(Observation(
+                    "SM-05", *base,
+                    {"name": "focus_indicator_px", "value": px, "unit": "px", "threshold": FOCUS_INDICATOR_MIN_PX, "comparator": ">=", "phase": walk.get("phase")},
+                    False, "P2",
+                    f"Tab으로 '{stop.get('name') or sel}'에 포커스가 가도 화면에 표시가 생기지 않습니다(WCAG 2.4.7). 키보드 사용자는 현재 위치를 모릅니다.",
+                ))
+    return out
+
+
 SNAPSHOT_CHECKS: tuple[Callable[[Context], list[Observation]], ...] = (
     check_reach,
     check_game_controls,
@@ -1787,7 +1842,7 @@ HYPOTHESIS_CHECKS = frozenset({"GZ-01", "GZ-04", "PC-05", "PT-05", "GM-06"})
 # Checks that read no profile attribute: one verdict per snapshot, reported as
 # "profile-independent" instead of a k/n coverage (STF-08).
 PROFILE_INVARIANT_CHECKS = frozenset({"PT-01", "PT-05", "PT-06", "PC-01", "PC-02", "CG-01", "CG-03", "GZ-03", "GM-05", "GM-06",
-                                      "SM-01", "SM-02", "SM-03", "SM-04", "LY-01"})
+                                      "SM-01", "SM-02", "SM-03", "SM-04", "SM-05", "SM-06", "LY-01"})
 
 
 def tier(check_id: str, measurement: dict[str, Any] | None = None) -> str:

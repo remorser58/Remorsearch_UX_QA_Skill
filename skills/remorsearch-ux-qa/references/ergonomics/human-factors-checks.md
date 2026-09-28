@@ -99,6 +99,23 @@ Game timing must be measured, not inferred from an agent failing in real time.
 Photosensitivity, subtitles-for-dialogue and audio-only cues are covered in
 game-ux-ergonomics.md; subtitle coverage and audio cues are not automated here.
 
+## Semantics and layout (profile-independent, web DOM)
+
+These are measured once per screen and reported as profile-independent. They
+matter most to people the swarm does not simulate (screen-reader, voice-control
+and keyboard users), so the report names them. The rules are kept narrow for
+precision; a full audit still needs axe-core or a manual WCAG review.
+
+| ID | Basis | Rule | Severity |
+| --- | --- | --- | --- |
+| SM-01 | measured | A control (button, link, role control) has no accessible name (WCAG 4.1.2; axe `button-name`/`link-name`). Name order: aria-labelledby, aria-label, alt, value, own text, title. | P1 on the task path or primary, else P2 |
+| SM-02 | measured | The control's name comes from aria-label/labelledby and does not contain its visible text (WCAG 2.5.3 Label in Name). Only labels of 2+ letters, ≤ 40 characters and ≤ 6 words count as labels (card links with long content are not checked). | P2 on the path, else P3 |
+| SM-03 | measured | A form field has no programmatic label: name from placeholder or title only, or none (WCAG 1.3.1, 3.3.2, 4.1.2). | none: P1 on the path, else P2; placeholder/title: P2 on the path, else P3 |
+| SM-04 | measured | An error message (declared `error_message` or `role=alert`) is more than 48 CSS px from every field on the screen and no field points to it with aria-describedby or aria-errormessage (WCAG 3.3.1; LAT-09 ER-01). An error next to its field passes. | P2 |
+| SM-05 | measured | Keyboard focus walk (desktop and keyboard devices; at load in a separate browser context and at the end of the run): focusing the element changes fewer than 4 pixels in its box + 4 px (WCAG 2.4.7). | P2 |
+| SM-06 | measured | The focused element is behind a fixed or sticky layer at all nine sample points (WCAG 2.4.11); partly covered is P3 (2.4.12). Not also reported as SM-05. | P2 / P3 |
+| LY-01 | measured | Text is cut off by its own box (overflow hidden or clip and scroll size > client size; XCTest `textClipped`, a symptom for WCAG 1.4.4 and 1.4.12). Boxes under 4 px (screen-reader-only text) are skipped. | P2; P3 with an ellipsis |
+
 ## Judgment (not automated)
 
 - WCAG 2.5.8 exceptions; whether an action is irreversible; whether a

@@ -141,6 +141,12 @@ Functions:
   that snapshot; they are evaluated in the snapshots where they are usable.
 - Text elements are listed only when they own a text node, so a `<li>` whose text is
   inside a child button does not report the child's text with its own font size.
+- Semantics fields (web driver, additive): `dom_id`; for controls and form fields
+  `a11y` = {`name_source` (aria-labelledby | aria-label | alt | value | label |
+  placeholder | content | title | none), `invalid` (aria-invalid), `user_invalid`
+  (`:user-invalid`), `described_by` (ids that exist), `error_message`, `required`,
+  `focusable`, `tabindex`}; for text elements whose own box cuts their text,
+  `clipped` = {`x`, `y`, `ellipsis`}.
 
 ## 4. Scenario (`ergo-scenario.v1`)
 
@@ -200,6 +206,10 @@ runs/<run_id>/S-<run>-000.json + .png
   "timing_windows": [{"id": "qte-1", "selector": "#qte", "kind": "qte", "visible_ms": 400,
                       "intervals_ms": [400], "text": "지금 누르세요!"}],
   "flash_samples": [{"t_ms": 0, "mean_luminance": 0.3}],
+  "focus_walks": [{"phase": "load|end", "snapshot_id": "S-...-000", "ended": "cycle|left_document|max_stops|refocus_failed",
+                   "stops": [{"selector": "#pay", "dom_id": "pay", "role": "button", "name": "결제하기",
+                              "box": {"x": 0, "y": 0, "w": 0, "h": 0}, "in_viewport": true,
+                              "indicator_px": 530, "clip_px": [120, 56], "obscured_fraction": 0, "obscured_by": null}]}],
   "persona_notes": [{"step_index": 1, "intent": "...", "expected": "...", "observed": "...", "confusion": false}]
 }
 ```

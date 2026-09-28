@@ -89,5 +89,23 @@ class Clipping(unittest.TestCase):
             self.assertEqual(checks.tier(cid), "finding")
 
 
+class FocusWalk(unittest.TestCase):
+    def run_doc(self):
+        def stop(sel, px, covered=0.0, name=""):
+            return {"selector": sel, "name": name, "indicator_px": px, "obscured_fraction": covered, "obscured_by": "#bar" if covered else None,
+                    "in_viewport": True, "box": {"x": 0, "y": 0, "w": 100, "h": 40}}
+        stops = [stop("#plain", 530), stop("#nofocus", 0), stop("#faint", 3), stop("#under", 0, 1.0), stop("#half", 200, 0.444)]
+        return {"run_id": "R-f", "focus_walks": [{"phase": "load", "snapshot_id": "S-0", "stops": stops},
+                                                 {"phase": "end", "snapshot_id": "S-1", "stops": stops}]}
+
+    def test_focus_not_visible_and_obscured(self) -> None:
+        obs = checks.check_focus_walks(self.run_doc(), {"profile_id": "P"})
+        got = sorted((o.check_id, o.element_key.split("|")[0], o.severity) for o in obs)
+        self.assertEqual(got, [("SM-05", "#faint", "P2"), ("SM-05", "#nofocus", "P2"), ("SM-06", "#half", "P3"), ("SM-06", "#under", "P2")])
+
+    def test_runs_without_walks(self) -> None:
+        self.assertEqual(checks.check_focus_walks({"run_id": "R"}, {"profile_id": "P"}), [])
+
+
 if __name__ == "__main__":
     unittest.main()
