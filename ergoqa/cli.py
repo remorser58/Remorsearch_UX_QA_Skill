@@ -138,7 +138,9 @@ def cmd_swarm(args: argparse.Namespace) -> int:
     findings = swarm.aggregate(analyses, profiles)
     out = Path(args.out)
     _write_json(out / "analyses.json", {"analyses": analyses})
-    _write_json(out / "findings.json", {"findings": findings, "severity_counts": swarm.severity_counts(findings)})
+    problem_units = swarm.units(findings)
+    _write_json(out / "findings.json", {"findings": findings, "units": problem_units, "severity_counts": swarm.severity_counts(findings),
+                                        "unit_severity_counts": swarm.severity_counts(problem_units)})
     audience_doc = load_json(args.audience) if getattr(args, "audience", None) else None
     plan = None
     raw = load_json(args.profiles)
@@ -149,7 +151,9 @@ def cmd_swarm(args: argparse.Namespace) -> int:
         bundle_doc = bundle.to_evidence_bundle(args.bundle_id or f"ergo-{out.name}", analyses, findings, profiles)
         _write_json(out / "bundle.json", bundle_doc)
     counts = swarm.severity_counts(findings)
-    print(f"findings: {len(findings)} (P0 {counts['P0']}, P1 {counts['P1']}, P2 {counts['P2']}, P3 {counts['P3']}) -> {out}")
+    ucounts = swarm.severity_counts(problem_units)
+    print(f"problem units: {len(problem_units)} (P0 {ucounts['P0']}, P1 {ucounts['P1']}, P2 {ucounts['P2']}, P3 {ucounts['P3']}); "
+          f"element findings: {len(findings)} (P0 {counts['P0']}, P1 {counts['P1']}, P2 {counts['P2']}, P3 {counts['P3']}) -> {out}")
     if args.fail_on:
         limit = checks.SEVERITY_ORDER[args.fail_on]
         if any(checks.SEVERITY_ORDER.get(f["severity"], 3) <= limit for f in findings):

@@ -220,12 +220,17 @@ def evaluate(entry: dict[str, Any], profile_ids: set[str] | None = None, check_f
             obs = [o for o in obs if check_filter(o["check_id"])]
         if basis is not None:
             obs = [o for o in obs if checks.CATALOG[o["check_id"]].basis == basis]
-        analyses.append({"scenario_id": a["scenario_id"], "observations": obs})
+        evaluated = [pid for pid in a.get("profiles_evaluated", []) if profile_ids is None or pid in profile_ids]
+        analyses.append({"scenario_id": a["scenario_id"], "run_id": a.get("run_id"), "profiles_evaluated": evaluated, "observations": obs})
     used = [p for pid, p in entry["profiles"].items() if profile_ids is None or pid in profile_ids]
     findings = swarm.aggregate(analyses, used)
     score = bench.score(entry["key"], findings, used)
     clean_ids = {f["id"] for f in score["clean_findings"]}
+    exact = bench.score(entry["key"], findings, used, exact_viewport=True)
     return {
+        "units": score["units"],
+        "clean_units": score["clean_control_units"],
+        "strict_exact": {d["id"] for d in exact["per_defect"] if d["detected_strict"]},
         "elements_flagged": len({(f["scenario_id"], f["element_key"]) for f in findings}),
         "clean_elements_flagged": len({(f["scenario_id"], f["element_key"]) for f in findings if f["id"] in clean_ids}),
         "strict": {d["id"] for d in score["per_defect"] if d["detected_strict"]},
@@ -244,13 +249,14 @@ def evaluate(entry: dict[str, Any], profile_ids: set[str] | None = None, check_f
 
 
 def combine(results: dict[str, dict[str, Any]]) -> dict[str, Any]:
-    out = {"strict": set(), "lenient": set(), "severity_ok": set(), "findings": 0, "clean": 0, "decoys": 0, "unlabeled": 0,
-           "elements_flagged": 0, "clean_elements_flagged": 0}
+    out = {"strict": set(), "lenient": set(), "severity_ok": set(), "strict_exact": set(), "findings": 0, "clean": 0, "decoys": 0, "unlabeled": 0,
+           "elements_flagged": 0, "clean_elements_flagged": 0, "units": 0, "clean_units": 0}
     for suite, r in results.items():
         out["strict"] |= {f"{suite}:{d}" for d in r["strict"]}
         out["lenient"] |= {f"{suite}:{d}" for d in r["lenient"]}
         out["severity_ok"] |= {f"{suite}:{d}" for d in r["severity_ok"]}
-        for k in ("findings", "clean", "decoys", "unlabeled", "elements_flagged", "clean_elements_flagged"):
+        out["strict_exact"] |= {f"{suite}:{d}" for d in r["strict_exact"]}
+        for k in ("findings", "clean", "decoys", "unlabeled", "elements_flagged", "clean_elements_flagged", "units", "clean_units"):
             out[k] += r[k]
     return out
 
@@ -288,6 +294,9 @@ def summarise(name: str, combined: dict[str, Any], baseline: dict[str, Any] | No
         "unlabeled": combined["unlabeled"],
         "elements_flagged": combined["elements_flagged"],
         "clean_elements_flagged": combined["clean_elements_flagged"],
+        "units": combined["units"],
+        "clean_control_units": combined["clean_units"],
+        "recall_strict_exact_viewport": round(len(combined["strict_exact"]) / n_defects, 3),
     }
     if baseline is not None:
         lost = sorted(baseline["strict"] - combined["strict"])
@@ -302,6 +311,8 @@ def summarise(name: str, combined: dict[str, Any], baseline: dict[str, Any] | No
             "delta_unlabeled": combined["unlabeled"] - baseline["unlabeled"],
             "delta_elements_flagged": combined["elements_flagged"] - baseline["elements_flagged"],
             "delta_clean_elements_flagged": combined["clean_elements_flagged"] - baseline["clean_elements_flagged"],
+            "delta_units": combined["units"] - baseline["units"],
+            "delta_clean_units": combined["clean_units"] - baseline["clean_units"],
         })
     return row
 
@@ -652,7 +663,7 @@ def main() -> int:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(json.dumps(_jsonable(rows), ensure_ascii=False, indent=1), encoding="utf-8")
         for row in rows:
-            print(json.dumps({k: row.get(k) for k in ("variant", "recall_strict", "severity_agreement", "findings", "clean_control_findings", "elements_flagged", "clean_elements_flagged", "lost_strict", "gained_strict", "delta_findings", "delta_clean", "delta_clean_elements_flagged")}, ensure_ascii=False))
+            print(json.dumps({k: row.get(k) for k in ("variant", "recall_strict", "recall_strict_exact_viewport", "severity_agreement", "findings", "clean_control_findings", "units", "clean_control_units", "lost_strict", "gained_strict", "delta_findings", "delta_clean", "delta_clean_units")}, ensure_ascii=False))
         return 0
     result = experiments(cache, args.seed, args.resamples)
     if args.toggles:

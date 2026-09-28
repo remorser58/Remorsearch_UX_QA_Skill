@@ -1,0 +1,230 @@
+"""Regression tests for fixes found by precision adjudication and the UEM review."""
+
+from __future__ import annotations
+
+import sys
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from ergoqa import bench, checks, swarm  # noqa: E402
+from ergoqa.devices import get_device  # noqa: E402
+from ergoqa.hf import reach  # noqa: E402
+from ergoqa.profiles import _finalise, sample_profiles  # noqa: E402
+
+
+def el(eid, role, box, *, text="", name="", interactive=False, roles=(), fg="#111111", bg="#ffffff", size=16, weight=400,
+       tag="div", border=None, container=None, **extra):
+    out = {
+        "id": eid, "role": role, "name": name or text, "text": text, "tag": tag, "selector": f"#{eid}",
+        "box": dict(zip("xywh", box)), "interactive": interactive, "visible": True, "enabled": True, "in_viewport": True,
+        "font_size_px": size, "font_weight": weight, "color_fg": fg, "color_bg": bg, "border_color": border,
+        "container_bg": container, "roles": list(roles), "source": "dom",
+    }
+    out.update(extra)
+    return out
+
+
+def profile(pid="EP-T", device_id="galaxy-s24", grip="one_hand_right", **attrs):
+    p = {
+        "schema_version": "ergo-profile.v1", "profile_id": pid, "origin": "manual", "persona_ref": None, "label_ko": "",
+        "attributes": {
+            "age_band": attrs.get("age_band", "30s"), "handedness": "left" if grip.endswith("_left") else "right", "grip": grip,
+            "thumb_length_mm": 0, "hand_percentile": 50, "device_id": device_id,
+            "orientation": attrs.get("orientation", get_device(device_id).orientation),
+            "vision": {"acuity": "normal", "presbyopia": attrs.get("presbyopia", False), "cvd": attrs.get("cvd", "none"), "cvd_severity": 1.0, "viewing_distance_mm": 0},
+            "motor": {"tremor": "none", "touch_sigma_multiplier": 1.0, "touch_sigma_mm": 0.0},
+            "context": {"mobility": "seated", "lighting": attrs.get("lighting", "indoor"), "free_hands": 1, "interruptions": False},
+            "cognition": {"familiarity": "returning", "time_pressure": "low", "reading_wpm_ko": 0},
+            "reaction_time_ms": 0,
+        },
+        "assumption_fields": [], "base_rate_refs": {},
+    }
+    return _finalise(p, get_device(device_id))
+
+
+def ctx(elements, prof=None, device_id="galaxy-s24", previous=None, step=None, focus=None, run=None, path_ids=()):
+    prof = prof or profile(device_id=device_id)
+    device = get_device(device_id)
+    snap = {"snapshot_id": "S-1", "step_index": 1, "surface": {"kind": "web", "url": "http://x/a"},
+            "device": {"id": device_id, "viewport_css": list(device.viewport_css), "orientation": device.orientation},
+            "elements": elements, "focus_point": focus}
+    return checks.Context(run=run or {"run_id": "R-1", "steps": []}, snapshot=snap, previous=previous, step=step, profile=prof,
+                          device=device, scenario=None, conspicuity=None, path_element_ids=set(path_ids))
+
+
+class Occlusion(unittest.TestCase):
+    def test_covered_and_inert_elements_are_not_usable(self) -> None:
+        self.assertFalse(checks._usable({"occluded_fraction": 0.6}))
+        self.assertFalse(checks._usable({"inert_by_modal": True}))
+        self.assertTrue(checks._usable({"occluded_fraction": 0.2}))
+        self.assertTrue(checks._usable({}))  # snapshots without layer fields (older drivers, Android)
+
+    def test_contrast_skips_covered_text(self) -> None:
+        low = el("t", "paragraph", (10, 10, 200, 20), text="흐린 글자입니다", fg="#bbbbbb", bg="#ffffff")
+        self.assertTrue(any(o.check_id == "PC-01" for o in checks.check_contrast(ctx([low]))))
+        low_covered = dict(low, occluded_fraction=1.0, occluded_by="#sheet")
+        self.assertFalse(any(o.check_id == "PC-01" for o in checks.check_contrast(ctx([low_covered]))))
+
+    def test_gaze_primary_ignores_disabled_state(self) -> None:
+        pay = el("pay", "button", (10, 600, 340, 52), text="결제 처리 중…", interactive=True, roles=("primary",), tag="button", enabled=False)
+        self.assertFalse([o for o in checks.check_gaze(ctx([pay])) if o.check_id == "GZ-01"])
+
+
+class TabletReach(unittest.TestCase):
+    def test_tablet_is_tablet_like_and_phone_is_not(self) -> None:
+        self.assertTrue(reach.tablet_like(reach.geometry_for_device(get_device("galaxy-tab-s9"))))
+        self.assertFalse(reach.tablet_like(reach.geometry_for_device(get_device("galaxy-s24"))))
+
+    def test_one_hand_model_not_applied_to_tablets(self) -> None:
+        button = el("play", "button", (12, 518, 56, 56), text="재생", interactive=True, roles=("primary",), tag="button")
+        prof = profile(device_id="galaxy-tab-s9", grip="one_hand_right")
+        # _finalise turns a one-hand tablet profile into a cradled grip.
+        self.assertEqual(prof["attributes"]["grip"], "cradle_right")
+        prof["attributes"]["grip"] = "one_hand_right"
+        self.assertEqual(checks.check_reach(ctx([button], prof, "galaxy-tab-s9")), [])
+
+    def test_tablet_two_thumbs_reach_side_bands_not_centre_bottom(self) -> None:
+        geom = reach.geometry_for_device(get_device("galaxy-tab-s9"))
+        side = reach.reach_score(10, geom.screen_h * 0.5, geom, "two_thumbs", 107)
+        centre_bottom = reach.reach_score(geom.screen_w / 2, geom.screen_h - 10, geom, "two_thumbs", 107)
+        self.assertIn(side["zone"], ("natural", "mild"))
+        self.assertEqual(centre_bottom["zone"], "out")
+
+    def test_sampled_tablet_profiles_have_no_one_hand_grip(self) -> None:
+        profiles = sample_profiles(14, 11, ["galaxy-tab-s9"])
+        self.assertFalse([p for p in profiles if p["attributes"]["grip"].startswith("one_hand")])
+        self.assertTrue(any(p["attributes"]["grip"] == "cradle_left" for p in profiles))
+
+
+class Denominators(unittest.TestCase):
+    def test_tested_profiles_include_non_triggering_applicable_profiles(self) -> None:
+        young = profile("EP-Y")
+        old = profile("EP-O", age_band="60s", presbyopia=True)
+        deutan = profile("EP-D", cvd="deutan")
+        obs = [{"id": "OB-1", "check_id": "PC-04", "element_key": "#p|본문", "profile_id": "EP-O", "passed": False, "severity": "P3",
+                "run_id": "R-1", "measurement": {"name": "font_visual_angle_arcmin", "value": 25, "unit": "arcmin", "threshold": 31.2, "comparator": ">="},
+                "message_ko": "작음", "model": "visual-angle-v2", "selectors": ["#p"], "context_selectors": []}]
+        analysis = {"scenario_id": "SC-1", "run_id": "R-1", "profiles_evaluated": ["EP-Y", "EP-O", "EP-D"], "observations": obs}
+        finding = swarm.aggregate([analysis], [young, old, deutan])[0]
+        self.assertEqual(finding["tested_profiles"], ["EP-D", "EP-O", "EP-Y"])
+        self.assertEqual(finding["coverage_label"].split(" ")[0], "1/3")
+        self.assertEqual(finding["profile_specific"].get("vision.presbyopia"), True)
+
+    def test_applicability(self) -> None:
+        s24, desk = get_device("galaxy-s24"), get_device("desktop-1920")
+        self.assertTrue(checks.applicable("PC-03", profile(cvd="deutan"), s24))
+        self.assertFalse(checks.applicable("PC-03", profile(), s24))
+        self.assertFalse(checks.applicable("PT-04", profile("EP-M", device_id="desktop-1920", grip="mouse_right"), desk))
+        self.assertFalse(checks.applicable("RH-01", profile(grip="cradle_right"), s24))
+
+
+class Units(unittest.TestCase):
+    def test_findings_with_same_check_and_condition_merge(self) -> None:
+        base = {"category": "perception", "basis": "model", "severity": "P3", "triggered_profiles": ["EP-O"], "tested_profiles": ["EP-O", "EP-Y"],
+                "title_ko": "글자", "scenario_id": "SC-1", "check_id": "PC-04", "profile_specific": {"vision.presbyopia": True}}
+        findings = [dict(base, id="EF-001", element_key="#a|a"), dict(base, id="EF-002", element_key="#b|b", severity="P2"),
+                    dict(base, id="EF-003", element_key="#c|c", check_id="PC-01", profile_specific={})]
+        units = swarm.units(findings)
+        self.assertEqual(len(units), 2)
+        merged = next(u for u in units if u["check_id"] == "PC-04")
+        self.assertEqual(merged["instances"], ["EF-001", "EF-002"])
+        self.assertEqual(merged["severity"], "P2")
+
+
+class Bench(unittest.TestCase):
+    def test_viewport_findings_match_only_page_level_keys_when_exact(self) -> None:
+        f = {"element_key": "viewport|flash", "selectors": []}
+        self.assertTrue(bench._selector_matches(f, "#bomb"))
+        self.assertFalse(bench._selector_matches(f, "#bomb", exact_viewport=True))
+        self.assertTrue(bench._selector_matches(f, "viewport", exact_viewport=True))
+
+    def test_unit_metrics_present(self) -> None:
+        key = {"suite": "t", "defects": [{"id": "D-1", "scenario_id": "SC-1", "category": "perception", "element_selector": "#a", "severity_min": "P3"}],
+               "decoys": [], "clean_controls": [{"scenario_id": "SC-1-clean"}]}
+        f = {"id": "EF-001", "scenario_id": "SC-1", "check_id": "PC-04", "category": "perception", "basis": "model", "severity": "P3",
+             "element_key": "#a|a", "selectors": ["#a"], "triggered_profiles": ["EP-1"], "tested_profiles": ["EP-1"], "profile_specific": {}, "title_ko": "x"}
+        g = dict(f, id="EF-002", scenario_id="SC-1-clean")
+        scored = bench.score(key, [f, g], [profile("EP-1")])
+        self.assertEqual(scored["matched_units"], 1)
+        self.assertEqual(scored["clean_control_units"], 1)
+        self.assertEqual(scored["validity_lb_units"], 0.5)
+        self.assertEqual(scored["thoroughness_ci95"][1], 1.0)
+
+
+class RuleFixes(unittest.TestCase):
+    def test_numeric_keypad_is_not_choice_overload(self) -> None:
+        keys = [el(f"k{i}", "button", (10 + (i % 3) * 110, 400 + (i // 3) * 50, 100, 44), text=str(i % 10), interactive=True, tag="button")
+                for i in range(12)]
+        self.assertEqual(checks.check_choice_overload(ctx(keys)), [])
+
+    def test_unrelated_controls_of_similar_size_are_not_grouped(self) -> None:
+        mixed = [el(f"c{i}", "button", (10 + i * 30, 400, 44, 44), text=f"{i}월", interactive=True, tag="button",
+                    bg=("#ffffff" if i % 2 else "#eeeeee"), border=("#dddddd" if i % 3 else None)) for i in range(11)]
+        self.assertEqual(checks.check_choice_overload(ctx(mixed)), [])
+
+    def test_text_labelled_custom_radio_is_exempt_from_boundary_contrast(self) -> None:
+        card = el("opt", "radio", (10, 100, 300, 60), text="③ _count", interactive=True, tag="button", border="#eeeeee", container="#ffffff")
+        icon = el("icon", "button", (10, 200, 44, 44), interactive=True, tag="button", border="#eeeeee", container="#ffffff")
+        ids = {o.element_ids[0] for o in checks.check_contrast(ctx([card, icon])) if o.check_id == "PC-02"}
+        self.assertEqual(ids, {"icon"})
+
+    def test_signed_amounts_are_a_state_cue(self) -> None:
+        self.assertTrue(checks._state_cue("출금 −30,000원"))
+        self.assertTrue(checks._state_cue("+12,000원"))
+        self.assertFalse(checks._state_cue("09:30"))
+
+    def test_critical_print_size_skips_button_labels(self) -> None:
+        old = profile(age_band="60s", presbyopia=True, device_id="laptop-1440", grip="mouse_right")
+        button = el("b", "button", (10, 10, 438, 52), text="휴대폰 간편인증으로 가입", interactive=True, tag="button", size=16, weight=700)
+        para = el("p", "paragraph", (10, 100, 438, 52), text="휴대폰 간편인증으로 가입하면 바로 시작할 수 있어요", tag="p", size=13)
+        hits = {o.element_ids[0] for o in checks.check_text_size(ctx([button, para], old, "laptop-1440")) if o.check_id == "PC-04"}
+        self.assertNotIn("b", hits)
+        self.assertIn("p", hits)
+
+    def test_single_use_game_control_not_held_to_serial_size(self) -> None:
+        pause = el("hs-pause", "hotspot", (335, 54, 44, 44), interactive=True, roles=("game_control",), tag="hotspot")
+        pause["selector"] = "hotspot:hs-pause"
+        run = {"run_id": "R-1", "steps": [{"action": {"action": "tap", "target": "hotspot:hs-pause"}, "target_element_id": "hs-pause"}]}
+        obs = checks.check_game_controls(ctx([pause], device_id="iphone-15", prof=profile(device_id="iphone-15"), run=run))
+        self.assertTrue(all(o.passed for o in obs))
+        run["steps"].append(dict(run["steps"][0]))
+        obs = checks.check_game_controls(ctx([pause], device_id="iphone-15", prof=profile(device_id="iphone-15"), run=run))
+        self.assertTrue(any(not o.passed and o.severity == "P3" for o in obs))
+
+    def test_toast_at_the_floor_is_not_flagged_for_jitter(self) -> None:
+        run = {"run_id": "R-1", "steps": [], "timing_windows": [{"id": "toast", "selector": "#toast", "visible_ms": 3995.2, "kind": "transient_text", "text": "저장했어요"}]}
+        obs = checks.check_run_timing(run, profile(), get_device("galaxy-s24"), {}, {"timing_windows": [{"id": "toast", "selector": "#toast", "kind": "transient_text"}]})
+        self.assertTrue(all(o.passed for o in obs if o.check_id == "CG-02"))
+
+    def test_tap_after_qte_closed_is_not_a_latency_finding(self) -> None:
+        run = {"run_id": "R-1", "timing_windows": [{"id": "qte", "selector": "#qte", "kind": "qte", "starts_ms": [5042], "intervals_ms": [892]}],
+               "steps": [{"step_index": 7, "action": {"action": "tap", "target": "hotspot:hs-boost"}, "target_element_id": "hs-boost",
+                          "before": "S-6", "after": "S-7", "t_start_ms": 6106, "feedback_latency_ms": None, "result": "ok"}]}
+        boost = el("hs-boost", "hotspot", (355, 436, 28, 28), interactive=True, roles=("game_control", "timed"), tag="hotspot")
+        snaps = {"S-6": {"elements": [boost]}, "S-7": {"elements": [boost]}}
+        obs = checks.check_run_timing(run, profile(device_id="iphone-15"), get_device("iphone-15"), snaps, None)
+        self.assertFalse([o for o in obs if o.check_id == "CG-03" and not o.passed])
+
+
+class FeedbackNoticing(unittest.TestCase):
+    def test_bold_icon_error_is_salient_even_on_a_flat_box(self) -> None:
+        err = el("err", "alert", (20, 500, 320, 63), text="⚠ 1일 이체 한도를 넘었어요", fg="#b3261e", bg="#fdecec", container="#f2f4f6", weight=700,
+                 roles=("error_message",))
+        c = ctx([err])
+        salient, info = checks._salient_change(c, err, new=True)
+        self.assertTrue(salient)
+        self.assertTrue(info["text_salient"])
+
+    def test_screen_replacement_skips_feedback_noticing(self) -> None:
+        before = {"surface": {"url": "http://x/a"}, "elements": [el(f"e{i}", "button", (10, 10 + i * 50, 100, 44)) for i in range(10)]}
+        after_same = {"surface": {"url": "http://x/a"}, "elements": before["elements"][:9]}
+        after_new = {"surface": {"url": "http://x/a"}, "elements": [el("r", "heading", (10, 10, 200, 30))]}
+        self.assertFalse(checks._screen_changed(before, after_same))
+        self.assertTrue(checks._screen_changed(before, after_new))
+
+
+if __name__ == "__main__":
+    unittest.main()

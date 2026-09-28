@@ -1418,6 +1418,34 @@ SNAPSHOT_CHECKS: tuple[Callable[[Context], list[Observation]], ...] = (
 )
 
 
+def applicable(check_id: str, profile: dict[str, Any], device: Any) -> bool:
+    """Whether a check evaluates this profile at all (the coverage denominator).
+
+    Most checks only emit failed observations, so the profiles a check tested cannot
+    be read from its output. A profile counts as tested when the check reads it; the
+    finding's differential condition is then computed against the tested profiles that
+    did not trigger it (usability-evaluation-methods.md UEM-01).
+    """
+    attrs = profile.get("attributes", {})
+    touch = getattr(device, "input", "touch") == "touch"
+    grip = attrs.get("grip", "")
+    if check_id in ("RH-01", "RH-02"):
+        if not touch or grip.startswith("cradle") or grip not in reach.SUPPORTED_GRIPS:
+            return False
+        return not (grip.startswith("one_hand") and reach.tablet_like(reach.geometry_for_device(device)))
+    if check_id == "GM-02":
+        return touch and grip == "two_thumbs" and attrs.get("orientation") == "landscape"
+    if check_id in ("PT-03", "PT-04", "GM-05"):
+        return touch
+    if check_id in ("PT-05", "PT-06"):
+        return not touch
+    if check_id == "PC-03":
+        return (attrs.get("vision", {}) or {}).get("cvd") not in (None, "none")
+    if check_id == "PC-05":
+        return (attrs.get("context", {}) or {}).get("lighting") == "bright_sun"
+    return True
+
+
 def run_snapshot_checks(ctx: Context) -> list[Observation]:
     out: list[Observation] = []
     for check in SNAPSHOT_CHECKS:

@@ -42,11 +42,27 @@ def _segments(profile_ids: list[str], profiles_by_id: dict[str, dict[str, Any]])
     return sorted(s for s in found if s)
 
 
+def _device_of(profile: dict[str, Any]) -> Any:
+    from .devices import get_device, rotate
+
+    attrs = profile.get("attributes", {})
+    device = get_device(attrs.get("device_id"))
+    if attrs.get("orientation") == "landscape" and device.orientation != "landscape":
+        device = rotate(device, "landscape")
+    return device
+
+
 def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     profiles_by_id = {p["profile_id"]: p for p in profiles}
     groups: dict[tuple[str, str, str], dict[str, Any]] = {}
+    evaluated_by_run: dict[str, list[str]] = {}
+    devices: dict[str, Any] = {}
     for analysis in analyses:
         scenario_id = analysis.get("scenario_id") or "?"
+        run_id = analysis.get("run_id")
+        if run_id and analysis.get("profiles_evaluated"):
+            evaluated_by_run.setdefault(run_id, [])
+            evaluated_by_run[run_id] += [p for p in analysis["profiles_evaluated"] if p not in evaluated_by_run[run_id]]
         for obs in analysis["observations"]:
             key = (scenario_id, obs["check_id"], obs["element_key"])
             group = groups.setdefault(key, {"tested": set(), "triggered": set(), "failed": [], "runs": set()})
@@ -60,6 +76,18 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
         if not group["failed"]:
             continue
         spec = checks.CATALOG[check_id]
+        if check_id != "PJ-01":
+            # Denominator: every evaluated profile the check applies to, not only the ones
+            # that happened to emit an observation.
+            for run_id in group["runs"]:
+                for pid in evaluated_by_run.get(run_id, []):
+                    profile = profiles_by_id.get(pid)
+                    if profile is None:
+                        continue
+                    if pid not in devices:
+                        devices[pid] = _device_of(profile)
+                    if checks.applicable(check_id, profile, devices[pid]):
+                        group["tested"].add(pid)
         worst = min(group["failed"], key=lambda o: checks.SEVERITY_ORDER.get(o["severity"] or "P3", 3))
         tested = sorted(group["tested"])
         triggered = sorted(group["triggered"])
@@ -102,3 +130,45 @@ def severity_counts(findings: Iterable[dict[str, Any]]) -> dict[str, int]:
         if finding.get("severity") in counts:
             counts[finding["severity"]] += 1
     return counts
+
+
+def _differential_key(finding: dict[str, Any]) -> str:
+    diff = finding.get("profile_specific") or {}
+    return ";".join(f"{k}={diff[k]}" for k in sorted(diff)) or "all tested profiles"
+
+
+def units(findings: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Group findings into problem units: one (scenario, check, differential condition).
+
+    A systemic problem (small body text across a page for presbyopic profiles, five
+    targets under 24 px) is one unit with its elements as instances, as accessibility
+    scanners report one rule with many nodes. Counting units instead of findings is
+    the standard merge step before counting problems (UEM-02).
+    """
+    groups: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
+    for f in findings:
+        groups.setdefault((f["scenario_id"], f["check_id"], _differential_key(f)), []).append(f)
+    out = []
+    for (scenario_id, check_id, diff), members in groups.items():
+        worst = min(members, key=lambda f: checks.SEVERITY_ORDER.get(f["severity"] or "P3", 3))
+        triggered = sorted({p for f in members for p in f["triggered_profiles"]})
+        tested = sorted({p for f in members for p in f["tested_profiles"]})
+        out.append({
+            "scenario_id": scenario_id,
+            "check_id": check_id,
+            "category": worst["category"],
+            "basis": worst["basis"],
+            "severity": worst["severity"],
+            "condition": diff,
+            "profile_specific": worst.get("profile_specific") or {},
+            "instances": [f["id"] for f in members],
+            "elements": [f["element_key"] for f in members],
+            "triggered_profiles": triggered,
+            "tested_profiles": tested,
+            "segments_affected": sorted({s for f in members for s in f.get("segments_affected", [])}),
+            "title_ko": worst["title_ko"],
+        })
+    out.sort(key=lambda u: (checks.SEVERITY_ORDER.get(u["severity"] or "P3", 3), u["category"], u["scenario_id"], u["check_id"]))
+    for i, u in enumerate(out, 1):
+        u["id"] = f"EU-{i:03d}"
+    return out

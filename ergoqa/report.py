@@ -34,14 +34,20 @@ def render(
 ) -> str:
     profiles = list(profiles)
     composed = any(p.get("audience_ref") for p in profiles)
+    from .swarm import units as make_units
+
+    problem_units = make_units(findings)
+    ucounts = severity_counts(problem_units)
     analyses = list(analyses)
     counts = severity_counts(findings)
     lines: list[str] = [f"# {title}", ""]
     lines += [
         "## 1. 범위와 증거 경계",
         "",
-        f"- 실행(run) {len(analyses)}건, 시뮬레이션 프로필 {len(profiles)}개, 발견 {len(findings)}건 "
+        f"- 실행(run) {len(analyses)}건, 시뮬레이션 프로필 {len(profiles)}개. 문제 단위 {len(problem_units)}건 "
+        f"(P0 {ucounts['P0']} · P1 {ucounts['P1']} · P2 {ucounts['P2']} · P3 {ucounts['P3']}), 요소별 발견 {len(findings)}건 "
         f"(P0 {counts['P0']} · P1 {counts['P1']} · P2 {counts['P2']} · P3 {counts['P3']}).",
+        "- 문제 단위는 같은 시나리오·같은 체크·같은 차이 조건의 발견을 하나로 묶은 것입니다(예: 한 화면의 작은 본문 글자 여러 개 = 1건).",
         "- 모든 조작은 드라이버가 실제 화면(브라우저/기기)에서 수행한 기록을 분석했습니다. 인간공학 수치는 결정론적 모델이 계산했고, LLM 페르소나가 연기하지 않았습니다.",
         "- 'k/n 시뮬레이션 프로필'은 **커버리지**이며 실제 사용자 비율(유병률·선호)을 뜻하지 않습니다.",
         "- 실측(observed)과 모델 예측(inferred)을 분리해 표기했습니다. 모델 예측은 실제 사용자 테스트로 확인해야 하는 가설입니다.",
@@ -84,7 +90,10 @@ def render(
     limits = [n for a in analyses for n in a.get("limitations", [])]
     if limits:
         lines += ["", "실행 한계(에이전트 한계/환경 문제로 분류되어 발견에서 제외):"] + [f"- {n}" for n in limits]
-    lines += ["", "## 4. 발견 요약", "", "| ID | 심각도 | 범주 | 근거 | 대상 | 커버리지 | 차이 조건 |", "|---|---|---|---|---|---|---|"]
+    lines += ["", "## 4. 문제 단위 (분류·수정 우선순위용)", "", "| ID | 심각도 | 체크 | 시나리오 | 조건 | 요소 수 | 발견 ID |", "|---|---|---|---|---|---|---|"]
+    for u in problem_units:
+        lines.append(f"| {u['id']} | {u['severity']} | {u['check_id']} {u['title_ko']} | {u['scenario_id']} | {u['condition']} | {len(u['instances'])} | {', '.join(u['instances'][:6])}{' …' if len(u['instances']) > 6 else ''} |")
+    lines += ["", "### 요소별 발견 요약", "", "| ID | 심각도 | 범주 | 근거 | 대상 | 커버리지 | 차이 조건 |", "|---|---|---|---|---|---|---|"]
     for f in findings:
         diff = ", ".join(f"{k}={v}" for k, v in f["profile_specific"].items()) or "-"
         target = f["element_key"].replace("|", " / ")[:48]
