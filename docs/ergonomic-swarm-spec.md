@@ -253,6 +253,23 @@ the tested-but-untriggered ones (the differential condition). Severity = max
 observation severity, raised by one level (max P1 via this rule) when the element is
 `primary` or `destructive` on a critical path; never lowered below any observation.
 
+Additive fields and rules (2026-09-28):
+
+- `tested_profiles` is every profile evaluated on the run's device and orientation
+  for which `checks.applicable(check_id, profile, device)` is true (CVD checks: CVD
+  profiles; touch checks: touch profiles; reach: phone one-hand/two-thumb grips),
+  not only the profiles that emitted an observation. `profile_specific` is computed
+  against those tested-but-untriggered profiles.
+- Findings are grouped by (scenario, check, element selector); the element's text
+  is display only (a countdown is one element, not one finding per value).
+- `tier`: `finding` or `hypothesis`. Hypothesis checks (`checks.HYPOTHESIS_CHECKS`:
+  GZ-01, GZ-04, PC-05) are listed for review and excluded from defect counts,
+  benchmark scoring (`bench.score(..., include_hypotheses=False)`) and `--fail-on`.
+- `segments_affected`: audience segments whose composed profiles triggered it.
+- **Problem units** (`swarm.units`): findings with the same scenario, check and
+  differential condition form one unit `{id: "EU-nnn", instances: [EF ids],
+  elements, severity (worst), condition, tier}`. Reports and triage count units.
+
 ## 8. Evidence bundle export
 
 `ergoqa/bundle.py:to_evidence_bundle(...)` emits `ux-evidence-bundle.v1` that passes
