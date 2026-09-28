@@ -1378,17 +1378,24 @@ def check_run_timing(run: dict[str, Any], profile: dict[str, Any], device: Any, 
         failure_class = note.get("failure_class", "unknown")
         if failure_class in ("agent_limitation", "environment"):
             continue  # a run limitation, not a UX finding (recorded in the report as a limitation)
-        # Judgment-only findings: P3 by default; P2 at most, and only when the same
-        # mismatch was replicated by another agent model or input channel.
-        severity = "P2" if note.get("corroborated") else "P3"
+        # Judgment-only findings are anchored to the element the note is about (LAT-01),
+        # so notes from different runs at the same element can be matched. Severity P3;
+        # swarm.aggregate raises a unit to P2 and out of the hypothesis tier only when
+        # runs of different model families or input channels noted it (LAT-03).
+        selectors = [x for x in (note.get("anchor_selectors") or []) if isinstance(x, str)]
+        anchor_key = selectors[0] if selectors else (note.get("screen_key") or f"step-{note.get('step_index')}")
+        agent = run.get("agent") or {}
         out.append(Observation(
-            "PJ-01", run_id, pid, None, note.get("step_index"), [], f"step-{note.get('step_index')}|persona-note",
+            "PJ-01", run_id, pid, note.get("anchor_snapshot_id"), note.get("step_index"), list(note.get("anchor_element_ids") or []),
+            f"{anchor_key}|persona-note",
             {"name": "persona_confusion", "value": True, "unit": "flag", "threshold": False, "comparator": "==",
-             "failure_class": failure_class, "corroborated": bool(note.get("corroborated"))},
-            False, severity,
+             "failure_class": failure_class, "corroborated_claimed": bool(note.get("corroborated_claimed", note.get("corroborated"))),
+             "screen_key": note.get("screen_key")},
+            False, "P3",
             f"페르소나 기록(시뮬레이션·실제 사용자 발화 아님): 의도 '{note.get('intent', '')}' / 기대 '{note.get('expected', '')}' / 화면 '{note.get('observed', '')}'",
             "llm-persona-note",
-            {"agent": run.get("agent", {})},
+            {"agent": {"model_family": agent.get("model_family"), "input_channel": agent.get("input_channel"), "model": agent.get("model")},
+             "anchor_selectors": selectors},
         ))
     return out
 
@@ -1568,7 +1575,7 @@ def tier(check_id: str, measurement: dict[str, Any] | None = None) -> str:
     if check_id in HYPOTHESIS_CHECKS:
         return "hypothesis"
     if check_id == "PJ-01" and not (measurement or {}).get("corroborated"):
-        return "hypothesis"
+        return "hypothesis"  # `corroborated` is set only by swarm.aggregate from independent runs
     return "finding"
 
 

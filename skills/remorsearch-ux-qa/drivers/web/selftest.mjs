@@ -445,7 +445,8 @@ async function serveTest(base, tmp) {
   let ready = null;
   let resolveReady;
   const readyP = new Promise((r) => { resolveReady = r; });
-  const proc = runDriver(['serve', '--scenario', path.join(tmp, 'scenario.json'), '--profile', path.join(tmp, 'p-s24.json'),
+  writeJson(path.join(tmp, 'agent.json'), { model_family: 'claude', model: 'selftest', input_channel: 'screenshot', persona_arm: 'neutral' });
+  const proc = runDriver(['serve', '--agent-json', path.join(tmp, 'agent.json'), '--scenario', path.join(tmp, 'scenario.json'), '--profile', path.join(tmp, 'p-s24.json'),
     '--out', outDir, '--run-id', 'R-serve', '--base', base, '--port', '0', '--idle-timeout-s', '120'], {
     onLine: (obj) => {
       if (obj.event === 'ready') resolveReady(obj);
@@ -503,6 +504,10 @@ async function serveTest(base, tmp) {
   const n0 = run.persona_notes[0];
   check(`${label}: persona_notes carry step_index/intent/expected/observed/confusion (basis judgment)`,
     run.persona_notes.length === 1 && n0.step_index === 1 && n0.intent === '결제하기' && n0.confusion === true && n0.basis === 'judgment', run.persona_notes);
+  check(`${label}: a note without anchor is anchored to the acted element (selector and snapshot recorded)`,
+    n0.anchor === 'acted' && Array.isArray(n0.anchor_selectors) && n0.anchor_selectors.length === 1 && typeof n0.anchor_snapshot_id === 'string' && typeof n0.screen_key === 'string', n0);
+  check(`${label}: the operator record comes from --agent-json`,
+    run.agent && run.agent.model_family === 'claude' && run.agent.input_channel === 'screenshot', run.agent);
   check(`${label}: interactive steps recorded including no_target`,
     run.steps.length === 4 && run.steps.map((s) => s.result).join() === 'ok,ok,no_target,ok', run.steps.map((s) => s.result));
   check(`${label}: on-demand snapshot is noted`, [...snaps.values()].some((s) => s.notes.includes('on_demand')));

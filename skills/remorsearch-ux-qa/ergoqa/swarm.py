@@ -92,6 +92,19 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
                     if checks.applicable(check_id, profile, devices[pid]):
                         group["tested"].add(pid)
         worst = min(group["failed"], key=lambda o: checks.SEVERITY_ORDER.get(o["severity"] or "P3", 3))
+        if check_id == "PJ-01":
+            # Corroboration is computed, never taken from the agent (LAT-03): notes at the
+            # same anchor from runs whose operators differ in model family or input channel.
+            agents = {(((o.get("extra") or {}).get("agent") or {}).get("model_family"), ((o.get("extra") or {}).get("agent") or {}).get("input_channel"))
+                      for o in group["failed"]}
+            families = {a[0] for a in agents if a[0]}
+            channels = {a[1] for a in agents if a[1]}
+            basis = "family" if len(families) >= 2 else "channel" if len(channels) >= 2 else None
+            corroboration = {"corroborated": basis is not None, "basis": basis, "runs": len(group["runs"]),
+                             "agents": sorted(f"{a[0]}/{a[1]}" for a in agents)}
+            worst = dict(worst)
+            worst["measurement"] = {**worst["measurement"], "corroborated": basis is not None, "corroboration": corroboration}
+            worst["severity"] = "P2" if basis else "P3"
         tested = sorted(group["tested"])
         triggered = sorted(group["triggered"])
         # The differential is computed over every profile evaluated on the run's device,

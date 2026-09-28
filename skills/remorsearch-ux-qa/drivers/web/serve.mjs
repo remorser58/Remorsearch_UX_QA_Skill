@@ -12,7 +12,7 @@ import { ActionError, DriverFailure, isPlainObject } from './util.mjs';
 import { normalizeAction } from './validate.mjs';
 
 const MAX_BODY = 64 * 1024;
-const NOTE_KEYS = new Set(['intent', 'expected', 'observed', 'confusion', 'step_index', 'severity', 'failure_class', 'evidence', 'corroborated']);
+const NOTE_KEYS = new Set(['intent', 'expected', 'observed', 'confusion', 'step_index', 'severity', 'failure_class', 'evidence', 'corroborated', 'anchor']);
 // persona-agent-protocol.md: ux_issue | agent_limitation | environment | unknown
 const FAILURE_CLASSES = new Set(['ux_issue', 'agent_limitation', 'environment', 'unknown']);
 const SEVERITIES = new Set(['P0', 'P1', 'P2', 'P3']);
@@ -91,6 +91,15 @@ function validateNote(body, maxStep) {
   }
   if (body.evidence !== undefined && (typeof body.evidence !== 'string' || body.evidence.length > 200)) throw new HttpError(400, 'evidence must be a string (<= 200 chars)');
   if (body.corroborated !== undefined && typeof body.corroborated !== 'boolean') throw new HttpError(400, 'corroborated must be a boolean');
+  // anchor: what the note is about. "acted" (default) = the element the step acted on;
+  // {"point": {x, y}} or {"box": {x, y, w, h}} in CSS px of the current screenshot.
+  const a = body.anchor;
+  if (a !== undefined && a !== 'acted') {
+    const num = (v) => typeof v === 'number' && Number.isFinite(v);
+    const okPoint = a && typeof a === 'object' && a.point && num(a.point.x) && num(a.point.y);
+    const okBox = a && typeof a === 'object' && a.box && [a.box.x, a.box.y, a.box.w, a.box.h].every(num) && a.box.w > 0 && a.box.h > 0;
+    if (!okPoint && !okBox) throw new HttpError(400, 'anchor must be "acted", {"point": {x, y}} or {"box": {x, y, w, h}}');
+  }
   return body;
 }
 

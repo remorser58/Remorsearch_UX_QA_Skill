@@ -50,8 +50,21 @@ For each step (maximum from the scenario, default 25):
 ```json
 {"step_index": 3, "intent": "결제 버튼을 누른다", "expected": "결제 확인 화면",
  "observed": "화면 아래에 빨간 문구가 잠깐 보였고 화면은 그대로", "confusion": true,
- "failure_class": "ux_issue", "evidence": "S-R-7-003"}
+ "failure_class": "ux_issue", "evidence": "S-R-7-003",
+ "anchor": {"point": {"x": 180, "y": 742}}}
 ```
+
+`anchor` says what the note is about, so notes from different runs can be matched
+to one element:
+
+- `"acted"` (the default) is the element the step acted on;
+- `{"point": {x, y}}` is the smallest element at that point of the current
+  screenshot (CSS px);
+- `{"box": {x, y, w, h}}` is the element that overlaps the box best.
+
+The driver stores the resolved selector and a `screen_key`. Do not send
+`severity` or `corroborated`. The driver stores them as `*_claimed`, and they
+are ignored.
 
 `failure_class` is one of:
 
@@ -84,11 +97,21 @@ recorded (UXD checks in `docs/human-factors/ux-design-discipline.md`).
 
 ## 5. Replication before escalation
 
-A judgment finding can rise above P3 only when the same mismatch at the same
-step is reproduced by a second agent model or a second input channel
-(screenshot-only vs. accessibility tree). Set `corroborated: true` on the note
-only then. Agents from one model count as one correlated rater: ten identical
-agents agreeing is still one vote.
+Start every interactive run with an operator record:
+
+```sh
+node drivers/web/ergo_drive.mjs serve ... --agent-json agent.json
+# agent.json: {"model_family": "claude", "model": "<id>", "input_channel": "screenshot" | "a11y" | "screenshot+a11y",
+#              "persona_arm": "neutral" | "cognition" | "full" | "full+view", "seed": 1}
+```
+
+A judgment note is a **hypothesis** at P3 until `ergo_qa.py swarm` finds notes at
+the same anchor from runs whose operators differ in `model_family` or
+`input_channel`. Only then does it become a finding, at P2 at most. The agent
+never declares corroboration itself. Agents of one family on one channel count
+as one correlated rater: ten identical agents agreeing is still one vote. Under
+a single-family rule (for example Claude only), run each scenario on both input
+channels.
 
 Re-run judgment steps under meaning-preserving changes (reworded copy, reordered
 elements, theme change) when a finding matters; if the verdict flips, mark it

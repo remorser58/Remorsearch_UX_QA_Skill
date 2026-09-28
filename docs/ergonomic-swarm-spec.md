@@ -204,8 +204,17 @@ runs/<run_id>/S-<run>-000.json + .png
 }
 ```
 `persona_notes` are written by the LLM persona agent in interactive mode (basis judgment).
-`agent` (additive): `{"description": "<model, effort, input channel>"}` from `--agent`;
-`"unrecorded"` for serve runs without it. Agent-layer results are compared per agent.
+`agent` (additive): from `--agent-json` `{model_family, input_channel
+(screenshot|a11y|screenshot+a11y), model, model_version, effort, temperature, seed,
+persona_arm, prompt_sha256, max_steps, description}`, or `{"description": ...}` from
+`--agent`; `"unrecorded"` for interactive runs without either.
+Persona notes (additive): `anchor` ("acted" | {point} | {box}), `anchor_snapshot_id`,
+`anchor_element_ids`, `anchor_selectors`, `screen_key` (URL path + hash of visible
+headings + "+modal"); `severity_claimed` and `corroborated_claimed` are stored but
+never used. PJ-01 observations are keyed by the anchor selector; `swarm.aggregate`
+marks a PJ-01 finding corroborated (P2, tier finding) only when notes at the same
+anchor come from runs that differ in `model_family` or `input_channel`; otherwise it
+is a P3 hypothesis.
 
 ## 6. Observation (`ergoqa/checks.py`, produced by `analyze`)
 

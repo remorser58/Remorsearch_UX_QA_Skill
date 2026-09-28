@@ -38,15 +38,32 @@ options:
   --no-visual-feedback     only DOM mutations/navigation count as feedback
   --timeout-s N            scripted run time limit (default 900)
   --idle-timeout-s N       serve: finish as blocked after N s without requests (default 900)
-  --agent TEXT             who operates the run (model and channel), stored in run.json agent
+  --agent TEXT             who operates the run (free text), stored in run.json agent
+  --agent-json FILE        operator record {model_family, input_channel, model, persona_arm, seed, ...}
   --locale L / --timezone Z  browser locale and timezone (default ko-KR, Asia/Seoul)
   --headed                 show the browser window (needs a display)
 
 exit codes: 0 completed+success, 3 not successful, 2 usage/input error, 4 driver failure/blocked`;
 
+const INPUT_CHANNELS = new Set(['screenshot', 'a11y', 'screenshot+a11y']);
+const PERSONA_ARMS = new Set(['neutral', 'cognition', 'full', 'full+view']);
+
+/** Machine-readable operator record (LAT-02): corroboration is computed from model family and channel. */
+function readAgentJson(file) {
+  const a = readJsonFile(file, 'agent JSON');
+  if (!a || typeof a !== 'object' || Array.isArray(a)) throw new UsageError('--agent-json must contain an object');
+  if (typeof a.model_family !== 'string' || !a.model_family) throw new UsageError('--agent-json: model_family is required (e.g. "claude")');
+  if (!INPUT_CHANNELS.has(a.input_channel)) throw new UsageError(`--agent-json: input_channel must be one of ${[...INPUT_CHANNELS].join(', ')}`);
+  if (a.persona_arm !== undefined && !PERSONA_ARMS.has(a.persona_arm)) throw new UsageError(`--agent-json: persona_arm must be one of ${[...PERSONA_ARMS].join(', ')}`);
+  const keep = ['description', 'model', 'model_family', 'model_version', 'effort', 'temperature', 'seed', 'input_channel', 'persona_arm', 'prompt_sha256', 'max_steps'];
+  const out = {};
+  for (const k of keep) if (a[k] !== undefined) out[k] = typeof a[k] === 'string' ? a[k].slice(0, 200) : a[k];
+  return out;
+}
+
 const VALUE_FLAGS = new Set([
   'scenario', 'profile', 'out', 'run-id', 'base', 'port', 'flash-sample-ms', 'device', 'device-json', 'orientation',
-  'allow-origin', 'feedback-timeout-ms', 'settle-ms', 'timeout-s', 'idle-timeout-s', 'locale', 'timezone', 'agent',
+  'allow-origin', 'feedback-timeout-ms', 'settle-ms', 'timeout-s', 'idle-timeout-s', 'locale', 'timezone', 'agent', 'agent-json',
 ]);
 const BOOL_FLAGS = new Set(['headed', 'continue-on-error', 'no-auto-scroll', 'no-visual-feedback', 'help']);
 
@@ -183,6 +200,7 @@ async function main(argv) {
     // Who operated the run (e.g. "claude-opus-5-5 max, screenshot channel"); recorded so
     // agent-layer results can be attributed and compared across models.
     agent: typeof f.agent === 'string' ? f.agent.slice(0, 200) : null,
+    agentInfo: f['agent-json'] ? readAgentJson(f['agent-json']) : null,
   };
   if (!/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(options.locale)) throw new UsageError('--locale must look like ko-KR');
   if (!/^[A-Za-z_]+(\/[A-Za-z0-9_+-]+)*$/.test(options.timezoneId)) throw new UsageError('--timezone must be an IANA zone like Asia/Seoul');

@@ -131,6 +131,41 @@ class Denominators(unittest.TestCase):
         self.assertFalse(checks.applicable("RH-01", profile(grip="cradle_right"), s24))
 
 
+class PersonaNotes(unittest.TestCase):
+    def _run(self, run_id, family, channel):
+        note = {"step_index": 2, "intent": "결제", "expected": "완료", "observed": "오류 문구가 무엇이 틀렸는지 말하지 않음", "confusion": True,
+                "failure_class": "ux_issue", "anchor_snapshot_id": "S-2", "anchor_element_ids": ["el-5"], "anchor_selectors": ["#form-error"],
+                "screen_key": "/pay#abcd", "corroborated_claimed": True}
+        return {"run_id": run_id, "steps": [], "persona_notes": [note], "agent": {"model_family": family, "input_channel": channel}}
+
+    def _finding(self, runs):
+        prof = profile("EP-1")
+        analyses = []
+        for run in runs:
+            obs = [o.to_dict(i) for i, o in enumerate(checks.check_run_timing(run, prof, get_device("galaxy-s24"), {}, None))]
+            for o in obs:
+                o["selectors"] = o.get("extra", {}).get("anchor_selectors", [])
+                o["context_selectors"] = []
+            analyses.append({"scenario_id": "SC-1", "run_id": run["run_id"], "profiles_evaluated": ["EP-1"], "observations": obs})
+        return swarm.aggregate(analyses, [prof])
+
+    def test_note_is_anchored_to_its_element(self) -> None:
+        f = self._finding([self._run("R-1", "claude", "screenshot")])[0]
+        self.assertTrue(f["element_key"].startswith("#form-error|"))
+        self.assertEqual(f["selectors"], ["#form-error"])
+
+    def test_claimed_corroboration_is_ignored_and_same_channel_does_not_count(self) -> None:
+        f = self._finding([self._run("R-1", "claude", "screenshot"), self._run("R-2", "claude", "screenshot")])[0]
+        self.assertEqual(f["tier"], "hypothesis")
+        self.assertEqual(f["severity"], "P3")
+
+    def test_different_channels_corroborate(self) -> None:
+        f = self._finding([self._run("R-1", "claude", "screenshot"), self._run("R-2", "claude", "screenshot+a11y")])[0]
+        self.assertEqual(f["tier"], "finding")
+        self.assertEqual(f["severity"], "P2")
+        self.assertEqual(f["measurement"]["corroboration"]["basis"], "channel")
+
+
 class Units(unittest.TestCase):
     def test_findings_with_same_check_and_condition_merge(self) -> None:
         base = {"category": "perception", "basis": "model", "severity": "P3", "triggered_profiles": ["EP-O"], "tested_profiles": ["EP-O", "EP-Y"],

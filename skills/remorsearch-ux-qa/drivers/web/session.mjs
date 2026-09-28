@@ -60,6 +60,7 @@ export class WebSession {
     this.warned = new Set();
     this.steps = [];
     this.snapshots = [];
+    this.snapElements = new Map();
     this.personaNotes = [];
     this.consoleAll = [];
     this.consolePending = [];
@@ -564,6 +565,9 @@ export class WebSession {
     writeJsonAtomic(jsonPath, snap);
     this.snapshots.push({ snapshot_id: id, step_index: stepIndex, path: `${id}.json`, png: `${id}.png` });
     this.lastSnapshotId = id;
+    // Keep recent element lists to anchor persona notes (note -> element -> selector).
+    this.snapElements.set(id, { elements: ex.elements, url: snap.surface.url });
+    if (this.snapElements.size > 64) this.snapElements.delete(this.snapElements.keys().next().value);
     return { id, jsonPath, pngPath, snap };
   }
 
@@ -1055,12 +1059,73 @@ export class WebSession {
       t_ms: this.rel(epochNow()),
       basis: 'judgment',
     };
-    if (note.severity) entry.severity = note.severity;
+    // The agent's own severity and corroboration are claims, not evidence: stored
+    // under *_claimed and never used for severity or tier (corroboration is computed
+    // across runs by model family and input channel).
+    if (note.severity) entry.severity_claimed = note.severity;
     if (note.failure_class) entry.failure_class = note.failure_class;
     if (note.evidence) entry.evidence = note.evidence;
-    if (note.corroborated !== undefined) entry.corroborated = note.corroborated;
+    if (note.corroborated !== undefined) entry.corroborated_claimed = note.corroborated;
+    Object.assign(entry, this.resolveAnchor(note.anchor ?? 'acted', entry.step_index));
     this.personaNotes.push(entry);
     return this.personaNotes.length - 1;
+  }
+
+  /** Resolve a note anchor to element ids and selectors in a recorded snapshot. */
+  resolveAnchor(anchor, stepIndex) {
+    const out = { anchor, anchor_snapshot_id: null, anchor_element_ids: [], anchor_selectors: [], screen_key: null };
+    const screenKey = (snapId) => {
+      const s = this.snapElements.get(snapId);
+      if (!s) return null;
+      let pathname = '';
+      try {
+        pathname = new URL(s.url).pathname;
+      } catch { /* keep empty */ }
+      const heads = s.elements.filter((e) => e.role === 'heading' && e.visible && e.in_viewport).map((e) => e.text).slice(0, 4).join('|');
+      const modal = s.elements.some((e) => e.inert_by_modal) ? '+modal' : '';
+      return `${pathname}#${sha256(Buffer.from(heads)).slice(0, 8)}${modal}`;
+    };
+    if (anchor === 'acted') {
+      const step = [...this.steps].reverse().find((st) => st.step_index <= stepIndex && st.target_element_id);
+      if (step) {
+        const s = this.snapElements.get(step.before);
+        const el = s && s.elements.find((e) => e.id === step.target_element_id);
+        if (el) {
+          out.anchor_snapshot_id = step.before;
+          out.anchor_element_ids = [el.id];
+          out.anchor_selectors = el.selector ? [el.selector] : [];
+        }
+        out.screen_key = screenKey(step.after || step.before);
+      }
+      return out;
+    }
+    const snapId = this.lastSnapshotId;
+    const s = this.snapElements.get(snapId);
+    out.anchor_snapshot_id = snapId;
+    out.screen_key = screenKey(snapId);
+    if (!s) return out;
+    const vis = s.elements.filter((e) => e.visible && e.box && e.box.w > 0 && e.box.h > 0);
+    let pick = null;
+    if (anchor.point) {
+      const { x, y } = anchor.point;
+      const inside = vis.filter((e) => x >= e.box.x && x <= e.box.x + e.box.w && y >= e.box.y && y <= e.box.y + e.box.h);
+      pick = inside.sort((a, b) => a.box.w * a.box.h - b.box.w * b.box.h)[0] || null;
+    } else if (anchor.box) {
+      const b = anchor.box;
+      const iou = (e) => {
+        const ix = Math.max(0, Math.min(b.x + b.w, e.box.x + e.box.w) - Math.max(b.x, e.box.x));
+        const iy = Math.max(0, Math.min(b.y + b.h, e.box.y + e.box.h) - Math.max(b.y, e.box.y));
+        const inter = ix * iy;
+        return inter / (b.w * b.h + e.box.w * e.box.h - inter);
+      };
+      const best = vis.map((e) => [iou(e), e]).sort((p, q) => q[0] - p[0])[0];
+      pick = best && best[0] >= 0.3 ? best[1] : null;
+    }
+    if (pick) {
+      out.anchor_element_ids = [pick.id];
+      out.anchor_selectors = pick.selector ? [pick.selector] : [];
+    }
+    return out;
   }
 
   async evaluateSuccess() {
@@ -1157,7 +1222,8 @@ export class WebSession {
         },
         device: this.dev ? this.dev.snapshotDevice : null,
         mode: this.mode,
-        agent: this.opts.agent ? { description: this.opts.agent } : (this.mode === 'interactive' ? { description: 'unrecorded' } : null),
+        agent: this.opts.agentInfo ? { ...this.opts.agentInfo, ...(this.opts.agent ? { description: this.opts.agent } : {}) }
+          : this.opts.agent ? { description: this.opts.agent } : (this.mode === 'interactive' ? { description: 'unrecorded' } : null),
         started_at: this.startedAt,
         ended_at: isoNow(),
         status,

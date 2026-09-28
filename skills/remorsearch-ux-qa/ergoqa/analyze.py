@@ -214,7 +214,7 @@ def analyze_run(
             # Geometry or colours estimated from a screenshot (spec section 11): never observed.
             record["epistemic_status"] = "inferred"
             record["geometry_basis"] = "estimated"
-        record["selectors"] = [s for s in (selector_of.get((obs.snapshot_id, eid)) for eid in obs.element_ids) if s]
+        record["selectors"] = [s for s in (selector_of.get((obs.snapshot_id, eid)) for eid in obs.element_ids) if s] or list(obs.extra.get("anchor_selectors") or [])
         record["context_selectors"] = sorted({c for eid in obs.element_ids for c in context_of.get((obs.snapshot_id, eid), [])})
         record["scenario_id"] = run.get("scenario_id")
         dicts.append(record)
