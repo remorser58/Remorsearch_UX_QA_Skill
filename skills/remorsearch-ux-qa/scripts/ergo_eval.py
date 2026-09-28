@@ -490,17 +490,69 @@ def score_agents(data: dict[str, Any], agent_dir: Path) -> dict[str, Any]:
     return out
 
 
+def agents_plan(data: dict[str, Any], agent_dir: Path, budget: int, sessions_per_profile: str = "both") -> dict[str, Any]:
+    """Operator profiles and sessions for C6 (persona agents in serve mode).
+
+    Profiles come from ``audience.compose`` (budget per product), or, for a product
+    without an audience file, from stratified sampling on the scenarios' devices.
+    Input channels alternate (screenshot, screenshot+a11y) so notes can be
+    corroborated across channels under a one-family rule. Every profile runs every
+    scenario of its product in a separate session. Writes ``profiles.json``,
+    ``agents/*.json`` and ``sessions.json``; no scenario content is read here
+    beyond ids and devices.
+    """
+    agent_dir.mkdir(parents=True, exist_ok=True)
+    (agent_dir / "agents").mkdir(exist_ok=True)
+    (agent_dir / "profiles").mkdir(exist_ok=True)
+    products: dict[str, list[str]] = {}
+    for sid, slug in data["product_of"].items():
+        if sid in data["scenarios"]:
+            products.setdefault(slug, []).append(sid)
+    profiles, sessions = [], []
+    port = 9500
+    for slug, sids in sorted(products.items()):
+        doc = data["audiences"].get(slug)
+        if doc is not None:
+            chosen = audience.compose(doc, budget)["profiles"]
+            origin = "audience"
+        else:
+            devices = sorted({d for sid in sids for d in data["scenarios"][sid]["device_ids"]})
+            chosen = sample_profiles(budget, 11, devices)
+            origin = "stratified"
+        for i, prof in enumerate(chosen):
+            prof = dict(prof)
+            prof["profile_id"] = f"OP-{slug}-{i + 1:02d}@{prof['attributes']['device_id']}"
+            channel = "screenshot" if i % 2 == 0 else "screenshot+a11y"
+            agent = {"model_family": "claude", "model": "opus", "input_channel": channel, "persona_arm": "full", "seed": i + 1,
+                     "description": f"C6 operator {slug} {i + 1} ({origin})"}
+            (agent_dir / "profiles" / f"{prof['profile_id']}.json").write_text(json.dumps(prof, ensure_ascii=False), encoding="utf-8")
+            (agent_dir / "agents" / f"{prof['profile_id']}.json").write_text(json.dumps(agent, ensure_ascii=False), encoding="utf-8")
+            profiles.append(prof)
+            for sid in sorted(sids):
+                sessions.append({"product": slug, "scenario_id": sid, "scenario_path": str(data["paths"][sid]),
+                                 "profile_path": str(agent_dir / "profiles" / f"{prof['profile_id']}.json"),
+                                 "agent_json": str(agent_dir / "agents" / f"{prof['profile_id']}.json"),
+                                 "run_id": f"R-{sid}-{prof['profile_id'].split('@')[0]}", "port": port, "channel": channel,
+                                 "label_ko": prof.get("label_ko") or ""})
+                port += 1
+    (agent_dir / "profiles.json").write_text(json.dumps({"profiles": profiles}, ensure_ascii=False, indent=1), encoding="utf-8")
+    (agent_dir / "sessions.json").write_text(json.dumps(sessions, ensure_ascii=False, indent=1), encoding="utf-8")
+    return {"profiles": len(profiles), "sessions": len(sessions), "by_channel": {c: sum(1 for x in sessions if x["channel"] == c) for c in ("screenshot", "screenshot+a11y")}}
+
+
 def main() -> int:
     global C5_SEEDS
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="cmd", required=True)
-    for name in ("record", "analyse", "score", "plan", "score-agents"):
+    for name in ("record", "analyse", "score", "plan", "score-agents", "agents-plan"):
         p = sub.add_parser(name)
         p.add_argument("--suite", required=True, type=Path)
         p.add_argument("--out", required=True, type=Path, help="work folder (score-agents: the agent-run folder with runs/ and profiles.json)")
         p.add_argument("--c5-seeds", type=int, default=C5_SEEDS, help="pre-registered: 20; fewer only for pipeline tests")
         if name == "score":
             p.add_argument("--open", action="store_true", help="also list per-defect misses (development suites only)")
+        if name == "agents-plan":
+            p.add_argument("--budget", type=int, default=4, help="operator profiles per product (pre-registered: 4)")
     args = parser.parse_args()
     C5_SEEDS = args.c5_seeds
     data = load_suite(args.suite.resolve())
@@ -514,6 +566,8 @@ def main() -> int:
         record(data, out)
     elif args.cmd == "analyse":
         analyse_all(data, out)
+    elif args.cmd == "agents-plan":
+        print(json.dumps(agents_plan(data, out, args.budget), indent=1))
     elif args.cmd == "score-agents":
         print(json.dumps(score_agents(data, out), ensure_ascii=False, indent=1))
     else:
