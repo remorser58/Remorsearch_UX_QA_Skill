@@ -475,7 +475,16 @@ Rules (validated by `audience-check`):
 
 - `sources[].type` ∈ official_statistics, product_analytics, app_store_reviews,
   community, survey, interview, usability_test, support_tickets, official_docs,
-  competitor, market_report, research_paper, product_brief, expert_judgment.
+  competitor, market_report, research_paper, product_brief, expert_judgment, news.
+- `sources[].bundle_ref` (optional): the source's id in the `ux-evidence-bundle.v1`
+  written by the research mode's public-page reader, so a quote can be traced to
+  the page read (`references/research/public-page-access.md`).
+- Community, app-store review and news sources support **existence** only: a
+  share that rests only on them, or `statistic` evidence from them, is rejected
+  (record such quotes as `firsthand`). Sizes need statistics, analytics or a
+  survey.
+- When the research mode wrote a gate (`ux-research-gate.v1`), Stage 0 cross-checks
+  it before composition (planned: `audience-check --gate --bundle`).
 - Every segment has at least one evidence item; every share, condition, context
   and task cites known `source_id`s. `share.value` is null exactly when
   `basis` is `unknown`.
@@ -516,7 +525,9 @@ Composition (`audience.compose(audience, budget, floors)`):
    "audience_composed"` and `audience_ref` {audience_id, segment_id,
    segment_priority, context_id, task_ids, facet, floor, reasons, source_ids}),
    `segments` (weight, profiles), `floors_used`, and `untested` (facets and
-   segments the budget did not reach — listed in the report).
+   segments the budget did not reach — listed in the report). In the evidence
+   bundle, each persona record keeps `basis: "synthetic"` and carries the
+   profile's `audience_ref`; each finding record carries `segments_affected`.
 
 Rules added after the personas-and-audience research brief (2026-09-28;
 `docs/qa-discipline/personas-and-audience-research.md`):

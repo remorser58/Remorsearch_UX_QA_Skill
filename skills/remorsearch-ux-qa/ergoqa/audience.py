@@ -42,8 +42,11 @@ CONFIDENCE = ("high", "medium", "low")
 SOURCE_TYPES = (
     "official_statistics", "product_analytics", "app_store_reviews", "community", "survey",
     "interview", "usability_test", "support_tickets", "official_docs", "competitor",
-    "market_report", "research_paper", "product_brief", "expert_judgment",
+    "market_report", "research_paper", "product_brief", "expert_judgment", "news",
 )
+# Self-selected or reported sources support that a group or complaint exists, never
+# its size (references/research/source-grading.md, packaging session design).
+EXISTENCE_ONLY_TYPES = ("community", "app_store_reviews", "news")
 EVIDENCE_KINDS = ("firsthand", "statistic", "official", "inference")
 FREQUENCIES = ("daily", "weekly", "monthly", "rare", "once")
 CRITICALITY = ("safety", "health", "money", "legal", "data", "access", "convenience")
@@ -140,6 +143,12 @@ def validate_audience(doc: Any) -> list[str]:
                 errors.append(f"sources[{i}].type must be one of {', '.join(SOURCE_TYPES)}")
             if not src.get("title"):
                 errors.append(f"sources[{i}].title is required")
+            if src.get("bundle_ref") is not None and (not isinstance(src["bundle_ref"], str) or not src["bundle_ref"].strip()):
+                errors.append(f"sources[{i}].bundle_ref must be a non-empty string (ux-evidence-bundle source id) when present")
+    type_of = {src.get("source_id"): src.get("type") for src in sources if isinstance(src, dict)} if isinstance(sources, list) else {}
+
+    def existence_only(refs: Any) -> bool:
+        return isinstance(refs, list) and bool(refs) and all(type_of.get(r) in EXISTENCE_ONLY_TYPES for r in refs)
 
     def refs_ok(refs: Any, where: str, required: bool = True) -> None:
         if refs is None and not required:
@@ -186,6 +195,8 @@ def validate_audience(doc: Any) -> list[str]:
                 if not _is_share(value):
                     errors.append(f"{where}.share.value must be between 0 and 1")
                 refs_ok(share.get("source_ids"), f"{where}.share.source_ids")
+                if existence_only(share.get("source_ids")):
+                    errors.append(f"{where}.share rests only on community, review or news sources; they support existence, not size (use basis unknown)")
         evidence = seg.get("evidence")
         if not isinstance(evidence, list) or not evidence:
             errors.append(f"{where}.evidence must be a non-empty array (why this segment exists)")
@@ -201,6 +212,8 @@ def validate_audience(doc: Any) -> list[str]:
                 elif ev["kind"] == "official" and not str(ev.get("quote") or "").strip():
                     errors.append(f"{where}.evidence[{j}].quote must quote the official text")
                 refs_ok([ev.get("source_id")], f"{where}.evidence[{j}].source_id")
+                if ev.get("kind") == "statistic" and existence_only([ev.get("source_id")]):
+                    errors.append(f"{where}.evidence[{j}] is a statistic from a community, review or news source; record it as firsthand (existence only)")
         _weights_ok(seg.get("age_bands"), AGE_BANDS, f"{where}.age_bands", errors)
         devices = seg.get("devices")
         _weights_ok(devices, None, f"{where}.devices", errors)

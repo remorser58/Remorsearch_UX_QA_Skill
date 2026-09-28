@@ -148,6 +148,17 @@ class ResearchRules(unittest.TestCase):
         self.assertIn("role customer", reasons)
         self.assertIn("TalkBack", reasons)
 
+    def test_community_sources_support_existence_not_size(self) -> None:
+        doc = load()
+        doc["sources"].append({"source_id": "SRC-forum", "type": "community", "title": "커뮤니티 글", "bundle_ref": "SRC-B-7"})
+        doc["segments"][0]["share"] = {"value": 0.3, "basis": "estimated", "source_ids": ["SRC-forum"]}
+        doc["segments"][1]["evidence"][0]["source_id"] = "SRC-forum"
+        errors = audience.validate_audience(doc)
+        self.assertTrue(any("support existence, not size" in e for e in errors))
+        self.assertTrue(any("record it as firsthand" in e for e in errors))
+        doc["sources"][-1]["bundle_ref"] = ""
+        self.assertTrue(any("bundle_ref must be a non-empty string" in e for e in audience.validate_audience(doc)))
+
     def test_age_facet_does_not_switch_presbyopia(self) -> None:
         plan = audience.compose(load(), 16)
         base = next(p for p in plan["profiles"] if p["audience_ref"]["segment_id"] == "SEG-commuter" and p["audience_ref"]["facet"] == "typical")

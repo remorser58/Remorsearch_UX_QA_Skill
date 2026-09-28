@@ -18,7 +18,7 @@ def _persona_record(profile: dict[str, Any], strategy: str, seed: int | None) ->
     attrs = profile["attributes"]
     assumptions = {field: attrs.get(field) for field in profile.get("assumption_fields", []) if field in attrs}
     filled = [profile["coverage_stratum"]] if profile.get("coverage_stratum") else []
-    return {
+    record = {
         "id": profile["profile_id"],
         "basis": "synthetic",
         "label_ko": profile.get("label_ko", ""),
@@ -36,6 +36,10 @@ def _persona_record(profile: dict[str, Any], strategy: str, seed: int | None) ->
         "original_attributes": {k: v for k, v in ref.items()},
         "scenario_assumptions": assumptions,
     }
+    if profile.get("audience_ref"):
+        # Which Stage-0 segment and facet the synthetic profile stands for (still synthetic).
+        record["audience_ref"] = profile["audience_ref"]
+    return record
 
 
 def to_evidence_bundle(
@@ -108,6 +112,7 @@ def to_evidence_bundle(
                 "verification_status": "verified" if verified else "unverified",
                 "check_id": finding["check_id"],
                 "summary": finding["summary_ko"],
+                "segments_affected": list(finding.get("segments_affected") or []),
             })
         if ids and finding.get("recommendation_ko"):
             proposals.append({
