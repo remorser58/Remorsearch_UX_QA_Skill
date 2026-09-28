@@ -1053,6 +1053,9 @@ export class WebSession {
       basis: 'judgment',
     };
     if (note.severity) entry.severity = note.severity;
+    if (note.failure_class) entry.failure_class = note.failure_class;
+    if (note.evidence) entry.evidence = note.evidence;
+    if (note.corroborated !== undefined) entry.corroborated = note.corroborated;
     this.personaNotes.push(entry);
     return this.personaNotes.length - 1;
   }

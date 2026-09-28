@@ -12,7 +12,9 @@ import { ActionError, DriverFailure, isPlainObject } from './util.mjs';
 import { normalizeAction } from './validate.mjs';
 
 const MAX_BODY = 64 * 1024;
-const NOTE_KEYS = new Set(['intent', 'expected', 'observed', 'confusion', 'step_index', 'severity']);
+const NOTE_KEYS = new Set(['intent', 'expected', 'observed', 'confusion', 'step_index', 'severity', 'failure_class', 'evidence', 'corroborated']);
+// persona-agent-protocol.md: ux_issue | agent_limitation | environment | unknown
+const FAILURE_CLASSES = new Set(['ux_issue', 'agent_limitation', 'environment', 'unknown']);
 const SEVERITIES = new Set(['P0', 'P1', 'P2', 'P3']);
 
 class HttpError extends Error {
@@ -84,6 +86,11 @@ function validateNote(body, maxStep) {
     throw new HttpError(400, `step_index must be an integer within 0..${maxStep}`);
   }
   if (body.severity !== undefined && !SEVERITIES.has(body.severity)) throw new HttpError(400, 'severity must be one of P0, P1, P2, P3');
+  if (body.failure_class !== undefined && !FAILURE_CLASSES.has(body.failure_class)) {
+    throw new HttpError(400, `failure_class must be one of ${[...FAILURE_CLASSES].join(', ')}`);
+  }
+  if (body.evidence !== undefined && (typeof body.evidence !== 'string' || body.evidence.length > 200)) throw new HttpError(400, 'evidence must be a string (<= 200 chars)');
+  if (body.corroborated !== undefined && typeof body.corroborated !== 'boolean') throw new HttpError(400, 'corroborated must be a boolean');
   return body;
 }
 
