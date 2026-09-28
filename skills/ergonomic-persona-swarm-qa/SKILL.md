@@ -1,6 +1,6 @@
 ---
 name: ergonomic-persona-swarm-qa
-description: Research who uses the product, compose a diverse persona swarm from that research, then run a MiroFish-style swarm of ergonomic persona agents that actually operate a web app, mobile app or game on the real screen and score reach, handedness, touch accuracy, gaze, contrast, colour-vision, reading time, timing windows and flashing with deterministic human-factors models; report P0-P3 findings as coverage over simulated profiles, never as prevalence.
+description: Research who uses the product, compose a diverse persona set from that research, record real runs of the product (web, mobile web and browser games in Chromium; Android via uiautomator; iOS/desktop/native games via annotated screenshots), and score each persona's reach, handedness, touch accuracy, feedback noticing, contrast, colour vision, text size, reading time, timing windows and flashing with deterministic human-factors models. Optional LLM persona agents can drive exploratory runs; that layer is not yet validated. Reports P0-P3 problem units as coverage over simulated profiles, never as prevalence.
 ---
 
 # Ergonomic Persona Swarm QA
@@ -110,8 +110,10 @@ Composition works in three steps:
 
 `persona-plan.md` explains why each persona exists and lists the facets the
 budget did not reach. Report those as untested. On the development suites,
-principled composition reached the same recall as random sampling with about a
-third of the profiles (`docs/validation/experiments/`).
+condition-stratified sets reached the recall of random sampling with about a
+third of the profiles (`docs/validation/experiments/`). Those suites were written
+against the same condition vocabulary, so this is not yet evidence for
+audience-based composition; `heldout-2` tests that.
 
 Without audience research (for example, a quick scan), fall back to stratified
 coverage:

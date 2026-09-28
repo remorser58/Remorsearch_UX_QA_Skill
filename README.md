@@ -18,17 +18,32 @@ File: [`skills/persona-driven-ux-qa/SKILL.md`](skills/persona-driven-ux-qa/SKILL
 
 ### `/ergonomic-persona-swarm-qa`
 
-A MiroFish-style swarm of ergonomic persona profiles that operates the **real
-screen** (web, mobile web and browser games through a Playwright driver; Android
-via uiautomator; iOS/desktop/native games via annotated screenshots) and scores
-the human body and senses with deterministic human-factors models: thumb reach by
-grip and handedness (left/right mirrored), dual-Gaussian touch accuracy and
-destructive misfire, gaze priority and feedback noticing, WCAG contrast, colour
-vision deficiency (Machado + CIEDE2000), text visual angle for presbyopia, Korean
-reading time for toasts, reaction windows, flashing, and game input demands.
-Findings carry the differential condition (for example `grip=one_hand_left`) and
-are reported as coverage over simulated profiles, never as prevalence. LLM persona
-agents look at screenshots and act; they never role-play ergonomics.
+Stage 0 researches who uses the product. It writes an `ergo-audience.v1` file:
+segments with evidence, device and age mix, conditions, contexts, and key tasks
+with concrete data. A persona set is composed deterministically from that file.
+Real runs of the product are recorded: web, mobile web and browser games through
+a Playwright driver, Android via uiautomator, and iOS, desktop and native games
+via annotated screenshots. Each run is then scored under every persona with
+deterministic human-factors models:
+
+- thumb reach by grip and handedness (left and right mirrored; side grips on
+  tablets);
+- dual-Gaussian touch accuracy and destructive misfire;
+- feedback noticing;
+- WCAG contrast;
+- colour vision deficiency (Machado + CIEDE2000);
+- text visual angle for presbyopia;
+- Korean reading time for toasts;
+- reaction windows, flashing, and game input demands.
+
+Findings are grouped into problem units. Each carries the differential condition
+(for example `grip=one_hand_left`) and the audience segments it affects, and is
+reported as coverage over simulated profiles, never as prevalence. The structure
+borrows from MiroFish; the claims do not. Optional LLM persona agents can drive
+exploratory runs. They look at screenshots and act, and never role-play
+ergonomics. That agent layer is not yet validated. See
+[`validation-and-limits.md`](skills/ergonomic-persona-swarm-qa/references/validation-and-limits.md)
+for what the benchmarks do and do not show.
 
 File: [`skills/ergonomic-persona-swarm-qa/SKILL.md`](skills/ergonomic-persona-swarm-qa/SKILL.md) ·
 research: [`docs/human-factors/`](docs/human-factors/) · contracts:

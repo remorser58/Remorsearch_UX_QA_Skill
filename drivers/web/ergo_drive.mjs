@@ -38,6 +38,7 @@ options:
   --no-visual-feedback     only DOM mutations/navigation count as feedback
   --timeout-s N            scripted run time limit (default 900)
   --idle-timeout-s N       serve: finish as blocked after N s without requests (default 900)
+  --agent TEXT             who operates the run (model and channel), stored in run.json agent
   --locale L / --timezone Z  browser locale and timezone (default ko-KR, Asia/Seoul)
   --headed                 show the browser window (needs a display)
 
@@ -45,7 +46,7 @@ exit codes: 0 completed+success, 3 not successful, 2 usage/input error, 4 driver
 
 const VALUE_FLAGS = new Set([
   'scenario', 'profile', 'out', 'run-id', 'base', 'port', 'flash-sample-ms', 'device', 'device-json', 'orientation',
-  'allow-origin', 'feedback-timeout-ms', 'settle-ms', 'timeout-s', 'idle-timeout-s', 'locale', 'timezone',
+  'allow-origin', 'feedback-timeout-ms', 'settle-ms', 'timeout-s', 'idle-timeout-s', 'locale', 'timezone', 'agent',
 ]);
 const BOOL_FLAGS = new Set(['headed', 'continue-on-error', 'no-auto-scroll', 'no-visual-feedback', 'help']);
 
@@ -179,6 +180,9 @@ async function main(argv) {
     allowOrigins,
     locale: f.locale || 'ko-KR',
     timezoneId: f.timezone || 'Asia/Seoul',
+    // Who operated the run (e.g. "claude-opus-5-5 max, screenshot channel"); recorded so
+    // agent-layer results can be attributed and compared across models.
+    agent: typeof f.agent === 'string' ? f.agent.slice(0, 200) : null,
   };
   if (!/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(options.locale)) throw new UsageError('--locale must look like ko-KR');
   if (!/^[A-Za-z_]+(\/[A-Za-z0-9_+-]+)*$/.test(options.timezoneId)) throw new UsageError('--timezone must be an IANA zone like Asia/Seoul');

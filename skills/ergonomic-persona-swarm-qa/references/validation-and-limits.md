@@ -40,44 +40,98 @@ section 12.
 
 ## Results so far
 
-| Suite (role) | Detector | measured-only | single persona | swarm | Clean-control findings (swarm) |
+| Suite (role) | Detector | measured-only* | single persona | swarm | Clean-control findings (swarm) |
 | --- | --- | --- | --- | --- | --- |
 | mobile-commerce v1 (dev, 17 defects) | before tuning | 0.29 | 0.65 | 0.82 | 232 |
-| mobile-commerce v2 (dev) | `8c1de02` | 0.35 | 0.71 | **0.94** | 84 |
+| mobile-commerce v2 (dev) | `8c1de02` | 0.35 | 0.71 | 0.94 | 84 |
 | game-desktop v1 (dev, 16 defects) | before tuning | 0.06 | 0.25 | 0.31 | 92 |
-| game-desktop v3 (dev) | `3cad062` | 0.44 | 0.88 | **1.00** | 31 |
-| heldout-mixed (held-out, 20 defects) | frozen `8c1de02` | 0.15 | 0.35 | **0.80** (lenient 0.90) | 98 |
+| game-desktop v3 (dev) | `3cad062` | 0.44 | 0.88 | 1.00 | 31 |
+| heldout-mixed (held-out, 20 defects), scorer at freeze `8c1de02` | frozen `8c1de02` | 0.05 | 0.20 | **0.60** (lenient 0.70) | 98 |
+| heldout-mixed, scorer of `3cad062` (id-prefix rule added before scoring) | frozen `8c1de02` | 0.15 | 0.35 | 0.80 (lenient 0.90) | 98 |
 
-Recall is strict recall. On the held-out suite the swarm found 9 defects that
-the single default persona missed. Severity agreement was 0.70, 2 of 6 decoys
-were flagged, and labelled precision (a lower bound) was 0.34.
+\* "measured-only" means *this tool's own measured checks under the default
+persona*. It is not a standard accessibility scanner; axe-core, Lighthouse and
+Android ATF have not been run for comparison.
 
-Read these numbers with the disclosures below. The development-suite gains are
-post-hoc: the checks were tuned after seeing those suites' scores. Only the
-held-out row is an out-of-sample estimate, and it is one small suite of
-synthetic pages.
+**How to read this table:**
+
+- **Development rows are training-set fits.** The checks were tuned after seeing
+  those scores, as explained under Disclosures.
+- **The held-out figure depends on the scorer.** The id-prefix matching rule
+  (`#opt-` matches `#opt-*`) was added to the scorer in `3cad062`, after the
+  detector freeze `8c1de02` and before the held-out suite was scored. The
+  held-out README declares that key convention. With the scorer as it was at
+  the freeze, swarm strict recall is 0.60; with the rule it is 0.80. Both are
+  reported.
+- **Swarm versus single persona is not evidence of usefulness by itself.** A
+  defect keyed to a condition (CVD, presbyopia, left hand, walking, 60+,
+  two-thumb) can only be credited to a profile that has that condition. The
+  single default persona therefore cannot score on those defects by
+  construction. Newer summaries also report recall on unconditioned defects
+  only (`recall_strict_unconditioned`), where every configuration can be
+  credited.
+- **Strict matching only checks that a triggered profile satisfies the
+  condition.** It does not check that the tool identified the condition. Newer
+  summaries report `condition_identified` separately: the finding's
+  differential condition names the key's condition.
+- **Operating point.** Recall above counts findings at any severity. Newer
+  summaries also report recall at P0–P1 and P0–P2
+  (`recall_strict_by_operating_point`).
+- **Precision.** Earlier docs called 0.34 "labelled precision (a lower bound)".
+  It is not a lower bound, because it left unlabelled findings out of the
+  denominator. Newer summaries report `validity_lb_units`, which counts all
+  units, and `precision_labelled_subset_units` under its own name.
+- **Adjudication round 1** (68 sampled unlabelled and clean-control findings
+  from the `8c1de02` detector, 2 independent judges, agreement 0.91, κ 0.72):
+  52 invalid, 10 valid, 6 split
+  (`docs/validation/adjudication-round1.json`). The judges named concrete
+  causes, and those causes were fixed:
+  - wrong state (the element was covered by a sheet);
+  - the phone reach model applied to tablets;
+  - the label hit area ignored;
+  - reach scored at the target's centre;
+  - salience judged from box fill only;
+  - numeric keypads counted as choice overload.
+  The adjudicated sample came from the development and held-out suites, so
+  those fixes are also post-hoc for them.
 
 ## Disclosures
 
-- **Post-hoc tuning.** Noise fixes were made after v1 scoring on the
-  development suites. Each was a principled rule change (for example PC-02 limited
-  to boundary-identified components, profile multipliers only below 9.2 mm).
-  They were still chosen while looking at the scores.
-- **Blindness breaches.** The benchmark authors' completion summaries described
-  some seeded defects to the tool author, for all suites. The held-out suite's
-  timing-window metadata was also printed once before scoring. The held-out
-  result was still produced by a frozen detector with no change after scoring.
+- **Post-hoc tuning** went beyond threshold choices:
+  - After v1 scoring, check categories were relabelled to the key taxonomy
+    (GM-01 → perception, GM-02 → reach).
+  - Three checks (GM-05, GM-06, PT-06) were added after v1 misses, and each is
+    credited with one development defect.
+  - The harness exposes per-defect selector, category and condition to the
+    developer.
+  - The committed development ablation names checks and conditions for all 53
+    defects, including the former held-out suite.
+  - The adjudication fixes were derived from findings on these same suites.
+  - The inclusive floors were chosen from the development ablation.
+- **Blindness breaches.** Benchmark authors' completion summaries described some
+  seeded defects to the tool author, for all three suites. The held-out suite's
+  timing-window metadata was printed once before scoring.
+- **Same model family and ontology.** The benchmark authors, the detector's
+  author and the adjudicators are all Claude models. The authors wrote defects
+  from this tool's spec: its categories and profile attributes. Recall therefore
+  measures agreement within one ontology, not coverage of all UX problems.
 - **Synthetic pages.** Fixture pages written by an agent are cleaner and more
   regular than production apps. Recall on real products is unknown.
-- **Seeded categories match the checks.** Suites were written from the same
-  human-factors literature as the checks. Defect types the tool has no check
-  for are under-represented, so recall overstates coverage of all UX problems.
+- **Severity scales.** The mobile-commerce author declared P1–P4, while the
+  scorer compares P0–P3 literally, so that suite's severity agreement is
+  unreliable. Severity agreement is one-sided: over-rating is not penalised.
+- **Agent layer not validated.** Every number above comes from scripted
+  Chromium runs re-analysed under simulated profiles. The only LLM-agent evidence
+  is 4 unscored runs on 2 development scenarios, with no agent model recorded.
+  Runs now record the agent with `--agent`.
 
 ## Known limits
 
-- **Noise is the main weakness.** Clean-control findings (84–98 per suite) mean
-  that a raw findings list is too long to hand to a team unfiltered. Report P0–P2
-  first, group P3 by condition, and use adjudication before claiming precision.
+- **Noise is the main weakness.** Clean-control findings (31–98 per suite before
+  the adjudication fixes) made the raw list too long to hand to a team. Findings
+  are now grouped into problem units, and low-validity model checks are listed
+  as hypotheses. Report P0–P2 first and use adjudication before claiming
+  precision.
 - **Models are uncalibrated for Korean users.** Thumb reach (Parhi landmark
   scaled by hand length), touch-SD multipliers for walking, tremor and age,
   gaze priors (free viewing in Western labs) and notice bands are assumptions or

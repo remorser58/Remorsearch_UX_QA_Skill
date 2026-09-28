@@ -204,6 +204,8 @@ runs/<run_id>/S-<run>-000.json + .png
 }
 ```
 `persona_notes` are written by the LLM persona agent in interactive mode (basis judgment).
+`agent` (additive): `{"description": "<model, effort, input channel>"}` from `--agent`;
+`"unrecorded"` for serve runs without it. Agent-layer results are compared per agent.
 
 ## 6. Observation (`ergoqa/checks.py`, produced by `analyze`)
 

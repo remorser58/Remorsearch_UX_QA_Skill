@@ -1157,6 +1157,7 @@ export class WebSession {
         },
         device: this.dev ? this.dev.snapshotDevice : null,
         mode: this.mode,
+        agent: this.opts.agent ? { description: this.opts.agent } : (this.mode === 'serve' ? { description: 'unrecorded' } : null),
         started_at: this.startedAt,
         ended_at: isoNow(),
         status,

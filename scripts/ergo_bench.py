@@ -129,6 +129,24 @@ def evaluate(run_records: list[dict[str, Any]], profiles: list[dict[str, Any]], 
     return {"analyses": analyses, "findings": findings, "score": scored, "profiles": used}
 
 
+def provenance() -> dict[str, Any]:
+    """Detector/scorer identity: commit, dirty flag and a hash of the code that scored."""
+    import hashlib
+
+    def git(*args: str) -> str:
+        try:
+            return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, timeout=20).stdout.strip()
+        except Exception:  # noqa: BLE001 - provenance is best effort
+            return ""
+
+    digest = hashlib.sha256()
+    for path in sorted((ROOT / "ergoqa").rglob("*.py")) + [ROOT / "scripts" / "ergo_bench.py"]:
+        digest.update(path.relative_to(ROOT).as_posix().encode())
+        digest.update(path.read_bytes())
+    return {"commit": git("rev-parse", "HEAD"), "dirty": bool(git("status", "--porcelain", "--", "ergoqa", "scripts", "drivers")),
+            "code_sha256": digest.hexdigest()}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--suite", required=True, type=Path)
@@ -202,7 +220,7 @@ def main() -> int:
     swarm_res = results["swarm"]
     (work / "report.md").write_text(report.render(swarm_res["findings"], profiles, swarm_res["analyses"], title=f"벤치마크 {suite.name}"), encoding="utf-8")
 
-    summary = {"suite": suite.name, "runs": [{k: v for k, v in r.items() if k != "stderr_tail"} for r in run_records],
+    summary = {"suite": suite.name, "provenance": provenance(), "runs": [{k: v for k, v in r.items() if k != "stderr_tail"} for r in run_records],
                "run_failures": [r for r in run_records if r.get("exit") not in (0, 3, None)]}
     for mode, res in results.items():
         sc = res["score"] or {}

@@ -82,8 +82,20 @@ def score(answer_key: dict[str, Any], findings: Iterable[dict[str, Any]], profil
         best = min(strict, key=lambda f: SEVERITY_ORDER.get(f["severity"], 3)) if strict else None
         severity_ok = bool(best) and SEVERITY_ORDER.get(best["severity"], 3) <= SEVERITY_ORDER.get(d.get("severity_min", "P3"), 3)
         specific_ok = None
-        if best and d.get("profile_condition"):
-            specific_ok = all(best["profile_specific"].get(k) == v for k, v in flatten_condition(d["profile_condition"]).items())
+        if strict and d.get("profile_condition"):
+            # Condition identified: some strict match's differential condition names the
+            # key's condition (any-of lists accepted), i.e. the tool said *who* is affected.
+            def _identifies(f: dict[str, Any]) -> bool:
+                diff = f.get("profile_specific") or {}
+                for k, v in flatten_condition(d["profile_condition"]).items():
+                    got = diff.get(k)
+                    if isinstance(v, (list, tuple)):
+                        if got not in v:
+                            return False
+                    elif got != v:
+                        return False
+                return True
+            specific_ok = any(_identifies(f) for f in strict)
         for f in strict or lenient:
             matched_finding_ids.add(f["id"])
         per_defect.append({
@@ -122,8 +134,22 @@ def score(answer_key: dict[str, Any], findings: Iterable[dict[str, Any]], profil
     defect_units = {u["id"] for u in unit_list if u["scenario_id"] in defect_scenarios}
     unlabeled_units = defect_units - matched_units - decoy_units
     detected = sum(d["detected_strict"] for d in per_defect)
-    validity_lb = round(len(matched_units) / (len(matched_units) + len(clean_units) + len(decoy_units)), 3) if (matched_units or clean_units or decoy_units) else None
+    scored_units = {u["id"] for u in unit_list if u["scenario_id"] in defect_scenarios | clean_ids}
+    # A true lower bound: every unit on scored pages is in the denominator; unlabelled
+    # units count as not-yet-shown-valid (methodology review 2026-09-28).
+    validity_lb = round(len(matched_units) / len(scored_units), 3) if scored_units else None
+    labelled = len(matched_units) + len(clean_units) + len(decoy_units)
+    precision_labelled_subset = round(len(matched_units) / labelled, 3) if labelled else None
     clean_scenarios = len(clean_ids) or 1
+    by_op: dict[str, float] = {}
+    for name, worst in (("p0_p1", 1), ("p0_p2", 2), ("all", 3)):
+        hit = 0
+        for d in per_defect:
+            if d["detected_strict"] and d["severity_found"] is not None and SEVERITY_ORDER.get(d["severity_found"], 3) <= worst:
+                hit += 1
+        by_op[name] = round(hit / n, 3)
+    unconditioned = [d for d in per_defect if not d["profile_condition"]]
+    conditioned = [d for d in per_defect if d["profile_condition"]]
     return {
         "suite": answer_key.get("suite"),
         "defects": len(defects),
@@ -145,6 +171,12 @@ def score(answer_key: dict[str, Any], findings: Iterable[dict[str, Any]], profil
         "decoy_units": len(decoy_units),
         "unlabeled_units": len(unlabeled_units),
         "validity_lb_units": validity_lb,
+        "precision_labelled_subset_units": precision_labelled_subset,
+        "recall_strict_by_operating_point": by_op,
+        "recall_strict_unconditioned": round(sum(d["detected_strict"] for d in unconditioned) / len(unconditioned), 3) if unconditioned else None,
+        "unconditioned_defects": len(unconditioned),
+        "condition_identified": round(sum(1 for d in conditioned if d["differential_matches_condition"]) / len(conditioned), 3) if conditioned else None,
+        "conditioned_defects": len(conditioned),
         "effectiveness_lb": round(detected / n * validity_lb, 3) if validity_lb is not None else None,
         "false_alarm_units_per_clean_scenario": round(len(clean_units) / clean_scenarios, 2),
         "exact_viewport_matching": exact_viewport,
