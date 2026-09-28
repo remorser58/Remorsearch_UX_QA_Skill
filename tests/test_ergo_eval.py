@@ -82,5 +82,39 @@ class Verdicts(unittest.TestCase):
         self.assertEqual(d["ci95"], [1.0, 1.0])
 
 
+class Amendment3(unittest.TestCase):
+    def test_poisson_and_newcombe_reference_values(self) -> None:
+        from ergoqa import bench
+        self.assertAlmostEqual(bench.poisson_upper(0, 10), 0.369, places=3)   # Garwood: 3.689
+        self.assertAlmostEqual(bench.poisson_upper(7, 10), 1.442, places=2)   # 14.42
+        same = [True] * 14 + [False] * 6
+        r = bench.newcombe_paired(same, same)
+        self.assertEqual(r["diff"], 0.0)
+        self.assertLess(r["ci95"][0], 0.0)  # no discordant pairs still leaves an interval
+        self.assertEqual(bench.newcombe_paired([], [])["diff"], None)
+
+    def test_twin_discrimination(self) -> None:
+        from ergoqa import bench
+        key = {"defects": [{"id": "D-1", "scenario_id": "S-a", "category": "pointing", "element_selector": "#b", "profile_condition": {}},
+                           {"id": "D-2", "scenario_id": "S-a", "category": "reach", "element_selector": "#c", "profile_condition": {}}]}
+        f = lambda sid, sel, cat: {"id": f"{sid}{sel}{cat}", "scenario_id": sid, "category": cat, "element_key": f"{sel}|x",  # noqa: E731
+                                   "selectors": [sel], "context_selectors": [], "triggered_profiles": ["P"], "tier": "finding"}
+        findings = [f("S-a", "#b", "pointing"), f("S-a", "#c", "reach"), f("S-b", "#c", "reach")]
+        d = bench.discrimination(key, findings, [{"profile_id": "P", "attributes": {}}], {"S-a": "S-b"})
+        self.assertEqual(d["recall_discriminating"], 0.5)  # D-2 is flagged in the clean twin too
+        self.assertEqual(d["non_discriminating"], 1)
+        self.assertEqual(d["youden_by_category"]["reach"]["youden_j"], 0.0)
+
+    def test_fixed_sequence_stops_at_first_failure(self) -> None:
+        per = [{"id": f"D-{i}", "detected_strict": True, "detected_lenient": True, "profile_condition": {}, "differential_matches_condition": None}
+               for i in range(20)]
+        noisy = {"per_defect": per, "clean_control_units_by_severity": {"P0": 0, "P1": 1, "P2": 0, "P3": 0},
+                 "recall_strict_by_operating_point": {"p0_p1": 1.0, "p0_p2": 1.0, "all": 1.0}, "clean_control_units": 1}
+        key = {"defects": [{"id": f"D-{i}", "scenario_id": "S", "category": "reach"} for i in range(20)], "clean_controls": [{"scenario_id": "C"}]}
+        out = ergo_eval.confirmatory({"C2": noisy, "C3": noisy, "C4@14": noisy}, key, clean_n=4)
+        self.assertEqual(out["N"]["verdict"], "fail")  # a P1 unit on a clean page
+        self.assertEqual(out["H7'"]["confirmatory_status"], "descriptive (sequence stopped earlier)")
+
+
 if __name__ == "__main__":
     unittest.main()

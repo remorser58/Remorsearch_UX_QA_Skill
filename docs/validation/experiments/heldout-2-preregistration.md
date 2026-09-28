@@ -172,3 +172,55 @@ have not been opened by the tool author. Development used the three dev suites
    unverified in each persona plan).
 3. **Round-2 adjudication judges:** one Opus and one Sonnet judge per unit
    (instead of two Opus judges), to reduce correlated errors within one model.
+
+### Amendment 3 (2026-09-28, before the freeze and before any heldout-2 recording)
+
+From `docs/qa-discipline/evaluating-qa-detectors.md` (EVD-01..06). The original
+H1–H7 verdicts are still computed and reported. What is added:
+
+1. **Trivial baselines (EVD-01).** `flag_all` reports every visible element in
+   every category for every C3 profile at P0. Chance level moves the tool's own
+   findings to random elements of the same scenario, 1 000 times. Both are scored
+   with the same scorer. `kappa_recall = (recall − chance) / (1 − chance)`.
+   - On the old held-out suite (heldout-mixed recordings, test run), `flag_all`
+     reaches strict recall 0.95 with 36 clean-control units against the swarm's
+     0.90. Strict recall alone therefore cannot support a usefulness claim. It is
+     reported only next to noise, chance-corrected recall and twin discrimination.
+2. **Clean-twin discrimination (EVD-02).** A strictly detected defect counts as
+   discriminating only when its selector and category are not also flagged in its
+   product's clean twin. Reported: `recall_discriminating` and per-category
+   Youden J = TPR − FPR(twin).
+3. **Product clusters (EVD-04).**
+   - Reported: a two-stage product bootstrap (2 000 draws), a leave-one-product-out
+     range and recall per product.
+   - With 4 products these are descriptive. A claim about "the next product" is
+     made only as the number of products where the direction holds.
+4. **Noise gate N (EVD-05)** replaces H4 as the confirmatory noise rule.
+   - Rule for C4@14: no P0–P1 clean-control unit, and P0–P2 clean-control units per
+     clean scenario ≤ 0.35 (point estimate).
+   - The Poisson 95 % upper bound and an FROC-style table by severity threshold are
+     reported. They are not gated: with 4 clean scenarios, a single unit already
+     gives an upper bound of 1.39.
+5. **Confirmatory fixed-sequence family (EVD-03).** Each step uses a two-sided 95 %
+   interval (one-sided 0.025). Testing stops at the first step that does not pass,
+   and the steps after it are descriptive. Margins were set by simulated power
+   before any heldout-2 data.
+
+   | Order | Hypothesis | Rule | n expected | Power / MDE |
+   | --- | --- | --- | --- | --- |
+   | 1 | N | as above | 4 clean scenarios | – |
+   | 2 | H7′: C3 not worse than C2 on unconditioned defects | Newcombe paired interval lower ≥ −0.15 | ~22 | 99 % if C3 and C2 agree on every defect; 35 % with 10 % discordance each way |
+   | 3 | HA: models name the condition | C4@14 `condition_identified` among detected conditioned defects, Wilson lower ≥ 0.30 | 15–20 | needs a point estimate of about 0.53–0.55 |
+   | 4 | H3′: C4@14 not worse than C3 | Newcombe lower ≥ −0.20 | ~45 | 84 % with 10 % discordance each way (margin −0.10: 31 %) |
+   | 5 | H2′: audience beats the placebo audience | C4@10 − C4-swap@10 on primary defects: lower > 0 and point ≥ +0.10 | 16–24 | 80 % only if the true effect is about +0.35 or more. Underpowered, so the estimate and its interval are the result |
+
+   The brief's original margins (−0.05, −0.10) had near-zero power at these n.
+6. **Placebo arms (EVD-06)**, computed offline on the same recordings.
+   - `C4-swap@{10,14}`: each product composed from the next product's audience,
+     with the device mix replaced by the product's own devices.
+   - `C4-floors@{10,14}`: a neutral audience of one adult segment with the default
+     floors.
+   - "Audience research adds value beyond the floors" is claimed only if C4 beats
+     both arms on primary defects. Otherwise the gain is attributed to floors and
+     stratification.
+   - `C4-rep` (repeated Stage 0) is not run before the freeze.

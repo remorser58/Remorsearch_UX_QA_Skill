@@ -61,6 +61,7 @@ from ergoqa.profiles import sample_profiles  # noqa: E402
 from ergo_bench import default_profile, provenance, static_server  # noqa: E402
 
 BUDGETS = (6, 10, 14)
+PLACEBO_BUDGETS = (10, 14)  # EVD-06 swap and floors-only arms
 C5_SEEDS = 20
 C3_TOUCH, C3_POINTER = 14, 7
 BOOTSTRAP = 2000
@@ -125,6 +126,30 @@ def _base(gk: str) -> dict[str, Any]:
     return p
 
 
+def neutral_audience(devices: list[str]) -> dict[str, Any]:
+    """Placebo audience (EVD-06): one general adult segment on the product's own devices,
+    no conditions, so composition adds only the inclusive floors and one-facet variations."""
+    return {"schema_version": "ergo-audience.v1", "audience_id": "AU-neutral",
+            "product": {"name": "neutral", "category": "placebo", "surface": "web", "locale": "ko-KR"},
+            "sources": [{"source_id": "SRC-neutral", "type": "expert_judgment", "title": "Neutral placebo audience (EVD-06)"}],
+            "segments": [{"segment_id": "SEG-general", "name_ko": "일반 성인 사용자", "priority": "primary", "confidence": "low",
+                          "share": {"value": None, "basis": "unknown"},
+                          "evidence": [{"source_id": "SRC-neutral", "claim": "placebo arm", "kind": "inference"}],
+                          "age_bands": {"20s": 0.2, "30s": 0.2, "40s": 0.2, "50s": 0.2, "60s": 0.2},
+                          "devices": {d: 1.0 / len(devices) for d in devices},
+                          "tasks": [{"task_id": "T-main", "goal_ko": "주요 과업", "concrete_data": {"값": "시나리오 참조"},
+                                     "frequency": "weekly", "criticality": "convenience", "source_ids": ["SRC-neutral"]}]}]}
+
+
+def swapped_audience(donor: dict[str, Any], devices: list[str]) -> dict[str, Any]:
+    """Another product's audience with its device mix replaced by this product's devices
+    (EVD-06 swap arm): segments, ages, conditions and contexts from the wrong product."""
+    doc = json.loads(json.dumps(donor))
+    for seg in doc["segments"]:
+        seg["devices"] = {d: 1.0 / len(devices) for d in devices}
+    return doc
+
+
 def configurations(data: dict[str, Any]) -> tuple[dict[str, dict[str, set[str]]], dict[str, dict[str, Any]], dict[str, set[str]], list[str]]:
     """Profile sets per configuration and product, the profile registry, device groups per
     scenario, notes.
@@ -163,6 +188,9 @@ def configurations(data: dict[str, Any]) -> tuple[dict[str, dict[str, set[str]]]
         doc = data["audiences"].get(slug)
         if doc is None:
             notes.append(f"{slug}: no audience file, C4 not run")
+        devices = sorted({g.split("|")[0] for g in product_groups})
+        slugs = sorted(s for s in data["audiences"] if s in products)
+        donor = data["audiences"].get(slugs[(slugs.index(slug) + 1) % len(slugs)]) if slug in slugs and len(slugs) > 1 else None
         for budget in BUDGETS:
             if doc is not None:
                 plan = audience.compose(doc, budget)
@@ -170,7 +198,13 @@ def configurations(data: dict[str, Any]) -> tuple[dict[str, dict[str, set[str]]]
                     add(f"C4@{budget}", slug, p)
                     for sid in sids:
                         groups_of[sid].add(_group(p))
-            devices = sorted({g.split("|")[0] for g in product_groups})
+            if budget in PLACEBO_BUDGETS:
+                arms = [("C4-floors", neutral_audience(devices))] + ([("C4-swap", swapped_audience(donor, devices))] if donor else [])
+                for arm, arm_doc in arms:
+                    for p in audience.compose(arm_doc, budget)["profiles"]:
+                        add(f"{arm}@{budget}", slug, p)
+                        for sid in sids:
+                            groups_of[sid].add(_group(p))
             for seed in range(C5_SEEDS):
                 for p in sample_profiles(budget, 1000 + seed, devices, strategy="base_rate_sample"):
                     add(f"C5@{budget}#{seed}", slug, p)
@@ -281,7 +315,134 @@ def _findings(cache: dict[str, Any], ids_by_product: dict[str, list[str]], basis
 
 def score_config(cache: dict[str, Any], key: dict[str, Any], config: str) -> dict[str, Any]:
     findings, used = _findings(cache, cache["configs"][config], basis="measured" if config == "C1" else None)
-    return bench.score(key, findings, used, exact_viewport=True, include_hypotheses=False)
+    sc = bench.score(key, findings, used, exact_viewport=True, include_hypotheses=False)
+    sc["_findings"], sc["_profiles"] = findings, used
+    return sc
+
+
+# ---------------------------------------------------------------------------
+# Amendment-3 analyses (evaluating-qa-detectors.md EVD-01..06)
+
+CATEGORIES = ("reach", "pointing", "gaze", "perception", "cognition", "game", "semantics", "layout", "heuristic")
+
+
+def twins(key: dict[str, Any], product_of: dict[str, str]) -> dict[str, str]:
+    """Defect scenario -> the clean scenario of the same product."""
+    clean_by_product: dict[str, str] = {}
+    for c in key.get("clean_controls", []):
+        clean_by_product.setdefault(product_of.get(c["scenario_id"]), c["scenario_id"])
+    return {d["scenario_id"]: clean_by_product[product_of.get(d["scenario_id"])]
+            for d in key.get("defects", []) if product_of.get(d["scenario_id"]) in clean_by_product}
+
+
+def element_pool(out: Path) -> dict[str, list[dict[str, Any]]]:
+    """Visible DOM elements per scenario over all recorded snapshots (selector, context)."""
+    pool: dict[str, dict[str, dict[str, Any]]] = {}
+    for run_dir in sorted(p for p in (out / "runs").iterdir() if (p / "run.json").is_file()):
+        run = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
+        per = pool.setdefault(run["scenario_id"], {})
+        for snap in run.get("snapshots") or []:
+            f = run_dir / snap["path"]
+            if not f.is_file():
+                continue
+            for e in json.loads(f.read_text(encoding="utf-8")).get("elements") or []:
+                if e.get("visible") is False or not e.get("selector"):
+                    continue
+                per.setdefault(e["selector"], {"selector": e["selector"], "context": [f"#{a}" for a in e.get("ancestor_ids") or []]})
+    return {sid: list(v.values()) for sid, v in pool.items()}
+
+
+def flag_all(key: dict[str, Any], pool: dict[str, list[dict[str, Any]]], profile_ids: dict[str, list[str]],
+             product_of: dict[str, str]) -> list[dict[str, Any]]:
+    """EVD-01 trivial detector: every visible element in every category, all profiles, P0."""
+    out = []
+    for sid, elements in pool.items():
+        trig = profile_ids.get(product_of.get(sid), [])
+        items = elements + [{"selector": "viewport", "context": []}]
+        for e in items:
+            for cat in CATEGORIES:
+                out.append({"id": f"FA-{len(out)}", "scenario_id": sid, "check_id": f"BASE-{cat}", "category": cat,
+                            "element_key": f"{e['selector']}|flash" if e["selector"] == "viewport" else f"{e['selector']}|",
+                            "selectors": [e["selector"]] if e["selector"] != "viewport" else [], "context_selectors": e["context"],
+                            "severity": "P0", "tier": "finding", "basis": "measured", "title_ko": "flag_all baseline",
+                            "triggered_profiles": trig, "tested_profiles": trig, "profile_specific": {},
+                            "run_ids": [], "instances": []})
+    return out
+
+
+def strict_hits(defects: list[dict[str, Any]], findings: list[dict[str, Any]], profiles_by_id: dict[str, Any]) -> list[bool]:
+    by_sid: dict[str, list[dict[str, Any]]] = {}
+    for f in findings:
+        by_sid.setdefault(f["scenario_id"], []).append(f)
+    return [any(f["category"] == d["category"] and bench._selector_matches(f, d.get("element_selector", ""), True)
+                and bench._profile_ok(f, d.get("profile_condition") or {}, profiles_by_id) for f in by_sid.get(d["scenario_id"], []))
+            for d in defects]
+
+
+def chance_recall(key: dict[str, Any], sc: dict[str, Any], pool: dict[str, list[dict[str, Any]]], reps: int = 1000, seed: int = 11) -> dict[str, Any]:
+    """EVD-01 chance level: the tool's own findings moved to random elements of the same
+    scenario (category, severity, profiles and count kept), scored strictly."""
+    findings = [f for f in sc["_findings"] if f.get("tier") != "hypothesis"]
+    profiles_by_id = {p["profile_id"]: p for p in sc["_profiles"]}
+    defects = key["defects"]
+    rng = random.Random(seed)
+    recalls = []
+    for _ in range(reps):
+        moved = []
+        for f in findings:
+            elems = pool.get(f["scenario_id"]) or []
+            if not elems:
+                continue
+            e = rng.choice(elems)
+            moved.append({**f, "element_key": f"{e['selector']}|", "selectors": [e["selector"]], "context_selectors": e["context"]})
+        hits = strict_hits(defects, moved, profiles_by_id)
+        recalls.append(sum(hits) / (len(defects) or 1))
+    recalls.sort()
+    mean = statistics.fmean(recalls) if recalls else 0.0
+    real = sc["recall_strict"]
+    return {"recall_chance_mean": round(mean, 3), "recall_chance_p95": round(recalls[int(0.95 * len(recalls)) - 1], 3) if recalls else None,
+            "recall_above_chance": round(real - mean, 3), "kappa_recall": round((real - mean) / (1 - mean), 3) if mean < 1 else None, "reps": reps}
+
+
+def cluster_recall(per_defect: list[dict[str, Any]], product_of: dict[str, str], reps: int = BOOTSTRAP, seed: int = 13) -> dict[str, Any]:
+    """EVD-04: two-stage product bootstrap, leave-one-product-out range and per-product recall."""
+    by_prod: dict[str, list[bool]] = {}
+    for d in per_defect:
+        by_prod.setdefault(product_of.get(d["scenario_id"], "?"), []).append(bool(d["detected_strict"]))
+    prods = sorted(by_prod)
+    rng = random.Random(seed)
+    boots = []
+    for _ in range(reps):
+        vals = []
+        for _p in prods:
+            hits = by_prod[rng.choice(prods)]
+            vals += [rng.choice(hits) for _ in hits]
+        boots.append(sum(vals) / len(vals) if vals else 0.0)
+    boots.sort()
+    lopo = []
+    for p in prods:
+        rest = [h for q in prods if q != p for h in by_prod[q]]
+        if rest:
+            lopo.append(sum(rest) / len(rest))
+    return {"n_products": len(prods), "per_product": {p: _rate(sum(v), len(v)) for p, v in by_prod.items()},
+            "recall_cluster_ci95": [round(boots[int(0.025 * reps)], 3), round(boots[int(0.975 * reps) - 1], 3)] if boots else [None, None],
+            "recall_lopo_range": [round(min(lopo), 3), round(max(lopo), 3)] if lopo else [None, None],
+            "note": "descriptive: fewer than 10 products"}
+
+
+def noise_gate(sc: dict[str, Any], clean_scenarios: int) -> dict[str, Any]:
+    """EVD-05: effective false-alarm gate and an FROC-style table by severity threshold."""
+    by = sc["clean_control_units_by_severity"]
+    rows = {}
+    for name, sev in (("p0", ("P0",)), ("p0_p1", ("P0", "P1")), ("p0_p2", ("P0", "P1", "P2")), ("all", ("P0", "P1", "P2", "P3"))):
+        k = sum(by[x] for x in sev)
+        rows[name] = {"clean_units": k, "per_clean_scenario": round(k / clean_scenarios, 3) if clean_scenarios else None,
+                      "poisson_upper95_per_scenario": bench.poisson_upper(k, clean_scenarios),
+                      "recall_strict_at_threshold": sc["recall_strict_by_operating_point"].get(name if name != "p0" else "p0_p1")}
+    # With few clean scenarios the Poisson upper bound cannot fall below 1.0 unless there
+    # is no P0-P2 unit at all (4 scenarios, 1 unit -> 1.39), so it is reported, not gated.
+    ok = clean_scenarios > 0 and rows["p0_p1"]["clean_units"] == 0 and rows["p0_p2"]["per_clean_scenario"] <= 0.35
+    return {"table": rows, "verdict": ("pass" if ok else "fail") if clean_scenarios else "not_run"}
 
 
 def _rate(k: int, n: int) -> dict[str, Any]:
@@ -420,6 +581,66 @@ def hypotheses(scores: dict[str, dict[str, Any]], key: dict[str, Any]) -> dict[s
     return out
 
 
+def confirmatory(scores: dict[str, dict[str, Any]], key: dict[str, Any], clean_n: int) -> dict[str, Any]:
+    """EVD-03 fixed-sequence family (one-sided 0.025 each, via two-sided 95 % intervals):
+    N -> H7' -> HA -> H3' -> H2'. Testing stops at the first hypothesis that does not
+    pass; the rest are reported as descriptive."""
+    defects = key["defects"]
+    ids = [d["id"] for d in defects]
+    det = {c: {d["id"]: bool(d["detected_strict"]) for d in sc["per_defect"]} for c, sc in scores.items()}
+    steps: list[tuple[str, dict[str, Any]]] = []
+
+    if "C4@14" in scores:
+        steps.append(("N", noise_gate(scores["C4@14"], clean_n)))
+    else:
+        steps.append(("N", {"verdict": "not_run"}))
+
+    uncond = [d["id"] for d in defects if not d.get("profile_condition")]
+    if "C3" in det and "C2" in det and uncond:
+        r = bench.newcombe_paired([det["C3"][i] for i in uncond], [det["C2"][i] for i in uncond])
+        steps.append(("H7'", {**r, "rule": "lower >= -0.15 (margin set by power: n~22, no discordance -> 99 %)",
+                              "verdict": "pass" if r["ci95"][0] is not None and r["ci95"][0] >= -0.15 else "fail"}))
+    else:
+        steps.append(("H7'", {"verdict": "not_run"}))
+
+    if "C4@14" in scores:
+        cond = [d for d in scores["C4@14"]["per_defect"] if d["profile_condition"] and d["detected_strict"]]
+        k = sum(1 for d in cond if d["differential_matches_condition"])
+        r = _rate(k, len(cond))
+        steps.append(("HA", {**r, "rule": "Wilson lower >= 0.30 (condition identified among detected conditioned defects)",
+                             "verdict": ("pass" if r["ci95"][0] >= 0.30 else "fail") if cond else "not_run"}))
+    else:
+        steps.append(("HA", {"verdict": "not_run"}))
+
+    if "C4@14" in det and "C3" in det:
+        r = bench.newcombe_paired([det["C4@14"][i] for i in ids], [det["C3"][i] for i in ids])
+        steps.append(("H3'", {**r, "rule": "lower >= -0.20 (margin set by power: n~45, 10 % discordance each way -> 84 %)",
+                              "verdict": "pass" if r["ci95"][0] is not None and r["ci95"][0] >= -0.20 else "fail"}))
+    else:
+        steps.append(("H3'", {"verdict": "not_run"}))
+
+    primary = [d["id"] for d in defects if d.get("audience_relevance") == "primary"]
+    if "C4@10" in det and "C4-swap@10" in det and primary:
+        r = bench.newcombe_paired([det["C4@10"][i] for i in primary], [det["C4-swap@10"][i] for i in primary])
+        ok = r["ci95"][0] is not None and r["ci95"][0] > 0 and r["diff"] >= 0.10
+        floors = bench.newcombe_paired([det["C4@10"][i] for i in primary], [det["C4-floors@10"][i] for i in primary]) if "C4-floors@10" in det else None
+        steps.append(("H2'", {**r, "vs_floors": floors, "rule": "C4@10 - C4-swap@10 on primary defects: lower > 0 and point >= +0.10",
+                              "verdict": "pass" if ok else "fail"}))
+    else:
+        steps.append(("H2'", {"verdict": "not_run"}))
+
+    out: dict[str, Any] = {}
+    stopped = False
+    for name, res in steps:
+        if stopped:
+            res = {**res, "confirmatory_status": "descriptive (sequence stopped earlier)"}
+        else:
+            res = {**res, "confirmatory_status": "tested"}
+            stopped = res.get("verdict") != "pass"
+        out[name] = res
+    return out
+
+
 def score_all(data: dict[str, Any], out: Path, show_open: bool) -> dict[str, Any]:
     with (out / "analysis-cache.pickle").open("rb") as fh:
         cache = pickle.load(fh)
@@ -447,11 +668,40 @@ def score_all(data: dict[str, Any], out: Path, show_open: bool) -> dict[str, Any
                                           "recall_strict_min_max": [round(rec[0], 3), round(rec[-1], 3)],
                                           "clean_control_units_mean": round(statistics.fmean(clean), 2)}
     agg["hypotheses"] = hypotheses(scores, key)
+    # Amendment 3 (EVD-01..06): baselines, twin discrimination, product clusters, noise
+    # gate and the fixed-sequence confirmatory family. The original H1-H7 stay above.
+    product_of = cache["product_of"]
+    twin_of = twins(key, product_of)
+    clean_n = agg["clean_scenarios"]
+    for c, sc in scores.items():
+        if c.startswith("C5@"):
+            continue
+        disc = bench.discrimination(key, sc["_findings"], sc["_profiles"], twin_of)
+        agg["configs"][c]["discrimination"] = {k: v for k, v in disc.items() if k != "per_defect"}
+        agg["configs"][c]["clusters"] = cluster_recall(sc["per_defect"], product_of)
+        agg["configs"][c]["noise_gate"] = noise_gate(sc, clean_n)
+        sc["_discrimination"] = disc
+    pool = element_pool(out)
+    baselines = {}
+    if "C3" in scores:
+        fa = flag_all(key, pool, cache["configs"]["C3"], product_of)
+        fa_score = bench.score(key, fa, scores["C3"]["_profiles"], exact_viewport=True)
+        baselines["flag_all"] = {"recall_strict": fa_score["recall_strict"], "recall_lenient": fa_score["recall_lenient"],
+                                 "unreachable_defects": sum(1 for d in fa_score["per_defect"] if not d["detected_lenient"]),
+                                 "clean_control_units": fa_score["clean_control_units"]}
+        for c in ("C3", "C4@14"):
+            if c in scores:
+                baselines[f"chance_{c}"] = chance_recall(key, scores[c], pool)
+    agg["baselines"] = baselines
+    agg["confirmatory"] = confirmatory(scores, key, clean_n)
     (out / "aggregate.json").write_text(json.dumps(agg, ensure_ascii=False, indent=1), encoding="utf-8")
     sealed = out / "sealed"
     sealed.mkdir(exist_ok=True)
     for c, sc in scores.items():
-        (sealed / f"score-{c.replace('#', '-s').replace('@', '-b')}.json").write_text(json.dumps(sc, ensure_ascii=False, indent=1), encoding="utf-8")
+        keep = {k: v for k, v in sc.items() if not k.startswith("_")}
+        if "_discrimination" in sc:
+            keep["discrimination_per_defect"] = sc["_discrimination"]["per_defect"]
+        (sealed / f"score-{c.replace('#', '-s').replace('@', '-b')}.json").write_text(json.dumps(keep, ensure_ascii=False, indent=1), encoding="utf-8")
     if show_open:
         for c in ("C3", "C4@14"):
             if c in scores:
