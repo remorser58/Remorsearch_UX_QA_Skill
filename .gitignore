@@ -8,3 +8,4 @@ __pycache__/
 # Ergonomic swarm benchmark outputs and scratch runs
 .ergo-bench/
 .ergo-runs/
+.ergo-bench-*.log

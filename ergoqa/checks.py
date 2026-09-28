@@ -525,6 +525,9 @@ def check_fitts_sequence(ctx: Context) -> list[Observation]:
 
 # ---------------------------------------------------------------- gaze
 
+_FIXATION_CACHE: dict[tuple, dict[str, list[float]]] = {}
+
+
 def _gaze_kind(ctx: Context) -> str:
     return gaze.prior_kind(getattr(ctx.device, "form_factor", "phone"), ctx.surface_kind)
 
@@ -595,7 +598,11 @@ def check_gaze(ctx: Context) -> list[Observation]:
     centres = {e["id"]: pointing.centre(e["box"]) for e in ctx.elements if e["id"] in priorities}
     visible_primary = [e for e in ctx.elements if "primary" in _roles(e) and _visible(e) and e["id"] in priorities]
     if visible_primary:
-        probs = gaze.fixation_probabilities(centres, priorities, start, mm_px, viewing, seed=zlib.crc32(str(ctx.snapshot.get("snapshot_id")).encode()) & 0xFFFF)
+        cache_key = (ctx.snapshot.get("snapshot_id"), ctx.run.get("run_id"), round(viewing), round(start[0], 1), round(start[1], 1), round(mm_px, 5))
+        probs = _FIXATION_CACHE.get(cache_key)
+        if probs is None:
+            probs = gaze.fixation_probabilities(centres, priorities, start, mm_px, viewing, seed=zlib.crc32(str(ctx.snapshot.get("snapshot_id")).encode()) & 0xFFFF)
+            _FIXATION_CACHE[cache_key] = probs
         k = params.GAZE_EARLY_FIXATIONS
         for element in visible_primary:
             p_seen = probs.get(element["id"], [0.0] * k)[k - 1]

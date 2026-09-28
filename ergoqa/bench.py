@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any, Iterable
 
-from .profiles import matches_condition
+from .profiles import flatten_condition, matches_condition
 
 SEVERITY_ORDER = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
 
@@ -56,7 +56,7 @@ def score(answer_key: dict[str, Any], findings: Iterable[dict[str, Any]], profil
         severity_ok = bool(best) and SEVERITY_ORDER.get(best["severity"], 3) <= SEVERITY_ORDER.get(d.get("severity_min", "P3"), 3)
         specific_ok = None
         if best and d.get("profile_condition"):
-            specific_ok = all(best["profile_specific"].get(k) == v for k, v in d["profile_condition"].items())
+            specific_ok = all(best["profile_specific"].get(k) == v for k, v in flatten_condition(d["profile_condition"]).items())
         for f in strict or lenient:
             matched_finding_ids.add(f["id"])
         per_defect.append({

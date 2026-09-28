@@ -371,10 +371,22 @@ def _flatten_keys(obj: Any, prefix: str = "") -> list[str]:
     return [prefix]
 
 
+def flatten_condition(condition: dict[str, Any], prefix: str = "") -> dict[str, Any]:
+    """Flatten nested conditions ({"vision": {"cvd": "deutan"}}) to dotted keys."""
+    flat: dict[str, Any] = {}
+    for key, value in condition.items():
+        dotted = f"{prefix}.{key}" if prefix else key
+        if isinstance(value, dict):
+            flat.update(flatten_condition(value, dotted))
+        else:
+            flat[dotted] = value
+    return flat
+
+
 def matches_condition(profile: dict[str, Any], condition: dict[str, Any]) -> bool:
-    """True when every dotted key in condition equals the profile attribute."""
+    """True when every (dotted or nested) key in condition equals the profile attribute."""
     attrs = profile.get("attributes", {})
-    for key, expected in condition.items():
+    for key, expected in flatten_condition(condition).items():
         actual = _get_path(attrs, key)
         if isinstance(expected, (list, tuple)):
             if actual not in expected:

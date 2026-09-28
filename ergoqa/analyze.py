@@ -20,16 +20,40 @@ from .snapshot import load_run_dir
 SEVERITY_RANK = checks.SEVERITY_ORDER
 
 
+_CONSPICUITY_CACHE: dict[tuple[str, int], list[list[float]] | None] = {}
+
+
 def conspicuity_for_snapshot(snapshot: dict[str, Any], cell_css_px: int = 8) -> list[list[float]] | None:
-    """Bottom-up conspicuity grid for a snapshot screenshot (None if unavailable)."""
-    path = snapshot.get("screenshot", {}).get("resolved_path")
+    """Bottom-up conspicuity grid for a snapshot screenshot (None if unavailable).
+
+    Prefers the driver's CSS-scale copy (``screenshot.css``); results are cached
+    by screenshot hash so repeated analyses do not decode again.
+    """
+    shot = snapshot.get("screenshot", {})
+    path = shot.get("resolved_path")
     if not path or not Path(path).is_file():
         return None
+    css = shot.get("css") if isinstance(shot.get("css"), dict) else None
+    if css and isinstance(css.get("path"), str):
+        try:
+            from .snapshot import resolve_within, sha256_file
+
+            css_path = resolve_within(Path(path).parent, css["path"])
+            if css_path.is_file() and (not css.get("sha256") or sha256_file(css_path) == css["sha256"]):
+                path = str(css_path)
+            else:
+                css = None
+        except Exception:  # noqa: BLE001 - fall back to the full screenshot
+            css = None
+    cache_key = (str(shot.get("sha256") or path) + ("|css" if css else ""), cell_css_px)
+    if cache_key in _CONSPICUITY_CACHE:
+        return _CONSPICUITY_CACHE[cache_key]
     try:
         image = png.to_rgb(png.read_png(path))
     except (png.PNGError, OSError):
+        _CONSPICUITY_CACHE[cache_key] = None
         return None
-    dpr = float(snapshot.get("device", {}).get("dpr") or 1.0)
+    dpr = 1.0 if css else float(snapshot.get("device", {}).get("dpr") or 1.0)
     factor = max(1, int(round(cell_css_px * dpr)))
     small = png.downsample(image, factor)
     data = small.data
@@ -37,7 +61,9 @@ def conspicuity_for_snapshot(snapshot: dict[str, Any], cell_css_px: int = 8) -> 
     for y in range(small.height):
         base = y * small.width * 3
         rows.append([(data[base + 3 * x], data[base + 3 * x + 1], data[base + 3 * x + 2]) for x in range(small.width)])
-    return gaze.conspicuity_map(rows)
+    grid = gaze.conspicuity_map(rows)
+    _CONSPICUITY_CACHE[cache_key] = grid
+    return grid
 
 
 def _device_for(snapshot: dict[str, Any], profile: dict[str, Any]):

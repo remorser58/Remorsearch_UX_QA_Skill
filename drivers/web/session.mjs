@@ -1,0 +1,1193 @@
+// WebSession: one emulated device, one page, one run directory.
+//
+// Produces ergo-snapshot.v1 files and ergo-run.v1 (docs/ergonomic-swarm-spec.md
+// sections 3, 5 and 10) from real Playwright/CDP input events. Everything the
+// page reports is treated as data; nothing from the page or from HTTP requests
+// is evaluated as code.
+
+import fs from 'node:fs';
+import path from 'node:path';
+
+import { resolveDevice } from './devices.mjs';
+import { STATE_KEY, TW_BINDING, extractSnapshot, hitTest, idAtPoint, idForElement, pageInit } from './page_scripts.mjs';
+import { cssScaleCopy, decodePng, frameFromImage, frameStats, visualDiffFraction } from './png.mjs';
+import { KNOWN_ROLES } from './validate.mjs';
+import {
+  DriverFailure, epochNow, isoNow, pngSize, round1, sha256, sleep, truncate, writeFileAtomic, writeJsonAtomic,
+} from './util.mjs';
+
+export const ELEMENT_CAP = 400;
+export const FEEDBACK_WINDOW_MS = 3000;
+const FRAME_WIDTH = 160; // downscaled CSS-px width for flash/visual probe frames
+const VISUAL_LEVEL = 16; // per-channel change (0-255) that counts as a changed pixel
+const TW_POLL_MS = 16;
+const DEFAULT_TARGET_TIMEOUT_MS = 5000;
+const MAX_FLASH_SAMPLES = 50000;
+const MAX_CONSOLE = 500;
+
+const MEASURED = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'type', 'press', 'scroll', 'gamepad']);
+const POINTER = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'scroll']);
+
+function firstLine(msg) {
+  return truncate(String(msg || '').split('\n')[0], 500);
+}
+
+function r4(n) {
+  return Math.round(n * 10000) / 10000;
+}
+
+function stripQuery(url) {
+  try {
+    const u = new URL(url);
+    return `${u.origin}${u.pathname}`;
+  } catch {
+    return truncate(url, 200);
+  }
+}
+
+export class WebSession {
+  constructor({ pw, pwInfo, scenario, deviceRequest, profileId, runId, runDir, mode, options, warnings }) {
+    this.pw = pw;
+    this.pwInfo = pwInfo;
+    this.scenario = scenario;
+    this.deviceRequest = deviceRequest;
+    this.profileId = profileId;
+    this.runId = runId;
+    this.runDir = runDir;
+    this.mode = mode;
+    this.opts = options;
+    this.warnings = [...(warnings || [])];
+    this.warned = new Set();
+    this.steps = [];
+    this.snapshots = [];
+    this.personaNotes = [];
+    this.consoleAll = [];
+    this.consolePending = [];
+    this.navEvents = [];
+    this.navRequestPending = false;
+    this.flashSamples = [];
+    this.frameIndex = 0;
+    this.blocked = [];
+    this.blockedCount = 0;
+    this.blockedConsole = 0;
+    this.blockReasons = [];
+    this.snapSeq = 0;
+    this.lastSnapshotId = null;
+    this.focusPoint = null;
+    this.lastActive = null;
+    this.clockOffset = 0;
+    this.clockRtt = null;
+    this.needCalibrate = false;
+    this.crashed = false;
+    this.finished = null;
+    this.startedAt = isoNow();
+    this.runStartEpoch = epochNow();
+    this.httpStatus = null;
+    this.twPollers = [];
+    this.tw = new Map(scenario.timing_windows.map((w) => [w.id, {
+      def: w, cur: null, intervals: [], appearances: 0, firstVisible: null, text: null, method: 'in-page-poll', fallback: false, error: null,
+    }]));
+    const allowed = new Set(['http:', 'https:'].includes(scenario.origin.protocol) ? [scenario.origin.origin] : []);
+    for (const o of options.allowOrigins || []) allowed.add(o);
+    this.allowedOrigins = allowed;
+  }
+
+  warnOnce(key, msg) {
+    if (this.warned.has(key)) return;
+    this.warned.add(key);
+    this.warnings.push(msg);
+  }
+
+  block(reason) {
+    this.blockReasons.push(reason);
+  }
+
+  rel(epoch) {
+    return Math.max(0, round1(epoch - this.runStartEpoch));
+  }
+
+  // ------------------------------------------------------------------ lifecycle
+
+  async start() {
+    try {
+      this.browser = await this.pw.chromium.launch({ headless: !this.opts.headed, timeout: 60000 });
+    } catch (err) {
+      throw new DriverFailure(`cannot launch Chromium: ${firstLine(err.message)}`);
+    }
+    this.browserVersion = this.browser.version();
+    const dev = resolveDevice({
+      ...this.deviceRequest,
+      pwDevices: this.pw.devices,
+      chromeMajor: parseInt(this.browserVersion, 10),
+    });
+    this.dev = dev;
+    for (const w of dev.warnings) this.warnOnce(`dev:${w}`, w);
+    this.vw = dev.contextOptions.viewport.width;
+    this.vh = dev.contextOptions.viewport.height;
+    this.context = await this.browser.newContext({
+      ...dev.contextOptions,
+      locale: this.opts.locale,
+      timezoneId: this.opts.timezoneId,
+      colorScheme: 'light',
+      reducedMotion: 'no-preference',
+      serviceWorkers: 'block',
+      acceptDownloads: false,
+    });
+    await this.context.route('**/*', (route) => this.onRoute(route));
+    await this.context.routeWebSocket(/.*/, (ws) => this.onWebSocket(ws));
+    const windows = this.scenario.timing_windows;
+    if (windows.length) {
+      await this.context.exposeBinding(TW_BINDING, (source, payload) => this.onTimingWindow(source, payload));
+    }
+    await this.context.addInitScript(pageInit, {
+      key: STATE_KEY,
+      binding: windows.length ? TW_BINDING : null,
+      windows: windows.map((w) => ({ id: w.id, selector: w.selector })),
+      pollMs: TW_POLL_MS,
+    });
+    this.page = await this.context.newPage();
+    this.cdp = await this.context.newCDPSession(this.page);
+    this.page.on('console', (msg) => {
+      if (msg.type() === 'error') this.pushConsole('console', msg.text(), msg.location());
+    });
+    this.page.on('pageerror', (err) => this.pushConsole('pageerror', err && err.message ? err.message : String(err), null));
+    this.page.on('crash', () => {
+      this.crashed = true;
+      this.block('page crashed');
+    });
+    this.page.on('request', (req) => {
+      try {
+        if (req.isNavigationRequest() && req.frame() === this.page.mainFrame()) {
+          this.navEvents.push(epochNow());
+          this.navRequestPending = true;
+        }
+      } catch { /* request without frame (service worker) */ }
+    });
+    this.page.on('framenavigated', (frame) => {
+      if (frame !== this.page.mainFrame()) return;
+      const t = epochNow();
+      this.navEvents.push(t);
+      if (this.navRequestPending) {
+        // A new document replaced the old one: its timed elements are gone.
+        this.navRequestPending = false;
+        for (const w of this.tw.values()) if (w.cur) this.applyTransition(w, false, t, null);
+        this.needCalibrate = true;
+      }
+    });
+
+    this.runStartEpoch = epochNow();
+    this.startedAt = isoNow();
+    let response = null;
+    try {
+      response = await this.page.goto(this.scenario.url, { waitUntil: 'load', timeout: 30000 });
+    } catch (err) {
+      this.block(`initial navigation failed: ${firstLine(err.message)}`);
+    }
+    this.httpStatus = response ? response.status() : null;
+    if (response && response.status() >= 400) this.block(`initial navigation returned HTTP ${response.status()}`);
+    await this.calibrate().catch(() => {});
+    this.needCalibrate = false;
+    await sleep(this.opts.settleMs);
+    if (this.opts.flashSampleMs > 0) {
+      await this.probeFrames({ dispatch: epochNow(), stepIndex: 0, flashMs: this.opts.flashSampleMs, visual: null, fb: { done: true } });
+    }
+    await this.snapshot(0, []);
+  }
+
+  async calibrate() {
+    let best = null;
+    for (let i = 0; i < 5; i++) {
+      const t0 = epochNow();
+      const pageEpoch = await this.page.evaluate(() => performance.timeOrigin + performance.now());
+      const t1 = epochNow();
+      if (!best || t1 - t0 < best.rtt) best = { rtt: t1 - t0, offset: pageEpoch - (t0 + t1) / 2 };
+    }
+    this.clockOffset = best.offset;
+    this.clockRtt = best.rtt;
+  }
+
+  pushConsole(type, text, location) {
+    const msg = String(text ?? '');
+    if (this.blockedCount > 0 && msg.includes('ERR_BLOCKED_BY_CLIENT')) {
+      this.blockedConsole++;
+      return; // caused by the driver's network policy, not by the page
+    }
+    const entry = {
+      t_ms: this.rel(epochNow()),
+      type,
+      text: truncate(msg, 1000),
+      url: location && location.url ? stripQuery(location.url) : null,
+    };
+    if (this.consoleAll.length < MAX_CONSOLE) this.consoleAll.push(entry);
+    if (this.consolePending.length < 100) this.consolePending.push(`[${type}] ${truncate(msg, 500)}`);
+  }
+
+  isAllowed(url) {
+    let u;
+    try {
+      u = new URL(url);
+    } catch {
+      return false;
+    }
+    if (['data:', 'blob:', 'about:'].includes(u.protocol)) return true;
+    if (u.protocol === 'file:') {
+      const s = this.scenario.origin;
+      if (s.protocol !== 'file:') return false;
+      const dir = s.pathname.slice(0, s.pathname.lastIndexOf('/') + 1);
+      return u.pathname.startsWith(dir);
+    }
+    return this.allowedOrigins.has(u.origin);
+  }
+
+  onRoute(route) {
+    const req = route.request();
+    const url = req.url();
+    if (this.isAllowed(url)) return route.continue().catch(() => {});
+    this.blockedCount++;
+    if (this.blocked.length < 50) this.blocked.push({ t_ms: this.rel(epochNow()), url: stripQuery(url), resource_type: req.resourceType() });
+    return route.abort('blockedbyclient').catch(() => {});
+  }
+
+  onWebSocket(ws) {
+    const url = ws.url();
+    const asHttp = url.replace(/^ws/, 'http');
+    if (this.isAllowed(asHttp)) {
+      ws.connectToServer();
+      return;
+    }
+    this.blockedCount++;
+    if (this.blocked.length < 50) this.blocked.push({ t_ms: this.rel(epochNow()), url: stripQuery(url), resource_type: 'websocket' });
+    ws.close({ code: 1008, reason: 'blocked by ergoqa network policy' }).catch(() => {});
+  }
+
+  // ------------------------------------------------------------------ timing windows
+
+  onTimingWindow(source, payload) {
+    try {
+      if (!source || source.frame !== this.page.mainFrame()) return;
+    } catch {
+      return;
+    }
+    if (!payload || typeof payload !== 'object' || typeof payload.id !== 'string') return;
+    const w = this.tw.get(payload.id);
+    if (!w || w.fallback) return;
+    if (payload.v === null) {
+      this.startFallbackPoll(w);
+      return;
+    }
+    if (typeof payload.v !== 'boolean' || typeof payload.t !== 'number' || !Number.isFinite(payload.t)) return;
+    const text = typeof payload.text === 'string' ? payload.text.slice(0, 500) : null;
+    this.applyTransition(w, payload.v, payload.t - this.clockOffset, text);
+  }
+
+  applyTransition(w, visible, t, text) {
+    if (visible && !w.cur) {
+      w.cur = { since: t };
+      w.appearances++;
+      if (w.firstVisible === null) w.firstVisible = t;
+      if (text && !w.text) w.text = text;
+    } else if (!visible && w.cur) {
+      w.intervals.push(Math.max(0, t - w.cur.since));
+      w.cur = null;
+    }
+  }
+
+  startFallbackPoll(w) {
+    // Not a CSS selector (e.g. "text=..."): poll with Playwright every 16 ms.
+    w.fallback = true;
+    w.method = 'playwright-poll';
+    let busy = false;
+    const timer = setInterval(async () => {
+      if (busy || this.finished || this.crashed) return;
+      busy = true;
+      try {
+        const t0 = epochNow();
+        const n = await this.page.locator(w.def.selector).filter({ visible: true }).count();
+        const t1 = epochNow();
+        let text = null;
+        if (n > 0 && !w.cur && !w.text) {
+          text = await this.page.locator(w.def.selector).filter({ visible: true }).first().innerText({ timeout: 200 }).catch(() => null);
+        }
+        this.applyTransition(w, n > 0, (t0 + t1) / 2, text ? text.replace(/\s+/g, ' ').trim() : null);
+      } catch (err) {
+        w.error = firstLine(err.message);
+      } finally {
+        busy = false;
+      }
+    }, TW_POLL_MS);
+    this.twPollers.push(timer);
+  }
+
+  timingWindowsOut(endEpoch) {
+    const out = [];
+    for (const w of this.tw.values()) {
+      const closed = w.intervals.map(round1);
+      const open = w.cur ? round1(endEpoch - w.cur.since) : null;
+      out.push({
+        id: w.def.id,
+        selector: w.def.selector,
+        measure: w.def.measure,
+        ...(w.def.kind ? { kind: w.def.kind } : {}),
+        ...(w.def.text || w.text ? { text: w.def.text || w.text } : {}),
+        // Shortest completed visible interval (the tightest window a user got);
+        // null when the element never both appeared and disappeared.
+        visible_ms: closed.length ? Math.min(...closed) : null,
+        intervals_ms: closed,
+        min_visible_ms: closed.length ? Math.min(...closed) : null,
+        max_visible_ms: closed.length ? Math.max(...closed) : null,
+        appearances: w.appearances,
+        open_interval_ms: open,
+        first_visible_t_ms: w.firstVisible !== null ? this.rel(w.firstVisible) : null,
+        poll_interval_ms: TW_POLL_MS,
+        method: w.method,
+        error: w.error,
+      });
+    }
+    return out;
+  }
+
+  // ------------------------------------------------------------------ page state helpers
+
+  async firstMutation(t0, t1) {
+    try {
+      const v = await this.page.evaluate(({ key, a, b }) => {
+        const s = window[Symbol.for(key)];
+        return s && s.firstMutationAfter ? s.firstMutationAfter(a, b) : null;
+      }, { key: STATE_KEY, a: t0 + this.clockOffset, b: t1 + this.clockOffset });
+      return v === null ? null : v - this.clockOffset;
+    } catch {
+      return null;
+    }
+  }
+
+  async countMutations(t0, t1) {
+    try {
+      return await this.page.evaluate(({ key, a, b }) => {
+        const s = window[Symbol.for(key)];
+        return s && s.countMutations ? s.countMutations(a, b) : 0;
+      }, { key: STATE_KEY, a: t0 + this.clockOffset, b: t1 + this.clockOffset });
+    } catch {
+      return null;
+    }
+  }
+
+  async scrollPos() {
+    try {
+      return await this.page.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
+    } catch {
+      return null;
+    }
+  }
+
+  async captureFrame() {
+    const scale = Math.min(1, FRAME_WIDTH / this.vw);
+    const r = await this.cdp.send('Page.captureScreenshot', {
+      format: 'png',
+      clip: { x: 0, y: 0, width: this.vw, height: this.vh, scale },
+      captureBeyondViewport: false,
+      optimizeForSpeed: true,
+    });
+    return frameFromImage(decodePng(Buffer.from(r.data, 'base64')));
+  }
+
+  visualThreshold(frame) {
+    const n = frame.width * frame.height;
+    return Math.max(3 / n, 0.0004);
+  }
+
+  /** Capture downscaled frames after `dispatch` for flash sampling and/or visual feedback. */
+  async probeFrames({ dispatch, stepIndex, flashMs, visual, fb }) {
+    let prev = null;
+    for (;;) {
+      if (!this.page || this.crashed || this.page.isClosed()) return;
+      const now = epochNow();
+      const wantFlash = flashMs > 0 && now < dispatch + flashMs;
+      const wantVisual = !!visual && fb.visual == null && !fb.done && now < visual.deadline;
+      if (!wantFlash && !wantVisual) return;
+      const t0 = epochNow();
+      let frame;
+      try {
+        frame = await this.captureFrame();
+      } catch {
+        await sleep(16);
+        continue;
+      }
+      const t1 = epochNow();
+      const tm = (t0 + t1) / 2;
+      if (wantVisual && visual.pre) {
+        // The frame reflects the page when the capture was requested (t0): the
+        // change happened before t0 and after the previous capture started.
+        const d = visualDiffFraction(frame, visual.pre, VISUAL_LEVEL);
+        if (d !== null && d >= this.visualThreshold(frame)) fb.visual = t0;
+      }
+      if (wantFlash && this.flashSamples.length < MAX_FLASH_SAMPLES) {
+        const st = frameStats(frame, prev);
+        this.flashSamples.push({
+          t_ms: this.rel(tm),
+          mean_luminance: r4(st.mean_luminance),
+          changed_fraction: prev ? r4(st.changed_fraction) : 0,
+          flash_fraction: prev ? r4(st.flash_fraction) : 0,
+          red_fraction: r4(st.red_fraction),
+          frame_index: this.frameIndex++,
+          step_index: stepIndex,
+          capture_ms: round1(t1 - t0),
+        });
+        prev = frame;
+      }
+    }
+  }
+
+  // ------------------------------------------------------------------ snapshots
+
+  async targetGroups() {
+    const groups = [];
+    const handlesToDispose = [];
+    const hotspotRoles = {};
+    for (const [role, sels] of Object.entries(this.scenario.targets)) {
+      const handles = [];
+      for (const sel of sels) {
+        if (sel.startsWith('hotspot:')) {
+          const id = sel.slice('hotspot:'.length);
+          (hotspotRoles[id] ||= []).push(role);
+          continue;
+        }
+        try {
+          const hs = await this.page.locator(sel).elementHandles();
+          handles.push(...hs.slice(0, 50));
+          handlesToDispose.push(...hs);
+        } catch (err) {
+          this.warnOnce(`target:${sel}`, `target selector ${JSON.stringify(sel)} (${role}) could not be evaluated: ${firstLine(err.message)}`);
+        }
+      }
+      groups.push({ role, handles });
+    }
+    return { groups, hotspotRoles, handlesToDispose };
+  }
+
+  async extract() {
+    const { groups, hotspotRoles, handlesToDispose } = await this.targetGroups();
+    try {
+      return await this.page.evaluate(extractSnapshot, {
+        key: STATE_KEY,
+        cap: ELEMENT_CAP,
+        groups,
+        hotspots: this.scenario.hotspots,
+        hotspotRoles,
+        knownRoles: KNOWN_ROLES,
+      });
+    } finally {
+      await Promise.all(handlesToDispose.map((h) => h.dispose().catch(() => {})));
+    }
+  }
+
+  async snapshot(stepIndex, notes) {
+    if (this.needCalibrate) {
+      this.needCalibrate = false;
+      await this.calibrate().catch(() => {});
+    }
+    const seq = this.snapSeq++;
+    const id = `S-${this.runId}-${String(seq).padStart(3, '0')}`;
+    let png;
+    let ex;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        png = await this.page.screenshot({ type: 'png', scale: 'device', animations: 'allow', caret: 'initial', timeout: 15000 });
+        ex = await this.extract();
+        break;
+      } catch (err) {
+        if (attempt >= 2 || this.crashed || this.page.isClosed()) {
+          throw new DriverFailure(`snapshot ${id} failed: ${firstLine(err.message)}`);
+        }
+        await this.page.waitForLoadState('load', { timeout: 10000 }).catch(() => {});
+      }
+    }
+    const capturedAt = isoNow();
+    const allNotes = [...notes];
+    if (ex.truncated) allNotes.push(`elements capped at ${ELEMENT_CAP} of ${ex.candidates} candidates (roles and interactive elements first)`);
+    if (ex.pageHotspotError) allNotes.push(ex.pageHotspotError);
+    for (const r of ex.unknownRoles) this.warnOnce(`role:${r}`, `unknown role ${JSON.stringify(r)} (data-ergo-role or hotspot) ignored; allowed: ${KNOWN_ROLES.join(', ')}`);
+    const { width, height } = pngSize(png);
+    const ew = Math.round(this.vw * this.dev.base.dpr);
+    const eh = Math.round(this.vh * this.dev.base.dpr);
+    if (Math.abs(width - ew) > 1 || Math.abs(height - eh) > 1) allNotes.push(`screenshot is ${width}x${height}, expected about ${ew}x${eh}`);
+    if (ex.viewport.w !== this.vw || ex.viewport.h !== this.vh) {
+      allNotes.push(`page reports viewport ${ex.viewport.w}x${ex.viewport.h} (layout zoom or meta viewport); boxes are in page CSS px`);
+    }
+    this.lastActive = ex.active;
+    let title = null;
+    try {
+      title = await this.page.title();
+    } catch { /* navigating */ }
+    // CSS-scale copy for fast analysis in Python (derived from the same capture).
+    let cssCopy = null;
+    try {
+      cssCopy = cssScaleCopy(png, this.dev.base.dpr);
+    } catch (err) {
+      allNotes.push(`css-scale copy failed: ${firstLine(err.message)}`);
+    }
+    const snap = {
+      schema_version: 'ergo-snapshot.v1',
+      snapshot_id: id,
+      run_id: this.runId,
+      step_index: stepIndex,
+      captured_at: capturedAt,
+      surface: { kind: 'web', url: this.page.url(), title, app_id: null, scroll: ex.scroll },
+      device: this.dev.snapshotDevice,
+      screenshot: {
+        path: `${id}.png`, sha256: sha256(png), width_px: width, height_px: height,
+        ...(cssCopy ? { css: { path: `${id}.css.png`, sha256: sha256(cssCopy.png), width_px: cssCopy.width, height_px: cssCopy.height, factor: cssCopy.factor } } : {}),
+      },
+      elements: ex.elements,
+      focus_point: this.focusPoint,
+      console_errors: this.consolePending.splice(0),
+      notes: allNotes,
+    };
+    const pngPath = path.join(this.runDir, `${id}.png`);
+    const jsonPath = path.join(this.runDir, `${id}.json`);
+    writeFileAtomic(pngPath, png);
+    if (cssCopy) writeFileAtomic(path.join(this.runDir, `${id}.css.png`), cssCopy.png);
+    writeJsonAtomic(jsonPath, snap);
+    this.snapshots.push({ snapshot_id: id, step_index: stepIndex, path: `${id}.json`, png: `${id}.png` });
+    this.lastSnapshotId = id;
+    return { id, jsonPath, pngPath, snap };
+  }
+
+  // ------------------------------------------------------------------ targets
+
+  inViewport(p) {
+    return p.x >= 0 && p.y >= 0 && p.x < this.vw && p.y < this.vh;
+  }
+
+  clampPoint(p) {
+    return { x: Math.min(this.vw - 1, Math.max(0, p.x)), y: Math.min(this.vh - 1, Math.max(0, p.y)) };
+  }
+
+  async resolveTarget(target, offset, timeoutMs) {
+    const rp = (p) => ({ x: Math.round(p.x * 100) / 100, y: Math.round(p.y * 100) / 100 });
+    if (typeof target === 'object') {
+      const hit = await this.page.evaluate(idAtPoint, { key: STATE_KEY, x: target.x, y: target.y }).catch(() => ({ id: null }));
+      return { kind: 'point', point: rp(target), elementId: hit.id, handle: null, waited: false };
+    }
+    if (target.startsWith('hotspot:')) {
+      const id = target.slice('hotspot:'.length);
+      const spot = await this.page.evaluate(({ id: hid, declared }) => {
+        try {
+          const api = window.__ergoqa__;
+          if (api && typeof api.hotspots === 'function') {
+            const list = api.hotspots();
+            if (Array.isArray(list)) {
+              const h = list.find((x) => x && x.id === hid);
+              if (h && h.box && [h.box.x, h.box.y, h.box.w, h.box.h].every((n) => typeof n === 'number' && Number.isFinite(n))) {
+                return { box: { x: h.box.x, y: h.box.y, w: h.box.w, h: h.box.h }, origin: 'page' };
+              }
+            }
+          }
+        } catch (e) { /* fall back to the scenario declaration */ }
+        const d = declared.find((x) => x.id === hid);
+        return d ? { box: d.box, origin: 'scenario' } : null;
+      }, { id, declared: this.scenario.hotspots }).catch(() => null);
+      if (!spot) return { kind: 'missing', error: `hotspot ${JSON.stringify(id)} is declared neither by the scenario nor by window.__ergoqa__.hotspots()` };
+      const b = spot.box;
+      const point = offset ? { x: b.x + offset.x, y: b.y + offset.y } : { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+      return {
+        kind: 'hotspot', point: rp(point), elementId: `hs-${id.replace(/[^A-Za-z0-9._-]/g, '_')}`, handle: null, box: b, origin: spot.origin, waited: false,
+      };
+    }
+    const deadline = epochNow() + timeoutMs;
+    let waited = false;
+    for (;;) {
+      let handle = null;
+      let any = 0;
+      try {
+        const loc = this.page.locator(target);
+        const vis = loc.filter({ visible: true });
+        if ((await vis.count()) > 0) handle = await vis.first().elementHandle({ timeout: 1000 });
+        else any = await loc.count();
+      } catch (err) {
+        const msg = firstLine(err.message);
+        if (/selector|parse|Unexpected token|Unknown engine/i.test(msg)) return { kind: 'missing', error: `invalid selector ${JSON.stringify(target)}: ${msg}` };
+      }
+      if (handle) {
+        const box = await handle.boundingBox().catch(() => null);
+        if (box && box.width > 0 && box.height > 0) {
+          const point = offset ? { x: box.x + offset.x, y: box.y + offset.y } : { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+          const info = await handle.evaluate(idForElement, STATE_KEY).catch(() => ({ id: null, exact: false, interactive: false }));
+          return {
+            kind: 'selector', point: rp(point), elementId: info.id, exact: info.exact, interactive: info.interactive, handle, box, waited,
+          };
+        }
+        await handle.dispose().catch(() => {});
+      }
+      if (epochNow() > deadline) {
+        return {
+          kind: 'missing',
+          error: any ? `${JSON.stringify(target)} matched ${any} element(s) but none is visible` : `no element matches ${JSON.stringify(target)}`,
+        };
+      }
+      waited = true;
+      await sleep(50);
+    }
+  }
+
+  // ------------------------------------------------------------------ input
+
+  pointerMode() {
+    if (this.dev.contextOptions.hasTouch) return 'touch';
+    if (this.dev.base.input === 'mouse') return 'mouse';
+    this.warnOnce('pointer-fallback', `${this.dev.base.id} has no pointer (input=${this.dev.base.input}); pointer actions were sent as mouse events (fallback)`);
+    return 'mouse(fallback)';
+  }
+
+  async touchPath(start, end, durationMs, holdStartMs, holdEndMs) {
+    const steps = Math.max(2, Math.round(durationMs / 16));
+    await this.cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: start.x, y: start.y }] });
+    if (holdStartMs) await sleep(holdStartMs);
+    for (let i = 1; i <= steps; i++) {
+      const f = i / steps;
+      await this.cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: start.x + (end.x - start.x) * f, y: start.y + (end.y - start.y) * f }],
+      });
+      await sleep(durationMs / steps);
+    }
+    if (holdEndMs) await sleep(holdEndMs);
+    await this.cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  }
+
+  async mousePath(start, end, durationMs, holdStartMs, holdEndMs) {
+    const steps = Math.max(2, Math.round(durationMs / 16));
+    await this.page.mouse.move(start.x, start.y);
+    await this.page.mouse.down();
+    if (holdStartMs) await sleep(holdStartMs);
+    for (let i = 1; i <= steps; i++) {
+      const f = i / steps;
+      await this.page.mouse.move(start.x + (end.x - start.x) * f, start.y + (end.y - start.y) * f);
+      await sleep(durationMs / steps);
+    }
+    if (holdEndMs) await sleep(holdEndMs);
+    await this.page.mouse.up();
+  }
+
+  async gestureEnd(action, start) {
+    if (action.to !== undefined) {
+      const r = await this.resolveTarget(action.to, undefined, 2000);
+      if (r.kind === 'missing') throw new Error(`gesture destination: ${r.error}`);
+      if (r.handle) await r.handle.dispose().catch(() => {});
+      return this.clampPoint(r.point);
+    }
+    let dx = action.dx ?? 0;
+    let dy = action.dy ?? 0;
+    if (action.direction) {
+      const vertical = action.direction === 'up' || action.direction === 'down';
+      const d = action.distance ?? (vertical ? this.vh : this.vw) * 0.5;
+      dx = action.direction === 'right' ? d : action.direction === 'left' ? -d : 0;
+      dy = action.direction === 'down' ? d : action.direction === 'up' ? -d : 0;
+    }
+    return this.clampPoint({ x: start.x + dx, y: start.y + dy });
+  }
+
+  async doScroll(action, anchorIn) {
+    let dx = action.dx ?? 0;
+    let dy = action.dy ?? 0;
+    if (action.direction) {
+      const vertical = action.direction === 'up' || action.direction === 'down';
+      const d = action.distance ?? (vertical ? this.vh : this.vw) * 0.6;
+      dx = action.direction === 'right' ? d : action.direction === 'left' ? -d : 0;
+      dy = action.direction === 'down' ? d : action.direction === 'up' ? -d : 0;
+    }
+    const anchor = anchorIn || { x: this.vw / 2, y: this.vh / 2 };
+    const mode = this.pointerMode();
+    if (mode === 'touch') {
+      // Finger moves opposite to the content; slow strokes with a final hold avoid
+      // fling. Each stroke loses the touch slop (~10-15 CSS px in Chromium), so
+      // strokes are lengthened by SLOP and, when the window is the scroller, up to
+      // three corrective strokes close the remaining distance (scroll_delta
+      // records what actually happened).
+      const SLOP = 14;
+      const maxY = Math.max(40, Math.min(this.vh * 0.6, 2 * Math.min(anchor.y, this.vh - anchor.y) - 16)) - SLOP;
+      const maxX = Math.max(40, Math.min(this.vw * 0.6, 2 * Math.min(anchor.x, this.vw - anchor.x) - 16)) - SLOP;
+      const stroke = async (cx, cy) => {
+        const fx = cx === 0 ? 0 : cx + Math.sign(cx) * SLOP;
+        const fy = cy === 0 ? 0 : cy + Math.sign(cy) * SLOP;
+        const start = this.clampPoint({ x: anchor.x + fx / 2, y: anchor.y + fy / 2 });
+        const end = this.clampPoint({ x: anchor.x - fx / 2, y: anchor.y - fy / 2 });
+        await this.touchPath(start, end, action.duration_ms ?? 350, 0, 120);
+        await sleep(60);
+      };
+      const origin = await this.scrollPos();
+      let remX = dx;
+      let remY = dy;
+      for (let i = 0; i < 40 && (Math.abs(remX) > 0.5 || Math.abs(remY) > 0.5); i++) {
+        const cx = Math.max(-maxX, Math.min(maxX, remX));
+        const cy = Math.max(-maxY, Math.min(maxY, remY));
+        await stroke(cx, cy);
+        remX -= cx;
+        remY -= cy;
+      }
+      for (let k = 0; origin && k < 3; k++) {
+        const cur = await this.scrollPos();
+        if (!cur || (cur.x === origin.x && cur.y === origin.y)) break; // not the window scroller
+        const rx = dx - (cur.x - origin.x);
+        const ry = dy - (cur.y - origin.y);
+        if (Math.abs(rx) <= 2 && Math.abs(ry) <= 2) break;
+        await stroke(Math.max(-maxX, Math.min(maxX, rx)), Math.max(-maxY, Math.min(maxY, ry)));
+        const next = await this.scrollPos();
+        if (!next || (Math.abs(next.x - cur.x) < 1 && Math.abs(next.y - cur.y) < 1)) break; // at the scroll limit
+      }
+      return 'touch';
+    }
+    await this.page.mouse.move(anchor.x, anchor.y);
+    await this.page.mouse.wheel(dx, dy);
+    await sleep(150);
+    return mode;
+  }
+
+  async dispatchInput(action, resolved) {
+    const kind = action.action;
+    const p = resolved ? resolved.point : null;
+    const center = { x: this.vw / 2, y: this.vh / 2 };
+    const mode = POINTER.has(kind) || (kind === 'type' && p) ? this.pointerMode() : null;
+    const touch = mode === 'touch';
+    switch (kind) {
+      case 'tap':
+      case 'click':
+        if (touch) await this.page.touchscreen.tap(p.x, p.y);
+        else await this.page.mouse.click(p.x, p.y);
+        return mode;
+      case 'double_tap':
+        if (touch) {
+          await this.page.touchscreen.tap(p.x, p.y);
+          await sleep(120);
+          await this.page.touchscreen.tap(p.x, p.y);
+        } else {
+          await this.page.mouse.dblclick(p.x, p.y);
+        }
+        return mode;
+      case 'long_press': {
+        const ms = action.ms ?? action.duration_ms ?? 800;
+        if (touch) {
+          await this.cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: p.x, y: p.y }] });
+          await sleep(ms);
+          await this.cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        } else {
+          await this.page.mouse.move(p.x, p.y);
+          await this.page.mouse.down();
+          await sleep(ms);
+          await this.page.mouse.up();
+        }
+        return mode;
+      }
+      case 'swipe':
+      case 'drag': {
+        const start = p || center;
+        const end = await this.gestureEnd(action, start);
+        const duration = action.duration_ms ?? (kind === 'swipe' ? 200 : 600);
+        const holdStart = kind === 'drag' ? (action.hold_ms ?? 250) : 0;
+        const holdEnd = kind === 'drag' ? 100 : 0;
+        if (touch) await this.touchPath(start, end, duration, holdStart, holdEnd);
+        else await this.mousePath(start, end, duration, holdStart, holdEnd);
+        return { input: mode, start, end };
+      }
+      case 'type':
+        if (p) {
+          if (touch) await this.page.touchscreen.tap(p.x, p.y);
+          else await this.page.mouse.click(p.x, p.y);
+          await sleep(80);
+        }
+        if (action.clear) {
+          await this.page.keyboard.press('ControlOrMeta+A');
+          await this.page.keyboard.press('Backspace');
+        }
+        await this.page.keyboard.type(action.text, { delay: action.delay_ms ?? 25 });
+        return p ? `${mode}+keyboard` : 'keyboard';
+      case 'press':
+        for (let i = 0; i < (action.repeat ?? 1); i++) {
+          await this.page.keyboard.press(action.key, { delay: action.hold_ms ?? 0 });
+        }
+        return 'keyboard';
+      case 'gamepad':
+        for (const k of action.keys ?? [action.key]) {
+          await this.page.keyboard.down(k);
+          await sleep(action.hold_ms ?? 80);
+          await this.page.keyboard.up(k);
+        }
+        return 'keyboard(gamepad-mapping)';
+      case 'scroll':
+        return this.doScroll(action, p);
+      default:
+        throw new Error(`unsupported action ${kind}`);
+    }
+  }
+
+  /** Wait until a DOM mutation or main-frame navigation follows `dispatch`, or the deadline. */
+  async waitForFeedback(dispatch, deadline) {
+    while (epochNow() < deadline) {
+      if (this.navEvents.some((t) => t >= dispatch)) return;
+      if ((await this.firstMutation(dispatch, deadline + 1e6)) !== null) return;
+      await sleep(16);
+    }
+  }
+
+  async performInput(action, resolved, step) {
+    const kind = action.action;
+    const fbTimeout = action.feedback_timeout_ms ?? (kind === 'scroll' ? 0 : this.opts.feedbackTimeoutMs);
+    const visualOn = this.opts.visualFeedback && fbTimeout > 0 && MEASURED.has(kind);
+    let pre = null;
+    let visualAmbient = false;
+    if (visualOn) {
+      try {
+        const a = await this.captureFrame();
+        await sleep(40);
+        pre = await this.captureFrame();
+        const d = visualDiffFraction(a, pre, VISUAL_LEVEL);
+        visualAmbient = d !== null && d >= this.visualThreshold(pre);
+      } catch {
+        pre = null;
+      }
+    }
+    const scrollBefore = ['scroll', 'swipe', 'drag'].includes(kind) ? await this.scrollPos() : null;
+    const dispatch = epochNow();
+    step.t_start_ms = this.rel(dispatch);
+    const fb = { visual: null, done: false };
+    const probe = this.probeFrames({
+      dispatch,
+      stepIndex: step.step_index,
+      flashMs: this.opts.flashSampleMs,
+      visual: visualOn && pre && !visualAmbient ? { pre, deadline: dispatch + fbTimeout } : null,
+      fb,
+    });
+    let inputErr = null;
+    try {
+      const r = await this.dispatchInput(action, resolved);
+      if (r && typeof r === 'object') {
+        step.input = r.input;
+        if (!step.point) step.point = { x: round1(r.start.x), y: round1(r.start.y) };
+        step.end_point = { x: round1(r.end.x), y: round1(r.end.y) };
+      } else {
+        step.input = r;
+      }
+    } catch (err) {
+      inputErr = err;
+    }
+    const inputEnd = epochNow();
+    if (fbTimeout > 0 && !inputErr) await this.waitForFeedback(dispatch, dispatch + fbTimeout);
+    fb.done = true;
+    await probe;
+    if (this.navEvents.some((t) => t >= dispatch)) {
+      await this.page.waitForLoadState('load', { timeout: 10000 }).catch(() => {});
+    }
+    const early = [this.navEvents.find((t) => t >= dispatch)].filter((t) => t != null);
+    const domEarly = await this.firstMutation(dispatch, epochNow());
+    if (domEarly !== null) early.push(domEarly);
+    if (!early.length && fb.visual != null) early.push(fb.visual);
+    const anchor = Math.max(inputEnd, early.length ? Math.min(...early) : inputEnd);
+    await sleep(anchor + (action.settle_ms ?? this.opts.settleMs) - epochNow());
+    const end = epochNow();
+    step.t_end_ms = Math.max(step.t_start_ms, this.rel(end));
+
+    // Feedback latency (spec): first DOM mutation or main-frame navigation after
+    // dispatch, within 3000 ms and before the after-snapshot. Only when neither
+    // happened does a visual change of the viewport count (canvas/CSS-only
+    // feedback); focus/caret or tap-highlight changes would otherwise mask
+    // missing application feedback on DOM pages.
+    const windowEnd = Math.min(dispatch + FEEDBACK_WINDOW_MS, end);
+    const cands = [];
+    const dom = await this.firstMutation(dispatch, windowEnd);
+    if (dom !== null) cands.push({ t: dom, src: 'dom_mutation' });
+    const nav = this.navEvents.find((t) => t >= dispatch && t <= windowEnd);
+    if (nav !== undefined) cands.push({ t: nav, src: 'navigation' });
+    cands.sort((a, b) => a.t - b.t);
+    let first = cands[0] || null;
+    if (!first && fb.visual != null && fb.visual <= windowEnd) first = { t: fb.visual, src: 'visual_change' };
+    step.feedback_latency_ms = first ? round1(Math.max(0, first.t - dispatch)) : null;
+    step.feedback_source = first ? first.src : null;
+    step.feedback_dom_ms = dom !== null ? round1(Math.max(0, dom - dispatch)) : null;
+    step.feedback_visual_ms = fb.visual != null ? round1(Math.max(0, fb.visual - dispatch)) : null;
+    step.feedback_window_ms = round1(windowEnd - dispatch);
+    step.feedback_ambient_mutations = await this.countMutations(dispatch - 500, dispatch);
+    step.feedback_visual_ambient = visualOn ? visualAmbient : null;
+    if (scrollBefore) {
+      const after = await this.scrollPos();
+      if (after) step.scroll_delta = { x: round1(after.x - scrollBefore.x), y: round1(after.y - scrollBefore.y) };
+    }
+    if (inputErr) throw inputErr;
+  }
+
+  /** Execute one validated action; always ends with an after-snapshot. */
+  async act(action) {
+    if (this.crashed) throw new DriverFailure('page crashed');
+    const stepIndex = this.steps.length + 1;
+    const step = {
+      step_index: stepIndex,
+      action,
+      target_element_id: null,
+      point: null,
+      before: this.lastSnapshotId,
+      after: null,
+      t_start_ms: null,
+      t_end_ms: null,
+      feedback_latency_ms: null,
+      result: 'ok',
+      error: null,
+      input: null,
+    };
+    let resolved = null;
+    try {
+      const kind = action.action;
+      if (kind === 'wait') {
+        const t0 = epochNow();
+        step.t_start_ms = this.rel(t0);
+        await sleep(action.ms);
+        step.t_end_ms = Math.max(step.t_start_ms, this.rel(epochNow()));
+      } else if (kind === 'snapshot') {
+        step.t_start_ms = this.rel(epochNow());
+        step.t_end_ms = step.t_start_ms;
+      } else {
+        if (action.target !== undefined) {
+          const timeout = action.timeout_ms ?? DEFAULT_TARGET_TIMEOUT_MS;
+          resolved = await this.resolveTarget(action.target, action.offset, timeout);
+          const allowScroll = action.auto_scroll ?? this.opts.autoScroll;
+          if (resolved.kind !== 'missing' && !this.inViewport(resolved.point) && allowScroll) {
+            if (resolved.handle) {
+              await resolved.handle.scrollIntoViewIfNeeded({ timeout: 5000 }).catch(() => {});
+              await resolved.handle.dispose().catch(() => {});
+              step.auto_scrolled = true;
+            } else if (resolved.kind === 'hotspot' && resolved.origin === 'page') {
+              // Live page hotspots follow the document; scenario boxes are fixed viewport coordinates.
+              const p = resolved.point;
+              await this.page.evaluate(({ dx, dy }) => window.scrollBy(dx, dy), {
+                dx: p.x < 0 || p.x >= this.vw ? p.x - this.vw / 2 : 0,
+                dy: p.y < 0 || p.y >= this.vh ? p.y - this.vh / 2 : 0,
+              }).catch(() => {});
+              step.auto_scrolled = true;
+            }
+            if (step.auto_scrolled) {
+              await sleep(150);
+              resolved = await this.resolveTarget(action.target, action.offset, timeout);
+            }
+          }
+          const stale = resolved.kind === 'selector' && (resolved.elementId == null || (!resolved.exact && resolved.interactive));
+          if (resolved.kind !== 'missing' && (resolved.waited || step.auto_scrolled || stale)) {
+            // The target appeared or moved after the last snapshot: capture what the
+            // user saw right before acting, and re-read ids from that snapshot.
+            const why = step.auto_scrolled ? 'pre_action_auto_scroll' : 'pre_action_target_appeared';
+            const pre = await this.snapshot(stepIndex, [why]);
+            step.before = pre.id;
+            if (resolved.handle) await resolved.handle.dispose().catch(() => {});
+            resolved = await this.resolveTarget(action.target, action.offset, 1000);
+          }
+          if (resolved.kind === 'missing') {
+            step.result = 'no_target';
+            step.error = resolved.error;
+          } else if (!this.inViewport(resolved.point)) {
+            step.result = 'no_target';
+            step.error = `target point (${resolved.point.x}, ${resolved.point.y}) is outside the ${this.vw}x${this.vh} viewport${allowScroll ? '' : ' (auto_scroll disabled)'}`;
+            step.point = resolved.point;
+            step.target_element_id = resolved.elementId || null;
+          } else {
+            step.point = resolved.point;
+            step.target_element_id = resolved.elementId || null;
+            const hit = await this.page.evaluate(idAtPoint, { key: STATE_KEY, x: resolved.point.x, y: resolved.point.y }).catch(() => ({ id: null }));
+            step.hit_element_id = hit.id;
+            if (resolved.handle) step.target_hit = await resolved.handle.evaluate(hitTest, resolved.point).catch(() => null);
+            else step.target_hit = resolved.elementId ? hit.id === resolved.elementId : null;
+          }
+        }
+        if (step.result === 'ok') await this.performInput(action, resolved, step);
+      }
+    } catch (err) {
+      if (err instanceof DriverFailure) throw err;
+      step.result = 'error';
+      step.error = firstLine(err.message);
+    } finally {
+      if (resolved && resolved.handle) await resolved.handle.dispose().catch(() => {});
+    }
+    // focus_point: last pointer point; keyboard actions use the focused element.
+    if (step.point && step.result === 'ok') {
+      this.focusPoint = step.end_point ? { x: round1(step.end_point.x), y: round1(step.end_point.y) } : { ...step.point };
+    } else if (['press', 'gamepad', 'type'].includes(action.action) && step.result === 'ok' && this.lastActive) {
+      this.focusPoint = { ...this.lastActive };
+    }
+    let snap = null;
+    try {
+      snap = await this.snapshot(stepIndex, []);
+      step.after = snap.id;
+      if (!step.point && ['press', 'gamepad', 'type'].includes(action.action) && this.lastActive && step.result === 'ok') {
+        // Keyboard focus moved during the step: update for the next snapshot.
+        this.focusPoint = { ...this.lastActive };
+      }
+    } catch (err) {
+      step.result = 'error';
+      step.error = step.error || firstLine(err.message);
+      this.steps.push(step);
+      throw err;
+    }
+    step.url_after = this.page.url();
+    this.steps.push(step);
+    return { step, snap };
+  }
+
+  // ------------------------------------------------------------------ notes / finish
+
+  addNote(note) {
+    const entry = {
+      step_index: note.step_index ?? this.steps.length,
+      intent: note.intent ?? '',
+      expected: note.expected ?? '',
+      observed: note.observed ?? '',
+      confusion: note.confusion,
+      snapshot_id: this.lastSnapshotId,
+      t_ms: this.rel(epochNow()),
+      basis: 'judgment',
+    };
+    if (note.severity) entry.severity = note.severity;
+    this.personaNotes.push(entry);
+    return this.personaNotes.length - 1;
+  }
+
+  async evaluateSuccess() {
+    const sc = this.scenario.success;
+    const unevaluable = this.scenario.success_unevaluable;
+    if (!sc && !unevaluable.length) return { success: null, detail: null };
+    const results = [];
+    const check = async (kind, value, fn) => {
+      try {
+        results.push({ kind, value, passed: !!(await fn()) });
+      } catch (err) {
+        results.push({ kind, value, passed: false, error: firstLine(err.message) });
+      }
+    };
+    if (this.page && !this.crashed && !this.page.isClosed()) {
+      for (const sel of sc?.selector_visible || []) {
+        await check('selector_visible', sel, async () => (await this.page.locator(sel).filter({ visible: true }).count()) > 0);
+      }
+      for (const s of sc?.url_contains || []) await check('url_contains', s, async () => this.page.url().includes(s));
+      if (sc?.text_present) {
+        const body = await this.page.evaluate(() => (document.body ? document.body.innerText : '')).catch(() => '');
+        for (const s of sc.text_present) await check('text_present', s, async () => body.includes(s));
+      }
+    }
+    const allPassed = results.length > 0 && results.every((r) => r.passed);
+    const anyFailed = results.some((r) => !r.passed) || (this.crashed && results.length === 0);
+    let success;
+    if (anyFailed) success = false;
+    else if (unevaluable.length || !results.length) success = null;
+    else success = allPassed;
+    return { success, detail: { criteria: results, unevaluable } };
+  }
+
+  async finish({ personaSuccess, reason } = {}) {
+    if (this.finished) return this.finished;
+    const finishing = (async () => {
+      if (reason) this.block(reason);
+      for (const t of this.twPollers) clearInterval(t);
+      const end = epochNow();
+      let success = null;
+      let detail = null;
+      let basis = null;
+      try {
+        ({ success, detail } = await this.evaluateSuccess());
+        if (detail) basis = 'measured';
+      } catch (err) {
+        this.warnings.push(`success evaluation failed: ${firstLine(err.message)}`);
+      }
+      if (success === null && !detail && typeof personaSuccess === 'boolean') {
+        success = personaSuccess;
+        basis = 'judgment';
+      }
+      let finalUrl = null;
+      let title = null;
+      try {
+        finalUrl = this.page.url();
+        title = await this.page.title();
+      } catch { /* page gone */ }
+      let status = 'completed';
+      if (this.blockReasons.length) status = 'blocked';
+      else if (this.mode === 'scripted' && this.steps.some((s) => s.result !== 'ok')) status = 'failed';
+      const flashFrames = this.flashSamples.length;
+      const gaps = [];
+      for (let i = 1; i < this.flashSamples.length; i++) {
+        if (this.flashSamples[i].step_index === this.flashSamples[i - 1].step_index) gaps.push(this.flashSamples[i].t_ms - this.flashSamples[i - 1].t_ms);
+      }
+      const run = {
+        schema_version: 'ergo-run.v1',
+        run_id: this.runId,
+        scenario_id: this.scenario.scenario_id,
+        profile_id: this.profileId,
+        driver: {
+          name: 'playwright-web',
+          version: this.pwInfo.version,
+          browser: 'chromium',
+          browser_version: this.browserVersion || null,
+          playwright_path: this.pwInfo.path,
+          emulation: this.dev ? { ...this.dev.emulation, locale: this.opts.locale, timezone: this.opts.timezoneId } : null,
+          network_policy: {
+            allowed_origins: [...this.allowedOrigins],
+            blocked_requests: this.blockedCount,
+            blocked_sample: this.blocked,
+            blocked_console_messages_suppressed: this.blockedConsole,
+          },
+          clock: { page_offset_ms: round1(this.clockOffset), calibration_rtt_ms: round1(this.clockRtt) },
+          feedback: {
+            window_ms: FEEDBACK_WINDOW_MS,
+            wait_ms: this.opts.feedbackTimeoutMs,
+            sources: ['dom_mutation', 'navigation', ...(this.opts.visualFeedback ? ['visual_change'] : [])],
+            visual_frame_width_css: FRAME_WIDTH,
+            visual_pixel_level: VISUAL_LEVEL,
+          },
+          element_cap: ELEMENT_CAP,
+        },
+        device: this.dev ? this.dev.snapshotDevice : null,
+        mode: this.mode,
+        started_at: this.startedAt,
+        ended_at: isoNow(),
+        status,
+        success,
+        success_basis: basis,
+        success_detail: detail,
+        ...(this.mode === 'interactive' ? { persona_claimed_success: typeof personaSuccess === 'boolean' ? personaSuccess : null } : {}),
+        surface: { kind: 'web', url: this.scenario.url, final_url: finalUrl, title, http_status: this.httpStatus },
+        steps: this.steps,
+        timing_windows: this.timingWindowsOut(end),
+        flash_samples: this.flashSamples,
+        flash_sampling: this.opts.flashSampleMs > 0 ? {
+          enabled: true,
+          per_step_ms: this.opts.flashSampleMs,
+          method: 'CDP Page.captureScreenshot, viewport downscaled to ~160 CSS px wide, optimizeForSpeed',
+          frames: flashFrames,
+          mean_interval_ms: gaps.length ? round1(gaps.reduce((a, b) => a + b, 0) / gaps.length) : null,
+          max_interval_ms: gaps.length ? round1(Math.max(...gaps)) : null,
+          changed_fraction: 'share of pixels with |delta relative luminance| >= 0.10 vs the previous frame of the same burst (0 for the first frame)',
+          flash_fraction: 'changed pixels whose darker state is < 0.80 (WCAG 2.3.1 general-flash pair condition)',
+        } : { enabled: false },
+        persona_notes: this.personaNotes,
+        snapshots: this.snapshots,
+        console_errors: this.consoleAll,
+        blocked_reasons: this.blockReasons,
+        warnings: this.warnings,
+      };
+      if (!run.device) run.device = this.deviceRequest.fallbackDevice;
+      writeJsonAtomic(path.join(this.runDir, 'run.json'), run);
+      try {
+        if (this.browser) await this.browser.close();
+      } catch { /* already gone */ }
+      let exitCode = 3;
+      if (status === 'blocked') exitCode = 4;
+      else if (status === 'completed' && success === true) exitCode = 0;
+      return { status, success, runPath: path.join(this.runDir, 'run.json'), exitCode, run };
+    })();
+    this.finished = finishing;
+    return finishing;
+  }
+}
+
+export function ensureRunDir(dir) {
+  if (fs.existsSync(dir)) {
+    const st = fs.lstatSync(dir);
+    if (!st.isDirectory() || st.isSymbolicLink()) return `run directory ${dir} exists and is not a plain directory`;
+    if (fs.readdirSync(dir).length) return `run directory ${dir} already exists and is not empty (evidence is never overwritten)`;
+    return null;
+  }
+  fs.mkdirSync(dir, { recursive: true });
+  return null;
+}
