@@ -99,6 +99,7 @@ them. The out-of-sample test is `heldout-2`, pre-registered in
 | exp3 (round 2) | `4dbdc37` | 0.849 | 186 | 51 | 96 | 26 |
 
 | exp4 (rounds 3-4, flash rework) | `a11ef18` | 0.906 (95 % CI 0.80-0.96) | 193 | 53 | 97 | 26 |
+| exp5 (semantics checks, RH-01 secondary controls) | `5b6e8fb` | 0.906 | 200 | 54 | 101 | 27 |
 
 exp4 detail (`ablation-dev-def157e.json`): single default persona 0.642, measured
 checks only 0.302. Stratified coverage reaches 0.906 at 8 profiles per device;

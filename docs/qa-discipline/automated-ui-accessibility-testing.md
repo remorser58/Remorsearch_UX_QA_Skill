@@ -362,6 +362,119 @@
 - XCTest에는 `textClipped` 감사 유형이 있습니다. [industry]
 - "전체 내용에 접근할 수 있는지"(1.4.10·1.4.12의 Understanding)는 결정적으로 일부만 확인할 수 있습니다. 같은 글자가 `title`, `aria-label`, 연결된 상세 링크, 펼치기 버튼에 있는지 봅니다. 없으면 `truncated_without_alternative`로 기록합니다 (AUT-05).
 
+### 2.4 파일럿: 사람이 쓴 ACT 예제로 현재 구현과 대안을 비교 [derived]
+
+**목적.** 이 스킬의 벤치마크는 작성자·탐지기·심사관이 모두 Claude입니다 (`validation-and-limits.md`). W3C ACT 예제는 사람 커뮤니티가 쓴 외부 오라클입니다. SM/LY 검사가 ACT의 "통과 예제에서 오탐 0" 계약을 지키는지 확인했습니다.
+
+**방법.**
+
+- ACT 규칙 원본 8개와 c487ae에서 예제 169개를 추출했습니다.
+- 브라우저: Playwright 1.56.1 + Chromium 1194 (`/opt/pw-browsers`). 예제 HTML과 ACT `test-assets`는 로컬 라우팅으로 제공하고, 외부 네트워크는 막았습니다.
+- 비교 대상 네 가지:
+  1. **스킬**: `page_scripts.mjs` 339–468행을 그대로 복사해 페이지에서 실행하고, `check_semantics`의 판정을 재현했습니다.
+  2. **스킬 필터 + Chromium 이름**: 같은 가시성·활성 필터를 쓰되 이름만 CDP AX 트리에서 가져왔습니다.
+  3. **Chromium AX 트리 그대로**
+  4. **axe-core 4.13.0**: ACT에 대응하는 규칙만 실행했습니다.
+- 스크립트와 결과는 스크래치패드에만 두었고, 저장소는 바꾸지 않았습니다.
+
+**이름 규칙** (탐지 = 실패 예제 중 잡은 수, 오탐 = passed·inapplicable 예제 중 실패로 판정한 수):
+
+| ACT 규칙 (실패 / 비실패 예제) | 스킬 (SM-01·SM-03) | 스킬 필터 + Chromium 이름 | Chromium AX 트리 | axe-core 4.13 |
+| --- | --- | --- | --- | --- |
+| 97a4e1 버튼 (5 / 12) | 3/5, 오탐 0/12 | 4/5, 0/12 | 5/5, 0/12 | 5/5, 0/12 |
+| e086e5 입력 칸 (9 / 12) | 5/9, 0/12 (placeholder·title까지 세면 1/12) | 9/9, 0/12 | 9/9, 0/12 | 9/9, 0/12 |
+| c487ae 링크 (11 / 17) | 7/11, **3/17** | 7/11, 0/17 | 10/11, 0/17 | 11/11, 0/17 |
+| **합계 (25 / 41)** | **15/25 (60 %), 오탐 3/41 (7.3 %)** | 20/25 (80 %), 0/41 | 24/25 (96 %), 0/41 | **25/25, 0/41** |
+
+- **스킬이 놓친 원인:**
+  - 크기가 0인 초점 가능 요소(빈 `<span role="button">`, 빈 `<a href>`, `role="none"` 링크)를 가시성 필터가 제외했습니다.
+  - `role="textbox"`인 `div` 3건은 요소 수집 선택자에 없습니다.
+  - 비활성 입력 칸은 설계상 건너뜁니다.
+  - `<area>`는 수집하지 않습니다.
+  - `role="doc-biblioref"` 예제 하나는 파일럿에서 외부 이미지를 막은 탓이라 인공물일 수 있습니다.
+- **스킬의 오탐 3건:** 링크 안 `img`의 `aria-label`, `title`, `aria-labelledby`로 생기는 이름을 계산하지 않았습니다. `accNameSrc`는 내용에서 `img[alt]`와 `svg title`만 봅니다.
+
+**2.5.3 레이블 포함** (ACT 2ee8b8: 실패 16, 통과 16, 적용 외 6):
+
+| 방식 | 탐지 | 통과 예제 오탐 | 적용 외 예제 오탐 |
+| --- | --- | --- | --- |
+| 현재 SM-02 (모든 비단어 문자 삭제 후 부분 문자열, 글자 2개 이상) | 7/16 | 3/16 | 0/6 |
+| **ACT 알고리즘** (토큰화, 괄호 제거, NFKD, 연속 부분열), 보이는 내부 글자, 아이콘 글꼴 제외, 한글 조사 완화 | **16/16** | 1/16 ("X"를 닫기 기호로 쓴 경우) | 2/6 (약어 "Ave.", 하이픈 "non-standard") |
+| axe `label-content-name-mismatch` (experimental) | 14/16 | 3/16 (아이콘 리거처, 공백 없는 span, 괄호) | 0/6 |
+
+- 현재 SM-02가 놓친 9건 중 5건은 숫자만 있는 레이블("2021", 전화번호, "11×3=33")이라 글자 2개 이상 조건에 걸렸습니다. 나머지는 단어 경계를 지운 탓("Discover It" ⊂ "Discover Italy", "justice" = "just ice")입니다.
+- **주의:** 아이콘 글꼴과 시각적으로 숨긴 글자 처리는 첫 실행의 오탐 두 건을 본 뒤 넣었습니다. 이 행은 이 예제에 맞춘 결과(fit)이지 보류 추정치가 아닙니다.
+
+**잘림, 초점, 메타 뷰포트, 글자 간격:**
+
+| ACT 규칙 (실패 / 통과 / 적용 외) | 방식 | 탐지 | 오탐 |
+| --- | --- | --- | --- |
+| 59br37 200 % 잘림 (5 / 4 / 5), 640 × 512, DPR 2 | 현재 LY-01 (자기 상자) | 5/5 (말줄임 제외 시 4/5) | 통과 2/4 (말줄임, 한 줄 고정), 적용 외 0/5 |
+| 〃 | ACT식 조상 잘림 (축별, 스크롤 컨테이너에서 멈춤, 4 px 미만 상자 제외) | 5/5 | 0/4, 0/5 (**두 번 고친 뒤의 fit**) |
+| oj04fd 보이는 초점 (1 / 4 / 2) | 현재 SM-05 (상자 + 4 px, 24/255 이상 픽셀 4개 미만이면 실패) | 1/1 | 통과 1/4 (표시가 요소 **옆**의 파란 사각형) |
+| 〃 | ACT식 (뷰포트 전체에서 초점 전후 픽셀이 하나라도 다른가) | 1/1 | 0/4 |
+| b4f0c3 메타 뷰포트 (7 / 5 / 4) | axe `meta-viewport` | 5/7 (`user-scalable=invalid`, `maximum-scale=invalid` 놓침) | 0/9 |
+| 24afc2 `!important` 자간 (4 / 6 / 9) | axe `avoid-inline-spacing` | 4/4 | 2/15 (자기 글자가 없는 요소) |
+
+**실행 비용.** 이름 파일럿 104개 예제가 브라우저 컨텍스트 생성, CDP 트리, axe 주입을 모두 합쳐 22.5초(예제당 약 0.2초)였습니다. 작은 페이지라 실제 제품 비용을 대표하지 않습니다.
+
+**이 파일럿이 말하지 않는 것.** ACT 예제는 규칙당 5–38개이고 경계 사례 위주입니다. 실제 제품에서의 정밀도가 아닙니다. 다만 "현재 SM-01/SM-02/LY-01/SM-05가 사람이 쓴 통과 예제를 실패로 판정한다"는 것은 확인된 사실이고, 고치는 방법도 규칙 원문에 있습니다.
+
+### 2.5 프로필과 무관한 검사와 프로필에 따라 달라지는 검사
+
+| 검사 | WCAG / KWCAG 2.2 | 계산이 프로필에 따라 달라지나 | 보고 단위 | 누구에게 중요한가 (audience 조건) |
+| --- | --- | --- | --- | --- |
+| 이름·역할 (SM-01, SM-03, AX) | 4.1.2, 1.3.1, 3.3.2 / 7.3.2, 8.2.1 | 아니요 | `screen_key` × 기기 부류마다 한 번 | `screen_reader`, 음성 제어 (선언만 되고 시뮬레이션하지 않는 조건) |
+| 레이블 포함 (SM-02) | 2.5.3 / 6.5.3 | 아니요 | 한 번 | 음성 제어 |
+| 오류 연결 (SM-04) | 3.3.1 / 7.3.1 | 측정은 아니요. 알아차리는지는 예(GZ-02가 이미 다룸) | 한 번 | `screen_reader`, `cognitive`, 모두 |
+| 보이는 초점, 초점 가림, 초점 관리 (SM-05, SM-06, AUT-11) | 2.4.7, 2.4.11, 2.4.3 / 6.1.2 | 계산은 아니요. 키보드가 있는 기기 부류에만 적용 | 키보드 기기마다 한 번. 프로필 속성 `grip=keyboard_only`와 연결 | `keyboard_only`, `switch_access`, 데스크톱 `screen_reader` |
+| 약한 초점 표시 (AUT-10) | 2.4.13 AAA | **부분적으로 예**: 색 변화만으로 된 표시는 CVD 시뮬레이션과 시각(visual angle)에 따라 다르게 보임 | 시각 조건 프로필마다 (basis `model`) | `low_vision`, `cvd_*`, `presbyopia` |
+| 320 CSS px 리플로 (AUT-06) | 1.4.10 / 없음 | 적합성 판정은 아니요 | 데스크톱 화면마다 한 번 | `low_vision`, `magnifier` (400 % 확대) |
+| 200 % 확대 (AUT-07, 데스크톱) | 1.4.4 / 없음 | 아니요 | 한 번 | `presbyopia`, `low_vision` |
+| OS 글자 크기 1.3·2.0배 (AUT-07, 모바일) | WCAG 밖 (플랫폼 설정) | **예**: `contexts[].technical.text_scale`(AP-09)에 따라 다름 | 그 프로필마다. 차등 조건 `technical.text_scale` | 60대·70대 이상 `presbyopia`, `low_vision` |
+| 글자 간격 (AUT-19) | 1.4.12 / 없음 | 아니요 | 한 번 | 난독증, `low_vision` (선언만 됨) |
+| 메타 뷰포트 확대 차단 (AUT-08) | 1.4.4 (ACT b4f0c3) | 아니요 | 모바일 화면마다 한 번 | 구형 모바일 브라우저의 `low_vision` |
+| 대상 크기 (PT-01) | 2.5.8 / 6.1.3 권장 | 아니요 (이미 profile-invariant) | 한 번 | 운동 (PT-04 모델 검사는 프로필에 따라 다름) |
+
+**원칙** [derived]:
+
+1. 프로필과 무관한 검사는 페르소나 수만큼 곱하지 않습니다. 현재 `PROFILE_INVARIANT_CHECKS`(STF-08)와 같습니다.
+2. 그렇다고 "누구와도 무관"하게 두지도 않습니다. `serves` 필드에 선언만 된 조건을 적고, audience 파일에 그 조건이 있는 세그먼트를 `segments_affected`로 연결합니다. 이렇게 해야 페르소나 구성과 이어집니다.
+3. 글자 크기와 확대는 유일하게 **프로필 속성을 바꿔 다시 렌더링해야** 드러나는 레이아웃 결함입니다. 스웜 구조(프로필마다 다른 조건)가 정적 스캐너보다 확실히 나은 곳입니다.
+
+### 2.6 axe-core를 페이지 안에서 호출해 결과를 매핑하는 방법과 MPL-2.0
+
+- Playwright 공식 문서는 `@axe-core/playwright`를 권장합니다 (`AxeBuilder({ page }).analyze()`). 면책 문구는 "Automated accessibility tests can detect some common accessibility problems … But many accessibility problems can only be discovered through manual testing."입니다. [industry]
+- 드라이버는 이미 Playwright를 쓰므로 `node_modules/axe-core/axe.min.js`를 `page.addScriptTag({ path })`로 넣고 `axe.run()`을 부르면 됩니다. 이렇게 하면 네트워크를 쓰지 않으므로 사양 §0의 "로컬 페이지 외 네트워크 금지"를 지킵니다. 4.13.0의 `axe.min.js`는 567 KB(gzip 152 KB)입니다. [derived]
+- **MPL-2.0 원문의 요구** [standard: 라이선스 원문]:
+  - §3.3: "You may create and distribute a Larger Work under terms of Your choice, provided that You also comply with the requirements of this License for the Covered Software."
+  - §3.2: 실행 형태(Executable Form)로 배포하면 소스 형태도 제공해야 하고, 받는 사람에게 소스를 얻는 방법을 알려야 합니다.
+  - §3.4: 라이선스 고지를 지우거나 바꿀 수 없습니다.
+  - §1.10(b): "any new file in Source Code Form that contains any Covered Software"도 수정본(Modification)입니다.
+  - `axe.min.js` 머리말: "This entire copyright notice must appear in every copy of this file you distribute or in any file that contains substantial portions of this source code." [industry]
+- **정리** [derived, 법률 자문 아님]:
+  1. npm **선택적 의존성**으로 두는 방식은 스킬이 axe를 재배포하지 않으므로 MIT인 스킬 코드에 아무 영향이 없습니다. 권장합니다.
+  2. 오프라인 복사를 위해 동봉(vendoring)할 때는 수정하지 않은 `axe.min.js`와 머리말을 그대로 두고, `THIRD_PARTY_NOTICES.md`에 MPL-2.0 고지와 v4.13.0 소스 링크를 적습니다. 나머지 스킬 파일은 MIT로 남습니다 (Larger Work).
+  3. axe의 **규칙 코드를 `checks.py`나 `page_scripts.mjs`에 옮겨 적으면 안 됩니다.** 그 파일이 MPL 수정본이 됩니다. 규칙은 ACT·accname 원문에서 다시 구현합니다.
+- 허용적 라이선스 대안 [industry: npm 메타데이터]:
+  - Siteimprove Alfa (MIT, ACT 중심). 구현 보고서의 consistent 규칙 수는 29로 axe(26)보다 많습니다 [snippet].
+  - IBM Equal Access `accessibility-checker` (Apache-2.0)
+  - HTML_CodeSniffer (BSD-3-Clause)
+
+### 2.7 현재 SM/LY 구현 감사 (코드를 읽고 파일럿과 대조) [derived]
+
+| 위치 | 관찰 | 영향 |
+| --- | --- | --- |
+| `page_scripts.mjs` `accNameSrc` (377–411행) | `aria-hidden` 하위, CSS 생성 글자, 하위 요소의 접근 가능한 이름(`img`의 `aria-label`·`title`·`labelledby`), 내장 컨트롤, 내용에서 이름을 얻을 수 없는 역할(`role=textbox`는 입력 글자가 이름이 됨), presentational 역할 충돌을 다루지 않음 | 파일럿 링크 오탐 3/17. `aria-hidden` 아이콘 글자가 이름으로 잡혀 생기는 미탐 가능성 |
+| `INTERACTIVE` 선택자 (520–522행) | textbox, searchbox, combobox, listbox, spinbutton, option, menuitemcheckbox, menuitemradio, treeitem, gridcell 역할이 없음 | 사용자 정의 입력 칸의 SM-03 미탐 (파일럿 3/9) |
+| `checks.py` `_present` + 가시성 | 크기 0이거나 숨었지만 초점을 받는 요소를 건너뜀 | 스크린리더·키보드 사용자가 만나는 빈 링크와 빈 버튼을 놓침 |
+| SM-02 (`checks.py` 1735–1743행) | 모든 비단어 문자를 지운 뒤 부분 문자열로 비교. 글자 2개 이상 조건. 괄호 규칙 없음. `innerText` 사용 | ACT 대비 미탐 9/16, 오탐 3/22 |
+| SM-03 문서 | placeholder·title만 있는 칸을 1.3.1/3.3.2/4.1.2 실패처럼 서술 | ACT와 axe는 이름이 있다고 봄. best practice로 표기해야 함 |
+| SM-04 | 48 CSS px 상수. 규범 출처 없음 (LAT-09 ER-01) | 글자 크기나 확대가 바뀌면 판정도 바뀜. DOM 그룹 근접성이 더 안정적임 |
+| SM-05 (`session.mjs` 316–365행) | 상자 + 4 px, 채널 차이 24/255, 4 px. 초점 없는 상태를 Shift+Tab으로 만듦 | 표시가 떨어져 있으면 오탐 (파일럿 1/4). Shift+Tab은 이전 요소에 초점을 주므로, 이웃 요소의 표시가 잘라낸 영역에 들어오면 미탐 가능 |
+| SM-06 (`focusInfo`) | 9개 표본점, fixed·sticky 조상만 셈. 사용자가 연 층이나 Esc로 닫히는 층을 빼지 않음. 일부 가림을 P3로 보고 | 2.4.11 주석과 어긋날 수 있음. AAA를 결함으로 셈 |
+| LY-01 (`clippedOf`, 444–449행) | 자기 상자만 봄. 말줄임을 P3로 셈. 기본 뷰포트에서만 실행 | ACT가 통과시키는 말줄임·한 줄 고정에서 오탐. 조상이 자르는 경우 미탐. 확대 상태를 보지 않으므로 1.4.4 시험이 아님 |
+
 ## 3. Implications for the skill (스킬에 주는 시사점)
 
 (작성 중)
