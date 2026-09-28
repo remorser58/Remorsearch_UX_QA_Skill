@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 
 import { CATALOG } from './devices.mjs';
 import { decodePng } from './png.mjs';
+import { snapshotReply } from './serve.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..');
@@ -460,7 +461,7 @@ async function serveTest(base, tmp) {
   let ready = null;
   let resolveReady;
   const readyP = new Promise((r) => { resolveReady = r; });
-  writeJson(path.join(tmp, 'agent.json'), { model_family: 'claude', model: 'selftest', input_channel: 'screenshot', persona_arm: 'neutral' });
+  writeJson(path.join(tmp, 'agent.json'), { model_family: 'claude', model: 'selftest', input_channel: 'screenshot+a11y', persona_arm: 'neutral' });
   const proc = runDriver(['serve', '--agent-json', path.join(tmp, 'agent.json'), '--scenario', path.join(tmp, 'scenario.json'), '--profile', path.join(tmp, 'p-s24.json'),
     '--out', outDir, '--run-id', 'R-serve', '--base', base, '--port', '0', '--idle-timeout-s', '120'], {
     onLine: (obj) => {
@@ -522,7 +523,13 @@ async function serveTest(base, tmp) {
   check(`${label}: a note without anchor is anchored to the acted element (selector and snapshot recorded)`,
     n0.anchor === 'acted' && Array.isArray(n0.anchor_selectors) && n0.anchor_selectors.length === 1 && typeof n0.anchor_snapshot_id === 'string' && typeof n0.screen_key === 'string', n0);
   check(`${label}: the operator record comes from --agent-json`,
-    run.agent && run.agent.model_family === 'claude' && run.agent.input_channel === 'screenshot', run.agent);
+    run.agent && run.agent.model_family === 'claude' && run.agent.input_channel === 'screenshot+a11y', run.agent);
+  const fake = { jsonPath: '/x/S.json', pngPath: '/x/S.png', id: 'S-1', snap: { step_index: 2, surface: { url: 'u', title: 't' }, elements: [1, 2] } };
+  const shot = snapshotReply(fake, { result: 'ok', target_element_id: 'el-1', target_hit: true, feedback_latency_ms: 40, feedback_source: 'dom' }, 'screenshot');
+  const both = snapshotReply(fake, { result: 'ok', target_element_id: 'el-1' }, 'screenshot+a11y');
+  check(`${label}: screenshot-channel replies carry no snapshot JSON path, element count or DOM grounding flags`,
+    shot.png && shot.result === 'ok' && ['snapshot', 'elements', 'target_element_id', 'target_hit', 'feedback_latency_ms', 'feedback_source'].every((k) => !(k in shot))
+    && both.snapshot === '/x/S.json' && both.elements === 2 && both.target_element_id === 'el-1', { shot, both });
   check(`${label}: interactive steps recorded including no_target`,
     run.steps.length === 4 && run.steps.map((s) => s.result).join() === 'ok,ok,no_target,ok', run.steps.map((s) => s.result));
   check(`${label}: on-demand snapshot is noted`, [...snaps.values()].some((s) => s.notes.includes('on_demand')));

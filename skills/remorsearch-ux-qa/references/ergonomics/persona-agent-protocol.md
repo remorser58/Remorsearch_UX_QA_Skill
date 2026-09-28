@@ -23,8 +23,12 @@ Any ergonomic number that appears in LLM text is discarded.
 - The screenshot limited to the visible viewport. Optionally the profile view
   (`scripts/ergo_qa.py view`) that approximates colour-vision deficiency or
   reduced acuity; say which one was used.
-- No DOM, no accessibility tree and no hidden text unless the scenario is an
-  assistive-technology scenario that uses them (then record `input_channel`).
+- No DOM, no accessibility tree and no hidden text unless the run's operator
+  record says `input_channel: "screenshot+a11y"` or `"a11y"`. With
+  `input_channel: "screenshot"` the driver's replies (and its ready line) carry
+  only the PNG, the URL, the title and the step result: no snapshot JSON path,
+  element count, target element id, hit flag or DOM feedback latency. The agent
+  must not open files in the run directory other than the PNGs.
 
 Do not give the agent demographics as a voice ("as a 67-year-old woman I…"),
 MBTI types or traits inferred from demographics. Demographics choose scenarios;

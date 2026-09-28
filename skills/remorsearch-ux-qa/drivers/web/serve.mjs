@@ -103,8 +103,13 @@ function validateNote(body, maxStep) {
   return body;
 }
 
-function snapshotReply(snap, extra = {}) {
-  return {
+// Replies to a screenshot-channel operator carry only what a person sees: no
+// snapshot JSON path, element count or DOM grounding flags (LAT-02), so runs on
+// different input channels stay independent views for corroboration.
+const DOM_REPLY_KEYS = ['snapshot', 'elements', 'target_element_id', 'target_hit', 'feedback_latency_ms', 'feedback_source'];
+
+export function snapshotReply(snap, extra = {}, channel = null) {
+  const out = {
     snapshot: snap.jsonPath,
     png: snap.pngPath,
     snapshot_id: snap.id,
@@ -114,6 +119,8 @@ function snapshotReply(snap, extra = {}) {
     elements: snap.snap.elements.length,
     ...extra,
   };
+  if (channel === 'screenshot') for (const k of DOM_REPLY_KEYS) delete out[k];
+  return out;
 }
 
 /**
@@ -121,6 +128,7 @@ function snapshotReply(snap, extra = {}) {
  * timeout or a driver failure has written run.json.
  */
 export function startServer({ session, port, idleTimeoutS, onReady, onDone }) {
+  const channel = session.opts?.agentInfo?.input_channel ?? null;
   let queue = Promise.resolve();
   let finished = false;
   let idleTimer = null;
@@ -183,7 +191,7 @@ export function startServer({ session, port, idleTimeoutS, onReady, onDone }) {
     if (finished) throw new HttpError(409, 'session already finished');
     if (pathname === '/snapshot') {
       const snap = await enqueue(() => session.snapshot(session.steps.length, ['on_demand']));
-      send(res, 200, snapshotReply(snap, { result: 'ok' }));
+      send(res, 200, snapshotReply(snap, { result: 'ok' }, channel));
       return;
     }
     const body = await readJson(req);
@@ -218,7 +226,7 @@ export function startServer({ session, port, idleTimeoutS, onReady, onDone }) {
         feedback_latency_ms: step.feedback_latency_ms,
         feedback_source: step.feedback_source ?? null,
         auto_scrolled: !!step.auto_scrolled,
-      }));
+      }, channel));
       return;
     }
     if (pathname === '/note') {

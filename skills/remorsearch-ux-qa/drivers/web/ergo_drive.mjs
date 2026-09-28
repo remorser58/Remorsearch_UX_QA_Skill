@@ -323,7 +323,8 @@ async function main(argv) {
         port: actualPort,
         run_id: runId,
         run_dir: runDir,
-        snapshot: path.join(runDir, `${session.lastSnapshotId}.json`),
+        // A screenshot-channel operator gets no snapshot JSON path (serve.mjs DOM_REPLY_KEYS).
+        ...(session.opts?.agentInfo?.input_channel === 'screenshot' ? {} : { snapshot: path.join(runDir, `${session.lastSnapshotId}.json`) }),
         png: path.join(runDir, `${session.lastSnapshotId}.png`),
         endpoints: ['GET /health', 'GET /snapshot', 'POST /act', 'POST /note', 'POST /finish'],
       }),
