@@ -16,8 +16,8 @@ from .profiles import _get_path
 
 DIFFERENTIAL_ATTRIBUTES = (
     "handedness", "grip", "age_band", "device_id", "orientation",
-    "vision.cvd", "vision.presbyopia", "motor.tremor", "context.mobility",
-    "context.lighting", "cognition.familiarity", "hand_percentile",
+    "vision.cvd", "vision.presbyopia", "vision.acuity", "motor.tremor", "context.mobility",
+    "context.lighting", "cognition.familiarity", "cognition.time_pressure", "hand_percentile",
 )
 
 
@@ -94,7 +94,11 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
         worst = min(group["failed"], key=lambda o: checks.SEVERITY_ORDER.get(o["severity"] or "P3", 3))
         tested = sorted(group["tested"])
         triggered = sorted(group["triggered"])
-        untriggered = [profiles_by_id[p] for p in tested if p not in group["triggered"] and p in profiles_by_id]
+        # The differential is computed over every profile evaluated on the run's device,
+        # counting profiles outside the check's scope as not triggered, so a CVD-only or
+        # bright-sun-only finding names its condition (AP-05) instead of reading "k/k".
+        evaluated = {pid for run_id in group["runs"] for pid in evaluated_by_run.get(run_id, [])} | set(tested)
+        untriggered = [profiles_by_id[p] for p in sorted(evaluated) if p not in group["triggered"] and p in profiles_by_id]
         differential = _differential([profiles_by_id[p] for p in triggered if p in profiles_by_id], untriggered)
         findings.append({
             "check_id": check_id,

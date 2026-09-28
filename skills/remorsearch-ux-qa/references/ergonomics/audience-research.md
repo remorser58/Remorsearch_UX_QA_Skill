@@ -61,6 +61,16 @@ resources, environment.
 
 Rules:
 
+- Quote the source. `statistic` evidence must quote the number as the source
+  prints it; `official` evidence must quote the text. A number without a quote
+  is rejected by `audience-check`.
+- Record who buys versus who operates. Guardians who only pay, or people served
+  by a staff member, get `role: customer` or `served` and no profile.
+- Declare groups the models cannot simulate (screen-reader, switch access,
+  hearing loss, cognitive) as conditions or exclusions with `test_instead`; they
+  are listed as untested in the plan and the report.
+- Older segments: state presbyopia explicitly with its share. Age alone does
+  not switch it on in variations.
 - Every segment has at least one evidence item. Every share, condition,
   context and task cites a `source_id`.
 - Keep `firsthand` (a user said it), `statistic`, `official` and `inference`

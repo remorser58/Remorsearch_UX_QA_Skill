@@ -53,17 +53,19 @@ CORE_POINTER_STRATA: tuple[tuple[str, dict[str, Any]], ...] = (
     ("mouse_left", {"handedness": "left", "grip": "mouse_left"}),
     ("keyboard_only", {"grip": "keyboard_only"}),
 )
+# Strata for the fallback plan (no audience file). Kept: conditions whose removal lost
+# unique seeded defects on the development suites (deutan, presbyopia, walking, 70s+,
+# small hand) and tremor, an edge condition with a model. Removed after ablation
+# (docs/validation/experiments/decisions.md): bright sun (0 unique, +31 findings, PC-05
+# is a hypothesis), first use (no deterministic check reads familiarity), protan and
+# large hand (0 unique). Audience composition adds them when the audience needs them.
 CONDITION_STRATA: tuple[tuple[str, dict[str, Any]], ...] = (
     ("cvd_deutan", {"vision.cvd": "deutan"}),
     ("presbyopia_60s", {"age_band": "60s", "vision.presbyopia": True}),
     ("tremor", {"motor.tremor": "mild"}),
     ("walking", {"context.mobility": "walking", "context.free_hands": 1}),
-    ("bright_sun", {"context.lighting": "bright_sun"}),
-    ("first_use", {"cognition.familiarity": "first_use"}),
-    ("cvd_protan", {"vision.cvd": "protan"}),
     ("70s_plus", {"age_band": "70s+", "vision.presbyopia": True}),
     ("small_hand", {"hand_percentile": 5}),
-    ("large_hand", {"hand_percentile": 95}),
 )
 COVERAGE_STRATA = CORE_TOUCH_STRATA + CORE_POINTER_STRATA + CONDITION_STRATA
 

@@ -113,6 +113,15 @@ class Denominators(unittest.TestCase):
         self.assertEqual(finding["coverage_label"].split(" ")[0], "1/3")
         self.assertEqual(finding["profile_specific"].get("vision.presbyopia"), True)
 
+    def test_scoped_finding_names_its_condition(self) -> None:
+        normal, deutan = profile("EP-N"), profile("EP-D", cvd="deutan")
+        obs = [{"id": "OB-1", "check_id": "PC-03", "element_key": "#dot|상태", "profile_id": "EP-D", "passed": False, "severity": "P2",
+                "run_id": "R-1", "measurement": {"name": "cvd_delta_e2000", "value": 3, "unit": "dE00", "threshold": 10, "comparator": ">="},
+                "message_ko": "구분 안 됨", "model": "m", "selectors": ["#dot"], "context_selectors": []}]
+        finding = swarm.aggregate([{"scenario_id": "SC-1", "run_id": "R-1", "profiles_evaluated": ["EP-N", "EP-D"], "observations": obs}], [normal, deutan])[0]
+        self.assertEqual(finding["tested_profiles"], ["EP-D"])  # coverage within the check's scope
+        self.assertEqual(finding["profile_specific"].get("vision.cvd"), "deutan")  # but the condition is named
+
     def test_applicability(self) -> None:
         s24, desk = get_device("galaxy-s24"), get_device("desktop-1920")
         self.assertTrue(checks.applicable("PC-03", profile(cvd="deutan"), s24))

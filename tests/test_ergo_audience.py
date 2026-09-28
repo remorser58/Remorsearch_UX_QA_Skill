@@ -132,6 +132,30 @@ class Compose(unittest.TestCase):
             audience.compose(doc, 4)
 
 
+class ResearchRules(unittest.TestCase):
+    def test_statistic_evidence_needs_a_quoted_number(self) -> None:
+        doc = load()
+        doc["segments"][1]["evidence"][0]["quote"] = "많다"
+        self.assertTrue(any("quote the source's number" in e for e in audience.validate_audience(doc)))
+
+    def test_not_simulated_conditions_and_non_operators_are_listed_untested(self) -> None:
+        doc = load()
+        doc["segments"].append({**copy.deepcopy(doc["segments"][1]), "segment_id": "SEG-payer", "name_ko": "보호자(결제만)", "role": "customer"})
+        plan = audience.compose(doc, 8)
+        self.assertFalse(any(p["audience_ref"]["segment_id"] == "SEG-payer" for p in plan["profiles"]))
+        reasons = " ".join(u["reason"] for u in plan["untested"])
+        self.assertIn("screen_reader", reasons)
+        self.assertIn("role customer", reasons)
+        self.assertIn("TalkBack", reasons)
+
+    def test_age_facet_does_not_switch_presbyopia(self) -> None:
+        plan = audience.compose(load(), 16)
+        base = next(p for p in plan["profiles"] if p["audience_ref"]["segment_id"] == "SEG-commuter" and p["audience_ref"]["facet"] == "typical")
+        for p in plan["profiles"]:
+            if p["audience_ref"]["segment_id"] == "SEG-commuter" and p["audience_ref"]["facet"] == "age":
+                self.assertEqual(p["attributes"]["vision"]["presbyopia"], base["attributes"]["vision"]["presbyopia"])
+
+
 class StubsAndReport(unittest.TestCase):
     def test_scenario_stubs_embed_concrete_data(self) -> None:
         stubs = audience.scenario_stubs(load())

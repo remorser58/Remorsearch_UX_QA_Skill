@@ -27,6 +27,7 @@ reported as prevalence of the findings.
 from __future__ import annotations
 
 import copy
+import re
 from typing import Any, Iterable
 
 from . import params
@@ -64,6 +65,10 @@ CONDITIONS: dict[str, dict[str, Any]] = {
     "small_hand": {"hand_percentile": 5},
     "large_hand": {"hand_percentile": 95},
 }
+# Conditions a Stage-0 file may declare but the models do not simulate: they are listed
+# as untested with their source, never silently dropped (AP-10).
+NOT_SIMULATED = ("hearing_loss", "deaf", "screen_reader", "switch_access", "cognitive", "magnifier")
+ROLES = ("operator", "customer", "served")
 CONTEXT_KEYS = ("mobility", "lighting", "one_handed", "interruptions", "time_pressure")
 MOBILITY = ("seated", "standing", "walking", "transit")
 LIGHTING = ("indoor", "bright_sun", "dark")
@@ -191,6 +196,10 @@ def validate_audience(doc: Any) -> list[str]:
                     continue
                 if ev.get("kind") not in EVIDENCE_KINDS:
                     errors.append(f"{where}.evidence[{j}].kind must be one of {', '.join(EVIDENCE_KINDS)}")
+                elif ev["kind"] == "statistic" and not re.search(r"\d", str(ev.get("quote") or "")):
+                    errors.append(f"{where}.evidence[{j}].quote must quote the source's number for statistic evidence")
+                elif ev["kind"] == "official" and not str(ev.get("quote") or "").strip():
+                    errors.append(f"{where}.evidence[{j}].quote must quote the official text")
                 refs_ok([ev.get("source_id")], f"{where}.evidence[{j}].source_id")
         _weights_ok(seg.get("age_bands"), AGE_BANDS, f"{where}.age_bands", errors)
         devices = seg.get("devices")
@@ -210,11 +219,15 @@ def validate_audience(doc: Any) -> list[str]:
             _weights_ok(seg["grips"], ("one_hand", "cradle", "two_thumbs"), f"{where}.grips", errors)
         if seg.get("familiarity") is not None:
             _weights_ok(seg["familiarity"], ("first_use", "returning", "expert"), f"{where}.familiarity", errors)
+        if seg.get("role", "operator") not in ROLES:
+            errors.append(f"{where}.role must be one of {', '.join(ROLES)}")
         for j, cond in enumerate(seg.get("conditions") or []):
             cw = f"{where}.conditions[{j}]"
-            if not isinstance(cond, dict) or cond.get("condition") not in CONDITIONS:
-                errors.append(f"{cw}.condition must be one of {', '.join(CONDITIONS)}")
+            if not isinstance(cond, dict) or cond.get("condition") not in CONDITIONS and cond.get("condition") not in NOT_SIMULATED:
+                errors.append(f"{cw}.condition must be one of {', '.join(CONDITIONS)} (or declared-not-simulated: {', '.join(NOT_SIMULATED)})")
                 continue
+            if cond.get("cause") not in (None, "permanent", "temporary", "situational"):
+                errors.append(f"{cw}.cause must be permanent, temporary or situational")
             if cond.get("share") is not None and not _is_share(cond["share"]):
                 errors.append(f"{cw}.share must be between 0 and 1 or null")
             if cond.get("stakes", "normal") not in STAKES:
@@ -350,7 +363,7 @@ def _facets(seg: dict[str, Any], modal_ctx: dict[str, Any] | None, modal_age: st
     member on another device the segment really uses, contexts, remaining
     minority conditions, first-time use, other age bands, other grips.
     """
-    conds = [c for c in seg.get("conditions") or [] if c.get("share") is None or c["share"] < MAJORITY]
+    conds = [c for c in seg.get("conditions") or [] if c["condition"] in CONDITIONS and (c.get("share") is None or c["share"] < MAJORITY)]
     conds.sort(key=lambda c: (-(c.get("share") or 0.0), list(CONDITIONS).index(c["condition"])))
 
     def cond_facet(c: dict[str, Any]) -> dict[str, Any]:
@@ -406,9 +419,13 @@ def _make_profile(audience: dict[str, Any], seg: dict[str, Any], device_id: str,
     attrs["grip"], attrs["handedness"] = _grip_for(device, orient, grip_kind, left)
     if attrs["grip"].startswith("one_hand"):
         attrs["context"]["free_hands"] = 1
-    if age in ("50s", "60s", "70s+"):
-        attrs["vision"]["presbyopia"] = True  # age-typical; corrected by the segment's own data when given
-    reasons = [f"segment {seg['segment_id']} typical member: {age}, {device_id}, {attrs['grip']}"]
+    # Presbyopia comes from the segment's own conditions (or a facet/floor), never from
+    # an age facet, so each variation changes one thing (AP-14). The base profile of a
+    # segment whose modal age is 50+ is presbyopic unless the segment says otherwise.
+    declared = {c["condition"] for c in seg.get("conditions") or []}
+    if modal_age in ("50s", "60s", "70s+") and "presbyopia" not in declared:
+        attrs["vision"]["presbyopia"] = True
+    reasons = [f"segment {seg['segment_id']} base profile (a base for variation, not an average user): {age}, {device_id}, {attrs['grip']}"]
     for cond in majority:
         for k, v in CONDITIONS[cond["condition"]].items():
             _set_path(attrs, k, v)
@@ -532,7 +549,7 @@ def _segment_state(seg: dict[str, Any]) -> dict[str, Any]:
     return {
         "modal_age": modal_age,
         "modal_ctx": modal_ctx,
-        "majority": [c for c in seg.get("conditions") or [] if c.get("share") is not None and c["share"] >= MAJORITY],
+        "majority": [c for c in seg.get("conditions") or [] if c["condition"] in CONDITIONS and c.get("share") is not None and c["share"] >= MAJORITY],
         "dominant": _modal(grips, ("one_hand", "cradle", "two_thumbs")),
         "top_device": max(seg["devices"], key=lambda d: (seg["devices"][d], d)),
         "queue": _facets(seg, modal_ctx, modal_age),
@@ -556,7 +573,10 @@ def compose(audience: dict[str, Any], budget: int, floors: Iterable[str] | None 
         raise AudienceError("; ".join(errors))
     if budget < 1:
         raise AudienceError("budget must be >= 1")
-    segments = audience["segments"]
+    all_segments = audience["segments"]
+    segments = [s for s in all_segments if s.get("role", "operator") == "operator"]
+    if not segments:
+        raise AudienceError("no operator segment: only people who operate the product get profiles")
     floor_list = list(floors) if floors is not None else list(audience.get("floors", FLOOR_DEFAULTS))
     for f in floor_list:
         if f not in FLOOR_CHOICES:
@@ -617,6 +637,14 @@ def compose(audience: dict[str, Any], budget: int, floors: Iterable[str] | None 
             untested.append({"segment_id": sid, "facet": facet["kind"], "reason": facet["reason"]})
     for seg in rank[budget:]:
         untested.append({"segment_id": seg["segment_id"], "facet": "segment", "reason": "segment not tested — budget smaller than the number of segments"})
+    for seg in all_segments:
+        if seg.get("role", "operator") != "operator":
+            untested.append({"segment_id": seg["segment_id"], "facet": "segment", "reason": f"role {seg['role']}: does not operate the product (no profile)"})
+        for c in seg.get("conditions") or []:
+            if c["condition"] in NOT_SIMULATED:
+                untested.append({"segment_id": seg["segment_id"], "facet": "not_simulated", "reason": f"{c['condition']} is not simulated by the models — test with real users or assistive technology"})
+    for ex in audience.get("exclusions") or []:
+        untested.append({"segment_id": "-", "facet": "exclusion", "reason": f"{ex.get('group')}: {ex.get('why', '')}" + (f" — test instead: {ex['test_instead']}" if ex.get("test_instead") else "")})
     return {
         "schema_version": "ergo-persona-plan.v1",
         "audience_id": audience["audience_id"],
@@ -670,7 +698,7 @@ def plan_markdown(plan: dict[str, Any], audience: dict[str, Any]) -> str:
     """Korean table explaining why each persona exists."""
     names = {s["segment_id"]: s["name_ko"] for s in audience["segments"]}
     lines = [f"# 페르소나 구성 근거 ({plan['audience_id']})", "",
-             f"예산 {plan['budget']}개. 세그먼트 비중은 배분에만 쓰며 실제 사용자 비율을 뜻하지 않습니다.", "",
+             f"예산 {plan['budget']}개. 세그먼트 비중은 배분에만 쓰며 실제 사용자 비율을 뜻하지 않습니다. 각 프로필은 시험 조건이지 평균 사용자가 아닙니다.", "",
              "| 세그먼트 | 우선순위 | 가중치 | 프로필 수 |", "|---|---|---|---|"]
     for sid, row in plan["segments"].items():
         lines.append(f"| {names.get(sid, sid)} ({sid}) | {row['priority']} | {row['weight']} | {row['profiles']} |")

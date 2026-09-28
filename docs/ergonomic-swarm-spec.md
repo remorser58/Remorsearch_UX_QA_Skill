@@ -484,6 +484,27 @@ Composition (`audience.compose(audience, budget, floors)`):
    `segments` (weight, profiles), `floors_used`, and `untested` (facets and
    segments the budget did not reach — listed in the report).
 
+Rules added after the personas-and-audience research brief (2026-09-28;
+`docs/qa-discipline/personas-and-audience-research.md`):
+
+- `evidence[].quote`: required. For `statistic` evidence it must contain the
+  source's number; for `official` evidence it must be non-empty.
+- `segments[].role`: `operator` (default), `customer` or `served`. Only operators
+  get profiles; the others are listed as untested.
+- `conditions[].condition` may also be a declared-but-not-simulated condition
+  (`hearing_loss`, `deaf`, `screen_reader`, `switch_access`, `cognitive`,
+  `magnifier`). These always appear in `untested`, never silently dropped.
+  `conditions[].cause` (optional) is `permanent`, `temporary` or `situational`.
+- `exclusions[].test_instead` (optional): how an excluded group should be tested.
+- The first profile of a segment is its **base profile**, "a base for variation,
+  not an average user".
+- An age facet never switches presbyopia: presbyopia comes from the segment's
+  conditions (the base profile of a 50+ segment is presbyopic unless the segment
+  declares presbyopia explicitly), a facet or the floor.
+- Differential conditions are computed over every profile evaluated on the device;
+  profiles outside a check's scope count as not triggered, so a CVD-only finding
+  names `vision.cvd`. The coverage label stays within the check's scope.
+
 Findings gain `segments_affected` (segments whose composed profiles triggered
 them). Segment weights steer allocation only; they are never reported as the
 share of users affected by a finding.
