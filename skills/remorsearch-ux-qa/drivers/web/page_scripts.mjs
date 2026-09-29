@@ -945,6 +945,53 @@ export function extractSnapshot(args) {
     const r = ae.getBoundingClientRect();
     if (r.width > 0 && r.height > 0) active = { x: round2(r.left + r.width / 2), y: round2(r.top + r.height / 2) };
   }
+  // Layers that take over the screen (FM-02): declared dialogs, and fixed or absolute
+  // painted boxes covering at least 40 % of the viewport. Records whether keyboard
+  // focus is inside each one; values are never read.
+  let deep = document.activeElement;
+  while (deep && deep.shadowRoot && deep.shadowRoot.activeElement) deep = deep.shadowRoot.activeElement;
+  const focusOnBody = !deep || deep === document.body || deep === document.documentElement;
+  const layers = [];
+  const vpArea = Math.max(1, vw * vh);
+  const painted = (n) => {
+    const cs = style(n);
+    const bg = cs.backgroundColor || '';
+    const a = /rgba\(.*,\s*([\d.]+)\)/.exec(bg);
+    return (bg && bg !== 'transparent' && !(a && parseFloat(a[1]) === 0)) || (cs.backgroundImage && cs.backgroundImage !== 'none');
+  };
+  for (const n of all) {
+    if (layers.length >= 8) break;
+    if (n === document.body || n === document.documentElement) continue;
+    const role = (n.getAttribute('role') || '').trim();
+    let modal = false;
+    try {
+      modal = n.matches(':modal');
+    } catch (e) { /* unsupported */ }
+    const declared = modal || n.getAttribute('aria-modal') === 'true' || role === 'dialog' || role === 'alertdialog'
+      || (n.tagName.toLowerCase() === 'dialog' && n.open);
+    let kind = null;
+    const g = geo(n);
+    if (!g.vis) continue;
+    if (declared) kind = modal || n.getAttribute('aria-modal') === 'true' ? 'modal' : 'dialog';
+    else {
+      // Area first (cheap, from the cached box), then the computed style.
+      const r = g.r;
+      const w = Math.max(0, Math.min(r.right, vw) - Math.max(r.left, 0));
+      const h = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0));
+      if ((w * h) / vpArea < 0.4) continue;
+      const pos = style(n).position;
+      if ((pos === 'fixed' || pos === 'absolute') && painted(n)) kind = 'sheet';
+    }
+    if (!kind) continue;
+    if (layers.some((l) => l.node.contains(n))) continue; // keep the outermost
+    for (let i = layers.length - 1; i >= 0; i--) if (n.contains(layers[i].node)) layers.splice(i, 1);
+    layers.push({ node: n, kind });
+  }
+  const layerOut = layers.map(({ node, kind }) => ({
+    selector: uniqueSelector(node), dom_id: node.id || null, kind,
+    box: { x: round2(geo(node).r.left), y: round2(geo(node).r.top), w: round2(geo(node).r.width), h: round2(geo(node).r.height) },
+    contains_focus: !focusOnBody && (node === deep || node.contains(deep)),
+  }));
   const se = document.scrollingElement || document.documentElement;
   return {
     elements,
@@ -953,6 +1000,8 @@ export function extractSnapshot(args) {
     viewport: { w: vw, h: vh },
     scroll: { x: round2(window.scrollX), y: round2(window.scrollY), width: se ? se.scrollWidth : null, height: se ? se.scrollHeight : null },
     active,
+    focus: { on_body: focusOnBody, tag: focusOnBody ? null : deep.tagName.toLowerCase(), dom_id: focusOnBody ? null : (deep.id || null) },
+    layers: layerOut,
     pageHotspotError,
     unknownRoles: [...unknownRoles],
   };

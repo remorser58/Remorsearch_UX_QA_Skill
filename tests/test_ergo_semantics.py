@@ -95,6 +95,38 @@ class Reflow(unittest.TestCase):
         self.assertIn("잘려", clipped[0].message_ko)
 
 
+class FocusManagement(unittest.TestCase):
+    """FM-02 and SM-06 at a step, from the snapshot's focus and layers."""
+
+    def ctx_for(self, layers_before, layers_after, focus, elements=(), action="tap"):
+        c = ctx(list(elements), previous={"snapshot_id": "S-0", "layers": layers_before, "elements": []},
+                step={"action": {"action": action}})
+        c.snapshot["focus"] = focus
+        c.snapshot["layers"] = layers_after
+        return c
+
+    def test_new_layer_without_focus_is_reported(self) -> None:
+        sheet = {"selector": "#addr-modal", "dom_id": "addr-modal", "kind": "sheet", "contains_focus": False}
+        obs = checks.check_focus_management(self.ctx_for([], [sheet], {"on_body": False, "tag": "button", "dom_id": "btn-addr"}))
+        self.assertEqual([(o.check_id, o.element_key.split("|")[0], o.severity) for o in obs], [("FM-02", "#addr-modal", "P2")])
+
+    def test_focus_inside_old_layers_scrolls_and_old_recordings_pass(self) -> None:
+        dlg = {"selector": "#dlg", "dom_id": "dlg", "kind": "modal", "contains_focus": True}
+        stale = {"selector": "#menu", "dom_id": "menu", "kind": "sheet", "contains_focus": False}
+        self.assertEqual(checks.check_focus_management(self.ctx_for([], [dlg], {"on_body": False, "dom_id": "code"})), [])
+        self.assertEqual(checks.check_focus_management(self.ctx_for([stale], [stale], {"on_body": True})), [])
+        self.assertEqual(checks.check_focus_management(self.ctx_for([], [stale], {"on_body": True}, action="scroll")), [])
+        old = self.ctx_for([], [stale], {"on_body": True})
+        old.snapshot.pop("focus")
+        self.assertEqual(checks.check_focus_management(old), [])
+
+    def test_focus_moved_under_a_fixed_header(self) -> None:
+        name = el("applicant-name", "textbox", (16, 0, 328, 48), interactive=True, tag="input", dom_id="applicant-name",
+                  occluded_fraction=1.0, occluded_by="#hdr", a11y=a11y("label"))
+        obs = checks.check_focus_management(self.ctx_for([], [], {"on_body": False, "dom_id": "applicant-name"}, [name]))
+        self.assertEqual([(o.check_id, o.measurement["phase"], o.severity) for o in obs], [("SM-06", "step", "P2")])
+
+
 class ZeroSize(unittest.TestCase):
     """AUT-20: controls with no rendered box but still in the accessibility tree."""
 

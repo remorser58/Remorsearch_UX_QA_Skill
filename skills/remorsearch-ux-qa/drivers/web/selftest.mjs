@@ -103,6 +103,11 @@ function startFixtureServer() {
       readFixture(pathname, res, req);
       return;
     }
+    if (req.method === 'GET' && pathname === '/dialog.html') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), 'dialog.html')));
+      return;
+    }
     if (req.method === 'GET' && pathname === '/reflow.html') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), 'reflow.html')));
@@ -789,6 +794,31 @@ async function reflowTest(base, tmp) {
   check('reflow: the run itself is not resized (steps ok, success)', run.status === 'completed' && run.success === true, { status: run.status });
 }
 
+async function dialogTest(base, tmp) {
+  const sc = {
+    schema_version: 'ergo-scenario.v1', scenario_id: 'SC-driver-dialog-01', surface: { kind: 'web', url: '{BASE}/dialog.html' },
+    task_goal_ko: '주소를 찾고 본인 확인을 한다', device_ids: ['desktop-1920'], targets: {},
+    steps: [{ action: 'click', target: '#open-bad' }, { action: 'click', target: '#close-bad' }, { action: 'click', target: '#open-good' }],
+    success: { url_contains: 'dialog' },
+  };
+  writeJson(path.join(tmp, 'dialog.json'), sc);
+  const outDir = path.join(tmp, 'runs');
+  const r = await runDriver(['run', '--scenario', path.join(tmp, 'dialog.json'), '--device', 'desktop-1920', '--out', outDir, '--run-id', 'R-dialog',
+    '--base', base, '--no-focus-walk', '--no-reflow']);
+  if (!check('dialog desktop-1920: exit 0', r.code === 0, `${r.code} ${r.err}`)) return;
+  const loaded = loadRun(path.join(outDir, 'R-dialog'));
+  const snaps = [...loaded.snaps.values()];
+  const layersAt = (i) => (snaps[i] && snaps[i].layers) || [];
+  check('layers: the first screen has no layer (a small toast is not one)', layersAt(0).length === 0, layersAt(0));
+  const bad = layersAt(1).find((l) => l.dom_id === 'sheet');
+  check('layers: a fixed painted sheet over the screen is a layer, and focus stayed outside it',
+    !!bad && bad.kind === 'sheet' && bad.contains_focus === false && snaps[1].focus && snaps[1].focus.dom_id === 'open-bad', { layers: layersAt(1), focus: snaps[1].focus });
+  const good = layersAt(3).find((l) => l.dom_id === 'dlg');
+  check('layers: a modal dialog that takes focus is recorded with focus inside', !!good && good.kind === 'modal' && good.contains_focus === true,
+    { layers: layersAt(3), focus: snaps[3] && snaps[3].focus });
+  check('focus record never carries a field value', !JSON.stringify(snaps.map((x) => x.focus)).includes('value'), snaps.map((x) => x.focus));
+}
+
 function runReader(args) {
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [path.join(HERE, 'read_page.mjs'), ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -919,6 +949,7 @@ async function main() {
     await focusTest(base, tmp);
     await readPageTest(base, tmp);
     await reflowTest(base, tmp);
+    await dialogTest(base, tmp);
     await serveTest(base, tmp);
     await exitCodeTests(base, tmp);
   } finally {

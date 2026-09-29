@@ -1170,6 +1170,8 @@ export class WebSession {
       },
       elements: ex.elements,
       focus_point: this.focusPoint,
+      focus: ex.focus,
+      layers: ex.layers,
       console_errors: this.consolePending.splice(0),
       notes: allNotes,
     };

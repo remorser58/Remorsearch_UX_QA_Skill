@@ -234,6 +234,12 @@ SM08 = _register(CheckSpec(
     ("REF-wcag22-211", "REF-wcag22-412"), ("web", "desktop"), "accessibility",
     "<button>이나 <input type=radio|checkbox>를 쓰거나, role·tabindex=0·키보드 동작(Enter/Space)과 상태(aria-pressed, aria-checked)를 주세요.",
 ))
+FM02 = _register(CheckSpec(
+    "FM-02", "semantics", "measured", "대화상자·덮는 층이 열렸는데 키보드 초점이 그 안으로 가지 않음",
+    "A dialog or covering layer opened but keyboard focus did not move into it",
+    ("REF-wcag22-243", "REF-wcag22-412"), ("web", "desktop"), "accessibility",
+    "층을 열면 그 안의 첫 조작 요소나 제목으로 초점을 옮기고(role=dialog, aria-modal=true), 닫으면 연 버튼으로 돌려보내세요.",
+))
 RF01 = _register(CheckSpec(
     "RF-01", "layout", "measured", "320 CSS px 폭에서 내용이 가로로 넘침(리플로)",
     "Content sticks out sideways at 320 CSS px (reflow)",
@@ -1898,6 +1904,56 @@ def check_semantics(ctx: Context) -> list[Observation]:
     return out
 
 
+def check_focus_management(ctx: Context) -> list[Observation]:
+    """Focus after a step (AUT-11), from the snapshot's focus record and layers.
+
+    FM-02 (WCAG 2.4.3): a click opened a layer (a declared dialog, or a fixed or
+    absolute painted box over at least 40 % of the viewport) that was not there
+    before, and keyboard focus is not inside it. SM-06 at the step (2.4.11): the step
+    left focus on an element that something else fully covers (an input moved under a
+    fixed header after a validation error). Skipped when a layer just opened: the
+    trigger behind it is covered by design, and FM-02 reports that case.
+    """
+    focus = ctx.snapshot.get("focus")
+    if not isinstance(focus, dict):
+        return []  # recorded before the driver kept focus and layers
+    out: list[Observation] = []
+    base = (ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"))
+    action = ((ctx.step or {}).get("action") or {}).get("action")
+    opened = False
+    if ctx.previous is not None and action in ("tap", "click", "double_tap", "long_press", "press"):
+        before = {layer.get("selector") for layer in ctx.previous.get("layers") or [] if isinstance(layer, dict)}
+        for layer in ctx.snapshot.get("layers") or []:
+            if not isinstance(layer, dict) or layer.get("selector") in before:
+                continue
+            opened = True
+            if layer.get("contains_focus"):
+                continue
+            element = next((e for e in ctx.elements if layer.get("dom_id") and e.get("dom_id") == layer["dom_id"]), None)
+            key = element_key(element) if element else f"{layer.get('selector') or '?'}|{layer.get('kind')}"
+            where = "문서 본문(body)으로 떨어져" if focus.get("on_body") else "층 바깥에 남아"
+            out.append(Observation(
+                "FM-02", *base, [element["id"]] if element else [], key,
+                {"name": "focus_in_layer", "value": False, "unit": "flag", "threshold": True, "comparator": "==",
+                 "layer_kind": layer.get("kind"), "focus_on_body": bool(focus.get("on_body"))},
+                False, "P2",
+                f"'{layer.get('selector')}' 층이 열렸지만 키보드 초점이 {where} 있습니다. 스크린리더·키보드 사용자는 새로 열린 내용을 모른 채 뒤쪽 화면을 계속 탐색합니다(WCAG 2.4.3).",
+                extra={"anchor_selectors": [layer["selector"]] if layer.get("selector") else []},
+            ))
+    if not opened and not focus.get("on_body") and focus.get("dom_id"):
+        target = next((e for e in ctx.elements if e.get("dom_id") == focus["dom_id"]), None)
+        covered = (target or {}).get("occluded_fraction")
+        if target is not None and target.get("in_viewport") is not False and isinstance(covered, (int, float)) and covered >= 0.999:
+            out.append(Observation(
+                "SM-06", *base, [target["id"]], element_key(target),
+                {"name": "focus_obscured_fraction", "value": round(float(covered), 3), "unit": "fraction", "threshold": 1.0, "comparator": "<",
+                 "by": target.get("occluded_by"), "phase": "step", "criterion": "2.4.11", "user_opened": False},
+                False, "P2",
+                f"이 단계 뒤 키보드 초점이 '{target.get('name') or target.get('selector')}'에 있지만 다른 요소가 그 칸을 완전히 가립니다(WCAG 2.4.11).",
+            ))
+    return out
+
+
 def check_reflow(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[str, dict[str, Any]] | None = None) -> list[Observation]:
     """RF-01 (WCAG 1.4.10): at 320 CSS px wide, content that sticks out to the right.
 
@@ -2052,6 +2108,7 @@ SNAPSHOT_CHECKS: tuple[Callable[[Context], list[Observation]], ...] = (
     check_text_size,
     check_choice_overload,
     check_semantics,
+    check_focus_management,
 )
 
 
@@ -2069,7 +2126,8 @@ HYPOTHESIS_CHECKS = frozenset({"GZ-01", "GZ-04", "PC-05", "PT-05", "GM-06"})
 # Checks that read no profile attribute: one verdict per snapshot, reported as
 # "profile-independent" instead of a k/n coverage (STF-08).
 PROFILE_INVARIANT_CHECKS = frozenset({"PT-01", "PT-05", "PT-06", "PC-01", "PC-02", "CG-01", "CG-03", "GZ-03", "GM-05", "GM-06",
-                                      "SM-01", "SM-02", "SM-03", "SM-04", "SM-05", "SM-06", "SM-07", "SM-08", "LY-01", "RF-01"})
+                                      "SM-01", "SM-02", "SM-03", "SM-04", "SM-05", "SM-06", "SM-07", "SM-08", "LY-01", "RF-01",
+                                      "FM-02"})
 
 
 def tier(check_id: str, measurement: dict[str, Any] | None = None) -> str:
