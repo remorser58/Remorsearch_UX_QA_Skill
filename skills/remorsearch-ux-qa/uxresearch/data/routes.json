@@ -1,6 +1,6 @@
 {
   "schema_version": "ux-research-routes.v1",
-  "version": "2026-09-28.1",
+  "version": "2026-09-29.1",
   "note": "The only place platform names appear in the reader. Every entry is unverified (verified_at null) until a manual live check and a human review; an unverified route that fails simply falls through to the next rung. hosts: exact names or '*.suffix'. path: a regular expression on the URL path; its named groups become template variables, and query parameters are available as {q_<name>}. Other template variables: {scheme} {host} {port_suffix} {path} {query} {url_enc}, and {key} for a user key read from the environment variable named in 'env' (the value is never stored or logged). official: kind 'feed' (scope 'item' keeps only the entry that links to the page; scope 'all' keeps every entry, such as a thread or review feed), 'oembed', or 'api' (documented here, used by a later phase). alternates: the site's own mobile or AMP twins. author_from: subdomain | path_segment | page. login_hosts: a redirect there is an auth_gate stop. Verify every note live before relying on it.",
   "platforms": [
     {
@@ -40,7 +40,7 @@
       "official": [],
       "alternates": [{"kind": "mobile", "url": "https://m.cafe.naver.com/{cafe}/{article}"}],
       "login_hosts": ["nid.naver.com"],
-      "terms_note": "Public boards only. A member-only board is an auth_gate coverage gap; never capture it from a signed-in browser.",
+      "terms_note": "Public boards only, unless the user authorised this cafe in the brief (access_policy.signed_in_communities, with the cafe's path_prefix); then a signed-in capture is ingested with --context signed_in and kept as summaries only. Otherwise a member-only board is an auth_gate coverage gap; never capture it from a signed-in browser.",
       "verified_at": null
     },
     {
@@ -213,7 +213,7 @@
       "hosts": ["x.com", "twitter.com", "mobile.twitter.com"],
       "platform_family": "microblog",
       "path": "^/[A-Za-z0-9_]{1,15}/status/[0-9]{1,25}/?$",
-      "author_from": "page",
+      "author_from": "path_segment",
       "official": [
         {"kind": "oembed", "scope": "item", "auth": "none",
          "url": "https://publish.twitter.com/oembed?url={url_enc}&omit_script=true&dnt=true"}

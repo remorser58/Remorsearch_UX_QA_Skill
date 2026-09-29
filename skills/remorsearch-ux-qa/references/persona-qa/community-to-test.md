@@ -66,7 +66,7 @@ Reader routes and stops are starting points. Verify them live (`references/resea
 
 | Channel | What it shows | Reader route | Typical stop |
 | --- | --- | --- | --- |
-| YouTube comments | Natural language, immediate reactions, setup and expectation gaps | R0 Data API with the user's key, or R3 render (first comments only) | Usually none; long threads are only partly read |
+| YouTube comments | Natural language, immediate reactions, setup and expectation gaps | R3 render (first comments only); the Data API route with the user's key is planned | Usually none; long threads are only partly read |
 | DC Inside and open forums | Strong dissatisfaction, workarounds, edge cases, and version reactions | R2 mobile twin | `human_check` or `rate_limit` on busy boards |
 | Naver Cafes | Focused user groups, local context, recurring practical workflows | R2 mobile twin or R3, public boards only | `auth_gate` on member-only boards, unless the user authorised that cafe |
 | Reddit and product forums | Expert workflows, comparisons, shortcuts, and migration reasons | R0 `.rss` feeds | `rate_limit`; robots.txt opt-outs |

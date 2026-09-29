@@ -45,9 +45,9 @@ Sponsored reviews, affiliate posts, event entries, coordinated campaigns, repeat
 
 Useful for identifying messaging and perception. Weak as direct evidence of ordinary user experience: a disclosed promotion caps the source at grade D, so it never counts toward a claim.
 
-Korean disclosures to look for, in the form a disclosure takes: 체험단 (체험단 후기), 협찬 (#협찬, [협찬], 협찬을 받아), 원고료 (소정의 원고료를 받아), 제품을 제공받아 (무상으로 제공받아), 업체로부터 지원받아, 광고 (#광고, [광고], 유료 광고 포함), 쿠팡 파트너스 활동의 일환으로, 수수료를 제공받, 서포터즈 활동. English: sponsored, #ad, paid partnership, affiliate link.
+Korean disclosures to look for, in the form a disclosure takes: 체험단으로 참여하여, [체험단], 협찬을 받아 작성, #협찬, [협찬], 소정의 원고료를 받아, 제품을 무상으로 제공받아, 업체로부터 지원받아, #광고, [광고], 유료 광고 포함, 쿠팡 파트너스 활동의 일환으로, 수수료를 제공받, 서포터즈 활동으로. English: #ad, #sponsored, "this video is sponsored", paid partnership, "contains affiliate links".
 
-A word alone is not a disclosure. A review that complains "광고가 너무 많다" (too many ads in the app) is a user complaint, not promotion.
+A word alone is not a disclosure. A review that complains "광고가 너무 많다" (too many ads in the app) or "체험단 후기만 잔뜩이다" is a user complaint, not promotion. The reader's `promo_flags` are candidates that a verifier confirms before the D cap applies (`references/source-grading.md`, section 4).
 
 ### Lead
 

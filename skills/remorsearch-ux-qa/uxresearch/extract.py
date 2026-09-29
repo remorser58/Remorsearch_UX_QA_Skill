@@ -3,11 +3,21 @@
 html.parser only. Visible text skips script, style, noscript, template, svg and
 head content (and elements marked hidden), keeps paragraph breaks and is capped
 at 400 KB. The parser also records: title, description, Open Graph, canonical,
-lang; declared alternates (mobile/handheld, AMP, RSS/Atom); robots and
-tdm-reservation meta; password inputs; the length of the main content (text
-outside headers, navigation, footers, forms and similar chrome); and JSON-LD,
-at most 10 blocks and 1 MB, of which only isAccessibleForFree, articleBody,
-reviewBody, aggregateRating and the author's @type are kept.
+lang; declared alternates (mobile/handheld, AMP, RSS/Atom); robots,
+tdm-reservation and refresh meta; password inputs and captcha widgets, and
+whether they sit inside a form or inside the page's navigation chrome; the
+length of the main content; and JSON-LD, at most 10 blocks and 1 MB, of which
+only isAccessibleForFree, articleBody, reviewBody, aggregateRating and the
+author's @type are kept.
+
+Chrome comes in two kinds. Navigation chrome (headers, navigation, footers,
+sidebars, menus, login boxes and the like) repeats on every page of a site.
+Widget chrome (buttons, labels, selects, text areas, dialogs) holds controls. A
+form counts as chrome only inside navigation chrome, so a form that wraps a
+whole page (common on older sites) does not hide the post inside it. Main
+content is the text outside both kinds of chrome, inside main or article when
+the page has them. `notice_text` is the text a site notice could be in: outside
+navigation chrome and outside links.
 
 The JSON-LD body replaces the visible text only when it is longer, and
 `extraction_source` says which one was used. Text is NFC-normalised.
@@ -38,14 +48,18 @@ BLOCK_TAGS = frozenset({"p", "div", "br", "li", "ul", "ol", "h1", "h2", "h3", "h
                         "dd", "dt", "dl", "figure", "figcaption", "form", "hr", "address", "details",
                         "summary", "fieldset", "legend", "tbody", "thead", "tfoot", "caption"})
 CELL_TAGS = frozenset({"td", "th"})
-CHROME_TAGS = frozenset({"header", "nav", "footer", "aside", "form", "button", "select", "option", "label",
-                         "textarea", "dialog", "menu"})
-CHROME_ROLES = frozenset({"navigation", "banner", "contentinfo", "complementary", "search", "menu", "menubar",
-                          "toolbar", "dialog", "alertdialog"})
+NAV_TAGS = frozenset({"header", "nav", "footer", "aside", "menu"})
+NAV_ROLES = frozenset({"navigation", "banner", "contentinfo", "complementary", "search", "menu", "menubar",
+                       "toolbar"})
+WIDGET_TAGS = frozenset({"button", "select", "option", "label", "textarea", "dialog"})
+WIDGET_ROLES = frozenset({"dialog", "alertdialog"})
 MAIN_TAGS = frozenset({"main", "article"})
+FRAME_TAGS = frozenset({"iframe", "img", "embed"})
 FEED_TYPES = frozenset({"application/rss+xml", "application/atom+xml", "application/feed+json"})
 _ALERT = re.compile(r"\balert\s*\(\s*([\"'])(.{1,300}?)\1", re.S)
 _HIDDEN_STYLE = re.compile(r"display\s*:\s*none|visibility\s*:\s*hidden", re.I)
+_REFRESH = re.compile(r"^\s*(\d{1,6})(?:\.\d*)?\s*(?:[;,]\s*(?:url\s*=\s*)?[\"']?\s*([^\"'\s][^\"']*?)\s*[\"']?\s*)?$", re.I)
+TOKEN_CAP = 2000
 
 
 def nonspace(text: str) -> int:
@@ -80,7 +94,14 @@ class Page:
     meta_robots: list = field(default_factory=list)
     tdm_meta: str | None = None
     meta_refresh: str | None = None
+    refresh_delay: int | None = None  # seconds, from <meta http-equiv="refresh">
+    refresh_url: str | None = None  # the absolute URL a meta refresh sends the visitor to
     password_inputs: int = 0
+    open_password_inputs: int = 0  # password inputs outside navigation chrome (not a header login box)
+    notice_text: str = ""  # text outside navigation chrome and outside links: where a site notice can be
+    main_container: bool = False  # the page has a main or article element
+    free_chars: int = 0  # main-content characters outside any form
+    main_free_chars: int = 0  # characters inside main or article, outside chrome and forms
     jsonld_blocks: int = 0
     jsonld_free: bool | None = None
     jsonld_body_chars: int = 0
@@ -91,6 +112,11 @@ class Page:
     attrs: set = field(default_factory=set)
     tags: set = field(default_factory=set)
     srcs: list = field(default_factory=list)
+    script_srcs: list = field(default_factory=list)
+    form_idents: set = field(default_factory=set)  # id and class tokens seen inside a form
+    open_idents: set = field(default_factory=set)  # id and class tokens seen outside any form
+    form_srcs: list = field(default_factory=list)  # iframe, img and embed sources inside a form
+    open_srcs: list = field(default_factory=list)  # iframe, img and embed sources outside any form
     input_names: list = field(default_factory=list)
     hrefs: list = field(default_factory=list)
     noscript_text: str = ""
@@ -108,6 +134,16 @@ class Page:
                 "og": {k: v[:300] for k, v in list(self.og.items())[:12]}}
 
 
+def _join(base: str, href: str) -> str | None:
+    """urljoin that returns None instead of raising on malformed input such as 'http://[x'."""
+    try:
+        joined = urljoin(base, href.strip())
+        urlsplit(joined).hostname  # raises ValueError for a malformed authority
+        return joined
+    except ValueError:
+        return None
+
+
 def _chrome_tokens(markers: dict | None) -> frozenset:
     if markers is None:
         from .verdict import load_markers
@@ -123,12 +159,17 @@ class _Parser(HTMLParser):
         self.page = Page(kind="html")
         self.stack: list[tuple[str, dict]] = []
         self.open: dict[str, int] = {}
-        self.depth = {"skip": 0, "chrome": 0, "main": 0, "title": 0, "noscript": 0, "jsonld": 0, "script": 0}
+        self.depth = {"skip": 0, "nav": 0, "chrome": 0, "form": 0, "link": 0, "main": 0, "title": 0, "noscript": 0,
+                      "jsonld": 0, "script": 0}
         self.parts: list[str] = []
+        self.notice_parts: list[str] = []
         self.size = 0
+        self.notice_size = 0
         self.main_seen = False
         self.main_count = 0
         self.body_count = 0
+        self.free_count = 0
+        self.main_free_count = 0
         self.jsonld: list[str] = []
         self.jsonld_bytes = 0
         self.jsonld_index: int | None = None
@@ -136,12 +177,29 @@ class _Parser(HTMLParser):
         self.script_bytes = 0
         self.noscript: list[str] = []
 
-    def _emit(self, text: str) -> None:
+    def _emit(self, text: str, notice: bool = True) -> None:
+        """Visible text; `notice` also adds it to the text a site notice could be in."""
+        if notice and self.notice_size < TEXT_CAP_CHARS:
+            self.notice_parts.append(text)
+            self.notice_size += len(text)
         if self.size >= TEXT_CAP_CHARS:
             self.page.truncated = True
             return
         self.parts.append(text)
         self.size += len(text)
+
+    def _record_tokens(self, tokens: list[str], src: str, tag: str) -> None:
+        """Where widgets sit: inside a form (a comment or sign-in form) or on the page itself."""
+        page = self.page
+        inside = self.depth["form"] > 0
+        idents = page.form_idents if inside else page.open_idents
+        for token in tokens:
+            if len(idents) < TOKEN_CAP:
+                idents.add(token)
+        if src and tag in FRAME_TAGS:
+            frames = page.form_srcs if inside else page.open_srcs
+            if len(frames) < 300:
+                frames.append(src)
 
     def handle_starttag(self, tag: str, attrs_list: list) -> None:
         tag = tag.lower()
@@ -160,9 +218,12 @@ class _Parser(HTMLParser):
             if (name.startswith("ng-") or name.startswith("data-react") or name in ("data-v-app", "data-server-rendered")) \
                     and len(page.attrs) < 200:
                 page.attrs.add(name)
-        src = attrs.get("src", "")
+        src = attrs.get("src", "")[:300].lower()
         if src and tag in ("script", "iframe", "img", "embed") and len(page.srcs) < 300:
-            page.srcs.append(src[:300].lower())
+            page.srcs.append(src)
+            if tag == "script" and len(page.script_srcs) < 300:
+                page.script_srcs.append(src)
+        self._record_tokens(([ident] if ident else []) + classes[:20], src, tag)
         if tag == "html" and attrs.get("lang"):
             page.lang = attrs["lang"].strip()
         elif tag == "meta":
@@ -173,6 +234,8 @@ class _Parser(HTMLParser):
             kind = attrs.get("type", "").lower()
             if kind == "password":
                 page.password_inputs += 1
+                if not self.depth["nav"]:
+                    page.open_password_inputs += 1
             name = (attrs.get("name") or attrs.get("id") or "").lower()
             if name and len(page.input_names) < 300:
                 page.input_names.append(name[:100])
@@ -188,11 +251,16 @@ class _Parser(HTMLParser):
             if tag in BLOCK_TAGS:
                 self._emit("\n")
             return
+        role = attrs.get("role", "").lower()
+        nav = tag in NAV_TAGS or role in NAV_ROLES or (ident in self.chrome_tokens) \
+            or any(c in self.chrome_tokens for c in classes)
         flags = {
             "skip": tag in SKIP_TAGS or "hidden" in attrs or bool(_HIDDEN_STYLE.search(attrs.get("style", ""))),
-            "chrome": tag in CHROME_TAGS or attrs.get("role", "").lower() in CHROME_ROLES
-                      or (ident in self.chrome_tokens) or any(c in self.chrome_tokens for c in classes),
-            "main": tag in MAIN_TAGS or attrs.get("role", "").lower() == "main",
+            "nav": nav,
+            "chrome": nav or tag in WIDGET_TAGS or role in WIDGET_ROLES or (tag == "form" and self.depth["nav"] > 0),
+            "form": tag == "form",
+            "link": tag == "a",
+            "main": tag in MAIN_TAGS or role == "main",
             "title": tag == "title",
             "noscript": tag == "noscript",
             "jsonld": tag == "script" and attrs.get("type", "").strip().lower() == "application/ld+json",
@@ -256,12 +324,16 @@ class _Parser(HTMLParser):
             return
         if depth["skip"]:
             return
-        self._emit(data)
+        self._emit(data, notice=not depth["nav"] and not depth["link"])
         count = nonspace(data)
         if not depth["chrome"]:
             self.body_count += count
+            if not depth["form"]:
+                self.free_count += count
             if depth["main"]:
                 self.main_count += count
+                if not depth["form"]:
+                    self.main_free_count += count
 
     def _meta(self, attrs: dict) -> None:
         page = self.page
@@ -276,15 +348,22 @@ class _Parser(HTMLParser):
             page.meta_robots.append((name, content[:300]))
         elif name == "tdm-reservation":
             page.tdm_meta = content.strip()[:20]
-        if equiv == "refresh":
+        if equiv == "refresh" and page.meta_refresh is None:
             page.meta_refresh = content[:300]
+            found = _REFRESH.match(page.meta_refresh)
+            if found:
+                page.refresh_delay = int(found.group(1))
+                if found.group(2):
+                    page.refresh_url = _join(self.base_url, found.group(2))
 
     def _link(self, attrs: dict) -> None:
         rel = set(attrs.get("rel", "").lower().split())
         href = attrs.get("href", "").strip()
         if not href:
             return
-        absolute = urljoin(self.base_url, href)
+        absolute = _join(self.base_url, href)
+        if absolute is None:
+            return  # a malformed link is skipped; the rest of the page is still parsed
         if "canonical" in rel and self.page.canonical is None:
             self.page.canonical = absolute
         kind = None
@@ -373,6 +452,10 @@ def from_html(html: str, base_url: str, markers: dict | None = None) -> Page:
     script = "".join(parser.script_text)
     page.alerts = [m.group(2)[:300] for m in _ALERT.finditer(script)][:20]
     page.main_chars = parser.main_count if parser.main_seen else parser.body_count
+    page.main_container = parser.main_seen
+    page.free_chars = parser.main_free_count if parser.main_seen else parser.free_count
+    page.main_free_chars = parser.main_free_count
+    page.notice_text = nfc(tidy("".join(parser.notice_parts)))
     body = _apply_jsonld(page, parser.jsonld)
     return _finish(page, tidy("".join(parser.parts)), body)
 
@@ -391,8 +474,8 @@ def from_text(text: str) -> Page:
     page = Page(kind="text", extraction_source="text")
     body = nfc(tidy(text[:TEXT_CAP_CHARS]))
     page.truncated = len(text) > TEXT_CAP_CHARS
-    page.text = page.visible_text = body
-    page.visible_chars = page.main_chars = nonspace(body)
+    page.text = page.visible_text = page.notice_text = body
+    page.visible_chars = page.main_chars = page.free_chars = nonspace(body)
     return page
 
 
@@ -414,12 +497,15 @@ def from_page_read(doc: dict) -> Page:
     challenge = doc.get("challenge") if isinstance(doc.get("challenge"), dict) else {}
     page.challenge_interactive = bool(challenge.get("interactive"))
     page.challenge_markers = [str(m)[:100] for m in (challenge.get("markers") or [])[:20]]
+    # A render capture says only that a password field was on the page, not where; the login-wall
+    # rule then needs almost no text around it (verdict.py).
     page.password_inputs = 1 if doc.get("login_form") else 0
     blocks = doc.get("json_ld") if isinstance(doc.get("json_ld"), list) else []
     body = _apply_jsonld(page, blocks)
     visible = tidy(text[:TEXT_CAP_CHARS])
     result = _finish(page, visible, body)
-    result.main_chars = result.visible_chars
+    result.main_chars = result.free_chars = result.visible_chars
+    result.notice_text = result.visible_text
     return result
 
 
@@ -431,7 +517,32 @@ def _same_link(a: str, b: str) -> bool:
             if host.startswith(prefix):
                 host = host[len(prefix):]
         return host, (parts.path or "/").rstrip("/") or "/", parts.query
-    return key(a) == key(b)
+    try:
+        return key(a) == key(b)
+    except ValueError:
+        return False  # a malformed link in a feed matches nothing
+
+
+def _declares_dtd(xml_text: str) -> bool:
+    """True when anything before the root element declares a DTD (or is not a comment or a
+    processing instruction), however long the prolog is."""
+    i = 0
+    while True:
+        j = xml_text.find("<", i)
+        if j == -1:
+            return False
+        if xml_text.startswith("<!--", j):
+            end = xml_text.find("-->", j + 4)
+            if end == -1:
+                return True
+            i = end + 3
+        elif xml_text.startswith("<?", j):
+            end = xml_text.find("?>", j + 2)
+            if end == -1:
+                return True
+            i = end + 2
+        else:
+            return xml_text.startswith("<!", j)  # <!DOCTYPE (and any entity it declares) before the root
 
 
 def _local(tag) -> str:
@@ -450,10 +561,12 @@ def _child_text(node, *names: str) -> str:
 def from_feed(xml_text: str, target_url: str, scope: str = "item") -> Page | None:
     """RSS (0.9x, 1.0, 2.0) or Atom. scope 'item' keeps only the entry linking to target_url;
     'all' keeps every entry (a thread or review feed)."""
-    if re.search(r"<!DOCTYPE|<!ENTITY", xml_text[:65536], re.I):
+    if _declares_dtd(xml_text):
         return None  # no DTDs: entity expansion is never allowed
     try:
-        root = ET.fromstring(xml_text.encode("utf-8"))
+        # The text is already decoded (net.decode_body), so it is parsed as a str: expat then ignores
+        # the declared encoding, which would otherwise break EUC-KR/CP949 feeds and garble Latin-1 ones.
+        root = ET.fromstring(xml_text)
     except (ET.ParseError, ValueError):
         return None
     entries = []

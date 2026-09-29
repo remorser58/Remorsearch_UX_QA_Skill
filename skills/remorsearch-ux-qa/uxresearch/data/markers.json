@@ -1,10 +1,11 @@
 {
   "schema_version": "ux-research-markers.v1",
-  "version": "2026-09-28.1",
+  "version": "2026-09-29.1",
   "verified_at": null,
-  "note": "Compiled for Remorsearch UX QA; not transcribed from any other project. Words match case-insensitively; ASCII markers match only at identifier boundaries (a letter or digit may not touch either end), a space inside a marker matches any run of whitespace (none for Korean). Word markers count only on pages with thin main content; structural markers (widgets, inputs, script sources, password fields) are checked first. Injection patterns are regular expressions.",
+  "note": "Compiled for Remorsearch UX QA; not transcribed from any other project. Words match case-insensitively; ASCII markers match only at identifier boundaries (a letter or digit may not touch either end), a space inside a marker matches any run of whitespace (none for Korean). Word markers count only on pages with thin main content, and only as notices: outside navigation chrome and links, not quoted, asked about or written as a person's own report (verdict.py). Structural markers (widgets, inputs, script sources, password fields) are checked first. Promotion markers are disclosure forms, not bare words, so a complaint about sponsored posts is not itself flagged; the flags they raise are candidates that a verifier confirms before a grade is capped. Injection patterns are regular expressions; credential and command patterns need a request addressed to the reader.",
   "thresholds": {
     "thin_main_chars": 200,
+    "empty_main_chars": 20,
     "shell_visible_chars": 200,
     "suspect_main_chars": 60,
     "standalone_line_chars": 24
@@ -66,8 +67,11 @@
   "logged_in": {
     "href": ["logout", "log-out", "log_out", "signout", "sign-out", "sign_out", "logoff"],
     "lines": {
-      "en": ["logout", "log out", "sign out", "my account"],
-      "ko": ["로그아웃", "마이페이지", "내 정보", "회원정보 수정"]
+      "en": ["logout", "log out", "sign out"],
+      "ko": ["로그아웃", "회원정보 수정"]
+    },
+    "greetings": {
+      "ko": ["님 환영합니다", "님 반갑습니다", "님, 환영합니다", "님, 반갑습니다"]
     }
   },
   "membership": {
@@ -145,13 +149,19 @@
     }
   },
   "promotion": {
-    "ko": ["체험단", "협찬", "원고료", "제품을 제공받아", "제품을 제공 받아", "제품을 무상으로 제공", "무상으로 제공받",
-           "업체로부터 지원", "업체로부터 제공", "지원받아 작성", "제공받아 작성", "소정의 원고료", "소정의 수수료",
-           "수수료를 제공받", "쿠팡 파트너스 활동", "파트너스 활동을 통해", "일정액의 수수료", "유료 광고", "광고 포함",
-           "#광고", "[광고]", "(광고)", "광고비를 받", "대가를 받고", "서포터즈"],
-    "en": ["sponsored", "#ad", "#sponsored", "paid partnership", "affiliate link", "affiliate links",
-           "earn a commission", "this post contains affiliate", "provided by the brand", "received this product for free",
-           "in exchange for a review"]
+    "ko": ["체험단으로 참여", "체험단에 참여하여", "체험단에 참여해", "체험단에 선정되어", "체험단 활동으로", "#체험단",
+           "[체험단]", "(체험단)", "협찬을 받아 작성", "협찬받아 작성", "협찬 받아 작성", "협찬을 받았습니다",
+           "협찬받았습니다", "협찬으로 제공", "#협찬", "[협찬]", "(협찬)", "원고료를 받아 작성", "원고료를 받고 작성",
+           "원고료를 지원받아", "소정의 원고료", "제품을 제공받아", "제품을 제공 받아", "제품을 무상으로 제공",
+           "무상으로 제공받아", "업체로부터 지원받아", "업체로부터 제공받아", "지원받아 작성", "제공받아 작성",
+           "소정의 수수료", "수수료를 제공받", "쿠팡 파트너스 활동", "파트너스 활동을 통해", "일정액의 수수료",
+           "유료 광고 포함", "유료광고 포함", "#광고", "[광고]", "(광고)", "대가를 받고 작성", "서포터즈 활동으로",
+           "서포터즈 활동의 일환", "서포터즈로 활동하며", "[서포터즈]", "#서포터즈"],
+    "en": ["this post is sponsored", "this video is sponsored", "this review is sponsored", "this episode is sponsored",
+           "#sponsored", "[sponsored]", "#ad", "paid partnership", "this post contains affiliate",
+           "contains affiliate links", "may earn a commission", "earn a small commission", "i earn a commission",
+           "we earn a commission", "the brand provided", "received this product for free",
+           "in exchange for an honest review"]
   },
   "injection": {
     "instruction_override": {
@@ -184,7 +194,8 @@
     },
     "tool_execution": {
       "en": [
-        "\\b(run|execute|eval)\\b.{0,20}\\b(command|commands|code|script|shell|terminal)\\b",
+        "\\b(run|execute|eval|paste)\\s+(this|these|the following|the below)\\s+(shell\\s+)?(command|commands|code|script|snippet)\\b",
+        "\\b(open|launch)\\s+(a|your|the)\\s+terminal\\s+and\\s+(run|type|paste)\\b",
         "\\brm\\s+-rf\\b",
         "\\bcurl\\s+[^|\\n]{0,200}\\|\\s*(sh|bash)\\b",
         "\\bsudo\\s+\\w",
@@ -192,17 +203,20 @@
         "\\bsubprocess\\."
       ],
       "ko": [
-        "(명령어|명령|코드|스크립트|터미널)\\S{0,3}\\s*(실행|입력|돌려)",
-        "(아래|다음)\\s*(명령|코드)\\S{0,3}\\s*(실행|복사)"
+        "(?<![가-힣])(아래|다음|위의?)\\s*(명령어?|코드|스크립트)\\S{0,3}\\s*.{0,20}((실행|입력|복사)\\s*(하세요|해\\s*주세요|해라|해\\s*줘|하십시오|하시오)|붙여\\s*넣(으세요|어\\s*주세요|어라|어\\s*줘|으십시오))",
+        "(터미널|콘솔|쉘|셸|명령\\s*프롬프트)\\S{0,3}\\s*.{0,20}(실행|입력)\\S{0,2}\\s*(하세요|해\\s*주세요|해라|해\\s*줘|하십시오)"
       ]
     },
     "credential_request": {
       "en": [
-        "\\b(send|give|share|enter|paste|reveal|post|email)\\b.{0,20}\\b(password|passcode|api[ _-]?key|access token|secret key|credentials|private key|seed phrase|otp)\\b",
+        "\\b(send|give|share|dm|message|email|tell|show)\\s+(me|us)\\b.{0,30}\\b(password|passcode|api[ _-]?key|access token|secret key|credentials|private key|seed phrase|recovery phrase|otp|verification code)\\b",
+        "\\b(reply|respond|comment)\\s+(here\\s+|below\\s+)?with\\s+(your\\s+)?.{0,20}\\b(password|passcode|api[ _-]?key|access token|secret key|credentials|private key|seed phrase|recovery phrase|otp|verification code)\\b",
+        "\\b(post|paste|enter|type|put|leave|drop|share)\\s+your\\s+(password|passcode|api[ _-]?key|access token|secret key|credentials|private key|seed phrase|recovery phrase)\\b.{0,30}\\b(here|below|in (the|a|your) (comments?|reply|replies|dm|message))\\b",
         "\\b(api[_ -]?key|access[_ -]?token|password)\\s*[:=]\\s*\\S+"
       ],
       "ko": [
-        "(비밀번호|패스워드|암호|API\\s*키|토큰|인증번호|OTP|계좌번호|주민등록번호)\\S{0,3}\\s*(보내|알려|입력해|공유|적어)"
+        "(나에게|저에게|제게|나한테|저한테|여기에?|댓글로|댓글에|쪽지로|메시지로|DM으로|디엠으로|이메일로|메일로)\\s*.{0,20}(비밀번호|패스워드|암호|API\\s*키|토큰|인증번호|OTP|계좌번호|카드번호|주민등록번호)\\S{0,3}\\s*(보내|알려|남겨|적어|공유)",
+        "(비밀번호|패스워드|암호|API\\s*키|토큰|인증번호|OTP|계좌번호|카드번호|주민등록번호)\\S{0,3}\\s*(나에게|저에게|제게|나한테|저한테|여기에?|댓글로|댓글에|쪽지로|메시지로|DM으로|디엠으로|이메일로|메일로)\\s*(보내|알려|남겨|적어|공유)"
       ]
     },
     "review_steering": {

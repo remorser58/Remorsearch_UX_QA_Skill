@@ -10,9 +10,15 @@ and matches prefixes only, so 'Disallow: /board/' plus 'Allow: /board/view'
 would deny /board/view there.
 
 Fetch status: 2xx is parsed; 4xx means unavailable (allowed); 5xx, 429 or a
-network failure means unreachable (disallow everything); a challenge page
-instead of the file is recorded as unavailable_bot_filtered (allowed for the
-honest rungs, never enough for the opt-in engine rung).
+network failure means unreachable (disallow everything for now, so the reader
+defers and checks again later); a challenge page instead of the file is
+recorded as unavailable_bot_filtered (allowed for the honest rungs, never enough
+for the opt-in engine rung). A 2xx body that holds robots.txt lines is always
+parsed as robots.txt, whatever its content type and whatever its comments say.
+
+X-Robots-Tag: each header is read on its own. Inside one header, a
+'product-token:' prefix scopes the directives after it to that crawler; a known
+directive with a value (such as 'unavailable_after: <date>') is not a crawler name.
 """
 from __future__ import annotations
 
@@ -26,7 +32,11 @@ STATUSES = ("ok", "unavailable", "unavailable_bot_filtered", "unreachable")
 _UNRESERVED = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
 _HEX = frozenset("0123456789abcdefABCDEF")
 _AGENT_KEYS = {"user-agent", "useragent", "user agent"}
-_VALUE_DIRECTIVES = {"unavailable_after", "max-snippet", "max-image-preview", "max-video-preview"}
+_RULE_KEYS = _AGENT_KEYS | {"allow", "disallow"}
+_DIRECTIVES = {"all", "none", "index", "follow", "noindex", "nofollow", "noarchive", "nocache", "nosnippet",
+               "notranslate", "noimageindex", "indexifembedded", "noai", "noimageai", "noodp", "noydir",
+               "unavailable_after", "max-snippet", "max-image-preview", "max-video-preview"}
+_PRODUCT_TOKEN = re.compile(r"[a-z0-9_-]+")
 
 
 @dataclass
@@ -106,6 +116,15 @@ def parse(text: str) -> list[Group]:
             in_rules = True
             current.request_rate_s = _rate(value)
     return groups
+
+
+def looks_like_robots(text: str) -> bool:
+    """True when the body holds at least one user-agent, allow or disallow line."""
+    for line in re.split(r"\r\n|\r|\n", text[:PARSE_LIMIT_BYTES]):
+        key, sep, _ = line.split("#", 1)[0].partition(":")
+        if sep and key.strip().lower() in _RULE_KEYS:
+            return True
+    return False
 
 
 def _agent_token(agent: str) -> str:
@@ -209,23 +228,28 @@ def decide(record: dict, url: str) -> dict:
 
 
 def _x_robots(value: str, token: str) -> set[str]:
+    """Directives of one X-Robots-Tag header that apply to `token` (unscoped ones apply to all)."""
     found: set[str] = set()
     agent = None
     for item in value.split(","):
         item = item.strip().lower()
         if ":" in item:
             head, _, tail = item.partition(":")
-            if head.strip() not in _VALUE_DIRECTIVES:
-                agent, item = head.strip(), tail.strip()
+            head = head.strip()
+            if head not in _DIRECTIVES and _PRODUCT_TOKEN.fullmatch(head):
+                agent, item = head, tail.strip()
         if item and (agent is None or agent == token.lower()):
             found.add(item.split(":", 1)[0].strip())
     return found
 
 
-def page_optouts(headers: dict, meta_robots: list, tdm_meta: str | None, token: str) -> list[str]:
-    """X-Robots-Tag or robots meta 'noai', and TDM reservation (header or meta)."""
+def page_optouts(headers: dict, meta_robots: list, tdm_meta: str | None, token: str,
+                 x_robots: list | None = None) -> list[str]:
+    """X-Robots-Tag or robots meta 'noai', and TDM reservation (header or meta). `x_robots` lists
+    each X-Robots-Tag header separately; without it the (possibly merged) header value is used."""
     reasons: list[str] = []
-    if "noai" in _x_robots(headers.get("x-robots-tag", ""), token):
+    values = x_robots if x_robots is not None else [headers.get("x-robots-tag", "")]
+    if any("noai" in _x_robots(value, token) for value in values):
         reasons.append("x-robots-tag:noai")
     for name, content in meta_robots:
         if name in ("robots", token.lower()) and "noai" in {p.strip().lower() for p in content.split(",")}:

@@ -15,15 +15,24 @@ Rungs, cheapest and most honest first. Each runs at most once per URL:
   R3 real_browser    an unmodified browser render in an anonymous context. In this
                      version the researcher's own browser renders the page and the
                      capture is handed in with `ingest`; `read` exits 4 and says how.
+                     A community the brief authorises may be captured signed in.
   R4 browser_equivalent_tls  the opt-in engine rung. Not in this version: see
                      engine_rung() below for the hook and its preconditions.
 
-Escalation happens only on js_shell, js_check, bot_filter or suspect. Any stop
-class ends the URL; human_check, or a second rate-limit signal, stops the whole
-host for the run. robots.txt is checked before every request, on the page's own
-host and on route and alternate hosts. Redirects are followed only within one
-origin and only to paths robots.txt allows; a redirect to a login page is an
-auth_gate stop, and every other hop goes through the same checks as a new URL.
+Before any rung, the page's own URL is checked against the deny list, the route
+table's out-of-scope private channels and its own robots.txt; a disallowed path
+stops there, so no official route or alternate is read for it. Escalation
+happens only on js_shell, js_check, bot_filter or suspect. Any stop class ends
+the URL. The whole host stops for the run on a human check backed by a widget or
+a challenge status, on any human check in a render capture, on a second
+rate-limit signal, and after three URLs in a row that no allowed rung could read
+(a URL still waiting for its render does not count). robots.txt that cannot be
+fetched (5xx, 429, network failure) disallows everything for now: the URL is
+deferred until it is checked again. Every request, redirect hop, official route
+and alternate goes through the same checks as a new URL: deny list,
+out-of-scope channels, robots.txt. Redirects are followed only within one origin
+and only to paths robots.txt allows; a redirect to a login page is an auth_gate
+stop.
 """
 from __future__ import annotations
 
@@ -31,6 +40,7 @@ import functools
 import hashlib
 import ipaddress
 import json
+import math
 import os
 import re
 from dataclasses import dataclass, field
@@ -39,7 +49,7 @@ from urllib.parse import parse_qsl, quote, urlsplit
 
 from . import ROBOTS_TOKEN, USER_AGENT, extract, net, privacy, robots, verdict
 from .envelope import scan as scan_injection
-from .ledger import BudgetExceeded, Deferred, HostStopped, Run
+from .ledger import ROBOTS_RETRY_S, BudgetExceeded, Deferred, HostStopped, Run
 
 DATA = Path(__file__).resolve().parent / "data"
 PRESENTATION = {"R0": "official_route", "R1": "honest_ua", "R2": "site_alternate", "R3": "real_browser",
@@ -56,10 +66,15 @@ JSON_ACCEPT = "application/json;q=1.0,*/*;q=0.5"
 ROBOTS_ACCEPT = "text/plain,*/*;q=0.5"
 HTML_TYPES = frozenset({"text/html", "application/xhtml+xml"})
 FEED_TYPES = frozenset({"application/rss+xml", "application/atom+xml", "application/xml", "text/xml"})
-INGEST_HELP = ("Render it yourself: open the URL in a private or signed-out browser window (never a signed-in "
-               "session), let a self-clearing check finish (at most 15 s), scroll only (no typing, no clicks), "
-               "save the page as HTML or copy its text, then run: ux_research.py ingest --run RUN --url URL "
-               "--file FILE --context anonymous")
+INGEST_HELP = ("Render it yourself: open the URL in a private or signed-out browser window (a signed-in session "
+               "only for a community the brief authorises), let a self-clearing check finish (at most 15 s), scroll "
+               "only (no typing, no clicks), save the page as HTML or copy its text, then run: ux_research.py ingest "
+               "--run RUN --url URL --file FILE --context anonymous")
+AUTHORISED_NOTE = ("member content from an authorised community: shared outputs keep authored summaries only "
+                   "(no quotes, no post URLs, no member's personal data)")
+ROBOTS_UNREACHABLE = ("robots.txt could not be fetched (5xx, 429 or a network failure), so nothing may be read "
+                      "there until it is checked again")
+CONTEXTS = ("anonymous", "unknown", "signed_in")
 
 
 # ---------------------------------------------------------------- site data
@@ -176,6 +191,9 @@ class _Attempt:
     chain: list = field(default_factory=list)
     robots: dict | None = None
     waited_s: float = 0.0
+    retry_after_s: int | None = None
+    scope: bool = False  # stopped by the deny list or an out-of-scope channel, before any request
+    out_of_scope: bool = False
 
 
 def _headers(run: Run, accept: str) -> dict:
@@ -196,6 +214,17 @@ def _robots_brief(decision: dict | None) -> dict | None:
         return None
     return {k: decision.get(k) for k in ("allowed", "decision", "robots_status", "http_status", "group", "rule",
                                          "sha256", "crawl_delay")}
+
+
+def scope_stop(run: Run, routes: Routes, url: str) -> tuple[str, list, bool] | None:
+    """(stop class, reasons, out of scope) when the researcher's deny list or the route table's
+    private channels exclude this URL. Checked before any robots.txt, slot or request."""
+    if verdict.host_matches(net.host_of(url), run.policy.get("deny_hosts", [])):
+        return "opted_out", ["deny_hosts"], False
+    excluded = routes.excluded(url)
+    if excluded:
+        return "auth_gate", [f"private_channel:{excluded}"], True
+    return None
 
 
 def robots_decision(run: Run, url: str, max_wait: float) -> dict:
@@ -220,7 +249,11 @@ def robots_decision(run: Run, url: str, max_wait: float) -> dict:
                 run.log({**entry, "error": failure.kind})
                 raise failure
             challenge = False
-            if response is not None and _looks_html(response):
+            parsed = response is not None and 200 <= response.status < 300 and \
+                robots.looks_like_robots(response.body[:robots.PARSE_LIMIT_BYTES].decode("utf-8", "replace"))
+            if response is not None and not parsed and _looks_html(response):
+                # Only a body with no robots.txt lines can be a challenge page: words in a real file's
+                # comments never override its rules.
                 challenge = verdict.robots_challenge(response.status,
                                                      extract.from_html(response.text()[0], response.final_url))
             record = robots.record_from_fetch(origin, status=response.status if response else None,
@@ -236,11 +269,22 @@ def robots_decision(run: Run, url: str, max_wait: float) -> dict:
                          test_override=response.test_override)
         run.log({**entry, "error": failure.kind if failure else None, "robots_status": record["status"],
                  "sha256": record["sha256"], "crawl_delay": record["crawl_delay"]})
-    return {"origin": origin, **robots.decide(record, url)}
+    decision = {"origin": origin, **robots.decide(record, url)}
+    if decision["robots_status"] == "unreachable":  # disallowed for now; checked again after ROBOTS_RETRY_S
+        stored = float(record.get("stored_at") or run.clock())
+        decision["retry_after_s"] = max(1, int(math.ceil(ROBOTS_RETRY_S - (run.clock() - stored))))
+    return decision
+
+
+def _robots_reasons(decision: dict) -> list:
+    rule = decision.get("rule") or {}
+    return [f"robots.txt:{rule.get('type', 'disallow')} {rule.get('pattern', '')}".strip(),
+            f"robots_status:{decision['robots_status']}"]
 
 
 def _request(st: _Read, url: str, rung: str, *, accept: str = PAGE_ACCEPT, purpose: str = "page") -> _Attempt:
-    """robots.txt, a paced slot, one GET; same-origin redirects only; login redirects stop."""
+    """Deny list and out-of-scope check, robots.txt, a paced slot, one GET; same-origin redirects
+    only; login redirects stop. Every hop gets the same checks as a new URL."""
     run = st.run
     attempt = _Attempt(url=url, rung=rung, purpose=purpose)
     requested_login = verdict.is_login_url(url, st.routes.login_hosts)
@@ -248,7 +292,12 @@ def _request(st: _Read, url: str, rung: str, *, accept: str = PAGE_ACCEPT, purpo
     hops = 0
     while True:
         parts = urlsplit(current)
-        try:  # every hop is checked before any slot, robots.txt or request is spent on it
+        excluded = scope_stop(run, st.routes, current)  # before any slot, robots.txt or request
+        if excluded:
+            attempt.stop, attempt.reasons, attempt.out_of_scope = excluded
+            attempt.scope = True
+            return attempt
+        try:
             net.check_host(parts.hostname or "", parts.port or (443 if parts.scheme == "https" else 80))
         except net.NetError as exc:
             if exc.kind in net.REFUSAL_KINDS:
@@ -256,10 +305,11 @@ def _request(st: _Read, url: str, rung: str, *, accept: str = PAGE_ACCEPT, purpo
         decision = robots_decision(run, current, st.max_wait)
         attempt.robots = decision
         if not decision["allowed"]:
-            rule = decision.get("rule") or {}
-            attempt.stop = "opted_out"
-            attempt.reasons = [f"robots.txt:{rule.get('type', 'disallow')} {rule.get('pattern', '')}".strip(),
-                               f"robots_status:{decision['robots_status']}"]
+            if decision["robots_status"] == "unreachable":
+                attempt.error, attempt.error_detail = "robots_unreachable", ROBOTS_UNREACHABLE
+                attempt.retry_after_s = decision.get("retry_after_s")
+                return attempt
+            attempt.stop, attempt.reasons = "opted_out", _robots_reasons(decision)
             return attempt
         host = net.host_of(current)
         origin = net.origin_of(current)
@@ -270,6 +320,8 @@ def _request(st: _Read, url: str, rung: str, *, accept: str = PAGE_ACCEPT, purpo
         def follow(source: str, target: str, origin: str = origin) -> bool:
             if net.origin_of(target) != origin or verdict.is_legal_block_url(target):
                 return False
+            if scope_stop(run, st.routes, target):
+                return False
             if not requested_login and verdict.is_login_url(target, st.routes.login_hosts):
                 return False
             record = run.robots_record(origin)
@@ -277,11 +329,10 @@ def _request(st: _Read, url: str, rung: str, *, accept: str = PAGE_ACCEPT, purpo
 
         entry = {"kind": "request", "purpose": purpose, "fetch_id": fetch_id, "rung": rung,
                  "presentation": PRESENTATION[rung], "url": current, "host": host}
-        try:
+        try:  # the slot is released whatever happens, so a failure never leaves the host leased
             response = net.fetch(current, headers=_headers(run, accept),
                                  max_redirects=max(0, net.MAX_REDIRECTS - hops), on_redirect=follow)
         except net.NetError as exc:
-            run.release(slot)
             attempt.error, attempt.error_detail = exc.kind, exc.detail
             attempt.chain.extend(exc.redirects)
             attempt.contacted = attempt.contacted or exc.kind in ("too_large", "redirect_loop", "protocol_error",
@@ -289,7 +340,8 @@ def _request(st: _Read, url: str, rung: str, *, accept: str = PAGE_ACCEPT, purpo
             st.contacted = st.contacted or attempt.contacted
             run.log({**entry, "error": exc.kind, "redirects": exc.redirects, "waited_s": round(slot.waited, 3)})
             return attempt
-        run.release(slot)
+        finally:
+            run.release(slot)
         attempt.contacted = st.contacted = True
         attempt.chain.extend(response.redirects)
         hops += len(response.redirects)
@@ -339,7 +391,7 @@ def _evaluate(st: _Read, attempt: _Attempt, *, requested: str, feed_target: str 
     elif response.content_type.startswith("text/"):
         page = extract.from_text(text)
     optouts = robots.page_optouts(response.headers, page.meta_robots if page else [],
-                                  page.tdm_meta if page else None, ROBOTS_TOKEN)
+                                  page.tdm_meta if page else None, ROBOTS_TOKEN, response.x_robots)
     v = verdict.classify(status=response.status, headers=response.headers, page=page, requested_url=requested,
                          final_url=response.final_url, redirect_urls=[r["to"] for r in attempt.chain],
                          expect=st.expect, optouts=optouts, login_hosts=st.routes.login_hosts)
@@ -393,11 +445,16 @@ def _remaining(st: _Read, last_verdict: str | None = None) -> tuple[list, list]:
 def _done(st: _Read, bucket: str, *, stop: str | None = None, verdict_: str | None = None, reasons=(),
           rung: str | None = None, attempt: _Attempt | None = None, page=None, untried=(), error: str | None = None,
           retry_after_s: int | None = None, host_stop: dict | None = None, next_step: str | None = None,
-          notes=()) -> dict:
+          notes=(), out_of_scope: bool = False, access_basis: str = "public_anonymous") -> dict:
     run = st.run
     host = net.host_of(st.url)
     response = attempt.response if attempt is not None else None
-    robots_info = _robots_brief(attempt.robots if attempt is not None and attempt.robots else st.target_robots)
+    # The source's robots record is its own page's decision, not a route or alternate host's, unless
+    # another host's robots.txt is what stopped or deferred it.
+    robots_source = st.target_robots
+    if attempt is not None and attempt.robots and (robots_source is None or not attempt.robots.get("allowed")):
+        robots_source = attempt.robots
+    robots_info = _robots_brief(robots_source)
     result = {"source": "read", "bucket": bucket, "exit_code": EXIT[bucket], "url": privacy.mask_url(st.url),
               "final_url": privacy.mask_url(response.final_url) if response else None, "host": host,
               "verdict": verdict_, "stop_class": stop, "reasons": list(reasons)[:10], "rung": rung,
@@ -405,7 +462,11 @@ def _done(st: _Read, bucket: str, *, stop: str | None = None, verdict_: str | No
               "fetch_id": attempt.fetch_id if attempt is not None else None, "trail": st.trail,
               "untried": list(untried), "error": error, "retry_after_s": retry_after_s, "host_stop": host_stop,
               "next_step": next_step, "notes": list(notes), "robots": robots_info, "fetched_at": run.now_iso(),
-              "engine_rung": "off", "render": "needs_host_render" if "R3" in untried else None}
+              "engine_rung": "off", "render": "needs_host_render" if "R3" in untried else None,
+              "context": "anonymous", "access_basis": access_basis if bucket == "read" else None}
+    if out_of_scope:
+        result["out_of_scope"] = True
+        result["notes"].append("a private channel: out of the research's scope, not a coverage gap")
     text = None
     if bucket == "read" and page is not None:
         text = page.text
@@ -416,13 +477,16 @@ def _done(st: _Read, bucket: str, *, stop: str | None = None, verdict_: str | No
         run.save_page(attempt.fetch_id, text)
     elif stop == "paywall" and page is not None:
         result["meta"] = page.metadata()
-    if bucket in ("read", "unread"):
+    # Only a URL with no allowed rung left counts toward bot_filter_persistent: a page that is waiting
+    # for its render (R3 untried) has not been found unreadable yet.
+    if bucket == "read" or (bucket == "unread" and not untried):
         streak = run.note_outcome(host, bucket)
         if streak:
             result["host_stop"] = streak
             result["notes"].append("this host is now stopped for the run: " + streak["reason"])
     run.log({"kind": "outcome", "source": "read", "url": st.url, "url_key": run.url_key(st.url), "host": host,
              "fetched_at": result["fetched_at"], "context": "anonymous", "engine_version": None,
+             "access_basis": result["access_basis"], "out_of_scope": out_of_scope or None,
              "robots": {"decision": (robots_info or {}).get("decision"), "status": (robots_info or {}).get("robots_status")},
              "bucket": bucket, "verdict": verdict_, "stop_class": stop, "rung": rung,
              "presentation": result["presentation"], "fetch_id": result["fetch_id"], "untried": result["untried"],
@@ -449,6 +513,9 @@ def _refused(run: Run, url, kind: str, detail: str, st: _Read | None = None) -> 
 def _error_outcome(st: _Read, attempt: _Attempt) -> dict:
     if attempt.error in net.REFUSAL_KINDS:
         return _refused(st.run, st.url, attempt.error, attempt.error_detail, st)
+    if attempt.error == "robots_unreachable":
+        return _done(st, "deferred", error=attempt.error, reasons=["robots_unreachable", attempt.error_detail],
+                     rung=attempt.rung, attempt=attempt, retry_after_s=attempt.retry_after_s)
     if attempt.error in net.TRANSIENT_KINDS:
         return _done(st, "deferred", error=attempt.error, reasons=[attempt.error_detail], rung=attempt.rung,
                      attempt=attempt, retry_after_s=TRANSIENT_RETRY_S)
@@ -467,6 +534,12 @@ def _rate_limited(st: _Read, attempt: _Attempt, v: verdict.Verdict, rung: str) -
                      attempt=attempt, host_stop=noted["stop"])
     _trail(st, rung, "rate_limited", attempt=attempt, v=v, note=f"one wait of {noted['wait_s']:.0f} s, then one retry")
     return None
+
+
+def _host_signal(v: verdict.Verdict) -> bool:
+    """A 429 or a 503 with Retry-After: one polite wait, then the host stops. A rate-limit notice
+    without those statuses stops only its URL."""
+    return v.stop_class == "rate_limit" and v.host_wide
 
 
 def _terminal(st: _Read, attempt: _Attempt, page, v: verdict.Verdict, rung: str) -> dict | None:
@@ -532,7 +605,8 @@ def _rung0(st: _Read, platform: dict | None, values: dict) -> dict | None:
         if attempt.contacted or attempt.error:
             requests += 1
         if attempt.stop or attempt.error:
-            _trail(st, "R0", "failed", url=candidate, attempt=attempt)
+            note = ", ".join(attempt.reasons[:2]) if attempt.scope else None
+            _trail(st, "R0", "skipped" if attempt.scope else "failed", url=candidate, attempt=attempt, note=note)
             continue
         response = attempt.response
         if not 200 <= response.status < 300:
@@ -550,14 +624,15 @@ def _rung0(st: _Read, platform: dict | None, values: dict) -> dict | None:
             _log_attempt(st.run, attempt)
             _trail(st, "R0", "failed", url=candidate, attempt=attempt, note="no entry for this page")
             continue
-        optouts = robots.page_optouts(response.headers, [], None, ROBOTS_TOKEN)
+        optouts = robots.page_optouts(response.headers, [], None, ROBOTS_TOKEN, response.x_robots)
         v = verdict.classify(status=response.status, headers=response.headers, page=page, requested_url=candidate,
                              final_url=response.final_url, expect=st.expect, optouts=optouts,
                              login_hosts=st.routes.login_hosts)
         _log_attempt(st.run, attempt, v, page)
         if v.ok:
+            basis = "official_api" if route.get("auth") == "user_key" else "public_anonymous"
             return _done(st, "read", verdict_=v.verdict, reasons=v.reasons + [f"route:{platform.get('id')}"],
-                         rung="R0", attempt=attempt, page=page)
+                         rung="R0", attempt=attempt, page=page, access_basis=basis)
         _trail(st, "R0", "failed", url=candidate, attempt=attempt, v=v)
     return None
 
@@ -599,20 +674,30 @@ def _alternates(st: _Read, platform: dict | None, values: dict, page) -> list[tu
 
 
 def _ladder(st: _Read) -> dict:
+    # The page's own robots.txt decides before any rung: a path the site disallows is never read,
+    # not even through an official route or an alternate on another host. This decision, not a
+    # route host's, is the source's robots record.
+    decision = robots_decision(st.run, st.url, st.max_wait)
+    st.target_robots = decision
+    if not decision["allowed"]:
+        if decision["robots_status"] == "unreachable":
+            return _done(st, "deferred", error="robots_unreachable", retry_after_s=decision.get("retry_after_s"),
+                         reasons=["robots_unreachable", ROBOTS_UNREACHABLE])
+        return _done(st, "stopped", stop="opted_out", reasons=_robots_reasons(decision))
     platform, values = st.routes.match(st.url)
     result = _rung0(st, platform, values)
     if result is not None:
         return result
     # R1: one honest GET, plus at most one polite retry after a first rate-limit signal
     attempt = _request(st, st.url, "R1")
-    st.target_robots = attempt.robots
     for _ in range(2):
         if attempt.stop:
-            return _done(st, "stopped", stop=attempt.stop, reasons=attempt.reasons, rung="R1", attempt=attempt)
+            return _done(st, "stopped", stop=attempt.stop, reasons=attempt.reasons, rung="R1", attempt=attempt,
+                         out_of_scope=attempt.out_of_scope)
         if attempt.error:
             return _error_outcome(st, attempt)
         page, v = _evaluate(st, attempt, requested=st.url)
-        if v.stop_class != "rate_limit":
+        if not _host_signal(v):
             break
         stopped = _rate_limited(st, attempt, v, "R1")
         if stopped is not None:
@@ -649,8 +734,9 @@ def _ladder(st: _Read) -> dict:
             continue
         if alt.contacted or alt.error:
             requests += 1
-        if alt.stop == "opted_out":
-            _trail(st, "R2", "skipped", url=candidate, attempt=alt, note=f"{source}: robots.txt disallows it")
+        if alt.scope or alt.stop == "opted_out":
+            why = ", ".join(alt.reasons[:1]) if alt.scope else "robots.txt disallows it"
+            _trail(st, "R2", "skipped", url=candidate, attempt=alt, note=f"{source}: {why}")
             continue
         if alt.stop:
             return _done(st, "stopped", stop=alt.stop, reasons=alt.reasons, rung="R2", attempt=alt)
@@ -661,7 +747,7 @@ def _ladder(st: _Read) -> dict:
         if alt_v.stop_class == "gone" and alt.response.status in (404, 410):
             _trail(st, "R2", "failed", url=candidate, attempt=alt, v=alt_v, note=f"{source} does not exist")
             continue
-        if alt_v.stop_class == "rate_limit":
+        if _host_signal(alt_v):
             stopped = _rate_limited(st, alt, alt_v, "R2")
             if stopped is not None:
                 return stopped
@@ -715,11 +801,10 @@ def read(run: Run, url: str, *, expect=(), max_wait: float | None = None) -> dic
     except net.NetError as exc:
         if exc.kind in net.REFUSAL_KINDS:
             return _refused(run, target, exc.kind, exc.detail, st)
-    if verdict.host_matches(host, run.policy.get("deny_hosts", [])):
-        return _done(st, "stopped", stop="opted_out", reasons=["deny_hosts"])
-    excluded = st.routes.excluded(target)
+    excluded = scope_stop(run, st.routes, target)
     if excluded:
-        return _done(st, "stopped", stop="auth_gate", reasons=[f"private_channel:{excluded}"])
+        stop, reasons, out_of_scope = excluded
+        return _done(st, "stopped", stop=stop, reasons=reasons, out_of_scope=out_of_scope)
     stopped = run.host_stop(host)
     if stopped:
         return _done(st, "stopped", stop="host_stopped", reasons=[f"host_stop:{stopped['class']}"], host_stop=stopped)
@@ -739,6 +824,9 @@ def read(run: Run, url: str, *, expect=(), max_wait: float | None = None) -> dic
 
 
 def check_robots(run: Run, url: str, *, max_wait: float | None = None) -> dict:
+    """What a browser tool may open on this URL's host, without reading the page: the deny list, the
+    route table's out-of-scope channels, a host stopped for this run, and robots.txt. Page-level
+    opt-outs (noai, TDM) are in the page itself, so only `read` sees them."""
     run.require_open()
     wait = float(run.policy.get("max_wait_s", 60) if max_wait is None else max_wait)
     try:
@@ -750,18 +838,33 @@ def check_robots(run: Run, url: str, *, max_wait: float | None = None) -> dict:
             return {"url": privacy.mask_url(url), "exit_code": EXIT["refused"], "error": exc.kind,
                     "reasons": [exc.detail]}
         target = net.parse_url(url)
+    masked = privacy.mask_url(target)
+    excluded = scope_stop(run, Routes(run.routes), target)
+    if excluded:  # decided before robots.txt is fetched: nothing is sent to an excluded host
+        stop, reasons, out_of_scope = excluded
+        return {"url": masked, "exit_code": EXIT["stopped"], "allowed": False, "stop_class": stop,
+                "reasons": reasons, "out_of_scope": out_of_scope}
+    stopped = run.host_stop(net.host_of(target))
+    if stopped:
+        return {"url": masked, "exit_code": EXIT["stopped"], "allowed": False, "stop_class": "host_stopped",
+                "reasons": [f"host_stop:{stopped['class']}"], "host_stop": stopped}
     try:
         decision = robots_decision(run, target, wait)
     except Deferred as exc:
-        return {"url": privacy.mask_url(target), "exit_code": EXIT["deferred"], "retry_after_s": exc.retry_after_s}
+        return {"url": masked, "exit_code": EXIT["deferred"], "allowed": False, "retry_after_s": exc.retry_after_s,
+                "reasons": [f"deferred:{exc.why}"]}
     except HostStopped as exc:
-        return {"url": privacy.mask_url(target), "exit_code": EXIT["stopped"], "stop_class": "host_stopped",
+        return {"url": masked, "exit_code": EXIT["stopped"], "allowed": False, "stop_class": "host_stopped",
                 "host_stop": exc.stop}
     except net.NetError as exc:
         code = EXIT["refused"] if exc.kind in net.REFUSAL_KINDS else EXIT["unread"]
-        return {"url": privacy.mask_url(target), "exit_code": code, "error": exc.kind, "reasons": [exc.detail]}
-    return {"url": privacy.mask_url(target), "exit_code": EXIT["read"] if decision["allowed"] else EXIT["stopped"],
-            "stop_class": None if decision["allowed"] else "opted_out", **decision}
+        return {"url": masked, "exit_code": code, "allowed": False, "error": exc.kind, "reasons": [exc.detail]}
+    if decision["allowed"]:
+        return {"url": masked, "exit_code": EXIT["read"], "stop_class": None, **decision}
+    if decision["robots_status"] == "unreachable":
+        return {"url": masked, "exit_code": EXIT["deferred"], "stop_class": None, "error": "robots_unreachable",
+                "reasons": ["robots_unreachable", ROBOTS_UNREACHABLE], **decision}
+    return {"url": masked, "exit_code": EXIT["stopped"], "stop_class": "opted_out", **decision}
 
 
 PAGE_READ_REQUIRED = {"schema_version": str, "url": str, "final_url": str, "status": int, "text": str,
@@ -792,24 +895,94 @@ def _ingest_refused(run: Run, url: str, reason: str) -> dict:
             "error": "ingest_refused", "reasons": [reason], "text": None}
 
 
+def _ingest_stopped(run: Run, target: str, host: str, context: str, stop_class: str, reasons: list,
+                    **extra) -> dict:
+    """A capture that is not taken in: a host stop or a budget stop decided before it is looked at."""
+    run.log({"kind": "outcome", "source": "ingest", "url": target, "url_key": run.url_key(target), "host": host,
+             "bucket": "stopped", "stop_class": stop_class, "rung": "R3", "context": context, "reasons": reasons,
+             "host_stop": (extra.get("host_stop") or {}).get("class")})
+    return {"source": "ingest", "bucket": "stopped", "exit_code": EXIT["stopped"], "url": privacy.mask_url(target),
+            "host": host, "verdict": None, "stop_class": stop_class, "reasons": reasons, "rung": "R3",
+            "presentation": "real_browser", "context": context, "untried": [],
+            "notes": ["the capture text was discarded"], "text": None, **extra}
+
+
+def authorised_community(run: Run, url: str) -> dict | None:
+    """The community in the brief's access_policy.signed_in_communities that covers this URL: its
+    host (subdomains included) and, when the entry has one, its path prefix. Only the user's brief
+    adds entries; nothing a page says counts as authorisation."""
+    try:
+        parts = urlsplit(url)
+        host = parts.hostname or ""
+    except ValueError:
+        return None
+    path = parts.path or "/"
+    for community in run.policy.get("signed_in_communities") or []:
+        if not verdict.host_matches(host, [community.get("host", "")]):
+            continue
+        prefix = (community.get("path_prefix") or "").rstrip("/")
+        if not prefix or path == prefix or path.startswith(prefix + "/"):
+            return community
+    return None
+
+
+def _capture_blocked(run: Run, target: str, community: dict | None) -> tuple[str | None, dict | None]:
+    """(why a capture of this URL may not be taken in, or None; the anonymous read of it).
+
+    A capture needs an earlier anonymous read of the same URL that reached the page and did not
+    stop; in an authorised community a membership stop (auth_gate) is the one stop a signed-in
+    capture may follow. A capture never replaces a stop, and no capture follows one that stopped."""
+    key = run.url_key(target)
+    prior = run.last_outcome(key, kind="read")
+    if prior is None:
+        return "no earlier anonymous read of this URL in this run; run `read` first", None
+    bucket, stop = prior.get("bucket"), prior.get("stop_class")
+    if bucket == "deferred":
+        return "the anonymous read was deferred; run `read` again after its retry_after_s", prior
+    member_wall = community is not None and stop == "auth_gate" and not prior.get("out_of_scope")
+    if (bucket not in ("read", "unread") or stop) and not member_wall:
+        lifted = "; authorisation lifts only a membership stop (auth_gate)" if community is not None else ""
+        return f"the anonymous read ended in {stop or bucket}; a capture cannot replace a stop{lifted}", prior
+    if not prior.get("contacted"):
+        return "the anonymous read made no request for this page; run `read` again", prior
+    for earlier in run.outcomes(key, kind="ingest"):
+        if earlier.get("bucket") != "stopped":
+            continue
+        if community is not None and earlier.get("stop_class") == "auth_gate" and earlier.get("context") != "signed_in":
+            continue  # an anonymous capture met the membership wall; the authorised member's view may follow
+        return (f"an earlier capture of this URL ended in {earlier.get('stop_class')}; "
+                "a capture cannot replace a stop"), prior
+    return None, prior
+
+
 def ingest(run: Run, url: str, file_path, *, fmt: str | None = None, context: str, expect=()) -> dict:
-    """Accept a render capture (html, txt or ux-page-read.v1) after an anonymous read that did not stop."""
+    """Accept a render capture (html, txt or ux-page-read.v1) after an anonymous read of the same URL.
+
+    `context` is the browser context the capture came from. `signed_in` is accepted only for a
+    community the brief authorises; its text is member content (access_basis authorised_member),
+    scrubbed of personal identifiers, and shared outputs keep authored summaries of it only. A
+    human check in a capture stops the host, a rate-limit page in it is a rate-limit signal, and
+    the capture resets or extends the host's run of unreadable URLs."""
     run.require_open()
     try:
         target = net.parse_url(url)
     except net.NetError as exc:
         return _ingest_refused(run, url if isinstance(url, str) else "", f"{exc.kind}: {exc.detail}")
-    if context == "signed_in":
-        return _ingest_refused(run, target, "signed-in captures are refused: this reader version has no authorised "
-                                            "communities; capture the page in a private or signed-out window")
-    if context not in ("anonymous", "unknown"):
-        return _ingest_refused(run, target, "context must be anonymous or unknown")
-    prior = run.last_outcome(run.url_key(target), kind="read")
-    if prior is None or not prior.get("contacted"):
-        return _ingest_refused(run, target, "no earlier anonymous read of this URL in this run; run `read` first")
-    if prior.get("bucket") not in ("read", "unread") or prior.get("stop_class"):
-        return _ingest_refused(run, target, "the anonymous read ended in "
-                               f"{prior.get('stop_class') or prior.get('bucket')}; a capture cannot replace a stop")
+    if context not in CONTEXTS:
+        return _ingest_refused(run, target, f"context must be one of {', '.join(CONTEXTS)}")
+    routes = Routes(run.routes)
+    excluded = scope_stop(run, routes, target)
+    if excluded:
+        why = "a private channel, out of this research's scope" if excluded[2] else "a host the researcher excludes"
+        return _ingest_refused(run, target, f"this URL is on {why} ({', '.join(excluded[1])}); it is never captured")
+    community = authorised_community(run, target) if context == "signed_in" else None
+    if context == "signed_in" and community is None:
+        return _ingest_refused(run, target, "signed-in captures are accepted only for communities the brief authorises "
+                                            "(access_policy.signed_in_communities); capture this page in a private "
+                                            "or signed-out window")
+    blocked, prior = _capture_blocked(run, target, community)
+    if blocked:
+        return _ingest_refused(run, target, blocked)
     path = Path(file_path)
     if path.is_symlink() or not path.is_file() or path.stat().st_size > INGEST_MAX_BYTES:
         return _ingest_refused(run, target, "the capture must be a regular file of at most 8 MB")
@@ -820,8 +993,9 @@ def ingest(run: Run, url: str, file_path, *, fmt: str | None = None, context: st
         if fmt == "page-read":
             doc = json.loads(data.decode("utf-8"))
             check_page_read(doc)
-            if doc["context"] != "anonymous":
-                return _ingest_refused(run, target, "the capture was not made in an anonymous context")
+            if doc["context"] != "anonymous" or context == "signed_in":
+                return _ingest_refused(run, target, "a ux-page-read.v1 capture comes from a fresh anonymous context; "
+                                                    "declare it with --context anonymous")
             declared = {net.parse_url(u) for u in (doc.get("url"), doc.get("final_url")) if isinstance(u, str) and u}
             if target not in declared:
                 return _ingest_refused(run, target, "the capture is for a different URL")
@@ -840,30 +1014,34 @@ def ingest(run: Run, url: str, file_path, *, fmt: str | None = None, context: st
     host = net.host_of(target)
     stopped = run.host_stop(host)
     if stopped and stopped.get("class") in ("rate_limit", "human_check"):
-        run.log({"kind": "outcome", "source": "ingest", "url": target, "url_key": run.url_key(target), "host": host,
-                 "bucket": "stopped", "stop_class": "host_stopped", "rung": "R3", "context": context,
-                 "reasons": [f"host_stop:{stopped['class']}"]})
-        return {"source": "ingest", "bucket": "stopped", "exit_code": EXIT["stopped"], "url": privacy.mask_url(target),
-                "host": host, "verdict": None, "stop_class": "host_stopped", "host_stop": stopped,
-                "reasons": [f"host_stop:{stopped['class']}"], "rung": "R3", "presentation": "real_browser",
-                "context": context, "untried": [], "notes": ["the capture text was discarded"], "text": None}
+        return _ingest_stopped(run, target, host, context, "host_stopped", [f"host_stop:{stopped['class']}"],
+                               host_stop=stopped)
     try:
         run.book_render(host)
     except BudgetExceeded as exc:
-        run.log({"kind": "outcome", "source": "ingest", "url": target, "url_key": run.url_key(target), "host": host,
-                 "bucket": "stopped", "stop_class": "budget", "rung": "R3", "context": context,
-                 "reasons": [f"budget:{exc.scope}:{exc.limit}"]})
-        return {"source": "ingest", "bucket": "stopped", "exit_code": EXIT["stopped"], "url": privacy.mask_url(target),
-                "host": host, "verdict": None, "stop_class": "budget", "reasons": [f"budget:{exc.scope}:{exc.limit}"],
-                "rung": "R3", "presentation": "real_browser", "context": context, "untried": [],
-                "notes": ["the capture text was discarded"], "text": None}
-    routes = Routes(run.routes)
+        return _ingest_stopped(run, target, host, context, "budget", [f"budget:{exc.scope}:{exc.limit}"])
     optouts = robots.page_optouts({}, page.meta_robots, page.tdm_meta, ROBOTS_TOKEN)
     v = verdict.classify(status=status, headers={}, page=page, requested_url=target, final_url=final_url,
                          expect=tuple(t for t in expect if t), optouts=optouts, login_hosts=routes.login_hosts,
-                         capture=True)
+                         capture=True, signed_in=community is not None)
     fetch_id = run.new_fetch_id()
     bucket = "read" if v.ok else "stopped" if v.stop_class else "unread"
+    notes: list = []
+    host_stop = None
+    # A render is what a person's browser shows, so a human check in it stops the whole host, and a
+    # rate-limit page in it is a rate-limit signal for the host (one wait, then the host stops).
+    if v.stop_class == "human_check":
+        host_stop = run.stop_host(host, "human_check", "human check in a render capture", v.reasons)
+    elif v.stop_class == "rate_limit":
+        noted = run.note_rate_limit(host, None, v.reasons)
+        host_stop = noted["stop"] if noted["stopped"] else None
+    if bucket in ("read", "unread"):  # a render was the last allowed rung: it resets or extends the streak
+        streak = run.note_outcome(host, bucket)
+        if streak:
+            host_stop = streak
+    if host_stop:
+        notes.append("this host is now stopped for the run: " + host_stop["reason"])
+    basis = ("authorised_member" if community is not None else "public_anonymous") if bucket == "read" else None
     run.log({"kind": "ingest", "fetch_id": fetch_id, "rung": "R3", "presentation": PRESENTATION["R3"],
              "url": target, "final_url": final_url, "host": host, "format": fmt, "context": context,
              "bytes": len(data), "status": status, "verdict": v.verdict, "stop_class": v.stop_class,
@@ -872,25 +1050,34 @@ def ingest(run: Run, url: str, file_path, *, fmt: str | None = None, context: st
               "final_url": privacy.mask_url(final_url), "host": host, "verdict": v.verdict,
               "stop_class": v.stop_class, "reasons": v.reasons[:10], "rung": "R3", "presentation": "real_browser",
               "context": context, "format": fmt, "fetch_id": fetch_id, "untried": [], "fetched_at": run.now_iso(),
-              "engine_rung": "off", "text": None}
+              "engine_rung": "off", "access_basis": basis, "host_stop": host_stop, "notes": notes, "text": None}
+    if community is not None:
+        result["community"] = community.get("name")
     if v.ok:
         text = page.text
+        if community is not None:  # member content: no personal identifiers, summaries only downstream
+            text, scrubbed = privacy.scrub(text)
+            result.update(summary_only=True, scrubbed=scrubbed)
+            notes.append(AUTHORISED_NOTE)
+        else:
+            result["meta"] = page.metadata()
         run.save_page(fetch_id, text)
         result.update(extraction_source=page.extraction_source, text_chars=len(text), truncated=page.truncated,
                       content_sha256=hashlib.sha256(text.encode("utf-8")).hexdigest(),
-                      injection=scan_injection(text), promo_flags=verdict.promotion_flags(text),
-                      meta=page.metadata(), text=text)
+                      injection=scan_injection(text), promo_flags=verdict.promotion_flags(text), text=text)
     elif v.stop_class:
-        result["notes"] = ["the capture text was discarded"]
+        notes.append("the capture text was discarded")
     run.log({"kind": "outcome", "source": "ingest", "url": target, "url_key": run.url_key(target), "host": host,
              "fetched_at": result["fetched_at"], "engine_version": None,
              "robots": {"decision": (prior.get("robots") or {}).get("decision"),
                         "status": (prior.get("robots") or {}).get("status")},
              "bucket": bucket, "verdict": v.verdict, "stop_class": v.stop_class, "rung": "R3",
              "presentation": "real_browser", "fetch_id": fetch_id, "context": context, "untried": [],
-             "contacted": False, "reasons": v.reasons[:6], "text_chars": result.get("text_chars"),
+             "access_basis": basis, "community": result.get("community"), "contacted": False,
+             "reasons": v.reasons[:6], "text_chars": result.get("text_chars"),
              "content_sha256": result.get("content_sha256"),
-             "injection_risk": (result.get("injection") or {}).get("risk")})
+             "injection_risk": (result.get("injection") or {}).get("risk"),
+             "host_stop": (host_stop or {}).get("class")})
     return result
 
 

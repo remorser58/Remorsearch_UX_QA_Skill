@@ -75,8 +75,12 @@ An axis is one reader's beat: a set of sources and the questions it serves.
   global product, the reverse.
 - Drop axes the brief excludes, and record each dropped axis in the report.
 - Statistics tables often come as PDF or spreadsheet files, which the reader does
-  not parse. Record such a source with its URL, table name and the number quoted
-  as printed. It is an institutional source, counted by organisation.
+  not parse. Read the file's URL with `read` first; it ends unread (`no_page`).
+  Then save the table's text as the file shows it, unchanged, to a `.txt` file and
+  pass it to `ingest --context anonymous`. The capture gets a `fetch_id` and page
+  text, so excerpts from it pass merge's verbatim check. Record the table name and
+  quote the number as printed. It is an institutional source, counted by
+  organisation.
 
 ## A0: the brief, asked once
 
@@ -89,8 +93,9 @@ An axis is one reader's beat: a set of sources and the questions it serves.
      claim is about the current version;
    - who the personas are for: persona-qa, ergonomics or both;
    - whether team analytics or store-console exports exist and can be shared;
-   - communities the user belongs to and authorises for signed-in reading (default:
-     none; see `references/public-page-access.md`, section 3);
+   - communities the user belongs to and authorises for signed-in reading, each with
+     its host, name and why, plus the path prefix when several communities share a
+     host (default: none; see `references/public-page-access.md`, section 3);
    - the engine rung R4, asked only when an insane-search install is detected
      (default: off).
 4. Defaults for anything unanswered: all eight questions; Korean then English for

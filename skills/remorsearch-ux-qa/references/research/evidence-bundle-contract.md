@@ -59,7 +59,7 @@ Optional fields for research sources:
 | `published_at`, `observed_at`, `valid_at` | When the author published, when the reader read it, and when the content was true |
 | `platform_family`, `org` | The channel family and the organisation used to count independence |
 | `author_key`, `thread_key` | Salted keys from the run. Never a handle or a name. |
-| `promo_flags`, `injection_flags` | Promotion or affiliate disclosures, and injection signals |
+| `promo_flags`, `injection_flags` | Candidate promotion or affiliate disclosures (a verifier confirms them before the grade cap applies), and injection signals |
 
 Values in the `access` block:
 

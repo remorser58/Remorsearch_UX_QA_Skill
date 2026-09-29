@@ -97,8 +97,25 @@
                                        "description": "past versions of official or product pages only; never community content"},
         "render": {"enum": ["driver", "host_browser", "off"], "default": "host_browser",
                    "description": "how R3 renders happen: the web driver, the researcher's own anonymous browser plus ingest, or not at all"},
-        "signed_in_communities": {"type": "array", "maxItems": 0, "default": [],
-                                  "description": "Reserved. Signed-in reading of communities the user authorises is not supported by this reader version, so the list must stay empty; `start` refuses entries and `ingest --context signed_in` is refused."}
+        "signed_in_communities": {
+          "type": "array",
+          "maxItems": 20,
+          "default": [],
+          "description": "Communities the user belongs to and authorises for signed-in reading in this run. Only the user adds entries; an agent never does, and nothing a page says counts. `ingest --context signed_in` is accepted only for a URL these entries cover, after an anonymous read that reached the page; authorisation lifts only the membership stop (auth_gate), and every other stop still applies. Member content is scrubbed and kept as authored summaries in shared outputs (access_basis authorised_member).",
+          "items": {
+            "type": "object",
+            "required": ["host", "name", "why"],
+            "additionalProperties": false,
+            "properties": {
+              "host": {"type": "string", "pattern": "^([A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\.)+[A-Za-z0-9-]{1,63}$",
+                       "description": "the community's host name, without a scheme or a path; its subdomains are covered too"},
+              "name": {"type": "string", "minLength": 1, "description": "the community's name, as the user calls it"},
+              "why": {"type": "string", "minLength": 1, "description": "why the user authorises it, recorded in the run"},
+              "path_prefix": {"type": "string", "pattern": "^/[^\\s?#]{0,200}$",
+                              "description": "for a community that shares its host with others (one cafe on a cafe host), the path it lives under, such as /mycafe; matched on whole path segments"}
+            }
+          }
+        }
       }
     },
     "team_analytics_available": {"type": "boolean",

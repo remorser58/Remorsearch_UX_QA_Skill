@@ -88,9 +88,10 @@ Research and persona-qa read what anyone can read without an account.
 - **Tools.** The skill uses the best browser tool your agent host has: first an
   agentic tool that drives your own browser (Aside, Claude in Chrome, the Claude
   app's built-in browser), then an automation browser (Playwright MCP, Chrome
-  DevTools MCP or the bundled driver), then its own reader, and last plain web
-  search and fetch, whose results are leads only. It records which tool read each
-  source.
+  DevTools MCP, or the bundled page reader once it lands; the bundled live web
+  driver tests your product, it does not read community pages), then its own
+  reader, and last plain web search and fetch, whose results are leads only. It
+  records which tool read each source.
 - **The reader** (`scripts/ux_research.py`) climbs a short ladder only as far as
   needed: an official feed or API, one honestly identified request, the site's
   own mobile or feed version, then a real-browser render.

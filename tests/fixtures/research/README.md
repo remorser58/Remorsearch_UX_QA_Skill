@@ -13,6 +13,10 @@ to that address for the reader; test names never reach real DNS or a proxy.
 | `pages/post-normal.html` | an ordinary community post (read) |
 | `pages/post-header-login.html` | a login box in the header and a full post below (read, not auth_gate) |
 | `pages/post-captcha-discussion.html` | a post that talks about captchas without a widget (read, not human_check) |
+| `pages/post-header-login-short.html`, `post-header-login-medium.html` | the same header login box over posts of about 60 and 150 characters (read, not auth_gate) |
+| `pages/post-form-wrapped.html` | a whole page wrapped in one form, as older sites do, with a header login box (read; the post counts as main content) |
+| `pages/post-short.html` | a two-sentence post whose navigation links to a members-only board (read, not auth_gate) |
+| `pages/post-comment-captcha.html` | a short post with a reCAPTCHA widget in its comment form (read, not human_check) |
 | `pages/login-wall.html`, `age-gate.html`, `member-only.html` | password form plus login word on thin content; age and membership walls (auth_gate) |
 | `pages/paywall-jsonld.html` | JSON-LD `isAccessibleForFree: false` (paywall, metadata only) |
 | `pages/deleted-post.html` | a removed post served with status 200 (gone) |

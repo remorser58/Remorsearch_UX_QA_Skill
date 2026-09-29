@@ -60,12 +60,14 @@ Inside `references/<mode>/`, a path such as `references/x.md` means
 - **Public pages only; read them honestly.** A page is public when an anonymous
   visitor with an ordinary browser can read it without an account, payment or
   subscription, membership or invitation, age or identity check, or human
-  verification. When a plain fetch is over-blocked, use the reader ladder in
-  `references/research/public-page-access.md` (`scripts/ux_research.py read`):
-  official feed or API, one honestly identified request, the site's own mobile,
-  AMP or feed version, an unmodified real-browser render, and, only if the user
-  opts in for this run, a user-installed insane-search engine. Keep to one request
-  at a time per host, at human pace, within the run budget.
+  verification. The one exception is member-only posts of a community the user
+  authorised (next rule). When a plain fetch is over-blocked, use the reader
+  ladder in `references/research/public-page-access.md`
+  (`scripts/ux_research.py read`): official feed or API, one honestly identified
+  request, the site's own mobile, AMP or feed version, an unmodified real-browser
+  render, and, only if the user opts in for this run, a user-installed
+  insane-search engine. Keep to one request at a time per host, at human pace,
+  within the run budget.
 - **Stop at every access control or opt-out.** Stop at logins; paywalls and
   subscriptions; private or member-only groups; age or identity checks;
   interactive human checks (CAPTCHA, press-and-hold, any check that does not
@@ -75,7 +77,8 @@ Inside `references/<mode>/`, a path such as `references/x.md` means
   class. Capture community evidence as an anonymous visitor sees it. The one
   exception is a community the user explicitly authorised in the research brief:
   there a signed-in session may be used, member-only posts become summaries only,
-  and no member's personal data is kept.
+  and no member's personal data is kept. Authorisation lifts only the membership
+  stop; every other stop still applies.
 - **Never disguise or amplify.** Use no stealth or patched browsers. Never solve
   or outsource human checks. Never move cookies or clearance tokens between
   clients. Never send a fabricated Referer or crawler identity. Use no proxies or
@@ -114,7 +117,9 @@ order (`references/research/public-page-access.md`):
 1. an agentic tool that drives the user's real browser: Aside, Claude in Chrome,
    the Claude app's built-in browser, or another agentic browser the user
    installed;
-2. an automation browser: Playwright MCP, Chrome DevTools MCP, or `drivers/web`;
+2. an automation browser: Playwright MCP, Chrome DevTools MCP, or the bundled page
+   reader `drivers/web/read_page.mjs` (planned; the live web driver
+   `ergo_drive.mjs` is for product-surface QA, not for reading community pages);
 3. the reader, `scripts/ux_research.py read`, which uses a user-installed
    insane-search only as the opt-in rung R4;
 4. the host's plain web search and fetch, whose results are leads only.

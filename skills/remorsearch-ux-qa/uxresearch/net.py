@@ -7,7 +7,10 @@ reserved ranges are refused). Direct connections are pinned to the checked
 address while SNI and Host keep the hostname. Through an HTTP(S)_PROXY the proxy
 resolves the name, so the local pre-check is best effort and the response says
 so. Certificates are always verified. Redirects are followed by hand so each hop
-is checked again.
+is checked again. A malformed URL or Location header is a NetError, never an
+uncaught ValueError. The time limit covers the whole body: each read waits at
+most for the time that is left, so a server that trickles bytes cannot hold the
+reader (and its host slot) past the limit.
 
 Test hooks (never for real use): with REMORSEARCH_ALLOW_PRIVATE=1 the reader may
 connect to loopback addresses, and REMORSEARCH_TEST_RESOLVE="a.test=127.0.0.1,..."
@@ -76,6 +79,7 @@ class Response:
     precheck: str = "pinned"
     test_override: bool = False
     truncated: bool = False
+    x_robots: list = field(default_factory=list)  # each X-Robots-Tag header on its own
 
     @property
     def content_type(self) -> str:
@@ -106,19 +110,23 @@ def parse_url(url: str) -> str:
     """Validate an absolute http(s) URL; return it with an ASCII host, no fragment, no default port."""
     if not isinstance(url, str) or not url.strip() or len(url) > 8192 or re.search(r"[\x00-\x1f\x7f]", url.strip()):
         raise NetError("bad_url", "not a single-line absolute URL")
-    parts = urlsplit(url.strip())
+    try:
+        parts = urlsplit(url.strip())
+        hostname = parts.hostname
+    except ValueError as exc:  # for example 'http://[oops/' (an unclosed IPv6 bracket)
+        raise NetError("bad_url", "malformed URL") from exc
     scheme = parts.scheme.lower()
     if scheme not in ("http", "https"):
         raise NetError("bad_scheme", f"only http and https are read (got {scheme or 'none'})")
     if "@" in parts.netloc:
         raise NetError("credentials_in_url", "URLs carrying user:password@ are refused")
-    if not parts.hostname:
+    if not hostname:
         raise NetError("bad_url", "no host")
     try:
         port = parts.port
     except ValueError as exc:
         raise NetError("bad_url", "invalid port") from exc
-    host = _ascii_host(parts.hostname)
+    host = _ascii_host(hostname)
     netloc = f"[{host}]" if ":" in host else host
     if port is not None and port != (443 if scheme == "https" else 80):
         netloc += f":{port}"
@@ -128,11 +136,17 @@ def parse_url(url: str) -> str:
 
 
 def host_of(url: str) -> str:
-    return urlsplit(url).hostname or ""
+    try:
+        return urlsplit(url).hostname or ""
+    except ValueError:  # a malformed authority such as 'http://[oops/'
+        return ""
 
 
 def origin_of(url: str) -> str:
-    parts = urlsplit(url)
+    try:
+        parts = urlsplit(url)
+    except ValueError:
+        return ""
     return f"{parts.scheme}://{parts.netloc}".lower()
 
 
@@ -317,13 +331,23 @@ def _headers(message) -> dict:
     return result
 
 
-def _read_capped(response, cap: int, deadline: float, truncate: bool) -> tuple[bytes, bool]:
+def _read_capped(response, cap: int, deadline: float, truncate: bool, sock=None) -> tuple[bytes, bool]:
+    """Read at most `cap` bytes before `deadline`. Each read returns what has arrived (read1) and
+    waits at most for the time that is left, so a trickling server cannot stretch the limit."""
     chunks, total = [], 0
     while True:
-        if time.monotonic() > deadline:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
             raise NetError("timeout", "the response exceeded the time limit")
-        chunk = response.read(65536)
+        if sock is not None:
+            try:
+                sock.settimeout(remaining)
+            except OSError:
+                pass
+        chunk = response.read1(65536)
         if not chunk:
+            if getattr(response, "length", None):  # Content-Length promised more than arrived
+                raise NetError("protocol_error", "the connection closed before the body was complete")
             return b"".join(chunks), False
         total += len(chunk)
         if total > cap:
@@ -382,6 +406,7 @@ class _Hop:
     precheck: str
     test_override: bool
     truncated: bool
+    x_robots: list
 
 
 def _request_once(url: str, headers: dict, timeout: float, max_wire: int, max_decoded: int, truncate: bool) -> _Hop:
@@ -413,6 +438,7 @@ def _request_once(url: str, headers: dict, timeout: float, max_wire: int, max_de
     else:
         conn = _PinnedHTTPConnection(host, port, addresses, timeout)
     deadline = time.monotonic() + timeout
+    response = None
     try:
         conn.putrequest("GET", target, skip_accept_encoding=True)
         for name, value in {**headers, **extra}.items():
@@ -420,18 +446,21 @@ def _request_once(url: str, headers: dict, timeout: float, max_wire: int, max_de
         conn.putheader("Accept-Encoding", "gzip, deflate")
         conn.putheader("Connection", "close")
         conn.endheaders()
+        sock = conn.sock  # kept: the connection object drops it once the response owns the stream
         response = conn.getresponse()
         status = response.status
         found = _headers(response.msg)
+        x_robots = [str(v) for v in (response.msg.get_all("X-Robots-Tag") or [])][:20]
         if status in REDIRECT_STATUSES and found.get("location"):
-            raw, _ = _read_capped(response, REDIRECT_BODY_BYTES, deadline, True)
-            return _Hop(status, found, b"", len(raw), found["location"].strip(), bool(proxy), precheck, override, False)
+            raw, _ = _read_capped(response, REDIRECT_BODY_BYTES, deadline, True, sock)
+            return _Hop(status, found, b"", len(raw), found["location"].strip(), bool(proxy), precheck, override, False,
+                        x_robots)
         declared = found.get("content-length", "").strip()
         if declared.isdigit() and int(declared) > max_wire and not truncate:
             raise NetError("too_large", f"content-length {declared} exceeds {max_wire} bytes")
-        raw, cut = _read_capped(response, max_wire, deadline, truncate)
+        raw, cut = _read_capped(response, max_wire, deadline, truncate, sock)
         body, cut_decoded = _decode_content(raw, found.get("content-encoding", ""), max_decoded, truncate)
-        return _Hop(status, found, body, len(raw), None, bool(proxy), precheck, override, cut or cut_decoded)
+        return _Hop(status, found, body, len(raw), None, bool(proxy), precheck, override, cut or cut_decoded, x_robots)
     except NetError:
         raise
     except (socket.timeout, TimeoutError) as exc:
@@ -442,9 +471,13 @@ def _request_once(url: str, headers: dict, timeout: float, max_wire: int, max_de
         raise NetError("connect_error", "the server closed the connection") from exc
     except http.client.HTTPException as exc:
         raise NetError("protocol_error", exc.__class__.__name__) from exc
+    except ValueError as exc:  # a malformed status line, header or chunk size
+        raise NetError("protocol_error", "malformed response") from exc
     except OSError as exc:
         raise NetError("connect_error", exc.__class__.__name__) from exc
     finally:
+        if response is not None:
+            response.close()  # also when a read failed half-way, so the socket is closed now, not at collection
         conn.close()
 
 
@@ -465,11 +498,12 @@ def fetch(url: str, *, headers: dict | None = None, timeout: float = TIMEOUT_S,
         if hop.location is None:
             return Response(first, current, hop.status, hop.headers, hop.body, wire,
                             int((time.monotonic() - started) * 1000), redirects, None,
-                            hop.via_proxy, hop.precheck, hop.test_override, hop.truncated)
+                            hop.via_proxy, hop.precheck, hop.test_override, hop.truncated, hop.x_robots)
         try:
             target = parse_url(urljoin(current, hop.location))
-        except NetError as exc:
-            raise NetError("protocol_error", f"redirect to an unusable URL ({exc.kind})", redirects) from exc
+        except (NetError, ValueError) as exc:
+            kind = exc.kind if isinstance(exc, NetError) else "bad_url"
+            raise NetError("protocol_error", f"redirect to an unusable URL ({kind})", redirects) from exc
         redirects.append({"status": hop.status, "from": current, "to": target})
         if len(redirects) > max_redirects or target in seen:
             raise NetError("redirect_loop", f"more than {max_redirects} redirects or a cycle", redirects)
@@ -477,7 +511,7 @@ def fetch(url: str, *, headers: dict | None = None, timeout: float = TIMEOUT_S,
         if on_redirect is not None and not on_redirect(current, target):
             return Response(first, current, hop.status, hop.headers, b"", wire,
                             int((time.monotonic() - started) * 1000), redirects, target,
-                            hop.via_proxy, hop.precheck, hop.test_override, False)
+                            hop.via_proxy, hop.precheck, hop.test_override, False, hop.x_robots)
         current = target
 
 
