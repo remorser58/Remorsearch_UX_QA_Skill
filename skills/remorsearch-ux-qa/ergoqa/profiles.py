@@ -64,14 +64,23 @@ CORE_POINTER_STRATA: tuple[tuple[str, dict[str, Any]], ...] = (
 # (docs/validation/experiments/decisions.md): bright sun (0 unique, +31 findings, PC-05
 # is a hypothesis), first use (no deterministic check reads familiarity), protan and
 # large hand (0 unique). Audience composition adds them when the audience needs them.
+# Low vision was added in round 12: on dev-2, RF-01 found a timer cut away at 320 px
+# (400 % zoom) but no swarm profile had the condition, and nothing else changed on the
+# development suites. It sits before 70s_plus so that a 7-slot pointer plan includes it
+# (desktop magnifier users are the main audience of reflow and resize checks).
 CONDITION_STRATA: tuple[tuple[str, dict[str, Any]], ...] = (
     ("cvd_deutan", {"vision.cvd": "deutan"}),
     ("presbyopia_60s", {"age_band": "60s", "vision.presbyopia": True}),
     ("tremor", {"motor.tremor": "mild"}),
     ("walking", {"context.mobility": "walking", "context.free_hands": 1}),
+    ("low_vision", {"vision.acuity": "low"}),
     ("70s_plus", {"age_band": "70s+", "vision.presbyopia": True}),
     ("small_hand", {"hand_percentile": 5}),
 )
+# Strata that change nothing on a pointer device: mobility and hand size feed only the
+# touch model (touch_sigma_multiplier, thumb reach). A pointer device skips them, so
+# its slots go to conditions its checks read (round 12: no change on the dev suites).
+TOUCH_ONLY_STRATA = frozenset({"walking", "small_hand"})
 COVERAGE_STRATA = CORE_TOUCH_STRATA + CORE_POINTER_STRATA + CONDITION_STRATA
 
 
@@ -285,8 +294,12 @@ def coverage_plan(devices: list[Any], count: int, orientation: str | None = None
         core = core_strata(device, orientation)
         for name, overrides in core:
             plan.append((device, name, dict(overrides)))
-    for index, (name, overrides) in enumerate(CONDITION_STRATA):
-        device = devices[index % len(devices)]
+    index = 0
+    for name, overrides in CONDITION_STRATA:
+        eligible = [d for d in devices if d.input == "touch" or name not in TOUCH_ONLY_STRATA]
+        if not eligible:
+            continue
+        device = eligible[index % len(eligible)]
         slot = dict(overrides)
         if device.input == "touch":
             left = (index // len(devices)) % 2 == 1
@@ -294,6 +307,7 @@ def coverage_plan(devices: list[Any], count: int, orientation: str | None = None
             slot.setdefault("grip", "two_thumbs" if landscape else ("one_hand_left" if left else "one_hand_right"))
             slot.setdefault("handedness", "left" if left else "right")
         plan.append((device, name, slot))
+        index += 1
     while len(plan) < count:
         plan.append((devices[len(plan) % len(devices)], None, {}))
     return plan[:count]

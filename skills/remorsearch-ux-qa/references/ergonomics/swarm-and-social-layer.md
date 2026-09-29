@@ -71,8 +71,9 @@ Aside search queries. Not a forecast of real reactions.
 
 ## Swarm size and sensitivity
 
-- Start with the coverage plan (per device: 4 grips, then 10 condition strata).
-  16 profiles on two phones covers every stratum once.
+- Start with the coverage plan (per device: its grips, then 7 condition strata;
+  pointer devices skip the 2 touch-only ones). 14 profiles on a phone and 7 on a
+  desktop cover every stratum that applies to the device once.
 - Report sensitivity: how findings change with a second device class, a second
   agent model, or with/without cross-profile analysis. A finding that appears
   only under one setting is labelled as such.

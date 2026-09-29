@@ -366,3 +366,27 @@ class FeedbackNoticing(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CoveragePlan(unittest.TestCase):
+    """Round 12: a low-vision stratum, and pointer devices skip touch-only strata."""
+
+    def strata(self, device_id: str, count: int) -> list[str]:
+        return [p.get("coverage_stratum") for p in sample_profiles(count, 11, [device_id])]
+
+    def test_pointer_plan_skips_touch_only_strata_and_covers_low_vision(self) -> None:
+        got = self.strata("laptop-1440", 7)
+        self.assertEqual(got, ["mouse_right", "mouse_left", "keyboard_only", "cvd_deutan", "presbyopia_60s", "tremor", "low_vision"])
+
+    def test_touch_plan_keeps_every_condition(self) -> None:
+        got = self.strata("galaxy-s24", 14)
+        for name in ("cvd_deutan", "presbyopia_60s", "tremor", "walking", "low_vision", "70s_plus", "small_hand"):
+            self.assertIn(name, got)
+        low = next(p for p in sample_profiles(14, 11, ["galaxy-s24"]) if p.get("coverage_stratum") == "low_vision")
+        self.assertEqual(low["attributes"]["vision"]["acuity"], "low")
+
+    def test_mixed_devices_put_touch_only_strata_on_the_phone(self) -> None:
+        plan = sample_profiles(24, 11, ["galaxy-s24", "laptop-1440"])
+        for p in plan:
+            if p.get("coverage_stratum") in ("walking", "small_hand"):
+                self.assertEqual(p["attributes"]["device_id"], "galaxy-s24")
