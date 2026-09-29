@@ -218,7 +218,6 @@ FLASH_RED_SHARE_DELTA = 0.10       # [policy] a red transition moves >= 10 % of 
 FLASH_RED_EXCESS = 20.0 / 320.0    # [standard] WCAG 2.0 red flash note: (R-G-B)*320 > 20 on linear RGB (driver pixel test)
 FLASH_MIN_FPS = 20.0               # [policy] below 20 samples/s (Nyquist 10 Hz) a pass is reported as inconclusive
 FLASH_MAX_GAP_MS = 100.0           # [policy] a longer gap inside a sampling window is reported (can hide one 5 Hz flash pair)
-MASH_MIN_PRESSES = 8               # [policy] repeated presses on one target needed to progress (XAG 107 / GAG: avoid mashing)
 QTE_MOTOR_MS = 100.0           # [assumption] provisional; game brief
 RT_CV = 0.2                    # [assumption] provisional coefficient of variation of RT
 INPUT_LATENCY_MS = {"touch": 80.0, "mouse": 20.0, "keyboard": 20.0, "gamepad": 50.0, "remote": 100.0}  # [assumption]

@@ -1415,14 +1415,8 @@ def check_run_timing(run: dict[str, Any], profile: dict[str, Any], device: Any, 
             "GM-04", run_id, pid, None, None, [], "viewport|flash",
             flash["measurement"], flash["severity"] is None, flash["severity"], flash["message"], flash["model"],
         ))
-    mash = _mash_bursts(run)
-    for target, count, span in mash:
-        out.append(Observation(
-            "GM-06", run_id, pid, None, None, [], f"{target}|mash",
-            {"name": "rapid_presses", "value": count, "unit": "presses", "threshold": params.MASH_MIN_PRESSES, "comparator": "<", "span_ms": round(span)},
-            False, "P2",
-            f"진행에 '{target}'을(를) {count}회 연속으로 빠르게 눌러야 했습니다({span/1000:.1f}초). 길게 누르기/토글/자동 진행 대안이 있는지 확인이 필요합니다.",
-        ))
+    # GM-06 (mashing) emits nothing until a press-rate and hold-time sweep measures what
+    # the game demands; counting the script's presses measured the script (GQA-13).
     for note in run.get("persona_notes", []):
         if not note.get("confusion"):
             continue
@@ -1566,13 +1560,6 @@ def _dom_flash(measured: dict[str, Any], element: dict[str, Any] | None, viewpor
     }
 
 
-def _input_identity(action: dict[str, Any]) -> str:
-    """What was pressed: the target for pointer actions, the key or button for press/gamepad."""
-    if action.get("action") in ("press", "gamepad"):
-        return f"{action.get('action')}:{action.get('key') or action.get('keys') or action.get('button') or action.get('target')}"
-    return str(action.get("target"))
-
-
 def _frame_flash(run: dict[str, Any], samples: list[dict[str, Any]], device: Any, attrs: dict[str, Any]) -> dict[str, Any]:
     """WCAG 2.3.1 screening from the driver's flash samples (GM-04, whole run).
 
@@ -1663,32 +1650,6 @@ def _frame_flash(run: dict[str, Any], samples: list[dict[str, Any]], device: Any
         message += (" EA IRIS는 인증 도구가 아니며(README 면책), 기본 설정은 화면의 25 % 이상이 바뀌어야 전이로 세므로 국소 섬광은 IRIS를 통과할 수 있습니다."
                     " IRIS 통과가 이 판정을 뒤집지 않습니다. 방송·인증 목적이면 Harding FPA 같은 인증 절차를 따로 밟으세요.")
     return {"measurement": measurement, "severity": "P0" if failed else ("P1" if extended else None), "message": message, "model": model}
-
-
-def _mash_bursts(run: dict[str, Any]) -> list[tuple[str, int, float]]:
-    """Runs of rapid presses on one target that the task needed (XAG 107 / GAG)."""
-    bursts: list[tuple[str, int, float]] = []
-    current: list[dict[str, Any]] = []
-
-    def flush() -> None:
-        if len(current) >= params.MASH_MIN_PRESSES:
-            span = float(current[-1].get("t_start_ms") or 0) - float(current[0].get("t_start_ms") or 0)
-            bursts.append((_input_identity(current[0].get("action") or {}), len(current), span))
-
-    for step in run.get("steps", []):
-        action = step.get("action") or {}
-        if action.get("action") in ("wait", "snapshot"):
-            continue  # waits between scripted presses do not break a burst
-        # Scripted pacing reflects the driver, not the game's demand, so bursts are
-        # counted by consecutive presses on one target (waits/snapshots ignored).
-        same = current and action.get("action") in ("tap", "click", "press", "gamepad") and _input_identity(action) == _input_identity(current[-1].get("action") or {})
-        if same:
-            current.append(step)
-            continue
-        flush()
-        current = [step] if action.get("action") in ("tap", "click", "press", "gamepad") else []
-    flush()
-    return bursts
 
 
 _LABEL_NOISE = re.compile(r"[\W_]+", re.UNICODE)
@@ -1992,8 +1953,8 @@ SNAPSHOT_CHECKS: tuple[Callable[[Context], list[Observation]], ...] = (
 # and listed under "hypotheses" (docs/validation/experiments/decisions.md).
 # PT-05 (Fitts ID > 6 bits) has no normative threshold and produced no finding on the
 # development suites (STF-22).
-# GM-06 counts presses the script needed, which measures the script, not what the game
-# requires (game review 2026-09-28): a hypothesis until a press-rate sweep confirms it.
+# GM-06 is registered but emits nothing until a press-rate sweep exists (GQA-13); it
+# stays in this set so that a future rule starts as a hypothesis.
 HYPOTHESIS_CHECKS = frozenset({"GZ-01", "GZ-04", "PC-05", "PT-05", "GM-06"})
 
 # Checks that read no profile attribute: one verdict per snapshot, reported as
