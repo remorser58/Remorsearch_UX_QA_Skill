@@ -58,7 +58,11 @@ has (`CLAUDE_CODE_SUBAGENT_MODEL`, agent definitions, plugin agents) and follows
 it without asking. Only if there is none does it ask once, with the host's
 selection prompt, which model and reasoning effort to use, and it saves the answer
 in `~/.config/remorsearch-ux-qa/config.json`. Say "change the agent model" to be
-asked again.
+asked again. The recommended default, Sonnet at max effort, comes from a blind
+benchmark on 11 screens
+([`docs/validation/subagent-model-benchmark.md`](docs/validation/subagent-model-benchmark.md)).
+Claude Code applies a subagent's effort only through an agent definition, so the
+skill offers to create two small ones in `~/.claude/agents/`.
 
 ## Evidence rules
 
@@ -88,7 +92,7 @@ Research and persona-qa read what anyone can read without an account.
 - **Tools.** The skill uses the best browser tool your agent host has: first an
   agentic tool that drives your own browser (Aside, Claude in Chrome, the Claude
   app's built-in browser), then an automation browser (Playwright MCP, Chrome
-  DevTools MCP, or the bundled page reader once it lands; the bundled live web
+  DevTools MCP, or the bundled page reader `read_page.mjs`; the bundled live web
   driver tests your product, it does not read community pages), then its own
   reader, and last plain web search and fetch, whose results are leads only. It
   records which tool read each source.
