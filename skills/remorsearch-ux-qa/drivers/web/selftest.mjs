@@ -792,6 +792,13 @@ async function reflowTest(base, tmp) {
   check('reflow: a table, a self-scrolling chip row and fluid text are exempt',
     !offenders.includes('fee-table') && !offenders.includes('chips') && !offenders.includes('fluid') && !offenders.some((o) => o === null), offenders);
   check('reflow: the run itself is not resized (steps ok, success)', run.status === 'completed' && run.success === true, { status: run.status });
+  const lost = recs.flatMap((x) => (x.lost || []).map((o) => o.dom_id));
+  check('reflow: text visible at the device width but cut at 320 px is lost; a carousel slide hidden at both is not',
+    lost.includes('bar-timer') && !lost.includes('slide-2') && !lost.includes('bar-title'), recs.map((x) => x.lost));
+  const first = JSON.parse(fs.readFileSync(path.join(outDir, 'R-reflow', run.snapshots[0].path), 'utf8'));
+  const chip = first.elements.find((e) => e.dom_id === 'chip-t');
+  check('LY-01 data: text cut by a clipping ancestor records the ancestor', !!chip && chip.clipped && chip.clipped.x === true && chip.clipped.by === '#chip-l',
+    chip && chip.clipped);
 }
 
 async function dialogTest(base, tmp) {

@@ -87,13 +87,61 @@ function stripQuery(url) {
  */
 /** In-page, on a static copy at 320 px: does the page scroll sideways, and which outermost
  * elements stick out past the right edge (1.4.10; two-dimensional content exempt)? */
-function reflowInfo(limit) {
+function reflowInfo(arg) {
+  // For each element that owns text, the share of its box left visible by clipping
+  // ancestors (scroll containers count as reachable), indexed by document order.
+  const textVisibility = () => {
+    const all = document.body ? document.body.getElementsByTagName('*') : [];
+    const out = [];
+    for (let i = 0; i < all.length && i < 6000; i++) {
+      const n = all[i];
+      let own = false;
+      for (const c of n.childNodes) if (c.nodeType === 3 && c.nodeValue.trim()) { own = true; break; }
+      if (!own) { out.push(null); continue; }
+      const r = n.getBoundingClientRect();
+      if (r.width <= 1 || r.height <= 1) { out.push(null); continue; }
+      let x0 = r.left; let y0 = r.top; let x1 = r.right; let y1 = r.bottom;
+      for (let m = n.parentElement; m && m !== document.body && m !== document.documentElement; m = m.parentElement) {
+        const cs = getComputedStyle(m);
+        if (['auto', 'scroll'].includes(cs.overflowX) || ['auto', 'scroll'].includes(cs.overflowY)) break;
+        const a = m.getBoundingClientRect();
+        if (['hidden', 'clip'].includes(cs.overflowX)) { x0 = Math.max(x0, a.left); x1 = Math.min(x1, a.right); }
+        if (['hidden', 'clip'].includes(cs.overflowY)) { y0 = Math.max(y0, a.top); y1 = Math.min(y1, a.bottom); }
+      }
+      out.push(Math.max(0, x1 - x0) * Math.max(0, y1 - y0) / (r.width * r.height));
+    }
+    return out;
+  };
+  if (arg.mode === 'visibility') return textVisibility();
+  const limit = arg.limit;
+  const full = arg.full || [];
   const se = document.scrollingElement || document.documentElement;
   const cw = se.clientWidth;
   const sw = se.scrollWidth;
   const clipX = (n) => ['hidden', 'clip'].includes(getComputedStyle(n).overflowX);
   const rootClips = clipX(document.documentElement) || (document.body ? clipX(document.body) : false);
-  const out = { client_width: cw, scroll_width: sw, root_clips: rootClips, offenders: [] };
+  const out = { client_width: cw, scroll_width: sw, root_clips: rootClips, offenders: [], lost: [] };
+  // Text visible at the full width but cut away by clipping containers at 320 px.
+  const now = textVisibility();
+  const els = document.body ? document.body.getElementsByTagName('*') : [];
+  for (let i = 0; i < now.length && out.lost.length < limit; i++) {
+    if (full[i] == null || now[i] == null || full[i] < 0.9 || now[i] >= 0.5) continue;
+    const n = els[i];
+    let skip = false;
+    for (let m = n; m && m.nodeType === 1 && m !== document.body; m = m.parentElement) {
+      const tag = m.tagName.toLowerCase();
+      const role = m.getAttribute('role') || '';
+      if (['table', 'canvas', 'video', 'iframe', 'svg', 'pre', 'code', 'map'].includes(tag) || ['img', 'application', 'grid', 'table'].includes(role)
+        || m.getAttribute('aria-hidden') === 'true') { skip = true; break; }
+    }
+    if (skip) continue;
+    const r = n.getBoundingClientRect();
+    const ids = [];
+    for (let m = n.parentElement; m && ids.length < 6; m = m.parentElement) if (m.id) ids.push(m.id);
+    out.lost.push({ dom_id: n.id || null, ancestor_ids: ids, tag: n.tagName.toLowerCase(), visible_full: Math.round(full[i] * 100) / 100,
+      visible_320: Math.round(now[i] * 100) / 100, box: { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) },
+      text: (n.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 60) });
+  }
   if (sw <= cw + 4 && !rootClips) return out;
   const TWO_D = new Set(['table', 'canvas', 'video', 'iframe', 'svg', 'pre', 'code', 'map', 'object', 'embed', 'math']);
   const exempt = (n) => {
@@ -500,8 +548,13 @@ export class WebSession {
         const html = /<base\s/i.test(screen.html) ? screen.html
           : /<head[^>]*>/i.test(screen.html) ? screen.html.replace(/<head[^>]*>/i, (m) => `${m}${base}`) : `${base}${screen.html}`;
         try {
+          // The same static copy at the device width first, then at 320 px.
+          await page.setViewportSize({ width: this.vw, height: this.vh });
           await page.setContent(html, { waitUntil: 'load', timeout: 8000 });
-          const info = await page.evaluate(reflowInfo, 20);
+          const full = await page.evaluate(reflowInfo, { mode: 'visibility' }).catch(() => []);
+          await page.setViewportSize({ width: REFLOW_WIDTH, height: touch ? 568 : 256 });
+          await sleep(50);
+          const info = await page.evaluate(reflowInfo, { limit: 20, full });
           this.reflow.push({ snapshot_id: screen.snapshot_id, url: screen.url, width: REFLOW_WIDTH, ...info });
         } catch (err) {
           this.reflow.push({ snapshot_id: screen.snapshot_id, url: screen.url, width: REFLOW_WIDTH, error: firstLine(err.message) });

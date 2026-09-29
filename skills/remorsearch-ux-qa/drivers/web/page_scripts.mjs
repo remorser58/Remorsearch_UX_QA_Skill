@@ -544,9 +544,34 @@ export function extractSnapshot(args) {
   // Text cut off by its own box (XCTest textClipped; WCAG 1.4.4/1.4.12 symptoms).
   const clippedOf = (el, cs) => {
     const hide = (v) => v === 'hidden' || v === 'clip';
-    const x = hide(cs.overflowX) && el.scrollWidth > el.clientWidth + 1;
-    const y = hide(cs.overflowY) && el.scrollHeight > el.clientHeight + 1;
-    if (!x && !y) return null;
+    let x = hide(cs.overflowX) && el.scrollWidth > el.clientWidth + 1;
+    let y = hide(cs.overflowY) && el.scrollHeight > el.clientHeight + 1;
+    let by = null;
+    let ellipsis = cs.textOverflow === 'ellipsis';
+    if (!x && !y) {
+      // ACT 59br37: text cut by an ancestor that clips (a fixed-width chip or label),
+      // within three levels. The text must be partly visible: a slide that is wholly
+      // outside its carousel is not cut text. A scroll container is reachable.
+      const r = el.getBoundingClientRect();
+      for (let n = el.parentElement, i = 0; n && n.nodeType === 1 && i < 3 && n !== document.body; n = n.parentElement, i++) {
+        const ncs = style(n);
+        const ax = ncs.overflowX;
+        const ay = ncs.overflowY;
+        if (ax === 'auto' || ax === 'scroll' || ay === 'auto' || ay === 'scroll') break;
+        if (!hide(ax) && !hide(ay)) continue;
+        const a = n.getBoundingClientRect();
+        const cutX = hide(ax) && (r.right > a.right + 1 || r.left < a.left - 1) && r.left < a.right && r.right > a.left;
+        const cutY = hide(ay) && (r.bottom > a.bottom + 1 || r.top < a.top - 1) && r.top < a.bottom && r.bottom > a.top;
+        if (cutX || cutY) {
+          x = cutX;
+          y = cutY;
+          by = n;
+          ellipsis = ellipsis || ncs.textOverflow === 'ellipsis';
+          break;
+        }
+      }
+      if (!x && !y) return null;
+    }
     const clamp = cs.webkitLineClamp && cs.webkitLineClamp !== 'none';
     // Tickers and marquees clip by design: text that moves (CSS animation on the element
     // or a close ancestor, or <marquee>) is recorded as animated.
@@ -559,7 +584,7 @@ export function extractSnapshot(args) {
         break;
       }
     }
-    return { x, y, ellipsis: cs.textOverflow === 'ellipsis' || !!clamp, line_clamp: !!clamp, animated };
+    return { x, y, ellipsis: ellipsis || !!clamp, line_clamp: !!clamp, animated, by: by ? (by.id ? `#${by.id}` : by.tagName.toLowerCase()) : null };
   };
   const visibleText = (el) => {
     const tag = el.tagName.toLowerCase();

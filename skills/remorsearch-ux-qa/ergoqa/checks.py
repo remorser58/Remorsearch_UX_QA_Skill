@@ -266,7 +266,7 @@ SM06 = _register(CheckSpec(
 ))
 LY01 = _register(CheckSpec(
     "LY-01", "layout", "measured", "상자에 잘린 텍스트",
-    "Text clipped by its own box",
+    "Text clipped by its own box or a clipping container",
     ("REF-xctest-textclipped", "REF-wcag22-144", "REF-wcag22-1412"), ("web", "desktop"), "visual",
     "고정 높이·너비와 overflow:hidden을 풀어 글자가 늘어나도 다 보이게 하세요.",
 ))
@@ -1925,12 +1925,15 @@ def check_semantics(ctx: Context) -> list[Observation]:
             continue
         if clip.get("animated"):
             continue  # tickers and marquees clip by design
+        by = clip.get("by")  # a clipping ancestor (a fixed-width chip or label), when not its own box
         out.append(Observation(
             "LY-01", *base, [e["id"]], element_key(e),
-            {"name": "text_clipped", "value": True, "unit": "flag", "threshold": False, "comparator": "==", "axis": "x" if clip.get("x") else "y", "ellipsis": bool(clip.get("ellipsis"))},
+            {"name": "text_clipped", "value": True, "unit": "flag", "threshold": False, "comparator": "==", "axis": "x" if clip.get("x") else "y", "ellipsis": bool(clip.get("ellipsis")),
+             "clipped_by": by},
             False, "P3" if clip.get("ellipsis") else "P2",
-            f"'{(e.get('text') or '')[:30]}' 글자가 상자에 잘립니다" + ((" (여러 줄 말줄임으로 줄임)." if clip.get("line_clamp") else " (말줄임표로 줄임).")
+            f"'{(e.get('text') or '')[:30]}' 글자가 {'바깥 상자(' + by + ')' if by else '상자'}에 잘립니다" + ((" (여러 줄 말줄임으로 줄임)." if clip.get("line_clamp") else " (말줄임표로 줄임).")
                                                                     if clip.get("ellipsis") else ". 글자를 키우거나 번역되면 더 많이 잘립니다."),
+            extra={"context_selectors": [by]} if by and by.startswith("#") else {},
         ))
     return out
 
@@ -2009,9 +2012,28 @@ def check_reflow(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[s
             continue
         width = rec.get("client_width") or 0
         scrolls = (rec.get("scroll_width") or 0) > width + REFLOW_TOLERANCE_PX
+        snap = (snapshots or {}).get(rec.get("snapshot_id"))
+        for lost in rec.get("lost") or []:
+            # Visible at the device width, cut away by a clipping container at 320 px.
+            element = None
+            if lost.get("dom_id") and snap:
+                element = next((e for e in snap.get("elements", []) if e.get("dom_id") == lost["dom_id"]), None)
+            anchor = f"#{lost['dom_id']}" if lost.get("dom_id") else (f"#{lost['ancestor_ids'][0]} {lost.get('tag')}" if lost.get("ancestor_ids") else lost.get("tag") or "?")
+            key = element_key(element) if element else f"{anchor}|{(lost.get('text') or '')[:40]}"
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(Observation(
+                "RF-01", run["run_id"], profile["profile_id"], rec.get("snapshot_id"), None,
+                [element["id"]] if element else [], key,
+                {"name": "visible_share_at_320", "value": lost.get("visible_320"), "unit": "fraction", "threshold": 0.5, "comparator": ">=",
+                 "visible_share_full": lost.get("visible_full"), "viewport_css_px": rec.get("width")},
+                False, "P2",
+                f"'{(lost.get('text') or anchor)[:30]}'이(가) 원래 폭에서는 보이지만 320 CSS px 폭(400 % 확대)에서는 상자에 잘려 {100 * (lost.get('visible_320') or 0):.0f}%만 보입니다(WCAG 1.4.10).",
+                extra={"anchor_selectors": [anchor], "context_selectors": [f"#{a}" for a in lost.get("ancestor_ids") or [] if a]},
+            ))
         if not scrolls and not rec.get("root_clips"):
             continue
-        snap = (snapshots or {}).get(rec.get("snapshot_id"))
         for off in rec.get("offenders") or []:
             box = off.get("box") or {}
             if (box.get("x") or 0) + (box.get("w") or 0) <= width + REFLOW_TOLERANCE_PX:

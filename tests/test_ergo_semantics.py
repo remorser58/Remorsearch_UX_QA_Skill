@@ -112,6 +112,20 @@ class Reflow(unittest.TestCase):
         clipped = checks.check_reflow(self.run_doc(320, root_clips=True), {"profile_id": "P"}, {})
         self.assertIn("잘려", clipped[0].message_ko)
 
+    def test_text_lost_at_320_without_page_scroll(self) -> None:
+        # A one-line bar with overflow:hidden: the timer fits at the device width and is
+        # cut away at 320 px, with no sideways scroll to reach it (F102).
+        timer = {"dom_id": "qbar-timer", "ancestor_ids": ["qbar", "view-quiz"], "tag": "p", "visible_full": 1.0,
+                 "visible_320": 0.0, "box": {"x": 330, "y": 20, "w": 120, "h": 24}, "text": "남은 시간 09:41"}
+        doc = {"run_id": "R", "reflow": [{"snapshot_id": "S-3", "width": 320, "client_width": 320, "scroll_width": 320,
+                                          "root_clips": False, "offenders": [], "lost": [timer, dict(timer)]}]}
+        snap = {"S-3": {"elements": [el("qbar-timer", "timer", (330, 20, 120, 24), text="남은 시간 09:41", dom_id="qbar-timer")]}}
+        obs = checks.check_reflow(doc, {"profile_id": "P"}, snap)
+        self.assertEqual([(o.check_id, o.element_key.split("|")[0], o.severity) for o in obs], [("RF-01", "#qbar-timer", "P2")])
+        self.assertEqual(obs[0].measurement["name"], "visible_share_at_320")
+        self.assertEqual(obs[0].extra["context_selectors"], ["#qbar", "#view-quiz"])
+        self.assertEqual(obs[0].element_ids, ["qbar-timer"])
+
 
 class FocusManagement(unittest.TestCase):
     """FM-02 and SM-06 at a step, from the snapshot's focus and layers."""
@@ -216,6 +230,15 @@ class Clipping(unittest.TestCase):
         sr_only = el("sr", "paragraph", (0, 0, 1, 1), text="스크린리더 전용", clipped={"x": True, "y": True, "ellipsis": False})
         obs = [o for o in checks.check_semantics(ctx([cut, dots, sr_only])) if o.check_id == "LY-01"]
         self.assertEqual({o.element_key.split("|")[0]: o.severity for o in obs}, {"#title": "P2", "#sub": "P3"})
+
+    def test_text_cut_by_a_clipping_ancestor(self) -> None:
+        price = el("sauce-2-price", "text", (200, 300, 60, 20), text="+500원",
+                   clipped={"x": True, "y": False, "ellipsis": False, "by": "#sauce-2"})
+        obs = [o for o in checks.check_semantics(ctx([price])) if o.check_id == "LY-01"]
+        self.assertEqual(len(obs), 1)
+        self.assertEqual(obs[0].measurement["clipped_by"], "#sauce-2")
+        self.assertEqual(obs[0].extra["context_selectors"], ["#sauce-2"])
+        self.assertIn("바깥 상자(#sauce-2)", obs[0].message_ko)
 
     def test_profile_invariant_and_categories(self) -> None:
         for cid, cat in (("SM-01", "semantics"), ("SM-04", "semantics"), ("LY-01", "layout")):
