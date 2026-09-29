@@ -356,6 +356,24 @@ class FeedbackNoticing(unittest.TestCase):
         got = [o for o in checks.check_gaze(c) if o.check_id == "GZ-02"]
         self.assertEqual([(o.severity, o.measurement["new"]) for o in got], [("P1", True)])
 
+    def test_app_scroll_of_half_a_screen_reorients_but_off_screen_still_counts(self) -> None:
+        # A form that jumps to its first error: the tap point's content moved away, so
+        # eccentricity from it is not measured; a message left off-screen still is.
+        buttons = [el(f"e{i}", "button", (10, 10 + i * 50, 100, 44)) for i in range(8)]
+        err = el("err", "alert", (20, 40, 320, 60), text="3번 문항에 답하지 않았습니다.", roles=("error_message",), weight=700,
+                 fg="#b3261e", bg="#fdecec", container="#ffffff")
+        far = el("far", "alert", (20, 900, 320, 60), text="아래 오류", roles=("error_message",), in_viewport=False)
+        before = {"surface": {"url": "http://x/a", "scroll": {"x": 0, "y": 742}}, "elements": buttons}
+
+        def gz(scroll_y, action="click"):
+            c = ctx(buttons + [err, far], previous=before, focus={"x": 180, "y": 740}, step={"action": {"action": action}})
+            c.snapshot["surface"] = {"url": "http://x/a", "scroll": {"x": 0, "y": scroll_y}}
+            return sorted(o.element_key.split("|")[0] for o in checks.check_gaze(c) if o.check_id == "GZ-02")
+
+        self.assertEqual(gz(51), ["#far"])  # app scrolled 691 px on a 780 px screen
+        self.assertIn("#err", gz(700))  # a small scroll: the tap point still anchors the gaze
+        self.assertIn("#err", gz(51, action="swipe"))  # the user scrolled: not an app jump
+
     def test_screen_replacement_skips_feedback_noticing(self) -> None:
         before = {"surface": {"url": "http://x/a"}, "elements": [el(f"e{i}", "button", (10, 10 + i * 50, 100, 44)) for i in range(10)]}
         after_same = {"surface": {"url": "http://x/a"}, "elements": before["elements"][:9]}

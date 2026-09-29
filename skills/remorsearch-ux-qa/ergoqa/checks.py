@@ -894,6 +894,20 @@ def _screen_changed(previous: dict[str, Any] | None, current: dict[str, Any]) ->
     return len(before - after) / len(before) >= params.SCREEN_CHANGE_FRACTION
 
 
+def _app_scrolled(ctx: Context) -> bool:
+    """The app scrolled the window by at least APP_SCROLL_REORIENT_FRACTION of the screen
+    during the step (not a scroll, swipe or drag the user made)."""
+    if ctx.previous is None:
+        return False
+    if ((ctx.step or {}).get("action") or {}).get("action") in ("scroll", "swipe", "drag"):
+        return False
+    a = ((ctx.previous.get("surface") or {}).get("scroll") or {}).get("y")
+    b = ((ctx.snapshot.get("surface") or {}).get("scroll") or {}).get("y")
+    if not isinstance(a, (int, float)) or not isinstance(b, (int, float)):
+        return False
+    return abs(b - a) >= params.APP_SCROLL_REORIENT_FRACTION * ctx.viewport[1]
+
+
 def check_gaze(ctx: Context) -> list[Observation]:
     from .devices import mm_per_css_px
 
@@ -954,6 +968,7 @@ def check_gaze(ctx: Context) -> list[Observation]:
         # re-orients (not peripheral), but transient messages (toasts, declared timing
         # windows) shown with it can still be missed.
         replaced = _screen_changed(ctx.previous, ctx.snapshot)
+        reoriented = _app_scrolled(ctx)
         transient = {w.get("selector") for w in (ctx.scenario or {}).get("timing_windows", []) if w.get("kind") in (None, "transient_text")}
         # Messages already rendered before the step, in view or not: a message scrolled
         # out of view (by the page or by the driver's pre-action scroll) is not new.
@@ -992,7 +1007,7 @@ def check_gaze(ctx: Context) -> list[Observation]:
                     gaze.MODEL_ID,
                 ))
                 continue
-            if not _visible(element):
+            if not _visible(element) or reoriented:
                 continue
             centre_css = pointing.centre(element["box"])
             # Eccentricity to the nearest point of the message, not its centroid: a wide

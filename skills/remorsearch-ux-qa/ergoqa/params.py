@@ -245,6 +245,11 @@ SALIENT_ICON_CHARS = "⚠✓✔✗✕!❗ⓘ✅❌"
 # An action that removes >= 60 % of the visible elements replaced the screen; feedback
 # there is not peripheral (GZ-02 skipped). [policy]
 SCREEN_CHANGE_FRACTION = 0.6
+# When the app itself scrolls the view by at least half a screen during a step (a form
+# jumping to its first error), the content under the tap has moved away and the user
+# re-orients to the new view, as after a screen replacement: GZ-02 does not measure
+# eccentricity from the old tap point (off-screen messages are still checked). [policy]
+APP_SCROLL_REORIENT_FRACTION = 0.5
 
 # Measured visible durations carry polling jitter (16 ms poll plus capture); a toast
 # hidden by setTimeout(4000) measured 3995 ms. [policy]
