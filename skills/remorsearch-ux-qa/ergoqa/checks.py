@@ -955,7 +955,9 @@ def check_gaze(ctx: Context) -> list[Observation]:
         # windows) shown with it can still be missed.
         replaced = _screen_changed(ctx.previous, ctx.snapshot)
         transient = {w.get("selector") for w in (ctx.scenario or {}).get("timing_windows", []) if w.get("kind") in (None, "transient_text")}
-        before = {e.get("selector") or e.get("id"): e for e in ctx.previous.get("elements", []) if _visible(e)}
+        # Messages already rendered before the step, in view or not: a message scrolled
+        # out of view (by the page or by the driver's pre-action scroll) is not new.
+        before = {e.get("selector") or e.get("id"): e for e in ctx.previous.get("elements", []) if _present(e)}
         scale = _notice_scale(ctx)
         grip = ctx.attrs.get("grip", "")
         geom = reach.geometry_for_device(ctx.device) if ctx.is_touch else None

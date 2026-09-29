@@ -339,6 +339,23 @@ class FeedbackNoticing(unittest.TestCase):
         c.scenario = {"timing_windows": []}
         self.assertFalse([o for o in checks.check_gaze(c) if o.check_id == "GZ-02"])
 
+    def test_message_scrolled_out_of_view_is_not_new(self) -> None:
+        # dev-2 clean pages: an error shown in view, then scrolled out by the driver's
+        # pre-action scroll (or by the page), is the same message, not a new one.
+        buttons = [el(f"e{i}", "button", (10, 10 + i * 50, 100, 44)) for i in range(8)]
+        err_before = el("err", "alert", (20, -600, 320, 60), text="3번 문항에 답하지 않았습니다.", roles=("error_message",), in_viewport=False)
+        err_after = el("err", "alert", (20, -600, 320, 60), text="3번 문항에 답하지 않았습니다.", roles=("error_message",), in_viewport=False)
+        before = {"surface": {"url": "http://x/a"}, "elements": buttons + [err_before]}
+        c = ctx(buttons + [err_after], previous=before, focus={"x": 60, "y": 200})
+        c.snapshot["surface"] = {"url": "http://x/a"}
+        self.assertFalse([o for o in checks.check_gaze(c) if o.check_id == "GZ-02"])
+        # Hidden before (not rendered) and now shown off-screen: new, P1 for an error.
+        hidden = dict(err_before, visible=False)
+        c = ctx(buttons + [err_after], previous={"surface": {"url": "http://x/a"}, "elements": buttons + [hidden]}, focus={"x": 60, "y": 200})
+        c.snapshot["surface"] = {"url": "http://x/a"}
+        got = [o for o in checks.check_gaze(c) if o.check_id == "GZ-02"]
+        self.assertEqual([(o.severity, o.measurement["new"]) for o in got], [("P1", True)])
+
     def test_screen_replacement_skips_feedback_noticing(self) -> None:
         before = {"surface": {"url": "http://x/a"}, "elements": [el(f"e{i}", "button", (10, 10 + i * 50, 100, 44)) for i in range(10)]}
         after_same = {"surface": {"url": "http://x/a"}, "elements": before["elements"][:9]}
