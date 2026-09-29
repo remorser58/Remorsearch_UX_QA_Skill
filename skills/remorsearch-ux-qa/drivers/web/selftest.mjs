@@ -808,6 +808,19 @@ async function viewportTest(base, tmp) {
     check('viewport: canvas-only feedback after a scroll is seen in the frames (frames show the scrolled screen, not the document top)',
       st.target_hit === true && st.feedback_source === 'visual_change', { hit: st.target_hit, src: st.feedback_source, visual: st.feedback_visual_ms });
   }
+  // A swipe on an inner scroll box while frames are captured for visual feedback.
+  writeJson(path.join(tmp, 'vp-inner.json'), {
+    ...scenario('SC-driver-vp-03', '', 'galaxy-s24', { url_contains: 'viewport' }),
+    steps: [{ action: 'swipe', target: '#inner', direction: 'up', distance: 150 }, { action: 'wait', ms: 400 }],
+  });
+  r = await runDriver(['run', '--scenario', path.join(tmp, 'vp-inner.json'), '--device', 'galaxy-s24', '--out', outDir, '--run-id', 'R-vp-inner',
+    '--base', base, '--no-reflow']);
+  if (check('viewport galaxy-s24 (inner scroll box): exit 0', r.code === 0, `${r.code} ${r.err}`)) {
+    const { run } = loadRun(path.join(outDir, 'R-vp-inner'));
+    const last = JSON.parse(fs.readFileSync(path.join(outDir, 'R-vp-inner', run.snapshots[run.snapshots.length - 1].path), 'utf8'));
+    const pos = Number((last.elements.find((e) => e.dom_id === 'inner-pos') || {}).text);
+    check('viewport: a swipe scrolls an inner scroll box while frames are captured (no downscaling clip during gestures)', pos > 50, pos);
+  }
   // Content wider than the phone: the screen pans inside a wider layout viewport.
   writeJson(path.join(tmp, 'vp-wide.json'), scenario('SC-driver-vp-02', '?wide', 'galaxy-s24', { text_present: '눌림' }));
   r = await runDriver(['run', '--scenario', path.join(tmp, 'vp-wide.json'), '--device', 'galaxy-s24', '--out', outDir, '--run-id', 'R-vp-wide',

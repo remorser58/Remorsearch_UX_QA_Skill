@@ -62,6 +62,8 @@ const REFLOW_BUDGET_MS = 20000;
 
 const MEASURED = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'type', 'press', 'scroll', 'gamepad']);
 const POINTER = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'scroll']);
+// Actions that move content with the pointer (scroll gestures) or hold it down.
+const GESTURES = new Set(['long_press', 'swipe', 'drag', 'scroll']);
 
 function firstLine(msg) {
   return truncate(String(msg || '').split('\n')[0], 500);
@@ -680,7 +682,10 @@ export class WebSession {
    * of a scrolled document). A clip also snaps a visual viewport that is panned inside
    * a wider layout viewport (content wider than the screen) back to the layout
    * viewport, which moves the page under the next tap; a panned viewport is therefore
-   * captured whole, without a clip, and downscaled here.
+   * captured whole, without a clip, and downscaled here. A downscaling clip also stops
+   * a scroll gesture in progress on an inner scroll container (touch or wheel: the
+   * content does not move at all), so during gesture steps (wholeFrames) frames are
+   * captured whole too.
    */
   async visualFrame(cdp, targetW) {
     const w = Math.max(1, Math.round(Math.min(this.vw, targetW)));
@@ -688,7 +693,7 @@ export class WebSession {
     const m = await cdp.send('Page.getLayoutMetrics').catch(() => null);
     const v = m && (m.cssVisualViewport || m.visualViewport);
     let r;
-    if (v && (Math.abs(v.offsetX) > 0.5 || Math.abs(v.offsetY) > 0.5)) {
+    if (this.wholeFrames || (v && (Math.abs(v.offsetX) > 0.5 || Math.abs(v.offsetY) > 0.5))) {
       r = await cdp.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false, optimizeForSpeed: true });
     } else {
       const cw = v ? v.clientWidth : this.vw;
@@ -700,7 +705,12 @@ export class WebSession {
     }
     let img = decodePng(Buffer.from(r.data, 'base64'));
     if (img.width !== w || img.height !== h) img = resampleImage(img, w, h);
-    return frameFromImage(img);
+    const frame = frameFromImage(img);
+    // Where the screen is on the page, and CSS px per frame px: the page's own scroll
+    // between two frames is then a known motion (flash sampling).
+    frame.page = v ? [v.pageX, v.pageY] : null;
+    frame.cssPerPx = [(v ? v.clientWidth : this.vw) / w, (v ? v.clientHeight : this.vh) / h];
+    return frame;
   }
 
   /** Blur the deepest focused element (kept for refocus); false when nothing is focused. */
@@ -1239,7 +1249,18 @@ export class WebSession {
   /** Block grid statistics of a flash frame (png.mjs blockStats), base64 encoded into the sample. */
   addBlockStats(sample, frame) {
     if (!this.flashGrid) this.flashGrid = makeBlockGrid(frame.width, frame.height, this.vw, this.vh);
-    const bs = blockStats(frame, this.flashGrid, this.flashPrev);
+    // Page scroll measured between the frames: content moved by -delta (frame px).
+    const prev = this.flashPrev;
+    let known = null;
+    if (prev && prev.page && frame.page && frame.cssPerPx) {
+      const dx = frame.page[0] - prev.page[0];
+      const dy = frame.page[1] - prev.page[1];
+      if (Math.abs(dx) >= 0.5 || Math.abs(dy) >= 0.5) {
+        known = [Math.round(-dx / frame.cssPerPx[0]), Math.round(-dy / frame.cssPerPx[1])];
+        sample.page_scroll_css = [round1(dx), round1(dy)];
+      }
+    }
+    const bs = blockStats(frame, this.flashGrid, prev, known);
     if (!bs) return; // frame size changed: no grid for this sample
     sample.block_lum = Buffer.from(bs.lum).toString('base64');
     sample.block_red = Buffer.from(bs.red).toString('base64');
@@ -1694,6 +1715,8 @@ export class WebSession {
     const kind = action.action;
     const fbTimeout = action.feedback_timeout_ms ?? (kind === 'scroll' ? 0 : this.opts.feedbackTimeoutMs);
     const visualOn = this.opts.visualFeedback && fbTimeout > 0 && MEASURED.has(kind);
+    // Frames taken while a gesture scrolls something must not use a downscaling clip.
+    this.wholeFrames = GESTURES.has(kind);
     let pre = null;
     let visualAmbient = false;
     if (visualOn) {
@@ -1735,6 +1758,7 @@ export class WebSession {
     if (fbTimeout > 0 && !inputErr) await this.waitForFeedback(dispatch, dispatch + fbTimeout);
     fb.done = true;
     await probe;
+    this.wholeFrames = false;
     if (this.navEvents.some((t) => t >= dispatch)) {
       await this.page.waitForLoadState('load', { timeout: 10000 }).catch(() => {});
     }

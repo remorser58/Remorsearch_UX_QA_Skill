@@ -11,6 +11,9 @@
   top of the document. With ?wide a 416 px box makes the content wider than a 360 px
   phone: the layout viewport widens and the screen (visual viewport) pans inside it,
   so boxes, hit tests and taps must use screen coordinates. #out records the tap.
+  #inner is its own scroll box: a swipe on it must scroll it while the driver captures
+  frames for visual feedback (a downscaling capture clip stops such a scroll);
+  #inner-pos shows its scrollTop.
 -->
 <style>
   body { margin: 0; font-family: sans-serif; }
@@ -19,10 +22,14 @@
   #go { width: 120px; height: 44px; margin: 8px; }
   #cv { display: block; width: 200px; height: 60px; margin: 8px; background: #ffffff; }
   #tail { height: 300px; }
+  #inner { height: 200px; overflow-y: auto; border: 1px solid #999999; }
+  #inner p { margin: 0; padding: 12px; border-bottom: 1px solid #dddddd; }
 </style>
 </head>
 <body>
 <div id="wide" hidden>고정 폭 상자</div>
+<div id="inner"></div>
+<p id="inner-pos">0</p>
 <div id="spacer"></div>
 <button id="go" type="button">다음</button>
 <canvas id="cv" width="200" height="60"></canvas>
@@ -30,6 +37,9 @@
 <div id="tail"></div>
 <script>
   if (location.search.includes('wide')) document.getElementById('wide').hidden = false;
+  const inner = document.getElementById('inner');
+  inner.innerHTML = Array.from({ length: 40 }, (_, i) => `<p>항목 ${i + 1}</p>`).join('');
+  inner.addEventListener('scroll', () => { document.getElementById('inner-pos').textContent = String(Math.round(inner.scrollTop)); });
   document.getElementById('go').addEventListener('click', () => {
     const c = document.getElementById('cv').getContext('2d');
     c.fillStyle = '#d93025';

@@ -335,8 +335,11 @@ export function globalShift(cur, prev) {
  *           is explained by the global shift (or whose content entered the
  *           viewport with it); null when no shift was detected
  *  - shift: [dx, dy] frame px of that global shift ([0, 0] if none)
+ * `known` is a shift the caller measured (the page's own scroll between the two
+ * frames); it replaces the estimate, which periodic content (a feed of equal cards
+ * scrolled by about half a card per frame) makes ambiguous.
  */
-export function blockStats(frame, grid, prev) {
+export function blockStats(frame, grid, prev, known = null) {
   const { cols, rows, colOf, rowOf, xEdges, yEdges } = grid;
   const w = frame.width;
   const h = frame.height;
@@ -368,7 +371,7 @@ export function blockStats(frame, grid, prev) {
     redU8[b] = Math.round(255 * redShare[b]);
   }
   const out = { lum: lumU8, red: redU8, moved: null, shift: [0, 0] };
-  const shift = globalShift(frame, prev);
+  const shift = known && prev && prev.width === frame.width && prev.height === frame.height ? known : globalShift(frame, prev);
   if (!shift) return out;
   const [dx, dy] = shift;
   const ip = integrals(prev);
@@ -503,6 +506,36 @@ export function encodeRgbPng(width, height, rgb) {
 export function resampleImage(img, w, h) {
   const { width: sw, height: sh, channels: ch, data } = img;
   const out = Buffer.alloc(w * h * 3);
+  if (sw % w === 0 && sh % h === 0 && ch >= 3) {
+    // Integer factor (the usual case: CSS-px capture to the frame width): plain sums.
+    const fx = sw / w;
+    const fy = sh / h;
+    const n = fx * fy;
+    const acc = new Float64Array(w * 3);
+    for (let oy = 0; oy < h; oy++) {
+      acc.fill(0);
+      for (let y = oy * fy; y < (oy + 1) * fy; y++) {
+        let i = y * sw * ch;
+        for (let ox = 0; ox < w; ox++) {
+          let r = 0, g = 0, b = 0;
+          for (let k = 0; k < fx; k++, i += ch) {
+            let pr = data[i], pg = data[i + 1], pb = data[i + 2];
+            if (ch === 4 && data[i + 3] < 255) {
+              const f = data[i + 3] / 255;
+              pr = pr * f + 255 * (1 - f); pg = pg * f + 255 * (1 - f); pb = pb * f + 255 * (1 - f);
+            }
+            r += pr; g += pg; b += pb;
+          }
+          acc[ox * 3] += r; acc[ox * 3 + 1] += g; acc[ox * 3 + 2] += b;
+        }
+      }
+      for (let ox = 0; ox < w; ox++) {
+        const o = (oy * w + ox) * 3;
+        out[o] = Math.round(acc[ox * 3] / n); out[o + 1] = Math.round(acc[ox * 3 + 1] / n); out[o + 2] = Math.round(acc[ox * 3 + 2] / n);
+      }
+    }
+    return { width: w, height: h, channels: 3, data: out };
+  }
   for (let oy = 0; oy < h; oy++) {
     const y0 = Math.floor((oy * sh) / h);
     const y1 = Math.max(y0 + 1, Math.floor(((oy + 1) * sh) / h));
