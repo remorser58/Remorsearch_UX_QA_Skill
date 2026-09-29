@@ -107,7 +107,7 @@ category, release_date, current_version}; `personas_for`; `audience_questions`;
 `languages` {primary, secondary}; `channels` {include, exclude}; `time_windows`;
 `budgets`; `access_policy` {deny_hosts, allow_wayback_for_official, render,
 signed_in_communities}; `team_analytics_available`; and `report_lang`.
-`render` says how R3 renders happen: `driver` (the bundled driver, once it lands),
+`render` says how R3 renders happen: `driver` (the bundled page reader, `drivers/web/read_page.mjs`),
 `host_browser` (a browser tool from the host, then `ingest`) or `off`.
 
 ## A1: the plan
@@ -263,8 +263,10 @@ axis is missing without acknowledgement.
 - `ux_research.py export-audience` (planned) writes `audience.draft.json`, an
   `ergo-audience.v1` draft, only when the gate's hashes match:
   - sources are mapped to `ergo-audience.v1` types; community and review sources
-    get `url: null` plus a `bundle_ref` {bundle_id, source_id, claim_ids}; news is
-    left out until the ergonomics contract accepts it;
+    get `url: null` plus a `bundle_ref` {bundle_id, source_id, claim_ids}; news
+    sources are exported too, for existence claims only (`audience-check`
+    refuses `share` and `statistic` evidence backed only by news, community or
+    review sources);
   - segments come only from supported `segment_exists` claims;
   - confidence and evidence kind come from the gate;
   - contexts and conditions carry `share: null` unless a supported share claim

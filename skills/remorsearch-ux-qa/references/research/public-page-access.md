@@ -36,7 +36,7 @@ Use the best tool the host has. Do not depend on one product.
 | Order | Tool class | Examples | Detect it by | Use it for |
 | --- | --- | --- | --- | --- |
 | 1 | Agentic tools that drive the user's real browser | Aside; Claude in Chrome; the Claude app's built-in browser; another agentic browser the user installed | `aside` on the PATH; tools named `mcp__claude-in-chrome__*`; tools named `mcp__Claude_Browser__*` or `mcp__remote-devices__Claude_Browser__*`; other browser-control tools in the tool list | Interactive browsing and R3 captures |
-| 2 | Automation browsers | Playwright MCP; Chrome DevTools MCP; the bundled page reader `drivers/web/read_page.mjs` (planned; the live web driver `ergo_drive.mjs` is for product-surface QA, not for reading community pages) | tools such as `browser_navigate` and `browser_snapshot` (Playwright MCP) or `navigate_page` and `take_snapshot` (Chrome DevTools MCP); Node.js 22 or later with Playwright installed in `drivers/web` | R3 renders in a fresh profile |
+| 2 | Automation browsers | Playwright MCP; Chrome DevTools MCP; the bundled page reader `drivers/web/read_page.mjs` (the live web driver `ergo_drive.mjs` is for product-surface QA, not for reading community pages) | tools such as `browser_navigate` and `browser_snapshot` (Playwright MCP) or `navigate_page` and `take_snapshot` (Chrome DevTools MCP); Node.js 22 or later with Playwright installed in `drivers/web` | R3 renders in a fresh profile |
 | 3 | The reader ladder | `python3 scripts/ux_research.py read`: rungs R0-R2 | `python3 scripts/ux_research.py --help` runs | Every anonymous pre-read, and the evidence text whenever it can read the page |
 | 4 | The host's plain web search and fetch | a web search tool; a fetch tool that returns a summary | the tool list | Discovery only. Results are leads, grade D |
 
@@ -117,7 +117,7 @@ needed. Each rung runs at most once per URL.
 | R0 official route | The route table's feed or oEmbed routes for the page's host, with the user's own key from an environment variable when a route needs one. Documented APIs are listed in the route table but not called yet (planned); the rung skips them. A feed the page itself declares is tried at R2. | at most 2 | `official_route` |
 | R1 honest request | One GET with the reader's own User-Agent, `RemorsearchUXQA/<version> (+https://github.com/remorser58/ux-research-qa-skills; read-only UX research)`, the brief's Accept-Language, no cookies and no Referer. | 1 | `honest_ua` |
 | R2 site alternate | The page's own mobile, AMP or feed version on the same registrable domain; then a mobile twin from the route table; then a `www.` to `m.` rewrite, only if that host resolves. Also the page's JSON-LD and Open Graph data. | at most 2 | `site_alternate` |
-| R3 real-browser render | An unmodified browser loads the page as an anonymous visitor (section 10). Today: a tool from section 2, then `ingest`. When `drivers/web/read_page.mjs` lands, the reader runs it itself if Node.js and Playwright are installed. | 1 | `real_browser` |
+| R3 real-browser render | An unmodified browser loads the page as an anonymous visitor (section 10). The agent renders it with a tool from section 2, or with `node drivers/web/read_page.mjs URL --out capture.json`, and passes the capture to `ingest`. The reader never starts a browser itself. | 1 | `real_browser` |
 
 The team's own exports, such as store-console review exports or analytics, are an
 official route too. They are files, not reads: record them as `team_provided`
@@ -373,6 +373,16 @@ them.
    that stops is final: no later capture of that URL is accepted.
 7. Pace renders like reads (section 8). `ingest` books the render in the ledger.
 
+The bundled page reader does steps 2 to 5 by itself in a fresh anonymous context:
+
+```sh
+node drivers/web/read_page.mjs URL --out capture.json
+python3 scripts/ux_research.py ingest capture.json --run RUN_DIR --url URL --context anonymous
+```
+
+At an interactive human check it stops without scrolling, still writes the
+capture, and exits with code 3; `ingest` then records the stop.
+
 ## 11. Discovery and archives
 
 Discovery:
@@ -498,7 +508,7 @@ Each source records the tool in `access_method`:
 | Another agentic browser | `agentic_browser:<name>` |
 | Playwright MCP | `playwright_mcp` |
 | Chrome DevTools MCP | `chrome_devtools_mcp` |
-| The bundled driver (`read_page.mjs`) | `drivers_web` |
+| The bundled page reader (`drivers/web/read_page.mjs`) | `drivers_web` |
 | The host's web search, or its fetch tool (leads only) | `web_search`, `web_fetch` |
 | The team's own export | `team_export` |
 

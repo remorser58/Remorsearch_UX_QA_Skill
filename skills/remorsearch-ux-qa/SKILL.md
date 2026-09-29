@@ -113,8 +113,8 @@ order (`references/research/public-page-access.md`):
    the Claude app's built-in browser, or another agentic browser the user
    installed;
 2. an automation browser: Playwright MCP, Chrome DevTools MCP, or the bundled page
-   reader `drivers/web/read_page.mjs` (planned; the live web driver
-   `ergo_drive.mjs` is for product-surface QA, not for reading community pages);
+   reader `drivers/web/read_page.mjs` (the live web driver `ergo_drive.mjs` is
+   for product-surface QA, not for reading community pages);
 3. the reader, `scripts/ux_research.py read`;
 4. the host's plain web search and fetch, whose results are leads only.
 
