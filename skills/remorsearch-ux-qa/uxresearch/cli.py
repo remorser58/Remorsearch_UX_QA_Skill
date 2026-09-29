@@ -104,7 +104,6 @@ def build_parser() -> argparse.ArgumentParser:
     start.add_argument("--deny-host", action="append", default=[], help="a host the researcher excludes (repeatable)")
     start.add_argument("--render", choices=ledger.RENDER_MODES, help="how R3 renders happen (default host_browser)")
     start.add_argument("--routes", type=Path, help="a route table to use instead of uxresearch/data/routes.json")
-    start.add_argument("--engine-opt-in", action="store_true", help="the opt-in engine rung R4 (not in this version)")
 
     read = commands.add_parser("read", help="Read one public URL through the ladder")
     read.add_argument("url")
@@ -159,8 +158,7 @@ def _start(args) -> int:
         deny += brief.get("access_policy", {}).get("deny_hosts", [])
     overrides = {"per_host": args.per_host, "per_run": args.per_run, "min_interval_s": args.min_interval,
                  "max_wait_s": args.max_wait, "raise_reason": args.reason, "accept_language": args.accept_language,
-                 "deny_hosts": deny or None, "render": args.render,
-                 "engine_opt_in": True if args.engine_opt_in else None}
+                 "deny_hosts": deny or None, "render": args.render}
     policy = ledger.build_policy(brief, overrides)
     path = _run_path(args.run, creating=True) if args.run else None
     created = ledger.create(path, policy, brief=brief, routes=routes,

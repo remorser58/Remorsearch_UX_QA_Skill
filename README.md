@@ -100,9 +100,6 @@ Research and persona-qa read what anyone can read without an account.
   removed posts, and reports each as a coverage gap. It never disguises itself,
   and it reads one page at a time per host, at least 8 seconds apart by default,
   within a budget.
-- **Optional engine.** One extra rung can call your own separately installed
-  [insane-search](https://github.com/fivetaku/insane-search), only when you turn it
-  on for a run. It is off by default and labelled on every source it reads.
 - **Privacy.** Quotes are short, authors become salted keys, and temporary page
   text is kept outside your project and deleted when the run closes. Signed-in
   reading happens only in communities you authorise for the run, and keeps
@@ -165,7 +162,8 @@ MIT, see [`LICENSE`](LICENSE). Third-party material and references are listed in
 Credits: the public-page reader and the research gate were designed after studying
 fivetaku's [insane-search](https://github.com/fivetaku/insane-search) and
 [insane-research](https://github.com/fivetaku/insane-research) (both MIT). Ideas
-only; no code or text from them is included.
+only; no code or text from them is included, and the skill does not depend on or
+call either project.
 
 ## 한국어 요약
 
@@ -176,6 +174,6 @@ Remorsearch UX QA는 근거 중심의 UX 리서치·QA 스킬입니다. 커뮤�
 페르소나를 끝까지 구분해서, 시뮬레이션을 실제 사용자 조사처럼 보고하지 않습니다.
 대상 사용자 리서치로 세그먼트를 먼저 찾고, 그 근거로 페르소나를 만듭니다. 공개
 페이지는 정직하게 읽습니다. 로그인, 유료 벽, 캡차, robots.txt 거부 앞에서는
-멈추고, 사용자가 따로 설치한 insane-search는 실행마다 켰을 때만 씁니다.
+멈추고, 정체를 숨기거나 차단을 우회하지 않습니다.
 설치는 `skills/remorsearch-ux-qa` 폴더 하나를 `~/.claude/skills/`나
 `~/.codex/skills/`에 복사하면 됩니다.

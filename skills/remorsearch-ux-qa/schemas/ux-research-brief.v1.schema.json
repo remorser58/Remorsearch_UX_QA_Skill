@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/remorser58/ux-research-qa-skills/schemas/ux-research-brief.v1.schema.json",
   "title": "UX Research Brief v1",
-  "description": "What one research run is about and the limits it runs under. Read by `ux_research.py start --brief`, which checks these shapes itself. Budgets above the defaults need a recorded reason and can never pass the maxima. The opt-in engine rung is off unless this run turns it on, and the choice is never saved between runs.",
+  "description": "What one research run is about and the limits it runs under. Read by `ux_research.py start --brief`, which checks these shapes itself. Budgets above the defaults need a recorded reason and can never pass the maxima.",
   "type": "object",
   "required": ["schema_version", "product"],
   "additionalProperties": false,
@@ -89,8 +89,6 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "engine_opt_in": {"type": "boolean", "default": false,
-                          "description": "the opt-in engine rung R4 for this run only; not available until the engine adapter ships"},
         "deny_hosts": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true,
                        "description": "hosts the researcher excludes; a name also covers its subdomains"},
         "allow_wayback_for_official": {"type": "boolean", "default": true,

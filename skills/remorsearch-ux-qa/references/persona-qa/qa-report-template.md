@@ -14,12 +14,11 @@
 
 ### Reader access table
 
-For community research (`references/research/public-page-access.md`, sections 6 and 16). One row per host or channel.
+For community research (`references/research/public-page-access.md`, sections 6 and 15). One row per host or channel.
 
 | Host or channel | Tools | Reads | Rungs used | Stops by class | Unread (untried rungs) | robots / TDM decision | Browser context |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-- Engine rung R4: off / on (version)
 - Search count / budget:
 - Signed-in communities authorised in the brief: none / list
 

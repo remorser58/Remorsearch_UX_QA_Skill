@@ -54,7 +54,7 @@ STOP_CLASSES = ("auth_gate", "paywall", "human_check", "opted_out", "rate_limit"
 ESCALATE = frozenset({"js_shell", "js_check", "bot_filter", "suspect"})
 OK = frozenset({"ok_strong", "ok_weak"})
 HOST_STOPPING = frozenset({"human_check"})
-PRESENTATIONS = ("official_route", "honest_ua", "site_alternate", "real_browser", "browser_equivalent_tls")
+PRESENTATIONS = ("official_route", "honest_ua", "site_alternate", "real_browser")
 BUCKETS = ("read", "deferred", "unread", "stopped")
 WORD_FAMILIES = ("deleted", "membership", "age_identity", "paywall", "human_check", "rate_limit", "geo", "legal",
                  "bot_filter", "js_check")

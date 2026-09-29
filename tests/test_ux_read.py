@@ -920,13 +920,14 @@ class ReaderRobotsTests(ServerCase):
         self.assertEqual((code, summary["robots"]["decision"]), (3, "disallowed"))
         self.assertEqual(self.server.hits("board.test"), ["/robots.txt", "/board/view?id=1"])
         outcomes = [e for e in self.ledger_entries() if e["kind"] == "outcome"]
-        access = {k: outcomes[0].get(k) for k in ("rung", "presentation", "verdict", "stop_class", "fetch_id",
-                                                  "fetched_at", "content_sha256", "robots", "context",
-                                                  "engine_version")}
+        fields = ("rung", "presentation", "verdict", "stop_class", "fetch_id", "fetched_at", "content_sha256",
+                  "robots", "context")
+        self.assertLessEqual(set(fields), set(outcomes[0]))
+        access = {k: outcomes[0][k] for k in fields}
         self.assertEqual((access["rung"], access["presentation"], access["verdict"], access["context"]),
                          ("R1", "honest_ua", "ok_weak", "anonymous"))
         self.assertEqual(access["robots"], {"decision": "allowed", "status": "ok"})
-        self.assertIsNone(access["engine_version"])
+        self.assertIsNone(access["stop_class"])
         self.assertRegex(access["content_sha256"], r"^[0-9a-f]{64}$")
         self.assertTrue(access["fetch_id"].startswith("F-") and access["fetched_at"].endswith("Z"))
         self.assertEqual(outcomes[1]["robots"], {"decision": "disallowed", "status": "ok"})
@@ -990,16 +991,6 @@ class ReaderRobotsTests(ServerCase):
             self.assertEqual((code, summary["stop_class"], summary["reasons"]), (3, "opted_out", ["x-robots-tag:noai"]), path)
             self.assertNotIn("NORMAL-POST-SENTINEL", out)
         self.assertEqual(self.read(self.url("xrt.test", "/other"))[0], 0)
-
-    def test_engine_rung_needs_a_robots_file_that_was_read(self):
-        state = ladder._Read(run=None, url="http://x.test/p", expect=(), max_wait=0, routes=None)
-        state.target_robots = {"robots_status": "unavailable_bot_filtered", "allowed": True}
-        self.assertFalse(ladder._engine_preconditions(state, "bot_filter"))
-        state.target_robots = {"robots_status": "unavailable", "allowed": True}
-        self.assertFalse(ladder._engine_preconditions(state, "bot_filter"))
-        state.target_robots = {"robots_status": "ok", "allowed": True}
-        self.assertTrue(ladder._engine_preconditions(state, "bot_filter"))
-        self.assertFalse(ladder._engine_preconditions(state, "js_shell"))
 
 
 class ReaderPacingTests(ServerCase):
@@ -1621,7 +1612,7 @@ class ReaderBudgetTests(ServerCase):
 
     def test_raises_need_a_reason_and_stay_under_the_ceilings(self):
         refused = (["--per-host", "101", "--reason", "x"], ["--per-run", "501", "--reason", "x"], ["--per-host", "50"],
-                   ["--per-run", "300"], ["--min-interval", "4"], ["--engine-opt-in"])
+                   ["--per-run", "300"], ["--min-interval", "4"])
         for index, extra in enumerate(refused):
             target = self.tmp / f"refused-{index}"
             code, out, _ = self.cli("start", "--run", target, "--routes", ROUTES, *extra)
@@ -2156,6 +2147,8 @@ class ContractTests(unittest.TestCase):
             self.assertTrue(schema["$id"].endswith(f"/schemas/{name}.schema.json"))
             self.assertEqual(schema["properties"]["schema_version"], {"const": name})
         self.assertEqual(sorted(brief["properties"]), sorted(ledger.BRIEF_FIELDS))
+        for name, fields in ledger._NESTED_FIELDS.items():
+            self.assertEqual(sorted(brief["properties"][name]["properties"]), sorted(fields), name)
         budgets = brief["properties"]["budgets"]["properties"]
         for name in ("per_host", "per_run"):
             self.assertEqual((budgets[name]["maximum"], budgets[name]["default"]),
@@ -2181,19 +2174,13 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(verdict.VERDICTS, ("ok_strong", "ok_weak", "suspect", "js_shell", "js_check", "bot_filter"))
         self.assertEqual(verdict.STOP_CLASSES, ("auth_gate", "paywall", "human_check", "opted_out", "rate_limit",
                                                 "geo_block", "legal_block", "gone", "budget", "host_stopped"))
-        self.assertEqual(verdict.PRESENTATIONS, ("official_route", "honest_ua", "site_alternate", "real_browser",
-                                                 "browser_equivalent_tls"))
+        self.assertEqual(verdict.PRESENTATIONS, ("official_route", "honest_ua", "site_alternate", "real_browser"))
         self.assertEqual(tuple(ladder.PRESENTATION.values()), verdict.PRESENTATIONS)
+        self.assertEqual(ladder.RUNGS, ("R0", "R1", "R2", "R3"))
         self.assertEqual(ROBOTS_TOKEN, "RemorsearchUXQA")
         self.assertTrue(USER_AGENT.startswith("RemorsearchUXQA/") and PROJECT_URL in USER_AGENT)
         self.assertEqual(ladder.EXIT, {"read": 0, "refused": 2, "stopped": 3, "unread": 4, "deferred": 5})
         self.assertEqual(ladder.CONTEXTS, ("anonymous", "unknown", "signed_in"))
-
-    def test_r4_is_an_explicit_hook(self):
-        with self.assertRaises(NotImplementedError):
-            ladder.engine_rung(None, "http://x.test/")
-        with self.assertRaises(ledger.RunError):
-            ledger.build_policy(None, {"engine_opt_in": True})
 
     def test_registrable_domains(self):
         cases = {"a.b.example.co.kr": "example.co.kr", "alice.tistory.com": "alice.tistory.com",

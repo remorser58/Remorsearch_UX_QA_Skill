@@ -64,9 +64,8 @@ Inside `references/<mode>/`, a path such as `references/x.md` means
   authorised (next rule). When a plain fetch is over-blocked, use the reader
   ladder in `references/research/public-page-access.md`
   (`scripts/ux_research.py read`): official feed or API, one honestly identified
-  request, the site's own mobile, AMP or feed version, an unmodified real-browser
-  render, and, only if the user opts in for this run, a user-installed
-  insane-search engine. Keep to one request at a time per host, at human pace,
+  request, the site's own mobile, AMP or feed version, and an unmodified
+  real-browser render. Keep to one request at a time per host, at human pace,
   within the run budget.
 - **Stop at every access control or opt-out.** Stop at logins; paywalls and
   subscriptions; private or member-only groups; age or identity checks;
@@ -86,9 +85,7 @@ Inside `references/<mode>/`, a path such as `references/x.md` means
   call undocumented endpoints found in network traffic. Never scrape search-result
   pages. Never read archive, cache or reader-proxy copies of community posts.
   Never collect one person's post history, and decline requests to research or
-  identify a particular person. The opt-in engine rung presents a browser TLS
-  fingerprint and the engine's own Referer. It is the single recorded exception
-  and is labelled on every source it produced.
+  identify a particular person. This rule has no exception.
 - **Figma is the design source of truth** when it exists. Record file, version,
   node IDs and readback.
 - **No side accent bars**, attached side tabs or decorative rails in proposals.
@@ -97,8 +94,6 @@ Inside `references/<mode>/`, a path such as `references/x.md` means
 ## Tools in this folder
 
 Python 3.10+ standard library only; Node.js 22 only for the live web driver.
-Optional: a user-installed insane-search for one opt-in reader rung (not
-included).
 
 | Tool | Used by | Command |
 | --- | --- | --- |
@@ -120,8 +115,7 @@ order (`references/research/public-page-access.md`):
 2. an automation browser: Playwright MCP, Chrome DevTools MCP, or the bundled page
    reader `drivers/web/read_page.mjs` (planned; the live web driver
    `ergo_drive.mjs` is for product-surface QA, not for reading community pages);
-3. the reader, `scripts/ux_research.py read`, which uses a user-installed
-   insane-search only as the opt-in rung R4;
+3. the reader, `scripts/ux_research.py read`;
 4. the host's plain web search and fetch, whose results are leads only.
 
 Detect what is available from the tool list and the installed commands, and

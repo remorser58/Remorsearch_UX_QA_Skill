@@ -171,7 +171,7 @@ _NESTED_FIELDS = {
     "languages": ("primary", "secondary"),
     "channels": ("include", "exclude"),
     "budgets": ("per_host", "per_run", "search_queries", "min_interval_s", "reason"),
-    "access_policy": ("engine_opt_in", "deny_hosts", "allow_wayback_for_official", "render", "signed_in_communities"),
+    "access_policy": ("deny_hosts", "allow_wayback_for_official", "render", "signed_in_communities"),
 }
 
 
@@ -205,8 +205,6 @@ def validate_brief(brief) -> None:
                  "brief.budgets.min_interval_s must be a number")
     policy = brief.get("access_policy", {})
     _require(isinstance(policy, dict), "brief.access_policy must be an object")
-    if "engine_opt_in" in policy:
-        _require(isinstance(policy["engine_opt_in"], bool), "brief.access_policy.engine_opt_in must be true or false")
     if "deny_hosts" in policy:
         _require(isinstance(policy["deny_hosts"], list) and all(isinstance(h, str) and h for h in policy["deny_hosts"]),
                  "brief.access_policy.deny_hosts must be a list of host names")
@@ -234,7 +232,7 @@ def validate_brief(brief) -> None:
 def build_policy(brief: dict | None, overrides: dict) -> dict:
     """Defaults, then the brief, then command-line values. Refuses anything past the ceilings."""
     policy = {**DEFAULTS, "max_wait_s": DEFAULT_MAX_WAIT_S, "accept_language": DEFAULT_ACCEPT_LANGUAGE,
-              "deny_hosts": [], "engine_opt_in": False, "render": "host_browser",
+              "deny_hosts": [], "render": "host_browser",
               "allow_wayback_for_official": True, "raise_reason": None, "signed_in_communities": []}
     if brief:
         budgets = brief.get("budgets", {})
@@ -244,7 +242,7 @@ def build_policy(brief: dict | None, overrides: dict) -> dict:
         if budgets.get("reason"):
             policy["raise_reason"] = str(budgets["reason"])
         access = brief.get("access_policy", {})
-        for name in ("engine_opt_in", "deny_hosts", "render", "allow_wayback_for_official"):
+        for name in ("deny_hosts", "render", "allow_wayback_for_official"):
             if name in access:
                 policy[name] = access[name]
         # Only the user's brief authorises signed-in reading; there is no command-line switch for it.
@@ -273,8 +271,6 @@ def build_policy(brief: dict | None, overrides: dict) -> dict:
              f"min_interval_s cannot be below {MIN_INTERVAL_FLOOR_S:.0f} seconds")
     _require(float(policy["max_wait_s"]) >= 0, "max_wait_s cannot be negative")
     _require(policy["render"] in RENDER_MODES, f"render must be one of {', '.join(RENDER_MODES)}")
-    _require(policy["engine_opt_in"] is False,
-             "the opt-in engine rung (R4) is not available in this version; it ships with the engine adapter")
     return policy
 
 
@@ -302,7 +298,7 @@ def create(path: Path | None, policy: dict, *, brief: dict | None = None, routes
             "rules_version": RULES_VERSION, "user_agent": USER_AGENT, "policy": policy,
             "brief_sha256": brief_sha, "routes": {"source": routes_source,
                                                    "sha256": hashlib.sha256(routes_text.encode()).hexdigest()},
-            "engine_rung": "off", "test_hooks": net.test_hooks_enabled(), "closed_at": None}
+            "test_hooks": net.test_hooks_enabled(), "closed_at": None}
     _write_new(path / "run.json", (json.dumps(meta, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
     hosts = {"schema_version": HOSTS_SCHEMA, "run": {"docs": 0, "policy_requests": 0}, "hosts": {}, "robots": {}}
     _write_new(path / "hosts.json", (json.dumps(hosts, indent=2) + "\n").encode("utf-8"))
@@ -629,8 +625,7 @@ class Run:
             row["host_stop"] = state_row.get("stopped")
             row["robots"] = sorted({r["status"] for origin, r in hosts_state["robots"].items()
                                     if (urlsplit(origin).hostname or "") == host})
-        return {"run_id": self.meta["run_id"], "engine_rung": self.meta.get("engine_rung", "off"),
-                "test_hooks": self.meta.get("test_hooks", False), "totals": totals,
+        return {"run_id": self.meta["run_id"], "test_hooks": self.meta.get("test_hooks", False), "totals": totals,
                 "requests": hosts_state["run"], "hosts": [hosts[h] for h in sorted(hosts)],
                 "signed_in_communities": [c.get("name") for c in self.policy.get("signed_in_communities", [])],
                 "buckets": ["read", "deferred", "unread", "stopped"]}

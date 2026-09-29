@@ -16,7 +16,6 @@
   "time_windows": [{"from": "2026-01-01", "to": "2026-09-28", "label": "since the redesign"}],
   "budgets": {"per_host": 20, "per_run": 150, "search_queries": 100, "min_interval_s": 10},
   "access_policy": {
-    "engine_opt_in": false,
     "deny_hosts": ["denied.test"],
     "allow_wayback_for_official": true,
     "render": "host_browser"

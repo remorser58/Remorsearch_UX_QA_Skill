@@ -47,7 +47,7 @@ Use `verification_status: "verified"` only when the required observed support ex
 Every source records `channel`, `source_ref`, `access_basis`, `access_method`, `public_scope`, and `retention_status`. Keep `withdrawn`, `deleted`, and `redacted` states visible. A withdrawn or deleted source must not continue to support a verified claim.
 
 - `access_basis`: research runs use `public_anonymous`, `public_teaser`, `official_api`, `team_provided`, `fixture` or `authorised_member`. Older bundles may say `public`.
-- `access_method`: the tool that read the page, such as `ux_research_read`, `aside`, `claude_in_chrome`, `claude_app_browser`, `playwright_mcp`, `chrome_devtools_mcp`, `drivers_web`, `web_search`, `web_fetch` or `team_export` (`references/research/public-page-access.md`, section 16).
+- `access_method`: the tool that read the page, such as `ux_research_read`, `aside`, `claude_in_chrome`, `claude_app_browser`, `playwright_mcp`, `chrome_devtools_mcp`, `drivers_web`, `web_search`, `web_fetch` or `team_export` (`references/research/public-page-access.md`, section 15).
 - In shared outputs, a source with `access_basis: authorised_member` carries an authored summary only: no excerpt, no post URL and no member's personal data.
 
 Optional fields for research sources:
@@ -55,7 +55,7 @@ Optional fields for research sources:
 | Field | Content |
 | --- | --- |
 | `source_type` | An `ergo-audience.v1` source type (`official_statistics`, `product_analytics`, `app_store_reviews`, `community`, `survey`, `interview`, `usability_test`, `support_tickets`, `official_docs`, `competitor`, `market_report`, `research_paper`, `product_brief`, `expert_judgment`), or `news`, `llm_output` or `synthetic` |
-| `access` | `{rung, presentation, verdict, stop_class, fetch_id, fetched_at, content_sha256, robots, context, engine_version}`, copied from the reader's run ledger |
+| `access` | `{rung, presentation, verdict, stop_class, fetch_id, fetched_at, content_sha256, robots, context}`, copied from the reader's run ledger |
 | `published_at`, `observed_at`, `valid_at` | When the author published, when the reader read it, and when the content was true |
 | `platform_family`, `org` | The channel family and the organisation used to count independence |
 | `author_key`, `thread_key` | Salted keys from the run. Never a handle or a name. |
@@ -63,8 +63,8 @@ Optional fields for research sources:
 
 Values in the `access` block:
 
-- `rung`: `R0` to `R4` for pages that were read; `search_snippet` or `summarizing_fetch` for leads;
-- `presentation`: `official_route`, `honest_ua`, `site_alternate`, `real_browser` or `browser_equivalent_tls`;
+- `rung`: `R0` to `R3` for pages that were read; `search_snippet` or `summarizing_fetch` for leads;
+- `presentation`: `official_route`, `honest_ua`, `site_alternate` or `real_browser`;
 - `verdict`: `ok_strong`, `ok_weak`, `suspect`, `js_shell`, `js_check` or `bot_filter`;
 - `stop_class`: `none`, or one of `opted_out`, `gone`, `auth_gate`, `paywall`, `human_check`, `rate_limit`, `geo_block`, `legal_block`, `budget`, `host_stopped`;
 - `robots`: the robots.txt decision for the path (`allowed` or `disallowed`) and the file's status (`ok`, `unavailable`, `unavailable_bot_filtered` or `unreachable`);

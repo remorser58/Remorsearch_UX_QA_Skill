@@ -12,9 +12,9 @@ would deny /board/view there.
 Fetch status: 2xx is parsed; 4xx means unavailable (allowed); 5xx, 429 or a
 network failure means unreachable (disallow everything for now, so the reader
 defers and checks again later); a challenge page instead of the file is
-recorded as unavailable_bot_filtered (allowed for the honest rungs, never enough
-for the opt-in engine rung). A 2xx body that holds robots.txt lines is always
-parsed as robots.txt, whatever its content type and whatever its comments say.
+recorded as unavailable_bot_filtered (allowed, like unavailable). A 2xx body
+that holds robots.txt lines is always parsed as robots.txt, whatever its content
+type and whatever its comments say.
 
 X-Robots-Tag: each header is read on its own. Inside one header, a
 'product-token:' prefix scopes the directives after it to that crawler; a known

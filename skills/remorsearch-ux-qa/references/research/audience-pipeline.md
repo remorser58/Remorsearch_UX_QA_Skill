@@ -95,20 +95,18 @@ An axis is one reader's beat: a set of sources and the questions it serves.
    - whether team analytics or store-console exports exist and can be shared;
    - communities the user belongs to and authorises for signed-in reading, each with
      its host, name and why, plus the path prefix when several communities share a
-     host (default: none; see `references/public-page-access.md`, section 3);
-   - the engine rung R4, asked only when an insane-search install is detected
-     (default: off).
+     host (default: none; see `references/public-page-access.md`, section 3).
 4. Defaults for anything unanswered: all eight questions; Korean then English for
-   a Korean product; the budgets below; the engine off; no signed-in communities;
-   no `deny_hosts`.
+   a Korean product; the budgets below; no signed-in communities; no
+   `deny_hosts`.
 5. Write `brief.json` and run `python3 scripts/ux_research.py start --brief
    brief.json`. Every later command writes into the run folder it prints.
 
 The brief (`ux-research-brief.v1`) holds: `product` {name, surface, url, locale,
 category, release_date, current_version}; `personas_for`; `audience_questions`;
 `languages` {primary, secondary}; `channels` {include, exclude}; `time_windows`;
-`budgets`; `access_policy` {engine_opt_in, deny_hosts, allow_wayback_for_official,
-render, signed_in_communities}; `team_analytics_available`; and `report_lang`.
+`budgets`; `access_policy` {deny_hosts, allow_wayback_for_official, render,
+signed_in_communities}; `team_analytics_available`; and `report_lang`.
 `render` says how R3 renders happen: `driver` (the bundled driver, once it lands),
 `host_browser` (a browser tool from the host, then `ingest`) or `off`.
 

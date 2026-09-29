@@ -16,8 +16,6 @@ Rungs, cheapest and most honest first. Each runs at most once per URL:
                      version the researcher's own browser renders the page and the
                      capture is handed in with `ingest`; `read` exits 4 and says how.
                      A community the brief authorises may be captured signed in.
-  R4 browser_equivalent_tls  the opt-in engine rung. Not in this version: see
-                     engine_rung() below for the hook and its preconditions.
 
 Before any rung, the page's own URL is checked against the deny list, the route
 table's out-of-scope private channels and its own robots.txt; a disallowed path
@@ -52,8 +50,7 @@ from .envelope import scan as scan_injection
 from .ledger import ROBOTS_RETRY_S, BudgetExceeded, Deferred, HostStopped, Run
 
 DATA = Path(__file__).resolve().parent / "data"
-PRESENTATION = {"R0": "official_route", "R1": "honest_ua", "R2": "site_alternate", "R3": "real_browser",
-                "R4": "browser_equivalent_tls"}
+PRESENTATION = {"R0": "official_route", "R1": "honest_ua", "R2": "site_alternate", "R3": "real_browser"}
 RUNGS = tuple(PRESENTATION)
 R0_MAX_REQUESTS = 2
 R2_MAX_REQUESTS = 2
@@ -424,7 +421,7 @@ def _trail(st: _Read, rung: str, outcome: str, *, url: str | None = None, attemp
 # ---------------------------------------------------------------- outcomes
 
 
-def _remaining(st: _Read, last_verdict: str | None = None) -> tuple[list, list]:
+def _remaining(st: _Read) -> tuple[list, list]:
     untried, notes = [], []
     render = st.run.policy.get("render", "host_browser")
     if render != "off":
@@ -433,12 +430,6 @@ def _remaining(st: _Read, last_verdict: str | None = None) -> tuple[list, list]:
             notes.append("the render driver is not available in this version; use the host browser and ingest")
     else:
         notes.append("render disabled by the brief")
-    if st.run.policy.get("engine_opt_in") and _engine_preconditions(st, last_verdict):
-        try:
-            engine_rung(st, st.url)
-        except NotImplementedError as exc:
-            untried.append("R4")
-            notes.append(str(exc))
     return untried, notes
 
 
@@ -462,7 +453,7 @@ def _done(st: _Read, bucket: str, *, stop: str | None = None, verdict_: str | No
               "fetch_id": attempt.fetch_id if attempt is not None else None, "trail": st.trail,
               "untried": list(untried), "error": error, "retry_after_s": retry_after_s, "host_stop": host_stop,
               "next_step": next_step, "notes": list(notes), "robots": robots_info, "fetched_at": run.now_iso(),
-              "engine_rung": "off", "render": "needs_host_render" if "R3" in untried else None,
+              "render": "needs_host_render" if "R3" in untried else None,
               "context": "anonymous", "access_basis": access_basis if bucket == "read" else None}
     if out_of_scope:
         result["out_of_scope"] = True
@@ -485,7 +476,7 @@ def _done(st: _Read, bucket: str, *, stop: str | None = None, verdict_: str | No
             result["host_stop"] = streak
             result["notes"].append("this host is now stopped for the run: " + streak["reason"])
     run.log({"kind": "outcome", "source": "read", "url": st.url, "url_key": run.url_key(st.url), "host": host,
-             "fetched_at": result["fetched_at"], "context": "anonymous", "engine_version": None,
+             "fetched_at": result["fetched_at"], "context": "anonymous",
              "access_basis": result["access_basis"], "out_of_scope": out_of_scope or None,
              "robots": {"decision": (robots_info or {}).get("decision"), "status": (robots_info or {}).get("robots_status")},
              "bucket": bucket, "verdict": verdict_, "stop_class": stop, "rung": rung,
@@ -760,27 +751,9 @@ def _ladder(st: _Read) -> dict:
             return terminal
         _trail(st, "R2", "escalate", url=candidate, attempt=alt, v=alt_v, note=source)
         last, last_rung = alt_v, "R2"
-    untried, notes = _remaining(st, last.verdict)
+    untried, notes = _remaining(st)
     return _done(st, "unread", verdict_=last.verdict, reasons=last.reasons, rung=last_rung, untried=untried,
                  notes=notes, next_step=INGEST_HELP if "R3" in untried else None)
-
-
-def _engine_preconditions(st: _Read, last_verdict: str | None) -> bool:
-    decision = st.target_robots or {}
-    return last_verdict == "bot_filter" and decision.get("robots_status") == "ok" and bool(decision.get("allowed"))
-
-
-def engine_rung(st: _Read, url: str):
-    """R4 hook: opt-in, bounded delegation to a user-installed engine CLI (phase E).
-
-    Runs only when the run opted in (never saved between runs), R1-R3 ended in
-    bot_filter, robots.txt was read and allows the path, and no stop was seen.
-    The adapter (uxresearch/engine_adapter.py) will pass fixed bounding flags,
-    set a learning-free environment, re-run our own extract and verdict code on
-    the raw body, ignore the engine's untried-routes advice and label every
-    source browser_equivalent_tls. `start` refuses the opt-in until then.
-    """
-    raise NotImplementedError("R4 (the opt-in engine rung) ships with the engine adapter in a later phase")
 
 
 # ---------------------------------------------------------------- entry points
@@ -1050,7 +1023,7 @@ def ingest(run: Run, url: str, file_path, *, fmt: str | None = None, context: st
               "final_url": privacy.mask_url(final_url), "host": host, "verdict": v.verdict,
               "stop_class": v.stop_class, "reasons": v.reasons[:10], "rung": "R3", "presentation": "real_browser",
               "context": context, "format": fmt, "fetch_id": fetch_id, "untried": [], "fetched_at": run.now_iso(),
-              "engine_rung": "off", "access_basis": basis, "host_stop": host_stop, "notes": notes, "text": None}
+              "access_basis": basis, "host_stop": host_stop, "notes": notes, "text": None}
     if community is not None:
         result["community"] = community.get("name")
     if v.ok:
@@ -1068,7 +1041,7 @@ def ingest(run: Run, url: str, file_path, *, fmt: str | None = None, context: st
     elif v.stop_class:
         notes.append("the capture text was discarded")
     run.log({"kind": "outcome", "source": "ingest", "url": target, "url_key": run.url_key(target), "host": host,
-             "fetched_at": result["fetched_at"], "engine_version": None,
+             "fetched_at": result["fetched_at"],
              "robots": {"decision": (prior.get("robots") or {}).get("decision"),
                         "status": (prior.get("robots") or {}).get("status")},
              "bucket": bucket, "verdict": v.verdict, "stop_class": v.stop_class, "rung": "R3",
@@ -1082,4 +1055,4 @@ def ingest(run: Run, url: str, file_path, *, fmt: str | None = None, context: st
 
 
 __all__ = ["read", "ingest", "check_robots", "check_page_read", "robots_decision", "registrable_domain", "Routes",
-           "engine_rung", "EXIT", "PRESENTATION", "RUNGS"]
+           "EXIT", "PRESENTATION", "RUNGS"]
