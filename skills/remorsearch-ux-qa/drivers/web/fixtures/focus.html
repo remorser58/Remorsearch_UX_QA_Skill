@@ -18,6 +18,11 @@
   not count); #adlg-under sits under a non-modal absolute dialog (2.4.11 fails);
   #menu-under and #chat-under sit under layers the scenario opens: #menu closes on
   Escape without moving focus (passes), #chat does not (fails).
+  #open-step2 shows #step2, a mid-task panel the walks never see (the scenario hides
+  it again with #submit): focus probes before clicks must find #save without an
+  indicator, the :focus-visible ring of #fv after mouse clicks, the ring #js-ring
+  draws from a script only after a key press (a common library pattern), and skip
+  the text field #note.
 -->
 <style>
   html { scroll-behavior: smooth; }
@@ -43,6 +48,11 @@
   #menu, #chat { position: fixed; width: 300px; height: 150px; background: #fff8e1; border: 1px solid #999999; z-index: 30; }
   #menu { left: 1150px; top: 650px; }
   #chat { left: 1150px; top: 860px; }
+  #step2 { position: absolute; left: 16px; top: 820px; }
+  #step2 button, #step2 input { margin: 0 12px 0 0; }
+  #save:focus, #fv:focus, #js-ring:focus { outline: none; }
+  #fv:focus-visible { outline: 3px solid #1a73e8; }
+  #js-ring.kbfocus { box-shadow: 0 0 0 3px #d93025; }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -66,6 +76,8 @@
 <button id="chat-btn" type="button" aria-expanded="false" aria-controls="chat">상담</button>
 <button id="menu-under" class="abs" type="button" style="left: 1200px; top: 700px">메뉴 밑</button>
 <button id="chat-under" class="abs" type="button" style="left: 1200px; top: 910px">상담 밑</button>
+<button id="open-step2" class="abs" type="button" style="left: 16px; top: 760px">단계 2</button>
+<div id="step2" hidden><button id="fv" type="button">보이는 링</button><button id="js-ring" type="button">스크립트 링</button><input id="note" type="text" aria-label="메모"><button id="save" type="button">임시 저장</button><button id="submit" type="button">제출</button></div>
 <div id="menu" hidden>메뉴 내용</div>
 <div id="chat" hidden>상담 창</div>
 <script>
@@ -80,6 +92,14 @@
       document.getElementById(btn).setAttribute('aria-expanded', String(!p.hidden));
     });
   }
+  document.getElementById('open-step2').addEventListener('click', () => { document.getElementById('step2').hidden = false; });
+  document.getElementById('submit').addEventListener('click', () => { document.getElementById('step2').hidden = true; });
+  let keyboard = false;
+  document.addEventListener('keydown', (e) => { if (!e.metaKey && !e.altKey && !e.ctrlKey) keyboard = true; }, true);
+  document.addEventListener('mousedown', () => { keyboard = false; }, true);
+  const jsRing = document.getElementById('js-ring');
+  jsRing.addEventListener('focus', () => { if (keyboard) jsRing.classList.add('kbfocus'); });
+  jsRing.addEventListener('blur', () => jsRing.classList.remove('kbfocus'));
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     document.getElementById('menu').hidden = true;

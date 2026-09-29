@@ -720,7 +720,9 @@ async function focusTest(base, tmp) {
     task_goal_ko: '포커스 표시를 본다',
     device_ids: ['desktop-1920'],
     targets: {},
-    steps: [{ action: 'type', target: '#pw', text: 'hunter2secret' }, { action: 'click', target: '#menu-btn' },
+    steps: [{ action: 'type', target: '#pw', text: 'hunter2secret' }, { action: 'click', target: '#open-step2' },
+      { action: 'click', target: '#fv' }, { action: 'click', target: '#js-ring' }, { action: 'click', target: '#save' },
+      { action: 'click', target: '#note' }, { action: 'click', target: '#submit' }, { action: 'click', target: '#menu-btn' },
       { action: 'click', target: '#chat-btn' }, { action: 'wait', ms: 100 }],
     success: { url_contains: 'focus' },
   };
@@ -765,12 +767,23 @@ async function focusTest(base, tmp) {
   check('focus: a user-opened chat that stays on Escape keeps the element covered',
     endStop('#chat-under')?.obscured_fraction === 1 && endStop('#chat-under')?.obscured_user_opened === true && endStop('#chat-under')?.escape_reveals === false,
     endStop('#chat-under'));
+  const probe = (sel) => run.steps.find((s) => s.action.target === sel)?.focus_probe;
+  check('focus probe: before a click on a mid-task screen, a control without an indicator changes no pixels',
+    probe('#save')?.focus_visible === true && probe('#save')?.indicator_px === 0 && (probe('#save')?.indicator_any_px ?? 0) < 4
+      && !walks.some((w) => w.stops.some((s) => s.selector === '#save')), probe('#save'));
+  check('focus probe: :focus-visible rings and rings a script draws after a key press show after mouse clicks',
+    probe('#fv')?.indicator_px > 50 && probe('#js-ring')?.indicator_px > 20 && probe('#menu-btn')?.indicator_px > 50,
+    ['#fv', '#js-ring', '#menu-btn'].map((k) => [k, probe(k)?.focus_visible, probe(k)?.indicator_px]));
+  check('focus probe: text fields are skipped, and so is any click while a text field has focus; every probe names its screen',
+    probe('#note')?.skipped === 'text_entry' && probe('#submit')?.skipped === 'field_focused' && probe('#open-step2')?.skipped === 'field_focused'
+    && ['#fv', '#save', '#menu-btn'].every((k) => probe(k)?.snapshot_id && probe(k)?.selector === k), [probe('#note'), probe('#submit'), probe('#save')?.snapshot_id]);
   const names = walks.flatMap((w) => w.stops.map((s) => s.name)).join('|');
   check('focus: stop names never contain a typed value', !names.includes('hunter2') && stop('#pw')?.name === '비밀번호', names);
   check('focus: the walk does not disturb the run (steps ok, success measured)', run.status === 'completed' && run.success === true,
     { status: run.status, success: run.success, ms: Date.now() - t0 });
   const touch = loadRun(path.join(outDir, 'R-layers')).run;
-  check('focus: no walk on touch devices by default', Array.isArray(touch.focus_walks) && touch.focus_walks.length === 0, touch.focus_walks);
+  check('focus: no walk and no focus probe on touch devices by default', Array.isArray(touch.focus_walks) && touch.focus_walks.length === 0
+    && touch.steps.every((s) => !s.focus_probe), touch.focus_walks);
 }
 
 async function reflowTest(base, tmp) {

@@ -51,6 +51,7 @@ const FOCUS_VIEWPORT_WIDTH = 480; // viewport-wide captures are downscaled to ab
 // per-channel change between them that marks a pixel as animated.
 const FOCUS_ANIM_GAP_MS = 40;
 const FOCUS_MASK_LEVEL = 4;
+const STEP_PROBE_MAX = 16; // focus probes before clicks, per run
 
 // Reflow (WCAG 1.4.10, AUT-06): each distinct screen's DOM is copied as the run goes
 // and re-rendered after the run at 320 CSS px wide with scripts off (a static copy,
@@ -197,6 +198,39 @@ function reflowInfo(arg) {
     if (out.offenders.length >= limit) break;
   }
   return out;
+}
+
+/**
+ * In-page, on the element a click will land on: the focusable control it belongs to,
+ * marked for focusProbe, with its box and small wrappers. Skipped (with a reason) when
+ * there is none, when it is a text-entry field (the caret shows focus there), when it
+ * already has focus, or when a text-entry field or editor has focus: taking focus from
+ * it would fire its blur (validation that moves the layout) before the click, and
+ * Chromium re-rasterises page text when an editable element loses focus, so the
+ * captures would differ without any indicator.
+ */
+function probeTarget(start) {
+  const FOCUSABLE = 'a[href], area[href], button, input, select, textarea, summary, [tabindex], [contenteditable=""], [contenteditable="true"]';
+  const node = start && start.nodeType === 1 ? start : start && start.parentElement;
+  const el = node ? node.closest(FOCUSABLE) : null;
+  if (!el || el.disabled || el.tabIndex < 0 || el.closest('[inert]')) return { skip: 'not_focusable' };
+  const pressable = ['button', 'submit', 'reset', 'checkbox', 'radio', 'image', 'file', 'color', 'range'];
+  const textEntry = (n) => !!n && n.nodeType === 1 && (n.tagName === 'TEXTAREA' || n.isContentEditable
+    || (n.tagName === 'INPUT' && !pressable.includes((n.getAttribute('type') || 'text').toLowerCase())));
+  if (textEntry(el)) return { skip: 'text_entry' };
+  let active = document.activeElement;
+  while (active && active.shadowRoot && active.shadowRoot.activeElement) active = active.shadowRoot.activeElement;
+  if (active === el || (active && el.contains(active))) return { skip: 'already_focused' };
+  if (textEntry(active)) return { skip: 'field_focused' };
+  const r = el.getBoundingClientRect();
+  const boxes = [{ x: r.left, y: r.top, w: r.width, h: r.height }];
+  for (let n = el.parentElement, i = 0; n && n.nodeType === 1 && i < 3; n = n.parentElement, i++) {
+    const a = n.getBoundingClientRect();
+    if (a.width * a.height > 4 * Math.max(1, r.width * r.height)) break;
+    boxes.push({ x: a.left, y: a.top, w: a.width, h: a.height });
+  }
+  window.__ergoProbeEl = el;
+  return { boxes, vw: window.innerWidth, vh: window.innerHeight, scroll: [window.scrollX, window.scrollY] };
 }
 
 function focusInfo() {
@@ -773,6 +807,100 @@ export class WebSession {
     }
     if (cdp) await cdp.detach().catch(() => {});
     this.focusWalks.push({ phase, snapshot_id: snapshotId, url: page.url(), ended, stops });
+  }
+
+  /**
+   * Before a click on a control (mouse and keyboard devices): its focus indicator as a
+   * keyboard user sees it on this screen, which the walks (initial and end screens)
+   * do not reach. The control and its small wrappers, and the viewport, are captured
+   * twice unfocused (the pair masks animation); then a Shift press gives keyboard
+   * modality (so :focus-visible and script focus-visible rules apply), the control is
+   * focused, and both are captured again. Then the control is blurred, so the click
+   * focuses it as a mouse does (no keyboard ring left on the screen after the click).
+   * The extra events are a Shift key press and the control's own focus and blur; the
+   * previous focus (never a text field: probeTarget skips those) leaves a moment
+   * earlier than the click would move it. Recorded on the step as focus_probe; at most
+   * STEP_PROBE_MAX per run.
+   */
+  async focusProbe(resolved, step) {
+    if ((this.stepProbes || 0) >= STEP_PROBE_MAX) return;
+    const page = this.page;
+    let handle = resolved.handle || null;
+    let own = false;
+    if (!handle) {
+      handle = await page.evaluateHandle((pt) => document.elementFromPoint(pt.x, pt.y), resolved.point).catch(() => null);
+      own = true;
+    }
+    let cdp = null;
+    try {
+      const target = handle ? await handle.evaluate(probeTarget).catch(() => null) : null;
+      if (!target || target.skip) {
+        step.focus_probe = { skipped: target ? target.skip : 'no_element' };
+        return;
+      }
+      const boxes = target.boxes;
+      const x0 = Math.max(0, Math.floor(Math.min(...boxes.map((b) => b.x)) - 4));
+      const y0 = Math.max(0, Math.floor(Math.min(...boxes.map((b) => b.y)) - 4));
+      const x1 = Math.min(target.vw, Math.ceil(Math.max(...boxes.map((b) => b.x + b.w)) + 4));
+      const y1 = Math.min(target.vh, Math.ceil(Math.max(...boxes.map((b) => b.y + b.h)) + 4));
+      if (x1 - x0 < 2 || y1 - y0 < 2) {
+        step.focus_probe = { skipped: 'outside_viewport' };
+        return;
+      }
+      this.stepProbes = (this.stepProbes || 0) + 1;
+      const clip = { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+      cdp = await page.context().newCDPSession(page);
+      const off = await this.clipFrame(page, clip);
+      const allOff = await this.viewportFrame(cdp, target.vw, target.vh);
+      await sleep(FOCUS_ANIM_GAP_MS);
+      const off2 = await this.clipFrame(page, clip);
+      const allOff2 = await this.viewportFrame(cdp, target.vw, target.vh);
+      await page.keyboard.press('Shift');
+      const got = await page.evaluate(() => {
+        const el = window.__ergoProbeEl;
+        if (!el || !el.isConnected) return null;
+        el.focus({ preventScroll: true });
+        let a = document.activeElement;
+        while (a && a.shadowRoot && a.shadowRoot.activeElement) a = a.shadowRoot.activeElement;
+        return { focused: a === el, visible: el.matches(':focus-visible'), scroll: [window.scrollX, window.scrollY] };
+      });
+      if (!got || !got.focused) {
+        await page.evaluate(() => { window.__ergoProbeEl = null; }).catch(() => {});
+        step.focus_probe = { skipped: 'focus_refused' };
+        return;
+      }
+      await sleep(FOCUS_SETTLE_MS);
+      const info = await page.evaluate(focusInfo);
+      const on = await this.clipFrame(page, clip);
+      const allOn = await this.viewportFrame(cdp, target.vw, target.vh);
+      // Let the click focus it as a mouse does: a control that stayed focused with
+      // keyboard modality would keep its ring after the click, which a mouse user never
+      // sees (and the next probe would count the ring going away).
+      await page.evaluate(() => {
+        const el = window.__ergoProbeEl;
+        window.__ergoProbeEl = null;
+        if (el) el.blur();
+      }).catch(() => {});
+      const moved = got.scroll[0] !== target.scroll[0] || got.scroll[1] !== target.scroll[1];
+      if (moved) {
+        // A focus handler scrolled the page: put it back so the click lands where the
+        // step resolved it; the captures no longer line up and are not used.
+        await page.evaluate((xy) => window.scrollTo(xy[0], xy[1]), target.scroll).catch(() => {});
+      }
+      step.focus_probe = {
+        snapshot_id: step.before, selector: info ? info.selector : null, dom_id: info ? info.dom_id : null, tag: info ? info.tag : null,
+        role: info ? info.role : null, name: info ? info.name : null, box: info ? info.box : null, in_viewport: info ? info.in_viewport : null,
+        focus_visible: got.visible, moved, clip_px: [clip.width, clip.height],
+        indicator_px: moved ? null : indicatorPixels(on, off, off2, FOCUS_DIFF_LEVEL, FOCUS_MASK_LEVEL),
+        indicator_any_px: moved ? null : indicatorPixels(allOn, allOff, allOff2, FOCUS_DIFF_LEVEL, FOCUS_MASK_LEVEL),
+        indicator_any_scale: Math.round(Math.min(1, FOCUS_VIEWPORT_WIDTH / target.vw) * 1000) / 1000,
+      };
+    } catch (err) {
+      step.focus_probe = { skipped: 'error', error: firstLine(err.message) };
+    } finally {
+      if (cdp) await cdp.detach().catch(() => {});
+      if (own && handle) await handle.dispose().catch(() => {});
+    }
   }
 
   /** Wait until the page stops scrolling after a focus move (max ~600 ms). */
@@ -1696,6 +1824,9 @@ export class WebSession {
             if (resolved.handle) step.target_hit = await resolved.handle.evaluate(hitTest, resolved.point).catch(() => null);
             else step.target_hit = resolved.elementId ? hit.id === resolved.elementId : null;
           }
+        }
+        if (step.result === 'ok' && ['tap', 'click'].includes(kind) && this.focusWalkEnabled() && this.pointerMode() !== 'touch') {
+          await this.focusProbe(resolved, step);
         }
         if (step.result === 'ok') await this.performInput(action, resolved, step);
       }

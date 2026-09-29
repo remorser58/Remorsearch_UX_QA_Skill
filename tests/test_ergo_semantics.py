@@ -307,6 +307,21 @@ class FocusWalk(unittest.TestCase):
     def test_runs_without_walks(self) -> None:
         self.assertEqual(checks.check_focus_walks({"run_id": "R"}, {"profile_id": "P"}), [])
 
+    def test_focus_probes_before_clicks_on_mid_task_screens(self) -> None:
+        # The walks never saw the quiz footer; the probe before the click on it did.
+        def probe(sel, px, visible=True, moved=False, covered=None):
+            return {"snapshot_id": "S-7", "selector": sel, "dom_id": sel[1:], "name": "", "focus_visible": visible, "moved": moved,
+                    "indicator_px": px, "indicator_any_px": px, "in_viewport": True, "box": {"x": 0, "y": 0, "w": 90, "h": 48},
+                    "obscured_fraction": covered}
+        steps = [{"step_index": 3, "focus_probe": probe("#submit", 0)}, {"step_index": 4, "focus_probe": probe("#save", 0, visible=False)},
+                 {"step_index": 5, "focus_probe": probe("#next", 0, moved=True)}, {"step_index": 6, "focus_probe": probe("#ok", 320, covered=1.0)},
+                 {"step_index": 7, "focus_probe": {"skipped": "field_focused"}}, {"step_index": 8}]
+        run = {"run_id": "R", "steps": steps, "focus_walks": [{"phase": "load", "snapshot_id": "S-0", "stops": []}]}
+        obs = checks.check_focus_walks(run, {"profile_id": "P"})
+        self.assertEqual([(o.check_id, o.element_key.split("|")[0], o.snapshot_id) for o in obs], [("SM-05", "#submit", "S-7")])
+        self.assertEqual((obs[0].measurement["phase"], obs[0].measurement["step_index"]), ("step", 3))
+        self.assertIn("3단계", obs[0].message_ko)
+
     def test_indicator_drawn_elsewhere_in_the_viewport_passes(self) -> None:
         # ACT oj04fd: nothing changes near the element, but a distant marker does (AUT-09).
         run = {"run_id": "R", "focus_walks": [{"phase": "load", "snapshot_id": "S-0", "stops": [

@@ -200,6 +200,20 @@ they belong to (0 = initial load), so a step can own two snapshots.
   `obscured_by` (share of nine sample points covered by a painting fixed or sticky
   layer that does not contain the element). `ended` says why a walk stopped
   (`cycle`, `left_document`, `max_stops`, `time_budget`, `opaque_frame`).
+- **Focus probe before clicks** (same devices and switch as the walk): the walks see
+  only the initial and end screens, so before a `tap`/`click` on a focusable
+  control the driver captures the control, its small wrappers and the viewport
+  twice unfocused, presses Shift (keyboard modality, so `:focus-visible` and
+  script focus-visible rules apply), focuses the control without scrolling,
+  captures again and blurs it, so the click focuses it as a mouse does (a ring
+  left from keyboard modality would otherwise stay on screen after the click).
+  `step.focus_probe` records the control like a walk stop plus `focus_visible`,
+  `indicator_px`, `indicator_any_px`, `moved` (a focus handler scrolled; the page
+  is scrolled back and the captures are not used) and `snapshot_id` (the screen).
+  Skipped, with `skipped`, for text-entry targets (the caret shows focus), when the
+  control already has focus, and while a text-entry field or editor has focus
+  (its blur would run before the click, and Chromium re-rasterises page text when
+  an editable element loses focus). At most 16 per run.
 - **Console**: `console.error` and uncaught page errors, per snapshot (since the
   previous one) and in `run.json`. Errors caused by the driver's own network block
   are counted separately, not reported as page errors.

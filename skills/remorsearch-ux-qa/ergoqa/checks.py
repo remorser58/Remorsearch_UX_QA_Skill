@@ -2100,9 +2100,21 @@ def check_focus_walks(run: dict[str, Any], profile: dict[str, Any], snapshots: d
     reported as SM-05. Each element is reported once with its worst result over the
     walks, tied to the snapshot element when the stop can be matched (DOM id or box
     overlap).
+
+    The walks see the initial and end screens only. Focus probes the driver took
+    before clicks (``step.focus_probe``: the clicked control focused with keyboard
+    modality) add SM-05 evidence from the screens in between; a probe counts only
+    when the control matched ``:focus-visible`` and did not scroll, and is never used
+    for SM-06 (a covered control could not have been clicked).
     """
+    walks = list(run.get("focus_walks") or [])
+    for step in run.get("steps") or []:
+        probe = step.get("focus_probe")
+        if isinstance(probe, dict) and probe.get("focus_visible") is True and not probe.get("moved") and isinstance(probe.get("indicator_px"), int):
+            walks.append({"phase": "step", "snapshot_id": probe.get("snapshot_id"), "step_index": step.get("step_index"),
+                          "stops": [{**probe, "obscured_fraction": None, "obscured_user_opened": None}]})
     worst: dict[str, dict[str, Any]] = {}
-    for walk in run.get("focus_walks") or []:
+    for walk in walks:
         for stop in walk.get("stops") or []:
             sel = stop.get("selector") or "?"
             w = worst.setdefault(sel, {"stop": stop, "walk": walk, "covered": 0.0, "covered_walk": walk, "covered_by": None, "min_px": None,
@@ -2153,9 +2165,11 @@ def check_focus_walks(run: dict[str, Any], profile: dict[str, Any], snapshots: d
                 [element["id"]] if element else [], element_key(element) if element else f"{sel}|{name}",
                 {"name": "focus_indicator_px", "value": w["min_px"], "unit": "px", "threshold": FOCUS_INDICATOR_MIN_PX, "comparator": ">=",
                  "phase": w["walk"].get("phase"), "local_px": stop.get("indicator_px"), "viewport_px": stop.get("indicator_any_px"),
-                 "viewport_scale": stop.get("indicator_any_scale")},
+                 "viewport_scale": stop.get("indicator_any_scale"), "step_index": w["walk"].get("step_index")},
                 False, "P2",
-                f"Tab으로 '{name or sel}'에 포커스가 가도 화면에 표시가 생기지 않습니다(WCAG 2.4.7). 키보드 사용자는 현재 위치를 모릅니다.",
+                (f"키보드로 '{name or sel}'에 포커스를 주어도 화면에 표시가 생기지 않습니다(WCAG 2.4.7, 과업 {w['walk'].get('step_index')}단계 화면). "
+                 "키보드 사용자는 지금 무엇을 누르게 되는지 모릅니다." if w["walk"].get("phase") == "step" else
+                 f"Tab으로 '{name or sel}'에 포커스가 가도 화면에 표시가 생기지 않습니다(WCAG 2.4.7). 키보드 사용자는 현재 위치를 모릅니다."),
             ))
     return out
 
