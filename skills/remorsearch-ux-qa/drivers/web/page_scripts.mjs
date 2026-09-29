@@ -980,7 +980,23 @@ export function extractSnapshot(args) {
       const h = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0));
       if ((w * h) / vpArea < 0.4) continue;
       const pos = style(n).position;
-      if ((pos === 'fixed' || pos === 'absolute') && painted(n)) kind = 'sheet';
+      if ((pos === 'fixed' || pos === 'absolute') && painted(n)) {
+        // An overlay sits over content that is still rendered underneath; a screen that
+        // replaced the previous one (display:none swaps) covers nothing.
+        let over = 0;
+        for (const c of candidates) {
+          if (over >= 1) break;
+          if (n.contains(c.el) || c.el.contains(n)) continue;
+          const cg = geo(c.el);
+          if (!cg.vis) continue;
+          const cx = cg.r.left + cg.r.width / 2;
+          const cy = cg.r.top + cg.r.height / 2;
+          if (cx < r.left || cx > r.right || cy < r.top || cy > r.bottom || cx < 0 || cy < 0 || cx >= vw || cy >= vh) continue;
+          const top = document.elementFromPoint(cx, cy);
+          if (top && n.contains(top)) over += 1;
+        }
+        if (over) kind = 'sheet';
+      }
     }
     if (!kind) continue;
     if (layers.some((l) => l.node.contains(n))) continue; // keep the outermost

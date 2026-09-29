@@ -94,7 +94,7 @@ function reflowInfo(limit) {
   const clipX = (n) => ['hidden', 'clip'].includes(getComputedStyle(n).overflowX);
   const rootClips = clipX(document.documentElement) || (document.body ? clipX(document.body) : false);
   const out = { client_width: cw, scroll_width: sw, root_clips: rootClips, offenders: [] };
-  if (sw <= cw + 1 && !rootClips) return out;
+  if (sw <= cw + 4 && !rootClips) return out;
   const TWO_D = new Set(['table', 'canvas', 'video', 'iframe', 'svg', 'pre', 'code', 'map', 'object', 'embed', 'math']);
   const exempt = (n) => {
     for (let m = n; m && m.nodeType === 1 && m !== document.body; m = m.parentElement) {
@@ -128,7 +128,7 @@ function reflowInfo(limit) {
   for (let i = 0; i < all.length && i < 6000; i++) {
     const n = all[i];
     const r = n.getBoundingClientRect();
-    if (r.width <= 1 || r.height <= 1 || r.right <= cw + 1) continue;
+    if (r.width <= 1 || r.height <= 1 || r.right <= cw + 4) continue; // 4 px tolerance (borders, rounding)
     const cs = getComputedStyle(n);
     if (cs.display === 'none' || cs.visibility !== 'visible' || parseFloat(cs.opacity) === 0) continue;
     if (!(n.innerText || '').trim() && !['img', 'input', 'button', 'select', 'textarea'].includes(n.tagName.toLowerCase())) continue;

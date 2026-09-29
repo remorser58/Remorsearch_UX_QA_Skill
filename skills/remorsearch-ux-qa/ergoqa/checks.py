@@ -1943,7 +1943,12 @@ def check_focus_management(ctx: Context) -> list[Observation]:
     if not opened and not focus.get("on_body") and focus.get("dom_id"):
         target = next((e for e in ctx.elements if e.get("dom_id") == focus["dom_id"]), None)
         covered = (target or {}).get("occluded_fraction")
-        if target is not None and target.get("in_viewport") is not False and isinstance(covered, (int, float)) and covered >= 0.999:
+        under_layer = target is not None and any(
+            isinstance(layer, dict) and _inside({**target["box"], "w": 1, "h": 1, "x": target["box"]["x"] + target["box"]["w"] / 2,
+                                                  "y": target["box"]["y"] + target["box"]["h"] / 2}, layer.get("box") or {"x": 0, "y": 0, "w": 0, "h": 0})
+            for layer in ctx.snapshot.get("layers") or [])
+        # Under a layer the user opened: the 2.4.11 note exempts it and FM-02 covers focus.
+        if target is not None and not under_layer and target.get("in_viewport") is not False and isinstance(covered, (int, float)) and covered >= 0.999:
             out.append(Observation(
                 "SM-06", *base, [target["id"]], element_key(target),
                 {"name": "focus_obscured_fraction", "value": round(float(covered), 3), "unit": "fraction", "threshold": 1.0, "comparator": "<",
@@ -1952,6 +1957,9 @@ def check_focus_management(ctx: Context) -> list[Observation]:
                 f"이 단계 뒤 키보드 초점이 '{target.get('name') or target.get('selector')}'에 있지만 다른 요소가 그 칸을 완전히 가립니다(WCAG 2.4.11).",
             ))
     return out
+
+
+REFLOW_TOLERANCE_PX = 4  # borders and rounding; a few px of overflow hide no content
 
 
 def check_reflow(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[str, dict[str, Any]] | None = None) -> list[Observation]:
@@ -1968,11 +1976,15 @@ def check_reflow(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[s
     for rec in run.get("reflow") or []:
         if not isinstance(rec, dict) or rec.get("error"):
             continue
-        scrolls = (rec.get("scroll_width") or 0) > (rec.get("client_width") or 0) + 1
+        width = rec.get("client_width") or 0
+        scrolls = (rec.get("scroll_width") or 0) > width + REFLOW_TOLERANCE_PX
         if not scrolls and not rec.get("root_clips"):
             continue
         snap = (snapshots or {}).get(rec.get("snapshot_id"))
         for off in rec.get("offenders") or []:
+            box = off.get("box") or {}
+            if (box.get("x") or 0) + (box.get("w") or 0) <= width + REFLOW_TOLERANCE_PX:
+                continue
             element = None
             if off.get("dom_id") and snap:
                 element = next((e for e in snap.get("elements", []) if e.get("dom_id") == off["dom_id"]), None)
