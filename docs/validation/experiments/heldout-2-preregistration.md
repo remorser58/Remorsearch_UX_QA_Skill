@@ -240,6 +240,15 @@ H1–H7 verdicts are still computed and reported. What is added:
      attributed detections = 0 and clean-control units from those multipliers ≥ 3.
      Profile-only PT-04 then moves to the hypothesis tier. `one_hand_thumb` stays.
    - Otherwise the multipliers stay, with the observed numbers reported.
+   - Implementation, fixed before any heldout-2 data (`ergo_eval.py analyse
+     --variant condition-multipliers-off`, then `score`; `sit04()`):
+     - "attributed" means strictly detected, the finding's differential names the
+       key's condition, and PT-03 or PT-04 is among the matched checks;
+     - a multiplier-only unit is a clean-control unit none of whose elements the
+       same check flags in the multipliers-off analysis;
+     - the variant sets walking, transit, tremor, age and encumbrance multipliers to
+       1.0 and keeps `one_hand_thumb`;
+     - the cut needs the rule to hold in both C3 and C4@14.
 
 ### Amendment 5 (2026-09-29, custody incident, before the freeze and before any heldout-2 recording)
 

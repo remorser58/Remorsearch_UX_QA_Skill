@@ -36,6 +36,7 @@ for development suites only.
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import math
@@ -54,9 +55,9 @@ REPO = ROOT.parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from ergoqa import analyze, audience, bench, checks, swarm  # noqa: E402
+from ergoqa import analyze, audience, bench, checks, params, swarm  # noqa: E402
 from ergoqa.devices import get_device  # noqa: E402
-from ergoqa.profiles import sample_profiles  # noqa: E402
+from ergoqa.profiles import _finalise, sample_profiles  # noqa: E402
 
 from ergo_bench import default_profile, provenance, static_server  # noqa: E402
 
@@ -257,8 +258,43 @@ def _lean(obs: dict[str, Any]) -> dict[str, Any]:
     return keep
 
 
-def analyse_all(data: dict[str, Any], out: Path) -> dict[str, Any]:
+# Amendment 4 (SIT-04): the condition multipliers whose cut is decided on heldout-2.
+# one_hand_thumb stays (grip changes the finger position and is a floor).
+CONDITION_MULTIPLIERS = ("mobility_", "tremor_", "age_", "encumbered")
+VARIANTS = {"condition-multipliers-off": "analysis-cache.cond-mult-off.pickle"}
+
+
+def _variant_registry(registry: dict[str, dict[str, Any]], variant: str | None) -> dict[str, dict[str, Any]]:
+    """Profiles re-finalised under a model variant (same ids; params patched by the caller)."""
+    if variant is None:
+        return registry
+    fresh = {}
+    for pid, prof in registry.items():
+        q = copy.deepcopy(prof)
+        _finalise(q, get_device(q["attributes"]["device_id"]))
+        fresh[pid] = q
+    return fresh
+
+
+def analyse_all(data: dict[str, Any], out: Path, variant: str | None = None) -> dict[str, Any]:
+    if variant is not None:
+        if variant not in VARIANTS:
+            raise SystemExit(f"unknown variant {variant}")
+        saved = dict(params.TOUCH_SIGMA_MULT)
+        try:
+            for k in params.TOUCH_SIGMA_MULT:
+                if k.startswith(CONDITION_MULTIPLIERS):
+                    params.TOUCH_SIGMA_MULT[k] = 1.0
+            return _analyse_all(data, out, variant)
+        finally:
+            params.TOUCH_SIGMA_MULT.clear()
+            params.TOUCH_SIGMA_MULT.update(saved)
+    return _analyse_all(data, out, None)
+
+
+def _analyse_all(data: dict[str, Any], out: Path, variant: str | None) -> dict[str, Any]:
     configs, registry, _, _ = configurations(data)
+    registry = _variant_registry(registry, variant)
     of_product: dict[str, set[str]] = {}
     for by_product in configs.values():
         for product, ids in by_product.items():
@@ -287,8 +323,8 @@ def analyse_all(data: dict[str, Any], out: Path) -> dict[str, Any]:
         analyses.append(result)
         print(f"  {run_dir.name}: {len(result['profiles_evaluated'])} profiles, {len(result['observations'])} obs, {time.time() - started:.0f}s", flush=True)
     cache = {"analyses": analyses, "registry": registry, "configs": {c: {prod: sorted(ids) for prod, ids in v.items()} for c, v in configs.items()},
-             "product_of": data["product_of"], "health": health, "provenance": provenance()}
-    with (out / "analysis-cache.pickle").open("wb") as fh:
+             "product_of": data["product_of"], "health": health, "provenance": provenance(), "variant": variant}
+    with (out / (VARIANTS[variant] if variant else "analysis-cache.pickle")).open("wb") as fh:
         pickle.dump(cache, fh)
     return cache
 
@@ -641,6 +677,49 @@ def confirmatory(scores: dict[str, dict[str, Any]], key: dict[str, Any], clean_n
     return out
 
 
+SIT04_CONDITIONS = {"context.mobility": ("walking",), "motor.tremor": ("mild", "moderate"), "age_band": ("60s", "70s+")}
+
+
+def _sit04_defect(d: dict[str, Any]) -> bool:
+    for path, values in (d.get("profile_condition") or {}).items():
+        allowed = SIT04_CONDITIONS.get(path)
+        if allowed and any(v in allowed for v in (values if isinstance(values, list) else [values])):
+            return True
+    return False
+
+
+def _only_on_units(on: dict[str, Any], off: dict[str, Any], clean_ids: set[str]) -> list[str]:
+    """Clean-control units none of whose elements is flagged by the same check without the multipliers."""
+    flagged_off = {(f["scenario_id"], f["check_id"], f["element_key"]) for f in off["_findings"] if f.get("tier") != "hypothesis"}
+    return [u["id"] for u in swarm.units([f for f in on["_findings"] if f.get("tier") != "hypothesis"])
+            if u["scenario_id"] in clean_ids and not any((u["scenario_id"], u["check_id"], e) in flagged_off for e in u["elements"])]
+
+
+def sit04(scores: dict[str, dict[str, Any]], off_scores: dict[str, dict[str, Any]], key: dict[str, Any]) -> dict[str, Any]:
+    """Amendment 4 (SIT-04), exploratory: cut the condition multipliers when, in both C3
+    and C4@14, no defect conditioned on walking, tremor or age 60+ is detected with its
+    condition named through PT-03/PT-04, and at least 3 clean-control units exist only
+    with the multipliers on."""
+    clean_ids = {c["scenario_id"] for c in key.get("clean_controls", [])}
+    meta = {d["id"]: d for d in key["defects"]}
+    out: dict[str, Any] = {"conditions": {k: list(v) for k, v in SIT04_CONDITIONS.items()}, "configs": {}}
+    verdicts = []
+    for c in ("C3", "C4@14"):
+        if c not in scores or c not in off_scores:
+            continue
+        attributed = [d["id"] for d in scores[c]["per_defect"] if _sit04_defect(meta[d["id"]]) and d["detected_strict"]
+                      and d["differential_matches_condition"] and set(d["matched_checks"]) & {"PT-03", "PT-04"}]
+        only_on = _only_on_units(scores[c], off_scores[c], clean_ids)
+        lost = [d["id"] for d, e in zip(scores[c]["per_defect"], off_scores[c]["per_defect"]) if d["detected_strict"] and not e["detected_strict"]]
+        cut = not attributed and len(only_on) >= 3
+        verdicts.append(cut)
+        out["configs"][c] = {"conditioned_defects": sum(1 for d in key["defects"] if _sit04_defect(d)),
+                             "attributed_via_pt03_pt04": len(attributed), "clean_units_only_with_multipliers": len(only_on),
+                             "defects_lost_without_multipliers": len(lost), "cut_rule_holds": cut}
+    out["verdict"] = ("cut" if verdicts and all(verdicts) else "keep") if verdicts else "not_run"
+    return out
+
+
 def score_all(data: dict[str, Any], out: Path, show_open: bool) -> dict[str, Any]:
     with (out / "analysis-cache.pickle").open("rb") as fh:
         cache = pickle.load(fh)
@@ -694,6 +773,12 @@ def score_all(data: dict[str, Any], out: Path, show_open: bool) -> dict[str, Any
                 baselines[f"chance_{c}"] = chance_recall(key, scores[c], pool)
     agg["baselines"] = baselines
     agg["confirmatory"] = confirmatory(scores, key, clean_n)
+    off_path = out / VARIANTS["condition-multipliers-off"]
+    if off_path.is_file():
+        with off_path.open("rb") as fh:
+            off_cache = pickle.load(fh)
+        off_scores = {c: score_config(off_cache, key, c) for c in ("C3", "C4@14") if c in off_cache["configs"]}
+        agg["sit04"] = sit04(scores, off_scores, key)
     (out / "aggregate.json").write_text(json.dumps(agg, ensure_ascii=False, indent=1), encoding="utf-8")
     sealed = out / "sealed"
     sealed.mkdir(exist_ok=True)
@@ -850,6 +935,8 @@ def main() -> int:
             p.add_argument("--open", action="store_true", help="also list per-defect misses (development suites only)")
         if name == "agents-plan":
             p.add_argument("--budget", type=int, default=4, help="operator profiles per product (pre-registered: 4)")
+        if name == "analyse":
+            p.add_argument("--variant", choices=sorted(VARIANTS), help="re-analyse under a model variant (amendment 4: condition-multipliers-off)")
     args = parser.parse_args()
     C5_SEEDS = args.c5_seeds
     data = load_suite(args.suite.resolve())
@@ -862,7 +949,7 @@ def main() -> int:
     elif args.cmd == "record":
         record(data, out)
     elif args.cmd == "analyse":
-        analyse_all(data, out)
+        analyse_all(data, out, args.variant)
     elif args.cmd == "agents-plan":
         print(json.dumps(agents_plan(data, out, args.budget), indent=1))
     elif args.cmd == "score-agents":

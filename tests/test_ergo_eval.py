@@ -116,5 +116,61 @@ class Amendment3(unittest.TestCase):
         self.assertEqual(out["H7'"]["confirmatory_status"], "descriptive (sequence stopped earlier)")
 
 
+
+class Amendment4(unittest.TestCase):
+    """SIT-04: the conditional cut of the condition multipliers on heldout-2."""
+
+    def finding(self, fid, scenario, check, element, severity="P3"):
+        return {"id": fid, "scenario_id": scenario, "check_id": check, "element_key": element, "severity": severity, "tier": "finding",
+                "category": "pointing", "basis": "model", "triggered_profiles": ["P"], "tested_profiles": ["P"], "title_ko": "x"}
+
+    def score(self, per_defect, findings):
+        return {"per_defect": per_defect, "_findings": findings}
+
+    def key(self):
+        return {"defects": [{"id": "D-walk", "profile_condition": {"context.mobility": "walking"}},
+                            {"id": "D-old", "profile_condition": {"age_band": ["60s", "70s+"]}},
+                            {"id": "D-left", "profile_condition": {"grip": "one_hand_left"}}],
+                "clean_controls": [{"scenario_id": "C0"}, {"scenario_id": "C1"}, {"scenario_id": "C2"}]}
+
+    def per(self, walk_checks, walk_named):
+        row = lambda i, checks, named: {"id": i, "detected_strict": bool(checks), "differential_matches_condition": named, "matched_checks": checks}  # noqa: E731
+        return [row("D-walk", walk_checks, walk_named), row("D-old", [], None), row("D-left", ["RH-01"], True)]
+
+    def test_cut_when_no_attributed_detection_and_multiplier_only_noise(self) -> None:
+        # Three clean screens with a PT-04 unit each; the PT-02 unit exists either way.
+        on = [self.finding(f"F{i}", f"C{i}", "PT-04", f"#b{i}|x") for i in range(3)] + [self.finding("F9", "C0", "PT-02", "#z|x")]
+        off = [self.finding("G9", "C0", "PT-02", "#z|x")]
+        scores = {c: self.score(self.per(["PT-04"], False), on) for c in ("C3", "C4@14")}
+        off_scores = {c: self.score(self.per(["PT-04"], False), off) for c in ("C3", "C4@14")}
+        out = ergo_eval.sit04(scores, off_scores, self.key())
+        self.assertEqual(out["configs"]["C3"]["conditioned_defects"], 2)
+        self.assertEqual(out["configs"]["C3"]["clean_units_only_with_multipliers"], 3)
+        self.assertEqual(out["verdict"], "cut")
+
+    def test_keep_when_a_condition_is_named_through_pt04(self) -> None:
+        on = [self.finding(f"F{i}", f"C{i}", "PT-04", f"#b{i}|x") for i in range(3)]
+        scores = {c: self.score(self.per(["PT-04"], True), on) for c in ("C3", "C4@14")}
+        off_scores = {c: self.score(self.per([], None), []) for c in ("C3", "C4@14")}
+        out = ergo_eval.sit04(scores, off_scores, self.key())
+        self.assertEqual(out["configs"]["C4@14"]["attributed_via_pt03_pt04"], 1)
+        self.assertEqual(out["configs"]["C4@14"]["defects_lost_without_multipliers"], 1)
+        self.assertEqual(out["verdict"], "keep")
+
+    def test_variant_turns_off_only_condition_multipliers(self) -> None:
+        from ergoqa import params
+        from ergoqa.profiles import touch_sigma_multiplier
+        saved = dict(params.TOUCH_SIGMA_MULT)
+        try:
+            for k in params.TOUCH_SIGMA_MULT:
+                if k.startswith(ergo_eval.CONDITION_MULTIPLIERS):
+                    params.TOUCH_SIGMA_MULT[k] = 1.0
+            prof = {"attributes": {"grip": "one_hand_right", "age_band": "70s+", "motor": {"tremor": "mild"}, "context": {"mobility": "walking"}}}
+            self.assertAlmostEqual(touch_sigma_multiplier(prof), saved["one_hand_thumb"])
+        finally:
+            params.TOUCH_SIGMA_MULT.clear()
+            params.TOUCH_SIGMA_MULT.update(saved)
+
+
 if __name__ == "__main__":
     unittest.main()
