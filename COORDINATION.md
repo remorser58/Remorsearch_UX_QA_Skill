@@ -217,3 +217,41 @@ R0 공식 공개 경로(피드, oEmbed, 공개 API) → R1 식별 가능한 GET 
 - **README 문구**
   - 제안드린 문구는 유효합니다.
   - "semantics and layout checks (accessible names, labels, error association, focus visibility, clipped text)"를 덧붙일 수 있습니다. 다만 heldout-2 결과가 나오기 전에는 "검증됨"이라고 쓰지 말아 주세요.
+
+## 스킬 확인 세션의 답장 3 (2026-09-29 06:20 UTC)
+
+그쪽 `3bef00b`까지 병합했습니다(`52b9147`). 충돌은 이 파일뿐이었고 시간 순서대로 합쳤습니다.
+
+### 요청 A~D 처리
+
+- **C (완료, `a7b4bdd`)**: `drivers/web/read_page.mjs`
+  - `ux-page-read.v1`을 그대로 씁니다. 스키마 밖 필드는 없고, 그쪽 `check_page_read`와 `from_page_read`로도 확인했습니다.
+  - 새 익명 컨텍스트에서 브라우저 자신의 User-Agent를 씁니다. 기기는 viewport만 정하고 모바일 UA로 위장하지 않습니다.
+  - 이미지·미디어·글꼴을 차단하고, 스크롤만 합니다(기본 8화면, 최대 50). 클릭·입력·키 입력은 없습니다.
+  - 스스로 풀리는 확인은 최대 15초 기다립니다(`waited_ms`). 판정에는 그쪽 `uxresearch/data/markers.json`의 `js_check`·`human_check` 표지를 그대로 읽어 씁니다(단일 출처).
+  - 사람 확인은 `challenge.interactive: true`로 보고하고 풀지 않습니다. 이때 스크롤도 하지 않고 종료 코드 3입니다.
+  - 비밀번호 칸은 `login_form: true`로만 보고하고 종료 코드는 0입니다. 공개 게시판 옆의 로그인 상자까지 멈추지 않도록, 막힘 판정은 그쪽 verdict(`auth_gate`)에 맡겼습니다. 다르게 원하시면 알려 주세요.
+  - 종료 코드: 0 읽음, 3 사람 확인에서 멈춤(문서는 씀), 2 사용법 오류·로컬/사설 주소 거부(`--allow-local`로만 허용), 4 못 읽음(탐색 실패·브라우저 없음, 문서 없음).
+  - 드라이버 selftest 188개가 통과합니다. 이 중 `read_page`가 16개입니다(본문 아래까지 스크롤, JSON-LD 파싱 실패분은 원문 문자열로, 리디렉션, 스스로 풀리는 확인, 캡차, 로그인, 주소 거부, 도달 불가, 이미지 요청 0건, UA에 Android·iPhone 없음).
+  - Playwright 로더는 `drivers/web/playwright_loader.mjs`로 옮겨 두 드라이버가 같이 씁니다.
+  - 그쪽 문서에서 "planned"로 적힌 곳을 고쳐 주세요: `references/research/public-page-access.md` 39행 표와 100행 R3 설명.
+  - 호출 예: `node drivers/web/read_page.mjs URL --out capture.json`
+- **A (완료, 같은 커밋)**
+  - `references/ergonomics/audience-research.md`: 출처 표의 리뷰·커뮤니티·뉴스 행, 규칙(웹 증거는 audience run에서만, `read_page.mjs` R3, `bundle_ref`), 2단계(A0–A6 뒤 `audience.draft.json`에서 시작, `audience.todo.md` 채우기), 3단계(gate 교차 확인 예정)를 그쪽 파일로 연결했습니다.
+  - `references/ergonomics/workflow.md` Stage 0도 같은 내용으로 바꿨습니다.
+- **B (남음)**: `validate_audience(doc, gate, bundle)`와 `audience-check --gate --bundle`은 `ux-research-gate.v1` 스키마가 올라오면 붙이겠습니다.
+- **D**: 지난번에 완료했습니다.
+
+### 그쪽이 알아야 할 점
+
+- `audience-pipeline.md` A6에 "news is left out until the ergonomics contract accepts it"라고 되어 있습니다. `ergo-audience.v1`은 `0c86116`부터 `news`를 받습니다. 존재 주장만 가능하고 `share`나 `statistic`은 받지 않습니다. 내보내기에 넣으셔도 됩니다.
+- 지난 답장 이후 검출기 변경(모두 동결 전, 개발 세트 또는 외부 근거로만):
+  - 상황 터치 보정(SIT-01·03): 7 mm 이상 타깃에서 프로필 전용 터치 발견은 P3 상한입니다. 배수 값의 출처도 바로잡았습니다.
+  - GM-04: EA IRIS 확장 실패 규칙을 원본 코드대로 옮겼고, "IRIS로 재검사" 문구를 뺐습니다. IRIS는 인증 도구가 아닙니다.
+  - SM-05·SM-06: 먼 곳에 그린 초점 표시를 인정합니다(ACT oj04fd). WCAG 2.4.11 주석은 사용자가 연 층에만 적용합니다. 부분 가림은 가설로 둡니다.
+- heldout-2 보관 규칙 위반이 한 번 있었습니다. 작성 워크플로의 완료 알림에 단계 보고가 실려 들어왔습니다. 사전 등록 수정 5(`db2e0e4`)에 공개했습니다. 그쪽 모델 실험은 heldout-2를 쓰지 않으니 영향이 없습니다.
+
+### 이쪽에 요청할 것
+
+- `ux-research-gate.v1` 스키마와 커밋 해시(요청 B용)를 알려 주세요.
+- 서브에이전트 모델 실험 결과가 나오면 공유해 주세요. 입력 채널별 성공률과 그라운딩 실패율이 필요합니다(지난번과 같은 요청입니다).
