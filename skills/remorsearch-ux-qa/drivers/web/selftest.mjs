@@ -46,6 +46,45 @@ function skip(name, why) {
   console.log(`SKIP ${name} -- ${why}`);
 }
 
+// read_page.mjs fixtures (ux-page-read.v1): an article below the fold with JSON-LD and
+// meta tags, a redirect to it, a check that clears by itself, an interactive human
+// check and a login form. Image requests are counted (they must be blocked).
+const READ_HITS = { image: 0 };
+const READ_PAGES = {
+  '/read/article.html': `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>공개 후기 모음</title>
+<meta name="description" content="가게 이용 후기"><meta property="og:title" content="후기 모음"><meta name="robots" content="index, follow">
+<meta name="tdm-reservation" content="1">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"첫 주문 후기"}</script>
+<script type="application/ld+json">{not json</script></head>
+<body><h1>첫 주문 후기</h1><img src="/read/img.png" alt="사진"><div style="height:3000px">위쪽 본문</div>
+<p id="late">아래쪽 본문</p><script>window.addEventListener('scroll',()=>{if(!document.getElementById('lazy')){const p=document.createElement('p');p.id='lazy';p.textContent='스크롤로 불러온 댓글';document.body.appendChild(p);}});</script></body></html>`,
+  '/read/check.html': `<!doctype html><html><head><meta charset="utf-8"><title>Just a moment...</title></head>
+<body><div id="cf-please-wait">Checking your browser before accessing the site.</div>
+<script>setTimeout(()=>{document.title='본문';document.body.innerHTML='<main>확인이 끝난 본문</main>';},1500);</script></body></html>`,
+  '/read/captcha.html': `<!doctype html><html><head><meta charset="utf-8"><title>확인</title></head>
+<body><div class="g-recaptcha"></div><p>I'm not a robot</p><div style="height:3000px"></div></body></html>`,
+  '/read/login.html': `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>로그인</title></head>
+<body><form><input name="id" aria-label="아이디"><input type="password" aria-label="비밀번호"><button>로그인</button></form></body></html>`,
+};
+
+function readFixture(pathname, res, req) {
+  if (pathname === '/read/article.html') READ_HITS.ua = req.headers['user-agent'];
+  if (pathname === '/read/redirect') {
+    res.writeHead(302, { Location: '/read/article.html' });
+    res.end();
+    return;
+  }
+  if (pathname === '/read/img.png') {
+    READ_HITS.image += 1;
+    res.writeHead(200, { 'Content-Type': 'image/png' });
+    res.end(Buffer.alloc(0));
+    return;
+  }
+  const body = READ_PAGES[pathname];
+  res.writeHead(body ? 200 : 404, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+  res.end(body || 'not found');
+}
+
 function startFixtureServer() {
   const html = fs.readFileSync(FIXTURE);
   const server = http.createServer((req, res) => {
@@ -58,6 +97,25 @@ function startFixtureServer() {
     if (req.method === 'GET' && pathname === '/layers.html') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), 'layers.html')));
+      return;
+    }
+    if (req.method === 'GET' && pathname.startsWith('/read/')) {
+      readFixture(pathname, res, req);
+      return;
+    }
+    if (req.method === 'GET' && pathname === '/dialog.html') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), 'dialog.html')));
+      return;
+    }
+    if (req.method === 'GET' && pathname === '/reflow.html') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), 'reflow.html')));
+      return;
+    }
+    if (req.method === 'GET' && pathname === '/focus.html') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), 'focus.html')));
       return;
     }
     res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -365,6 +423,11 @@ function checkScripted(label, runDir, dev, { flash }) {
     st9.target_element_id === bySel(snaps.get(st9.before), '#pay')?.id, st9.target_element_id);
   const last = snaps.get(run.steps[run.steps.length - 1].after);
   check(`${label}: success element #done is visible at the end`, bySel(last, '#done')?.visible === true);
+  const payA = bySel(last, '#pay')?.a11y;
+  const cardA = bySel(last, '#card')?.a11y;
+  check(`${label}: controls carry a11y state (name source, focusable, ARIA links)`,
+    payA && payA.name_source === 'content' && payA.focusable === true && payA.invalid === false && Array.isArray(payA.described_by)
+    && cardA && cardA.name_source === 'label' && cardA.focusable === true, { payA, cardA });
   check(`${label}: off-origin image and WebSocket blocked by the network policy, no console noise`,
     run.driver.network_policy.blocked_requests >= 2
     && ['image', 'websocket'].every((t) => run.driver.network_policy.blocked_sample.some((b) => b.resource_type === t))
@@ -649,6 +712,201 @@ async function layersTest(base, tmp) {
     behind1 && behind1.inert_by_modal === true && inModal && inModal.inert_by_modal === false, [behind1, inModal]);
 }
 
+async function focusTest(base, tmp) {
+  const sc = {
+    schema_version: 'ergo-scenario.v1',
+    scenario_id: 'SC-driver-focus-01',
+    surface: { kind: 'web', url: '{BASE}/focus.html' },
+    task_goal_ko: '포커스 표시를 본다',
+    device_ids: ['desktop-1920'],
+    targets: {},
+    steps: [{ action: 'type', target: '#pw', text: 'hunter2secret' }, { action: 'click', target: '#menu-btn' },
+      { action: 'click', target: '#chat-btn' }, { action: 'wait', ms: 100 }],
+    success: { url_contains: 'focus' },
+  };
+  writeJson(path.join(tmp, 'focus.json'), sc);
+  const outDir = path.join(tmp, 'runs');
+  const t0 = Date.now();
+  const r = await runDriver(['run', '--scenario', path.join(tmp, 'focus.json'), '--device', 'desktop-1920',
+    '--out', outDir, '--run-id', 'R-focus', '--base', base]);
+  if (!check('focus desktop-1920: exit 0', r.code === 0, `${r.code} ${r.err}`)) return;
+  const { run } = loadRun(path.join(outDir, 'R-focus'));
+  const walks = run.focus_walks || [];
+  const load = walks.find((w) => w.phase === 'load');
+  const end = walks.find((w) => w.phase === 'end');
+  check('focus: walks recorded after the run (end state, then the initial screen in a fresh context)',
+    walks.map((w) => w.phase).join() === 'end,load' && load.snapshot_id === run.snapshots[0].snapshot_id && run.steps[0].t_start_ms < 3000,
+    walks.map((w) => [w.phase, w.snapshot_id, w.ended, w.stops.length]));
+  const stop = (sel) => load?.stops.find((s) => s.selector === sel);
+  check('focus: the walk starts at the top even with an autofocused field in the middle', load?.stops[0]?.selector === '#under',
+    load?.stops.slice(0, 3).map((s) => s.selector));
+  check('focus: default and custom rings change pixels; outline:none changes none',
+    stop('#plain')?.indicator_px > 50 && stop('#ring')?.indicator_px > 50 && stop('#nofocus')?.indicator_px === 0,
+    ['#plain', '#ring', '#nofocus'].map((k) => [k, stop(k)?.indicator_px]));
+  check("focus: a neighbour's ring does not count as the next element's indicator", stop('#adj1')?.indicator_px > 20 && stop('#adj2')?.indicator_px === 0,
+    [stop('#adj1')?.indicator_px, stop('#adj2')?.indicator_px]);
+  check('focus: the walk enters a same-origin iframe and continues after it',
+    load?.stops.some((s) => s.frame === 'iframe') && !!stop('#after-frame'), load?.stops.map((s) => [s.selector, s.frame]));
+  check('focus: an element behind the fixed bar is fully obscured by it', stop('#under')?.obscured_fraction === 1 && stop('#under')?.obscured_by === '#bar',
+    stop('#under'));
+  check('focus: a field inside a fixed dialog under its floating label is not obscured', stop('#dlg-in')?.obscured_fraction === 0, stop('#dlg-in'));
+  check('focus: below the fold with smooth scrolling the element is measured in view', stop('#deep')?.in_viewport === true && stop('#deep')?.indicator_px === 0,
+    stop('#deep'));
+  check('focus: an indicator drawn away from the element is found in the viewport (ACT oj04fd)',
+    stop('#far')?.indicator_px < 4 && stop('#far')?.indicator_any_px > 50, stop('#far'));
+  check('focus: an animation inside an element without an indicator is not an indicator',
+    stop('#anim')?.indicator_px < 4 && (stop('#anim')?.indicator_any_px === null || stop('#anim')?.indicator_any_px < 4), stop('#anim'));
+  check('focus: a non-modal absolute dialog fully covers the element under it (author layer)',
+    stop('#adlg-under')?.obscured_fraction === 1 && stop('#adlg-under')?.obscured_user_opened === false, stop('#adlg-under'));
+  check('focus: layers opened by the user are closed on the fresh load', stop('#menu-under')?.obscured_fraction === 0, stop('#menu-under'));
+  const endStop = (sel) => end?.stops.find((s) => s.selector === sel);
+  check('focus: a user-opened menu that closes on Escape without moving focus reveals the element (2.4.11 note)',
+    endStop('#menu-under')?.obscured_user_opened === true && endStop('#menu-under')?.escape_reveals === true, endStop('#menu-under'));
+  check('focus: a user-opened chat that stays on Escape keeps the element covered',
+    endStop('#chat-under')?.obscured_fraction === 1 && endStop('#chat-under')?.obscured_user_opened === true && endStop('#chat-under')?.escape_reveals === false,
+    endStop('#chat-under'));
+  const names = walks.flatMap((w) => w.stops.map((s) => s.name)).join('|');
+  check('focus: stop names never contain a typed value', !names.includes('hunter2') && stop('#pw')?.name === '비밀번호', names);
+  check('focus: the walk does not disturb the run (steps ok, success measured)', run.status === 'completed' && run.success === true,
+    { status: run.status, success: run.success, ms: Date.now() - t0 });
+  const touch = loadRun(path.join(outDir, 'R-layers')).run;
+  check('focus: no walk on touch devices by default', Array.isArray(touch.focus_walks) && touch.focus_walks.length === 0, touch.focus_walks);
+}
+
+async function reflowTest(base, tmp) {
+  const sc = {
+    schema_version: 'ergo-scenario.v1', scenario_id: 'SC-driver-reflow-01', surface: { kind: 'web', url: '{BASE}/reflow.html' },
+    task_goal_ko: '다음 화면으로 간다', device_ids: ['galaxy-s24'], targets: {},
+    steps: [{ action: 'tap', target: '#next' }, { action: 'wait', ms: 100 }], success: { url_contains: 'reflow' },
+  };
+  writeJson(path.join(tmp, 'reflow.json'), sc);
+  const outDir = path.join(tmp, 'runs');
+  const r = await runDriver(['run', '--scenario', path.join(tmp, 'reflow.json'), '--device', 'galaxy-s24', '--out', outDir, '--run-id', 'R-reflow', '--base', base]);
+  if (!check('reflow galaxy-s24: exit 0', r.code === 0, `${r.code} ${r.err}`)) return;
+  const { run } = loadRun(path.join(outDir, 'R-reflow'));
+  const recs = (run.reflow || []).filter((x) => !x.error);
+  const offenders = recs.flatMap((x) => x.offenders.map((o) => o.dom_id));
+  check('reflow: every distinct screen is re-rendered at 320 px (two screens here)', recs.length >= 2 && recs.every((x) => x.width === 320),
+    run.reflow);
+  check('reflow: fixed-width boxes stick out on both screens', offenders.includes('fixed-box') && offenders.includes('wide-note'), offenders);
+  check('reflow: a table, a self-scrolling chip row and fluid text are exempt',
+    !offenders.includes('fee-table') && !offenders.includes('chips') && !offenders.includes('fluid') && !offenders.some((o) => o === null), offenders);
+  check('reflow: the run itself is not resized (steps ok, success)', run.status === 'completed' && run.success === true, { status: run.status });
+}
+
+async function dialogTest(base, tmp) {
+  const sc = {
+    schema_version: 'ergo-scenario.v1', scenario_id: 'SC-driver-dialog-01', surface: { kind: 'web', url: '{BASE}/dialog.html' },
+    task_goal_ko: '주소를 찾고 본인 확인을 한다', device_ids: ['desktop-1920'], targets: {},
+    steps: [{ action: 'click', target: '#open-bad' }, { action: 'click', target: '#close-bad' }, { action: 'click', target: '#open-good' },
+      { action: 'click', target: '#close-good' }, { action: 'click', target: '#chip-hot' }, { action: 'click', target: '#chip-ok-t' }],
+    success: { url_contains: 'dialog' },
+  };
+  writeJson(path.join(tmp, 'dialog.json'), sc);
+  const outDir = path.join(tmp, 'runs');
+  const r = await runDriver(['run', '--scenario', path.join(tmp, 'dialog.json'), '--device', 'desktop-1920', '--out', outDir, '--run-id', 'R-dialog',
+    '--base', base, '--no-focus-walk', '--no-reflow']);
+  if (!check('dialog desktop-1920: exit 0', r.code === 0, `${r.code} ${r.err}`)) return;
+  const loaded = loadRun(path.join(outDir, 'R-dialog'));
+  const snaps = [...loaded.snaps.values()];
+  const layersAt = (i) => (snaps[i] && snaps[i].layers) || [];
+  check('layers: the first screen has no layer (a small toast is not one)', layersAt(0).length === 0, layersAt(0));
+  const bad = layersAt(1).find((l) => l.dom_id === 'sheet');
+  check('layers: a fixed painted sheet over the screen is a layer, and focus stayed outside it',
+    !!bad && bad.kind === 'sheet' && bad.contains_focus === false && snaps[1].focus && snaps[1].focus.dom_id === 'open-bad', { layers: layersAt(1), focus: snaps[1].focus });
+  const good = layersAt(3).find((l) => l.dom_id === 'dlg');
+  check('layers: a modal dialog that takes focus is recorded with focus inside', !!good && good.kind === 'modal' && good.contains_focus === true,
+    { layers: layersAt(3), focus: snaps[3] && snaps[3].focus });
+  check('focus record never carries a field value', !JSON.stringify(snaps.map((x) => x.focus)).includes('value'), snaps.map((x) => x.focus));
+  const ctl = (sel) => (loaded.run.steps.find((st) => st.action && st.action.target === sel) || {}).target_control;
+  check('clicks record what they landed on: a role-less div is not a control; text inside a button is',
+    ctl('#chip-hot') && ctl('#chip-hot').control === false && ctl('#chip-hot').contains_control === false && ctl('#chip-hot').ancestor_ids.includes('chips')
+    && ctl('#chip-ok-t') && ctl('#chip-ok-t').control === true && ctl('#open-bad').control === true,
+    { hot: ctl('#chip-hot'), ok: ctl('#chip-ok-t') });
+}
+
+function runReader(args) {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [path.join(HERE, 'read_page.mjs'), ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
+    let out = '';
+    let err = '';
+    child.stdout.on('data', (d) => { out += d; });
+    child.stderr.on('data', (d) => { err += d; });
+    const timer = setTimeout(() => child.kill('SIGKILL'), 90000);
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      const line = out.trim().split('\n').filter(Boolean).map((l) => {
+        try {
+          return JSON.parse(l);
+        } catch {
+          return null;
+        }
+      }).filter(Boolean).pop() || null;
+      resolve({ code, line, err });
+    });
+  });
+}
+
+const PAGE_READ_KEYS = new Set(['schema_version', 'url', 'final_url', 'status', 'redirects', 'title', 'lang', 'text', 'json_ld', 'meta', 'challenge',
+  'login_form', 'context', 'waited_ms', 'scrolls', 'blocked_types', 'device_id', 'driver_version', 'started_at', 'finished_at']);
+const PAGE_READ_REQUIRED = ['schema_version', 'url', 'final_url', 'status', 'text', 'context', 'started_at', 'finished_at'];
+
+function pageReadShape(doc) {
+  const extra = Object.keys(doc).filter((k) => !PAGE_READ_KEYS.has(k));
+  const missing = PAGE_READ_REQUIRED.filter((k) => !(k in doc));
+  const metaExtra = Object.keys(doc.meta || {}).filter((k) => !['description', 'og', 'robots', 'tdm_reservation'].includes(k));
+  return [...extra.map((k) => `extra ${k}`), ...missing.map((k) => `missing ${k}`), ...metaExtra.map((k) => `meta extra ${k}`)];
+}
+
+async function readPageTest(base, tmp) {
+  const out = (name) => path.join(tmp, `read-${name}.json`);
+  const load = (name) => JSON.parse(fs.readFileSync(out(name), 'utf8'));
+  let r = await runReader([`${base}/read/article.html`, '--allow-local', '--out', out('article'), '--device', 'galaxy-s24']);
+  if (check('read_page article: exit 0 with a document', r.code === 0 && fs.existsSync(out('article')), `${r.code} ${r.err}`)) {
+    const d = load('article');
+    check('read_page: document has only ux-page-read.v1 fields', pageReadShape(d).length === 0 && d.schema_version === 'ux-page-read.v1'
+      && d.context === 'anonymous', pageReadShape(d));
+    check('read_page: scrolling reaches text below the fold and loads scroll-triggered content',
+      d.text.includes('아래쪽 본문') && d.text.includes('스크롤로 불러온 댓글') && d.scrolls >= 1, { scrolls: d.scrolls, chars: d.text.length });
+    check('read_page: JSON-LD kept (parsed, and raw when invalid), meta tags read',
+      d.json_ld.length === 2 && d.json_ld[0].headline === '첫 주문 후기' && typeof d.json_ld[1] === 'string'
+      && d.meta.description === '가게 이용 후기' && d.meta.og['og:title'] === '후기 모음' && d.meta.robots === 'index, follow' && d.meta.tdm_reservation === '1',
+      { json_ld: d.json_ld, meta: d.meta });
+    check('read_page: images, media and fonts are blocked (no image request reached the server)',
+      READ_HITS.image === 0 && d.blocked_types.join() === 'image,media,font', READ_HITS);
+    check('read_page: the browser keeps its own identity (no emulated phone user agent)', /Chrome/.test(READ_HITS.ua || '')
+      && !/Android|iPhone/.test(READ_HITS.ua || '') && d.device_id === 'galaxy-s24' && d.status === 200 && d.lang === 'ko' && d.login_form === false && d.challenge.interactive === false, { ua: READ_HITS.ua, challenge: d.challenge });
+  }
+  r = await runReader([`${base}/read/redirect`, '--allow-local', '--out', out('redirect')]);
+  if (check('read_page redirect: exit 0', r.code === 0, `${r.code} ${r.err}`)) {
+    const d = load('redirect');
+    check('read_page: redirects recorded, final_url is the target', d.redirects.length === 1 && d.redirects[0].status === 302
+      && d.final_url.endsWith('/read/article.html') && d.url.endsWith('/read/redirect'), { redirects: d.redirects, final: d.final_url });
+  }
+  r = await runReader([`${base}/read/check.html`, '--allow-local', '--out', out('check')]);
+  if (check('read_page self-clearing check: exit 0', r.code === 0, `${r.code} ${r.err}`)) {
+    const d = load('check');
+    check('read_page: a check that clears by itself is waited for (not solved)', d.text.includes('확인이 끝난 본문') && d.waited_ms >= 1000
+      && d.waited_ms <= 15000 && d.challenge.interactive === false, { waited: d.waited_ms, text: d.text.slice(0, 60) });
+  }
+  r = await runReader([`${base}/read/captcha.html`, '--allow-local', '--out', out('captcha')]);
+  if (check('read_page human check: exit 3 (stopped) with a document', r.code === 3 && fs.existsSync(out('captcha')), `${r.code} ${r.err}`)) {
+    const d = load('captcha');
+    check('read_page: the interactive check is reported, not solved, and the page is not scrolled',
+      d.challenge.interactive === true && d.challenge.markers.some((m) => m.includes('g-recaptcha')) && d.scrolls === 0, d.challenge);
+  }
+  r = await runReader([`${base}/read/login.html`, '--allow-local', '--out', out('login')]);
+  check('read_page: a password field is reported (exit 0; the reader decides whether the page is gated)',
+    r.code === 0 && load('login').login_form === true, `${r.code} ${r.err}`);
+  r = await runReader([`${base}/read/article.html`]);
+  check('read_page: local and private addresses are refused without --allow-local (exit 2)', r.code === 2 && /refused/.test(r.err), `${r.code} ${r.err}`);
+  r = await runReader(['file:///etc/passwd']);
+  check('read_page: only http and https are read (exit 2)', r.code === 2, `${r.code} ${r.err}`);
+  r = await runReader(['http://127.0.0.1:9/', '--allow-local', '--out', out('down'), '--timeout-s', '5']);
+  check('read_page: an unreachable host is unread (exit 4, no document)', r.code === 4 && !fs.existsSync(out('down')) && r.line && r.line.exit === 4,
+    `${r.code} ${JSON.stringify(r.line)}`);
+}
+
 async function main() {
   const keep = process.argv.includes('--keep');
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ergo-web-selftest-'));
@@ -694,6 +952,10 @@ async function main() {
     }
 
     await layersTest(base, tmp);
+    await focusTest(base, tmp);
+    await readPageTest(base, tmp);
+    await reflowTest(base, tmp);
+    await dialogTest(base, tmp);
     await serveTest(base, tmp);
     await exitCodeTests(base, tmp);
   } finally {

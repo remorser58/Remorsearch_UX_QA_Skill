@@ -5,14 +5,17 @@ definition), REF-itu-bt1702 (broadcast flash guidance), REF-xag (Xbox
 Accessibility Guidelines), REF-der-deary2006 (reaction time by age).
 
 Flash detection here is a screening heuristic on sampled frames. It is not a
-certified Harding/PEAT analysis; a failure is a reason to run a certified tool,
-and a pass is not a certification.
+certified analysis (Harding FPA is the usual broadcast one); EA IRIS is a
+screening tool too, not a certification (its README says so). A pass is not a
+certification, and a pass in another screening tool does not overturn a failure
+here.
 """
 
 from __future__ import annotations
 
 import base64
 import binascii
+import functools
 import hashlib
 import math
 import statistics
@@ -201,6 +204,54 @@ def _runs(times: Sequence[float], need: int, window_ms: float) -> list[tuple[flo
     return runs
 
 
+@functools.lru_cache(maxsize=4096)
+def iris_extended_runs(times: tuple[float, ...], window_ms: float | None = None, frame_ms: float | None = None) -> tuple[tuple[float, float], ...]:
+    """Intervals in which EA IRIS's extended-failure rule holds for one transition train.
+
+    A port of IRIS's TransitionTracker counters on a virtual frame clock: per frame,
+    n = transitions in the last second; the frame is "in band" when
+    FLASH_IRIS_MIN_TRANSITIONS <= n <= FLASH_IRIS_MAX_TRANSITIONS; a frame fails when
+    it is in band and at least FLASH_IRIS_EXTENDED_SECONDS of in-band frames fall in
+    the last FLASH_IRIS_EXTENDED_WINDOW_S seconds (a count above the maximum is the
+    ordinary flash failure, which IRIS checks first). IRIS counts a transition only
+    when 25 % of the frame changes; here the train belongs to one block and the
+    caller applies the 10 degree field area instead. The window is IRIS's exact
+    second: the WCAG rule's lag tolerance protects an upper bound, and here it
+    would undercount the lower bound (a 2 Hz flicker would read 3 a fifth of the time).
+    """
+    if len(times) < params.FLASH_IRIS_MIN_TRANSITIONS:
+        return ()
+    window = params.FLASH_WINDOW_MS if window_ms is None else window_ms
+    if _max_in_window(list(times), window) < params.FLASH_IRIS_MIN_TRANSITIONS:
+        return ()
+    frame = frame_ms or params.FLASH_IRIS_FRAME_MS
+    one = max(1, int(round(window / frame)))
+    ext_window = int(round(params.FLASH_IRIS_EXTENDED_WINDOW_S * 1000.0 / frame))
+    need = int(round(params.FLASH_IRIS_EXTENDED_SECONDS * 1000.0 / frame))
+    base = times[0] - frame
+    per_frame: dict[int, int] = {}
+    for t in times:
+        f = max(1, int(math.ceil((t - base) / frame - 1e-9)))
+        per_frame[f] = per_frame.get(f, 0) + 1
+    last = max(per_frame) + one
+    counts = [0] * (last + 1)
+    band = [0] * (last + 1)
+    n = in_band = 0
+    runs: list[tuple[float, float]] = []
+    for f in range(1, last + 1):
+        n += per_frame.get(f, 0) - per_frame.get(f - one, 0)
+        counts[f] = n
+        band[f] = 1 if params.FLASH_IRIS_MIN_TRANSITIONS <= n <= params.FLASH_IRIS_MAX_TRANSITIONS else 0
+        in_band += band[f] - (band[f - ext_window] if f - ext_window >= 1 else 0)
+        if band[f] and in_band >= need:
+            t = base + f * frame
+            if runs and t - runs[-1][1] <= frame + 1e-9:
+                runs[-1] = (runs[-1][0], t)
+            else:
+                runs.append((t, t))
+    return tuple(runs)
+
+
 _EVENT_CACHE: dict[tuple, dict] = {}
 
 
@@ -276,7 +327,8 @@ def _field_stencil(block_mm: tuple[float, float], radius_mm: float, cols: int) -
 
 
 def _concurrent_area(transitions: dict[int, list[tuple[float, int, float]]], need: int, window_ms: float, cols: int, rows: int,
-                     block_mm: tuple[float, float], viewing_distance_mm: float, amplitude_is_coverage: bool) -> dict:
+                     block_mm: tuple[float, float], viewing_distance_mm: float, amplitude_is_coverage: bool,
+                     runs_of: Any = None) -> dict:
     """Largest solid angle of concurrently flashing blocks within any 10 degree field.
 
     A block flashes during each interval where ``need`` of its transitions fall
@@ -286,7 +338,9 @@ def _concurrent_area(transitions: dict[int, list[tuple[float, int, float]]], nee
     largest amplitude among itself and its flashing neighbours (a block half
     covered by a flashing region changes half as much as a covered one; an
     isolated block counts whole). Fields are circles of 5 degrees radius centred
-    on flashing blocks; a block is inside when its centre is.
+    on flashing blocks; a block is inside when its centre is. ``runs_of`` replaces
+    the "``need`` transitions within ``window_ms``" rule (IRIS extended failure);
+    its amplitude then also uses the transitions of the second before each run.
     """
     runs: dict[int, list[tuple[float, float]]] = {}
     amplitude: dict[int, float] = {}
@@ -294,10 +348,11 @@ def _concurrent_area(transitions: dict[int, list[tuple[float, int, float]]], nee
     for b, trans in transitions.items():
         times = [t for t, _, _ in trans]
         rate[b] = _max_in_window(times, window_ms) / 2.0 * (1000.0 / max(1000.0, window_ms))  # flashes per 1 s window
-        block_runs = _runs(times, need, window_ms)
+        block_runs = list(runs_of(tuple(times))) if runs_of else _runs(times, need, window_ms)
+        lead = window_ms if runs_of else 0.0
         if block_runs:
             runs[b] = block_runs
-            amplitude[b] = statistics.median(m for t, _, m in trans if any(r0 <= t <= r1 for r0, r1 in block_runs))
+            amplitude[b] = statistics.median(m for t, _, m in trans if any(r0 - lead <= t <= r1 for r0, r1 in block_runs))
     result: dict[str, Any] = {"max_rate": max(rate.values(), default=0.0), "flashing_blocks": len(runs), "area_sr": 0.0,
                               "at_ms": None, "center_block": None, "field_blocks": 0, "field_rate": 0.0}
     if not runs:
@@ -364,7 +419,10 @@ def analyse_block_flashes(samples: Sequence[dict], grid: dict, mm_per_css_px: tu
     ``mm_per_css_px`` is the device's physical pixel pitch (x, y); None uses the
     WCAG proxy for an unknown screen (a 341 x 256 CSS px rectangle as the 10
     degree field at 1024 x 768). Returns per-kind results and the verdict fields
-    ``failed`` (P0) and ``extended`` (IRIS extended failure, P1).
+    ``failed`` (P0) and ``extended`` (P1): ``sustained_5s`` (10 or more flashes
+    within 5 s) or ``iris_extended`` (EA IRIS's extended-failure rule), each over
+    the same 10 degree field area. ``iris_warning`` (IRIS's 4 transitions in one
+    second over that area) is a measurement only.
     """
     cols, rows = int(grid["cols"]), int(grid["rows"])
     block_css = grid.get("block_css") or [float(grid["viewport_css"][0]) / cols, float(grid["viewport_css"][1]) / rows]
@@ -383,12 +441,14 @@ def analyse_block_flashes(samples: Sequence[dict], grid: dict, mm_per_css_px: tu
     out: dict[str, Any] = {"method": "block-grid-v1", "grid": [cols, rows], "block_css": [round(float(v), 2) for v in block_css],
                            "geometry": geometry, "viewing_distance_mm": round(distance, 1), "samples": events["samples"],
                            "moved_samples": events["moved_samples"]}
+    window = params.FLASH_WINDOW_MS - params.FLASH_WINDOW_TOLERANCE_MS
     for kind in ("general", "red"):
         coverage = kind == "red"
-        main = _concurrent_area(events[kind], params.FLASH_FAIL_TRANSITIONS, params.FLASH_WINDOW_MS - params.FLASH_WINDOW_TOLERANCE_MS,
-                                cols, rows, block_mm, distance, coverage)
+        main = _concurrent_area(events[kind], params.FLASH_FAIL_TRANSITIONS, window, cols, rows, block_mm, distance, coverage)
         ext = _concurrent_area(events[kind], int(2 * params.FLASH_EXTENDED_MIN_FLASHES), params.FLASH_EXTENDED_WINDOW_MS, cols, rows,
                                block_mm, distance, coverage)
+        iris = _concurrent_area(events[kind], 0, params.FLASH_WINDOW_MS, cols, rows, block_mm, distance, coverage, runs_of=iris_extended_runs)
+        warn = _concurrent_area(events[kind], params.FLASH_IRIS_MIN_TRANSITIONS, params.FLASH_WINDOW_MS, cols, rows, block_mm, distance, coverage)
         center = main["center_block"]
         out[kind] = {
             "max_flashes_per_s": round(main["max_rate"], 2),
@@ -400,11 +460,19 @@ def analyse_block_flashes(samples: Sequence[dict], grid: dict, mm_per_css_px: tu
                                                               round((center // cols + 0.5) * float(block_css[1]), 1)],
             "field_blocks": main["field_blocks"],
             "field_flashes_per_s": round(main["field_rate"], 2),
-            "extended_area_sr": round(ext["area_sr"], 5),
-            "extended_failed": ext["area_sr"] > params.FLASH_AREA_SR,
+            "sustained_5s_area_sr": round(ext["area_sr"], 5),
+            "sustained_5s": ext["area_sr"] > params.FLASH_AREA_SR,
+            "iris_extended_area_sr": round(iris["area_sr"], 5),
+            "iris_extended": iris["area_sr"] > params.FLASH_AREA_SR,
+            "iris_extended_at_ms": iris["at_ms"],
+            "iris_warning": warn["area_sr"] > params.FLASH_AREA_SR,
         }
+        out[kind]["extended_failed"] = out[kind]["sustained_5s"] or out[kind]["iris_extended"]
     out["failed"] = out["general"]["failed"] or out["red"]["failed"]
-    out["extended"] = not out["failed"] and (out["general"]["extended_failed"] or out["red"]["extended_failed"])
+    out["sustained_5s"] = out["general"]["sustained_5s"] or out["red"]["sustained_5s"]
+    out["iris_extended"] = out["general"]["iris_extended"] or out["red"]["iris_extended"]
+    out["iris_warning"] = out["general"]["iris_warning"] or out["red"]["iris_warning"]
+    out["extended"] = not out["failed"] and (out["sustained_5s"] or out["iris_extended"])
     return out
 
 

@@ -132,6 +132,22 @@ class Compose(unittest.TestCase):
             audience.compose(doc, 4)
 
 
+class NoOpFacets(unittest.TestCase):
+    def test_a_facet_equal_to_the_typical_member_is_not_composed_or_listed(self) -> None:
+        # A two-thumb segment with no one-handed context: its "two_thumbs grip" facet
+        # would copy the typical member (reported by a Stage-0 agent, 2026-09-29).
+        doc = load()
+        seg = doc["segments"][0]
+        seg["grips"] = {"two_thumbs": 1.0}
+        seg["contexts"] = [c for c in seg.get("contexts") or [] if not c.get("one_handed")]
+        if not seg["contexts"]:
+            del seg["contexts"]
+        plan = audience.compose(doc, 12)
+        keys = [json.dumps(p["attributes"], sort_keys=True) for p in plan["profiles"]]
+        self.assertEqual(len(keys), len(set(keys)))
+        self.assertFalse([u for u in plan["untested"] if u["facet"] == "grip" and u["segment_id"] == seg["segment_id"]])
+
+
 class ResearchRules(unittest.TestCase):
     def test_statistic_evidence_needs_a_quoted_number(self) -> None:
         doc = load()
@@ -147,6 +163,48 @@ class ResearchRules(unittest.TestCase):
         self.assertIn("screen_reader", reasons)
         self.assertIn("role customer", reasons)
         self.assertIn("TalkBack", reasons)
+
+    def test_community_sources_support_existence_not_size(self) -> None:
+        doc = load()
+        doc["sources"].append({"source_id": "SRC-forum", "type": "community", "title": "커뮤니티 글", "bundle_ref": "SRC-B-7"})
+        doc["segments"][0]["share"] = {"value": 0.3, "basis": "estimated", "source_ids": ["SRC-forum"]}
+        doc["segments"][1]["evidence"][0]["source_id"] = "SRC-forum"
+        errors = audience.validate_audience(doc)
+        self.assertTrue(any("support existence, not size" in e for e in errors))
+        self.assertTrue(any("record it as firsthand" in e for e in errors))
+        doc["sources"][-1]["bundle_ref"] = ""
+        self.assertTrue(any("bundle_ref must be a non-empty string" in e for e in audience.validate_audience(doc)))
+
+    def test_walking_floor_only_on_handheld_devices(self) -> None:
+        doc = load()
+        for seg in doc["segments"]:
+            seg["devices"] = {"galaxy-tab-s9": 1.0}
+            for c in seg.get("contexts") or []:
+                c["mobility"] = "standing"
+        plan = audience.compose(doc, 8)
+        self.assertFalse(any(p["attributes"]["context"]["mobility"] == "walking" for p in plan["profiles"]))
+        self.assertFalse(any(f["floor"] == "walking" for f in plan["floors_used"]))
+        doc["segments"][2]["devices"] = {"galaxy-tab-s9": 0.5, "galaxy-s24": 0.5}
+        plan = audience.compose(doc, 16)
+        walkers = [p for p in plan["profiles"] if p["attributes"]["context"]["mobility"] == "walking"]
+        self.assertTrue(walkers)
+        self.assertTrue(all(p["attributes"]["device_id"] == "galaxy-s24" for p in walkers))
+
+    def test_stubs_only_for_operators_and_quote_basis(self) -> None:
+        doc = load()
+        payer = {**copy.deepcopy(doc["segments"][1]), "segment_id": "SEG-payer", "name_ko": "보호자(결제만)", "role": "customer"}
+        payer["tasks"] = [{**copy.deepcopy(doc["segments"][1]["tasks"][0]), "task_id": "T-pay-only"}]
+        doc["segments"].append(payer)
+        self.assertNotIn("SC-T-pay-only", {s["scenario_id"] for s in audience.scenario_stubs(doc)})
+        doc["segments"][0]["evidence"][0]["quote_basis"] = ""
+        self.assertTrue(any("quote_basis must be a non-empty string" in e for e in audience.validate_audience(doc)))
+        self.assertEqual(audience.quote_basis_kind("search tool's extract of the page (may paraphrase)"), "snippet")
+        self.assertEqual(audience.quote_basis_kind("document (read in full)"), "document")
+        self.assertEqual(audience.quote_basis_kind("page"), "page")
+        doc["segments"][0]["evidence"][0]["quote_basis"] = "snippet"
+        self.assertEqual(audience.validate_audience(doc), [])
+        text = audience.plan_markdown(audience.compose(doc, 4), doc)
+        self.assertIn("quote_basis=snippet", text)
 
     def test_age_facet_does_not_switch_presbyopia(self) -> None:
         plan = audience.compose(load(), 16)

@@ -63,18 +63,21 @@ No MiroFish code is used.
 
 Personas come from research on the product's actual audience, not from random
 sampling. Follow `references/ergonomics/audience-research.md`. Use analytics, surveys,
-official statistics, store reviews and communities (with the research mode,
-`references/research/workflow.md`), and comparable products. From those, write an
-`ergo-audience.v1` file with the following, each with cited evidence:
+official statistics and comparable products. Take reviews, communities and news from
+the research mode's audience run (`references/research/audience-pipeline.md`, reading
+under `references/research/public-page-access.md`); start from its
+`audience.draft.json`. From those, write an `ergo-audience.v1` file with the
+following, each with cited evidence:
 
 - segments, with share and basis, priority and confidence;
 - age and device mix;
 - conditions and contexts of use;
 - key tasks with concrete data (amounts, dates, names).
 
-Validate it with `python3 scripts/ergo_qa.py audience-check audience.json`.
-Unknown shares stay `unknown`. Synthetic personas and LLM output are never
-sources.
+Validate it with `python3 scripts/ergo_qa.py audience-check audience.json`, and
+cross-check it against the audience run's gate when that check ships
+(`--gate gate.json --bundle bundle.json`, planned). Unknown shares stay `unknown`.
+Synthetic personas and LLM output are never sources.
 
 ### 1. Frame the surface and declare roles
 

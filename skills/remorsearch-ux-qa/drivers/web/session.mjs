@@ -9,10 +9,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { resolveDevice } from './devices.mjs';
-import { STATE_KEY, TW_BINDING, extractSnapshot, hitTest, idAtPoint, idForElement, pageInit } from './page_scripts.mjs';
+import { STATE_KEY, TW_BINDING, controlOf, extractSnapshot, hitTest, idAtPoint, idForElement, pageInit } from './page_scripts.mjs';
 import {
   BLOCK_MIN_H_CSS, BLOCK_MIN_W_CSS, MOTION_MATCH, RED_EXCESS, RED_RATIO,
-  blockStats, cssScaleCopy, decodePng, frameFromImage, frameStats, makeBlockGrid, visualDiffFraction,
+  blockStats, cssScaleCopy, decodePng, frameFromImage, frameStats, indicatorPixels, makeBlockGrid, visualDiffFraction,
 } from './png.mjs';
 import { KNOWN_ROLES } from './validate.mjs';
 import {
@@ -34,6 +34,30 @@ const MAX_FLASH_BYTES = 6_000_000;
 // to the compositor (~33 ms), so a 30 Hz flicker would alias to a still image.
 const FLASH_JITTER_MS = 15;
 const MAX_CONSOLE = 500;
+// Keyboard focus walk (WCAG 2.4.7 focus visible, 2.4.11 focus not obscured): Tab
+// through up to this many stops; a stop's indicator is the pixel change inside its
+// box (+4 px) between focused and unfocused states.
+const FOCUS_WALK_MAX = 40;
+const FOCUS_DIFF_LEVEL = 24;
+const FOCUS_SETTLE_MS = 80;
+const FOCUS_WALK_BUDGET_MS = 8000;
+// Fewer changed pixels than this near the element sends a stop to the viewport-wide
+// comparison (an indicator drawn away from the element, ACT oj04fd); at most
+// FOCUS_VIEWPORT_MAX such comparisons per walk (full-viewport captures are slow).
+const FOCUS_LOCAL_MIN_PX = 4;
+const FOCUS_VIEWPORT_MAX = 6;
+const FOCUS_VIEWPORT_WIDTH = 480; // viewport-wide captures are downscaled to about this many px wide
+// Gap between the two unfocused captures whose difference masks animation, and the
+// per-channel change between them that marks a pixel as animated.
+const FOCUS_ANIM_GAP_MS = 40;
+const FOCUS_MASK_LEVEL = 4;
+
+// Reflow (WCAG 1.4.10, AUT-06): each distinct screen's DOM is copied as the run goes
+// and re-rendered after the run at 320 CSS px wide with scripts off (a static copy,
+// so the run itself is never resized). At most REFLOW_MAX_SCREENS per run.
+const REFLOW_WIDTH = 320;
+const REFLOW_MAX_SCREENS = 12;
+const REFLOW_BUDGET_MS = 20000;
 
 const MEASURED = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'type', 'press', 'scroll', 'gamepad']);
 const POINTER = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'scroll']);
@@ -53,6 +77,229 @@ function stripQuery(url) {
   } catch {
     return truncate(url, 200);
   }
+}
+
+/**
+ * In-page: the deepest focused element (through open shadow roots and same-origin
+ * iframes), its identity, box in top-viewport CSS px, and how much of it a painting
+ * fixed or sticky layer that does not contain it covers (9 sample points). Null when
+ * focus is on the document itself. The name never reads a field's value.
+ */
+/** In-page, on a static copy at 320 px: does the page scroll sideways, and which outermost
+ * elements stick out past the right edge (1.4.10; two-dimensional content exempt)? */
+function reflowInfo(limit) {
+  const se = document.scrollingElement || document.documentElement;
+  const cw = se.clientWidth;
+  const sw = se.scrollWidth;
+  const clipX = (n) => ['hidden', 'clip'].includes(getComputedStyle(n).overflowX);
+  const rootClips = clipX(document.documentElement) || (document.body ? clipX(document.body) : false);
+  const out = { client_width: cw, scroll_width: sw, root_clips: rootClips, offenders: [] };
+  if (sw <= cw + 4 && !rootClips) return out;
+  const TWO_D = new Set(['table', 'canvas', 'video', 'iframe', 'svg', 'pre', 'code', 'map', 'object', 'embed', 'math']);
+  const exempt = (n) => {
+    for (let m = n; m && m.nodeType === 1 && m !== document.body; m = m.parentElement) {
+      const tag = m.tagName.toLowerCase();
+      const role = m.getAttribute('role') || '';
+      if (TWO_D.has(tag) || ['img', 'application', 'grid', 'treegrid', 'table', 'toolbar'].includes(role)) return true;
+      if (m !== n) {
+        const ox = getComputedStyle(m).overflowX;
+        if (ox === 'auto' || ox === 'scroll') return true; // scrolls inside its own box
+        if ((ox === 'hidden' || ox === 'clip') && m.getBoundingClientRect().right <= cw + 1) return true; // clipped by a container that fits
+      }
+      if (m.getAttribute('aria-hidden') === 'true') return true;
+    }
+    return false;
+  };
+  const sel = (n) => {
+    if (n.id) return `#${CSS.escape(n.id)}`;
+    const parts = [];
+    for (let m = n; m && m.nodeType === 1 && m !== document.body && parts.length < 5; m = m.parentElement) {
+      if (m.id) {
+        parts.unshift(`#${CSS.escape(m.id)}`);
+        break;
+      }
+      const sib = m.parentElement ? [...m.parentElement.children].filter((c) => c.tagName === m.tagName) : [];
+      parts.unshift(sib.length > 1 ? `${m.tagName.toLowerCase()}:nth-of-type(${sib.indexOf(m) + 1})` : m.tagName.toLowerCase());
+    }
+    return parts.join(' > ');
+  };
+  const hits = [];
+  const all = document.body ? document.body.getElementsByTagName('*') : [];
+  for (let i = 0; i < all.length && i < 6000; i++) {
+    const n = all[i];
+    const r = n.getBoundingClientRect();
+    if (r.width <= 1 || r.height <= 1 || r.right <= cw + 4) continue; // 4 px tolerance (borders, rounding)
+    const cs = getComputedStyle(n);
+    if (cs.display === 'none' || cs.visibility !== 'visible' || parseFloat(cs.opacity) === 0) continue;
+    if (!(n.innerText || '').trim() && !['img', 'input', 'button', 'select', 'textarea'].includes(n.tagName.toLowerCase())) continue;
+    if (exempt(n)) continue;
+    hits.push(n);
+  }
+  const set = new Set(hits);
+  for (const n of hits) {
+    let outer = true;
+    for (let m = n.parentElement; m; m = m.parentElement) if (set.has(m)) { outer = false; break; }
+    if (!outer) continue;
+    const r = n.getBoundingClientRect();
+    const ids = [];
+    for (let m = n.parentElement; m && ids.length < 6; m = m.parentElement) if (m.id) ids.push(m.id);
+    out.offenders.push({ selector: sel(n), dom_id: n.id || null, ancestor_ids: ids, tag: n.tagName.toLowerCase(),
+      box: { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) },
+      text: (n.innerText || n.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim().slice(0, 60) });
+    if (out.offenders.length >= limit) break;
+  }
+  return out;
+}
+
+function focusInfo() {
+  let el = document.activeElement;
+  if (!el || el === document.body || el === document.documentElement) return null;
+  let ox = 0;
+  let oy = 0;
+  let doc = document;
+  const chain = [];
+  for (let depth = 0; depth < 8; depth++) {
+    chain.push(el);
+    if (el.shadowRoot && el.shadowRoot.activeElement) {
+      el = el.shadowRoot.activeElement;
+      continue;
+    }
+    if (el.tagName === 'IFRAME') {
+      let inner = null;
+      try {
+        inner = el.contentDocument && el.contentDocument.activeElement;
+      } catch (e) {
+        inner = null; // cross-origin frame: stop at the frame element
+      }
+      if (inner && inner !== el.contentDocument.body) {
+        const fr = el.getBoundingClientRect();
+        ox += fr.left + el.clientLeft;
+        oy += fr.top + el.clientTop;
+        doc = el.contentDocument;
+        el = inner;
+        continue;
+      }
+    }
+    break;
+  }
+  const view = doc.defaultView || window;
+  const r0 = el.getBoundingClientRect();
+  const r = { left: r0.left + ox, top: r0.top + oy, width: r0.width, height: r0.height };
+  r.right = r.left + r.width;
+  r.bottom = r.top + r.height;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const esc = (v) => (window.CSS && CSS.escape ? CSS.escape(v) : v);
+  let sel = el.id ? `#${esc(el.id)}` : null;
+  if (!sel) {
+    const parts = [];
+    for (let n = el; n && n.nodeType === 1 && n !== doc.body && parts.length < 6; n = n.parentElement) {
+      const tag = n.tagName.toLowerCase();
+      if (n.id) {
+        parts.unshift(`#${esc(n.id)}`);
+        break;
+      }
+      const sib = n.parentElement ? [...n.parentElement.children].filter((c) => c.tagName === n.tagName) : [];
+      parts.unshift(sib.length > 1 ? `${tag}:nth-of-type(${sib.indexOf(n) + 1})` : tag);
+    }
+    sel = parts.join(' > ');
+  }
+  const pathOf = (n) => {
+    const out = [];
+    for (let m = n; m && m.nodeType === 1; m = m.parentElement) out.unshift(m.parentElement ? [...m.parentElement.children].indexOf(m) : 0);
+    return out.join('.');
+  };
+  const path = chain.map(pathOf).join('/');
+  const inVp = r.width > 0 && r.height > 0 && r.right > 0 && r.bottom > 0 && r.left < vw && r.top < vh;
+  const paints = (n) => {
+    const cs = view.getComputedStyle(n);
+    const bg = cs.backgroundColor || '';
+    const alpha = /rgba\(.*,\s*([\d.]+)\)/.exec(bg);
+    if (bg && bg !== 'transparent' && !(alpha && parseFloat(alpha[1]) === 0)) return true;
+    if (cs.backgroundImage && cs.backgroundImage !== 'none') return true;
+    if (['IMG', 'SVG', 'CANVAS', 'VIDEO'].includes(n.tagName.toUpperCase())) return true;
+    for (const c of n.childNodes) if (c.nodeType === 3 && c.nodeValue.trim()) return true;
+    return false;
+  };
+  // Content the user disclosed (WCAG 2.4.11 note): a layer tied to an expanded
+  // trigger (aria-expanded="true" + aria-controls) or to a popovertarget button.
+  const disclosed = [];
+  for (const t of document.querySelectorAll('[aria-expanded="true"][aria-controls]')) {
+    for (const id of (t.getAttribute('aria-controls') || '').split(/\s+/)) {
+      const target = id && document.getElementById(id);
+      if (target) disclosed.push(target);
+    }
+  }
+  for (const t of document.querySelectorAll('[popovertarget]')) {
+    const target = document.getElementById(t.getAttribute('popovertarget'));
+    let open = false;
+    try {
+      open = !!target && target.matches(':popover-open');
+    } catch (e) {
+      open = false;
+    }
+    if (open) disclosed.push(target);
+  }
+  const userOpened = (layer) => disclosed.some((d) => d.contains(layer) || layer.contains(d));
+  let covered = 0;
+  let coveredBy = null;
+  let coveredUserOpened = true;
+  if (inVp && doc === document) {
+    for (const fx of [0.15, 0.5, 0.85]) {
+      for (const fy of [0.2, 0.5, 0.8]) {
+        const px = Math.min(vw - 1, Math.max(0, r.left + r.width * fx));
+        const py = Math.min(vh - 1, Math.max(0, r.top + r.height * fy));
+        let hit = document.elementFromPoint(px, py);
+        while (hit && hit.shadowRoot) {
+          const inner = hit.shadowRoot.elementFromPoint(px, py);
+          if (!inner || inner === hit) break;
+          hit = inner;
+        }
+        if (!hit || hit === el || el.contains(hit) || hit.contains(el) || chain.includes(hit)) continue;
+        let layer = null;
+        for (let n = hit; n && n.nodeType === 1; n = n.parentElement) {
+          const pos = getComputedStyle(n).position;
+          // Fixed or sticky layers, and non-modal dialogs placed with position:absolute.
+          const dialog = n.tagName === 'DIALOG' || ['dialog', 'alertdialog'].includes(n.getAttribute('role'));
+          if (pos === 'fixed' || pos === 'sticky' || (pos === 'absolute' && dialog && n.getAttribute('aria-modal') !== 'true')) {
+            layer = n;
+            break;
+          }
+        }
+        // A fixed dialog or sticky header that contains the focused element is its own
+        // layer, not a cover; transparent click-catchers do not hide anything.
+        if (layer && !layer.contains(el) && !chain.some((c) => layer.contains(c)) && (paints(hit) || paints(layer))) {
+          covered += 1;
+          if (!coveredBy) coveredBy = layer.id ? `#${esc(layer.id)}` : layer.tagName.toLowerCase();
+          if (!userOpened(layer)) coveredUserOpened = false;
+        }
+      }
+    }
+  }
+  const tag = el.tagName.toLowerCase();
+  const field = ['input', 'select', 'textarea'].includes(tag);
+  const txt = (n) => (n ? (n.innerText ?? n.textContent ?? '') : '').replace(/\s+/g, ' ').trim();
+  const lb = (el.getAttribute('aria-labelledby') || '').split(/\s+/).map((id) => id && (el.getRootNode().getElementById
+    ? el.getRootNode().getElementById(id) : doc.getElementById(id))).filter(Boolean).map(txt).join(' ').trim();
+  const labels = el.labels && el.labels.length ? [...el.labels].map(txt).join(' ').trim() : '';
+  const name = (lb || (el.getAttribute('aria-label') || '').trim() || labels || (el.getAttribute('title') || '').trim()
+    || (field ? (el.getAttribute('placeholder') || '').trim() : el.isContentEditable ? '' : txt(el))).slice(0, 80);
+  // Wrappers that draw the focus style (:focus-within borders): the nearest ancestors
+  // up to 4x the element's area, so the indicator region includes them.
+  const wraps = [];
+  for (let n = el.parentElement, i = 0; n && n.nodeType === 1 && i < 3; n = n.parentElement, i++) {
+    const a = n.getBoundingClientRect();
+    if (a.width * a.height > 4 * Math.max(1, r0.width * r0.height)) break;
+    wraps.push({ x: a.left + ox, y: a.top + oy, w: a.width, h: a.height });
+  }
+  return {
+    selector: sel, dom_id: el.id || null, tag, role: el.getAttribute('role') || tag, name, path,
+    frame: doc === document ? null : 'iframe',
+    box: { x: Math.round(r.left * 100) / 100, y: Math.round(r.top * 100) / 100, w: Math.round(r.width * 100) / 100, h: Math.round(r.height * 100) / 100 },
+    wrap_boxes: wraps,
+    in_viewport: inVp, obscured_fraction: inVp && doc === document ? Math.round((covered / 9) * 1000) / 1000 : null, obscured_by: coveredBy,
+    obscured_user_opened: covered > 0 ? coveredUserOpened : null, vw, vh,
+  };
 }
 
 export class WebSession {
@@ -81,6 +328,10 @@ export class WebSession {
     this.flashTruncated = null;
     this.flashGrid = null;
     this.flashPrev = null; // last flash frame (across bursts) for block motion
+    this.focusWalks = [];
+    this.reflowScreens = [];
+    this.reflowSeen = new Set();
+    this.reflow = [];
     this.frameIndex = 0;
     this.blocked = [];
     this.blockedCount = 0;
@@ -207,6 +458,293 @@ export class WebSession {
       await this.probeFrames({ dispatch: epochNow(), stepIndex: 0, flashMs: this.opts.flashSampleMs, visual: null, fb: { done: true } });
     }
     await this.snapshot(0, []);
+  }
+
+  reflowEnabled() {
+    if (this.opts.reflow === false) return false;
+    // 1.4.10 is about zooming to 320 CSS px; TVs and handheld consoles have no browser zoom.
+    return this.scenario.surface_kind !== 'game' && !['tv', 'handheld_console'].includes(this.dev.snapshotDevice.form_factor);
+  }
+
+  /** Keep a static copy of a screen for the reflow pass (distinct DOMs only). */
+  async keepForReflow(snapshotId) {
+    if (!this.reflowEnabled() || this.reflowScreens.length >= REFLOW_MAX_SCREENS) return;
+    try {
+      const html = await this.page.content();
+      const key = sha256(Buffer.from(html));
+      if (this.reflowSeen.has(key)) return;
+      this.reflowSeen.add(key);
+      this.reflowScreens.push({ snapshot_id: snapshotId, url: this.page.url(), html });
+    } catch { /* navigating: the next snapshot keeps the screen */ }
+  }
+
+  /** Re-render the kept screens at 320 CSS px, scripts off, and record what sticks out. */
+  async reflowPass() {
+    if (!this.reflowScreens.length) return;
+    let context = null;
+    const deadline = epochNow() + REFLOW_BUDGET_MS;
+    try {
+      const touch = this.dev.snapshotDevice.input === 'touch';
+      context = await this.browser.newContext({
+        viewport: { width: REFLOW_WIDTH, height: touch ? 568 : 256 }, deviceScaleFactor: 1, javaScriptEnabled: false,
+        locale: this.opts.locale, timezoneId: this.opts.timezoneId, colorScheme: 'light', serviceWorkers: 'block', acceptDownloads: false,
+      });
+      await this.installNetworkPolicy(context, false);
+      const page = await context.newPage();
+      for (const screen of this.reflowScreens) {
+        if (epochNow() > deadline) {
+          this.warnings.push(`reflow pass stopped at its ${REFLOW_BUDGET_MS} ms budget`);
+          break;
+        }
+        const base = `<base href="${screen.url.replace(/"/g, '&quot;')}">`;
+        const html = /<base\s/i.test(screen.html) ? screen.html
+          : /<head[^>]*>/i.test(screen.html) ? screen.html.replace(/<head[^>]*>/i, (m) => `${m}${base}`) : `${base}${screen.html}`;
+        try {
+          await page.setContent(html, { waitUntil: 'load', timeout: 8000 });
+          const info = await page.evaluate(reflowInfo, 20);
+          this.reflow.push({ snapshot_id: screen.snapshot_id, url: screen.url, width: REFLOW_WIDTH, ...info });
+        } catch (err) {
+          this.reflow.push({ snapshot_id: screen.snapshot_id, url: screen.url, width: REFLOW_WIDTH, error: firstLine(err.message) });
+        }
+      }
+    } catch (err) {
+      this.warnings.push(`reflow pass failed: ${firstLine(err.message)}`);
+    } finally {
+      if (context) await context.close().catch(() => {});
+      this.reflowScreens = [];
+    }
+  }
+
+  focusWalkEnabled() {
+    if (this.opts.focusWalk === true || this.opts.focusWalk === false) return this.opts.focusWalk;
+    return !!this.dev && ['mouse', 'keyboard'].includes(this.dev.base.input);
+  }
+
+  /** Network policy for a context: HTTP and WebSocket. `count` = add blocks to run.json. */
+  async installNetworkPolicy(context, count) {
+    if (count) {
+      await context.route('**/*', (route) => this.onRoute(route));
+      await context.routeWebSocket(/.*/, (ws) => this.onWebSocket(ws));
+      return;
+    }
+    await context.route('**/*', (route) => (this.isAllowed(route.request().url()) ? route.continue() : route.abort('blockedbyclient')).catch(() => {}));
+    await context.routeWebSocket(/.*/, (ws) => {
+      if (this.isAllowed(ws.url().replace(/^ws/, 'http'))) ws.connectToServer();
+      else ws.close({ code: 1008, reason: 'blocked by ergoqa network policy' }).catch(() => {});
+    });
+  }
+
+  /** Focus walk of the initial screen in a separate context, so the run's page keeps its state. */
+  async focusWalkFresh() {
+    let context = null;
+    try {
+      context = await this.browser.newContext({
+        ...this.dev.contextOptions, locale: this.opts.locale, timezoneId: this.opts.timezoneId, colorScheme: 'light',
+        reducedMotion: 'no-preference', serviceWorkers: 'block', acceptDownloads: false,
+      });
+      await this.installNetworkPolicy(context, false);
+      const page = await context.newPage();
+      await page.goto(this.scenario.url, { waitUntil: 'load', timeout: 30000 });
+      await sleep(this.opts.settleMs);
+      await this.focusWalk(page, 'load', this.snapshots.length ? this.snapshots[0].snapshot_id : null);
+    } catch (err) {
+      this.warnings.push(`focus walk (load) failed: ${firstLine(err.message)}`);
+    } finally {
+      if (context) await context.close().catch(() => {});
+    }
+  }
+
+  /** Clip of the page (or the whole viewport) at CSS scale, decoded (focus indicator comparison). */
+  async clipFrame(page, clip) {
+    const opts = { scale: 'css', animations: 'disabled', caret: 'hide', timeout: 5000 };
+    const buf = await page.screenshot(clip ? { ...opts, clip } : opts);
+    return frameFromImage(decodePng(buf));
+  }
+
+  /** The whole viewport downscaled to about FOCUS_VIEWPORT_WIDTH px wide (CDP; fast). */
+  async viewportFrame(cdp, vw, vh) {
+    const scale = Math.min(1, FOCUS_VIEWPORT_WIDTH / vw);
+    const r = await cdp.send('Page.captureScreenshot', {
+      format: 'png', clip: { x: 0, y: 0, width: vw, height: vh, scale }, captureBeyondViewport: false, optimizeForSpeed: true,
+    });
+    return frameFromImage(decodePng(Buffer.from(r.data, 'base64')));
+  }
+
+  /** Blur the deepest focused element (kept for refocus); false when nothing is focused. */
+  async blurFocused(page) {
+    return page.evaluate(() => {
+      let el = document.activeElement;
+      while (el && el.shadowRoot && el.shadowRoot.activeElement) el = el.shadowRoot.activeElement;
+      if (!el || el === document.body) return false;
+      el.blur();
+      window.__ergoFocusEl = el;
+      return true;
+    });
+  }
+
+  async refocus(page) {
+    await page.evaluate(() => {
+      const el = window.__ergoFocusEl;
+      if (el) el.focus({ preventScroll: true });
+    });
+  }
+
+  /**
+   * Tab through the page from the top: per stop, the focused element, how many pixels
+   * its focus changes (focused vs blurred, same scroll position, animation masked) in
+   * its box and its small wrappers (indicator_px) and, when that is nearly nothing, in
+   * the whole viewport (indicator_any_px), and whether a painting fixed or sticky layer
+   * or a non-modal absolute dialog covers it (and, in the end state, whether Escape
+   * reveals it when the user opened that layer). Bounded by FOCUS_WALK_MAX stops and
+   * FOCUS_WALK_BUDGET_MS.
+   */
+  async focusWalk(page, phase, snapshotId) {
+    const stops = [];
+    let ended = 'max_stops';
+    const deadline = epochNow() + FOCUS_WALK_BUDGET_MS;
+    // Smooth scrolling would leave focused elements mid-animation when measured.
+    await page.addStyleTag({ content: 'html, body { scroll-behavior: auto !important; }' }).catch(() => {});
+    // Reset the sequential focus navigation starting point to the top of the document
+    // (blur alone keeps it at the last focused or autofocused element).
+    await page.evaluate(() => {
+      window.scrollTo(0, 0);
+      const b = document.body;
+      if (!b) return;
+      const had = b.getAttribute('tabindex');
+      b.tabIndex = -1;
+      b.focus({ preventScroll: true });
+      b.blur();
+      if (had === null) b.removeAttribute('tabindex');
+      else b.setAttribute('tabindex', had);
+    });
+    const seen = new Set();
+    let lastPath = null;
+    let repeats = 0;
+    let viewportChecks = 0;
+    let cdp = null;
+    for (let i = 0; i < FOCUS_WALK_MAX; i++) {
+      if (epochNow() > deadline) {
+        ended = 'time_budget';
+        break;
+      }
+      await page.keyboard.press('Tab');
+      await this.settleScroll(page);
+      const info = await page.evaluate(focusInfo);
+      if (!info) {
+        ended = 'left_document';
+        break;
+      }
+      if (info.path === lastPath) {
+        // Focus moved inside a cross-origin frame (the frame element stays active).
+        if (++repeats >= 3) {
+          ended = 'opaque_frame';
+          break;
+        }
+        continue;
+      }
+      repeats = 0;
+      lastPath = info.path;
+      if (seen.has(info.path)) {
+        ended = 'cycle';
+        break;
+      }
+      seen.add(info.path);
+      const boxes = [info.box, ...(info.wrap_boxes || [])];
+      const x0 = Math.max(0, Math.floor(Math.min(...boxes.map((b) => b.x)) - 4));
+      const y0 = Math.max(0, Math.floor(Math.min(...boxes.map((b) => b.y)) - 4));
+      const x1 = Math.min(info.vw, Math.ceil(Math.max(...boxes.map((b) => b.x + b.w)) + 4));
+      const y1 = Math.min(info.vh, Math.ceil(Math.max(...boxes.map((b) => b.y + b.h)) + 4));
+      const stop = { ...info, path: undefined, wrap_boxes: undefined, vw: undefined, vh: undefined, indicator_px: null, clip_px: null,
+        indicator_any_px: null };
+      if (info.in_viewport && x1 - x0 >= 2 && y1 - y0 >= 2) {
+        // ACT oj04fd: focused vs blurred (blur, not Shift+Tab, so the previous stop's
+        // indicator is not mixed in); pixels that change between two blurred captures
+        // are animation and are masked.
+        const clip = { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+        const on = await this.clipFrame(page, clip);
+        const blurred = await this.blurFocused(page);
+        let off = null;
+        let off2 = null;
+        if (blurred) {
+          off = await this.clipFrame(page, clip);
+          await sleep(FOCUS_ANIM_GAP_MS);
+          off2 = await this.clipFrame(page, clip);
+        }
+        stop.indicator_px = off ? indicatorPixels(on, off, off2, FOCUS_DIFF_LEVEL, FOCUS_MASK_LEVEL) : null;
+        stop.clip_px = [clip.width, clip.height];
+        if (blurred && stop.indicator_px !== null && stop.indicator_px < FOCUS_LOCAL_MIN_PX && viewportChecks < FOCUS_VIEWPORT_MAX
+            && (info.obscured_fraction || 0) < 0.999) {
+          // Nothing near the element: look for an indicator anywhere in the viewport.
+          // Focus is restored by keyboard (Shift+Tab, Tab from the blurred starting point)
+          // so :focus-visible styles apply as they did; the comparison is kept only when
+          // the same element is focused at the same scroll position.
+          viewportChecks += 1;
+          if (!cdp) cdp = await page.context().newCDPSession(page);
+          const scroll = () => page.evaluate(() => [window.scrollX, window.scrollY]);
+          // The focused capture is bracketed by two unfocused ones, so an animation
+          // changes the pair and is masked.
+          const before = await scroll();
+          const allOff = await this.viewportFrame(cdp, info.vw, info.vh);
+          await page.keyboard.press('Shift+Tab');
+          await page.keyboard.press('Tab');
+          await this.settleScroll(page);
+          const back = await page.evaluate(focusInfo);
+          const after = await scroll();
+          if (back && back.path === info.path && before[0] === after[0] && before[1] === after[1]
+              && Math.abs(back.box.x - info.box.x) < 1 && Math.abs(back.box.y - info.box.y) < 1) {
+            const allOn = await this.viewportFrame(cdp, info.vw, info.vh);
+            const reblurred = await this.blurFocused(page);
+            const allOff2 = reblurred ? await this.viewportFrame(cdp, info.vw, info.vh) : null;
+            if (reblurred) await this.refocus(page);
+            stop.indicator_any_px = allOff2 ? indicatorPixels(allOn, allOff, allOff2, FOCUS_DIFF_LEVEL, FOCUS_MASK_LEVEL) : null;
+            stop.indicator_any_scale = Math.round(Math.min(1, FOCUS_VIEWPORT_WIDTH / info.vw) * 1000) / 1000;
+          } else if (!back || back.path !== info.path) {
+            await this.refocus(page);
+          }
+        } else if (blurred) {
+          await this.refocus(page);
+        }
+        await page.evaluate(() => {
+          window.__ergoFocusEl = null;
+        });
+      }
+      if (phase === 'end' && info.obscured_user_opened === true && (info.obscured_fraction || 0) >= 0.999) {
+        // WCAG 2.4.11 note: content the user opened may cover the focused element if the
+        // user can reveal it without moving focus (for example with Escape).
+        await page.keyboard.press('Escape');
+        await this.settleScroll(page);
+        const again = await page.evaluate(focusInfo);
+        stop.escape_reveals = !!again && again.path === info.path && (again.obscured_fraction || 0) < 0.999;
+      }
+      stops.push(stop);
+    }
+    if (cdp) await cdp.detach().catch(() => {});
+    this.focusWalks.push({ phase, snapshot_id: snapshotId, url: page.url(), ended, stops });
+  }
+
+  /** Wait until the page stops scrolling after a focus move (max ~600 ms). */
+  async settleScroll(page) {
+    let prev = null;
+    for (let i = 0; i < 12; i++) {
+      await sleep(i === 0 ? FOCUS_SETTLE_MS : 50);
+      const pos = await page.evaluate(() => [window.scrollX, window.scrollY]).catch(() => null);
+      if (pos && prev && pos[0] === prev[0] && pos[1] === prev[1]) return;
+      prev = pos;
+    }
+  }
+
+  /** Run a walk with a hard deadline; a hung page cannot stop run.json from being written. */
+  async boundedWalk(fn, phase) {
+    let timer = null;
+    try {
+      await Promise.race([fn(), new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error('deadline')), FOCUS_WALK_BUDGET_MS + 5000);
+      })]);
+    } catch (err) {
+      this.warnings.push(`focus walk (${phase}) stopped: ${firstLine(err.message)}`);
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   async calibrate() {
@@ -633,6 +1171,8 @@ export class WebSession {
       },
       elements: ex.elements,
       focus_point: this.focusPoint,
+      focus: ex.focus,
+      layers: ex.layers,
       console_errors: this.consolePending.splice(0),
       notes: allNotes,
     };
@@ -643,6 +1183,7 @@ export class WebSession {
     writeJsonAtomic(jsonPath, snap);
     this.snapshots.push({ snapshot_id: id, step_index: stepIndex, path: `${id}.json`, png: `${id}.png` });
     this.lastSnapshotId = id;
+    await this.keepForReflow(id);
     // Keep recent element lists to anchor persona notes (note -> element -> selector).
     this.snapElements.set(id, { elements: ex.elements, url: snap.surface.url });
     if (this.snapElements.size > 64) this.snapElements.delete(this.snapElements.keys().next().value);
@@ -1092,6 +1633,11 @@ export class WebSession {
           } else {
             step.point = resolved.point;
             step.target_element_id = resolved.elementId || null;
+            if (['tap', 'click', 'double_tap', 'long_press'].includes(kind)) {
+              step.target_control = resolved.handle
+                ? await resolved.handle.evaluate(controlOf).catch(() => null)
+                : await this.page.evaluate(controlOf, { x: resolved.point.x, y: resolved.point.y }).catch(() => null);
+            }
             const hit = await this.page.evaluate(idAtPoint, { key: STATE_KEY, x: resolved.point.x, y: resolved.point.y }).catch(() => ({ id: null }));
             step.hit_element_id = hit.id;
             if (resolved.handle) step.target_hit = await resolved.handle.evaluate(hitTest, resolved.point).catch(() => null);
@@ -1260,6 +1806,13 @@ export class WebSession {
       } catch (err) {
         this.warnings.push(`success evaluation failed: ${firstLine(err.message)}`);
       }
+      // Focus walks run after the task (so they never delay step 1) and only when the
+      // run ended normally: at the end state, then the initial screen in a fresh context.
+      if (this.focusWalkEnabled() && !reason && !this.crashed && this.page && !this.blockReasons.length) {
+        await this.boundedWalk(() => this.focusWalk(this.page, 'end', this.lastSnapshotId), 'end');
+        await this.boundedWalk(() => this.focusWalkFresh(), 'load');
+      }
+      if (this.reflowEnabled() && !reason && !this.crashed && !this.blockReasons.length) await this.reflowPass();
       if (success === null && !detail && typeof personaSuccess === 'boolean') {
         success = personaSuccess;
         basis = 'judgment';
@@ -1317,6 +1870,8 @@ export class WebSession {
         steps: this.steps,
         timing_windows: this.timingWindowsOut(end),
         flash_samples: this.flashSamples,
+        focus_walks: this.focusWalks,
+        reflow: this.reflow,
         flash_sampling: this.opts.flashSampleMs > 0 ? {
           enabled: true,
           per_step_ms: this.opts.flashSampleMs,

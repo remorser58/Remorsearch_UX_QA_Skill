@@ -371,39 +371,195 @@ export function extractSnapshot(args) {
     const explicit = (el.getAttribute('role') || '').trim().split(/\s+/)[0];
     return explicit || implicitRole(el);
   };
-  const accName = (el) => {
+  // Accessible name and where it came from (accname 1.2 order, simplified): the
+  // source lets checks tell a label-in-name mismatch (aria-label overriding the
+  // visible text) from a placeholder-only field or an unnamed icon button.
+  // Ids resolve in the element's own tree (document or shadow root).
+  const byId = (el, id) => {
+    const root = el.getRootNode();
+    return (root && typeof root.getElementById === 'function' ? root.getElementById(id) : null) || document.getElementById(id);
+  };
+  // SVG has no innerText; its textContent includes <style> and <script>. Its name comes
+  // from a <title> child only.
+  const svgTitle = (el) => {
+    const t = [...el.children].find((c) => c.tagName && c.tagName.toLowerCase() === 'title');
+    return t ? t.textContent.replace(/\s+/g, ' ').trim() : '';
+  };
+  // Roles whose name comes from the author only, never from their content (ARIA 1.2
+  // "Name From: author"): a role=textbox div's text is its value, not its name.
+  const AUTHOR_ONLY = new Set(['textbox', 'searchbox', 'combobox', 'listbox', 'spinbutton', 'slider', 'progressbar', 'meter', 'scrollbar',
+    'tree', 'treegrid', 'grid', 'table', 'menu', 'menubar', 'radiogroup', 'tablist', 'toolbar', 'dialog', 'alertdialog', 'img', 'group']);
+  const accNameSrc = (el) => {
     const lb = el.getAttribute('aria-labelledby');
     if (lb) {
-      const t = lb.split(/\s+/).map((id) => document.getElementById(id)).filter(Boolean).map(text).join(' ').trim();
-      if (t) return t;
+      const t = lb.split(/\s+/).map((id) => byId(el, id)).filter(Boolean).map(text).join(' ').trim();
+      if (t) return [t, 'aria-labelledby'];
     }
     const al = (el.getAttribute('aria-label') || '').trim();
-    if (al) return al;
+    if (al) return [al, 'aria-label'];
     const tag = el.tagName.toLowerCase();
     const type = (el.getAttribute('type') || '').toLowerCase();
     if (tag === 'img' || (tag === 'input' && type === 'image')) {
       const alt = (el.getAttribute('alt') || '').trim();
-      if (alt) return alt;
+      if (alt) return [alt, 'alt'];
     }
     if (tag === 'input' && ['submit', 'button', 'reset'].includes(type)) {
-      return (el.value || (type === 'submit' ? 'Submit' : type === 'reset' ? 'Reset' : '')).trim();
-    }
-    if (['input', 'select', 'textarea'].includes(tag)) {
+      const v = (el.value || (type === 'submit' ? 'Submit' : type === 'reset' ? 'Reset' : '')).trim();
+      if (v) return [v, 'value'];
+    } else if (['input', 'select', 'textarea'].includes(tag)) {
       if (el.labels && el.labels.length) {
         const t = [...el.labels].map(text).join(' ').trim();
-        if (t) return t;
+        if (t) return [t, 'label'];
       }
+      // HTML-AAM order: title before placeholder.
+      const ti = (el.getAttribute('title') || '').trim();
+      if (ti) return [ti, 'title'];
       const ph = (el.getAttribute('placeholder') || '').trim();
-      if (ph) return ph;
-    } else {
-      const t = text(el);
-      if (t) return t.slice(0, 300);
+      if (ph) return [ph, 'placeholder'];
+    } else if (typeof SVGElement !== 'undefined' && el instanceof SVGElement) {
+      const t = svgTitle(el);
+      if (t) return [t, 'content'];
+    } else if (!AUTHOR_ONLY.has((el.getAttribute('role') || '').trim().split(/\s+/)[0])) {
+      const t = nameFromContent(el) || text(el);
+      if (t) return [t.slice(0, 300), 'content'];
       const img = el.querySelector && el.querySelector('img[alt]');
-      if (img && img.alt.trim()) return img.alt.trim();
+      if (img && img.alt.trim()) return [img.alt.trim(), 'content'];
       const svgTitle = el.querySelector && el.querySelector('svg title');
-      if (svgTitle && svgTitle.textContent.trim()) return svgTitle.textContent.trim();
+      if (svgTitle && svgTitle.textContent.trim()) return [svgTitle.textContent.trim(), 'content'];
     }
-    return (el.getAttribute('title') || '').trim();
+    const title = (el.getAttribute('title') || '').trim();
+    return title ? [title, 'title'] : ['', 'none'];
+  };
+  const accName = (el) => accNameSrc(el)[0];
+  // Visually hidden (the "visually-hidden" pattern, display:none, visibility:hidden).
+  const visuallyHidden = (n) => {
+    const cs = style(n);
+    if (cs.display === 'none' || cs.visibility === 'hidden' || cs.visibility === 'collapse') return true;
+    if (/inset\(\s*50%/.test(cs.clipPath || '') || /rect\(\s*0(px)?,?\s*0(px)?,?\s*0(px)?,?\s*0(px)?\s*\)/.test(cs.clip || '')) return true;
+    const r = n.getBoundingClientRect();
+    return r.width <= 1 && r.height <= 1 && (cs.overflow === 'hidden' || cs.overflow === 'clip');
+  };
+  // ACT "visible inner text": text a sighted user sees inside the element.
+  const visibleInnerText = (el) => {
+    const out = [];
+    let budget = 400;
+    const walk = (n) => {
+      for (const c of n.childNodes) {
+        if (budget-- <= 0) return;
+        if (c.nodeType === 3) out.push(c.nodeValue);
+        else if (c.nodeType === 1 && !visuallyHidden(c) && c.tagName.toLowerCase() !== 'style' && c.tagName.toLowerCase() !== 'script') {
+          // Inline boxes join their text ("A", "C", "T" reads "ACT"); block boxes and
+          // <br> break words, as innerText does.
+          const block = c.tagName.toLowerCase() === 'br' || !/^inline/.test(style(c).display || 'inline');
+          if (block) out.push(' ');
+          walk(c);
+          if (block) out.push(' ');
+        }
+      }
+    };
+    walk(el);
+    return out.join('').replace(/\s+/g, ' ').trim().slice(0, 300);
+  };
+  // Name from content (accname 1.2 step 2F, simplified): text, plus the names of
+  // descendant images and labelled elements; hidden descendants contribute nothing.
+  const nameFromContent = (el) => {
+    const out = [];
+    let budget = 400;
+    const walk = (n) => {
+      for (const c of n.childNodes) {
+        if (budget-- <= 0) return;
+        if (c.nodeType === 3) {
+          out.push(c.nodeValue);
+          continue;
+        }
+        if (c.nodeType !== 1) continue;
+        const tag = c.tagName.toLowerCase();
+        if (tag === 'style' || tag === 'script') continue;
+        const cs = style(c);
+        if (cs.display === 'none' || cs.visibility === 'hidden' || c.getAttribute('aria-hidden') === 'true') continue;
+        const lb = c.getAttribute('aria-labelledby');
+        const lbText = lb ? lb.split(/\s+/).map((id) => byId(c, id)).filter(Boolean).map(text).join(' ').trim() : '';
+        const al = (c.getAttribute('aria-label') || '').trim();
+        if (lbText) out.push(lbText);
+        else if (al) out.push(al);
+        else if (tag === 'img' || (tag === 'input' && (c.getAttribute('type') || '').toLowerCase() === 'image')) {
+          out.push((c.getAttribute('alt') || '').trim() || (c.getAttribute('title') || '').trim());
+        } else if (typeof SVGElement !== 'undefined' && c instanceof SVGElement) out.push(svgTitle(c) || (c.getAttribute('title') || ''));
+        else {
+          const before = out.length;
+          walk(c);
+          if (out.slice(before).join('').trim() === '' && c.getAttribute('title')) out.push(c.getAttribute('title').trim());
+        }
+      }
+    };
+    walk(el);
+    return out.join(' ').replace(/\s+/g, ' ').trim();
+  };
+  const NATIVE_FOCUSABLE = new Set(['a', 'button', 'input', 'select', 'textarea', 'summary']);
+  // Programmatic state a check can read without a screen reader (WCAG 4.1.2, 3.3.1).
+  const a11yOf = (el) => {
+    const tag = el.tagName.toLowerCase();
+    const ids = (attr) => (el.getAttribute(attr) || '').split(/\s+/).filter((id) => id && byId(el, id));
+    const tabAttr = el.getAttribute('tabindex');
+    const native = NATIVE_FOCUSABLE.has(tag) && !(tag === 'a' && !el.hasAttribute('href'));
+    let disabled = false;
+    try {
+      disabled = el.matches(':disabled');
+    } catch (e) {
+      disabled = false;
+    }
+    return {
+      name_source: accNameSrc(el)[1],
+      invalid: el.getAttribute('aria-invalid') === 'true',
+      user_invalid: (() => {
+        try {
+          return el.matches(':user-invalid');
+        } catch (e) {
+          return false;
+        }
+      })(),
+      described_by: ids('aria-describedby').slice(0, 8),
+      visible_label: visibleInnerText(el),
+      // Hidden from assistive technology (aria-hidden or inert on it or an ancestor).
+      hidden: !!(el.closest && (el.closest('[aria-hidden="true"]') || el.closest('[inert]'))),
+      // Rendered (not display:none, not visibility:hidden), even with a zero-size box: such
+      // an element is still in the accessibility tree (AUT-20). Opacity does not count.
+      rendered: (() => {
+        if (typeof el.checkVisibility === 'function') return el.checkVisibility({ visibilityProperty: true });
+        const cs = style(el);
+        return cs.display !== 'none' && cs.visibility === 'visible' && el.getClientRects().length > 0;
+      })(),
+      // Visible text drawn by an icon font (ligatures such as "menu"): not a text label.
+      icon_font: (() => {
+        const ICON = /icon|material|awesome|symbol|glyph|fontello|ionicon|bootstrap-icons/i;
+        const nodes = [el, ...el.querySelectorAll('span, i, em')].slice(0, 6);
+        return nodes.some((n) => n.textContent && n.textContent.trim() && ICON.test(style(n).fontFamily || ''));
+      })(),
+      error_message: ids('aria-errormessage')[0] || null,
+      required: el.required === true || el.getAttribute('aria-required') === 'true',
+      focusable: !disabled && (tabAttr !== null ? parseInt(tabAttr, 10) >= 0 : native || el.isContentEditable),
+      tabindex: tabAttr !== null && Number.isFinite(parseInt(tabAttr, 10)) ? parseInt(tabAttr, 10) : null,
+    };
+  };
+  // Text cut off by its own box (XCTest textClipped; WCAG 1.4.4/1.4.12 symptoms).
+  const clippedOf = (el, cs) => {
+    const hide = (v) => v === 'hidden' || v === 'clip';
+    const x = hide(cs.overflowX) && el.scrollWidth > el.clientWidth + 1;
+    const y = hide(cs.overflowY) && el.scrollHeight > el.clientHeight + 1;
+    if (!x && !y) return null;
+    const clamp = cs.webkitLineClamp && cs.webkitLineClamp !== 'none';
+    // Tickers and marquees clip by design: text that moves (CSS animation on the element
+    // or a close ancestor, or <marquee>) is recorded as animated.
+    let animated = false;
+    for (let n = el, i = 0; n && n.nodeType === 1 && i < 4; n = n.parentElement, i++) {
+      const ncs = style(n);
+      if (n.tagName.toLowerCase() === 'marquee' || (ncs.animationName && ncs.animationName !== 'none')
+        || (typeof n.getAnimations === 'function' && n.getAnimations().length)) {
+        animated = true;
+        break;
+      }
+    }
+    return { x, y, ellipsis: cs.textOverflow === 'ellipsis' || !!clamp, line_clamp: !!clamp, animated };
   };
   const visibleText = (el) => {
     const tag = el.tagName.toLowerCase();
@@ -477,7 +633,9 @@ export function extractSnapshot(args) {
   // ---------- candidates
   const INTERACTIVE = 'a, button, input:not([type="hidden"]), select, textarea, summary, canvas, '
     + '[role="button"], [role="link"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"], '
-    + '[role="menuitem"], [role="slider"], [onclick], [contenteditable=""], [contenteditable="true"]';
+    + '[role="menuitem"], [role="slider"], [role="textbox"], [role="searchbox"], [role="combobox"], [role="listbox"], '
+    + '[role="spinbutton"], [role="option"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="treeitem"], '
+    + '[role="gridcell"][tabindex], [onclick], [contenteditable=""], [contenteditable="true"]';
   const isInteractive = (el) => {
     try {
       if (el.matches(INTERACTIVE)) return true;
@@ -703,6 +861,7 @@ export function extractSnapshot(args) {
       text: visibleText(el),
       tag,
       selector: uniqueSelector(el),
+      dom_id: el.id ? String(el.id).slice(0, 120) : null,
       box: { x: round2(g.r.left), y: round2(g.r.top), w: round2(g.r.width), h: round2(g.r.height) },
       interactive: c.interactive,
       visible: g.vis,
@@ -734,6 +893,11 @@ export function extractSnapshot(args) {
           occluded_by: o.by ? uniqueSelector(o.by) : null,
           inert_by_modal: inertByModal(el),
         };
+      })(),
+      ...(c.interactive || ['input', 'select', 'textarea'].includes(tag) ? { a11y: a11yOf(el) } : {}),
+      ...(() => {
+        const clip = !c.interactive && hasDirectText(el) ? clippedOf(el, cs) : null;
+        return clip ? { clipped: clip } : {};
       })(),
       roles: roleMap.has(el) ? [...roleMap.get(el)].sort() : [],
       // Ids of the nearest ancestors (grouping context such as a toolbar or chip row).
@@ -781,6 +945,69 @@ export function extractSnapshot(args) {
     const r = ae.getBoundingClientRect();
     if (r.width > 0 && r.height > 0) active = { x: round2(r.left + r.width / 2), y: round2(r.top + r.height / 2) };
   }
+  // Layers that take over the screen (FM-02): declared dialogs, and fixed or absolute
+  // painted boxes covering at least 40 % of the viewport. Records whether keyboard
+  // focus is inside each one; values are never read.
+  let deep = document.activeElement;
+  while (deep && deep.shadowRoot && deep.shadowRoot.activeElement) deep = deep.shadowRoot.activeElement;
+  const focusOnBody = !deep || deep === document.body || deep === document.documentElement;
+  const layers = [];
+  const vpArea = Math.max(1, vw * vh);
+  const painted = (n) => {
+    const cs = style(n);
+    const bg = cs.backgroundColor || '';
+    const a = /rgba\(.*,\s*([\d.]+)\)/.exec(bg);
+    return (bg && bg !== 'transparent' && !(a && parseFloat(a[1]) === 0)) || (cs.backgroundImage && cs.backgroundImage !== 'none');
+  };
+  for (const n of all) {
+    if (layers.length >= 8) break;
+    if (n === document.body || n === document.documentElement) continue;
+    const role = (n.getAttribute('role') || '').trim();
+    let modal = false;
+    try {
+      modal = n.matches(':modal');
+    } catch (e) { /* unsupported */ }
+    const declared = modal || n.getAttribute('aria-modal') === 'true' || role === 'dialog' || role === 'alertdialog'
+      || (n.tagName.toLowerCase() === 'dialog' && n.open);
+    let kind = null;
+    const g = geo(n);
+    if (!g.vis) continue;
+    if (declared) kind = modal || n.getAttribute('aria-modal') === 'true' ? 'modal' : 'dialog';
+    else {
+      // Area first (cheap, from the cached box), then the computed style.
+      const r = g.r;
+      const w = Math.max(0, Math.min(r.right, vw) - Math.max(r.left, 0));
+      const h = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0));
+      if ((w * h) / vpArea < 0.4) continue;
+      const pos = style(n).position;
+      if ((pos === 'fixed' || pos === 'absolute') && painted(n)) {
+        // An overlay sits over content that is still rendered underneath; a screen that
+        // replaced the previous one (display:none swaps) covers nothing.
+        let over = 0;
+        for (const c of candidates) {
+          if (over >= 1) break;
+          if (n.contains(c.el) || c.el.contains(n)) continue;
+          const cg = geo(c.el);
+          if (!cg.vis) continue;
+          const cx = cg.r.left + cg.r.width / 2;
+          const cy = cg.r.top + cg.r.height / 2;
+          if (cx < r.left || cx > r.right || cy < r.top || cy > r.bottom || cx < 0 || cy < 0 || cx >= vw || cy >= vh) continue;
+          const top = document.elementFromPoint(cx, cy);
+          if (top && n.contains(top)) over += 1;
+        }
+        if (over) kind = 'sheet';
+      }
+    }
+    if (!kind) continue;
+    if (layers.some((l) => l.node.contains(n))) continue; // keep the outermost
+    for (let i = layers.length - 1; i >= 0; i--) if (n.contains(layers[i].node)) layers.splice(i, 1);
+    layers.push({ node: n, kind });
+  }
+  const layerOut = layers.map(({ node, kind }) => ({
+    selector: uniqueSelector(node), dom_id: node.id || null, kind,
+    box: { x: round2(geo(node).r.left), y: round2(geo(node).r.top), w: round2(geo(node).r.width), h: round2(geo(node).r.height) },
+    contains_focus: !focusOnBody && (node === deep || node.contains(deep)),
+  }));
   const se = document.scrollingElement || document.documentElement;
   return {
     elements,
@@ -789,6 +1016,8 @@ export function extractSnapshot(args) {
     viewport: { w: vw, h: vh },
     scroll: { x: round2(window.scrollX), y: round2(window.scrollY), width: se ? se.scrollWidth : null, height: se ? se.scrollHeight : null },
     active,
+    focus: { on_body: focusOnBody, tag: focusOnBody ? null : deep.tagName.toLowerCase(), dom_id: focusOnBody ? null : (deep.id || null) },
+    layers: layerOut,
     pageHotspotError,
     unknownRoles: [...unknownRoles],
   };
@@ -832,6 +1061,48 @@ export function idAtPoint(args) {
     if (id) return { id, hotspot: false };
   }
   return { id: null, hotspot: false };
+}
+
+/**
+ * What a click landed on (SM-08): the element (a handle, or the top-most element at
+ * {x, y}), whether it or an ancestor within five levels is a control a keyboard or
+ * screen reader can operate (native control, widget role, tabindex >= 0, a label with
+ * a control, contenteditable), whether it contains one, and its ancestor ids.
+ * Never reads values.
+ */
+export function controlOf(arg) {
+  let el = arg && arg.nodeType === 1 ? arg : (arg ? document.elementFromPoint(arg.x, arg.y) : null);
+  while (el && el.shadowRoot && arg && arg.nodeType !== 1) {
+    const inner = el.shadowRoot.elementFromPoint(arg.x, arg.y);
+    if (!inner || inner === el) break;
+    el = inner;
+  }
+  if (!el) return null;
+  const NATIVE = ['button', 'input', 'select', 'textarea', 'summary', 'option', 'details', 'video', 'audio', 'iframe', 'canvas'];
+  const WIDGET = ['button', 'link', 'checkbox', 'radio', 'switch', 'tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'option',
+    'slider', 'spinbutton', 'textbox', 'searchbox', 'combobox', 'listbox', 'treeitem', 'gridcell', 'scrollbar'];
+  const isControl = (n) => {
+    const tag = n.tagName.toLowerCase();
+    if (NATIVE.includes(tag) || (tag === 'a' && n.hasAttribute('href')) || (tag === 'label' && n.control)) return true;
+    const role = (n.getAttribute('role') || '').trim().split(/\s+/)[0];
+    if (WIDGET.includes(role)) return true;
+    const t = n.getAttribute('tabindex');
+    return (t !== null && parseInt(t, 10) >= 0) || n.isContentEditable;
+  };
+  let control = false;
+  for (let n = el, i = 0; n && n.nodeType === 1 && i < 5; n = n.parentElement, i++) {
+    if (isControl(n)) {
+      control = true;
+      break;
+    }
+  }
+  const contains = [...el.querySelectorAll('*')].slice(0, 300).some(isControl);
+  const ids = [];
+  for (let n = el.parentElement; n && ids.length < 6; n = n.parentElement) if (n.id) ids.push(n.id);
+  return {
+    tag: el.tagName.toLowerCase(), role: (el.getAttribute('role') || '').trim() || null, dom_id: el.id || null, control,
+    contains_control: contains, ancestor_ids: ids, text: (el.innerText || el.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim().slice(0, 40),
+  };
 }
 
 /** Is the top-most element at (x, y) the target element or inside it? */

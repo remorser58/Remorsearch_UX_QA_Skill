@@ -192,3 +192,93 @@ def score(answer_key: dict[str, Any], findings: Iterable[dict[str, Any]], profil
         "clean_findings": [{"id": f["id"], "scenario_id": f["scenario_id"], "check_id": f["check_id"], "severity": f["severity"], "element_key": f["element_key"]} for f in clean_findings],
         "unlabeled": [{"id": f["id"], "scenario_id": f["scenario_id"], "check_id": f["check_id"], "severity": f["severity"], "element_key": f["element_key"]} for f in unlabeled],
     }
+
+
+# ---------------------------------------------------------------------------
+# Evaluation statistics (evaluating-qa-detectors.md EVD-02, EVD-03, EVD-05)
+
+
+def poisson_upper(k: int, n_units: float, alpha: float = 0.05) -> float | None:
+    """Exact (Garwood) upper bound of a Poisson rate: k events over n_units, two-sided 1-alpha."""
+    if n_units <= 0:
+        return None
+
+    def cdf(lam: float) -> float:
+        term = math.exp(-lam)
+        total = term
+        for i in range(1, k + 1):
+            term *= lam / i
+            total += term
+        return total
+
+    lo, hi = 0.0, max(10.0, 5.0 * (k + 1))
+    for _ in range(200):
+        mid = (lo + hi) / 2
+        if cdf(mid) > alpha / 2:
+            lo = mid
+        else:
+            hi = mid
+    return round(hi / n_units, 3)
+
+
+def newcombe_paired(a: list[bool], b: list[bool], z: float = 1.96) -> dict[str, Any]:
+    """Difference of paired proportions p(a) - p(b) with Newcombe's score interval
+    (method 10), which stays sensible when there are no discordant pairs."""
+    n = len(a)
+    if n == 0 or n != len(b):
+        return {"diff": None, "ci95": [None, None], "n": n, "discordant": [0, 0]}
+    both = sum(1 for x, y in zip(a, b) if x and y)
+    only_a = sum(1 for x, y in zip(a, b) if x and not y)
+    only_b = sum(1 for x, y in zip(a, b) if y and not x)
+    neither = n - both - only_a - only_b
+    p1, p2 = (both + only_a) / n, (both + only_b) / n
+    l1, u1 = wilson(both + only_a, n, z)
+    l2, u2 = wilson(both + only_b, n, z)
+    denom = (both + only_a) * (neither + only_b) * (both + only_b) * (neither + only_a)
+    phi = 0.0
+    if denom > 0:
+        num = both * neither - only_a * only_b
+        phi = (num - n / 2 if num > n / 2 else (num + n / 2 if num < -n / 2 else 0.0)) / math.sqrt(denom)
+    d = p1 - p2
+    lower = d - math.sqrt(max(0.0, (p1 - l1) ** 2 - 2 * phi * (p1 - l1) * (u2 - p2) + (u2 - p2) ** 2))
+    upper = d + math.sqrt(max(0.0, (u1 - p1) ** 2 - 2 * phi * (u1 - p1) * (p2 - l2) + (p2 - l2) ** 2))
+    return {"diff": round(d, 3), "ci95": [round(max(-1.0, lower), 3), round(min(1.0, upper), 3)], "n": n, "discordant": [only_a, only_b]}
+
+
+def discrimination(answer_key: dict[str, Any], findings: Iterable[dict[str, Any]], profiles: Iterable[dict[str, Any]],
+                   twin_of: dict[str, str], exact_viewport: bool = True) -> dict[str, Any]:
+    """Clean-twin discrimination (EVD-02): a strictly detected defect counts only when the
+    same selector, category and condition are NOT also flagged in its clean twin.
+
+    Also returns per-category Youden J = TPR(defect elements) - FPR(the same elements in
+    the twin) and its mean over categories (OWASP-style)."""
+    findings = [f for f in findings if f.get("tier") != "hypothesis"]
+    profiles_by_id = {p["profile_id"]: p for p in profiles}
+    rows = []
+    for d in answer_key.get("defects", []):
+        twin = twin_of.get(d["scenario_id"])
+
+        def hit(scenario_id: str | None) -> bool:
+            return scenario_id is not None and any(
+                f["scenario_id"] == scenario_id and f["category"] == d["category"]
+                and _selector_matches(f, d.get("element_selector", ""), exact_viewport)
+                and _profile_ok(f, d.get("profile_condition") or {}, profiles_by_id) for f in findings)
+
+        in_defect = hit(d["scenario_id"])
+        in_twin = hit(twin)
+        rows.append({"id": d["id"], "category": d["category"], "twin": twin, "detected": in_defect, "flagged_in_twin": in_twin,
+                     "discriminating": in_defect and not in_twin})
+    n = len(rows) or 1
+    by_cat: dict[str, dict[str, float]] = {}
+    for cat in sorted({r["category"] for r in rows}):
+        rs = [r for r in rows if r["category"] == cat]
+        tpr = sum(r["detected"] for r in rs) / len(rs)
+        fpr = sum(r["flagged_in_twin"] for r in rs if r["twin"]) / max(1, sum(1 for r in rs if r["twin"]))
+        by_cat[cat] = {"n": len(rs), "tpr": round(tpr, 3), "fpr_twin": round(fpr, 3), "youden_j": round(tpr - fpr, 3)}
+    return {
+        "recall_discriminating": round(sum(r["discriminating"] for r in rows) / n, 3),
+        "non_discriminating": sum(1 for r in rows if r["detected"] and not r["discriminating"]),
+        "youden_by_category": by_cat,
+        "youden_mean": round(sum(v["youden_j"] for v in by_cat.values()) / len(by_cat), 3) if by_cat else None,
+        "per_defect": rows,
+    }

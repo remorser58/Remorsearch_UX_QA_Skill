@@ -8,7 +8,6 @@
 // (success false/unknown, or a scripted step failed); 2 usage/input error;
 // 4 driver/browser failure or blocked run.
 
-import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -17,6 +16,7 @@ import { CATALOG, DeviceError, deviceFromJson, resolveDevice } from './devices.m
 import { WebSession, ensureRunDir } from './session.mjs';
 import { startServer } from './serve.mjs';
 import { normalizeProfile, normalizeScenario } from './validate.mjs';
+import { loadPlaywright } from './playwright_loader.mjs';
 import { DriverFailure, EXIT, UsageError, readJsonFile } from './util.mjs';
 
 const USAGE = `usage:
@@ -35,6 +35,9 @@ options:
   --allow-origin ORIGIN    extra origin the page may load from (repeatable; default: scenario origin only)
   --continue-on-error      scripted run: keep going after a failed step
   --no-auto-scroll         do not scroll targets into view (step fails with no_target instead)
+  --focus-walk / --no-focus-walk  Tab through the page at load (separate context) and at the end,
+                           recording focus indicators and covered focus (default: on for mouse/keyboard devices)
+  --no-reflow                   skip the 320 CSS px reflow pass (static copies of the screens, scripts off)
   --no-visual-feedback     only DOM mutations/navigation count as feedback
   --timeout-s N            scripted run time limit (default 900)
   --idle-timeout-s N       serve: finish as blocked after N s without requests (default 900)
@@ -65,7 +68,7 @@ const VALUE_FLAGS = new Set([
   'scenario', 'profile', 'out', 'run-id', 'base', 'port', 'flash-sample-ms', 'device', 'device-json', 'orientation',
   'allow-origin', 'feedback-timeout-ms', 'settle-ms', 'timeout-s', 'idle-timeout-s', 'locale', 'timezone', 'agent', 'agent-json',
 ]);
-const BOOL_FLAGS = new Set(['headed', 'continue-on-error', 'no-auto-scroll', 'no-visual-feedback', 'help']);
+const BOOL_FLAGS = new Set(['headed', 'continue-on-error', 'no-auto-scroll', 'no-visual-feedback', 'focus-walk', 'no-focus-walk', 'no-reflow', 'help']);
 
 function parseArgs(argv) {
   const out = { command: null, flags: {}, allowOrigins: [] };
@@ -108,39 +111,6 @@ function intFlag(flags, name, def, min, max) {
   return v;
 }
 
-function loadPlaywright() {
-  const req = createRequire(import.meta.url);
-  const attempts = [];
-  const tryLoad = (spec, how) => {
-    try {
-      const resolved = req.resolve(spec);
-      return { mod: req(resolved), path: resolved, how };
-    } catch (err) {
-      attempts.push(`${how}: ${String(err.message).split('\n')[0]}`);
-      return null;
-    }
-  };
-  let r = tryLoad('playwright', 'module resolution');
-  for (const dir of (process.env.NODE_PATH || '').split(path.delimiter).filter(Boolean)) {
-    r = r || tryLoad(path.join(dir, 'playwright'), `NODE_PATH ${dir}`);
-  }
-  r = r || tryLoad('/opt/node22/lib/node_modules/playwright', '/opt/node22 fallback');
-  if (!r) throw new DriverFailure(`cannot load the playwright package (${attempts.join('; ')})`);
-  let version = null;
-  for (let dir = path.dirname(r.path); dir !== path.dirname(dir); dir = path.dirname(dir)) {
-    const pkg = path.join(dir, 'package.json');
-    if (fs.existsSync(pkg)) {
-      try {
-        const meta = JSON.parse(fs.readFileSync(pkg, 'utf8'));
-        if (meta.name === 'playwright') {
-          version = meta.version;
-          break;
-        }
-      } catch { /* keep looking */ }
-    }
-  }
-  return { pw: r.mod, info: { version, path: path.dirname(r.path), resolved_by: r.how } };
-}
 
 function slug(s, n) {
   return String(s).replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, n) || 'x';
@@ -192,6 +162,9 @@ async function main(argv) {
     feedbackTimeoutMs: intFlag(f, 'feedback-timeout-ms', 3000, 0, 10000),
     settleMs: intFlag(f, 'settle-ms', 300, 0, 10000),
     autoScroll: !f['no-auto-scroll'],
+    // Keyboard focus walk (default: pointer/keyboard devices only).
+    focusWalk: f['focus-walk'] ? true : f['no-focus-walk'] ? false : null,
+    reflow: f['no-reflow'] ? false : null,
     visualFeedback: !f['no-visual-feedback'],
     headed: !!f.headed,
     allowOrigins,

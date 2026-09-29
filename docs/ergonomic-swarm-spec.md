@@ -141,6 +141,12 @@ Functions:
   that snapshot; they are evaluated in the snapshots where they are usable.
 - Text elements are listed only when they own a text node, so a `<li>` whose text is
   inside a child button does not report the child's text with its own font size.
+- Semantics fields (web driver, additive): `dom_id`; for controls and form fields
+  `a11y` = {`name_source` (aria-labelledby | aria-label | alt | value | label |
+  placeholder | content | title | none), `invalid` (aria-invalid), `user_invalid`
+  (`:user-invalid`), `described_by` (ids that exist), `error_message`, `required`,
+  `focusable`, `tabindex`}; for text elements whose own box cuts their text,
+  `clipped` = {`x`, `y`, `ellipsis`}.
 
 ## 4. Scenario (`ergo-scenario.v1`)
 
@@ -200,6 +206,10 @@ runs/<run_id>/S-<run>-000.json + .png
   "timing_windows": [{"id": "qte-1", "selector": "#qte", "kind": "qte", "visible_ms": 400,
                       "intervals_ms": [400], "text": "지금 누르세요!"}],
   "flash_samples": [{"t_ms": 0, "mean_luminance": 0.3}],
+  "focus_walks": [{"phase": "load|end", "snapshot_id": "S-...-000", "ended": "cycle|left_document|max_stops|refocus_failed",
+                   "stops": [{"selector": "#pay", "dom_id": "pay", "role": "button", "name": "결제하기",
+                              "box": {"x": 0, "y": 0, "w": 0, "h": 0}, "in_viewport": true,
+                              "indicator_px": 530, "clip_px": [120, 56], "obscured_fraction": 0, "obscured_by": null}]}],
   "persona_notes": [{"step_index": 1, "intent": "...", "expected": "...", "observed": "...", "confusion": false}]
 }
 ```
@@ -465,7 +475,16 @@ Rules (validated by `audience-check`):
 
 - `sources[].type` ∈ official_statistics, product_analytics, app_store_reviews,
   community, survey, interview, usability_test, support_tickets, official_docs,
-  competitor, market_report, research_paper, product_brief, expert_judgment.
+  competitor, market_report, research_paper, product_brief, expert_judgment, news.
+- `sources[].bundle_ref` (optional): the source's id in the `ux-evidence-bundle.v1`
+  written by the research mode's public-page reader, so a quote can be traced to
+  the page read (`references/research/public-page-access.md`).
+- Community, app-store review and news sources support **existence** only: a
+  share that rests only on them, or `statistic` evidence from them, is rejected
+  (record such quotes as `firsthand`). Sizes need statistics, analytics or a
+  survey.
+- When the research mode wrote a gate (`ux-research-gate.v1`), Stage 0 cross-checks
+  it before composition (planned: `audience-check --gate --bundle`).
 - Every segment has at least one evidence item; every share, condition, context
   and task cites known `source_id`s. `share.value` is null exactly when
   `basis` is `unknown`.
@@ -506,7 +525,9 @@ Composition (`audience.compose(audience, budget, floors)`):
    "audience_composed"` and `audience_ref` {audience_id, segment_id,
    segment_priority, context_id, task_ids, facet, floor, reasons, source_ids}),
    `segments` (weight, profiles), `floors_used`, and `untested` (facets and
-   segments the budget did not reach — listed in the report).
+   segments the budget did not reach — listed in the report). In the evidence
+   bundle, each persona record keeps `basis: "synthetic"` and carries the
+   profile's `audience_ref`; each finding record carries `segments_affected`.
 
 Rules added after the personas-and-audience research brief (2026-09-28;
 `docs/qa-discipline/personas-and-audience-research.md`):

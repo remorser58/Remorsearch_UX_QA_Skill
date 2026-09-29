@@ -60,6 +60,35 @@ error (nothing is run; an existing non-empty run directory is never overwritten)
 run directory exists). `run` and `serve` print one JSON line per event on stdout
 (`ready`, `finished`).
 
+## Reading public pages (`read_page.mjs`, rung R3)
+
+`read_page.mjs` renders one public URL for the research mode's reader and writes one
+`ux-page-read.v1` document (`schemas/ux-page-read.v1.schema.json`). It is not used
+by the swarm runs.
+
+```bash
+node drivers/web/read_page.mjs https://example.com/post/1 --out capture.json [--device desktop-1920]
+python3 scripts/ux_research.py ingest capture.json --run RUN_DIR --url https://example.com/post/1 --context anonymous
+```
+
+- A fresh anonymous context: no stored cookies, no sign-in. The browser keeps its
+  own user agent; the device sets only the viewport. No stealth.
+- Images, media and fonts are blocked.
+- It only scrolls (8 screens by default, at most 50). It never clicks, types or
+  presses keys, so "more comments" buttons and consent banners stay as they are.
+- A check that clears by itself ("checking your browser") is waited for, at most
+  15 s (`waited_ms`). An interactive human check is reported
+  (`challenge.interactive`) and never solved. A password field is reported
+  (`login_form`); the reader's verdict decides whether the page is gated.
+- Loopback, private and link-local addresses are refused unless `--allow-local`
+  (for local fixtures).
+- Pacing and budgets are the reader's job (`references/research/public-page-access.md`
+  section 8). Run it only after an anonymous read of the same URL that did not stop.
+
+Exit codes: 0 read (document written), 3 stopped at an interactive human check
+(document written), 2 usage or refused address, 4 unread (navigation failed or no
+browser).
+
 ## Devices
 
 `devices.mjs` mirrors `ergoqa/devices.py` (ids, CSS viewport, DPR, input,
@@ -157,6 +186,20 @@ they belong to (0 = initial load), so a step can own two snapshots.
   `flash_sampling` records `sampled_ms`, `mean_fps`, `max_gap_ms`, `bursts` and
   `truncated` (sampling stops at about 6 MB of samples so `run.json` stays below
   ergoqa's input limit).
+- **Keyboard focus walk** (mouse and keyboard devices by default; `--focus-walk`
+  / `--no-focus-walk`): after the task, when the run ended normally, the driver
+  Tabs through up to 40 stops of the end state and then of the initial screen (in a
+  separate browser context with the same network policy), each walk within 8 s. It
+  resets the sequential focus starting point to the top, turns smooth scrolling off
+  and waits for scrolling to settle, and follows focus into open shadow roots and
+  same-origin iframes. Per stop, `run.focus_walks[].stops[]` records the focused
+  element (`selector`, `dom_id`, `role`, `name` — never a field's value — `box`,
+  `frame`), `indicator_px` (pixels that change by >= 24/255 in the element box, its
+  small wrappers and 4 px around them, between the focused state and the same
+  element blurred at the same scroll position) and `obscured_fraction` /
+  `obscured_by` (share of nine sample points covered by a painting fixed or sticky
+  layer that does not contain the element). `ended` says why a walk stopped
+  (`cycle`, `left_document`, `max_stops`, `time_budget`, `opaque_frame`).
 - **Console**: `console.error` and uncaught page errors, per snapshot (since the
   previous one) and in `run.json`. Errors caused by the driver's own network block
   are counted separately, not reported as page errors.

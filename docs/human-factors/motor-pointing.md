@@ -545,7 +545,7 @@ This overlaps with the grip/reach domain brief. Only the pointing-relevant parts
 | Context | σ multiplier | Basis |
 |---|---|---|
 | Seated / standing | 1.0 | — |
-| Walking | 1.4 | From Ng et al.'s +40 % thumb error. Assumption: mean error scales like σ. |
+| Walking | 1.4 | Back-calculated from Conradi et al. 2015 (1.27–1.74 by baseline posture) `[derived]`. Ng et al.'s +40 % is the thumb error with a carried bag (encumbrance), not walking; it is the source of `encumbered` 1.4. Superseded values and the dev test: `situational-and-age-effects-on-touch.md` SIT-03, `decisions.md` round 8. |
 | Walking + encumbered | 2.0 | Bounded by the +112 % figure. Assumption. |
 
 - Report as "risk under walking assumption", `epistemic_status: inferred`.

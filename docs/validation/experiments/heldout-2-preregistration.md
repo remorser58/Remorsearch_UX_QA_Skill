@@ -117,4 +117,195 @@ family and per basis.
 
 ## Amendments
 
-None yet.
+### Amendment 1 (2026-09-28, before the freeze and before any heldout-2 recording)
+
+Nothing here was informed by heldout-2 content: its keys, pages and scenarios
+have not been opened by the tool author. Development used the three dev suites
+(exp4) and the new development suite `benchmarks/dev-2`.
+
+1. **Detector changes since this document was written:** GM-04 flash screening
+   rework (block grid, sampling during waits, capture jitter; live check 30/30);
+   RH-01 treats pause, menu and settings game controls as secondary; new
+   semantics and layout checks SM-01 (unnamed control), SM-02 (label in name),
+   SM-03 (unlabelled field), SM-04 (error neither near nor linked to a field) and
+   LY-01 (clipped text); screenshot-channel operators get no DOM data from the
+   driver.
+2. **H1 reinterpreted.** H1 assumed no semantics or layout checks. With SM and
+   LY checks, H1 reports their recall, but it is not evidence of blind
+   discovery: the tool author wrote the heldout-2 authoring prompt, whose
+   examples of rule sets (WCAG 4.1.2, 2.4.3, 2.4.7, 2.4.11, 1.4.10, 1.4.4, ATF,
+   XCTest) overlap the rules these checks implement. The checks were built from
+   public rule sets and tuned only on dev-2.
+3. **Secondary metric added:** `recall_condition_attributed` (a conditioned
+   defect counts only when the finding's differential names its condition).
+   exp4 showed that strict matching credits condition presence: a finding that
+   fires for every profile matches a walking-only defect when a walking profile
+   is present. The headline stays `recall_strict`.
+4. **Intervals for comparisons** (H2, H3, H7): paired bootstrap over defects,
+   2 000 resamples, seed 7; single rates use Wilson intervals. Verdict rule as
+   above (pass when the whole interval clears the threshold, fail when it is
+   entirely below, otherwise inconclusive).
+5. **C6 details:** operators are Opus only (the user's Claude-only rule).
+   Four composed profiles per product; input channels alternate between
+   `screenshot` and `screenshot+a11y`, so notes can be corroborated across
+   channels. Every profile runs both variants of its product in separate
+   sessions. A judgment note has no category, so C6 recall uses lenient matching
+   (scenario, selector, condition); strict matching is reported too.
+6. **Runner:** `skills/remorsearch-ux-qa/scripts/ergo_eval.py` (record,
+   analyse, score, agents-plan, score-agents) implements C1-C6 and H1-H7 as
+   written here; it prints aggregates only and seals per-defect results.
+
+### Amendment 2 (2026-09-28, before the freeze and before any heldout-2 recording)
+
+1. **C6 operators mix Opus and Sonnet** (the user asked to mix Sonnet into the
+   subagents). Four composed profiles per product cover {Opus, Sonnet} ×
+   {screenshot, screenshot+a11y}. Both models are one family (`claude`), so a
+   note is corroborated only by another input channel; agreement between Opus
+   and Sonnet on the same channel does not count. Results are also reported per
+   model.
+2. **Stage-0 composition fixes** found while running Stage 0 on the heldout-2
+   briefs (no defect content involved): the walking floor attaches only to a
+   phone or foldable; scenario stubs skip segments that do not operate the
+   product; `evidence[].quote_basis` records whether a quote was read on the page
+   or only in a search snippet (this environment's network policy blocks most
+   public sites, so Stage-0 quotes are largely snippets and are listed as
+   unverified in each persona plan).
+3. **Round-2 adjudication judges:** one Opus and one Sonnet judge per unit
+   (instead of two Opus judges), to reduce correlated errors within one model.
+
+### Amendment 3 (2026-09-28, before the freeze and before any heldout-2 recording)
+
+From `docs/qa-discipline/evaluating-qa-detectors.md` (EVD-01..06). The original
+H1–H7 verdicts are still computed and reported. What is added:
+
+1. **Trivial baselines (EVD-01).** `flag_all` reports every visible element in
+   every category for every C3 profile at P0. Chance level moves the tool's own
+   findings to random elements of the same scenario, 1 000 times. Both are scored
+   with the same scorer. `kappa_recall = (recall − chance) / (1 − chance)`.
+   - On the old held-out suite (heldout-mixed recordings, test run), `flag_all`
+     reaches strict recall 0.95 with 36 clean-control units against the swarm's
+     0.90. Strict recall alone therefore cannot support a usefulness claim. It is
+     reported only next to noise, chance-corrected recall and twin discrimination.
+2. **Clean-twin discrimination (EVD-02).** A strictly detected defect counts as
+   discriminating only when its selector and category are not also flagged in its
+   product's clean twin. Reported: `recall_discriminating` and per-category
+   Youden J = TPR − FPR(twin).
+3. **Product clusters (EVD-04).**
+   - Reported: a two-stage product bootstrap (2 000 draws), a leave-one-product-out
+     range and recall per product.
+   - With 4 products these are descriptive. A claim about "the next product" is
+     made only as the number of products where the direction holds.
+4. **Noise gate N (EVD-05)** replaces H4 as the confirmatory noise rule.
+   - Rule for C4@14: no P0–P1 clean-control unit, and P0–P2 clean-control units per
+     clean scenario ≤ 0.35 (point estimate).
+   - The Poisson 95 % upper bound and an FROC-style table by severity threshold are
+     reported. They are not gated: with 4 clean scenarios, a single unit already
+     gives an upper bound of 1.39.
+5. **Confirmatory fixed-sequence family (EVD-03).** Each step uses a two-sided 95 %
+   interval (one-sided 0.025). Testing stops at the first step that does not pass,
+   and the steps after it are descriptive. Margins were set by simulated power
+   before any heldout-2 data.
+
+   | Order | Hypothesis | Rule | n expected | Power / MDE |
+   | --- | --- | --- | --- | --- |
+   | 1 | N | as above | 4 clean scenarios | – |
+   | 2 | H7′: C3 not worse than C2 on unconditioned defects | Newcombe paired interval lower ≥ −0.15 | ~22 | 99 % if C3 and C2 agree on every defect; 35 % with 10 % discordance each way |
+   | 3 | HA: models name the condition | C4@14 `condition_identified` among detected conditioned defects, Wilson lower ≥ 0.30 | 15–20 | needs a point estimate of about 0.53–0.55 |
+   | 4 | H3′: C4@14 not worse than C3 | Newcombe lower ≥ −0.20 | ~45 | 84 % with 10 % discordance each way (margin −0.10: 31 %) |
+   | 5 | H2′: audience beats the placebo audience | C4@10 − C4-swap@10 on primary defects: lower > 0 and point ≥ +0.10 | 16–24 | 80 % only if the true effect is about +0.35 or more. Underpowered, so the estimate and its interval are the result |
+
+   The brief's original margins (−0.05, −0.10) had near-zero power at these n.
+6. **Placebo arms (EVD-06)**, computed offline on the same recordings.
+   - `C4-swap@{10,14}`: each product composed from the next product's audience,
+     with the device mix replaced by the product's own devices.
+   - `C4-floors@{10,14}`: a neutral audience of one adult segment with the default
+     floors.
+   - "Audience research adds value beyond the floors" is claimed only if C4 beats
+     both arms on primary defects. Otherwise the gain is attributed to floors and
+     stratification.
+   - `C4-rep` (repeated Stage 0) is not run before the freeze.
+
+### Amendment 4 (2026-09-28, before the freeze and before any heldout-2 recording)
+
+1. **Detector changes from dev round 8** (`decisions.md`): SIT-01 (profile-only
+   PT-03/PT-04 on targets of at least 7.0 mm are P3 at most) and SIT-03
+   (multiplier values and citations). SIT-02 was not adopted. Both changes were
+   judged on dev recordings only, before the freeze.
+2. **SIT-04, a conditional cut decided once on heldout-2.** It is exploratory and
+   changes no confirmatory verdict. After scoring, compute for C3 and C4@14 the
+   `recall_condition_attributed` of defects conditioned on walking, tremor or age
+   60+ that are detected through PT-03/PT-04, and the clean-control units that only
+   those multipliers produce (multipliers-off re-analysis of the same recordings).
+   - **Cut** (after this evaluation, not in the frozen detector) if both hold:
+     attributed detections = 0 and clean-control units from those multipliers ≥ 3.
+     Profile-only PT-04 then moves to the hypothesis tier. `one_hand_thumb` stays.
+   - Otherwise the multipliers stay, with the observed numbers reported.
+   - Implementation, fixed before any heldout-2 data (`ergo_eval.py analyse
+     --variant condition-multipliers-off`, then `score`; `sit04()`):
+     - "attributed" means strictly detected, the finding's differential names the
+       key's condition, and PT-03 or PT-04 is among the matched checks;
+     - a multiplier-only unit is a clean-control unit none of whose elements the
+       same check flags in the multipliers-off analysis;
+     - the variant sets walking, transit, tremor, age and encumbrance multipliers to
+       1.0 and keeps `one_hand_thumb`;
+     - the cut needs the rule to hold in both C3 and C4@14.
+
+### Amendment 5 (2026-09-29, custody incident, before the freeze and before any heldout-2 recording)
+
+Disclosure. The rule is that the tool author reads no heldout-2 key, page or
+scenario content and sees aggregates only. It was broken three times, without
+opening any suite file:
+
+1. **Stage reports in a workflow notification.** When the authoring workflow
+   stopped at the account usage limit, its completion notice carried the authoring
+   agents' stage reports into the author's session. Beyond counts, they contained
+   build notes:
+   - rhythm: an animation on one seeded element was moved so scripted taps reach
+     it; DOM order was set so focus order follows the screen order in both
+     variants; a settings row was tightened to fit 360 × 780; a shared,
+     non-seeded pad border was raised to about 3.7:1 contrast; a data attribute was
+     added for the success condition; 38 steps, 3 timing windows, galaxy-s24 and
+     galaxy-a55.
+   - expense: both variants were checked for text size, click-target size and
+     spacing, 320 px and 200 % reflow, keyboard focus handling and focus hidden
+     by a fixed bar, plus an axe-core cross-check; counts by evidence type,
+     audience relevance, severity and profile condition; a desktop mouse and
+     keyboard product; 27 steps, 2 transient-text windows, laptop-1440 and
+     desktop-1920.
+2. **Journal preview.** The first 150 characters of each stage result in the
+   workflow journal, read to check progress (counts only).
+3. **File names and modification times** of heldout-2 files, printed by a
+   command whose name-masking pattern failed (no content).
+
+No defect identity, selector, profile condition or variant assignment was seen.
+
+Effect on the detector:
+- The round 10 focus-check code (AUT-09, AUT-13) was written, self-tested and
+  gated on the ACT examples before the notice arrived. Its commit (`197865f`)
+  came after the notice, and only its decision-log text was written afterwards.
+- From here to the freeze, a detector change must cite a dev-suite result or an
+  external source (standard, ACT example, paper), as before. None may cite these
+  notes.
+
+Process fixes:
+- The blind verification stage reports changes only as counts per file.
+- Blind workflows are no longer resumed from their journals by the author. The
+  remaining stages are relaunched with an explicit start stage instead.
+
+Addendum to amendment 5 (same day). The relaunched verification stage reported its
+changes as counts per file, as the author's revised instruction asked. For expense
+this showed which page variant the verifier edited, which may hint at the variant
+assignment. rhythm's report showed no page edits. No detector change uses variant
+identity: the detector never compares variants, and scoring is automatic from the
+key. Later blind stages report only the total number of changes.
+
+### Amendment 6 (2026-09-29, before the freeze and before any heldout-2 recording)
+
+**Composition fix: no-op facets.** The rhythm Stage-0 agent reported that its
+persona plan listed "grip two_thumbs" as untested for a segment whose typical member
+already holds the phone with two thumbs. The variation would have copied the typical
+member. `audience.compose` now drops any facet whose profile equals the segment's
+typical member, so it is neither composed nor listed as untested. Recomputed on the
+four committed audience files: the C4 profiles at budgets 6, 10 and 14 are identical
+before and after the fix; only rhythm's untested list loses that entry. No defect
+content was involved.

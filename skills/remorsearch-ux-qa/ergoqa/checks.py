@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import math
 import re
+import unicodedata
 import zlib
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable
@@ -183,7 +184,7 @@ GM04 = _register(CheckSpec(
     "GM-04", "game", "measured", "초당 3회 초과 섬광(광과민성 발작 위험)",
     "More than three flashes in one second over a large area",
     ("REF-wcag22-231", "REF-itu-bt1702"), ("game", "web", "android", "ios", "desktop"), "visual",
-    "섬광 빈도를 초당 3회 이하로 낮추고 면적을 줄이세요. 인증된 도구(PEAT/Harding)로 재검사하세요.",
+    "섬광 빈도를 초당 3회 이하로 낮추고 면적을 줄이세요. 방송·인증이 필요하면 Harding FPA 같은 인증 절차를 따로 밟으세요.",
 ))
 GM05 = _register(CheckSpec(
     "GM-05", "game", "measured", "터치 게임 조작부가 작거나 화면 가장자리에 붙어 있음",
@@ -202,6 +203,72 @@ PT06 = _register(CheckSpec(
     "Destructive action placed against a primary/path action without separation (pointer devices)",
     ("REF-win32-touch", "REF-apple-hig-44pt"), ("web", "desktop"), "interaction",
     "파괴적 동작을 주요 동작과 떨어뜨리고(8px 이상, 권장 더 멀리) 확인/실행 취소를 두세요.",
+))
+SM01 = _register(CheckSpec(
+    "SM-01", "semantics", "measured", "이름 없는 조작 요소(스크린리더·음성 제어로 식별 불가)",
+    "Control without an accessible name",
+    ("REF-wcag22-412", "REF-wcag22-244"), ("web", "desktop"), "accessibility",
+    "아이콘 버튼·링크에 보이는 텍스트나 aria-label을 주세요.",
+))
+SM02 = _register(CheckSpec(
+    "SM-02", "semantics", "measured", "보이는 레이블이 접근 가능한 이름에 없음(음성 제어 불일치)",
+    "Visible label not contained in the accessible name",
+    ("REF-wcag22-253",), ("web", "desktop"), "accessibility",
+    "aria-label을 지우거나 보이는 문구로 시작하게 바꾸세요.",
+))
+SM03 = _register(CheckSpec(
+    "SM-03", "semantics", "measured", "입력 칸에 프로그램적 레이블이 없음(placeholder만)",
+    "Form field without a programmatic label",
+    ("REF-wcag22-131", "REF-wcag22-332", "REF-wcag22-412"), ("web", "desktop"), "accessibility",
+    "<label for> 또는 aria-labelledby로 보이는 레이블을 연결하고, placeholder를 레이블 대신 쓰지 마세요.",
+))
+SM07 = _register(CheckSpec(
+    "SM-07", "semantics", "measured", "입력 칸 이름이 placeholder·title뿐(모범 사례)",
+    "Form field named only by its placeholder or title (best practice)",
+    ("REF-wcag22-332", "REF-nngroup-placeholders"), ("web", "desktop"), "accessibility",
+    "보이는 <label>을 두고 연결하세요. placeholder는 입력하면 사라져 무엇을 적는 칸인지 잊게 됩니다.",
+))
+SM08 = _register(CheckSpec(
+    "SM-08", "semantics", "measured", "과업이 누른 조작 요소에 역할이 없고 키보드로 갈 수 없음",
+    "A control the task clicked has no role and cannot take keyboard focus",
+    ("REF-wcag22-211", "REF-wcag22-412"), ("web", "desktop"), "accessibility",
+    "<button>이나 <input type=radio|checkbox>를 쓰거나, role·tabindex=0·키보드 동작(Enter/Space)과 상태(aria-pressed, aria-checked)를 주세요.",
+))
+FM02 = _register(CheckSpec(
+    "FM-02", "semantics", "measured", "대화상자·덮는 층이 열렸는데 키보드 초점이 그 안으로 가지 않음",
+    "A dialog or covering layer opened but keyboard focus did not move into it",
+    ("REF-wcag22-243", "REF-wcag22-412"), ("web", "desktop"), "accessibility",
+    "층을 열면 그 안의 첫 조작 요소나 제목으로 초점을 옮기고(role=dialog, aria-modal=true), 닫으면 연 버튼으로 돌려보내세요.",
+))
+RF01 = _register(CheckSpec(
+    "RF-01", "layout", "measured", "320 CSS px 폭에서 내용이 가로로 넘침(리플로)",
+    "Content sticks out sideways at 320 CSS px (reflow)",
+    ("REF-wcag22-1410",), ("web", "desktop"), "visual",
+    "고정 폭(width: 400px 등)을 max-width: 100%와 줄바꿈되는 배치로 바꿔, 320 CSS px 폭(400 % 확대)에서 가로 스크롤 없이 읽히게 하세요.",
+))
+SM04 = _register(CheckSpec(
+    "SM-04", "semantics", "measured", "오류 문구가 입력 칸과 떨어져 있고 연결되지 않음",
+    "Error message neither next to nor linked to a field",
+    ("REF-wcag22-331", "REF-wcag22-131", "REF-aria21"), ("web", "desktop"), "content",
+    "오류 문구를 해당 칸 바로 아래에 두고 aria-describedby·aria-invalid로 연결하세요.",
+))
+SM05 = _register(CheckSpec(
+    "SM-05", "semantics", "measured", "키보드 포커스가 보이지 않음",
+    "Keyboard focus not visible",
+    ("REF-wcag22-247",), ("web", "desktop"), "visual",
+    "outline을 지우지 말고, 지웠다면 3:1 이상 대비의 포커스 표시(:focus-visible)를 주세요.",
+))
+SM06 = _register(CheckSpec(
+    "SM-06", "semantics", "measured", "포커스된 요소가 고정 영역에 가려짐",
+    "Focused element hidden behind a fixed or sticky layer",
+    ("REF-wcag22-2411",), ("web", "desktop"), "visual",
+    "고정 헤더·푸터 높이만큼 scroll-padding을 주거나 포커스 시 가리지 않게 배치하세요.",
+))
+LY01 = _register(CheckSpec(
+    "LY-01", "layout", "measured", "상자에 잘린 텍스트",
+    "Text clipped by its own box",
+    ("REF-xctest-textclipped", "REF-wcag22-144", "REF-wcag22-1412"), ("web", "desktop"), "visual",
+    "고정 높이·너비와 overflow:hidden을 풀어 글자가 늘어나도 다 보이게 하세요.",
 ))
 PJ01 = _register(CheckSpec(
     "PJ-01", "heuristic", "judgment", "페르소나 에이전트가 기대와 다른 결과/혼란을 기록",
@@ -264,6 +331,8 @@ class Context:
     scenario: dict[str, Any] | None
     conspicuity: list[list[float]] | None = None
     path_element_ids: set[str] = field(default_factory=set)
+    # Elements the task tapped or clicked (a subset of the path; SM-08).
+    clicked_element_ids: set[str] = field(default_factory=set)
 
     @property
     def elements(self) -> list[dict[str, Any]]:
@@ -581,16 +650,25 @@ def check_touch_accuracy(ctx: Context) -> list[Observation]:
         p_base = 1.0 - pointing.dual_gaussian_hit_probability(rect["w"], rect["h"], 1.0)
         p_miss = 1.0 - pointing.dual_gaussian_hit_probability(rect["w"], rect["h"], k)
         severity = _miss_severity(p_base)
+        platform_size = params.TOUCH_PROFILE_ONLY_P3_MIN_MM is not None and min(rect["w"], rect["h"]) >= params.TOUCH_PROFILE_ONLY_P3_MIN_MM
+        profile_only = False
         if k > 1.0 and small:
             # Profile inflation is an assumption: P2 only for the primary action or a
             # control the task actually used; otherwise P3 (MP-02, adjudication 2026-09-28).
+            # A target that meets the platform size gets P3 at most from inflation alone
+            # (SIT-01: walking and tremor studies find 7-8 mm targets usable; dev round 8).
             cap = "P2" if ("primary" in roles or element.get("id") in ctx.path_element_ids) else "P3"
-            severity = _worse(severity, _cap(_miss_severity(p_miss), cap))
+            if severity is None and platform_size:
+                cap = "P3"
+            inflated = _worse(severity, _cap(_miss_severity(p_miss), cap))
+            profile_only = severity is None and inflated is not None
+            severity = inflated
         out.append(Observation(
             "PT-04", ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
             [element["id"]], element_key(element),
             {"name": "miss_probability", "value": round(p_miss, 4), "unit": "probability", "threshold": params.MISS_PROBABILITY_SEVERITY[-1][0], "comparator": "<",
-             "sigma_multiplier": k, "baseline_miss_probability": round(p_base, 4), "target_mm": [round(rect["w"], 2), round(rect["h"], 2)]},
+             "sigma_multiplier": k, "baseline_miss_probability": round(p_base, 4), "target_mm": [round(rect["w"], 2), round(rect["h"], 2)],
+             "profile_only": profile_only},
             severity is None, severity,
             f"'{element.get('name') or element.get('text')}' 예측 오터치 확률 {p_miss*100:.1f}% (기준 인구 {p_base*100:.1f}%, σ배수 {k:.2f}, {rect['w']:.1f}×{rect['h']:.1f}mm).",
             "bi-zhai-2016-dual-gaussian",
@@ -607,7 +685,8 @@ def check_touch_accuracy(ctx: Context) -> list[Observation]:
             irreversible = "irreversible" in _roles(bad)
             severity = _misfire_severity(p_bad_base, irreversible)
             if k > 1.0:
-                severity = _worse(severity, _cap(_misfire_severity(p_bad, irreversible), "P2"))
+                cap = "P3" if (severity is None and platform_size and not irreversible) else "P2"  # SIT-01
+                severity = _worse(severity, _cap(_misfire_severity(p_bad, irreversible), cap))
             if severity is None and gap_mm < params.DESTRUCTIVE_MIN_GAP_MM:
                 severity = "P3"
             out.append(Observation(
@@ -898,11 +977,15 @@ def check_gaze(ctx: Context) -> list[Observation]:
                 # New or changed feedback rendered outside the viewport cannot be seen at all
                 # (UXD-12: P1 when it is an error or critical message).
                 critical = bool(roles & {"error_message", "critical_message"}) or element.get("role") == "alert"
+                # A message that just appeared off-screen is missed feedback. An existing one
+                # whose text changed while the user is elsewhere (a status line, an earlier
+                # error being updated) is only a prompt to check (dev-2 clean pages).
+                sev = ("P1" if critical else "P2") if prior is None else "P3"
                 out.append(Observation(
                     "GZ-02", *base, [element["id"]], element_key(element),
                     {"name": "feedback_eccentricity_deg", "value": None, "unit": "deg", "threshold": "in viewport", "comparator": "band",
-                     "band": "offscreen", "box": element["box"]},
-                    False, "P1" if critical else "P2",
+                     "band": "offscreen", "box": element["box"], "new": prior is None},
+                    False, sev,
                     f"조작 후 {'새로 나타난' if prior is None else '바뀐'} 메시지 '{(element.get('text') or '')[:30]}'이(가) 화면 밖(뷰포트 바깥)에 있어 보이지 않습니다.",
                     gaze.MODEL_ID,
                 ))
@@ -1356,14 +1439,8 @@ def check_run_timing(run: dict[str, Any], profile: dict[str, Any], device: Any, 
             "GM-04", run_id, pid, None, None, [], "viewport|flash",
             flash["measurement"], flash["severity"] is None, flash["severity"], flash["message"], flash["model"],
         ))
-    mash = _mash_bursts(run)
-    for target, count, span in mash:
-        out.append(Observation(
-            "GM-06", run_id, pid, None, None, [], f"{target}|mash",
-            {"name": "rapid_presses", "value": count, "unit": "presses", "threshold": params.MASH_MIN_PRESSES, "comparator": "<", "span_ms": round(span)},
-            False, "P2",
-            f"진행에 '{target}'을(를) {count}회 연속으로 빠르게 눌러야 했습니다({span/1000:.1f}초). 길게 누르기/토글/자동 진행 대안이 있는지 확인이 필요합니다.",
-        ))
+    # GM-06 (mashing) emits nothing until a press-rate and hold-time sweep measures what
+    # the game demands; counting the script's presses measured the script (GQA-13).
     for note in run.get("persona_notes", []):
         if not note.get("confusion"):
             continue
@@ -1507,13 +1584,6 @@ def _dom_flash(measured: dict[str, Any], element: dict[str, Any] | None, viewpor
     }
 
 
-def _input_identity(action: dict[str, Any]) -> str:
-    """What was pressed: the target for pointer actions, the key or button for press/gamepad."""
-    if action.get("action") in ("press", "gamepad"):
-        return f"{action.get('action')}:{action.get('key') or action.get('keys') or action.get('button') or action.get('target')}"
-    return str(action.get("target"))
-
-
 def _frame_flash(run: dict[str, Any], samples: list[dict[str, Any]], device: Any, attrs: dict[str, Any]) -> dict[str, Any]:
     """WCAG 2.3.1 screening from the driver's flash samples (GM-04, whole run).
 
@@ -1538,6 +1608,7 @@ def _frame_flash(run: dict[str, Any], samples: list[dict[str, Any]], device: Any
         res = game.analyse_block_flashes(samples, grid, pitch, viewing)
         failed, extended = res["failed"], res["extended"]
         kind = max(("general", "red"), key=lambda k: (res[k]["failed"], res[k]["extended_failed"], res[k]["area_sr"]))
+        ext_sr = max(res[kind]["sustained_5s_area_sr"], res[kind]["iris_extended_area_sr"])
         worst = res[kind]
         value = worst["field_flashes_per_s"] if worst["area_sr"] > 0 else max(res["general"]["max_flashes_per_s"], res["red"]["max_flashes_per_s"])
         field_sr = 2.0 * math.pi * (1.0 - math.cos(math.radians(params.FLASH_FIELD_DEG / 2.0)))
@@ -1546,7 +1617,8 @@ def _frame_flash(run: dict[str, Any], samples: list[dict[str, Any]], device: Any
             "method": res["method"], "flash_kind": kind if worst["area_sr"] > 0 else None,
             "area_sr": worst["area_sr"], "area_threshold_sr": params.FLASH_AREA_SR, "area_exceeds": failed,
             "field_fraction": round(worst["area_sr"] / field_sr, 3), "red_flash": res["red"]["failed"],
-            "extended_failure": extended, "general": res["general"], "red": res["red"],
+            "extended_failure": extended, "sustained_5s": res["sustained_5s"], "iris_extended": res["iris_extended"],
+            "iris_warning": res["iris_warning"], "general": res["general"], "red": res["red"],
             "grid": res["grid"], "block_css": res["block_css"], "geometry": res["geometry"],
             "viewing_distance_mm": res["viewing_distance_mm"], "motion_samples": res["moved_samples"],
         }
@@ -1557,10 +1629,14 @@ def _frame_flash(run: dict[str, Any], samples: list[dict[str, Any]], device: Any
             measurement["step_index"] = step
             where = f", {worst['at_ms'] / 1000:.1f}초({step}단계) 화면 ({worst['field_center_css'][0]:.0f}, {worst['field_center_css'][1]:.0f}) px 부근"
         label = "적색 섬광" if kind == "red" else "일반 섬광"
-        if failed or extended:
-            rate = "초당 3회 초과" if failed else "5초 동안 초당 2회 이상"
-            detail = (f"{label}: {rate} 깜빡이는 영역이 10° 시야 안에서 {worst['area_sr']:.4f} sr"
+        if failed:
+            detail = (f"{label}: 초당 3회 초과 깜빡이는 영역이 10° 시야 안에서 {worst['area_sr']:.4f} sr"
                       f"(기준 {params.FLASH_AREA_SR} sr, 시야의 {measurement['field_fraction'] * 100:.0f}%)를 차지함{where}.")
+        elif extended:
+            rules = [r for r, on in (("5초 안에 10회 이상(초당 2회 이상 지속)", worst["sustained_5s"]),
+                                     ("최근 5초 중 4초 이상 초당 2–3회(1초 전이 4–6회, EA IRIS 확장 실패 규칙)", worst["iris_extended"])) if on]
+            detail = (f"{label}: {' 또는 '.join(rules)} 깜빡이는 영역이 10° 시야 안에서 {ext_sr:.4f} sr"
+                      f"(기준 {params.FLASH_AREA_SR} sr)를 차지함{where}.")
         else:
             detail = (f"초당 3회를 넘게 깜빡이는 영역이 10° 시야 기준 면적을 넘지 않음(최대 {worst['area_sr']:.4f} sr / 기준 {params.FLASH_AREA_SR} sr, "
                       f"국소 최대 초당 {max(res['general']['max_flashes_per_s'], res['red']['max_flashes_per_s']):.1f}회).")
@@ -1595,34 +1671,471 @@ def _frame_flash(run: dict[str, Any], samples: list[dict[str, Any]], device: Any
         message = ("판정 불가(inconclusive, 통과 아님): " + "; ".join(reasons[p] for p in problems)
                    + ". 관찰한 구간에서는 " + detail + sampled)
     if failed or extended:
-        message += " 인증 도구(EA IRIS/Harding)로 재검사가 필요합니다."
+        message += (" EA IRIS는 인증 도구가 아니며(README 면책), 기본 설정은 화면의 25 % 이상이 바뀌어야 전이로 세므로 국소 섬광은 IRIS를 통과할 수 있습니다."
+                    " IRIS 통과가 이 판정을 뒤집지 않습니다. 방송·인증 목적이면 Harding FPA 같은 인증 절차를 따로 밟으세요.")
     return {"measurement": measurement, "severity": "P0" if failed else ("P1" if extended else None), "message": message, "model": model}
 
 
-def _mash_bursts(run: dict[str, Any]) -> list[tuple[str, int, float]]:
-    """Runs of rapid presses on one target that the task needed (XAG 107 / GAG)."""
-    bursts: list[tuple[str, int, float]] = []
-    current: list[dict[str, Any]] = []
+_LABEL_NOISE = re.compile(r"[\W_]+", re.UNICODE)
+# SM-08: tags that are controls by themselves (a label activates its control) and
+# widget roles a click may legitimately land on.
+NATIVE_CONTROL_TAGS = frozenset({"a", "button", "input", "select", "textarea", "summary", "label", "option", "canvas", "video", "audio",
+                                 "details", "hotspot", "iframe"})
+WIDGET_ROLES = frozenset({"button", "link", "checkbox", "radio", "switch", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option",
+                          "slider", "spinbutton", "textbox", "searchbox", "combobox", "listbox", "treeitem", "gridcell", "scrollbar"})
 
-    def flush() -> None:
-        if len(current) >= params.MASH_MIN_PRESSES:
-            span = float(current[-1].get("t_start_ms") or 0) - float(current[0].get("t_start_ms") or 0)
-            bursts.append((_input_identity(current[0].get("action") or {}), len(current), span))
 
-    for step in run.get("steps", []):
-        action = step.get("action") or {}
-        if action.get("action") in ("wait", "snapshot"):
-            continue  # waits between scripted presses do not break a burst
-        # Scripted pacing reflects the driver, not the game's demand, so bursts are
-        # counted by consecutive presses on one target (waits/snapshots ignored).
-        same = current and action.get("action") in ("tap", "click", "press", "gamepad") and _input_identity(action) == _input_identity(current[-1].get("action") or {})
-        if same:
-            current.append(step)
+def _sm08(run_id: str, profile_id: str, snapshot_id: str | None, step_index: int | None, element_ids: list[str], key: str,
+          role: str | None, tag: str | None, label: str, context: list[str]) -> Observation:
+    return Observation(
+        "SM-08", run_id, profile_id, snapshot_id, step_index, element_ids, key,
+        {"name": "role_focusable", "value": {"role": role, "tag": tag, "focusable": False}, "unit": "state",
+         "threshold": "native control, widget role or tabindex >= 0", "comparator": "in"},
+        False, "P1",
+        f"과업에서 누른 '{label[:30]}'이(가) 버튼·선택 요소로 선언되지 않았고 키보드로 초점을 받을 수 없습니다. 키보드·스크린리더 사용자는 이 단계를 마칠 수 없습니다(WCAG 2.1.1, 4.1.2).",
+        extra={"context_selectors": context} if context else {},
+    )
+
+
+def check_clicked_controls(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[str, dict[str, Any]] | None = None) -> list[Observation]:
+    """SM-08 from the steps: a tap or click landed on an element that is not a control, is
+    not inside one within five levels, and holds none (the driver's ``target_control``).
+    The click evidences the handler; nothing is guessed from styles."""
+    out: list[Observation] = []
+    seen: set[str] = set()
+    for st in run.get("steps") or []:
+        c = st.get("target_control")
+        if not isinstance(c, dict) or st.get("result") != "ok" or c.get("control") or c.get("contains_control") or c.get("tag") in ("html", "body"):
             continue
-        flush()
-        current = [step] if action.get("action") in ("tap", "click", "press", "gamepad") else []
-    flush()
-    return bursts
+        snap = (snapshots or {}).get(st.get("before") or "")
+        element = next((e for e in (snap or {}).get("elements", []) if c.get("dom_id") and e.get("dom_id") == c["dom_id"]), None)
+        target = (st.get("action") or {}).get("target")
+        selector = f"#{c['dom_id']}" if c.get("dom_id") else (target if isinstance(target, str) else f"{c.get('tag')}@{st.get('point')}")
+        key = element_key(element) if element else f"{selector}|{c.get('text') or ''}"
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(_sm08(run["run_id"], profile["profile_id"], st.get("before"), st.get("step_index"), [element["id"]] if element else [], key,
+                         c.get("role"), c.get("tag"), c.get("text") or selector, [f"#{a}" for a in c.get("ancestor_ids") or [] if a]))
+    return out
+
+
+def _inside(inner: dict[str, float], outer: dict[str, float]) -> bool:
+    return (inner.get("w", 0) > 0 and inner.get("h", 0) > 0 and inner["x"] >= outer["x"] - 1 and inner["y"] >= outer["y"] - 1
+            and inner["x"] + inner["w"] <= outer["x"] + outer["w"] + 1 and inner["y"] + inner["h"] <= outer["y"] + outer["h"] + 1)
+
+
+# Roles that are form fields even on a <div> (ACT e086e5 applicability).
+FIELD_ROLES = frozenset({"textbox", "searchbox", "combobox", "listbox", "spinbutton", "slider"})
+ERROR_NEAR_CSS_PX = 48.0  # LAT-09 ER-01: an error further than this from every field needs a programmatic link
+
+
+def _norm_label(text: str | None) -> str:
+    return _LABEL_NOISE.sub("", (text or "").lower())
+
+
+def _letters(text: str | None) -> int:
+    return sum(1 for ch in text or "" if ch.isalpha())
+
+
+def _dom_id(element: dict[str, Any]) -> str | None:
+    if element.get("dom_id"):
+        return str(element["dom_id"])
+    sel = element.get("selector") or ""
+    return sel[1:] if re.fullmatch(r"#[A-Za-z][\w-]*", sel) else None
+
+
+def _label_tokens(text: str | None) -> list[str]:
+    """ACT label-in-name tokenizer: drop (parenthesised) text, case-fold, NFKD, keep
+    letters and digits, split on whitespace. A lone "x" is the close symbol, not text."""
+    t = re.sub(r"\([^)]*\)", " ", text or "")
+    t = unicodedata.normalize("NFKD", t.casefold())
+    t = "".join(ch if unicodedata.category(ch)[0] in "LN" else " " for ch in t)
+    tokens = t.split()
+    return [] if tokens == ["x"] else tokens
+
+
+def _label_in_name(label: str | None, name: str | None) -> bool:
+    """Whether the visible label's tokens are a contiguous run of the name's tokens.
+    Korean relaxation (AUT-04): a Hangul label token also matches a name token that
+    starts with it, so a trailing particle ("장바구니" / "장바구니에") still counts."""
+    lt, nt = _label_tokens(label), _label_tokens(name)
+    if not lt:
+        return True
+    # ACT leaves abbreviations and spelling or hyphenation differences out of scope
+    # ("Ave." / "Avenue", "non-standard" / "nonstandard"): treat them as contained.
+    if "".join(lt) == "".join(nt) and "-" in f"{label or ''}{name or ''}":
+        return True
+    abbrev = {w.casefold() for w in re.findall(r"([^\W\d_]+)\.", f"{label or ''} {name or ''}")}
+
+    def same(a: str, b: str) -> bool:
+        if a == b:
+            return True
+        if re.search(r"[\u1100-\u11ff\uac00-\ud7a3]", a) is not None and b.startswith(a):
+            return True
+        return (a in abbrev and b.startswith(a)) or (b in abbrev and a.startswith(b))
+
+    return any(all(same(lt[j], nt[i + j]) for j in range(len(lt))) for i in range(len(nt) - len(lt) + 1))
+
+
+def _names_field(field_name: str | None, text: str | None) -> bool:
+    """Whether an error text names the field: Hangul names of 2+ syllables anywhere,
+    Latin names of 4+ letters as whole words (so "id" does not match "invalid")."""
+    name = (field_name or "").strip()
+    if not name:
+        return False
+    if re.search(r"[\uac00-\ud7a3]", name):
+        core = _norm_label(name)
+        return sum(1 for ch in core if "\uac00" <= ch <= "\ud7a3") >= 2 and core in _norm_label(text)
+    words = re.sub(r"[\W_]+", " ", name.lower()).strip()
+    return len(words.replace(" ", "")) >= 4 and re.search(rf"\b{re.escape(words)}\b", re.sub(r"[\W_]+", " ", (text or "").lower())) is not None
+
+
+def _edge_distance(a: dict[str, float], b: dict[str, float]) -> float:
+    dx = max(0.0, a["x"] - (b["x"] + b["w"]), b["x"] - (a["x"] + a["w"]))
+    dy = max(0.0, a["y"] - (b["y"] + b["h"]), b["y"] - (a["y"] + a["h"]))
+    return math.hypot(dx, dy)
+
+
+def check_semantics(ctx: Context) -> list[Observation]:
+    """Names, labels, error association and clipped text (SM-01..04, LY-01).
+
+    Measured from the DOM and profile-independent. They matter most to people the
+    swarm does not simulate (screen-reader and voice-control users) and are reported
+    for them; the rules follow axe-core / ATF / XCTest practice and are kept narrow
+    for precision (automated-ui-accessibility-testing brief).
+    """
+    out: list[Observation] = []
+    base = (ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"))
+    dom = [e for e in ctx.elements if e.get("source", "dom") == "dom" and _present(e)]
+    # AUT-20: a zero-size control still in the accessibility tree is reached by screen
+    # readers and, when focusable, by Tab; only the name rules apply to it (ACT 97a4e1,
+    # c487ae, e086e5 applicability), at P2 at most (P3 when it cannot take focus).
+    unseen = [e for e in ctx.elements if e.get("source", "dom") == "dom" and not _present(e) and _usable(e)
+              and isinstance(e.get("a11y"), dict) and not e["a11y"].get("hidden") and e["a11y"].get("rendered") is True
+              and (e["a11y"].get("focusable") or e.get("interactive") or e.get("role") in FIELD_ROLES)
+              and not (e.get("tag") == "a" and not e["a11y"].get("focusable"))]  # <a> without href has no link role
+    unseen_ids = {id(e) for e in unseen}
+    named = dom + unseen
+    fields = [e for e in named if isinstance(e.get("a11y"), dict) and (
+        (e.get("tag") in ("input", "select", "textarea") and e.get("role") != "button") or e.get("role") in FIELD_ROLES)]
+
+    def cap_unseen(e: dict[str, Any], severity: str) -> str:
+        if id(e) not in unseen_ids:
+            return severity
+        return _cap(severity, "P2" if e["a11y"].get("focusable") else "P3")
+
+    for e in named:
+        a = e.get("a11y")
+        if not isinstance(a, dict) or (not e.get("enabled", True) and e not in fields):
+            continue
+        if e.get("role") in ("none", "presentation") and not a.get("focusable"):
+            continue  # presentational and not focusable: not in the accessibility tree (ACT e086e5)
+        critical = _critical(ctx, e)
+        where = e.get("selector") or e.get("id")
+        if e in fields:
+            source = a.get("name_source")
+            if a.get("hidden"):
+                continue
+            if source == "none":
+                # WCAG 4.1.2 / ACT e086e5: no accessible name at all (disabled fields too, at P3).
+                out.append(Observation(
+                    "SM-03", *base, [e["id"]], element_key(e),
+                    {"name": "label_source", "value": source, "unit": "enum", "threshold": "any accessible name", "comparator": "!=",
+                     "disabled": not e.get("enabled", True), "visible_to_sighted": id(e) not in unseen_ids},
+                    False, cap_unseen(e, "P3" if not e.get("enabled", True) else ("P1" if critical else "P2")),
+                    f"입력 칸 '{where}'에 접근 가능한 이름이 없습니다. 스크린리더는 칸의 용도를 알리지 못합니다(WCAG 4.1.2).",
+                ))
+            elif source in ("placeholder", "title") and id(e) not in unseen_ids:
+                # A placeholder or title is an accessible name (ACT e086e5 passes it); a
+                # visible label is still better practice, so this is P3 and not a WCAG failure.
+                out.append(Observation(
+                    "SM-07", *base, [e["id"]], element_key(e),
+                    {"name": "label_source", "value": source, "unit": "enum", "threshold": "label|aria-labelledby|aria-label", "comparator": "in"},
+                    False, "P3",
+                    f"입력 칸 '{where}'의 이름이 {source}뿐입니다. 입력하면 안내가 사라져 무엇을 적는 칸인지 잊기 쉽습니다(모범 사례, WCAG 실패 아님).",
+                ))
+            continue
+        if not e.get("interactive") or e.get("tag") == "canvas":
+            continue
+        if a.get("hidden"):
+            continue  # hidden from assistive technology (a duplicate card-image link, an inert region)
+        name = (e.get("name") or "").strip()
+        if a.get("name_source") == "none" or not name:
+            out.append(Observation(
+                "SM-01", *base, [e["id"]], element_key(e),
+                {"name": "accessible_name", "value": "", "unit": "text", "threshold": "non-empty", "comparator": "!=",
+                 "visible_to_sighted": id(e) not in unseen_ids},
+                False, cap_unseen(e, "P1" if critical else "P2"),
+                f"조작 요소 '{where}'에 접근 가능한 이름이 없습니다. 스크린리더·음성 제어 사용자는 무엇을 하는 버튼인지 알 수 없습니다(시뮬레이션하지 않는 사용자군).",
+            ))
+            continue
+        if id(e) in unseen_ids:
+            continue  # the remaining rules (label in name, errors, clipping) need a rendered box
+        visible = (a.get("visible_label") if a.get("visible_label") is not None else e.get("text") or "").strip()
+        if a.get("name_source") in ("aria-label", "aria-labelledby") and not a.get("icon_font") and _label_tokens(visible):
+            if not _label_in_name(visible, name):
+                out.append(Observation(
+                    "SM-02", *base, [e["id"]], element_key(e),
+                    {"name": "label_in_name", "value": False, "unit": "flag", "threshold": True, "comparator": "==", "visible": visible[:60], "accessible_name": name[:60]},
+                    False, "P2" if critical else "P3",
+                    f"보이는 문구 '{visible[:30]}'이(가) 접근 가능한 이름 '{name[:30]}'에 없습니다. 음성 제어로 보이는 문구를 말해도 작동하지 않습니다.",
+                ))
+    # Input errors only: declared error_message, or role=alert that is not declared as a
+    # system notice (critical_message/status without error_message).
+    # An error signal is needed: a declared error message, or a role=alert while some
+    # field is invalid. A "담았습니다" toast with role=alert is not an input error.
+    fields = [f for f in fields if id(f) not in unseen_ids]  # distances need a rendered box
+    any_invalid = any(f["a11y"].get("invalid") or f["a11y"].get("user_invalid") for f in fields)
+    errors = [e for e in dom if (e.get("text") or "").strip() and (
+        "error_message" in _roles(e)
+        or (e.get("role") == "alert" and any_invalid and not (_roles(e) & {"critical_message", "status"})))]
+    if errors and fields:
+        for err in errors:
+            targets = {i for i in [_dom_id(err), *(err.get("ancestor_ids") or [])] if i}
+            linked = any(targets & set(f["a11y"].get("described_by") or []) or f["a11y"].get("error_message") in targets for f in fields)
+            nearest = min(_edge_distance(err["box"], f["box"]) for f in fields)
+            # WCAG 3.3.1 is met when the text identifies the item in error, wherever it is.
+            names_field = any(_names_field(f.get("name"), err.get("text")) for f in fields)
+            if linked or nearest <= ERROR_NEAR_CSS_PX or names_field:
+                continue
+            out.append(Observation(
+                "SM-04", *base, [err["id"]], element_key(err),
+                {"name": "error_field_distance_css_px", "value": round(nearest, 1), "unit": "css_px", "threshold": ERROR_NEAR_CSS_PX, "comparator": "<=", "linked": False},
+                False, "P2",
+                f"오류 문구 '{(err.get('text') or '')[:30]}'이(가) 어느 칸이 틀렸는지 적지 않았고, 가장 가까운 입력 칸에서 {nearest:.0f}px 떨어져 있으며, aria-describedby/aria-errormessage로 연결되지도 않았습니다(WCAG 3.3.1).",
+            ))
+    # SM-08 for recordings made before the driver recorded what each click landed on
+    # (newer runs: check_clicked_controls, from the steps).
+    if not any(isinstance(st.get("target_control"), dict) for st in ctx.run.get("steps") or []):
+        controls = [c for c in ctx.elements if c.get("interactive") or c.get("role") in WIDGET_ROLES]
+        for e in dom:
+            if e.get("id") not in ctx.clicked_element_ids or e.get("tag") in NATIVE_CONTROL_TAGS or e.get("role") in WIDGET_ROLES:
+                continue
+            a = e.get("a11y") if isinstance(e.get("a11y"), dict) else {}
+            if a.get("focusable") or a.get("hidden") or e.get("tag") == "hotspot" or "game_control" in _roles(e):
+                continue
+            if any(c is not e and _inside(c["box"], e["box"]) for c in controls):
+                continue  # a card whose link or button the keyboard can reach
+            out.append(_sm08(*base, [e["id"]], element_key(e), e.get("role"), e.get("tag"), e.get("name") or e.get("text") or e.get("selector") or "", []))
+    for e in dom:
+        clip = e.get("clipped")
+        box = e.get("box") or {}
+        if not isinstance(clip, dict) or e.get("interactive") or box.get("w", 0) < 4 or box.get("h", 0) < 4 or not (e.get("text") or "").strip():
+            continue
+        if clip.get("animated"):
+            continue  # tickers and marquees clip by design
+        out.append(Observation(
+            "LY-01", *base, [e["id"]], element_key(e),
+            {"name": "text_clipped", "value": True, "unit": "flag", "threshold": False, "comparator": "==", "axis": "x" if clip.get("x") else "y", "ellipsis": bool(clip.get("ellipsis"))},
+            False, "P3" if clip.get("ellipsis") else "P2",
+            f"'{(e.get('text') or '')[:30]}' 글자가 상자에 잘립니다" + ((" (여러 줄 말줄임으로 줄임)." if clip.get("line_clamp") else " (말줄임표로 줄임).")
+                                                                    if clip.get("ellipsis") else ". 글자를 키우거나 번역되면 더 많이 잘립니다."),
+        ))
+    return out
+
+
+def check_focus_management(ctx: Context) -> list[Observation]:
+    """Focus after a step (AUT-11), from the snapshot's focus record and layers.
+
+    FM-02 (WCAG 2.4.3): a click opened a layer (a declared dialog, or a fixed or
+    absolute painted box over at least 40 % of the viewport) that was not there
+    before, and keyboard focus is not inside it. SM-06 at the step (2.4.11): the step
+    left focus on an element that something else fully covers (an input moved under a
+    fixed header after a validation error). Skipped when a layer just opened: the
+    trigger behind it is covered by design, and FM-02 reports that case.
+    """
+    focus = ctx.snapshot.get("focus")
+    if not isinstance(focus, dict) or (ctx.snapshot.get("surface") or {}).get("kind") == "game":
+        return []  # recorded before the driver kept focus and layers, or a game screen
+    out: list[Observation] = []
+    base = (ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"))
+    action = ((ctx.step or {}).get("action") or {}).get("action")
+    opened = False
+    if ctx.previous is not None and action in ("tap", "click", "double_tap", "long_press", "press"):
+        before = {layer.get("selector") for layer in ctx.previous.get("layers") or [] if isinstance(layer, dict)}
+        for layer in ctx.snapshot.get("layers") or []:
+            if not isinstance(layer, dict) or layer.get("selector") in before:
+                continue
+            opened = True
+            if layer.get("contains_focus"):
+                continue
+            element = next((e for e in ctx.elements if layer.get("dom_id") and e.get("dom_id") == layer["dom_id"]), None)
+            key = element_key(element) if element else f"{layer.get('selector') or '?'}|{layer.get('kind')}"
+            where = "문서 본문(body)으로 떨어져" if focus.get("on_body") else "층 바깥에 남아"
+            out.append(Observation(
+                "FM-02", *base, [element["id"]] if element else [], key,
+                {"name": "focus_in_layer", "value": False, "unit": "flag", "threshold": True, "comparator": "==",
+                 "layer_kind": layer.get("kind"), "focus_on_body": bool(focus.get("on_body"))},
+                False, "P2",
+                f"'{layer.get('selector')}' 층이 열렸지만 키보드 초점이 {where} 있습니다. 스크린리더·키보드 사용자는 새로 열린 내용을 모른 채 뒤쪽 화면을 계속 탐색합니다(WCAG 2.4.3).",
+                extra={"anchor_selectors": [layer["selector"]] if layer.get("selector") else []},
+            ))
+    if not opened and not focus.get("on_body") and focus.get("dom_id"):
+        target = next((e for e in ctx.elements if e.get("dom_id") == focus["dom_id"]), None)
+        covered = (target or {}).get("occluded_fraction")
+        under_layer = target is not None and any(
+            isinstance(layer, dict) and _inside({**target["box"], "w": 1, "h": 1, "x": target["box"]["x"] + target["box"]["w"] / 2,
+                                                  "y": target["box"]["y"] + target["box"]["h"] / 2}, layer.get("box") or {"x": 0, "y": 0, "w": 0, "h": 0})
+            for layer in ctx.snapshot.get("layers") or [])
+        # Under a layer the user opened: the 2.4.11 note exempts it and FM-02 covers focus.
+        if target is not None and not under_layer and target.get("in_viewport") is not False and isinstance(covered, (int, float)) and covered >= 0.999:
+            out.append(Observation(
+                "SM-06", *base, [target["id"]], element_key(target),
+                {"name": "focus_obscured_fraction", "value": round(float(covered), 3), "unit": "fraction", "threshold": 1.0, "comparator": "<",
+                 "by": target.get("occluded_by"), "phase": "step", "criterion": "2.4.11", "user_opened": False},
+                False, "P2",
+                f"이 단계 뒤 키보드 초점이 '{target.get('name') or target.get('selector')}'에 있지만 다른 요소가 그 칸을 완전히 가립니다(WCAG 2.4.11).",
+            ))
+    return out
+
+
+REFLOW_TOLERANCE_PX = 4  # borders and rounding; a few px of overflow hide no content
+
+
+def check_reflow(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[str, dict[str, Any]] | None = None) -> list[Observation]:
+    """RF-01 (WCAG 1.4.10): at 320 CSS px wide, content that sticks out to the right.
+
+    The driver re-renders a static copy of each distinct screen at 320 px with scripts
+    off and lists the outermost elements past the right edge, leaving out
+    two-dimensional content (tables, maps, video, code) and anything inside its own
+    scroll or clipping box. It counts only when the page scrolls sideways or the root
+    clips (then the content is lost, not just shifted).
+    """
+    out: list[Observation] = []
+    seen: set[str] = set()
+    for rec in run.get("reflow") or []:
+        if not isinstance(rec, dict) or rec.get("error"):
+            continue
+        width = rec.get("client_width") or 0
+        scrolls = (rec.get("scroll_width") or 0) > width + REFLOW_TOLERANCE_PX
+        if not scrolls and not rec.get("root_clips"):
+            continue
+        snap = (snapshots or {}).get(rec.get("snapshot_id"))
+        for off in rec.get("offenders") or []:
+            box = off.get("box") or {}
+            if (box.get("x") or 0) + (box.get("w") or 0) <= width + REFLOW_TOLERANCE_PX:
+                continue
+            element = None
+            if off.get("dom_id") and snap:
+                element = next((e for e in snap.get("elements", []) if e.get("dom_id") == off["dom_id"]), None)
+            key = element_key(element) if element else f"{off.get('selector') or '?'}|{(off.get('text') or '')[:40]}"
+            if key in seen:
+                continue
+            seen.add(key)
+            box = off.get("box") or {}
+            right = (box.get("x") or 0) + (box.get("w") or 0)
+            how = "가로 스크롤이 생깁니다" if scrolls else "화면 밖으로 잘려 볼 수 없습니다"
+            out.append(Observation(
+                "RF-01", run["run_id"], profile["profile_id"], rec.get("snapshot_id"), None,
+                [element["id"]] if element else [], key,
+                {"name": "right_edge_css_px", "value": right, "unit": "css_px", "threshold": rec.get("client_width"), "comparator": "<=",
+                 "viewport_css_px": rec.get("width"), "page_scroll_width": rec.get("scroll_width"), "root_clips": bool(rec.get("root_clips"))},
+                False, "P2",
+                f"320 CSS px 폭(400 % 확대)에서 '{(off.get('text') or off.get('selector') or '')[:30]}'의 오른쪽 끝이 {right:.0f}px라 {how}(WCAG 1.4.10).",
+                extra={"anchor_selectors": [off["selector"]] if off.get("selector") else [],
+                       "context_selectors": [f"#{a}" for a in off.get("ancestor_ids") or [] if a]},
+            ))
+    return out
+
+
+FOCUS_INDICATOR_MIN_PX = 4  # changed pixels (>= 24/255 per channel) inside the element box + 4 px
+
+
+def _stop_element(stop: dict[str, Any], snapshot: dict[str, Any] | None) -> dict[str, Any] | None:
+    """The snapshot element a focus stop landed on: same DOM id, else the best box overlap."""
+    if not snapshot:
+        return None
+    elements = [e for e in snapshot.get("elements") or [] if e.get("source", "dom") == "dom"]
+    if stop.get("dom_id"):
+        hit = next((e for e in elements if e.get("dom_id") == stop["dom_id"] or e.get("selector") == f"#{stop['dom_id']}"), None)
+        if hit:
+            return hit
+    b = stop.get("box") or {}
+    best, score = None, 0.0
+    for e in elements:
+        eb = e.get("box") or {}
+        ix = max(0.0, min(b.get("x", 0) + b.get("w", 0), eb.get("x", 0) + eb.get("w", 0)) - max(b.get("x", 0), eb.get("x", 0)))
+        iy = max(0.0, min(b.get("y", 0) + b.get("h", 0), eb.get("y", 0) + eb.get("h", 0)) - max(b.get("y", 0), eb.get("y", 0)))
+        inter = ix * iy
+        union = b.get("w", 0) * b.get("h", 0) + eb.get("w", 0) * eb.get("h", 0) - inter
+        iou = inter / union if union > 0 else 0.0
+        if iou > score:
+            best, score = e, iou
+    return best if score >= 0.7 else None
+
+
+def check_focus_walks(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[str, dict[str, Any]] | None = None) -> list[Observation]:
+    """Keyboard focus walk results recorded by the web driver (SM-05, SM-06).
+
+    SM-05: focusing the element changes fewer than FOCUS_INDICATOR_MIN_PX pixels in and
+    around its box and, when the driver compared it, in the whole viewport (an
+    indicator drawn elsewhere passes, ACT oj04fd) (WCAG 2.4.7). SM-06: a painting fixed
+    or sticky layer or a non-modal absolute dialog covers all nine sample points of the
+    focused element (WCAG 2.4.11 AA). A layer the user opened is exempt when Escape
+    reveals the element without moving focus (the 2.4.11 note; end-state walks only).
+    Partly covered (2.4.12 AAA) is a hypothesis. A fully covered element is not also
+    reported as SM-05. Each element is reported once with its worst result over the
+    walks, tied to the snapshot element when the stop can be matched (DOM id or box
+    overlap).
+    """
+    worst: dict[str, dict[str, Any]] = {}
+    for walk in run.get("focus_walks") or []:
+        for stop in walk.get("stops") or []:
+            sel = stop.get("selector") or "?"
+            w = worst.setdefault(sel, {"stop": stop, "walk": walk, "covered": 0.0, "covered_walk": walk, "covered_by": None, "min_px": None,
+                                       "user_opened": False, "revealed": 0})
+            covered = stop.get("obscured_fraction")
+            user_opened = walk.get("phase") == "end" and stop.get("obscured_user_opened") is True
+            if user_opened and stop.get("escape_reveals") is True and isinstance(covered, (int, float)) and covered >= 0.999:
+                w["revealed"] += 1  # the user can reveal it without moving focus: not obscured
+                covered = 0.0
+            if isinstance(covered, (int, float)) and covered > w["covered"]:
+                w.update(covered=covered, covered_walk=walk, covered_by=stop.get("obscured_by"), user_opened=user_opened)
+            px = stop.get("indicator_px")
+            anywhere = stop.get("indicator_any_px")
+            if isinstance(px, int) and isinstance(anywhere, int):
+                px = max(px, anywhere)
+            if stop.get("in_viewport") and isinstance(px, int) and (stop.get("obscured_fraction") or 0) < 0.999 and (w["min_px"] is None or px < w["min_px"]):
+                w.update(min_px=px, stop=stop, walk=walk)
+    out: list[Observation] = []
+    for sel, w in worst.items():
+        stop = w["stop"]
+        name = (stop.get("name") or "")[:40]
+        if w["covered"] > 0:
+            snap = (snapshots or {}).get(w["covered_walk"].get("snapshot_id"))
+            element = _stop_element(stop, snap)
+            full = w["covered"] >= 0.999
+            layer = w["covered_by"] or "고정 영역"
+            if full and w["user_opened"]:
+                text = f"사용자가 연 {layer}이(가) '{name or sel}'을(를) 완전히 가리고, Escape로도 초점을 옮기지 않고 드러낼 수 없습니다(WCAG 2.4.11)."
+            elif full:
+                text = f"키보드 포커스가 '{name or sel}'에 있을 때 {layer}이(가) 요소를 완전히 가립니다(WCAG 2.4.11)."
+            else:
+                text = f"키보드 포커스가 '{name or sel}'에 있을 때 {layer}이(가) 요소를 {w['covered'] * 100:.0f}% 가립니다(WCAG 2.4.12 AAA, 가설)."
+            out.append(Observation(
+                "SM-06", run["run_id"], profile["profile_id"], w["covered_walk"].get("snapshot_id"), None,
+                [element["id"]] if element else [], element_key(element) if element else f"{sel}|{name}",
+                {"name": "focus_obscured_fraction", "value": w["covered"], "unit": "fraction", "threshold": 1.0, "comparator": "<",
+                 "by": w["covered_by"], "phase": w["covered_walk"].get("phase"), "criterion": "2.4.11" if full else "2.4.12",
+                 "user_opened": w["user_opened"], "revealed_by_escape_walks": w["revealed"]},
+                False, "P2" if full else "P3", text,
+            ))
+            if full:
+                continue
+        if w["min_px"] is not None and w["min_px"] < FOCUS_INDICATOR_MIN_PX:
+            snap = (snapshots or {}).get(w["walk"].get("snapshot_id"))
+            element = _stop_element(stop, snap)
+            out.append(Observation(
+                "SM-05", run["run_id"], profile["profile_id"], w["walk"].get("snapshot_id"), None,
+                [element["id"]] if element else [], element_key(element) if element else f"{sel}|{name}",
+                {"name": "focus_indicator_px", "value": w["min_px"], "unit": "px", "threshold": FOCUS_INDICATOR_MIN_PX, "comparator": ">=",
+                 "phase": w["walk"].get("phase"), "local_px": stop.get("indicator_px"), "viewport_px": stop.get("indicator_any_px"),
+                 "viewport_scale": stop.get("indicator_any_scale")},
+                False, "P2",
+                f"Tab으로 '{name or sel}'에 포커스가 가도 화면에 표시가 생기지 않습니다(WCAG 2.4.7). 키보드 사용자는 현재 위치를 모릅니다.",
+            ))
+    return out
 
 
 SNAPSHOT_CHECKS: tuple[Callable[[Context], list[Observation]], ...] = (
@@ -1637,6 +2150,8 @@ SNAPSHOT_CHECKS: tuple[Callable[[Context], list[Observation]], ...] = (
     check_colour_only,
     check_text_size,
     check_choice_overload,
+    check_semantics,
+    check_focus_management,
 )
 
 
@@ -1647,13 +2162,15 @@ SNAPSHOT_CHECKS: tuple[Callable[[Context], list[Observation]], ...] = (
 # and listed under "hypotheses" (docs/validation/experiments/decisions.md).
 # PT-05 (Fitts ID > 6 bits) has no normative threshold and produced no finding on the
 # development suites (STF-22).
-# GM-06 counts presses the script needed, which measures the script, not what the game
-# requires (game review 2026-09-28): a hypothesis until a press-rate sweep confirms it.
+# GM-06 is registered but emits nothing until a press-rate sweep exists (GQA-13); it
+# stays in this set so that a future rule starts as a hypothesis.
 HYPOTHESIS_CHECKS = frozenset({"GZ-01", "GZ-04", "PC-05", "PT-05", "GM-06"})
 
 # Checks that read no profile attribute: one verdict per snapshot, reported as
 # "profile-independent" instead of a k/n coverage (STF-08).
-PROFILE_INVARIANT_CHECKS = frozenset({"PT-01", "PT-05", "PT-06", "PC-01", "PC-02", "CG-01", "CG-03", "GZ-03", "GM-05", "GM-06"})
+PROFILE_INVARIANT_CHECKS = frozenset({"PT-01", "PT-05", "PT-06", "PC-01", "PC-02", "CG-01", "CG-03", "GZ-03", "GM-05", "GM-06",
+                                      "SM-01", "SM-02", "SM-03", "SM-04", "SM-05", "SM-06", "SM-07", "SM-08", "LY-01", "RF-01",
+                                      "FM-02"})
 
 
 def tier(check_id: str, measurement: dict[str, Any] | None = None) -> str:
@@ -1662,6 +2179,8 @@ def tier(check_id: str, measurement: dict[str, Any] | None = None) -> str:
         return "hypothesis"
     if check_id == "PJ-01" and not (measurement or {}).get("corroborated"):
         return "hypothesis"  # `corroborated` is set only by swarm.aggregate from independent runs
+    if check_id == "SM-06" and (measurement or {}).get("criterion") == "2.4.12":
+        return "hypothesis"  # partly obscured is AAA (2.4.12), not a 2.4.11 failure (AUT-13)
     return "finding"
 
 

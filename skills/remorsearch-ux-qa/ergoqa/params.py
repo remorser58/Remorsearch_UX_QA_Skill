@@ -45,14 +45,27 @@ TOUCH_SIGMA_MULT = {
     # the box includes location-dependent offsets, so 1.3 is used [assumption].
     "one_hand_thumb": 1.3,
     "mobility_seated": 1.0,
-    "mobility_walking": 1.4,    # Ng, Brewster & Williamson 2014: +40 % thumb error walking [paper->assumption]
-    "mobility_transit": 1.4,    # [assumption] treated like walking
+    # [derived] back-calculated from Conradi et al. 2015 (walking vs standing error at
+    # 5-8 mm targets): 1.27-1.74 by baseline posture (situational brief SIT-03, MP-11).
+    # Ng, Brewster & Williamson 2014's +40 % is an encumbrance effect, not walking.
+    "mobility_walking": 1.4,
+    "mobility_transit": 1.4,    # [assumption] an alias of walking (no separate data)
+    "encumbered": 1.4,          # [paper] Ng et al. 2014, thumb with a carried object (not used by the strata yet)
     "tremor_none": 1.0,
-    "tremor_mild": 1.5,         # [assumption] MP-12 sensitivity value
-    "tremor_moderate": 2.25,    # [assumption] MP-12 sensitivity value (2.0-2.5)
-    "age_60s": 1.15,            # [assumption] older adults err more (Sultana & Moffatt 2019); magnitude unconfirmed
-    "age_70s+": 1.3,            # [assumption]
+    "tremor_mild": 1.3,         # [derived] essential-tremor amplitude and Findlater & Zhang 2020 open data (self-reported tremor 1.07-1.15); was 1.5
+    "tremor_moderate": 1.8,     # [derived] as above; was 2.25
+    "age_60s": 1.10,            # [derived] Findlater & Zhang 2020 open data, 60-70 vs young: 1.10 (95 % CI 0.99-1.21); was 1.15
+    "age_70s+": 1.3,            # [assumption] no data for 70+ in the open dataset
 }
+# How profile factors combine. "multiplicative": product of the factors. "additive":
+# independent noise adds in variance, k = sqrt(1 + sum(k_i^2 - 1)) (situational brief
+# SIT-02). A sensitivity switch: additive changed no dev finding (round 8), so the
+# default stays multiplicative.
+TOUCH_SIGMA_COMBINE = "multiplicative"
+# SIT-01: profile-only PT-03/PT-04 findings (none at k = 1) on targets whose label-
+# inclusive short side meets the platform size are P3 at most; smaller critical
+# targets already get P2 from PT-02. None turns the cap off. [policy; dev round 8]
+TOUCH_PROFILE_ONLY_P3_MIN_MM: float | None = TOUCH_TARGET_MIN_MM
 TOUCH_SIGMA_BASE_MM = 1.30  # [derived] sqrt(1.68) absolute x-term of Bi & Zhai 2016
 
 # PT-04 severity by predicted miss probability on a critical/path target. [policy]
@@ -124,7 +137,7 @@ CVD_CONFUSABLE_DE = 5.0          # [snippet+policy] below: confusable after simu
 CVD_MARGINAL_DE = 10.0           # [snippet+policy] 5-10: marginal; >= 10 distinct
 CVD_STATE_CONTRAST_EXEMPT = 3.0  # [recalled] WCAG technique G183: >= 3:1 luminance contrast between states is a non-colour cue
 # Text size, compared with FONT SIZE (em) visual angle, two tiers:
-TEXT_PLATFORM_MIN_CSS_PX_MOBILE = 11.0  # [recalled] Apple HIG minimum text size 11 pt (Material Body Small 12 sp)
+TEXT_PLATFORM_MIN_CSS_PX_MOBILE = 11.0  # [industry] Apple HIG minimum text size 11 pt (game brief GQA-07; Material Body Small 12 sp)
 TEXT_FLOOR_ARCMIN = 16.0         # [recalled] ISO 9241-303 / ANSI-HFES 100 minimum character height -> P2 (P1 critical)
 TEXT_MIN_ARCMIN = 24.6           # [snippet] Hangul critical print size, young adults 0.41 deg (KJCP 2015; metric unconfirmed) -> P3
 TEXT_MIN_ARCMIN_PRESBYOPIA = 31.2  # [snippet] Hangul critical print size, older adults 0.52 deg -> P3
@@ -184,8 +197,17 @@ LATENCY_ATTENTION_MS = 10000.0  # [paper]
 FLASH_DELTA = 0.10             # [standard] WCAG general flash: 10 % of max relative luminance
 FLASH_DARK_LIMIT = 0.80        # [standard] darker image below 0.80
 FLASH_AREA_SR = 0.006          # [standard] WCAG 2.3.1 combined area threshold (25 % of any 10 deg field)
-FLASH_EXTENDED_WINDOW_MS = 5000.0   # [code] EA IRIS "extended failure": 2-3 flashes/s sustained over 5 s -> P1
-FLASH_EXTENDED_MIN_FLASHES = 10.0   # [derived] >= 2 flashes/s over the 5 s window
+FLASH_EXTENDED_WINDOW_MS = 5000.0   # [policy] sustained rule: 10 or more flashes within 5 s -> P1
+FLASH_EXTENDED_MIN_FLASHES = 10.0   # [derived] 2 flashes/s held over the 5 s window
+# EA IRIS extended failure (src/TransitionTracker.cpp, config/appsettings.json at d96978a):
+# a frame counts when its 1 s transition count is MinTransitions..MaxTransitions; the
+# failure is a frame whose count is >= MinTransitions after ExtendedFailSeconds of such
+# frames within the last ExtendedFailWindow seconds. [code]
+FLASH_IRIS_MIN_TRANSITIONS = 4
+FLASH_IRIS_MAX_TRANSITIONS = 6
+FLASH_IRIS_EXTENDED_SECONDS = 4.0
+FLASH_IRIS_EXTENDED_WINDOW_S = 5.0
+FLASH_IRIS_FRAME_MS = 10.0          # [policy] virtual frame clock for IRIS's frame-based counters
 FLASH_RED_RATIO = 0.8              # [standard] WCAG 2.2 red flash: R/(R+G+B) >= 0.8 (saturated red)
 # Block-grid screening (flash samples with block_lum/block_red; docs/human-factors/game-ux-ergonomics.md 2.1).
 FLASH_WINDOW_MS = 1000.0           # [standard] "any one-second period"
@@ -196,7 +218,6 @@ FLASH_RED_SHARE_DELTA = 0.10       # [policy] a red transition moves >= 10 % of 
 FLASH_RED_EXCESS = 20.0 / 320.0    # [standard] WCAG 2.0 red flash note: (R-G-B)*320 > 20 on linear RGB (driver pixel test)
 FLASH_MIN_FPS = 20.0               # [policy] below 20 samples/s (Nyquist 10 Hz) a pass is reported as inconclusive
 FLASH_MAX_GAP_MS = 100.0           # [policy] a longer gap inside a sampling window is reported (can hide one 5 Hz flash pair)
-MASH_MIN_PRESSES = 8               # [policy] repeated presses on one target needed to progress (XAG 107 / GAG: avoid mashing)
 QTE_MOTOR_MS = 100.0           # [assumption] provisional; game brief
 RT_CV = 0.2                    # [assumption] provisional coefficient of variation of RT
 INPUT_LATENCY_MS = {"touch": 80.0, "mouse": 20.0, "keyboard": 20.0, "gamepad": 50.0, "remote": 100.0}  # [assumption]
