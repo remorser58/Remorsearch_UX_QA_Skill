@@ -60,6 +60,35 @@ error (nothing is run; an existing non-empty run directory is never overwritten)
 run directory exists). `run` and `serve` print one JSON line per event on stdout
 (`ready`, `finished`).
 
+## Reading public pages (`read_page.mjs`, rung R3)
+
+`read_page.mjs` renders one public URL for the research mode's reader and writes one
+`ux-page-read.v1` document (`schemas/ux-page-read.v1.schema.json`). It is not used
+by the swarm runs.
+
+```bash
+node drivers/web/read_page.mjs https://example.com/post/1 --out capture.json [--device desktop-1920]
+python3 scripts/ux_research.py ingest capture.json --run RUN_DIR --url https://example.com/post/1 --context anonymous
+```
+
+- A fresh anonymous context: no stored cookies, no sign-in. The browser keeps its
+  own user agent; the device sets only the viewport. No stealth.
+- Images, media and fonts are blocked.
+- It only scrolls (8 screens by default, at most 50). It never clicks, types or
+  presses keys, so "more comments" buttons and consent banners stay as they are.
+- A check that clears by itself ("checking your browser") is waited for, at most
+  15 s (`waited_ms`). An interactive human check is reported
+  (`challenge.interactive`) and never solved. A password field is reported
+  (`login_form`); the reader's verdict decides whether the page is gated.
+- Loopback, private and link-local addresses are refused unless `--allow-local`
+  (for local fixtures).
+- Pacing and budgets are the reader's job (`references/research/public-page-access.md`
+  section 8). Run it only after an anonymous read of the same URL that did not stop.
+
+Exit codes: 0 read (document written), 3 stopped at an interactive human check
+(document written), 2 usage or refused address, 4 unread (navigation failed or no
+browser).
+
 ## Devices
 
 `devices.mjs` mirrors `ergoqa/devices.py` (ids, CSS viewport, DPR, input,

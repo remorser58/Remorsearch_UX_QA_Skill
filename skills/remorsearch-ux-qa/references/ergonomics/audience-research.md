@@ -53,7 +53,7 @@ resources, environment.
 | --- | --- | --- |
 | `product_analytics`, `survey`, `interview`, `usability_test`, `support_tickets` | Real segment sizes, devices, tasks, failures | Best evidence. Ask the team; cite version and date. |
 | `official_statistics` | Age/sex structure, disability, digital divide. Korean sources: 행정안전부 주민등록 인구, KOSIS, 과기정통부·NIA 디지털정보격차 실태조사, 방송통신위원회 방송매체 이용행태조사, 보건복지부 장애인 실태조사, 한국콘텐츠진흥원 게임이용자 실태조사 | Population-level. It bounds a segment; it is not the product's user base. |
-| `app_store_reviews`, `community` | Who complains, in which context, about what. Use the research mode (`references/research/workflow.md`) for public communities. | Self-selected and skewed toward problems. Firsthand quotes support existence, never size. |
+| `app_store_reviews`, `community`, `news` | Who complains, in which context, about what. Collect them with the research mode's audience run (`references/research/audience-pipeline.md`); pages are read under `references/research/public-page-access.md`. | Self-selected and skewed toward problems. Firsthand quotes support existence, never size. |
 | `competitor`, `market_report` | Audience of comparable products, device mix | Estimated; state the comparable product and its date. |
 | `official_docs`, `product_brief` | Intended users, legal duties (accessibility law, 전자상거래법) | Intent, not evidence of actual use. |
 | `research_paper` | Condition effects and prevalence (CVD, presbyopia, handedness) | Check the country and year. |
@@ -85,16 +85,32 @@ Rules:
 - Community, app-store review and news sources support existence only: never a
   share and never `statistic` evidence (`audience-check` rejects both).
 - Synthetic personas and LLM output are **never** sources for the audience file.
+- Web evidence comes from the audience run. Stage 0 has no web-collection code of
+  its own. Reading is honest and stops at logins, paywalls, human checks, robots.txt
+  refusals and TDM reservations (`references/research/public-page-access.md`). A
+  page the reader cannot read may be rendered with `drivers/web/read_page.mjs` (rung
+  R3: a fresh anonymous browser that only scrolls) and passed to
+  `ux_research.py ingest`. Nothing solves a human check or signs in to get past it.
+- Community and review sources enter the audience file as the audience run exported
+  them: `url: null` plus `bundle_ref` {bundle_id, source_id, claim_ids}.
 
 ## Workflow
 
 1. Read the product (brief, store listing, website, onboarding) and list the
    candidate groups and tasks.
-2. Search official statistics for size bounds, reviews and communities for
-   contexts and pain points, and comparable products for device mix. Ask the
-   team for analytics before estimating.
+2. Run the research mode's audience run (phases A0–A6 in
+   `references/research/audience-pipeline.md`) for reviews, communities and news:
+   who exists, in which situations, and what they struggle with. Its
+   `audience.draft.json` and `audience.todo.md` are the starting point. Then fill
+   what posts cannot give: size bounds from official statistics, devices and grips
+   from analytics or comparable products, concrete task data from the product.
+   Ask the team for analytics before estimating.
 3. Write `audience.json`. Validate it:
    `python3 scripts/ergo_qa.py audience-check audience.json`.
+   A cross-check against the audience run's gate
+   (`audience-check --gate gate.json --bundle bundle.json`) is planned; until it
+   ships, keep community sources limited to the claims the run exported as
+   supported.
 4. Compose personas under a budget, and read the plan:
    `python3 scripts/ergo_qa.py personas --audience audience.json --budget 12 --plan work/persona-plan.md --out work/profiles.json`
 5. Write scenarios from the key tasks:
