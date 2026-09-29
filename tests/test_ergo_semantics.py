@@ -50,6 +50,29 @@ class Names(unittest.TestCase):
         self.assertTrue(checks._label_in_name("Next →", "Next page"))
 
 
+class ZeroSize(unittest.TestCase):
+    """AUT-20: controls with no rendered box but still in the accessibility tree."""
+
+    def test_name_rules_apply_with_capped_severity(self) -> None:
+        link = el("empty", "link", (8, 8, 0, 0), interactive=True, tag="a", a11y=a11y("none", rendered=True), visible=False)
+        span = el("sb", "button", (8, 8, 0, 0), interactive=True, tag="span", a11y=a11y("none", focusable=False, rendered=True), visible=False)
+        field = el("tb", "textbox", (8, 26, 1904, 0), interactive=True, tag="div", a11y=a11y("none", focusable=False, rendered=True), visible=False)
+        obs = checks.check_semantics(ctx([link, span, field], path_ids=("empty",)))
+        got = {(o.check_id, o.element_key.split("|")[0]): o for o in obs}
+        self.assertEqual(sorted(got), [("SM-01", "#empty"), ("SM-01", "#sb"), ("SM-03", "#tb")])
+        self.assertEqual(got[("SM-01", "#empty")].severity, "P2")  # P1 on a path, capped: nobody sees it
+        self.assertEqual(got[("SM-01", "#sb")].severity, "P3")  # not focusable either
+        self.assertFalse(got[("SM-03", "#tb")].measurement["visible_to_sighted"])
+
+    def test_hidden_or_named_zero_size_controls_pass(self) -> None:
+        hidden = el("h", "link", (8, 8, 0, 0), interactive=True, tag="a", a11y=a11y("none", hidden=True, rendered=True), visible=False)
+        gone = el("g", "button", (0, 0, 0, 0), interactive=True, tag="button", a11y=a11y("none", rendered=False), visible=False)  # display:none
+        old = el("o", "button", (0, 0, 0, 0), interactive=True, tag="button", a11y=a11y("none"), visible=False)  # recorded before the field existed
+        named = el("n", "checkbox", (8, 8, 0, 0), interactive=True, tag="input", name="동의", a11y=a11y("label", rendered=True), visible=False)
+        no_href = el("a0", "link", (8, 8, 0, 0), interactive=True, tag="a", a11y=a11y("none", focusable=False, rendered=True), visible=False)
+        self.assertEqual(checks.check_semantics(ctx([hidden, gone, old, named, no_href])), [])  # ACT c487ae inapplicable 6: <a />
+
+
 class Fields(unittest.TestCase):
     def test_placeholder_only_and_unlabelled_fields(self) -> None:
         ph = el("phone", "textbox", (10, 200, 340, 44), interactive=True, tag="input", name="010-0000-0000", a11y=a11y("placeholder"))

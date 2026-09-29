@@ -1736,9 +1736,24 @@ def check_semantics(ctx: Context) -> list[Observation]:
     out: list[Observation] = []
     base = (ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"))
     dom = [e for e in ctx.elements if e.get("source", "dom") == "dom" and _present(e)]
-    fields = [e for e in dom if isinstance(e.get("a11y"), dict) and (
+    # AUT-20: a zero-size control still in the accessibility tree is reached by screen
+    # readers and, when focusable, by Tab; only the name rules apply to it (ACT 97a4e1,
+    # c487ae, e086e5 applicability), at P2 at most (P3 when it cannot take focus).
+    unseen = [e for e in ctx.elements if e.get("source", "dom") == "dom" and not _present(e) and _usable(e)
+              and isinstance(e.get("a11y"), dict) and not e["a11y"].get("hidden") and e["a11y"].get("rendered") is True
+              and (e["a11y"].get("focusable") or e.get("interactive") or e.get("role") in FIELD_ROLES)
+              and not (e.get("tag") == "a" and not e["a11y"].get("focusable"))]  # <a> without href has no link role
+    unseen_ids = {id(e) for e in unseen}
+    named = dom + unseen
+    fields = [e for e in named if isinstance(e.get("a11y"), dict) and (
         (e.get("tag") in ("input", "select", "textarea") and e.get("role") != "button") or e.get("role") in FIELD_ROLES)]
-    for e in dom:
+
+    def cap_unseen(e: dict[str, Any], severity: str) -> str:
+        if id(e) not in unseen_ids:
+            return severity
+        return _cap(severity, "P2" if e["a11y"].get("focusable") else "P3")
+
+    for e in named:
         a = e.get("a11y")
         if not isinstance(a, dict) or (not e.get("enabled", True) and e not in fields):
             continue
@@ -1755,11 +1770,11 @@ def check_semantics(ctx: Context) -> list[Observation]:
                 out.append(Observation(
                     "SM-03", *base, [e["id"]], element_key(e),
                     {"name": "label_source", "value": source, "unit": "enum", "threshold": "any accessible name", "comparator": "!=",
-                     "disabled": not e.get("enabled", True)},
-                    False, "P3" if not e.get("enabled", True) else ("P1" if critical else "P2"),
+                     "disabled": not e.get("enabled", True), "visible_to_sighted": id(e) not in unseen_ids},
+                    False, cap_unseen(e, "P3" if not e.get("enabled", True) else ("P1" if critical else "P2")),
                     f"입력 칸 '{where}'에 접근 가능한 이름이 없습니다. 스크린리더는 칸의 용도를 알리지 못합니다(WCAG 4.1.2).",
                 ))
-            elif source in ("placeholder", "title"):
+            elif source in ("placeholder", "title") and id(e) not in unseen_ids:
                 # A placeholder or title is an accessible name (ACT e086e5 passes it); a
                 # visible label is still better practice, so this is P3 and not a WCAG failure.
                 out.append(Observation(
@@ -1777,11 +1792,14 @@ def check_semantics(ctx: Context) -> list[Observation]:
         if a.get("name_source") == "none" or not name:
             out.append(Observation(
                 "SM-01", *base, [e["id"]], element_key(e),
-                {"name": "accessible_name", "value": "", "unit": "text", "threshold": "non-empty", "comparator": "!="},
-                False, "P1" if critical else "P2",
+                {"name": "accessible_name", "value": "", "unit": "text", "threshold": "non-empty", "comparator": "!=",
+                 "visible_to_sighted": id(e) not in unseen_ids},
+                False, cap_unseen(e, "P1" if critical else "P2"),
                 f"조작 요소 '{where}'에 접근 가능한 이름이 없습니다. 스크린리더·음성 제어 사용자는 무엇을 하는 버튼인지 알 수 없습니다(시뮬레이션하지 않는 사용자군).",
             ))
             continue
+        if id(e) in unseen_ids:
+            continue  # the remaining rules (label in name, errors, clipping) need a rendered box
         visible = (a.get("visible_label") if a.get("visible_label") is not None else e.get("text") or "").strip()
         if a.get("name_source") in ("aria-label", "aria-labelledby") and not a.get("icon_font") and _label_tokens(visible):
             if not _label_in_name(visible, name):
@@ -1795,6 +1813,7 @@ def check_semantics(ctx: Context) -> list[Observation]:
     # system notice (critical_message/status without error_message).
     # An error signal is needed: a declared error message, or a role=alert while some
     # field is invalid. A "담았습니다" toast with role=alert is not an input error.
+    fields = [f for f in fields if id(f) not in unseen_ids]  # distances need a rendered box
     any_invalid = any(f["a11y"].get("invalid") or f["a11y"].get("user_invalid") for f in fields)
     errors = [e for e in dom if (e.get("text") or "").strip() and (
         "error_message" in _roles(e)

@@ -385,6 +385,10 @@ export function extractSnapshot(args) {
     const t = [...el.children].find((c) => c.tagName && c.tagName.toLowerCase() === 'title');
     return t ? t.textContent.replace(/\s+/g, ' ').trim() : '';
   };
+  // Roles whose name comes from the author only, never from their content (ARIA 1.2
+  // "Name From: author"): a role=textbox div's text is its value, not its name.
+  const AUTHOR_ONLY = new Set(['textbox', 'searchbox', 'combobox', 'listbox', 'spinbutton', 'slider', 'progressbar', 'meter', 'scrollbar',
+    'tree', 'treegrid', 'grid', 'table', 'menu', 'menubar', 'radiogroup', 'tablist', 'toolbar', 'dialog', 'alertdialog', 'img', 'group']);
   const accNameSrc = (el) => {
     const lb = el.getAttribute('aria-labelledby');
     if (lb) {
@@ -415,7 +419,7 @@ export function extractSnapshot(args) {
     } else if (typeof SVGElement !== 'undefined' && el instanceof SVGElement) {
       const t = svgTitle(el);
       if (t) return [t, 'content'];
-    } else {
+    } else if (!AUTHOR_ONLY.has((el.getAttribute('role') || '').trim().split(/\s+/)[0])) {
       const t = nameFromContent(el) || text(el);
       if (t) return [t.slice(0, 300), 'content'];
       const img = el.querySelector && el.querySelector('img[alt]');
@@ -518,6 +522,13 @@ export function extractSnapshot(args) {
       visible_label: visibleInnerText(el),
       // Hidden from assistive technology (aria-hidden or inert on it or an ancestor).
       hidden: !!(el.closest && (el.closest('[aria-hidden="true"]') || el.closest('[inert]'))),
+      // Rendered (not display:none, not visibility:hidden), even with a zero-size box: such
+      // an element is still in the accessibility tree (AUT-20). Opacity does not count.
+      rendered: (() => {
+        if (typeof el.checkVisibility === 'function') return el.checkVisibility({ visibilityProperty: true });
+        const cs = style(el);
+        return cs.display !== 'none' && cs.visibility === 'visible' && el.getClientRects().length > 0;
+      })(),
       // Visible text drawn by an icon font (ligatures such as "menu"): not a text label.
       icon_font: (() => {
         const ICON = /icon|material|awesome|symbol|glyph|fontello|ionicon|bootstrap-icons/i;
