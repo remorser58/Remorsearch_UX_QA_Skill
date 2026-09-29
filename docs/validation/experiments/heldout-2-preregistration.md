@@ -291,3 +291,10 @@ Process fixes:
 - The blind verification stage reports changes only as counts per file.
 - Blind workflows are no longer resumed from their journals by the author. The
   remaining stages are relaunched with an explicit start stage instead.
+
+Addendum to amendment 5 (same day). The relaunched verification stage reported its
+changes as counts per file, as the author's revised instruction asked. For expense
+this showed which page variant the verifier edited, which may hint at the variant
+assignment. rhythm's report showed no page edits. No detector change uses variant
+identity: the detector never compares variants, and scoring is automatic from the
+key. Later blind stages report only the total number of changes.
