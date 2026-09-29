@@ -50,6 +50,51 @@ class Names(unittest.TestCase):
         self.assertTrue(checks._label_in_name("Next →", "Next page"))
 
 
+class ClickedWithoutRole(unittest.TestCase):
+    """SM-08: controls the task clicked that keyboard and screen-reader users cannot operate."""
+
+    def run_check(self, elements, clicked):
+        c = ctx(elements)
+        c.clicked_element_ids = set(clicked)
+        return checks.check_semantics(c)
+
+    def test_div_chip_clicked_by_the_task(self) -> None:
+        chip = el("chip", "generic", (10, 300, 90, 36), text="매운맛", tag="div", a11y=a11y("content", focusable=False))
+        obs = [o for o in self.run_check([chip], ["chip"]) if o.check_id == "SM-08"]
+        self.assertEqual([(o.element_key.split("|")[0], o.severity) for o in obs], [("#chip", "P1")])
+
+    def test_focusable_native_label_or_card_with_a_link_pass(self) -> None:
+        focusable = el("f", "generic", (10, 300, 90, 36), text="순한맛", tag="div", a11y=a11y("content", focusable=True))
+        label = el("l", "generic", (10, 350, 90, 36), text="동의", tag="label", a11y=a11y("content", focusable=False))
+        card = el("card", "generic", (10, 400, 340, 120), text="상품 카드", tag="div", a11y=a11y("content", focusable=False))
+        link = el("more", "link", (20, 480, 100, 30), text="자세히", tag="a", interactive=True, a11y=a11y("content"))
+        unclicked = el("u", "generic", (10, 600, 90, 36), text="안내", tag="div", a11y=a11y("content", focusable=False))
+        obs = self.run_check([focusable, label, card, link, unclicked], ["f", "l", "card"])
+        self.assertEqual([o for o in obs if o.check_id == "SM-08"], [])
+
+
+class Reflow(unittest.TestCase):
+    """RF-01: static re-render at 320 CSS px (WCAG 1.4.10)."""
+
+    def run_doc(self, scroll_width, root_clips=False):
+        off = {"selector": "#fee-summary", "dom_id": "fee-summary", "ancestor_ids": ["step3"], "tag": "div",
+               "box": {"x": 8, "y": 400, "w": 400, "h": 60}, "text": "수수료 합계 3,000원"}
+        return {"run_id": "R", "reflow": [{"snapshot_id": "S-3", "url": "http://x", "width": 320, "client_width": 320,
+                                           "scroll_width": scroll_width, "root_clips": root_clips, "offenders": [off]},
+                                          {"snapshot_id": "S-4", "url": "http://x", "width": 320, "error": "timeout"}]}
+
+    def test_overflow_is_reported_once_with_its_container(self) -> None:
+        obs = checks.check_reflow(self.run_doc(416), {"profile_id": "P"}, {})
+        self.assertEqual([(o.check_id, o.element_key.split("|")[0], o.severity) for o in obs], [("RF-01", "#fee-summary", "P2")])
+        self.assertEqual(obs[0].extra["context_selectors"], ["#step3"])
+        self.assertEqual(obs[0].measurement["value"], 408)
+
+    def test_no_overflow_no_finding_unless_the_root_clips(self) -> None:
+        self.assertEqual(checks.check_reflow(self.run_doc(320), {"profile_id": "P"}, {}), [])
+        clipped = checks.check_reflow(self.run_doc(320, root_clips=True), {"profile_id": "P"}, {})
+        self.assertIn("잘려", clipped[0].message_ko)
+
+
 class ZeroSize(unittest.TestCase):
     """AUT-20: controls with no rendered box but still in the accessibility tree."""
 

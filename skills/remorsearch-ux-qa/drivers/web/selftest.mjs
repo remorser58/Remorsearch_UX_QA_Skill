@@ -103,6 +103,11 @@ function startFixtureServer() {
       readFixture(pathname, res, req);
       return;
     }
+    if (req.method === 'GET' && pathname === '/reflow.html') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), 'reflow.html')));
+      return;
+    }
     if (req.method === 'GET' && pathname === '/focus.html') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), 'focus.html')));
@@ -763,6 +768,27 @@ async function focusTest(base, tmp) {
   check('focus: no walk on touch devices by default', Array.isArray(touch.focus_walks) && touch.focus_walks.length === 0, touch.focus_walks);
 }
 
+async function reflowTest(base, tmp) {
+  const sc = {
+    schema_version: 'ergo-scenario.v1', scenario_id: 'SC-driver-reflow-01', surface: { kind: 'web', url: '{BASE}/reflow.html' },
+    task_goal_ko: '다음 화면으로 간다', device_ids: ['galaxy-s24'], targets: {},
+    steps: [{ action: 'tap', target: '#next' }, { action: 'wait', ms: 100 }], success: { url_contains: 'reflow' },
+  };
+  writeJson(path.join(tmp, 'reflow.json'), sc);
+  const outDir = path.join(tmp, 'runs');
+  const r = await runDriver(['run', '--scenario', path.join(tmp, 'reflow.json'), '--device', 'galaxy-s24', '--out', outDir, '--run-id', 'R-reflow', '--base', base]);
+  if (!check('reflow galaxy-s24: exit 0', r.code === 0, `${r.code} ${r.err}`)) return;
+  const { run } = loadRun(path.join(outDir, 'R-reflow'));
+  const recs = (run.reflow || []).filter((x) => !x.error);
+  const offenders = recs.flatMap((x) => x.offenders.map((o) => o.dom_id));
+  check('reflow: every distinct screen is re-rendered at 320 px (two screens here)', recs.length >= 2 && recs.every((x) => x.width === 320),
+    run.reflow);
+  check('reflow: fixed-width boxes stick out on both screens', offenders.includes('fixed-box') && offenders.includes('wide-note'), offenders);
+  check('reflow: a table, a self-scrolling chip row and fluid text are exempt',
+    !offenders.includes('fee-table') && !offenders.includes('chips') && !offenders.includes('fluid') && !offenders.some((o) => o === null), offenders);
+  check('reflow: the run itself is not resized (steps ok, success)', run.status === 'completed' && run.success === true, { status: run.status });
+}
+
 function runReader(args) {
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [path.join(HERE, 'read_page.mjs'), ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -892,6 +918,7 @@ async function main() {
     await layersTest(base, tmp);
     await focusTest(base, tmp);
     await readPageTest(base, tmp);
+    await reflowTest(base, tmp);
     await serveTest(base, tmp);
     await exitCodeTests(base, tmp);
   } finally {

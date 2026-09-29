@@ -77,9 +77,14 @@ def _device_for(snapshot: dict[str, Any], profile: dict[str, Any]):
         return device
 
 
-def _path_selectors(run: dict[str, Any], snapshots_by_id: dict[str, dict[str, Any]]) -> set[str]:
+CLICK_ACTIONS = frozenset({"tap", "click", "double_tap", "long_press"})
+
+
+def _path_selectors(run: dict[str, Any], snapshots_by_id: dict[str, dict[str, Any]], actions: frozenset[str] | None = None) -> set[str]:
     selectors: set[str] = set()
     for step in run.get("steps", []):
+        if actions is not None and (step.get("action") or {}).get("action") not in actions:
+            continue
         target_id = step.get("target_element_id")
         before = snapshots_by_id.get(step.get("before") or "")
         if before and target_id:
@@ -174,6 +179,7 @@ def analyze_run(
     snapshots_by_id = {s["snapshot_id"]: s for s in snapshots}
     step_by_after = {s.get("after"): s for s in run.get("steps", []) if s.get("after")}
     selectors = _path_selectors(run, snapshots_by_id)
+    clicked = _path_selectors(run, snapshots_by_id, CLICK_ACTIONS)
     conspicuity: dict[str, Any] = {}
     if gaze_enabled:
         for snap in snapshots:
@@ -188,11 +194,13 @@ def analyze_run(
                 run=run, snapshot=snap, previous=previous, step=step_by_after.get(snap["snapshot_id"]),
                 profile=profile, device=device, scenario=scenario, conspicuity=conspicuity.get(snap["snapshot_id"]),
                 path_element_ids=path_ids,
+                clicked_element_ids={e["id"] for e in snap.get("elements", []) if e.get("selector") in clicked},
             )
             observations.extend(checks.run_snapshot_checks(ctx))
             previous = snap
         device = _device_for(snapshots[-1], profile)
-        run_obs = checks.check_run_timing(run, profile, device, snapshots_by_id, scenario) + checks.check_focus_walks(run, profile, snapshots_by_id)
+        run_obs = (checks.check_run_timing(run, profile, device, snapshots_by_id, scenario) + checks.check_focus_walks(run, profile, snapshots_by_id)
+                   + checks.check_reflow(run, profile, snapshots_by_id))
         if profile is not own:
             run_obs = [o for o in run_obs if o.check_id != "PJ-01"]
         observations.extend(run_obs)
@@ -215,7 +223,8 @@ def analyze_run(
             record["epistemic_status"] = "inferred"
             record["geometry_basis"] = "estimated"
         record["selectors"] = [s for s in (selector_of.get((obs.snapshot_id, eid)) for eid in obs.element_ids) if s] or list(obs.extra.get("anchor_selectors") or [])
-        record["context_selectors"] = sorted({c for eid in obs.element_ids for c in context_of.get((obs.snapshot_id, eid), [])})
+        record["context_selectors"] = sorted({c for eid in obs.element_ids for c in context_of.get((obs.snapshot_id, eid), [])}
+                                             | set(obs.extra.get("context_selectors") or []))
         record["scenario_id"] = run.get("scenario_id")
         dicts.append(record)
     coverage: dict[str, list[str]] = {}

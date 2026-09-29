@@ -228,6 +228,18 @@ SM07 = _register(CheckSpec(
     ("REF-wcag22-332", "REF-nngroup-placeholders"), ("web", "desktop"), "accessibility",
     "보이는 <label>을 두고 연결하세요. placeholder는 입력하면 사라져 무엇을 적는 칸인지 잊게 됩니다.",
 ))
+SM08 = _register(CheckSpec(
+    "SM-08", "semantics", "measured", "과업이 누른 조작 요소에 역할이 없고 키보드로 갈 수 없음",
+    "A control the task clicked has no role and cannot take keyboard focus",
+    ("REF-wcag22-211", "REF-wcag22-412"), ("web", "desktop"), "accessibility",
+    "<button>이나 <input type=radio|checkbox>를 쓰거나, role·tabindex=0·키보드 동작(Enter/Space)과 상태(aria-pressed, aria-checked)를 주세요.",
+))
+RF01 = _register(CheckSpec(
+    "RF-01", "layout", "measured", "320 CSS px 폭에서 내용이 가로로 넘침(리플로)",
+    "Content sticks out sideways at 320 CSS px (reflow)",
+    ("REF-wcag22-1410",), ("web", "desktop"), "visual",
+    "고정 폭(width: 400px 등)을 max-width: 100%와 줄바꿈되는 배치로 바꿔, 320 CSS px 폭(400 % 확대)에서 가로 스크롤 없이 읽히게 하세요.",
+))
 SM04 = _register(CheckSpec(
     "SM-04", "semantics", "measured", "오류 문구가 입력 칸과 떨어져 있고 연결되지 않음",
     "Error message neither next to nor linked to a field",
@@ -313,6 +325,8 @@ class Context:
     scenario: dict[str, Any] | None
     conspicuity: list[list[float]] | None = None
     path_element_ids: set[str] = field(default_factory=set)
+    # Elements the task tapped or clicked (a subset of the path; SM-08).
+    clicked_element_ids: set[str] = field(default_factory=set)
 
     @property
     def elements(self) -> list[dict[str, Any]]:
@@ -1653,6 +1667,19 @@ def _frame_flash(run: dict[str, Any], samples: list[dict[str, Any]], device: Any
 
 
 _LABEL_NOISE = re.compile(r"[\W_]+", re.UNICODE)
+# SM-08: tags that are controls by themselves (a label activates its control) and
+# widget roles a click may legitimately land on.
+NATIVE_CONTROL_TAGS = frozenset({"a", "button", "input", "select", "textarea", "summary", "label", "option", "canvas", "video", "audio",
+                                 "details", "hotspot", "iframe"})
+WIDGET_ROLES = frozenset({"button", "link", "checkbox", "radio", "switch", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option",
+                          "slider", "spinbutton", "textbox", "searchbox", "combobox", "listbox", "treeitem", "gridcell", "scrollbar"})
+
+
+def _inside(inner: dict[str, float], outer: dict[str, float]) -> bool:
+    return (inner.get("w", 0) > 0 and inner.get("h", 0) > 0 and inner["x"] >= outer["x"] - 1 and inner["y"] >= outer["y"] - 1
+            and inner["x"] + inner["w"] <= outer["x"] + outer["w"] + 1 and inner["y"] + inner["h"] <= outer["y"] + outer["h"] + 1)
+
+
 # Roles that are form fields even on a <div> (ACT e086e5 applicability).
 FIELD_ROLES = frozenset({"textbox", "searchbox", "combobox", "listbox", "spinbutton", "slider"})
 ERROR_NEAR_CSS_PX = 48.0  # LAT-09 ER-01: an error further than this from every field needs a programmatic link
@@ -1833,6 +1860,27 @@ def check_semantics(ctx: Context) -> list[Observation]:
                 False, "P2",
                 f"오류 문구 '{(err.get('text') or '')[:30]}'이(가) 어느 칸이 틀렸는지 적지 않았고, 가장 가까운 입력 칸에서 {nearest:.0f}px 떨어져 있으며, aria-describedby/aria-errormessage로 연결되지도 않았습니다(WCAG 3.3.1).",
             ))
+    # SM-08: the task tapped an element that is neither a native control nor a widget
+    # role, cannot take focus, and holds no control inside it. Keyboard and screen-reader
+    # users cannot operate it (WCAG 2.1.1, 4.1.2). Only clicked elements are judged, so a
+    # click handler is evidenced by the task itself, not guessed from styles.
+    controls = [c for c in ctx.elements if c.get("interactive") or c.get("role") in WIDGET_ROLES]
+    for e in dom:
+        if e.get("id") not in ctx.clicked_element_ids or e.get("tag") in NATIVE_CONTROL_TAGS or e.get("role") in WIDGET_ROLES:
+            continue
+        a = e.get("a11y") if isinstance(e.get("a11y"), dict) else {}
+        if a.get("focusable") or a.get("hidden") or e.get("tag") == "hotspot" or "game_control" in _roles(e):
+            continue
+        box = e["box"]
+        if any(c is not e and _inside(c["box"], box) for c in controls):
+            continue  # a card whose link or button the keyboard can reach
+        out.append(Observation(
+            "SM-08", *base, [e["id"]], element_key(e),
+            {"name": "role_focusable", "value": {"role": e.get("role"), "tag": e.get("tag"), "focusable": False}, "unit": "state",
+             "threshold": "native control, widget role or tabindex >= 0", "comparator": "in"},
+            False, "P1",
+            f"과업에서 누른 '{(e.get('name') or e.get('text') or e.get('selector') or '')[:30]}'이(가) 버튼·선택 요소로 선언되지 않았고 키보드로 초점을 받을 수 없습니다. 키보드·스크린리더 사용자는 이 단계를 마칠 수 없습니다(WCAG 2.1.1, 4.1.2).",
+        ))
     for e in dom:
         clip = e.get("clipped")
         box = e.get("box") or {}
@@ -1847,6 +1895,48 @@ def check_semantics(ctx: Context) -> list[Observation]:
             f"'{(e.get('text') or '')[:30]}' 글자가 상자에 잘립니다" + ((" (여러 줄 말줄임으로 줄임)." if clip.get("line_clamp") else " (말줄임표로 줄임).")
                                                                     if clip.get("ellipsis") else ". 글자를 키우거나 번역되면 더 많이 잘립니다."),
         ))
+    return out
+
+
+def check_reflow(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[str, dict[str, Any]] | None = None) -> list[Observation]:
+    """RF-01 (WCAG 1.4.10): at 320 CSS px wide, content that sticks out to the right.
+
+    The driver re-renders a static copy of each distinct screen at 320 px with scripts
+    off and lists the outermost elements past the right edge, leaving out
+    two-dimensional content (tables, maps, video, code) and anything inside its own
+    scroll or clipping box. It counts only when the page scrolls sideways or the root
+    clips (then the content is lost, not just shifted).
+    """
+    out: list[Observation] = []
+    seen: set[str] = set()
+    for rec in run.get("reflow") or []:
+        if not isinstance(rec, dict) or rec.get("error"):
+            continue
+        scrolls = (rec.get("scroll_width") or 0) > (rec.get("client_width") or 0) + 1
+        if not scrolls and not rec.get("root_clips"):
+            continue
+        snap = (snapshots or {}).get(rec.get("snapshot_id"))
+        for off in rec.get("offenders") or []:
+            element = None
+            if off.get("dom_id") and snap:
+                element = next((e for e in snap.get("elements", []) if e.get("dom_id") == off["dom_id"]), None)
+            key = element_key(element) if element else f"{off.get('selector') or '?'}|{(off.get('text') or '')[:40]}"
+            if key in seen:
+                continue
+            seen.add(key)
+            box = off.get("box") or {}
+            right = (box.get("x") or 0) + (box.get("w") or 0)
+            how = "가로 스크롤이 생깁니다" if scrolls else "화면 밖으로 잘려 볼 수 없습니다"
+            out.append(Observation(
+                "RF-01", run["run_id"], profile["profile_id"], rec.get("snapshot_id"), None,
+                [element["id"]] if element else [], key,
+                {"name": "right_edge_css_px", "value": right, "unit": "css_px", "threshold": rec.get("client_width"), "comparator": "<=",
+                 "viewport_css_px": rec.get("width"), "page_scroll_width": rec.get("scroll_width"), "root_clips": bool(rec.get("root_clips"))},
+                False, "P2",
+                f"320 CSS px 폭(400 % 확대)에서 '{(off.get('text') or off.get('selector') or '')[:30]}'의 오른쪽 끝이 {right:.0f}px라 {how}(WCAG 1.4.10).",
+                extra={"anchor_selectors": [off["selector"]] if off.get("selector") else [],
+                       "context_selectors": [f"#{a}" for a in off.get("ancestor_ids") or [] if a]},
+            ))
     return out
 
 
@@ -1979,7 +2069,7 @@ HYPOTHESIS_CHECKS = frozenset({"GZ-01", "GZ-04", "PC-05", "PT-05", "GM-06"})
 # Checks that read no profile attribute: one verdict per snapshot, reported as
 # "profile-independent" instead of a k/n coverage (STF-08).
 PROFILE_INVARIANT_CHECKS = frozenset({"PT-01", "PT-05", "PT-06", "PC-01", "PC-02", "CG-01", "CG-03", "GZ-03", "GM-05", "GM-06",
-                                      "SM-01", "SM-02", "SM-03", "SM-04", "SM-05", "SM-06", "SM-07", "LY-01"})
+                                      "SM-01", "SM-02", "SM-03", "SM-04", "SM-05", "SM-06", "SM-07", "SM-08", "LY-01", "RF-01"})
 
 
 def tier(check_id: str, measurement: dict[str, Any] | None = None) -> str:

@@ -37,6 +37,7 @@ options:
   --no-auto-scroll         do not scroll targets into view (step fails with no_target instead)
   --focus-walk / --no-focus-walk  Tab through the page at load (separate context) and at the end,
                            recording focus indicators and covered focus (default: on for mouse/keyboard devices)
+  --no-reflow                   skip the 320 CSS px reflow pass (static copies of the screens, scripts off)
   --no-visual-feedback     only DOM mutations/navigation count as feedback
   --timeout-s N            scripted run time limit (default 900)
   --idle-timeout-s N       serve: finish as blocked after N s without requests (default 900)
@@ -67,7 +68,7 @@ const VALUE_FLAGS = new Set([
   'scenario', 'profile', 'out', 'run-id', 'base', 'port', 'flash-sample-ms', 'device', 'device-json', 'orientation',
   'allow-origin', 'feedback-timeout-ms', 'settle-ms', 'timeout-s', 'idle-timeout-s', 'locale', 'timezone', 'agent', 'agent-json',
 ]);
-const BOOL_FLAGS = new Set(['headed', 'continue-on-error', 'no-auto-scroll', 'no-visual-feedback', 'focus-walk', 'no-focus-walk', 'help']);
+const BOOL_FLAGS = new Set(['headed', 'continue-on-error', 'no-auto-scroll', 'no-visual-feedback', 'focus-walk', 'no-focus-walk', 'no-reflow', 'help']);
 
 function parseArgs(argv) {
   const out = { command: null, flags: {}, allowOrigins: [] };
@@ -163,6 +164,7 @@ async function main(argv) {
     autoScroll: !f['no-auto-scroll'],
     // Keyboard focus walk (default: pointer/keyboard devices only).
     focusWalk: f['focus-walk'] ? true : f['no-focus-walk'] ? false : null,
+    reflow: f['no-reflow'] ? false : null,
     visualFeedback: !f['no-visual-feedback'],
     headed: !!f.headed,
     allowOrigins,

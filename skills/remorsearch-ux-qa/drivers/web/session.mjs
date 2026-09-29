@@ -52,6 +52,13 @@ const FOCUS_VIEWPORT_WIDTH = 480; // viewport-wide captures are downscaled to ab
 const FOCUS_ANIM_GAP_MS = 40;
 const FOCUS_MASK_LEVEL = 4;
 
+// Reflow (WCAG 1.4.10, AUT-06): each distinct screen's DOM is copied as the run goes
+// and re-rendered after the run at 320 CSS px wide with scripts off (a static copy,
+// so the run itself is never resized). At most REFLOW_MAX_SCREENS per run.
+const REFLOW_WIDTH = 320;
+const REFLOW_MAX_SCREENS = 12;
+const REFLOW_BUDGET_MS = 20000;
+
 const MEASURED = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'type', 'press', 'scroll', 'gamepad']);
 const POINTER = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'scroll']);
 
@@ -78,6 +85,72 @@ function stripQuery(url) {
  * fixed or sticky layer that does not contain it covers (9 sample points). Null when
  * focus is on the document itself. The name never reads a field's value.
  */
+/** In-page, on a static copy at 320 px: does the page scroll sideways, and which outermost
+ * elements stick out past the right edge (1.4.10; two-dimensional content exempt)? */
+function reflowInfo(limit) {
+  const se = document.scrollingElement || document.documentElement;
+  const cw = se.clientWidth;
+  const sw = se.scrollWidth;
+  const clipX = (n) => ['hidden', 'clip'].includes(getComputedStyle(n).overflowX);
+  const rootClips = clipX(document.documentElement) || (document.body ? clipX(document.body) : false);
+  const out = { client_width: cw, scroll_width: sw, root_clips: rootClips, offenders: [] };
+  if (sw <= cw + 1 && !rootClips) return out;
+  const TWO_D = new Set(['table', 'canvas', 'video', 'iframe', 'svg', 'pre', 'code', 'map', 'object', 'embed', 'math']);
+  const exempt = (n) => {
+    for (let m = n; m && m.nodeType === 1 && m !== document.body; m = m.parentElement) {
+      const tag = m.tagName.toLowerCase();
+      const role = m.getAttribute('role') || '';
+      if (TWO_D.has(tag) || ['img', 'application', 'grid', 'treegrid', 'table', 'toolbar'].includes(role)) return true;
+      if (m !== n) {
+        const ox = getComputedStyle(m).overflowX;
+        if (ox === 'auto' || ox === 'scroll') return true; // scrolls inside its own box
+        if ((ox === 'hidden' || ox === 'clip') && m.getBoundingClientRect().right <= cw + 1) return true; // clipped by a container that fits
+      }
+      if (m.getAttribute('aria-hidden') === 'true') return true;
+    }
+    return false;
+  };
+  const sel = (n) => {
+    if (n.id) return `#${CSS.escape(n.id)}`;
+    const parts = [];
+    for (let m = n; m && m.nodeType === 1 && m !== document.body && parts.length < 5; m = m.parentElement) {
+      if (m.id) {
+        parts.unshift(`#${CSS.escape(m.id)}`);
+        break;
+      }
+      const sib = m.parentElement ? [...m.parentElement.children].filter((c) => c.tagName === m.tagName) : [];
+      parts.unshift(sib.length > 1 ? `${m.tagName.toLowerCase()}:nth-of-type(${sib.indexOf(m) + 1})` : m.tagName.toLowerCase());
+    }
+    return parts.join(' > ');
+  };
+  const hits = [];
+  const all = document.body ? document.body.getElementsByTagName('*') : [];
+  for (let i = 0; i < all.length && i < 6000; i++) {
+    const n = all[i];
+    const r = n.getBoundingClientRect();
+    if (r.width <= 1 || r.height <= 1 || r.right <= cw + 1) continue;
+    const cs = getComputedStyle(n);
+    if (cs.display === 'none' || cs.visibility !== 'visible' || parseFloat(cs.opacity) === 0) continue;
+    if (!(n.innerText || '').trim() && !['img', 'input', 'button', 'select', 'textarea'].includes(n.tagName.toLowerCase())) continue;
+    if (exempt(n)) continue;
+    hits.push(n);
+  }
+  const set = new Set(hits);
+  for (const n of hits) {
+    let outer = true;
+    for (let m = n.parentElement; m; m = m.parentElement) if (set.has(m)) { outer = false; break; }
+    if (!outer) continue;
+    const r = n.getBoundingClientRect();
+    const ids = [];
+    for (let m = n.parentElement; m && ids.length < 6; m = m.parentElement) if (m.id) ids.push(m.id);
+    out.offenders.push({ selector: sel(n), dom_id: n.id || null, ancestor_ids: ids, tag: n.tagName.toLowerCase(),
+      box: { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) },
+      text: (n.innerText || n.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim().slice(0, 60) });
+    if (out.offenders.length >= limit) break;
+  }
+  return out;
+}
+
 function focusInfo() {
   let el = document.activeElement;
   if (!el || el === document.body || el === document.documentElement) return null;
@@ -256,6 +329,9 @@ export class WebSession {
     this.flashGrid = null;
     this.flashPrev = null; // last flash frame (across bursts) for block motion
     this.focusWalks = [];
+    this.reflowScreens = [];
+    this.reflowSeen = new Set();
+    this.reflow = [];
     this.frameIndex = 0;
     this.blocked = [];
     this.blockedCount = 0;
@@ -382,6 +458,60 @@ export class WebSession {
       await this.probeFrames({ dispatch: epochNow(), stepIndex: 0, flashMs: this.opts.flashSampleMs, visual: null, fb: { done: true } });
     }
     await this.snapshot(0, []);
+  }
+
+  reflowEnabled() {
+    if (this.opts.reflow === false) return false;
+    return this.scenario.surface_kind !== 'game';
+  }
+
+  /** Keep a static copy of a screen for the reflow pass (distinct DOMs only). */
+  async keepForReflow(snapshotId) {
+    if (!this.reflowEnabled() || this.reflowScreens.length >= REFLOW_MAX_SCREENS) return;
+    try {
+      const html = await this.page.content();
+      const key = sha256(Buffer.from(html));
+      if (this.reflowSeen.has(key)) return;
+      this.reflowSeen.add(key);
+      this.reflowScreens.push({ snapshot_id: snapshotId, url: this.page.url(), html });
+    } catch { /* navigating: the next snapshot keeps the screen */ }
+  }
+
+  /** Re-render the kept screens at 320 CSS px, scripts off, and record what sticks out. */
+  async reflowPass() {
+    if (!this.reflowScreens.length) return;
+    let context = null;
+    const deadline = epochNow() + REFLOW_BUDGET_MS;
+    try {
+      const touch = this.dev.snapshotDevice.input === 'touch';
+      context = await this.browser.newContext({
+        viewport: { width: REFLOW_WIDTH, height: touch ? 568 : 256 }, deviceScaleFactor: 1, javaScriptEnabled: false,
+        locale: this.opts.locale, timezoneId: this.opts.timezoneId, colorScheme: 'light', serviceWorkers: 'block', acceptDownloads: false,
+      });
+      await this.installNetworkPolicy(context, false);
+      const page = await context.newPage();
+      for (const screen of this.reflowScreens) {
+        if (epochNow() > deadline) {
+          this.warnings.push(`reflow pass stopped at its ${REFLOW_BUDGET_MS} ms budget`);
+          break;
+        }
+        const base = `<base href="${screen.url.replace(/"/g, '&quot;')}">`;
+        const html = /<base\s/i.test(screen.html) ? screen.html
+          : /<head[^>]*>/i.test(screen.html) ? screen.html.replace(/<head[^>]*>/i, (m) => `${m}${base}`) : `${base}${screen.html}`;
+        try {
+          await page.setContent(html, { waitUntil: 'load', timeout: 8000 });
+          const info = await page.evaluate(reflowInfo, 20);
+          this.reflow.push({ snapshot_id: screen.snapshot_id, url: screen.url, width: REFLOW_WIDTH, ...info });
+        } catch (err) {
+          this.reflow.push({ snapshot_id: screen.snapshot_id, url: screen.url, width: REFLOW_WIDTH, error: firstLine(err.message) });
+        }
+      }
+    } catch (err) {
+      this.warnings.push(`reflow pass failed: ${firstLine(err.message)}`);
+    } finally {
+      if (context) await context.close().catch(() => {});
+      this.reflowScreens = [];
+    }
   }
 
   focusWalkEnabled() {
@@ -1050,6 +1180,7 @@ export class WebSession {
     writeJsonAtomic(jsonPath, snap);
     this.snapshots.push({ snapshot_id: id, step_index: stepIndex, path: `${id}.json`, png: `${id}.png` });
     this.lastSnapshotId = id;
+    await this.keepForReflow(id);
     // Keep recent element lists to anchor persona notes (note -> element -> selector).
     this.snapElements.set(id, { elements: ex.elements, url: snap.surface.url });
     if (this.snapElements.size > 64) this.snapElements.delete(this.snapElements.keys().next().value);
@@ -1673,6 +1804,7 @@ export class WebSession {
         await this.boundedWalk(() => this.focusWalk(this.page, 'end', this.lastSnapshotId), 'end');
         await this.boundedWalk(() => this.focusWalkFresh(), 'load');
       }
+      if (this.reflowEnabled() && !reason && !this.crashed && !this.blockReasons.length) await this.reflowPass();
       if (success === null && !detail && typeof personaSuccess === 'boolean') {
         success = personaSuccess;
         basis = 'judgment';
@@ -1731,6 +1863,7 @@ export class WebSession {
         timing_windows: this.timingWindowsOut(end),
         flash_samples: this.flashSamples,
         focus_walks: this.focusWalks,
+        reflow: this.reflow,
         flash_sampling: this.opts.flashSampleMs > 0 ? {
           enabled: true,
           per_step_ms: this.opts.flashSampleMs,
