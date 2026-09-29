@@ -667,7 +667,8 @@ async function focusTest(base, tmp) {
     task_goal_ko: '포커스 표시를 본다',
     device_ids: ['desktop-1920'],
     targets: {},
-    steps: [{ action: 'type', target: '#pw', text: 'hunter2secret' }, { action: 'wait', ms: 100 }],
+    steps: [{ action: 'type', target: '#pw', text: 'hunter2secret' }, { action: 'click', target: '#menu-btn' },
+      { action: 'click', target: '#chat-btn' }, { action: 'wait', ms: 100 }],
     success: { url_contains: 'focus' },
   };
   writeJson(path.join(tmp, 'focus.json'), sc);
@@ -698,6 +699,19 @@ async function focusTest(base, tmp) {
   check('focus: a field inside a fixed dialog under its floating label is not obscured', stop('#dlg-in')?.obscured_fraction === 0, stop('#dlg-in'));
   check('focus: below the fold with smooth scrolling the element is measured in view', stop('#deep')?.in_viewport === true && stop('#deep')?.indicator_px === 0,
     stop('#deep'));
+  check('focus: an indicator drawn away from the element is found in the viewport (ACT oj04fd)',
+    stop('#far')?.indicator_px < 4 && stop('#far')?.indicator_any_px > 50, stop('#far'));
+  check('focus: an animation inside an element without an indicator is not an indicator',
+    stop('#anim')?.indicator_px < 4 && (stop('#anim')?.indicator_any_px === null || stop('#anim')?.indicator_any_px < 4), stop('#anim'));
+  check('focus: a non-modal absolute dialog fully covers the element under it (author layer)',
+    stop('#adlg-under')?.obscured_fraction === 1 && stop('#adlg-under')?.obscured_user_opened === false, stop('#adlg-under'));
+  check('focus: layers opened by the user are closed on the fresh load', stop('#menu-under')?.obscured_fraction === 0, stop('#menu-under'));
+  const endStop = (sel) => end?.stops.find((s) => s.selector === sel);
+  check('focus: a user-opened menu that closes on Escape without moving focus reveals the element (2.4.11 note)',
+    endStop('#menu-under')?.obscured_user_opened === true && endStop('#menu-under')?.escape_reveals === true, endStop('#menu-under'));
+  check('focus: a user-opened chat that stays on Escape keeps the element covered',
+    endStop('#chat-under')?.obscured_fraction === 1 && endStop('#chat-under')?.obscured_user_opened === true && endStop('#chat-under')?.escape_reveals === false,
+    endStop('#chat-under'));
   const names = walks.flatMap((w) => w.stops.map((s) => s.name)).join('|');
   check('focus: stop names never contain a typed value', !names.includes('hunter2') && stop('#pw')?.name === '비밀번호', names);
   check('focus: the walk does not disturb the run (steps ok, success measured)', run.status === 'completed' && run.success === true,

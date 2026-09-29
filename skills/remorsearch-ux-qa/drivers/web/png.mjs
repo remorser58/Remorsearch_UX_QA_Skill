@@ -405,6 +405,31 @@ export function blockStats(frame, grid, prev) {
  * Visual difference between two frames: share of pixels whose max RGB channel
  * difference is >= `level` (default 16/255). Returns null if sizes differ.
  */
+/**
+ * Focus-indicator pixels: pixels where ``on`` differs (max channel change >= level)
+ * from both unfocused frames ``off1`` and ``off2``, and ``off1`` and ``off2`` differ
+ * by less than ``maskLevel`` (pixels that change without focus are animation).
+ * Counted inside ``region`` {x0, y0, x1, y1} when given. Frames must share one size;
+ * returns null otherwise.
+ */
+export function indicatorPixels(on, off1, off2, level = 16, maskLevel = 4, region = null) {
+  if (!on || !off1 || !off2 || on.rgb.length !== off1.rgb.length || on.rgb.length !== off2.rgb.length) return null;
+  const w = on.width;
+  const x0 = region ? Math.max(0, region.x0) : 0;
+  const y0 = region ? Math.max(0, region.y0) : 0;
+  const x1 = region ? Math.min(w, region.x1) : w;
+  const y1 = region ? Math.min(on.height, region.y1) : on.height;
+  const d = (f, g, o) => Math.max(Math.abs(f.rgb[o] - g.rgb[o]), Math.abs(f.rgb[o + 1] - g.rgb[o + 1]), Math.abs(f.rgb[o + 2] - g.rgb[o + 2]));
+  let changed = 0;
+  for (let y = y0; y < y1; y++) {
+    for (let x = x0; x < x1; x++) {
+      const o = (y * w + x) * 3;
+      if (d(on, off1, o) >= level && d(on, off2, o) >= level && d(off1, off2, o) < maskLevel) changed++;
+    }
+  }
+  return changed;
+}
+
 export function visualDiffFraction(a, b, level = 16) {
   if (!a || !b || a.rgb.length !== b.rgb.length) return null;
   const n = a.rgb.length / 3;

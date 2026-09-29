@@ -1900,22 +1900,34 @@ def check_focus_walks(run: dict[str, Any], profile: dict[str, Any], snapshots: d
     """Keyboard focus walk results recorded by the web driver (SM-05, SM-06).
 
     SM-05: focusing the element changes fewer than FOCUS_INDICATOR_MIN_PX pixels in and
-    around its box (WCAG 2.4.7). SM-06: a painting fixed or sticky layer covers all nine
-    sample points of the focused element (WCAG 2.4.11 AA); partly covered is P3
-    (2.4.12 AAA). A fully covered element is not also reported as SM-05. Each element is
-    reported once with its worst result over the walks, tied to the snapshot element
-    when the stop can be matched (DOM id or box overlap).
+    around its box and, when the driver compared it, in the whole viewport (an
+    indicator drawn elsewhere passes, ACT oj04fd) (WCAG 2.4.7). SM-06: a painting fixed
+    or sticky layer or a non-modal absolute dialog covers all nine sample points of the
+    focused element (WCAG 2.4.11 AA). A layer the user opened is exempt when Escape
+    reveals the element without moving focus (the 2.4.11 note; end-state walks only).
+    Partly covered (2.4.12 AAA) is a hypothesis. A fully covered element is not also
+    reported as SM-05. Each element is reported once with its worst result over the
+    walks, tied to the snapshot element when the stop can be matched (DOM id or box
+    overlap).
     """
     worst: dict[str, dict[str, Any]] = {}
     for walk in run.get("focus_walks") or []:
         for stop in walk.get("stops") or []:
             sel = stop.get("selector") or "?"
-            w = worst.setdefault(sel, {"stop": stop, "walk": walk, "covered": 0.0, "covered_walk": walk, "covered_by": None, "min_px": None})
+            w = worst.setdefault(sel, {"stop": stop, "walk": walk, "covered": 0.0, "covered_walk": walk, "covered_by": None, "min_px": None,
+                                       "user_opened": False, "revealed": 0})
             covered = stop.get("obscured_fraction")
+            user_opened = walk.get("phase") == "end" and stop.get("obscured_user_opened") is True
+            if user_opened and stop.get("escape_reveals") is True and isinstance(covered, (int, float)) and covered >= 0.999:
+                w["revealed"] += 1  # the user can reveal it without moving focus: not obscured
+                covered = 0.0
             if isinstance(covered, (int, float)) and covered > w["covered"]:
-                w.update(covered=covered, covered_walk=walk, covered_by=stop.get("obscured_by"))
+                w.update(covered=covered, covered_walk=walk, covered_by=stop.get("obscured_by"), user_opened=user_opened)
             px = stop.get("indicator_px")
-            if stop.get("in_viewport") and isinstance(px, int) and (covered or 0) < 0.999 and (w["min_px"] is None or px < w["min_px"]):
+            anywhere = stop.get("indicator_any_px")
+            if isinstance(px, int) and isinstance(anywhere, int):
+                px = max(px, anywhere)
+            if stop.get("in_viewport") and isinstance(px, int) and (stop.get("obscured_fraction") or 0) < 0.999 and (w["min_px"] is None or px < w["min_px"]):
                 w.update(min_px=px, stop=stop, walk=walk)
     out: list[Observation] = []
     for sel, w in worst.items():
@@ -1925,14 +1937,20 @@ def check_focus_walks(run: dict[str, Any], profile: dict[str, Any], snapshots: d
             snap = (snapshots or {}).get(w["covered_walk"].get("snapshot_id"))
             element = _stop_element(stop, snap)
             full = w["covered"] >= 0.999
+            layer = w["covered_by"] or "고정 영역"
+            if full and w["user_opened"]:
+                text = f"사용자가 연 {layer}이(가) '{name or sel}'을(를) 완전히 가리고, Escape로도 초점을 옮기지 않고 드러낼 수 없습니다(WCAG 2.4.11)."
+            elif full:
+                text = f"키보드 포커스가 '{name or sel}'에 있을 때 {layer}이(가) 요소를 완전히 가립니다(WCAG 2.4.11)."
+            else:
+                text = f"키보드 포커스가 '{name or sel}'에 있을 때 {layer}이(가) 요소를 {w['covered'] * 100:.0f}% 가립니다(WCAG 2.4.12 AAA, 가설)."
             out.append(Observation(
                 "SM-06", run["run_id"], profile["profile_id"], w["covered_walk"].get("snapshot_id"), None,
                 [element["id"]] if element else [], element_key(element) if element else f"{sel}|{name}",
                 {"name": "focus_obscured_fraction", "value": w["covered"], "unit": "fraction", "threshold": 1.0, "comparator": "<",
-                 "by": w["covered_by"], "phase": w["covered_walk"].get("phase")},
-                False, "P2" if full else "P3",
-                f"키보드 포커스가 '{name or sel}'에 있을 때 {w['covered_by'] or '고정 영역'}이(가) 요소를 "
-                + ("완전히 가립니다(WCAG 2.4.11)." if full else f"{w['covered'] * 100:.0f}% 가립니다(WCAG 2.4.12)."),
+                 "by": w["covered_by"], "phase": w["covered_walk"].get("phase"), "criterion": "2.4.11" if full else "2.4.12",
+                 "user_opened": w["user_opened"], "revealed_by_escape_walks": w["revealed"]},
+                False, "P2" if full else "P3", text,
             ))
             if full:
                 continue
@@ -1943,7 +1961,8 @@ def check_focus_walks(run: dict[str, Any], profile: dict[str, Any], snapshots: d
                 "SM-05", run["run_id"], profile["profile_id"], w["walk"].get("snapshot_id"), None,
                 [element["id"]] if element else [], element_key(element) if element else f"{sel}|{name}",
                 {"name": "focus_indicator_px", "value": w["min_px"], "unit": "px", "threshold": FOCUS_INDICATOR_MIN_PX, "comparator": ">=",
-                 "phase": w["walk"].get("phase")},
+                 "phase": w["walk"].get("phase"), "local_px": stop.get("indicator_px"), "viewport_px": stop.get("indicator_any_px"),
+                 "viewport_scale": stop.get("indicator_any_scale")},
                 False, "P2",
                 f"Tab으로 '{name or sel}'에 포커스가 가도 화면에 표시가 생기지 않습니다(WCAG 2.4.7). 키보드 사용자는 현재 위치를 모릅니다.",
             ))
@@ -1989,6 +2008,8 @@ def tier(check_id: str, measurement: dict[str, Any] | None = None) -> str:
         return "hypothesis"
     if check_id == "PJ-01" and not (measurement or {}).get("corroborated"):
         return "hypothesis"  # `corroborated` is set only by swarm.aggregate from independent runs
+    if check_id == "SM-06" and (measurement or {}).get("criterion") == "2.4.12":
+        return "hypothesis"  # partly obscured is AAA (2.4.12), not a 2.4.11 failure (AUT-13)
     return "finding"
 
 

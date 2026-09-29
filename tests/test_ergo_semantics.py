@@ -166,6 +166,39 @@ class FocusWalk(unittest.TestCase):
     def test_runs_without_walks(self) -> None:
         self.assertEqual(checks.check_focus_walks({"run_id": "R"}, {"profile_id": "P"}), [])
 
+    def test_indicator_drawn_elsewhere_in_the_viewport_passes(self) -> None:
+        # ACT oj04fd: nothing changes near the element, but a distant marker does (AUT-09).
+        run = {"run_id": "R", "focus_walks": [{"phase": "load", "snapshot_id": "S-0", "stops": [
+            {"selector": "#far", "name": "", "indicator_px": 0, "indicator_any_px": 87, "obscured_fraction": 0, "in_viewport": True, "box": {"x": 0, "y": 0, "w": 90, "h": 40}},
+            {"selector": "#none", "name": "", "indicator_px": 0, "indicator_any_px": 2, "obscured_fraction": 0, "in_viewport": True, "box": {"x": 0, "y": 50, "w": 90, "h": 40}}]}]}
+        obs = checks.check_focus_walks(run, {"profile_id": "P"})
+        self.assertEqual([(o.check_id, o.element_key.split("|")[0]) for o in obs], [("SM-05", "#none")])
+        self.assertEqual(obs[0].measurement["viewport_px"], 2)
+
+    def test_user_opened_layer_is_exempt_only_when_escape_reveals(self) -> None:
+        def stop(sel, reveals, phase_user=True):
+            return {"selector": sel, "name": "", "indicator_px": 400, "obscured_fraction": 1.0, "obscured_by": "#menu",
+                    "obscured_user_opened": phase_user, "escape_reveals": reveals, "in_viewport": True, "box": {"x": 0, "y": 0, "w": 90, "h": 40}}
+        run = {"run_id": "R", "focus_walks": [{"phase": "end", "snapshot_id": "S-1", "stops": [stop("#menu-under", True), stop("#chat-under", False),
+                                                                                               stop("#banner-under", None, False)]}]}
+        obs = {o.element_key.split("|")[0]: o for o in checks.check_focus_walks(run, {"profile_id": "P"})}
+        self.assertNotIn("#menu-under", obs)
+        self.assertEqual(obs["#chat-under"].severity, "P2")
+        self.assertIn("사용자가 연", obs["#chat-under"].message_ko)
+        self.assertEqual(obs["#banner-under"].severity, "P2")  # author content (a cookie banner): the note does not apply
+
+    def test_escape_does_not_exempt_on_the_initial_screen(self) -> None:
+        # On a fresh load nothing is user-opened, whatever the driver inferred.
+        stop = {"selector": "#x", "name": "", "indicator_px": 400, "obscured_fraction": 1.0, "obscured_by": "#menu",
+                "obscured_user_opened": True, "escape_reveals": True, "in_viewport": True, "box": {"x": 0, "y": 0, "w": 90, "h": 40}}
+        obs = checks.check_focus_walks({"run_id": "R", "focus_walks": [{"phase": "load", "snapshot_id": "S-0", "stops": [stop]}]}, {"profile_id": "P"})
+        self.assertEqual([(o.check_id, o.severity) for o in obs], [("SM-06", "P2")])
+
+    def test_partly_obscured_is_a_hypothesis(self) -> None:
+        obs = [o for o in checks.check_focus_walks(self.run_doc(), {"profile_id": "P"}) if o.check_id == "SM-06"]
+        tiers = {o.element_key.split("|")[0]: checks.tier("SM-06", o.measurement) for o in obs}
+        self.assertEqual(tiers, {"#half": "hypothesis", "#under": "finding"})
+
 
 if __name__ == "__main__":
     unittest.main()
