@@ -200,7 +200,7 @@ def analyze_run(
             previous = snap
         device = _device_for(snapshots[-1], profile)
         run_obs = (checks.check_run_timing(run, profile, device, snapshots_by_id, scenario) + checks.check_focus_walks(run, profile, snapshots_by_id)
-                   + checks.check_reflow(run, profile, snapshots_by_id))
+                   + checks.check_reflow(run, profile, snapshots_by_id) + checks.check_clicked_controls(run, profile, snapshots_by_id))
         if profile is not own:
             run_obs = [o for o in run_obs if o.check_id != "PJ-01"]
         observations.extend(run_obs)

@@ -798,7 +798,8 @@ async function dialogTest(base, tmp) {
   const sc = {
     schema_version: 'ergo-scenario.v1', scenario_id: 'SC-driver-dialog-01', surface: { kind: 'web', url: '{BASE}/dialog.html' },
     task_goal_ko: '주소를 찾고 본인 확인을 한다', device_ids: ['desktop-1920'], targets: {},
-    steps: [{ action: 'click', target: '#open-bad' }, { action: 'click', target: '#close-bad' }, { action: 'click', target: '#open-good' }],
+    steps: [{ action: 'click', target: '#open-bad' }, { action: 'click', target: '#close-bad' }, { action: 'click', target: '#open-good' },
+      { action: 'click', target: '#close-good' }, { action: 'click', target: '#chip-hot' }, { action: 'click', target: '#chip-ok-t' }],
     success: { url_contains: 'dialog' },
   };
   writeJson(path.join(tmp, 'dialog.json'), sc);
@@ -817,6 +818,11 @@ async function dialogTest(base, tmp) {
   check('layers: a modal dialog that takes focus is recorded with focus inside', !!good && good.kind === 'modal' && good.contains_focus === true,
     { layers: layersAt(3), focus: snaps[3] && snaps[3].focus });
   check('focus record never carries a field value', !JSON.stringify(snaps.map((x) => x.focus)).includes('value'), snaps.map((x) => x.focus));
+  const ctl = (sel) => (loaded.run.steps.find((st) => st.action && st.action.target === sel) || {}).target_control;
+  check('clicks record what they landed on: a role-less div is not a control; text inside a button is',
+    ctl('#chip-hot') && ctl('#chip-hot').control === false && ctl('#chip-hot').contains_control === false && ctl('#chip-hot').ancestor_ids.includes('chips')
+    && ctl('#chip-ok-t') && ctl('#chip-ok-t').control === true && ctl('#open-bad').control === true,
+    { hot: ctl('#chip-hot'), ok: ctl('#chip-ok-t') });
 }
 
 function runReader(args) {

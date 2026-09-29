@@ -63,6 +63,24 @@ class ClickedWithoutRole(unittest.TestCase):
         obs = [o for o in self.run_check([chip], ["chip"]) if o.check_id == "SM-08"]
         self.assertEqual([(o.element_key.split("|")[0], o.severity) for o in obs], [("#chip", "P1")])
 
+    def test_from_the_driver_step_record(self) -> None:
+        steps = [{"step_index": 3, "before": "S-2", "result": "ok", "action": {"action": "tap", "target": "#qform-mc1-o3"},
+                  "target_control": {"tag": "div", "role": None, "dom_id": "qform-mc1-o3", "control": False, "contains_control": False,
+                                     "ancestor_ids": ["qform-mc1", "qform-mc"], "text": "① 12"}},
+                 {"step_index": 4, "before": "S-3", "result": "ok", "action": {"action": "tap", "target": "#ok"},
+                  "target_control": {"tag": "span", "role": None, "dom_id": None, "control": True, "contains_control": False, "ancestor_ids": []}},
+                 {"step_index": 5, "before": "S-4", "result": "ok", "action": {"action": "tap", "target": "#qform-mc1-o3"},
+                  "target_control": {"tag": "div", "role": None, "dom_id": "qform-mc1-o3", "control": False, "contains_control": False,
+                                     "ancestor_ids": ["qform-mc1", "qform-mc"], "text": "① 12"}}]
+        obs = checks.check_clicked_controls({"run_id": "R", "steps": steps}, {"profile_id": "P"}, {})
+        self.assertEqual([(o.check_id, o.element_key.split("|")[0], o.severity) for o in obs], [("SM-08", "#qform-mc1-o3", "P1")])
+        self.assertIn("#qform-mc", obs[0].extra["context_selectors"])
+        # With driver records present, the snapshot-based fallback stays silent.
+        chip = el("chip", "generic", (10, 300, 90, 36), text="매운맛", tag="div", a11y=a11y("content", focusable=False))
+        c = ctx([chip], run={"run_id": "R", "steps": steps})
+        c.clicked_element_ids = {"chip"}
+        self.assertEqual([o for o in checks.check_semantics(c) if o.check_id == "SM-08"], [])
+
     def test_focusable_native_label_or_card_with_a_link_pass(self) -> None:
         focusable = el("f", "generic", (10, 300, 90, 36), text="순한맛", tag="div", a11y=a11y("content", focusable=True))
         label = el("l", "generic", (10, 350, 90, 36), text="동의", tag="label", a11y=a11y("content", focusable=False))

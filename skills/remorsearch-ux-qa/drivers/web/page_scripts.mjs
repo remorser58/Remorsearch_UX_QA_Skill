@@ -1063,6 +1063,48 @@ export function idAtPoint(args) {
   return { id: null, hotspot: false };
 }
 
+/**
+ * What a click landed on (SM-08): the element (a handle, or the top-most element at
+ * {x, y}), whether it or an ancestor within five levels is a control a keyboard or
+ * screen reader can operate (native control, widget role, tabindex >= 0, a label with
+ * a control, contenteditable), whether it contains one, and its ancestor ids.
+ * Never reads values.
+ */
+export function controlOf(arg) {
+  let el = arg && arg.nodeType === 1 ? arg : (arg ? document.elementFromPoint(arg.x, arg.y) : null);
+  while (el && el.shadowRoot && arg && arg.nodeType !== 1) {
+    const inner = el.shadowRoot.elementFromPoint(arg.x, arg.y);
+    if (!inner || inner === el) break;
+    el = inner;
+  }
+  if (!el) return null;
+  const NATIVE = ['button', 'input', 'select', 'textarea', 'summary', 'option', 'details', 'video', 'audio', 'iframe', 'canvas'];
+  const WIDGET = ['button', 'link', 'checkbox', 'radio', 'switch', 'tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'option',
+    'slider', 'spinbutton', 'textbox', 'searchbox', 'combobox', 'listbox', 'treeitem', 'gridcell', 'scrollbar'];
+  const isControl = (n) => {
+    const tag = n.tagName.toLowerCase();
+    if (NATIVE.includes(tag) || (tag === 'a' && n.hasAttribute('href')) || (tag === 'label' && n.control)) return true;
+    const role = (n.getAttribute('role') || '').trim().split(/\s+/)[0];
+    if (WIDGET.includes(role)) return true;
+    const t = n.getAttribute('tabindex');
+    return (t !== null && parseInt(t, 10) >= 0) || n.isContentEditable;
+  };
+  let control = false;
+  for (let n = el, i = 0; n && n.nodeType === 1 && i < 5; n = n.parentElement, i++) {
+    if (isControl(n)) {
+      control = true;
+      break;
+    }
+  }
+  const contains = [...el.querySelectorAll('*')].slice(0, 300).some(isControl);
+  const ids = [];
+  for (let n = el.parentElement; n && ids.length < 6; n = n.parentElement) if (n.id) ids.push(n.id);
+  return {
+    tag: el.tagName.toLowerCase(), role: (el.getAttribute('role') || '').trim() || null, dom_id: el.id || null, control,
+    contains_control: contains, ancestor_ids: ids, text: (el.innerText || el.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim().slice(0, 40),
+  };
+}
+
 /** Is the top-most element at (x, y) the target element or inside it? */
 export function hitTest(el, pt) {
   let n = document.elementFromPoint(pt.x, pt.y);

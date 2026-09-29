@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { resolveDevice } from './devices.mjs';
-import { STATE_KEY, TW_BINDING, extractSnapshot, hitTest, idAtPoint, idForElement, pageInit } from './page_scripts.mjs';
+import { STATE_KEY, TW_BINDING, controlOf, extractSnapshot, hitTest, idAtPoint, idForElement, pageInit } from './page_scripts.mjs';
 import {
   BLOCK_MIN_H_CSS, BLOCK_MIN_W_CSS, MOTION_MATCH, RED_EXCESS, RED_RATIO,
   blockStats, cssScaleCopy, decodePng, frameFromImage, frameStats, indicatorPixels, makeBlockGrid, visualDiffFraction,
@@ -1633,6 +1633,11 @@ export class WebSession {
           } else {
             step.point = resolved.point;
             step.target_element_id = resolved.elementId || null;
+            if (['tap', 'click', 'double_tap', 'long_press'].includes(kind)) {
+              step.target_control = resolved.handle
+                ? await resolved.handle.evaluate(controlOf).catch(() => null)
+                : await this.page.evaluate(controlOf, { x: resolved.point.x, y: resolved.point.y }).catch(() => null);
+            }
             const hit = await this.page.evaluate(idAtPoint, { key: STATE_KEY, x: resolved.point.x, y: resolved.point.y }).catch(() => ({ id: null }));
             step.hit_element_id = hit.id;
             if (resolved.handle) step.target_hit = await resolved.handle.evaluate(hitTest, resolved.point).catch(() => null);

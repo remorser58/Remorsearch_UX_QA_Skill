@@ -977,11 +977,15 @@ def check_gaze(ctx: Context) -> list[Observation]:
                 # New or changed feedback rendered outside the viewport cannot be seen at all
                 # (UXD-12: P1 when it is an error or critical message).
                 critical = bool(roles & {"error_message", "critical_message"}) or element.get("role") == "alert"
+                # A message that just appeared off-screen is missed feedback. An existing one
+                # whose text changed while the user is elsewhere (a status line, an earlier
+                # error being updated) is only a prompt to check (dev-2 clean pages).
+                sev = ("P1" if critical else "P2") if prior is None else "P3"
                 out.append(Observation(
                     "GZ-02", *base, [element["id"]], element_key(element),
                     {"name": "feedback_eccentricity_deg", "value": None, "unit": "deg", "threshold": "in viewport", "comparator": "band",
-                     "band": "offscreen", "box": element["box"]},
-                    False, "P1" if critical else "P2",
+                     "band": "offscreen", "box": element["box"], "new": prior is None},
+                    False, sev,
                     f"조작 후 {'새로 나타난' if prior is None else '바뀐'} 메시지 '{(element.get('text') or '')[:30]}'이(가) 화면 밖(뷰포트 바깥)에 있어 보이지 않습니다.",
                     gaze.MODEL_ID,
                 ))
@@ -1681,6 +1685,41 @@ WIDGET_ROLES = frozenset({"button", "link", "checkbox", "radio", "switch", "tab"
                           "slider", "spinbutton", "textbox", "searchbox", "combobox", "listbox", "treeitem", "gridcell", "scrollbar"})
 
 
+def _sm08(run_id: str, profile_id: str, snapshot_id: str | None, step_index: int | None, element_ids: list[str], key: str,
+          role: str | None, tag: str | None, label: str, context: list[str]) -> Observation:
+    return Observation(
+        "SM-08", run_id, profile_id, snapshot_id, step_index, element_ids, key,
+        {"name": "role_focusable", "value": {"role": role, "tag": tag, "focusable": False}, "unit": "state",
+         "threshold": "native control, widget role or tabindex >= 0", "comparator": "in"},
+        False, "P1",
+        f"과업에서 누른 '{label[:30]}'이(가) 버튼·선택 요소로 선언되지 않았고 키보드로 초점을 받을 수 없습니다. 키보드·스크린리더 사용자는 이 단계를 마칠 수 없습니다(WCAG 2.1.1, 4.1.2).",
+        extra={"context_selectors": context} if context else {},
+    )
+
+
+def check_clicked_controls(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[str, dict[str, Any]] | None = None) -> list[Observation]:
+    """SM-08 from the steps: a tap or click landed on an element that is not a control, is
+    not inside one within five levels, and holds none (the driver's ``target_control``).
+    The click evidences the handler; nothing is guessed from styles."""
+    out: list[Observation] = []
+    seen: set[str] = set()
+    for st in run.get("steps") or []:
+        c = st.get("target_control")
+        if not isinstance(c, dict) or st.get("result") != "ok" or c.get("control") or c.get("contains_control") or c.get("tag") in ("html", "body"):
+            continue
+        snap = (snapshots or {}).get(st.get("before") or "")
+        element = next((e for e in (snap or {}).get("elements", []) if c.get("dom_id") and e.get("dom_id") == c["dom_id"]), None)
+        target = (st.get("action") or {}).get("target")
+        selector = f"#{c['dom_id']}" if c.get("dom_id") else (target if isinstance(target, str) else f"{c.get('tag')}@{st.get('point')}")
+        key = element_key(element) if element else f"{selector}|{c.get('text') or ''}"
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(_sm08(run["run_id"], profile["profile_id"], st.get("before"), st.get("step_index"), [element["id"]] if element else [], key,
+                         c.get("role"), c.get("tag"), c.get("text") or selector, [f"#{a}" for a in c.get("ancestor_ids") or [] if a]))
+    return out
+
+
 def _inside(inner: dict[str, float], outer: dict[str, float]) -> bool:
     return (inner.get("w", 0) > 0 and inner.get("h", 0) > 0 and inner["x"] >= outer["x"] - 1 and inner["y"] >= outer["y"] - 1
             and inner["x"] + inner["w"] <= outer["x"] + outer["w"] + 1 and inner["y"] + inner["h"] <= outer["y"] + outer["h"] + 1)
@@ -1866,27 +1905,19 @@ def check_semantics(ctx: Context) -> list[Observation]:
                 False, "P2",
                 f"오류 문구 '{(err.get('text') or '')[:30]}'이(가) 어느 칸이 틀렸는지 적지 않았고, 가장 가까운 입력 칸에서 {nearest:.0f}px 떨어져 있으며, aria-describedby/aria-errormessage로 연결되지도 않았습니다(WCAG 3.3.1).",
             ))
-    # SM-08: the task tapped an element that is neither a native control nor a widget
-    # role, cannot take focus, and holds no control inside it. Keyboard and screen-reader
-    # users cannot operate it (WCAG 2.1.1, 4.1.2). Only clicked elements are judged, so a
-    # click handler is evidenced by the task itself, not guessed from styles.
-    controls = [c for c in ctx.elements if c.get("interactive") or c.get("role") in WIDGET_ROLES]
-    for e in dom:
-        if e.get("id") not in ctx.clicked_element_ids or e.get("tag") in NATIVE_CONTROL_TAGS or e.get("role") in WIDGET_ROLES:
-            continue
-        a = e.get("a11y") if isinstance(e.get("a11y"), dict) else {}
-        if a.get("focusable") or a.get("hidden") or e.get("tag") == "hotspot" or "game_control" in _roles(e):
-            continue
-        box = e["box"]
-        if any(c is not e and _inside(c["box"], box) for c in controls):
-            continue  # a card whose link or button the keyboard can reach
-        out.append(Observation(
-            "SM-08", *base, [e["id"]], element_key(e),
-            {"name": "role_focusable", "value": {"role": e.get("role"), "tag": e.get("tag"), "focusable": False}, "unit": "state",
-             "threshold": "native control, widget role or tabindex >= 0", "comparator": "in"},
-            False, "P1",
-            f"과업에서 누른 '{(e.get('name') or e.get('text') or e.get('selector') or '')[:30]}'이(가) 버튼·선택 요소로 선언되지 않았고 키보드로 초점을 받을 수 없습니다. 키보드·스크린리더 사용자는 이 단계를 마칠 수 없습니다(WCAG 2.1.1, 4.1.2).",
-        ))
+    # SM-08 for recordings made before the driver recorded what each click landed on
+    # (newer runs: check_clicked_controls, from the steps).
+    if not any(isinstance(st.get("target_control"), dict) for st in ctx.run.get("steps") or []):
+        controls = [c for c in ctx.elements if c.get("interactive") or c.get("role") in WIDGET_ROLES]
+        for e in dom:
+            if e.get("id") not in ctx.clicked_element_ids or e.get("tag") in NATIVE_CONTROL_TAGS or e.get("role") in WIDGET_ROLES:
+                continue
+            a = e.get("a11y") if isinstance(e.get("a11y"), dict) else {}
+            if a.get("focusable") or a.get("hidden") or e.get("tag") == "hotspot" or "game_control" in _roles(e):
+                continue
+            if any(c is not e and _inside(c["box"], e["box"]) for c in controls):
+                continue  # a card whose link or button the keyboard can reach
+            out.append(_sm08(*base, [e["id"]], element_key(e), e.get("role"), e.get("tag"), e.get("name") or e.get("text") or e.get("selector") or "", []))
     for e in dom:
         clip = e.get("clipped")
         box = e.get("box") or {}
