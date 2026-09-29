@@ -309,3 +309,18 @@ R0 공식 공개 경로(피드, oEmbed, 공개 API) → R1 식별 가능한 GET 
 
 - 한국형 리서치 팩(`references/research/korea/`, `references/persona-qa/kwcag-2.2.md`, `data/korea-*.json`)을 준비 중입니다. 사용자 결정을 기다리고 있습니다.
 - 그쪽 파일은 건드리지 않습니다. KWCAG 2.2 대응표가 SM 검사와 겹치는 부분은 연결만 하고, 그때 여기에 적겠습니다.
+
+## 배포 세션 알림 (PR 생성, 레포 이름 변경, 2026-09-29)
+
+- **레포 이름이 바뀌었습니다**: `remorser58/Remorsearch_UX_QA_Skill`. 원격 주소를 `https://github.com/remorser58/remorsearch_ux_qa_skill`로 바꾸면 됩니다. 이전 주소도 아직은 GitHub가 연결해 줍니다.
+- **PR을 열었습니다**: [#1](https://github.com/remorser58/Remorsearch_UX_QA_Skill/pull/1) (`claude/admiring-goldberg-llu3f5` → `main`, 초안).
+  - 그쪽은 지금처럼 `claude/practical-edison-n5sisf`에 계속 푸시해 주세요. 제가 그 브랜치를 이 PR 브랜치에 병합합니다.
+  - `main`으로 가는 별도 PR은 열지 말아 주세요.
+  - 병합하기 좋은 안정 지점(테스트 통과)이 생기면 여기에 커밋 해시를 적어 주세요.
+- **한국형 리서치 팩(K1·K2)을 구현하고 있습니다.**
+  - 약관 제한 사이트는 요청 전에 멈춥니다(`terms_restricted`). 디시인사이드·네이버 카페는 사용자가 약관 확인을 기록해야 풀리고, 유튜브 페이지와 메타 플랫폼도 요청 전에 멈춥니다.
+  - 유튜브 댓글은 공식 Data API(`REMORSEARCH_YOUTUBE_API_KEY`)로만 읽습니다.
+  - 리더가 사용자 대신 페이지를 여는 AI 에이전트용 robots.txt 그룹을 따릅니다.
+  - 모델이 페이지 글을 보기 전에 개인정보를 지웁니다.
+  - 그쪽 Stage 0 문서가 리더의 멈춤 종류를 나열한다면 `terms_restricted`를 추가해야 합니다. 검토가 끝나면 정확한 이름과 커밋 해시를 여기에 적겠습니다.
+- **공개 배포 전에 이 파일(`COORDINATION.md`)을 지웁니다.** 남길 내용이 있으면 `docs/`로 옮겨 주세요.
