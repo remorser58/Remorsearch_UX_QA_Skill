@@ -100,6 +100,13 @@ them. The out-of-sample test is `heldout-2`, pre-registered in
 
 | exp4 (rounds 3-4, flash rework) | `a11ef18` | 0.906 (95 % CI 0.80-0.96) | 193 | 53 | 97 | 26 |
 | exp5 (semantics checks, RH-01 secondary controls) | `5b6e8fb` | 0.906 | 200 | 54 | 101 | 27 |
+| exp6 (rounds 8-10: touch cap, IRIS rule, focus walk with viewport fallback, GM-06 cut) | `38cc073` | 0.906 (95 % CI 0.80-0.96) | 213 | 61 | 108 | 30 (P2 3, P3 27) |
+
+exp6 detail (`ablation-dev-38cc073.json`, new recordings with the current driver): single default persona
+0.642, measured checks only 0.302. At P0-P2 the swarm detects 39 of 53 defects; 40 are detected with the
+condition named (or unconditioned). Clean-control P0-P2 units per clean scenario: 0.30 (EVD-05 gate 0.35).
+The four desktop runs carry focus walks (end state and fresh load; the admin end-state walk stopped at its
+8 s budget after 30 stops); the dev suites have no focus defect and SM-05/SM-06 report nothing on them.
 
 exp4 detail (`ablation-dev-def157e.json`): single default persona 0.642, measured
 checks only 0.302. Stratified coverage reaches 0.906 at 8 profiles per device;
