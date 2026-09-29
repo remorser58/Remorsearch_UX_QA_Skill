@@ -113,6 +113,11 @@ function startFixtureServer() {
       res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), 'reflow.html')));
       return;
     }
+    if (req.method === 'GET' && pathname === '/viewport.html') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), 'viewport.html')));
+      return;
+    }
     if (req.method === 'GET' && pathname === '/focus.html') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), 'focus.html')));
@@ -788,6 +793,37 @@ async function focusTest(base, tmp) {
     && touch.steps.every((s) => !s.focus_probe), touch.focus_walks);
 }
 
+async function viewportTest(base, tmp) {
+  const outDir = path.join(tmp, 'runs');
+  const scenario = (id, query, device, success) => ({
+    schema_version: 'ergo-scenario.v1', scenario_id: id, surface: { kind: 'web', url: `{BASE}/viewport.html${query}` },
+    task_goal_ko: '다음을 누른다', device_ids: [device], targets: {}, steps: [{ action: 'tap', target: '#go' }, { action: 'wait', ms: 200 }], success,
+  });
+  // A scrolled page: the captured frames must show the scrolled screen.
+  writeJson(path.join(tmp, 'vp-scroll.json'), scenario('SC-driver-vp-01', '', 'galaxy-s24', { url_contains: 'viewport' }));
+  let r = await runDriver(['run', '--scenario', path.join(tmp, 'vp-scroll.json'), '--device', 'galaxy-s24', '--out', outDir, '--run-id', 'R-vp-scroll',
+    '--base', base, '--no-reflow']);
+  if (check('viewport galaxy-s24 (scrolled): exit 0', r.code === 0, `${r.code} ${r.err}`)) {
+    const st = loadRun(path.join(outDir, 'R-vp-scroll')).run.steps[0];
+    check('viewport: canvas-only feedback after a scroll is seen in the frames (frames show the scrolled screen, not the document top)',
+      st.target_hit === true && st.feedback_source === 'visual_change', { hit: st.target_hit, src: st.feedback_source, visual: st.feedback_visual_ms });
+  }
+  // Content wider than the phone: the screen pans inside a wider layout viewport.
+  writeJson(path.join(tmp, 'vp-wide.json'), scenario('SC-driver-vp-02', '?wide', 'galaxy-s24', { text_present: '눌림' }));
+  r = await runDriver(['run', '--scenario', path.join(tmp, 'vp-wide.json'), '--device', 'galaxy-s24', '--out', outDir, '--run-id', 'R-vp-wide',
+    '--base', base, '--no-reflow']);
+  if (check('viewport galaxy-s24 (wider than the screen): exit 0', r.code === 0, `${r.code} ${r.err}`)) {
+    const { run } = loadRun(path.join(outDir, 'R-vp-wide'));
+    const st = run.steps[0];
+    const snaps = run.snapshots.map((s) => JSON.parse(fs.readFileSync(path.join(outDir, 'R-vp-wide', s.path), 'utf8')));
+    const boxes = snaps.map((sn) => sn.elements.find((e) => e.dom_id === 'go')).filter(Boolean);
+    check('viewport: a tap after scrolling a page wider than the screen lands (success, target hit)', run.success === true && st.target_hit === true,
+      { success: run.success, hit: st.target_hit, point: st.point });
+    check('viewport: boxes are screen coordinates (the tapped button is inside the 360x780 screen in the snapshots around the tap)',
+      boxes.length >= 2 && boxes.slice(1).every((b) => b.in_viewport === true && b.box.y >= 0 && b.box.y + b.box.h <= 780), boxes.map((b) => [b.box, b.in_viewport]));
+  }
+}
+
 async function reflowTest(base, tmp) {
   const sc = {
     schema_version: 'ergo-scenario.v1', scenario_id: 'SC-driver-reflow-01', surface: { kind: 'web', url: '{BASE}/reflow.html' },
@@ -810,6 +846,8 @@ async function reflowTest(base, tmp) {
   const lost = recs.flatMap((x) => (x.lost || []).map((o) => o.dom_id));
   check('reflow: text visible at the device width but cut at 320 px is lost; a carousel slide hidden at both is not',
     lost.includes('bar-timer') && !lost.includes('slide-2') && !lost.includes('bar-title'), recs.map((x) => x.lost));
+  check('reflow: text in a 90vh overflow:hidden shell is not lost because of a shorter viewport alone', !lost.includes('shell-note')
+    && recs.every((x) => x.lost_height === 780), recs.map((x) => x.lost_height));
   const first = JSON.parse(fs.readFileSync(path.join(outDir, 'R-reflow', run.snapshots[0].path), 'utf8'));
   const chip = first.elements.find((e) => e.dom_id === 'chip-t');
   check('LY-01 data: text cut by a clipping ancestor records the ancestor', !!chip && chip.clipped && chip.clipped.x === true && chip.clipped.by === '#chip-l',
@@ -977,6 +1015,7 @@ async function main() {
     await focusTest(base, tmp);
     await readPageTest(base, tmp);
     await reflowTest(base, tmp);
+    await viewportTest(base, tmp);
     await dialogTest(base, tmp);
     await serveTest(base, tmp);
     await exitCodeTests(base, tmp);

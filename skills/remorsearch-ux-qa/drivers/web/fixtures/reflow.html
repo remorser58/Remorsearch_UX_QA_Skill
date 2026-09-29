@@ -11,7 +11,9 @@
   second screen whose #wide-note is 380 px wide: the pass must keep both screens.
   #bar-timer fits at 360 px but is cut by #bar at 320 px (lost); #slide-2 is hidden by
   its carousel at both widths (not lost); #chip-t is cut by its fixed-width label
-  (LY-01, ancestor clipping).
+  (LY-01, ancestor clipping). #shell-note sits 600 px down a 90vh shell with
+  overflow:hidden: it shows at the device height and must not count as lost because a
+  shorter zoomed viewport would hide it (only the narrower width counts).
 -->
 <style>
   body { margin: 0; font-family: sans-serif; }
@@ -28,6 +30,8 @@
   #bar-timer { width: 60px; }
   #carousel { overflow: hidden; white-space: nowrap; width: 300px; }
   #carousel div { display: inline-block; width: 300px; }
+  #shell { height: 90vh; overflow: hidden; }
+  #shell-pad { height: 600px; }
   #chip-l { display: inline-block; width: 80px; overflow: hidden; white-space: nowrap; border: 1px solid #999; }
   [hidden] { display: none !important; }
 </style>
@@ -46,6 +50,7 @@
 <div id="step2" hidden>
   <p id="wide-note">두 번째 화면의 고정 폭 안내문</p>
 </div>
+<div id="shell"><div id="shell-pad"></div><p id="shell-note">셸 아래쪽 안내</p></div>
 <script>
   document.getElementById('next').addEventListener('click', () => {
     document.getElementById('step1').hidden = true;

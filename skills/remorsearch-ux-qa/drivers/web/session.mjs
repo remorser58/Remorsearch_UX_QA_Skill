@@ -12,7 +12,7 @@ import { resolveDevice } from './devices.mjs';
 import { STATE_KEY, TW_BINDING, controlOf, extractSnapshot, hitTest, idAtPoint, idForElement, pageInit } from './page_scripts.mjs';
 import {
   BLOCK_MIN_H_CSS, BLOCK_MIN_W_CSS, MOTION_MATCH, RED_EXCESS, RED_RATIO,
-  blockStats, cssScaleCopy, decodePng, frameFromImage, frameStats, indicatorPixels, makeBlockGrid, visualDiffFraction,
+  blockStats, cssScaleCopy, decodePng, frameFromImage, frameStats, indicatorPixels, makeBlockGrid, resampleImage, visualDiffFraction,
 } from './png.mjs';
 import { KNOWN_ROLES } from './validate.mjs';
 import {
@@ -222,15 +222,21 @@ function probeTarget(start) {
   while (active && active.shadowRoot && active.shadowRoot.activeElement) active = active.shadowRoot.activeElement;
   if (active === el || (active && el.contains(active))) return { skip: 'already_focused' };
   if (textEntry(active)) return { skip: 'field_focused' };
+  // Boxes relative to the screen (the visual viewport, panned inside a wider layout
+  // viewport when content is wider than the screen), like screenshot clips.
+  const vvp = window.visualViewport;
+  const one = !!vvp && Math.abs(vvp.scale - 1) < 0.01;
+  const dx = one ? vvp.offsetLeft : 0;
+  const dy = one ? vvp.offsetTop : 0;
   const r = el.getBoundingClientRect();
-  const boxes = [{ x: r.left, y: r.top, w: r.width, h: r.height }];
+  const boxes = [{ x: r.left - dx, y: r.top - dy, w: r.width, h: r.height }];
   for (let n = el.parentElement, i = 0; n && n.nodeType === 1 && i < 3; n = n.parentElement, i++) {
     const a = n.getBoundingClientRect();
     if (a.width * a.height > 4 * Math.max(1, r.width * r.height)) break;
-    boxes.push({ x: a.left, y: a.top, w: a.width, h: a.height });
+    boxes.push({ x: a.left - dx, y: a.top - dy, w: a.width, h: a.height });
   }
   window.__ergoProbeEl = el;
-  return { boxes, vw: window.innerWidth, vh: window.innerHeight, scroll: [window.scrollX, window.scrollY] };
+  return { boxes, vw: one ? vvp.width : window.innerWidth, vh: one ? vvp.height : window.innerHeight, scroll: [window.scrollX, window.scrollY] };
 }
 
 function focusInfo() {
@@ -269,8 +275,16 @@ function focusInfo() {
   const r = { left: r0.left + ox, top: r0.top + oy, width: r0.width, height: r0.height };
   r.right = r.left + r.width;
   r.bottom = r.top + r.height;
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
+  // The screen is the visual viewport; at scale 1 it can be panned inside a wider
+  // layout viewport (content wider than the screen). Sampling uses layout coordinates;
+  // boxes are reported relative to the screen, like snapshot boxes and screenshot clips.
+  const vvp = window.visualViewport;
+  const panned = !!vvp && Math.abs(vvp.scale - 1) < 0.01
+    && (vvp.offsetLeft > 0.5 || vvp.offsetTop > 0.5 || vvp.width < window.innerWidth - 1 || vvp.height < window.innerHeight - 1);
+  const VX0 = panned ? vvp.offsetLeft : 0;
+  const VY0 = panned ? vvp.offsetTop : 0;
+  const vw = panned ? vvp.width : window.innerWidth;
+  const vh = panned ? vvp.height : window.innerHeight;
   const esc = (v) => (window.CSS && CSS.escape ? CSS.escape(v) : v);
   let sel = el.id ? `#${esc(el.id)}` : null;
   if (!sel) {
@@ -292,7 +306,7 @@ function focusInfo() {
     return out.join('.');
   };
   const path = chain.map(pathOf).join('/');
-  const inVp = r.width > 0 && r.height > 0 && r.right > 0 && r.bottom > 0 && r.left < vw && r.top < vh;
+  const inVp = r.width > 0 && r.height > 0 && r.right > VX0 && r.bottom > VY0 && r.left < VX0 + vw && r.top < VY0 + vh;
   const paints = (n) => {
     const cs = view.getComputedStyle(n);
     const bg = cs.backgroundColor || '';
@@ -329,8 +343,8 @@ function focusInfo() {
   if (inVp && doc === document) {
     for (const fx of [0.15, 0.5, 0.85]) {
       for (const fy of [0.2, 0.5, 0.8]) {
-        const px = Math.min(vw - 1, Math.max(0, r.left + r.width * fx));
-        const py = Math.min(vh - 1, Math.max(0, r.top + r.height * fy));
+        const px = Math.min(VX0 + vw - 1, Math.max(VX0, r.left + r.width * fx));
+        const py = Math.min(VY0 + vh - 1, Math.max(VY0, r.top + r.height * fy));
         let hit = document.elementFromPoint(px, py);
         while (hit && hit.shadowRoot) {
           const inner = hit.shadowRoot.elementFromPoint(px, py);
@@ -372,12 +386,12 @@ function focusInfo() {
   for (let n = el.parentElement, i = 0; n && n.nodeType === 1 && i < 3; n = n.parentElement, i++) {
     const a = n.getBoundingClientRect();
     if (a.width * a.height > 4 * Math.max(1, r0.width * r0.height)) break;
-    wraps.push({ x: a.left + ox, y: a.top + oy, w: a.width, h: a.height });
+    wraps.push({ x: a.left + ox - VX0, y: a.top + oy - VY0, w: a.width, h: a.height });
   }
   return {
     selector: sel, dom_id: el.id || null, tag, role: el.getAttribute('role') || tag, name, path,
     frame: doc === document ? null : 'iframe',
-    box: { x: Math.round(r.left * 100) / 100, y: Math.round(r.top * 100) / 100, w: Math.round(r.width * 100) / 100, h: Math.round(r.height * 100) / 100 },
+    box: { x: Math.round((r.left - VX0) * 100) / 100, y: Math.round((r.top - VY0) * 100) / 100, w: Math.round(r.width * 100) / 100, h: Math.round(r.height * 100) / 100 },
     wrap_boxes: wraps,
     in_viewport: inVp, obscured_fraction: inVp && doc === document ? Math.round((covered / 9) * 1000) / 1000 : null, obscured_by: coveredBy,
     obscured_user_opened: covered > 0 ? coveredUserOpened : null, vw, vh,
@@ -582,14 +596,20 @@ export class WebSession {
         const html = /<base\s/i.test(screen.html) ? screen.html
           : /<head[^>]*>/i.test(screen.html) ? screen.html.replace(/<head[^>]*>/i, (m) => `${m}${base}`) : `${base}${screen.html}`;
         try {
-          // The same static copy at the device width first, then at 320 px.
+          // The same static copy at the device width first, then at 320 px with the same
+          // height, so only the narrower width can cut text away (a 100vh app shell with
+          // overflow:hidden would otherwise lose content to the shorter viewport alone).
+          // Sideways overflow is then measured at 320 px by the short zoomed height.
           await page.setViewportSize({ width: this.vw, height: this.vh });
           await page.setContent(html, { waitUntil: 'load', timeout: 8000 });
           const full = await page.evaluate(reflowInfo, { mode: 'visibility' }).catch(() => []);
+          await page.setViewportSize({ width: REFLOW_WIDTH, height: this.vh });
+          await sleep(50);
+          const narrow = await page.evaluate(reflowInfo, { limit: 20, full });
           await page.setViewportSize({ width: REFLOW_WIDTH, height: touch ? 568 : 256 });
           await sleep(50);
-          const info = await page.evaluate(reflowInfo, { limit: 20, full });
-          this.reflow.push({ snapshot_id: screen.snapshot_id, url: screen.url, width: REFLOW_WIDTH, ...info });
+          const info = await page.evaluate(reflowInfo, { limit: 20, full: [] });
+          this.reflow.push({ snapshot_id: screen.snapshot_id, url: screen.url, width: REFLOW_WIDTH, ...info, lost: narrow.lost, lost_height: this.vh });
         } catch (err) {
           this.reflow.push({ snapshot_id: screen.snapshot_id, url: screen.url, width: REFLOW_WIDTH, error: firstLine(err.message) });
         }
@@ -648,13 +668,39 @@ export class WebSession {
     return frameFromImage(decodePng(buf));
   }
 
-  /** The whole viewport downscaled to about FOCUS_VIEWPORT_WIDTH px wide (CDP; fast). */
-  async viewportFrame(cdp, vw, vh) {
-    const scale = Math.min(1, FOCUS_VIEWPORT_WIDTH / vw);
-    const r = await cdp.send('Page.captureScreenshot', {
-      format: 'png', clip: { x: 0, y: 0, width: vw, height: vh, scale }, captureBeyondViewport: false, optimizeForSpeed: true,
-    });
-    return frameFromImage(decodePng(Buffer.from(r.data, 'base64')));
+  /** The whole screen downscaled to about FOCUS_VIEWPORT_WIDTH px wide (CDP; fast). */
+  async viewportFrame(cdp) {
+    return this.visualFrame(cdp, FOCUS_VIEWPORT_WIDTH);
+  }
+
+  /**
+   * What the screen shows (the visual viewport), downscaled to `targetW` px wide, always
+   * the same size for a session. CDP clips are in document coordinates, so the clip
+   * starts at the visual viewport's page position (a clip at 0,0 would capture the top
+   * of a scrolled document). A clip also snaps a visual viewport that is panned inside
+   * a wider layout viewport (content wider than the screen) back to the layout
+   * viewport, which moves the page under the next tap; a panned viewport is therefore
+   * captured whole, without a clip, and downscaled here.
+   */
+  async visualFrame(cdp, targetW) {
+    const w = Math.max(1, Math.round(Math.min(this.vw, targetW)));
+    const h = Math.max(1, Math.round((this.vh * w) / this.vw));
+    const m = await cdp.send('Page.getLayoutMetrics').catch(() => null);
+    const v = m && (m.cssVisualViewport || m.visualViewport);
+    let r;
+    if (v && (Math.abs(v.offsetX) > 0.5 || Math.abs(v.offsetY) > 0.5)) {
+      r = await cdp.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false, optimizeForSpeed: true });
+    } else {
+      const cw = v ? v.clientWidth : this.vw;
+      const chh = v ? v.clientHeight : this.vh;
+      r = await cdp.send('Page.captureScreenshot', {
+        format: 'png', clip: { x: v ? v.pageX : 0, y: v ? v.pageY : 0, width: cw, height: chh, scale: Math.min(1, w / cw) },
+        captureBeyondViewport: false, optimizeForSpeed: true,
+      });
+    }
+    let img = decodePng(Buffer.from(r.data, 'base64'));
+    if (img.width !== w || img.height !== h) img = resampleImage(img, w, h);
+    return frameFromImage(img);
   }
 
   /** Blur the deepest focused element (kept for refocus); false when nothing is focused. */
@@ -771,7 +817,7 @@ export class WebSession {
           // The focused capture is bracketed by two unfocused ones, so an animation
           // changes the pair and is masked.
           const before = await scroll();
-          const allOff = await this.viewportFrame(cdp, info.vw, info.vh);
+          const allOff = await this.viewportFrame(cdp);
           await page.keyboard.press('Shift+Tab');
           await page.keyboard.press('Tab');
           await this.settleScroll(page);
@@ -779,9 +825,9 @@ export class WebSession {
           const after = await scroll();
           if (back && back.path === info.path && before[0] === after[0] && before[1] === after[1]
               && Math.abs(back.box.x - info.box.x) < 1 && Math.abs(back.box.y - info.box.y) < 1) {
-            const allOn = await this.viewportFrame(cdp, info.vw, info.vh);
+            const allOn = await this.viewportFrame(cdp);
             const reblurred = await this.blurFocused(page);
-            const allOff2 = reblurred ? await this.viewportFrame(cdp, info.vw, info.vh) : null;
+            const allOff2 = reblurred ? await this.viewportFrame(cdp) : null;
             if (reblurred) await this.refocus(page);
             stop.indicator_any_px = allOff2 ? indicatorPixels(allOn, allOff, allOff2, FOCUS_DIFF_LEVEL, FOCUS_MASK_LEVEL) : null;
             stop.indicator_any_scale = Math.round(Math.min(1, FOCUS_VIEWPORT_WIDTH / info.vw) * 1000) / 1000;
@@ -828,7 +874,11 @@ export class WebSession {
     let handle = resolved.handle || null;
     let own = false;
     if (!handle) {
-      handle = await page.evaluateHandle((pt) => document.elementFromPoint(pt.x, pt.y), resolved.point).catch(() => null);
+      handle = await page.evaluateHandle((pt) => {
+        const v = window.visualViewport;
+        const one = !!v && Math.abs(v.scale - 1) < 0.01;
+        return document.elementFromPoint(pt.x + (one ? v.offsetLeft : 0), pt.y + (one ? v.offsetTop : 0));
+      }, resolved.point).catch(() => null);
       own = true;
     }
     let cdp = null;
@@ -851,10 +901,10 @@ export class WebSession {
       const clip = { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
       cdp = await page.context().newCDPSession(page);
       const off = await this.clipFrame(page, clip);
-      const allOff = await this.viewportFrame(cdp, target.vw, target.vh);
+      const allOff = await this.viewportFrame(cdp);
       await sleep(FOCUS_ANIM_GAP_MS);
       const off2 = await this.clipFrame(page, clip);
-      const allOff2 = await this.viewportFrame(cdp, target.vw, target.vh);
+      const allOff2 = await this.viewportFrame(cdp);
       await page.keyboard.press('Shift');
       const got = await page.evaluate(() => {
         const el = window.__ergoProbeEl;
@@ -872,7 +922,7 @@ export class WebSession {
       await sleep(FOCUS_SETTLE_MS);
       const info = await page.evaluate(focusInfo);
       const on = await this.clipFrame(page, clip);
-      const allOn = await this.viewportFrame(cdp, target.vw, target.vh);
+      const allOn = await this.viewportFrame(cdp);
       // Let the click focus it as a mouse does: a control that stayed focused with
       // keyboard modality would keep its ring after the click, which a mouse user never
       // sees (and the next probe would count the ring going away).
@@ -1129,14 +1179,7 @@ export class WebSession {
   }
 
   async captureFrame() {
-    const scale = Math.min(1, FRAME_WIDTH / this.vw);
-    const r = await this.cdp.send('Page.captureScreenshot', {
-      format: 'png',
-      clip: { x: 0, y: 0, width: this.vw, height: this.vh, scale },
-      captureBeyondViewport: false,
-      optimizeForSpeed: true,
-    });
-    return frameFromImage(decodePng(Buffer.from(r.data, 'base64')));
+    return this.visualFrame(this.cdp, FRAME_WIDTH);
   }
 
   visualThreshold(frame) {
@@ -2062,7 +2105,7 @@ export class WebSession {
           // After page load, after each input and during snapshot steps for per_step_ms;
           // during wait steps for the whole wait.
           during: ['load', 'input', 'snapshot', 'wait'],
-          method: `CDP Page.captureScreenshot, viewport downscaled to ~${FRAME_WIDTH} CSS px wide, optimizeForSpeed, random 0-${FLASH_JITTER_MS} ms pause between captures`,
+          method: `CDP Page.captureScreenshot of the visual viewport (clip at its page position; whole capture when panned), downscaled to ~${FRAME_WIDTH} CSS px wide, optimizeForSpeed, random 0-${FLASH_JITTER_MS} ms pause between captures`,
           jitter_ms: [0, FLASH_JITTER_MS],
           frames: this.flashSamples.length,
           bursts: flashCov.bursts,

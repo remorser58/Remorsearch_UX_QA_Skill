@@ -495,6 +495,41 @@ export function encodeRgbPng(width, height, rgb) {
   ]);
 }
 
+/**
+ * Box-average an image (from decodePng) to exactly `w` x `h` pixels, 3 channels (alpha
+ * over white, as frameFromImage does). Used to give every capture of a session the same
+ * frame size whatever path produced it.
+ */
+export function resampleImage(img, w, h) {
+  const { width: sw, height: sh, channels: ch, data } = img;
+  const out = Buffer.alloc(w * h * 3);
+  for (let oy = 0; oy < h; oy++) {
+    const y0 = Math.floor((oy * sh) / h);
+    const y1 = Math.max(y0 + 1, Math.floor(((oy + 1) * sh) / h));
+    for (let ox = 0; ox < w; ox++) {
+      const x0 = Math.floor((ox * sw) / w);
+      const x1 = Math.max(x0 + 1, Math.floor(((ox + 1) * sw) / w));
+      let r = 0, g = 0, b = 0, n = 0;
+      for (let y = y0; y < y1 && y < sh; y++) {
+        for (let x = x0; x < x1 && x < sw; x++) {
+          const i = (y * sw + x) * ch;
+          let pr, pg, pb;
+          if (ch >= 3) { pr = data[i]; pg = data[i + 1]; pb = data[i + 2]; } else { pr = pg = pb = data[i]; }
+          const a = ch === 4 ? data[i + 3] : ch === 2 ? data[i + 1] : 255;
+          if (a < 255) {
+            const f = a / 255;
+            pr = pr * f + 255 * (1 - f); pg = pg * f + 255 * (1 - f); pb = pb * f + 255 * (1 - f);
+          }
+          r += pr; g += pg; b += pb; n++;
+        }
+      }
+      const o = (oy * w + ox) * 3;
+      out[o] = Math.round(r / n); out[o + 1] = Math.round(g / n); out[o + 2] = Math.round(b / n);
+    }
+  }
+  return { width: w, height: h, channels: 3, data: out };
+}
+
 export function cssScaleCopy(pngBuf, dpr) {
   const img = decodePng(pngBuf);
   const f = Math.max(1, Math.round(dpr));

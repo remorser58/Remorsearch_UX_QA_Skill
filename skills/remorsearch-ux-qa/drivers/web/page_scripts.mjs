@@ -131,8 +131,20 @@ export function extractSnapshot(args) {
       Object.defineProperty(window, KEY, { value: state, enumerable: false });
     } catch (e) { /* ignore */ }
   }
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
+  // The screen shows the visual viewport. At scale 1 it can be smaller than the layout
+  // viewport (content wider than the screen widens the layout viewport) and panned
+  // inside it. Geometry is computed in layout coordinates (elementFromPoint) against
+  // the screen's bounds [VX0, VX1) x [VY0, VY1), and reported relative to the screen, so
+  // boxes line up with the screenshot and with input coordinates.
+  const vvp = window.visualViewport;
+  const panned = !!vvp && Math.abs(vvp.scale - 1) < 0.01
+    && (vvp.offsetLeft > 0.5 || vvp.offsetTop > 0.5 || vvp.width < window.innerWidth - 1 || vvp.height < window.innerHeight - 1);
+  const VX0 = panned ? vvp.offsetLeft : 0;
+  const VY0 = panned ? vvp.offsetTop : 0;
+  const vw = panned ? vvp.width : window.innerWidth;
+  const vh = panned ? vvp.height : window.innerHeight;
+  const VX1 = VX0 + vw;
+  const VY1 = VY0 + vh;
   const known = new Set(args.knownRoles || []);
   const unknownRoles = new Set();
   const round2 = (n) => Math.round(n * 100) / 100;
@@ -214,10 +226,10 @@ export function extractSnapshot(args) {
   const layersBelow = (el, rect) => {
     const ancestors = [];
     for (let n = el; n; n = parentOf(n)) ancestors.push(n);
-    const ix0 = Math.max(0, rect.left);
-    const ix1 = Math.min(vw, rect.right);
-    const iy0 = Math.max(0, rect.top);
-    const iy1 = Math.min(vh, rect.bottom);
+    const ix0 = Math.max(VX0, rect.left);
+    const ix1 = Math.min(VX1, rect.right);
+    const iy0 = Math.max(VY0, rect.top);
+    const iy1 = Math.min(VY1, rect.bottom);
     if (ix1 - ix0 >= 1 && iy1 - iy0 >= 1) {
       let stack = [];
       try {
@@ -713,7 +725,7 @@ export function extractSnapshot(args) {
         vis = cs.display !== 'none' && cs.visibility === 'visible' && parseFloat(cs.opacity) > 0;
       }
     }
-    const inVp = r.width > 0 && r.height > 0 && r.right > 0 && r.bottom > 0 && r.left < vw && r.top < vh;
+    const inVp = r.width > 0 && r.height > 0 && r.right > VX0 && r.bottom > VY0 && r.left < VX1 && r.top < VY1;
     g = { r, vis, inVp };
     geometry.set(el, g);
     return g;
@@ -735,7 +747,7 @@ export function extractSnapshot(args) {
     // Hit testing cannot see elements that ignore pointer events (HUD and subtitle
     // overlays): elementFromPoint returns what lies BELOW them, so their occlusion is unknown.
     if (style(el).pointerEvents === 'none') return { fraction: null, by: null };
-    const x0 = Math.max(0, r.left), x1 = Math.min(vw, r.right), y0 = Math.max(0, r.top), y1 = Math.min(vh, r.bottom);
+    const x0 = Math.max(VX0, r.left), x1 = Math.min(VX1, r.right), y0 = Math.max(VY0, r.top), y1 = Math.min(VY1, r.bottom);
     if (x1 - x0 < 1 || y1 - y0 < 1) return { fraction: null, by: null };
     const pts = [[0.5, 0.5], [0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]];
     let covered = 0;
@@ -1001,8 +1013,8 @@ export function extractSnapshot(args) {
     else {
       // Area first (cheap, from the cached box), then the computed style.
       const r = g.r;
-      const w = Math.max(0, Math.min(r.right, vw) - Math.max(r.left, 0));
-      const h = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0));
+      const w = Math.max(0, Math.min(r.right, VX1) - Math.max(r.left, VX0));
+      const h = Math.max(0, Math.min(r.bottom, VY1) - Math.max(r.top, VY0));
       if ((w * h) / vpArea < 0.4) continue;
       const pos = style(n).position;
       if ((pos === 'fixed' || pos === 'absolute') && painted(n)) {
@@ -1016,7 +1028,7 @@ export function extractSnapshot(args) {
           if (!cg.vis) continue;
           const cx = cg.r.left + cg.r.width / 2;
           const cy = cg.r.top + cg.r.height / 2;
-          if (cx < r.left || cx > r.right || cy < r.top || cy > r.bottom || cx < 0 || cy < 0 || cx >= vw || cy >= vh) continue;
+          if (cx < r.left || cx > r.right || cy < r.top || cy > r.bottom || cx < VX0 || cy < VY0 || cx >= VX1 || cy >= VY1) continue;
           const top = document.elementFromPoint(cx, cy);
           if (top && n.contains(top)) over += 1;
         }
@@ -1033,6 +1045,17 @@ export function extractSnapshot(args) {
     box: { x: round2(geo(node).r.left), y: round2(geo(node).r.top), w: round2(geo(node).r.width), h: round2(geo(node).r.height) },
     contains_focus: !focusOnBody && (node === deep || node.contains(deep)),
   }));
+  if (panned && (VX0 || VY0)) {
+    // Report DOM geometry relative to the screen (hotspots keep their own coordinates).
+    const shift = (b) => { if (b) { b.x = round2(b.x - VX0); b.y = round2(b.y - VY0); } };
+    for (const e of elements) {
+      if (e.source !== 'dom') continue;
+      shift(e.box);
+      for (const hb of e.hit_boxes || []) shift(hb);
+    }
+    if (active) { active.x = round2(active.x - VX0); active.y = round2(active.y - VY0); }
+    for (const l of layerOut) shift(l.box);
+  }
   const se = document.scrollingElement || document.documentElement;
   return {
     elements,
@@ -1040,6 +1063,7 @@ export function extractSnapshot(args) {
     truncated: candidates.length > cap,
     viewport: { w: vw, h: vh },
     scroll: { x: round2(window.scrollX), y: round2(window.scrollY), width: se ? se.scrollWidth : null, height: se ? se.scrollHeight : null },
+    visual: vvp ? { offset_x: round2(vvp.offsetLeft), offset_y: round2(vvp.offsetTop), width: round2(vvp.width), height: round2(vvp.height), scale: round2(vvp.scale) } : null,
     active,
     focus: { on_body: focusOnBody, tag: focusOnBody ? null : deep.tagName.toLowerCase(), dom_id: focusOnBody ? null : (deep.id || null) },
     layers: layerOut,
@@ -1075,9 +1099,13 @@ export function idAtPoint(args) {
     const b = spots[i].box;
     if (args.x >= b.x && args.x <= b.x + b.w && args.y >= b.y && args.y <= b.y + b.h) return { id: spots[i].elementId, hotspot: true };
   }
-  let n = document.elementFromPoint(args.x, args.y);
+  // Points are screen (visual viewport) coordinates; hit testing takes layout ones.
+  const vvp = window.visualViewport;
+  const lx = args.x + (vvp && Math.abs(vvp.scale - 1) < 0.01 ? vvp.offsetLeft : 0);
+  const ly = args.y + (vvp && Math.abs(vvp.scale - 1) < 0.01 ? vvp.offsetTop : 0);
+  let n = document.elementFromPoint(lx, ly);
   while (n && n.shadowRoot) {
-    const inner = n.shadowRoot.elementFromPoint(args.x, args.y);
+    const inner = n.shadowRoot.elementFromPoint(lx, ly);
     if (!inner || inner === n) break;
     n = inner;
   }
@@ -1096,9 +1124,13 @@ export function idAtPoint(args) {
  * Never reads values.
  */
 export function controlOf(arg) {
-  let el = arg && arg.nodeType === 1 ? arg : (arg ? document.elementFromPoint(arg.x, arg.y) : null);
+  // Points are screen (visual viewport) coordinates; hit testing takes layout ones.
+  const vvp = window.visualViewport;
+  const lx = arg && arg.nodeType !== 1 ? arg.x + (vvp && Math.abs(vvp.scale - 1) < 0.01 ? vvp.offsetLeft : 0) : 0;
+  const ly = arg && arg.nodeType !== 1 ? arg.y + (vvp && Math.abs(vvp.scale - 1) < 0.01 ? vvp.offsetTop : 0) : 0;
+  let el = arg && arg.nodeType === 1 ? arg : (arg ? document.elementFromPoint(lx, ly) : null);
   while (el && el.shadowRoot && arg && arg.nodeType !== 1) {
-    const inner = el.shadowRoot.elementFromPoint(arg.x, arg.y);
+    const inner = el.shadowRoot.elementFromPoint(lx, ly);
     if (!inner || inner === el) break;
     el = inner;
   }
@@ -1132,9 +1164,13 @@ export function controlOf(arg) {
 
 /** Is the top-most element at (x, y) the target element or inside it? */
 export function hitTest(el, pt) {
-  let n = document.elementFromPoint(pt.x, pt.y);
+  // Points are screen (visual viewport) coordinates; hit testing takes layout ones.
+  const vvp = window.visualViewport;
+  const lx = pt.x + (vvp && Math.abs(vvp.scale - 1) < 0.01 ? vvp.offsetLeft : 0);
+  const ly = pt.y + (vvp && Math.abs(vvp.scale - 1) < 0.01 ? vvp.offsetTop : 0);
+  let n = document.elementFromPoint(lx, ly);
   while (n && n.shadowRoot) {
-    const inner = n.shadowRoot.elementFromPoint(pt.x, pt.y);
+    const inner = n.shadowRoot.elementFromPoint(lx, ly);
     if (!inner || inner === n) break;
     n = inner;
   }

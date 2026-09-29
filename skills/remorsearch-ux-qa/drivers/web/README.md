@@ -170,7 +170,15 @@ they belong to (0 = initial load), so a step can own two snapshots.
   `appearances`, `open_interval_ms` (still visible at the end, a lower bound, not
   counted), and the text seen. "Visible" = rendered, non-zero box, intersecting
   the viewport. Non-CSS selectors fall back to Playwright polling (`method`).
-- **Flash sampling** (`--flash-sample-ms`): CDP screenshots of the viewport
+- **Screen coordinates**: boxes, points, hit tests and captures all use the screen
+  (the visual viewport). CDP screenshot clips are in document coordinates, so frames
+  are clipped at the visual viewport's page position (a clip at 0,0 captured the top
+  of a scrolled document before this was fixed). When content is wider than a phone
+  screen, the layout viewport widens and the screen pans inside it; boxes are then
+  shifted to screen coordinates, hit tests shift points back, and frames are taken
+  without a clip (a clip snaps the pan back and would move the page under the next
+  tap) and downscaled in `png.mjs`. Snapshots record `visual` (offsets, size, scale).
+- **Flash sampling** (`--flash-sample-ms`): CDP screenshots of the screen
   downscaled to ~160 CSS px wide, as fast as possible (~30 fps here), decoded by
   the built-in PNG decoder (`png.mjs`). Each sample has `t_ms`, `mean_luminance`
   (WCAG relative luminance, 0..1), `frame_index`, `step_index`,
