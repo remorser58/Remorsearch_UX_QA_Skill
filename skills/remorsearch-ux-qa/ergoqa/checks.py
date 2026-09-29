@@ -1915,8 +1915,8 @@ def check_focus_management(ctx: Context) -> list[Observation]:
     trigger behind it is covered by design, and FM-02 reports that case.
     """
     focus = ctx.snapshot.get("focus")
-    if not isinstance(focus, dict):
-        return []  # recorded before the driver kept focus and layers
+    if not isinstance(focus, dict) or (ctx.snapshot.get("surface") or {}).get("kind") == "game":
+        return []  # recorded before the driver kept focus and layers, or a game screen
     out: list[Observation] = []
     base = (ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"))
     action = ((ctx.step or {}).get("action") or {}).get("action")

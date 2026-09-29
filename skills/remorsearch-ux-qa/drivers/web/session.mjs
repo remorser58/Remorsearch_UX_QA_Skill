@@ -462,7 +462,8 @@ export class WebSession {
 
   reflowEnabled() {
     if (this.opts.reflow === false) return false;
-    return this.scenario.surface_kind !== 'game';
+    // 1.4.10 is about zooming to 320 CSS px; TVs and handheld consoles have no browser zoom.
+    return this.scenario.surface_kind !== 'game' && !['tv', 'handheld_console'].includes(this.dev.snapshotDevice.form_factor);
   }
 
   /** Keep a static copy of a screen for the reflow pass (distinct DOMs only). */
