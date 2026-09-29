@@ -298,3 +298,14 @@ this showed which page variant the verifier edited, which may hint at the varian
 assignment. rhythm's report showed no page edits. No detector change uses variant
 identity: the detector never compares variants, and scoring is automatic from the
 key. Later blind stages report only the total number of changes.
+
+### Amendment 6 (2026-09-29, before the freeze and before any heldout-2 recording)
+
+**Composition fix: no-op facets.** The rhythm Stage-0 agent reported that its
+persona plan listed "grip two_thumbs" as untested for a segment whose typical member
+already holds the phone with two thumbs. The variation would have copied the typical
+member. `audience.compose` now drops any facet whose profile equals the segment's
+typical member, so it is neither composed nor listed as untested. Recomputed on the
+four committed audience files: the C4 profiles at budgets 6, 10 and 14 are identical
+before and after the fix; only rhythm's untested list loses that entry. No defect
+content was involved.

@@ -132,6 +132,22 @@ class Compose(unittest.TestCase):
             audience.compose(doc, 4)
 
 
+class NoOpFacets(unittest.TestCase):
+    def test_a_facet_equal_to_the_typical_member_is_not_composed_or_listed(self) -> None:
+        # A two-thumb segment with no one-handed context: its "two_thumbs grip" facet
+        # would copy the typical member (reported by a Stage-0 agent, 2026-09-29).
+        doc = load()
+        seg = doc["segments"][0]
+        seg["grips"] = {"two_thumbs": 1.0}
+        seg["contexts"] = [c for c in seg.get("contexts") or [] if not c.get("one_handed")]
+        if not seg["contexts"]:
+            del seg["contexts"]
+        plan = audience.compose(doc, 12)
+        keys = [json.dumps(p["attributes"], sort_keys=True) for p in plan["profiles"]]
+        self.assertEqual(len(keys), len(set(keys)))
+        self.assertFalse([u for u in plan["untested"] if u["facet"] == "grip" and u["segment_id"] == seg["segment_id"]])
+
+
 class ResearchRules(unittest.TestCase):
     def test_statistic_evidence_needs_a_quoted_number(self) -> None:
         doc = load()

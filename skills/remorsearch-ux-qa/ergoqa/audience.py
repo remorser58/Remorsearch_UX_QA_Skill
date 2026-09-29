@@ -633,6 +633,18 @@ def compose(audience: dict[str, Any], budget: int, floors: Iterable[str] | None 
             raise AudienceError(f"unknown floor {f!r}")
     weights = segment_weights(segments)
     state = {s["segment_id"]: _segment_state(s) for s in segments}
+    for seg in segments:
+        # A facet that changes nothing (a two-thumb variation of a two-thumb base) would
+        # spend a slot on a copy of the typical member; it is already covered.
+        st = state[seg["segment_id"]]
+
+        def attrs_for(facet: dict[str, Any] | None, st: dict[str, Any] = st, seg: dict[str, Any] = seg) -> dict[str, Any]:
+            dev = (facet or {}).get("device_id") or st["top_device"]
+            return _make_profile(audience, seg, dev, seg.get("orientation"), facet, st["modal_age"], st["modal_ctx"],
+                                 st["majority"], st["dominant"], 0)["attributes"]
+
+        base = attrs_for(None)
+        st["queue"] = [f for f in st["queue"] if attrs_for(f) != base]
     by_id = {s["segment_id"]: s for s in segments}
     profiles: list[dict[str, Any]] = []
     counts = {s["segment_id"]: 0 for s in segments}
