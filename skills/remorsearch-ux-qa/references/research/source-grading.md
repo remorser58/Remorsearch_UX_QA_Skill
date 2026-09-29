@@ -113,16 +113,20 @@ the caps. A grade never goes below E.
 
 Promotion and affiliate disclosures to look for, in the form a disclosure takes:
 
-- Korean: 체험단 (체험단 후기, 체험단으로 참여), 협찬 (#협찬, [협찬], 협찬을 받아),
-  원고료 (소정의 원고료를 받아), 제품을 제공받아 (무상으로 제공받아), 업체로부터
-  지원받아, 광고 (#광고, [광고], 유료 광고 포함), 쿠팡 파트너스 활동의 일환으로,
-  수수료를 제공받, 서포터즈 활동.
-- English: sponsored, #ad, paid partnership, affiliate link, "I received this
-  product for free", "I may earn a commission".
+- Korean: 체험단으로 참여하여, [체험단], 협찬을 받아 작성, #협찬, [협찬], 소정의
+  원고료를 받아, 제품을 무상으로 제공받아, 업체로부터 지원받아, #광고, [광고], 유료
+  광고 포함, 쿠팡 파트너스 활동의 일환으로, 수수료를 제공받, 서포터즈 활동으로.
+- English: #ad, #sponsored, "this video is sponsored", paid partnership, "this post
+  contains affiliate links", "I may earn a commission", "I received this product
+  for free".
 
 A word alone is not a disclosure. A review that complains "광고가 너무 많다" (too
-many ads in the app) is a user complaint, not promotion. The reader's marker file
-(`uxresearch/data/markers.json`) holds the full lists, compiled for this skill.
+many ads in the app), "체험단 후기만 잔뜩이다" or "half of these reviews are
+sponsored" is a user complaint, not promotion. The reader's marker file
+(`uxresearch/data/markers.json`) holds the full lists, compiled for this skill, in
+disclosure forms. Even a disclosure form can sit inside a complaint, so the
+reader's `promo_flags` are candidates: a verifier confirms that the source itself
+discloses promotion before the D cap applies.
 
 ## 5. Independence
 
@@ -154,8 +158,12 @@ Korean examples:
 Thresholds:
 
 - **Repeated**: 2 or more people.
-- **Corroborated**: 2 or more people across 2 or more channel families, or one
-  measured or statistical source.
+- **Corroborated**: 2 or more independent units across 2 or more channel
+  families, or 2 or more units of which one is a measured or statistical source.
+  One measured source graded A is enough on its own (section 7).
+- **One institutional source**: a single statistical source is one unit, counted
+  by organisation. It bounds a claim, but on its own the claim is
+  `supported_medium`, not corroborated (section 7).
 - **Per-person cap**: one author key contributes at most 3 sources or 5 excerpts
   per run. Going over is a process violation (gate exit 1). This stops one loud
   voice from dominating a claim, and it stops the run from profiling a person.
@@ -191,7 +199,7 @@ The first matching row sets the status:
 | `stale` | The claim is about the current version and all counting evidence predates the release date (section 10). |
 | `conflicting` | Counter evidence, or a counter-search with outcome `contradicts`, and no resolution (section 8). |
 | `supported_high` | One A; or B evidence from 2 or more units that is corroborated: the units span 2 or more channel families, or one of the B items is measured or statistical. |
-| `supported_medium` | B evidence from 2 or more people in one channel family; or one B plus a C from another channel family. |
+| `supported_medium` | B evidence from 2 or more people in one channel family; or one B plus a C from another channel family; or a single B from one institutional unit (a statistical source, counted by organisation), such as one official statistic that bounds a share. |
 | `single_voice` | B-grade support from only one person or thread. |
 
 What each status means downstream:

@@ -54,12 +54,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   `npm install` in `drivers/web/` for the live web driver.
 - **Aside** (optional browser research tool), installed and licensed by its own
   distributor.
-- **insane-search** (github.com/fivetaku/insane-search, MIT License, Copyright (c)
-  2026 fivetaku): the optional engine behind the reader's opt-in rung R4
-  (`references/research/public-page-access.md`). This folder does not include,
-  install or update it. When a user installs it and turns the rung on for a run,
-  it runs as the user's own tool, with its own dependencies (such as curl_cffi)
-  and its own DISCLAIMER.
 - Other browser tools that an agent host provides, such as Claude in Chrome,
   Playwright MCP or Chrome DevTools MCP, are used through the host. They are not
   part of this folder.
@@ -94,7 +88,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   independence, so people count and not only organisations.
 
 No code, text, marker lists or tables from insane-search or insane-research are
-included in this folder.
+included in this folder, and the skill does not depend on, install or call either
+project.
 
 Research papers, standards and guidelines cited in the references (for example
 WCAG 2.2, ISO 9241, RFC 9309, the TDM Reservation Protocol and human-factors

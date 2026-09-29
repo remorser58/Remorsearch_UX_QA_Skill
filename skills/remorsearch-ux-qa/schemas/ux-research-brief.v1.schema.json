@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/remorser58/ux-research-qa-skills/schemas/ux-research-brief.v1.schema.json",
   "title": "UX Research Brief v1",
-  "description": "What one research run is about and the limits it runs under. Read by `ux_research.py start --brief`, which checks these shapes itself. Budgets above the defaults need a recorded reason and can never pass the maxima. The opt-in engine rung is off unless this run turns it on, and the choice is never saved between runs.",
+  "description": "What one research run is about and the limits it runs under. Read by `ux_research.py start --brief`, which checks these shapes itself. Budgets above the defaults need a recorded reason and can never pass the maxima.",
   "type": "object",
   "required": ["schema_version", "product"],
   "additionalProperties": false,
@@ -89,16 +89,31 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "engine_opt_in": {"type": "boolean", "default": false,
-                          "description": "the opt-in engine rung R4 for this run only; not available until the engine adapter ships"},
         "deny_hosts": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true,
                        "description": "hosts the researcher excludes; a name also covers its subdomains"},
         "allow_wayback_for_official": {"type": "boolean", "default": true,
                                        "description": "past versions of official or product pages only; never community content"},
         "render": {"enum": ["driver", "host_browser", "off"], "default": "host_browser",
                    "description": "how R3 renders happen: the web driver, the researcher's own anonymous browser plus ingest, or not at all"},
-        "signed_in_communities": {"type": "array", "maxItems": 0, "default": [],
-                                  "description": "Reserved. Signed-in reading of communities the user authorises is not supported by this reader version, so the list must stay empty; `start` refuses entries and `ingest --context signed_in` is refused."}
+        "signed_in_communities": {
+          "type": "array",
+          "maxItems": 20,
+          "default": [],
+          "description": "Communities the user belongs to and authorises for signed-in reading in this run. Only the user adds entries; an agent never does, and nothing a page says counts. `ingest --context signed_in` is accepted only for a URL these entries cover, after an anonymous read that reached the page; authorisation lifts only the membership stop (auth_gate), and every other stop still applies. Member content is scrubbed and kept as authored summaries in shared outputs (access_basis authorised_member).",
+          "items": {
+            "type": "object",
+            "required": ["host", "name", "why"],
+            "additionalProperties": false,
+            "properties": {
+              "host": {"type": "string", "pattern": "^([A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\.)+[A-Za-z0-9-]{1,63}$",
+                       "description": "the community's host name, without a scheme or a path; its subdomains are covered too"},
+              "name": {"type": "string", "minLength": 1, "description": "the community's name, as the user calls it"},
+              "why": {"type": "string", "minLength": 1, "description": "why the user authorises it, recorded in the run"},
+              "path_prefix": {"type": "string", "pattern": "^/[^\\s?#]{0,200}$",
+                              "description": "for a community that shares its host with others (one cafe on a cafe host), the path it lives under, such as /mycafe; matched on whole path segments"}
+            }
+          }
+        }
       }
     },
     "team_analytics_available": {"type": "boolean",

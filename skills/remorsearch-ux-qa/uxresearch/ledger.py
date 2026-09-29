@@ -9,7 +9,8 @@ project so page text never lands in a repository. It holds:
   brief.json           the research brief, when one was given
   routes.json          the route table this run uses
   hosts.json           per-host pacing, counters, stop state; robots.txt cache
-  access-ledger.jsonl  append-only, URL-masked record of every request and outcome
+  access-ledger.jsonl  append-only, URL-masked record of every request and outcome;
+                       at close every URL in it is cut to its scheme and host
   pages/<fetch_id>.txt page text kept for later verbatim checks (0600; purged
                        after 72 h; deleted at close). Raw HTML is never written.
 
@@ -20,9 +21,11 @@ longer, plus 0-4 s of jitter; a per-host and a per-run budget of document
 requests (30 and 200 by default, raisable with a recorded reason to at most 100
 and 500; robots.txt requests are not charged); after a rate-limit signal one
 wait of at most 5 minutes, and a second signal stops the host; three unreadable
-URLs in a row stop the host as bot_filter_persistent. When the next slot is
-further away than the caller's max wait, the reader is told to come back later
-(Deferred) instead of blocking.
+URLs in a row stop the host as bot_filter_persistent (a URL counts only once no
+allowed rung is left for it; a successful render capture resets the count).
+While another reader holds a host, a caller polls until its own max wait runs
+out. When the next slot is further away than the caller's max wait, the reader
+is told to come back later (Deferred) instead of blocking.
 """
 from __future__ import annotations
 
@@ -45,7 +48,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from . import RULES_VERSION, USER_AGENT, VERSION, net
-from .privacy import mask_url
+from .privacy import mask_url, origin_only
 
 RUN_SCHEMA = "ux-research-run.v1"
 HOSTS_SCHEMA = "ux-research-hosts.v1"
@@ -67,9 +70,14 @@ RENDER_MODES = ("driver", "host_browser", "off")
 AUDIENCE_QUESTIONS = ("segments", "weight", "priority", "devices_and_grips", "abilities_and_conditions",
                       "contexts_of_use", "key_tasks", "pain_points")
 _URL_FIELDS = ("url", "final_url", "location", "requested_url", "route_url")
+_LEDGER_URL_KEYS = frozenset(_URL_FIELDS) | {"from", "to"}
 BRIEF_FIELDS = ("schema_version", "product", "personas_for", "audience_questions", "languages", "channels",
                 "time_windows", "budgets", "access_policy", "team_analytics_available", "report_lang")
 _LANG_TAG = re.compile(r"^[A-Za-z]{1,8}(-[A-Za-z0-9]{1,8}){0,3}$")
+_HOST_NAME = re.compile(r"^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9-]{1,63}$")
+_PATH_PREFIX = re.compile(r"^/[^\s?#]{0,200}$")
+COMMUNITY_FIELDS = ("host", "name", "why", "path_prefix")
+MAX_COMMUNITIES = 20
 
 
 class RunError(Exception):
@@ -163,7 +171,7 @@ _NESTED_FIELDS = {
     "languages": ("primary", "secondary"),
     "channels": ("include", "exclude"),
     "budgets": ("per_host", "per_run", "search_queries", "min_interval_s", "reason"),
-    "access_policy": ("engine_opt_in", "deny_hosts", "allow_wayback_for_official", "render", "signed_in_communities"),
+    "access_policy": ("deny_hosts", "allow_wayback_for_official", "render", "signed_in_communities"),
 }
 
 
@@ -197,17 +205,26 @@ def validate_brief(brief) -> None:
                  "brief.budgets.min_interval_s must be a number")
     policy = brief.get("access_policy", {})
     _require(isinstance(policy, dict), "brief.access_policy must be an object")
-    if "engine_opt_in" in policy:
-        _require(isinstance(policy["engine_opt_in"], bool), "brief.access_policy.engine_opt_in must be true or false")
     if "deny_hosts" in policy:
         _require(isinstance(policy["deny_hosts"], list) and all(isinstance(h, str) and h for h in policy["deny_hosts"]),
                  "brief.access_policy.deny_hosts must be a list of host names")
     if "render" in policy:
         _require(policy["render"] in RENDER_MODES, f"brief.access_policy.render must be one of {', '.join(RENDER_MODES)}")
     if "signed_in_communities" in policy:
-        _require(policy["signed_in_communities"] == [],
-                 "signed-in reading of authorised communities is not supported by this reader version; leave "
-                 "brief.access_policy.signed_in_communities empty and capture pages anonymously")
+        communities = policy["signed_in_communities"]
+        _require(isinstance(communities, list) and len(communities) <= MAX_COMMUNITIES,
+                 f"brief.access_policy.signed_in_communities must be a list of at most {MAX_COMMUNITIES} communities")
+        for item in communities:
+            _require(isinstance(item, dict) and not set(item) - set(COMMUNITY_FIELDS),
+                     "each signed-in community is {host, name, why} with an optional path_prefix")
+            for key in ("host", "name", "why"):
+                _require(isinstance(item.get(key), str) and item[key].strip() != "",
+                         f"a signed-in community needs a non-empty {key}")
+            _require(bool(_HOST_NAME.match(item["host"].strip().lower().rstrip("."))),
+                     f"signed-in community host {item['host']!r} must be a host name, without a scheme or a path")
+            if "path_prefix" in item:
+                _require(isinstance(item["path_prefix"], str) and bool(_PATH_PREFIX.match(item["path_prefix"])),
+                         "a signed-in community's path_prefix must start with / and hold no spaces, ? or #")
     languages = brief.get("languages", {})
     _require(isinstance(languages, dict), "brief.languages must be an object")
 
@@ -215,8 +232,8 @@ def validate_brief(brief) -> None:
 def build_policy(brief: dict | None, overrides: dict) -> dict:
     """Defaults, then the brief, then command-line values. Refuses anything past the ceilings."""
     policy = {**DEFAULTS, "max_wait_s": DEFAULT_MAX_WAIT_S, "accept_language": DEFAULT_ACCEPT_LANGUAGE,
-              "deny_hosts": [], "engine_opt_in": False, "render": "host_browser",
-              "allow_wayback_for_official": True, "raise_reason": None}
+              "deny_hosts": [], "render": "host_browser",
+              "allow_wayback_for_official": True, "raise_reason": None, "signed_in_communities": []}
     if brief:
         budgets = brief.get("budgets", {})
         for name in ("per_host", "per_run", "search_queries", "min_interval_s"):
@@ -225,9 +242,14 @@ def build_policy(brief: dict | None, overrides: dict) -> dict:
         if budgets.get("reason"):
             policy["raise_reason"] = str(budgets["reason"])
         access = brief.get("access_policy", {})
-        for name in ("engine_opt_in", "deny_hosts", "render", "allow_wayback_for_official"):
+        for name in ("deny_hosts", "render", "allow_wayback_for_official"):
             if name in access:
                 policy[name] = access[name]
+        # Only the user's brief authorises signed-in reading; there is no command-line switch for it.
+        policy["signed_in_communities"] = [
+            {"host": item["host"].strip().lower().rstrip("."), "name": item["name"].strip(), "why": item["why"].strip(),
+             **({"path_prefix": item["path_prefix"]} if item.get("path_prefix") else {})}
+            for item in access.get("signed_in_communities", [])]
         languages = brief.get("languages", {})
         if languages.get("primary"):
             secondary = languages.get("secondary") or []
@@ -249,8 +271,6 @@ def build_policy(brief: dict | None, overrides: dict) -> dict:
              f"min_interval_s cannot be below {MIN_INTERVAL_FLOOR_S:.0f} seconds")
     _require(float(policy["max_wait_s"]) >= 0, "max_wait_s cannot be negative")
     _require(policy["render"] in RENDER_MODES, f"render must be one of {', '.join(RENDER_MODES)}")
-    _require(policy["engine_opt_in"] is False,
-             "the opt-in engine rung (R4) is not available in this version; it ships with the engine adapter")
     return policy
 
 
@@ -278,7 +298,7 @@ def create(path: Path | None, policy: dict, *, brief: dict | None = None, routes
             "rules_version": RULES_VERSION, "user_agent": USER_AGENT, "policy": policy,
             "brief_sha256": brief_sha, "routes": {"source": routes_source,
                                                    "sha256": hashlib.sha256(routes_text.encode()).hexdigest()},
-            "engine_rung": "off", "test_hooks": net.test_hooks_enabled(), "closed_at": None}
+            "test_hooks": net.test_hooks_enabled(), "closed_at": None}
     _write_new(path / "run.json", (json.dumps(meta, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
     hosts = {"schema_version": HOSTS_SCHEMA, "run": {"docs": 0, "policy_requests": 0}, "hosts": {}, "robots": {}}
     _write_new(path / "hosts.json", (json.dumps(hosts, indent=2) + "\n").encode("utf-8"))
@@ -390,8 +410,8 @@ class Run:
                         raise BudgetExceeded("host", host, self.policy["per_host"])
                 lease = entry.get("lease")
                 busy = bool(lease and lease["expires"] > now)
-                ready_at = lease["expires"] if busy else float(entry["next_allowed_at"] or 0.0)
-                if ready_at <= now:
+                ready_at = float(entry["next_allowed_at"] or 0.0)
+                if not busy and ready_at <= now:
                     token = secrets.token_hex(8)
                     entry["lease"] = {"token": token, "expires": now + LEASE_S}
                     entry["last_request_at"] = now
@@ -402,10 +422,18 @@ class Run:
                         entry["policy_requests"] += 1
                         state["run"]["policy_requests"] += 1
                     return Slot(host, token, now, now - started)
+                interval = max(self.policy["min_interval_s"], float(entry.get("crawl_delay") or 0.0))
+            if busy:
+                # Another reader's request is in flight. It usually ends within seconds (the lease is only
+                # the crash bound), so poll until this caller's own deadline instead of deferring at once.
+                if now + POLL_S > deadline:
+                    raise Deferred(max(interval, ready_at - now), host, "another request holds this host")
+                self.sleeper(POLL_S)
+                continue
             wait = ready_at - now
             if now + wait > deadline:
-                raise Deferred(wait, host, "another request holds this host" if busy else "pacing")
-            self.sleeper(min(wait, POLL_S) if busy else wait)
+                raise Deferred(wait, host, "pacing")
+            self.sleeper(wait)
 
     def book_render(self, host: str) -> None:
         """A render made outside the reader (R3 via `ingest`) counts against the host like a read
@@ -522,6 +550,10 @@ class Run:
                 found = entry
         return found
 
+    def outcomes(self, url_key: str, *, kind: str) -> list:
+        return [e for e in self.entries()
+                if e.get("kind") == "outcome" and e.get("url_key") == url_key and e.get("source") == kind]
+
     # ------------------------------------------------------------ page cache
 
     def save_page(self, fetch_id: str, text: str) -> Path:
@@ -557,16 +589,22 @@ class Run:
         with self._state() as state:
             hosts_state = json.loads(json.dumps(state))
         hosts: dict[str, dict] = {}
-        totals = {"urls": 0, "read": 0, "deferred": 0, "unread": 0, "stopped": 0, "refused": 0}
+        totals = {"urls": 0, "read": 0, "deferred": 0, "unread": 0, "stopped": 0, "refused": 0, "out_of_scope": 0}
+
+        def new_row(host: str) -> dict:
+            return {"host": host, "urls": 0, "read": 0, "deferred": 0, "unread": 0, "stopped": {}, "refused": 0,
+                    "out_of_scope": 0, "rungs_used": {}, "untried": {}, "contexts": {}}
+
         for outcome in outcomes.values():
             host = outcome.get("host") or ""
-            row = hosts.setdefault(host, {"host": host, "urls": 0, "read": 0, "deferred": 0, "unread": 0,
-                                          "stopped": {}, "refused": 0, "rungs_used": {}, "untried": {},
-                                          "contexts": {}})
+            row = hosts.setdefault(host, new_row(host))
             bucket = outcome.get("bucket")
             row["urls"] += 1
             totals["urls"] += 1
-            if bucket == "stopped":
+            if outcome.get("out_of_scope"):  # private channels are outside the research, not coverage gaps
+                row["out_of_scope"] += 1
+                totals["out_of_scope"] += 1
+            elif bucket == "stopped":
                 cls = outcome.get("stop_class") or "unknown"
                 row["stopped"][cls] = row["stopped"].get(cls, 0) + 1
                 totals["stopped"] += 1
@@ -580,18 +618,46 @@ class Run:
             if outcome.get("context"):
                 row["contexts"][outcome["context"]] = row["contexts"].get(outcome["context"], 0) + 1
         for host in requests:  # hosts reached only through official routes or site alternates
-            hosts.setdefault(host, {"host": host, "urls": 0, "read": 0, "deferred": 0, "unread": 0, "stopped": {},
-                                    "refused": 0, "rungs_used": {}, "untried": {}, "contexts": {}})
+            hosts.setdefault(host, new_row(host))
         for host, row in hosts.items():
             state_row = hosts_state["hosts"].get(host, {})
             row["requests"] = requests.get(host, {"documents": 0, "robots": 0})
             row["host_stop"] = state_row.get("stopped")
             row["robots"] = sorted({r["status"] for origin, r in hosts_state["robots"].items()
                                     if (urlsplit(origin).hostname or "") == host})
-        return {"run_id": self.meta["run_id"], "engine_rung": self.meta.get("engine_rung", "off"),
-                "test_hooks": self.meta.get("test_hooks", False), "totals": totals,
+        return {"run_id": self.meta["run_id"], "test_hooks": self.meta.get("test_hooks", False), "totals": totals,
                 "requests": hosts_state["run"], "hosts": [hosts[h] for h in sorted(hosts)],
+                "signed_in_communities": [c.get("name") for c in self.policy.get("signed_in_communities", [])],
                 "buckets": ["read", "deferred", "unread", "stopped"]}
+
+    def _strip_ledger_urls(self) -> int:
+        """Cut every URL in the ledger to its scheme and host. Post URLs, which can carry an author's
+        ID, then live only in the bundle's source_ref."""
+        path = self.path / "access-ledger.jsonl"
+        stripped = 0
+
+        def strip(value):
+            nonlocal stripped
+            if isinstance(value, dict):
+                out = {}
+                for key, item in value.items():
+                    if key in _LEDGER_URL_KEYS and isinstance(item, str):
+                        out[key] = origin_only(item)
+                        stripped += 1
+                    else:
+                        out[key] = strip(item)
+                return out
+            if isinstance(value, list):
+                return [strip(item) for item in value]
+            return value
+
+        with self._state():
+            if path.is_symlink() or not path.is_file():
+                return 0
+            lines = [json.dumps(strip(json.loads(line)), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+                     for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+            _atomic_write(path, "".join(line + "\n" for line in lines))
+        return stripped
 
     def close(self) -> dict:
         if self.closed:
@@ -604,7 +670,8 @@ class Run:
         salt = self.path / "salt"
         if salt.exists():
             salt.unlink()
-        summary["closed"] = {"page_files_deleted": removed, "salt_deleted": True}
+        urls = self._strip_ledger_urls()
+        summary["closed"] = {"page_files_deleted": removed, "salt_deleted": True, "ledger_urls_cut_to_host": urls}
         self.meta["closed_at"] = self.now_iso()
         self.meta["summary"] = summary
         _atomic_write(self.path / "run.json", json.dumps(self.meta, ensure_ascii=False, indent=2) + "\n")

@@ -63,6 +63,8 @@ def _print_page(result: dict) -> None:
               "bucket": result.get("bucket"), "verdict": result.get("verdict") or "-",
               "stop_class": result.get("stop_class") or "-", "fetch_id": result.get("fetch_id") or "-",
               "fetched_at": result.get("fetched_at") or "-"}
+    if result.get("access_basis") == "authorised_member":
+        header["access_basis"] = "authorised_member (member content: summaries only in shared outputs)"
     injection = result.get("injection")
     if injection:
         header["injection"] = injection["risk"] + (f" ({', '.join(injection['signals'])})" if injection["signals"] else "")
@@ -102,7 +104,6 @@ def build_parser() -> argparse.ArgumentParser:
     start.add_argument("--deny-host", action="append", default=[], help="a host the researcher excludes (repeatable)")
     start.add_argument("--render", choices=ledger.RENDER_MODES, help="how R3 renders happen (default host_browser)")
     start.add_argument("--routes", type=Path, help="a route table to use instead of uxresearch/data/routes.json")
-    start.add_argument("--engine-opt-in", action="store_true", help="the opt-in engine rung R4 (not in this version)")
 
     read = commands.add_parser("read", help="Read one public URL through the ladder")
     read.add_argument("url")
@@ -116,11 +117,13 @@ def build_parser() -> argparse.ArgumentParser:
     ingest.add_argument("capture", nargs="?", type=Path, help="saved HTML, plain text, or ux-page-read.v1 JSON")
     ingest.add_argument("--file", type=Path, help="the capture file (same as the positional argument)")
     ingest.add_argument("--format", choices=["html", "txt", "page-read"], help="default: from the file extension")
-    ingest.add_argument("--context", required=True, choices=["anonymous", "unknown", "signed_in"],
-                        help="the browser context of the capture; signed-in captures are refused in this version")
+    ingest.add_argument("--context", required=True, choices=list(ladder.CONTEXTS),
+                        help="the browser context of the capture; signed_in only for a community the brief "
+                             "authorises (access_policy.signed_in_communities)")
     ingest.add_argument("--expect", action="append", default=[])
 
-    check = commands.add_parser("robots", help="Check robots.txt for a URL (reads robots.txt only)")
+    check = commands.add_parser("robots", help="Check whether a URL's host may be opened (deny list, out-of-scope "
+                                               "channels, host stops, robots.txt); never reads the page")
     check.add_argument("url")
     check.add_argument("--run", required=True)
     check.add_argument("--max-wait", type=float)
@@ -133,7 +136,8 @@ def build_parser() -> argparse.ArgumentParser:
     who.add_argument("--handle-stdin", action="store_true", help="read the handle from the first line of stdin")
     who.add_argument("--thread-url", help="print a thread key instead")
 
-    close = commands.add_parser("close", help="Print the coverage summary; delete page text and the salt")
+    close = commands.add_parser("close", help="Print the coverage summary; delete page text and the salt; cut the "
+                                              "ledger's URLs to their host")
     close.add_argument("--run", required=True)
     return parser
 
@@ -154,8 +158,7 @@ def _start(args) -> int:
         deny += brief.get("access_policy", {}).get("deny_hosts", [])
     overrides = {"per_host": args.per_host, "per_run": args.per_run, "min_interval_s": args.min_interval,
                  "max_wait_s": args.max_wait, "raise_reason": args.reason, "accept_language": args.accept_language,
-                 "deny_hosts": deny or None, "render": args.render,
-                 "engine_opt_in": True if args.engine_opt_in else None}
+                 "deny_hosts": deny or None, "render": args.render}
     policy = ledger.build_policy(brief, overrides)
     path = _run_path(args.run, creating=True) if args.run else None
     created = ledger.create(path, policy, brief=brief, routes=routes,

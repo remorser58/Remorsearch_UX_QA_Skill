@@ -75,8 +75,12 @@ An axis is one reader's beat: a set of sources and the questions it serves.
   global product, the reverse.
 - Drop axes the brief excludes, and record each dropped axis in the report.
 - Statistics tables often come as PDF or spreadsheet files, which the reader does
-  not parse. Record such a source with its URL, table name and the number quoted
-  as printed. It is an institutional source, counted by organisation.
+  not parse. Read the file's URL with `read` first; it ends unread (`no_page`).
+  Then save the table's text as the file shows it, unchanged, to a `.txt` file and
+  pass it to `ingest --context anonymous`. The capture gets a `fetch_id` and page
+  text, so excerpts from it pass merge's verbatim check. Record the table name and
+  quote the number as printed. It is an institutional source, counted by
+  organisation.
 
 ## A0: the brief, asked once
 
@@ -89,22 +93,21 @@ An axis is one reader's beat: a set of sources and the questions it serves.
      claim is about the current version;
    - who the personas are for: persona-qa, ergonomics or both;
    - whether team analytics or store-console exports exist and can be shared;
-   - communities the user belongs to and authorises for signed-in reading (default:
-     none; see `references/public-page-access.md`, section 3);
-   - the engine rung R4, asked only when an insane-search install is detected
-     (default: off).
+   - communities the user belongs to and authorises for signed-in reading, each with
+     its host, name and why, plus the path prefix when several communities share a
+     host (default: none; see `references/public-page-access.md`, section 3).
 4. Defaults for anything unanswered: all eight questions; Korean then English for
-   a Korean product; the budgets below; the engine off; no signed-in communities;
-   no `deny_hosts`.
+   a Korean product; the budgets below; no signed-in communities; no
+   `deny_hosts`.
 5. Write `brief.json` and run `python3 scripts/ux_research.py start --brief
    brief.json`. Every later command writes into the run folder it prints.
 
 The brief (`ux-research-brief.v1`) holds: `product` {name, surface, url, locale,
 category, release_date, current_version}; `personas_for`; `audience_questions`;
 `languages` {primary, secondary}; `channels` {include, exclude}; `time_windows`;
-`budgets`; `access_policy` {engine_opt_in, deny_hosts, allow_wayback_for_official,
-render, signed_in_communities}; `team_analytics_available`; and `report_lang`.
-`render` says how R3 renders happen: `driver` (the bundled driver, once it lands),
+`budgets`; `access_policy` {deny_hosts, allow_wayback_for_official, render,
+signed_in_communities}; `team_analytics_available`; and `report_lang`.
+`render` says how R3 renders happen: `driver` (the bundled page reader, `drivers/web/read_page.mjs`),
 `host_browser` (a browser tool from the host, then `ingest`) or `off`.
 
 ## A1: the plan
@@ -260,8 +263,10 @@ axis is missing without acknowledgement.
 - `ux_research.py export-audience` (planned) writes `audience.draft.json`, an
   `ergo-audience.v1` draft, only when the gate's hashes match:
   - sources are mapped to `ergo-audience.v1` types; community and review sources
-    get `url: null` plus a `bundle_ref` {bundle_id, source_id, claim_ids}; news is
-    left out until the ergonomics contract accepts it;
+    get `url: null` plus a `bundle_ref` {bundle_id, source_id, claim_ids}; news
+    sources are exported too, for existence claims only (`audience-check`
+    refuses `share` and `statistic` evidence backed only by news, community or
+    review sources);
   - segments come only from supported `segment_exists` claims;
   - confidence and evidence kind come from the gate;
   - contexts and conditions carry `share: null` unless a supported share claim

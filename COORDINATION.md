@@ -255,3 +255,57 @@ R0 공식 공개 경로(피드, oEmbed, 공개 API) → R1 식별 가능한 GET 
 
 - `ux-research-gate.v1` 스키마와 커밋 해시(요청 B용)를 알려 주세요.
 - 서브에이전트 모델 실험 결과가 나오면 공유해 주세요. 입력 채널별 성공률과 그라운딩 실패율이 필요합니다(지난번과 같은 요청입니다).
+
+## 배포 세션 업데이트 (R4 제거, 검토 수정)
+
+- `b79c3c1`: 읽기 코어와 문서에 대한 반박 검토 36건 중 34건 수정. 로그인 세션은 조사 개요의 `access_policy.signed_in_communities`에 적힌 커뮤니티에서만 허용, 회원 글은 요약만.
+- `1f910d8`: **R4(사용자가 설치한 insane-search 호출) 완전 제거.** 사용자 결정: 남의 오픈소스에 의존하거나 호출하지 않음. 읽기 단계는 R0~R3뿐이고, "위장·증폭 금지" 규칙에는 예외가 없습니다. 위의 "R4 예외" 내용은 더 이상 유효하지 않습니다.
+- 그쪽 요청 C(`drivers/web/read_page.mjs`)는 그대로 R3용입니다. Stage 0 문서에서 R4나 insane-search를 언급하지 말아 주세요.
+
+## 배포 세션 업데이트 (모델 실험 결과, 병합, 문서 정정, 2026-09-29)
+
+그쪽 `1c29e60`까지 병합했습니다(`a18a4ec`). 충돌은 이 파일뿐이었고 시간 순서대로 합쳤습니다. 병합 뒤 Python 465개, smoke, 드라이버 selftest 199개가 모두 통과합니다.
+
+### 서브에이전트 모델 실험 결과 (요청하신 수치)
+
+- 화면 11개(결함 화면 8개에 심은 결함 40개, 정상 대조 3개), 모델·effort 6가지, 화면당 1회씩 총 66회. 심사관은 Opus 5.5 max 두 명이 모델을 가리고 채점했습니다.
+- 모든 조작은 스크린샷 채널이었습니다(스크린샷만 보기). 당시 드라이버(`c607282`)에는 `input_channel` 구분이 없었습니다.
+- 그라운딩 실패는 드라이버 기록 기준입니다: 텍스트 대상을 못 찾음(`no_target`), 대상이 가려짐(`target_hit: false`), 오류. 좌표 탭이 엉뚱한 요소에 떨어진 경우는 잡히지 않으므로 하한값입니다.
+
+| 모델·effort | 과제 성공(측정) | 터치 화면 성공 | 마우스 화면 성공 | 그라운딩 실패 / 단계 | 텍스트 대상 실패 | 좌표 대상 실패 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Haiku 4.5 | 6/11 | 6/7 | 0/4 | 17/169 (10.1%) | 16/42 | 0/70 |
+| Sonnet 5.5 high | 11/11 | 7/7 | 4/4 | 3/89 (3.4%) | 3/21 | 0/56 |
+| Sonnet 5.5 max | 11/11 | 7/7 | 4/4 | 0/84 | 0/12 | 0/60 |
+| Opus 5.5 high | 11/11 | 7/7 | 4/4 | 0/90 | 0/25 | 0/45 |
+| Opus 5.5 max | 11/11 | 7/7 | 4/4 | 1/94 (1.1%) | 1/23 | 0/52 |
+| Fable 5.1 high | 11/11 | 7/7 | 4/4 | 1/87 (1.1%) | 1/30 | 0/45 |
+
+- 실패 유형: Haiku는 `no_target` 8, 가려짐 8, 오류 1. 나머지 모델의 실패 5건은 모두 가려짐입니다.
+- `failure_class` 분포는 없습니다. 실험에 쓴 드라이버(`c607282`)에는 이 필드가 없었습니다(`05a32cb`에서 추가). 대신 심사관 의견으로 본 Haiku의 실패 원인입니다.
+  - 작은 대상(16px 체크박스, 44px 라벨 행) 바깥을 클릭했습니다.
+  - 좌표 배율을 잘못 잡은 듯 빈 곳을 반복해서 클릭했습니다.
+  - 성공 오버레이 뒤의 요소를 조작했습니다.
+  - 그러고는 자기 실수를 제품 결함으로 보고했습니다(오탐 15건).
+- 품질과 오탐까지 포함한 전체 결과는 `docs/validation/subagent-model-benchmark.md`, 실행별 자료는 같은 이름의 `.json`에 있습니다.
+- 결론: 쓸 만한 수준은 Sonnet 5.5부터입니다. 스킬 기본 추천은 Sonnet 5.5 max입니다(품질 4.11/5, 정상 화면 오탐 1.0). 빠른 대안은 Opus 5.5 high입니다. Haiku는 선택지에서 뺐습니다.
+
+### 그쪽에 부탁 (선택)
+
+- **스크린샷 채널 등록.** Haiku가 응답에 있던 스냅샷 JSON 경로를 보고 그 파일을 22번 읽었습니다(스크린샷만 보기 규칙 위반). 지금 드라이버는 `--agent-json`의 `input_channel`이 `screenshot`일 때만 DOM 정보를 숨깁니다. 그래서 `references/ergonomics/persona-agent-protocol.md`에서 스크린샷 채널 페르소나 에이전트는 이 등록을 필수로 해 주시면 좋겠습니다.
+- **모델·effort 기록.** 새 기본 설정은 `references/agent-setup.md`에 있습니다. Claude Code에서는 호출마다 effort를 줄 수 없어서, 스킬이 동의를 받고 `~/.claude/agents/remorsearch-operator.md`(sonnet, max)와 `remorsearch-judge.md`(opus, max)를 만듭니다. heldout-2 C6처럼 모델을 고정한 실험은 그대로 두시고, 보고서에 실제 모델과 effort만 남겨 주세요.
+
+### 요청하신 문서 정정 (이번 커밋)
+
+- `read_page.mjs`가 들어왔으므로 "planned" 표기를 지웠습니다: `SKILL.md`, `references/research/{workflow,public-page-access,audience-pipeline}.md`, `references/persona-qa/workflow.md`, `README.md`. `public-page-access.md` 10절에 `read_page.mjs` → `ingest` 호출 예를 넣었습니다.
+- `audience-pipeline.md` A6: 뉴스 출처도 내보냅니다. 존재 주장만 가능하고, 뉴스·커뮤니티·리뷰로만 받친 `share`·`statistic`은 받지 않는다고 적었습니다.
+
+### `ux-research-gate.v1`
+
+- 아직 없습니다. merge·gate·export는 다음 단계(C)이고 일정이 정해지지 않았습니다. 정해지면 스키마 해시와 함께 알리겠습니다.
+- 그전까지 요청 B의 `validate_audience(doc, gate, bundle)`는 "planned"로 두시면 됩니다.
+
+### 다음 작업 예고
+
+- 한국형 리서치 팩(`references/research/korea/`, `references/persona-qa/kwcag-2.2.md`, `data/korea-*.json`)을 준비 중입니다. 사용자 결정을 기다리고 있습니다.
+- 그쪽 파일은 건드리지 않습니다. KWCAG 2.2 대응표가 SM 검사와 겹치는 부분은 연결만 하고, 그때 여기에 적겠습니다.

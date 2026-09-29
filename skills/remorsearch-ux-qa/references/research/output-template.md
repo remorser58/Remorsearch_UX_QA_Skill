@@ -7,7 +7,6 @@ Use this structure for a deep research result. Keep the prose compact. Link offi
 - Product and surface:
 - Research date:
 - Tools available and used (browser tools by class, the reader, search tools) and fallbacks:
-- Engine rung R4: off / on (version)
 - Search count / budget:
 - Channels checked:
 - Official sources checked:
@@ -20,7 +19,7 @@ Use this structure for a deep research result. Keep the prose compact. Link offi
 
 ### Reader access table
 
-One row per host or channel (`references/public-page-access.md`, sections 6 and 16).
+One row per host or channel (`references/public-page-access.md`, sections 6 and 15).
 
 | Host or channel | Tools | Reads | Rungs used | Stops by class | Unread (untried rungs) | robots / TDM decision | Browser context |
 | --- | --- | --- | --- | --- | --- | --- | --- |
