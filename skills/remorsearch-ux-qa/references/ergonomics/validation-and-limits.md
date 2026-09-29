@@ -37,6 +37,19 @@ section 12.
    is judged by independent LLM judges that see the screenshot, the element and
    the rule. They do not see the answer key. The result estimates real
    precision.
+6. **External precision gate.** The semantics and layout checks are run on the
+   W3C ACT rule examples, which the ACT task force wrote, not this tool's authors
+   (`scripts/ergo_act.py`, rules fetched at a pinned commit). A Passed or
+   Inapplicable example reported as failing is a gate failure. At the last run:
+   0 false alarms on 82 such examples. Detection of the Failed examples: SM-01 4/5
+   (buttons) and 7/11 (links), SM-03 6/9, SM-02 16/16, SM-05 1/1, LY-01 2/5 (the
+   rest clip only at 200 % zoom, which is not rendered).
+7. **Trivial baselines.** Recall is reported next to what a detector that flags
+   every visible element would reach, and next to chance (the tool's own findings
+   moved to random elements). On heldout-mixed, flagging everything reaches strict
+   recall 0.95 with 36 clean-control units, against the swarm's 0.90. Recall alone
+   therefore says little; read it with noise, chance-corrected recall and
+   clean-twin discrimination (heldout-2 pre-registration, amendment 3).
 
 ## Results so far
 
@@ -110,7 +123,13 @@ Android ATF have not been run for comparison.
   - The inclusive floors were chosen from the development ablation.
 - **Blindness breaches.** Benchmark authors' completion summaries described some
   seeded defects to the tool author, for all three suites. The held-out suite's
-  timing-window metadata was printed once before scoring.
+  timing-window metadata was printed once before scoring. For heldout-2, stage
+  reports from its authoring workflow reached the tool author through a completion
+  notice (build notes beyond counts, no defect identity or selector); this is
+  disclosed in amendment 5 of its pre-registration, with the safeguards taken.
+- **Checks removed after evidence.** GM-06 (mashing) counted the presses the
+  script needed; it now emits nothing until a press-rate sweep exists. The GZ-01,
+  GZ-04, PC-05 and PT-05 checks are hypotheses (listed, never counted).
 - **Same model family and ontology.** The benchmark authors, the detector's
   author and the adjudicators are all Claude models. The authors wrote defects
   from this tool's spec: its categories and profile attributes. Recall therefore
@@ -136,10 +155,25 @@ Android ATF have not been run for comparison.
   scaled by hand length), touch-SD multipliers for walking, tremor and age,
   gaze priors (free viewing in Western labs) and notice bands are assumptions or
   foreign data. They can reorder findings; they never justify P0 alone.
+  - The walking, tremor and age multipliers are back-calculated from published
+    error rates or open data (see `params.py`). On the development suites they
+    found no defect that other checks missed, and changing their values by ±0.1
+    changed no detection. On a target of at least 7 mm, a finding that only
+    they produce is P3 at most. Whether they stay is decided once on heldout-2
+    (amendment 4).
 - **Gaze is free-viewing.** `gaze-priority-v2` does not model goal-directed
   search, so GZ findings are prompts to check hierarchy, capped at P3 (GZ-01).
 - **Timing needs measurement.** QTE and flash results depend on frame-accurate
   capture; software input injection under-reports latency.
+- **Flash screening is not certification.** GM-04 screens sampled frames on a
+  block grid within 10° fields. Neither it nor EA IRIS (whose extended-failure
+  rule it also applies) certifies anything. IRIS's default counts a transition
+  only when 25 % of the frame changes, so a local flash can pass IRIS and still
+  fail here. Broadcast or certification needs a certified process such as
+  Harding FPA.
+- **Keyboard checks are desktop-only and bounded.** The focus walk runs on mouse
+  and keyboard devices, at most 40 stops in 8 s per walk, on the end state and on
+  a fresh load of the first screen. Screens reached only mid-task are not walked.
 - **LLM persona agents are not users.** They find task-flow confusion, dead
   ends and missing feedback. They cannot evidence bodily difficulty, and they
   follow ambiguous goals differently from people. Scenario goals must include
