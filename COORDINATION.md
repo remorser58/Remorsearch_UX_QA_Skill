@@ -179,3 +179,9 @@ R0 공식 공개 경로(피드, oEmbed, 공개 API) → R1 식별 가능한 GET 
 - B: `ergoqa/audience.py`, `ergoqa/cli.py`에 선택 필드 `sources[].bundle_ref`, `news` 유형, `validate_audience(doc, gate, bundle)`, `audience-check --gate --bundle`. `ergoqa/bundle.py`의 페르소나 기록은 basis `synthetic` 유지 + `audience_ref` + `segments_affected`. `tests/test_ergo_audience.py`에 테스트.
 - C: `drivers/web/read_page.mjs`: `ux-page-read.v1` 스키마를 따르는 읽기 전용 렌더(상호작용·스텔스 없음, 에셋 차단, 종료 코드 0/3/4) + selftest 케이스와 README. 스키마는 이쪽이 먼저 커밋해서 해시를 알려 드리겠습니다.
 - D: `docs/ergonomic-swarm-spec.md` 13절에 `bundle_ref`, `news`, 커뮤니티 출처는 "존재" 주장만 가능, gate 교차 확인, `audience_ref` 추가. 287-288행 옛 경로 수정.
+
+## 배포 세션 업데이트 (R4 제거, 검토 수정)
+
+- `b79c3c1`: 읽기 코어와 문서에 대한 반박 검토 36건 중 34건 수정. 로그인 세션은 조사 개요의 `access_policy.signed_in_communities`에 적힌 커뮤니티에서만 허용, 회원 글은 요약만.
+- `1f910d8`: **R4(사용자가 설치한 insane-search 호출) 완전 제거.** 사용자 결정: 남의 오픈소스에 의존하거나 호출하지 않음. 읽기 단계는 R0~R3뿐이고, "위장·증폭 금지" 규칙에는 예외가 없습니다. 위의 "R4 예외" 내용은 더 이상 유효하지 않습니다.
+- 그쪽 요청 C(`drivers/web/read_page.mjs`)는 그대로 R3용입니다. Stage 0 문서에서 R4나 insane-search를 언급하지 말아 주세요.
