@@ -1,0 +1,237 @@
+"""robots.txt (RFC 9309) parsing and matching, plus page-level opt-out signals.
+
+Our own parser and matcher. The group is chosen by product token
+(case-insensitive; every group naming the token is merged; '*' groups are the
+fallback). Among the rules of that group the longest matching pattern wins and
+Allow wins a tie. '*' matches any run of characters and a trailing '$' anchors
+the end. Paths and patterns are compared after percent-encoding normalisation.
+urllib.robotparser is not used for decisions: it takes the first matching rule
+and matches prefixes only, so 'Disallow: /board/' plus 'Allow: /board/view'
+would deny /board/view there.
+
+Fetch status: 2xx is parsed; 4xx means unavailable (allowed); 5xx, 429 or a
+network failure means unreachable (disallow everything); a challenge page
+instead of the file is recorded as unavailable_bot_filtered (allowed for the
+honest rungs, never enough for the opt-in engine rung).
+"""
+from __future__ import annotations
+
+import hashlib
+import re
+from dataclasses import dataclass, field
+from urllib.parse import urlsplit
+
+PARSE_LIMIT_BYTES = 512 * 1024
+STATUSES = ("ok", "unavailable", "unavailable_bot_filtered", "unreachable")
+_UNRESERVED = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
+_HEX = frozenset("0123456789abcdefABCDEF")
+_AGENT_KEYS = {"user-agent", "useragent", "user agent"}
+_VALUE_DIRECTIVES = {"unavailable_after", "max-snippet", "max-image-preview", "max-video-preview"}
+
+
+@dataclass
+class Group:
+    agents: list = field(default_factory=list)
+    rules: list = field(default_factory=list)  # [allow: bool, pattern: str]
+    crawl_delay: float | None = None
+    request_rate_s: float | None = None
+
+
+def normalize_path(value: str) -> str:
+    """Percent-encode non-ASCII and control octets, decode unreserved escapes, upper-case the rest."""
+    raw = value.encode("utf-8", "surrogatepass")
+    out: list[str] = []
+    i = 0
+    while i < len(raw):
+        octet = raw[i]
+        if octet == 0x25 and i + 2 < len(raw) and chr(raw[i + 1]) in _HEX and chr(raw[i + 2]) in _HEX:
+            decoded = int(raw[i + 1:i + 3], 16)
+            out.append(chr(decoded) if chr(decoded) in _UNRESERVED else "%" + raw[i + 1:i + 3].decode("ascii").upper())
+            i += 3
+            continue
+        out.append(f"%{octet:02X}" if octet >= 0x7F or octet <= 0x20 else chr(octet))
+        i += 1
+    return "".join(out)
+
+
+def target_of(url: str) -> str:
+    parts = urlsplit(url)
+    path = parts.path or "/"
+    return normalize_path(path + (f"?{parts.query}" if parts.query else ""))
+
+
+def _float(value: str) -> float | None:
+    try:
+        number = float(value.strip())
+    except ValueError:
+        return None
+    return number if 0 <= number < 86400 else None
+
+
+def _rate(value: str) -> float | None:
+    match = re.fullmatch(r"\s*(\d+)\s*/\s*(\d+)\s*([smh]?)\s*", value.lower())
+    if not match or int(match.group(1)) == 0:
+        return None
+    seconds = int(match.group(2)) * {"": 1, "s": 1, "m": 60, "h": 3600}[match.group(3)]
+    return seconds / int(match.group(1))
+
+
+def parse(text: str) -> list[Group]:
+    groups: list[Group] = []
+    current: Group | None = None
+    in_rules = False
+    for line in re.split(r"\r\n|\r|\n", text[:PARSE_LIMIT_BYTES]):
+        line = line.split("#", 1)[0].strip()
+        if ":" not in line:
+            continue
+        key, _, value = line.partition(":")
+        key, value = key.strip().lower(), value.strip()
+        if key in _AGENT_KEYS:
+            if current is None or in_rules:
+                current = Group()
+                groups.append(current)
+                in_rules = False
+            current.agents.append(value)
+            continue
+        if current is None:
+            continue  # rules before any user-agent line belong to no group
+        if key in ("allow", "disallow"):
+            in_rules = True
+            if value:
+                current.rules.append([key == "allow", normalize_path(value)])
+        elif key == "crawl-delay":
+            in_rules = True
+            current.crawl_delay = _float(value)
+        elif key == "request-rate":
+            in_rules = True
+            current.request_rate_s = _rate(value)
+    return groups
+
+
+def _agent_token(agent: str) -> str:
+    return re.split(r"[/\s]", agent.strip().lower(), maxsplit=1)[0]
+
+
+def select(groups: list[Group], token: str) -> dict:
+    """Merge the groups for `token`, else the '*' groups. Returns rules and pacing hints."""
+    wanted = token.lower()
+    chosen = [g for g in groups if any(_agent_token(a) == wanted for a in g.agents)]
+    label = token
+    if not chosen:
+        chosen = [g for g in groups if any(a.strip() == "*" for a in g.agents)]
+        label = "*" if chosen else None
+    rules: list = []
+    for group in chosen:
+        for rule in group.rules:
+            if rule not in rules:
+                rules.append(rule)
+    delays = [g.crawl_delay for g in chosen if g.crawl_delay is not None]
+    rates = [g.request_rate_s for g in chosen if g.request_rate_s is not None]
+    return {"group": label, "rules": rules, "crawl_delay": max(delays) if delays else None,
+            "request_rate_s": max(rates) if rates else None}
+
+
+def pattern_matches(pattern: str, target: str) -> bool:
+    """Glob match without regular expressions (no backtracking blow-up on hostile files)."""
+    if pattern.endswith("$"):
+        pattern = pattern[:-1]
+    else:
+        pattern += "*"
+    p = s = 0
+    star, mark = -1, 0
+    while s < len(target):
+        if p < len(pattern) and pattern[p] == "*":
+            star, mark = p, s
+            p += 1
+        elif p < len(pattern) and pattern[p] == target[s]:
+            p += 1
+            s += 1
+        elif star >= 0:
+            p = star + 1
+            mark += 1
+            s = mark
+        else:
+            return False
+    while p < len(pattern) and pattern[p] == "*":
+        p += 1
+    return p == len(pattern)
+
+
+def match(rules: list, target: str) -> tuple[bool, dict | None]:
+    """Longest match wins; Allow wins a tie; no match means allowed."""
+    if target == "/robots.txt":
+        return True, None
+    best = None
+    for allow, pattern in rules:
+        if pattern and pattern_matches(pattern, target):
+            key = (len(pattern), bool(allow))
+            if best is None or key > best[0]:
+                best = (key, bool(allow), pattern)
+    if best is None:
+        return True, None
+    return best[1], {"type": "allow" if best[1] else "disallow", "pattern": best[2]}
+
+
+def record_from_fetch(origin: str, *, status: int | None, body: bytes = b"", error: str | None = None,
+                      challenge: bool = False, token: str, fetched_at: str) -> dict:
+    """Interpret one robots.txt fetch as a cacheable record."""
+    record = {"origin": origin, "http_status": status, "fetched_at": fetched_at, "error": error,
+              "sha256": hashlib.sha256(body).hexdigest() if body else None,
+              "group": None, "rules": [], "crawl_delay": None, "request_rate_s": None}
+    if error == "redirect_loop":
+        record["status"] = "unavailable"  # RFC 9309: more than five redirects may be treated as unavailable
+    elif error is not None or status is None:
+        record["status"] = "unreachable"
+    elif status == 429 or status >= 500:
+        record["status"] = "unreachable"
+    elif challenge:
+        record["status"] = "unavailable_bot_filtered"
+    elif 200 <= status < 300:
+        record["status"] = "ok"
+        record.update(select(parse(body[:PARSE_LIMIT_BYTES].decode("utf-8-sig", "replace")), token))  # BOM-safe
+    else:
+        record["status"] = "unavailable"
+    return record
+
+
+def decide(record: dict, url: str) -> dict:
+    """Decision for one URL against a cached robots record."""
+    status = record["status"]
+    base = {"robots_status": status, "http_status": record.get("http_status"), "group": record.get("group"),
+            "sha256": record.get("sha256"), "crawl_delay": record.get("crawl_delay")}
+    if status == "unreachable":
+        return {**base, "allowed": False, "decision": "disallowed",
+                "rule": {"type": "disallow", "pattern": "/*", "reason": "robots.txt unreachable: complete disallow"}}
+    if status != "ok":
+        return {**base, "allowed": True, "decision": "allowed", "rule": None}
+    allowed, rule = match(record["rules"], target_of(url))
+    return {**base, "allowed": allowed, "decision": "allowed" if allowed else "disallowed", "rule": rule}
+
+
+def _x_robots(value: str, token: str) -> set[str]:
+    found: set[str] = set()
+    agent = None
+    for item in value.split(","):
+        item = item.strip().lower()
+        if ":" in item:
+            head, _, tail = item.partition(":")
+            if head.strip() not in _VALUE_DIRECTIVES:
+                agent, item = head.strip(), tail.strip()
+        if item and (agent is None or agent == token.lower()):
+            found.add(item.split(":", 1)[0].strip())
+    return found
+
+
+def page_optouts(headers: dict, meta_robots: list, tdm_meta: str | None, token: str) -> list[str]:
+    """X-Robots-Tag or robots meta 'noai', and TDM reservation (header or meta)."""
+    reasons: list[str] = []
+    if "noai" in _x_robots(headers.get("x-robots-tag", ""), token):
+        reasons.append("x-robots-tag:noai")
+    for name, content in meta_robots:
+        if name in ("robots", token.lower()) and "noai" in {p.strip().lower() for p in content.split(",")}:
+            reasons.append(f"meta-{name}:noai")
+    if headers.get("tdm-reservation", "").strip() == "1":
+        reasons.append("tdm-reservation:header")
+    if (tdm_meta or "").strip() == "1":
+        reasons.append("tdm-reservation:meta")
+    return reasons

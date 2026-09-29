@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/remorser58/ux-research-qa-skills/schemas/ux-research-brief.v1.schema.json",
+  "title": "UX Research Brief v1",
+  "description": "What one research run is about and the limits it runs under. Read by `ux_research.py start --brief`, which checks these shapes itself. Budgets above the defaults need a recorded reason and can never pass the maxima. The opt-in engine rung is off unless this run turns it on, and the choice is never saved between runs.",
+  "type": "object",
+  "required": ["schema_version", "product"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "ux-research-brief.v1"},
+    "product": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string", "minLength": 1, "maxLength": 200},
+        "surface": {"type": "string", "description": "web, mobile web, iOS app, Android app, kiosk ..."},
+        "url": {"type": "string", "format": "uri"},
+        "locale": {"type": "string", "description": "BCP 47 tag, for example ko-KR"},
+        "category": {"type": "string"},
+        "release_date": {"type": "string", "format": "date", "description": "release of the current version; older evidence may be stale"},
+        "current_version": {"type": "string"}
+      }
+    },
+    "personas_for": {
+      "enum": ["persona-qa", "ergonomics", "both"],
+      "description": "which mode the audience evidence will feed"
+    },
+    "audience_questions": {
+      "type": "array",
+      "description": "The Stage 0 questions this run answers (default: all eight).",
+      "items": {
+        "enum": ["segments", "weight", "priority", "devices_and_grips", "abilities_and_conditions",
+                 "contexts_of_use", "key_tasks", "pain_points"]
+      },
+      "uniqueItems": true
+    },
+    "languages": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Search and Accept-Language policy: Korean topics Korean first, global topics English first.",
+      "properties": {
+        "primary": {"type": "string", "pattern": "^[A-Za-z]{1,8}(-[A-Za-z0-9]{1,8}){0,3}$"},
+        "secondary": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^[A-Za-z]{1,8}(-[A-Za-z0-9]{1,8}){0,3}$"},
+          "maxItems": 5
+        }
+      }
+    },
+    "channels": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "include": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "exclude": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "time_windows": {
+      "type": "array",
+      "description": "Periods to cover, for example before and after a redesign.",
+      "items": {
+        "type": "object",
+        "required": ["from"],
+        "additionalProperties": false,
+        "properties": {
+          "from": {"type": "string", "format": "date"},
+          "to": {"type": "string", "format": "date"},
+          "label": {"type": "string"}
+        }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "per_host": {"type": "integer", "minimum": 1, "maximum": 100, "default": 30,
+                     "description": "document requests per host, escalation included; above 30 needs a reason"},
+        "per_run": {"type": "integer", "minimum": 1, "maximum": 500, "default": 200,
+                    "description": "document requests per run; above 200 needs a reason"},
+        "search_queries": {"type": "integer", "minimum": 1, "default": 120,
+                           "description": "search budget for discovery; warn at 80 %"},
+        "min_interval_s": {"type": "number", "minimum": 5, "default": 8,
+                           "description": "seconds between requests to one host; robots.txt Crawl-delay wins when longer"},
+        "reason": {"type": "string", "minLength": 1, "description": "why a budget is raised; recorded in the run"}
+      }
+    },
+    "access_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "engine_opt_in": {"type": "boolean", "default": false,
+                          "description": "the opt-in engine rung R4 for this run only; not available until the engine adapter ships"},
+        "deny_hosts": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true,
+                       "description": "hosts the researcher excludes; a name also covers its subdomains"},
+        "allow_wayback_for_official": {"type": "boolean", "default": true,
+                                       "description": "past versions of official or product pages only; never community content"},
+        "render": {"enum": ["driver", "host_browser", "off"], "default": "host_browser",
+                   "description": "how R3 renders happen: the web driver, the researcher's own anonymous browser plus ingest, or not at all"},
+        "signed_in_communities": {"type": "array", "maxItems": 0, "default": [],
+                                  "description": "Reserved. Signed-in reading of communities the user authorises is not supported by this reader version, so the list must stay empty; `start` refuses entries and `ingest --context signed_in` is refused."}
+      }
+    },
+    "team_analytics_available": {"type": "boolean",
+                                 "description": "the team can provide analytics or store-console exports (team_provided sources)"},
+    "report_lang": {"type": "string"}
+  }
+}

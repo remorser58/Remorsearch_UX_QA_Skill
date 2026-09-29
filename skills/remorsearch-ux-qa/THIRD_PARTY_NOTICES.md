@@ -54,6 +54,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   `npm install` in `drivers/web/` for the live web driver.
 - **Aside** (optional browser research tool), installed and licensed by its own
   distributor.
+- **insane-search** (github.com/fivetaku/insane-search, MIT License, Copyright (c)
+  2026 fivetaku): the optional engine behind the reader's opt-in rung R4
+  (`references/research/public-page-access.md`). This folder does not include,
+  install or update it. When a user installs it and turns the rung on for a run,
+  it runs as the user's own tool, with its own dependencies (such as curl_cffi)
+  and its own DISCLAIMER.
+- Other browser tools that an agent host provides, such as Claude in Chrome,
+  Playwright MCP or Chrome DevTools MCP, are used through the host. They are not
+  part of this folder.
 
 ## Studied as references only (no code included)
 
@@ -66,6 +75,27 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   inspected for the loop mode; no OMO code or installation is redistributed.
 - **Nemotron-Personas-Korea** (NVIDIA, CC BY 4.0): persona records may be linked
   at run time by the user; no dataset rows are included in this folder.
+- **insane-search** (github.com/fivetaku/insane-search, part of the gptaku-plugins
+  collection, MIT License, Copyright (c) 2026 fivetaku). Ideas used in the
+  public-page reader (`scripts/ux_research.py`, `uxresearch/`) and
+  `references/research/public-page-access.md`: official routes first, with
+  cheapest-first escalation; graded verdicts, because HTTP 200 is not success;
+  honest reporting of untried routes; an SSRF guard that re-checks every redirect;
+  an untrusted-content envelope for page text; and the rule that generic code
+  names no sites. We deliberately did not adopt its TLS-impersonation grid,
+  stealth browsers, cookie and clearance bridging, search-page scraping or archive
+  sidecars.
+- **insane-research** (github.com/fivetaku/insane-research, MIT License, Copyright
+  (c) 2026 fivetaku). Ideas used in `references/research/audience-pipeline.md` and
+  `references/research/source-grading.md`: phase contracts; claim status computed
+  by a gate with a data-flow lock; independence counting; the EXPAND lead loop;
+  schema-forced reader returns merged by code; and a report gate with an annex. We
+  changed its grading, so grades depend on the claim kind, and its unit of
+  independence, so people count and not only organisations.
+
+No code, text, marker lists or tables from insane-search or insane-research are
+included in this folder.
 
 Research papers, standards and guidelines cited in the references (for example
-WCAG 2.2, ISO 9241 and human-factors studies) are cited, not reproduced.
+WCAG 2.2, ISO 9241, RFC 9309, the TDM Reservation Protocol and human-factors
+studies) are cited, not reproduced.
