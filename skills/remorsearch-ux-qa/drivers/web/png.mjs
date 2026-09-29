@@ -56,26 +56,41 @@ export function decodePng(buf) {
   const raw = zlib.inflateSync(Buffer.concat(idat));
   if (raw.length < (stride + 1) * height) throw new Error('PNG image data too short');
   const out = new Uint8Array(stride * height);
+  // One loop per row filter (flash frames are decoded many times a second).
   for (let y = 0; y < height; y++) {
     const filter = raw[y * (stride + 1)];
     const src = y * (stride + 1) + 1;
     const dst = y * stride;
     const prev = dst - stride;
-    for (let x = 0; x < stride; x++) {
-      const v = raw[src + x];
-      const a = x >= channels ? out[dst + x - channels] : 0;
-      const b = y > 0 ? out[prev + x] : 0;
-      const c = x >= channels && y > 0 ? out[prev + x - channels] : 0;
-      let r;
-      switch (filter) {
-        case 0: r = v; break;
-        case 1: r = v + a; break;
-        case 2: r = v + b; break;
-        case 3: r = v + ((a + b) >> 1); break;
-        case 4: r = v + paeth(a, b, c); break;
-        default: throw new Error(`bad PNG filter ${filter}`);
-      }
-      out[dst + x] = r & 0xff;
+    const first = y === 0;
+    switch (filter) {
+      case 0:
+        out.set(raw.subarray(src, src + stride), dst);
+        break;
+      case 1:
+        for (let x = 0; x < stride; x++) out[dst + x] = raw[src + x] + (x >= channels ? out[dst + x - channels] : 0);
+        break;
+      case 2:
+        if (first) out.set(raw.subarray(src, src + stride), dst);
+        else for (let x = 0; x < stride; x++) out[dst + x] = raw[src + x] + out[prev + x];
+        break;
+      case 3:
+        for (let x = 0; x < stride; x++) {
+          const a = x >= channels ? out[dst + x - channels] : 0;
+          const b = first ? 0 : out[prev + x];
+          out[dst + x] = raw[src + x] + ((a + b) >> 1);
+        }
+        break;
+      case 4:
+        for (let x = 0; x < stride; x++) {
+          const a = x >= channels ? out[dst + x - channels] : 0;
+          const b = first ? 0 : out[prev + x];
+          const c = x >= channels && !first ? out[prev + x - channels] : 0;
+          out[dst + x] = raw[src + x] + paeth(a, b, c);
+        }
+        break;
+      default:
+        throw new Error(`bad PNG filter ${filter}`);
     }
   }
   return { width, height, channels, data: out };

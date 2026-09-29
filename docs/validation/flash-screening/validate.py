@@ -39,6 +39,7 @@ EXPECTED = {
     "SC-flash-f-scroll-text": "pass",    # high-contrast text scrolling
     "SC-flash-g-static": "pass",         # static page
     "SC-flash-h-feed-scroll": "pass",    # user scrolls a feed
+    "SC-flash-j-feed-scroll-inner": "pass",  # the same feed in an app-shell scroll box
     "SC-flash-i-slow": "pass",           # 1 Hz full-screen change
 }
 
