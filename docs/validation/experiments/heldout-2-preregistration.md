@@ -240,3 +240,45 @@ H1–H7 verdicts are still computed and reported. What is added:
      attributed detections = 0 and clean-control units from those multipliers ≥ 3.
      Profile-only PT-04 then moves to the hypothesis tier. `one_hand_thumb` stays.
    - Otherwise the multipliers stay, with the observed numbers reported.
+
+### Amendment 5 (2026-09-29, custody incident, before the freeze and before any heldout-2 recording)
+
+Disclosure. The rule is that the tool author reads no heldout-2 key, page or
+scenario content and sees aggregates only. It was broken three times, without
+opening any suite file:
+
+1. **Stage reports in a workflow notification.** When the authoring workflow
+   stopped at the account usage limit, its completion notice carried the authoring
+   agents' stage reports into the author's session. Beyond counts, they contained
+   build notes:
+   - rhythm: an animation on one seeded element was moved so scripted taps reach
+     it; DOM order was set so focus order follows the screen order in both
+     variants; a settings row was tightened to fit 360 × 780; a shared,
+     non-seeded pad border was raised to about 3.7:1 contrast; a data attribute was
+     added for the success condition; 38 steps, 3 timing windows, galaxy-s24 and
+     galaxy-a55.
+   - expense: both variants were checked for text size, click-target size and
+     spacing, 320 px and 200 % reflow, keyboard focus handling and focus hidden
+     by a fixed bar, plus an axe-core cross-check; counts by evidence type,
+     audience relevance, severity and profile condition; a desktop mouse and
+     keyboard product; 27 steps, 2 transient-text windows, laptop-1440 and
+     desktop-1920.
+2. **Journal preview.** The first 150 characters of each stage result in the
+   workflow journal, read to check progress (counts only).
+3. **File names and modification times** of heldout-2 files, printed by a
+   command whose name-masking pattern failed (no content).
+
+No defect identity, selector, profile condition or variant assignment was seen.
+
+Effect on the detector:
+- The round 10 focus-check code (AUT-09, AUT-13) was written, self-tested and
+  gated on the ACT examples before the notice arrived. Its commit (`197865f`)
+  came after the notice, and only its decision-log text was written afterwards.
+- From here to the freeze, a detector change must cite a dev-suite result or an
+  external source (standard, ACT example, paper), as before. None may cite these
+  notes.
+
+Process fixes:
+- The blind verification stage reports changes only as counts per file.
+- Blind workflows are no longer resumed from their journals by the author. The
+  remaining stages are relaunched with an explicit start stage instead.
