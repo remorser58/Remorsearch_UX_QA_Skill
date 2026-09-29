@@ -606,6 +606,8 @@ async function exitCodeTests(base, tmp) {
   const out = path.join(tmp, 'runs');
   let r = await runDriver(['run', '--profile', p, '--out', out]);
   check('usage: missing --scenario exits 2', r.code === 2, r.err);
+  r = await runDriver(['serve', '--scenario', sc, '--profile', p, '--out', out, '--base', base, '--port', '0']);
+  check('usage: serve without an operator record (--agent-json) exits 2', r.code === 2 && /agent-json/.test(r.err), r.err);
   r = await runDriver(['run', '--scenario', sc, '--device', 'nokia-3310', '--out', out, '--base', base]);
   check('usage: unknown device exits 2', r.code === 2 && /unknown device/.test(r.err), r.err);
   r = await runDriver(['run', '--scenario', sc, '--profile', p, '--out', out]);

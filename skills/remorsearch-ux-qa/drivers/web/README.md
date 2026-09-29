@@ -29,7 +29,8 @@ node drivers/web/ergo_drive.mjs run --scenario sc.json --profile p.json --out ru
   [--run-id R-x] [--base http://127.0.0.1:8765] [--flash-sample-ms 1000]
 
 # Interactive: an LLM persona agent looks at each screenshot and picks the next action
-node drivers/web/ergo_drive.mjs serve --scenario sc.json --profile p.json --out runs/ --port 9477
+# (--agent-json is required: the operator record, see persona-agent-protocol.md)
+node drivers/web/ergo_drive.mjs serve --scenario sc.json --profile p.json --agent-json agent.json --out runs/ --port 9477
 
 # Self-test (local fixture server, ~1 minute)
 node drivers/web/selftest.mjs [--keep]

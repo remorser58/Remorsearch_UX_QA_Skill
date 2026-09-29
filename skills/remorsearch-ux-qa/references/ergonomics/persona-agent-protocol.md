@@ -29,6 +29,12 @@ Any ergonomic number that appears in LLM text is discarded.
   only the PNG, the URL, the title and the step result: no snapshot JSON path,
   element count, target element id, hit flag or DOM feedback latency. The agent
   must not open files in the run directory other than the PNGs.
+- The operator record is required: `serve` refuses to start without
+  `--agent-json` (exit 2). A screenshot-channel agent must be registered as
+  `input_channel: "screenshot"`; otherwise the replies name the snapshot JSON and
+  the run cannot be counted as a screenshot-only rater. In the model benchmark an
+  unregistered agent read that JSON 22 times
+  (`docs/validation/subagent-model-benchmark.md`).
 
 Do not give the agent demographics as a voice ("as a 67-year-old woman I…"),
 MBTI types or traits inferred from demographics. Demographics choose scenarios;
@@ -38,7 +44,7 @@ they do not produce opinions.
 
 ```sh
 node drivers/web/ergo_drive.mjs serve --scenario sc.json --profile ep-05.json \
-  --out runs/ --port 9477 &
+  --agent-json agent.json --out runs/ --port 9477 &
 ```
 
 For each step (maximum from the scenario, default 25):
@@ -101,7 +107,8 @@ recorded (UXD checks in `docs/human-factors/ux-design-discipline.md`).
 
 ## 5. Replication before escalation
 
-Start every interactive run with an operator record:
+Start every interactive run with an operator record (required; record the
+model and effort actually used, `"effort": "max"` for example):
 
 ```sh
 node drivers/web/ergo_drive.mjs serve ... --agent-json agent.json
