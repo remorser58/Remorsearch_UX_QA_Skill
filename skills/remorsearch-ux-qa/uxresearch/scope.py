@@ -30,7 +30,7 @@ alternate, in this order:
                   or reported ('reported') terms restrict automated collection.
                   A stop, terms_restricted, and a coverage gap. Every entry that
                   covers the URL's host must be lifted, each by a check of its
-                  own; a confirmed entry is never lifted (see lift_record).
+                  own; lift_requires decides whether it can be lifted.
 
 Host names cover their subdomains in every list; path prefixes match whole path
 segments, case-insensitively, on the raw path and on its normalised forms (dot
@@ -58,7 +58,8 @@ from . import verdict
 
 DATA = Path(__file__).resolve().parent / "data"
 STATUSES = ("reported", "confirmed")
-LIFT_REQUIREMENTS = ("terms_check", "written_permission")
+LIFT_REQUIREMENTS = ("never", "written_permission", "terms_check")
+TERMS_POLICY_VERSION = "lift_requires.v1"  # older runs must restart; previously ignored checks stay inactive
 RESTRICTS = ("automated_collection", "bulk_collection", "ai_input", "storage")
 CHECK_RESULTS = ("permits_this_reading", "restricts_this_reading", "unclear")
 LIFTING_RESULT = "permits_this_reading"
@@ -214,6 +215,8 @@ def _endpoint_guard(url: str) -> tuple[str, str] | None:
 
 def _documents(entry: dict) -> list:
     """The terms documents a check may cite to lift this entry: terms_url and terms_urls."""
+    if not entry.get("terms_url"):
+        return []  # a missing primary document cannot be lifted by an alias alone
     urls = [entry.get("terms_url")] + list(entry.get("terms_urls") or [])
     return list(dict.fromkeys(u for u in urls if isinstance(u, str) and u.strip()))
 
@@ -338,12 +341,12 @@ def terms_entry(host: str, lists: Lists) -> dict | None:
 
 
 def _status(entry: dict) -> str:
-    return entry.get("status") if entry.get("status") in STATUSES else "confirmed"  # unknown: never lifted
+    return entry.get("status") if entry.get("status") in STATUSES else "reported"
 
 
 def _requires(entry: dict) -> str:
     value = entry.get("lift_requires")
-    return value if value in LIFT_REQUIREMENTS else "written_permission"  # unknown: the stricter need
+    return value if value in LIFT_REQUIREMENTS else "never"  # missing or unknown: fail closed
 
 
 def check_applies(check: dict, entry: dict) -> bool:
@@ -365,7 +368,7 @@ def _check_brief(check: dict) -> dict:
 
 def lift_record(entry: dict, host: str, policy: dict) -> dict:
     """What the run records about one terms entry for one URL's host, lifted or not. The entry is lifted only
-    when it is 'reported', a check of the user's covers the host (its host is the URL's host or a parent of
+    when its lift_requires permits it, a check of the user's covers the host (its host is the URL's host or a parent of
     it), is for this entry (check_applies), says permits_this_reading, and, for an entry that needs written
     permission, records that permission; any check for the entry that covers the host and does not permit
     the reading keeps it closed, and so does a check dated before the restriction came into force."""
@@ -381,8 +384,8 @@ def lift_record(entry: dict, host: str, policy: dict) -> dict:
     if requires == "written_permission":
         usable = [c for c in usable if isinstance(c.get("permission"), dict)]
     chosen = max(usable, key=lambda c: len(str(c.get("host")))) if usable else None
-    if status == "confirmed":
-        why = "confirmed_never_lifted"
+    if requires == "never":
+        why = "lift_requires_never"
     elif blocking:
         why = f"check_result:{blocking[0].get('result')}"
     elif chosen is not None:
@@ -589,7 +592,15 @@ def evaluate(url: str, policy: dict, lists: Lists, *, _depth: int = 0) -> tuple[
     record = combine([lift_record(entry, host, policy) for entry in entries])
     if record["lifted"]:
         return None, record
-    return ScopeStop("terms", "terms_restricted", terms_reasons(record), note=TERMS_NOTE, terms=record,
+    lift_notes = []
+    for item in record["entries"]:
+        if not item["lifted"]:
+            action = ("this restriction cannot be lifted" if item["lift_requires"] == "never" else
+                      "a lift needs the user's current terms check and prior written permission" if
+                      item["lift_requires"] == "written_permission" else "a lift needs the user's current terms check")
+            lift_notes.append(f"{item['entry']} (lift_requires: {item['lift_requires']}): {action}")
+    return ScopeStop("terms", "terms_restricted", terms_reasons(record),
+                     note=TERMS_NOTE + "; " + "; ".join(lift_notes), terms=record,
                      detail=f"terms_restricted ({record['status']}): {record['entry']}"), None
 
 
@@ -614,8 +625,8 @@ def _entry_effect(check: dict, entry: dict) -> tuple[str, bool]:
     if not verdict.host_matches(name, entry["hosts"]):
         return (f"does not lift {entry_id}: the check's host {name} is broader than the entry's hosts ({hosts}); "
                 "only a check for one of those hosts (or a narrower one) lifts it"), False
-    if _status(entry) == "confirmed":
-        return f"{entry_id} is confirmed and is never lifted", False
+    if _requires(entry) == "never":
+        return f"{entry_id}: lift_requires_never; this restriction is never lifted", False
     if not check_applies(check, entry):
         documents = ", ".join(_documents(entry)) or "none: this entry lists no terms document, so no check lifts it"
         return (f"does not lift {entry_id}: the check's terms_url is not this entry's terms document "
@@ -629,7 +640,7 @@ def _entry_effect(check: dict, entry: dict) -> tuple[str, bool]:
         return f"does not lift {entry_id}: its terms require prior written permission, and the check records none", \
             False
     extra = " with the written permission it records" if _requires(entry) == "written_permission" else ""
-    return (f"lifts {entry_id} (reported){extra} for URLs under {name}, when every other entry covering a URL is "
+    return (f"lifts {entry_id} ({_status(entry)}){extra} for URLs under {name}, when every other entry covering a URL is "
             f"lifted by its own check; at most {LIFTED_HOST_BUDGET} documents under this entry"), True
 
 
@@ -677,8 +688,8 @@ def describe_lifts(policy: dict, lists: Lists) -> list:
         if row["lifted_by"]:
             row["effect"] = (f"lifted for URLs under {', '.join(row['lifted_by'])} (hosts {hosts}) when every other "
                              f"entry covering the URL is lifted too; at most {LIFTED_HOST_BUDGET} documents")
-        elif row["status"] == "confirmed":
-            row["effect"] = "confirmed: never lifted"
+        elif row["lift_requires"] == "never":
+            row["effect"] = "lift_requires_never: never lifted"
         else:
             row["effect"] = f"not lifted: no check of its own lifts it (hosts {hosts})"
     return list(rows.values())
@@ -780,7 +791,7 @@ def validate_lifts(policy: dict, lists: Lists) -> None:
         if item.get("result") != LIFTING_RESULT:
             continue
         for entry in lists.terms:
-            if _status(entry) != "reported" or not check_applies(item, entry):
+            if _requires(entry) == "never" or not check_applies(item, entry):
                 continue
             since = entry.get("effective_from")
             if isinstance(since, str) and str(item.get("checked_on") or "") < since:
@@ -830,6 +841,11 @@ def check_run_table(run_routes: dict) -> list:
     official route, unless it is an unchanged copy of the packaged platform."""
     base = packaged()
     problems: list = []
+    for table in (base,) if run_routes is base else (base, run_routes):
+        for item in _items(table, "terms_restricted"):
+            if item.get("lift_requires") not in LIFT_REQUIREMENTS:
+                problems.append(f"terms_restricted entry {item.get('id')} needs an explicit lift_requires "
+                                f"({', '.join(LIFT_REQUIREMENTS)}); a missing or unknown value is never liftable")
     if not isinstance(run_routes, dict) or run_routes is base:
         return problems
     for name in ("terms_restricted", "discovery", "third_party_copies"):

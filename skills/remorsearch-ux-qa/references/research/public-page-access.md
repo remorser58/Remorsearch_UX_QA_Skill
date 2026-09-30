@@ -691,18 +691,18 @@ Band, KakaoTalk open chat, Danggeun, Coupang, the delivery apps and the Korean
 store pages. For each it gives the public scope, the legitimate routes, the stops
 to expect and the terms status. Several stop by default because their terms
 restrict automated collection: every Naver host (the blog RSS feeds and Naver
-Cafe included), DC Inside and Coupang, and their short links such as naver.me,
+Cafe included), DC Inside, Coupang, Daangn, Clien and App Store pages/feeds, and their short links such as naver.me,
 me2.do and coupa.ng (section 17).
 
 | Channel | Try first | Notes |
 | --- | --- | --- |
 | YouTube | The Data API only (R0, official-only mode), with the user's own key in `REMORSEARCH_YOUTUBE_API_KEY` (alias `YOUTUBE_API_KEY`) | Pages are terms_restricted (confirmed): never read, rendered or captured. Comments come only through the Data API: watch, youtu.be, shorts, live and embed URLs are read with `videos.list` and `commentThreads.list` (top-level comments, by relevance). Channel, community, playlist and search pages have no route and stay a coverage gap. With no key, the URL is a coverage gap and a question for the user (section 17). Front ends that show YouTube videos, such as Invidious- or Piped-style hosts, are third-party copies and stop the same way (section 11). |
 | Instagram, Threads, Facebook | None | terms_restricted (confirmed): Meta's Automated Data Collection Terms. No route in this version. Threads covers threads.com and threads.net. Facebook groups are out of scope. |
-| App Store | R0 the public customer-reviews feed for the app and country | |
+| App Store | Authorized own-app App Store Connect exports (`team_provided`) | Pages and public customer-review feeds stop under apple-app-store-terms (`never`). The executable feed route is removed. |
 | Google Play | The team's Play Console export (`team_provided`) first; an R3 render shows only the first reviews without clicks | Terms unchecked. App Store Connect exports work the same way. |
-| Reddit | R0 the `.rss` feed of a subreddit or thread | |
-| Hacker News | R1; the public Algolia HN API has no adapter yet | The plain page is readable. |
-| X | None | terms_restricted (reported, `x-terms`): X's terms reportedly bar crawling or scraping without prior written consent. Pages, the oEmbed route (publish.twitter.com is an X host) and t.co short links stop before any request unless a terms check with written permission lifts the entry (section 17). No timelines, no search pages, no undocumented endpoints. |
+| Reddit | None until an entry-specific check and prior written permission lift reddit-terms | User Agreement section 7; robots.txt still applies to the page and RSS feed after a lift. |
+| Hacker News | Official-only Firebase API, once an adapter exists | Pages stop under hackernews-terms (`never`). Today the API reports official_route_unavailable. |
+| X | None | terms_restricted (reported, `x-terms`): X's terms reportedly bar crawling or scraping without prior written consent. Pages and t.co short links stop before any request unless a terms check with written permission lifts the entry (section 17). The executable oEmbed route is removed after an unauthenticated HTML response on 2026-09-30; no retirement notice was found. No timelines, no search pages, no undocumented endpoints. |
 | Bluesky | R3 render; the public AppView API (no key needed) has no adapter yet | |
 | Mastodon | R1, or R3 render; public API routes are planned | Not in the route table, because every server is its own host. Follow each server's rules. |
 | Discord, KakaoTalk open chat, Band, Telegram, Facebook groups, Everytime | None | Private channels. Out of scope: `read` stops them before any request (`out_of_scope: true`), and reports list them apart from the gaps (section 6). |
@@ -820,34 +820,62 @@ look for another way in.
 | --- | --- |
 | `id` | The entry's name, such as `youtube-terms` |
 | `hosts` | The hosts it covers. Each host covers its subdomains. |
-| `status` | `confirmed`: the clause was read in the platform's own terms. `reported`: the restriction is known from the press, a third party or a notice that was not read in the original, or the clause was not read in full. |
+| `status` | Evidence quality only: `confirmed` means the primary clause was read and checked; `reported` means provenance, wording or version is unresolved. Neither status decides liftability. |
 | `restricts` | What is restricted: `automated_collection`, `bulk_collection`, `ai_input` or `storage` |
-| `lift_requires` | What a lift needs besides the user's check: `terms_check`, or `written_permission` when the clause forbids automated collection without prior written permission or consent (the check must then record that permission, 17.5). A `confirmed` entry is never lifted either way. |
+| `lift_requires` | `never` prohibits a page lift; `written_permission` requires a current user check and applicable prior written permission; `terms_check` requires a current user check. Missing or unknown values fail closed and make `start` refuse the table. |
 | `official_route` | The packaged route table platform whose official route may still run (official-only mode, 17.3), or null |
 | `terms_url`, `terms_urls`, `clause` | Where the terms are (`terms_urls` lists other addresses of the same document, such as its mobile page), and what the clause says when it was read. A check lifts the entry only when it cites one of these documents; an entry with no `terms_url` cannot be lifted. |
 | `effective_from` | The day the restriction took effect, when the research gives one: a check dated before it lifts nothing. No date means no lower bound. |
 | `read_via`, `sources`, `checked_at`, `verified_at` | How and when the entry was checked. `verified_at` stays null until a person has read the primary page directly. |
 | `note` | What was not read, and anything else a reader of the entry needs |
 
-The entries in route table version 2026-09-30.3 (the route table decides):
+The entries in route table version 2026-09-30.4 (the route table decides):
 
-| Entry | Hosts | Status | A lift needs | Official route |
+| Entry | Hosts | Status | lift_requires | Official route |
 | --- | --- | --- | --- | --- |
-| `youtube-terms` | youtube.com, youtu.be, youtube-nocookie.com, youtubekids.com | confirmed | never lifted | `youtube` (the Data API, 17.4) |
-| `meta-instagram` | instagram.com, instagr.am, ig.me | confirmed | never lifted | none |
-| `meta-threads` | threads.com, threads.net | confirmed | never lifted | none |
-| `meta-facebook` | facebook.com, fb.com, fb.me, fb.watch, m.me | confirmed | never lifted | none |
-| `dcinside-terms` | dcinside.com | reported; a revision reported in force from 2026-07-21 (`effective_from`) | written permission | none |
-| `naver-cafe-bulk-notice` | cafe.naver.com, m.cafe.naver.com | reported; a notice of 2026-08-31 (`effective_from`) | written permission; no terms document is recorded yet, so no check lifts it | none |
-| `naver-terms` | naver.com (every Naver host, the blog RSS feeds included), naver.me, me2.do | reported | written permission | none |
-| `coupang-terms` | coupang.com, coupa.ng | reported, low confidence | written permission | none |
-| `x-terms` | x.com, twitter.com, t.co | reported | written permission | none |
+| `youtube-terms` | youtube.com, youtu.be, youtube-nocookie.com, youtubekids.com | confirmed | `never` | `youtube` (the Data API, 17.4) |
+| `meta-instagram` | instagram.com, instagr.am, ig.me | confirmed | `never` | none |
+| `meta-threads` | threads.com, threads.net | confirmed | `never` | none |
+| `meta-facebook` | facebook.com, fb.com, fb.me, fb.watch, m.me | confirmed | `never` | none |
+| `dcinside-terms` | dcinside.com | reported | `written_permission` | none |
+| `naver-cafe-bulk-notice` | cafe.naver.com, m.cafe.naver.com | reported | `written_permission` (no terms document yet; no lift) | none |
+| `naver-terms` | naver.com, naver.me, me2.do | reported | `written_permission` | none |
+| `coupang-terms` | coupang.com, coupa.ng | reported | `written_permission` | none |
+| `x-terms` | x.com, twitter.com, t.co | reported | `written_permission` | none |
+| `daangn-terms` | daangn.com | reported | `written_permission` | none |
+| `tiktok-terms` | tiktok.com | confirmed | `never` | none |
+| `clien-terms` | clien.net | confirmed | `never` | none |
+| `apple-app-store-terms` | apps.apple.com, itunes.apple.com | confirmed | `never` | none |
+| `reddit-terms` | reddit.com, redd.it | confirmed | `written_permission` | none |
+| `hackernews-terms` | news.ycombinator.com | confirmed | `never` | `hacker-news` (no adapter yet) |
 
-The confirmed clauses were read through a search index of the operators' own
-pages; direct fetches were blocked when the entries were written. So every
-`verified_at` is still null, and a person should read those pages directly
-before setting it. The `x-terms` entry and both `effective_from` dates come from
-search summaries only (unverified).
+Every host covers its subdomains, including vm.tiktok.com and vt.tiktok.com;
+these were not independently verified as short-link operators. Unknown links
+still receive scope checks on every redirect. Every `verified_at` remains null:
+primary-source AI reads are evidence, never a person's terms check.
+
+The four existing YouTube/Meta policies remain `never`. Their clauses were read
+through an operator-page search index. The six additions are attributed to
+primary-source AI reads on 2026-09-30. Daangn stays reported: the clause and the
+2026-01-02 effective date came from the operator's page-data, and the declared
+terms page failed for a second reader. TikTok's automation clause has no
+permission exception. Clien needs each information rights holder's consent,
+which a host-wide platform permission cannot supply.
+
+Apple section F covers pages and feeds. The public customer-review feed route
+was removed; its historical URL and the observed 200 response remain in the
+platform note. Apple's 2026-09-14 date is a last update, not an established
+effective date. Authorized own-app App Store Connect exports remain
+`team_provided` files with app, territory, date and acquisition provenance.
+Reddit section 7 requires prior written consent; robots.txt still applies after
+a lift. HN site pages stay closed; the documented Firebase API needs an adapter
+before official-only mode can read it.
+
+X primary-source research reports current English v21 effective 2026-01-15, a
+Korean page dated 2026-04-10, and forthcoming terms effective 2026-10-09. All
+versions remain reported and unverified. Only listed document aliases count.
+The executable oEmbed route was removed after an unauthenticated request
+returned HTML on 2026-09-30; no retirement notice was found.
 
 ### 17.2 The stop
 
@@ -863,7 +891,7 @@ search summaries only (unverified).
 - `read` exits 3 with `stop_class: terms_restricted`. The reasons say which entry
   applied and why no lift did: `terms:<status>:<restrictions>`,
   `terms_entry:<id>` and `terms_check:<why>`, where the why is `no_terms_check`,
-  `confirmed_never_lifted`, `check_result:<result>`, `check_cites_another_document`,
+  `lift_requires_never`, `check_result:<result>`, `check_cites_another_document`,
   `check_predates_restriction` or `needs_written_permission`, then
   `terms_entry:<id>:<why>` for every other entry covering the URL that is not
   lifted. The official-route reasons of 17.3 follow. The result's `terms` record
@@ -902,7 +930,12 @@ Otherwise the URL ends as terms_restricted, and the reasons say why:
 | `official_route_refused` | The API refused the call |
 | `official_route_failed` | Any other failure |
 
-A route that fails never falls back to the page. A missing key is a coverage gap
+An R0 response is checked for login walls, human checks, browser checks, bot
+blocks, rate limits and opt-outs before feed or oEmbed extraction. These stops
+use the same classes and site effects as R1 and never fall through to it. A
+rate-limit signal gets one wait and one retry of the same route within the R0
+request cap; a second signal stops the site. A route that fails in official-only
+mode never falls back to the page. A missing key is a coverage gap
 and a question for the user: ask them to set the variable in their environment,
 never to paste the key in chat. `start` lists each key the route table reads,
 the routes that use it and whether it is set (`keys`), never its value. Keys come
@@ -967,8 +1000,8 @@ The one adapter in this version is `uxresearch/youtube.py`.
 
 ### 17.5 The user's terms check
 
-A reported entry is lifted only by the user's own reading of the host's current
-terms, recorded in the brief as `access_policy.terms_checked` (at most 20 items):
+An entry whose `lift_requires` permits a lift needs the user's own reading of
+the host's current terms, recorded in the brief as `access_policy.terms_checked` (at most 20 items):
 
 | Field | Content |
 | --- | --- |
@@ -979,8 +1012,10 @@ terms, recorded in the brief as `access_policy.terms_checked` (at most 20 items)
 | `note` | Optional: the clause or the reasoning, in the user's words |
 | `permission` | Required to lift an entry whose `lift_requires` is `written_permission`: `{granted_by, granted_on (YYYY-MM-DD), reference}`, the platform's prior written permission or consent that the user holds for this reading |
 
-- Only `permits_this_reading` lifts, and only a `reported` entry, for that run. A
-  `confirmed` entry is never lifted.
+- Only `permits_this_reading` can lift an entry for that run. `lift_requires:
+  never` always stays closed, including with written permission. Evidence status
+  does not change this policy. A `never` entry may still name an official-only
+  route; entries with no official route cannot enter that mode.
 - A check lifts an entry only when its `terms_url` is one of that entry's own
   terms documents (`terms_url` or `terms_urls`, compared by host and path), its
   `host` is one of the entry's hosts or a narrower one, and its host covers the
@@ -992,9 +1027,14 @@ terms, recorded in the brief as `access_policy.terms_checked` (at most 20 items)
   permission, not the user's own reading of the public-page rules. A check that
   would lift such an entry without `permission` makes `start` refuse the brief
   (exit 2) and say what is missing.
-- `start` also refuses a check dated before the `effective_from` of an entry it
-  cites, a check more than 365 days old, and two checks of one host that
-  disagree. Read the terms again and record the new date.
+- `start` refuses a lifting check dated before the entry's `effective_from`, a
+  check more than 365 days old, and conflicting checks for one host. Every
+  command on an open run revalidates freshness and the effective date; a stale
+  check refuses continued use with a reason and requires a new run with current
+  user checks. `close` still deletes private page text and the salt on refusal.
+- Runs created before this policy change are refused on resume, as are saved
+  tables that lack explicit `lift_requires` or retain changed restricted routes.
+  Hashed run files are never migrated in place.
 - Only the user writes these items. The agent records exactly what the user
   reports, never suggests a result and never adds a check the user did not make.
   There is no command-line switch, a route table given with `start --routes`
@@ -1021,8 +1061,8 @@ terms, recorded in the brief as `access_policy.terms_checked` (at most 20 items)
 
 ### 17.7 Changing an entry
 
-- An entry becomes `confirmed` when someone reads the clause in the platform's
-  own terms and records its URL, the clause and the date. `verified_at` is set
+- An entry becomes `confirmed` when the primary clause is read and checked,
+  with its URL, clause and date recorded. `lift_requires` is a separate policy. `verified_at` is set
   only after a person has read the primary page directly.
 - Change the route table first, then the entries table in 17.1, the platform map
   (`references/research/korea/platform-map.md`, section 8) and the legal

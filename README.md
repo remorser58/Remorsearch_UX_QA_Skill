@@ -146,16 +146,22 @@ pack is written in Korean and adds:
 - a legal checklist (not legal advice) and a report template in Korean;
 - KWCAG 2.2 and WCAG 2.2 accessibility results, reported apart.
 
-**Terms stops.** Where a platform's terms restrict automated collection, the reader
-stops before it sends any request, also for the platform's short links. YouTube
-pages, Instagram, Threads and Facebook are marked `confirmed` (the restricting
-clause was found) and are never lifted. DC Inside, Naver (including Naver Cafe),
-Coupang and X are marked `reported` (press reports and quotes). Their terms ask for
-prior written permission, so one is lifted only for a run in which you have read
-the host's current terms yourself, hold that permission, and recorded both in the
-brief (`access_policy.terms_checked`, with `permission`). The Naver Cafe notice has
-no recorded address yet, so it cannot be lifted. A lifted entry is read for at most
-10 documents per run across its hosts. An agent never writes that entry.
+**Terms stops.** Restricted hosts and their short links stop before any request.
+Evidence status (`reported` or `confirmed`) is separate from `lift_requires`:
+`never` prohibits a page lift; `written_permission` needs your current terms
+check and applicable prior written permission; `terms_check` needs your current
+check. Every covering entry must be lifted separately, with at most 10 documents
+per entry across its hosts. Open-run commands revalidate the 365-day limit and
+`effective_from`; older runs must restart. An agent never records a user's check.
+
+YouTube pages, Meta, TikTok, Clien and App Store pages/feeds use `never`.
+DC Inside, Naver, Coupang, X, Daangn and Reddit require written permission; the
+Naver Cafe notice still lacks a terms URL and cannot be lifted. YouTube keeps its
+official-only Data API route. HN pages use `never`, and its official-only API
+reports `official_route_unavailable` until an adapter exists. X oEmbed is removed
+after an unauthenticated HTML response on 2026-09-30; no retirement notice was
+found. Own-app App Store Connect exports remain `team_provided`.
+See [the entries and checks](skills/remorsearch-ux-qa/references/research/public-page-access.md#171-entries).
 
 **YouTube comments** come only through the YouTube Data API, with your own key in
 the environment variable `REMORSEARCH_YOUTUBE_API_KEY` (`YOUTUBE_API_KEY` is

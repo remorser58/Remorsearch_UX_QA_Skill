@@ -427,6 +427,42 @@ class YoutubeCase(unittest.TestCase):
 
 
 class YoutubeReadTests(YoutubeCase):
+    def test_html_controls_on_api_routes_stop_before_json_parsing(self):
+        pages = _paths.REPO / "tests" / "fixtures" / "research" / "pages"
+        cases = (("captcha-ko.html", 200, "human_check", "human_check"),
+                 ("js-check.html", 200, "opted_out", "opted_out"),
+                 ("blocked-403.html", 403, "opted_out", "opted_out"),
+                 ("login-wall.html", 200, "auth_gate", None),
+                 ("post-short.html", 429, "rate_limit", "rate_limit"))
+        for index, (name, status, stop, site_stop) in enumerate(cases):
+            with self.subTest(name=name):
+                self.api.reset()
+                vid = "Vid0000001A"
+                self.api.add(vid)
+                self.api.answer("videos", vid, (status, (pages / name).read_text(), [("Retry-After", "1")]))
+                self.start(run_dir=self.tmp / f"api-control-{index}")
+                code, result, out = self.read(f"https://www.youtube.com/watch?v={vid}")
+                self.assertEqual((code, result["rung"], result["stop_class"]), (3, "R0", stop))
+                self.assertEqual(result["untried"], [])
+                self.assertEqual(list((self.run_dir / "pages").glob("*.txt")), [])
+                host_stop = ledger.Run(self.run_dir, clock=self.clock).host_stop("api.video.test")
+                self.assertEqual((host_stop or {}).get("class"), site_stop)
+                self.assertEqual(len(self.api.requests("/videos")), 2 if stop == "rate_limit" else 1)
+                self.assertEqual(self.api.requests("/commentThreads"), [])
+                self.assertNotIn("official_route_failed", result["reasons"])
+                self.assert_never_leaks(KEY)
+
+    def test_an_api_check_after_a_comment_page_is_terminal(self):
+        vid = "Vid0000001A"
+        self.api.add(vid, pages=[[thread("UgwFirst0001", "already read")], []])
+        body = (_paths.REPO / "tests/fixtures/research/pages/js-check.html").read_text()
+        self.api.answer("commentThreads", vid, (200, body, []), page=2)
+        self.start()
+        code, result, _ = self.read(f"https://www.youtube.com/watch?v={vid}")
+        self.assertEqual((code, result["stop_class"]), (3, "opted_out"))
+        self.assertEqual(result["host_stop"]["class"], "opted_out")
+        self.assertEqual(list((self.run_dir / "pages").glob("*.txt")), [])
+
     def test_no_key_is_a_gap_and_nothing_is_requested(self):
         self.api.add("Vid0000001A", pages=[[thread("Ugw1", "댓글")]])
         created = self.start()
@@ -815,7 +851,7 @@ class RouteTableTests(YoutubeCase):
                     "author_from": "page", "alternates": [], "login_hosts": [], "official": [route],
                     "terms_note": "fixture", "verified_at": None}
         entry = {"id": "fixture-video-terms", "hosts": ["clips.test"], "status": "confirmed",
-                 "lift_requires": "written_permission", "restricts": ["automated_collection"],
+                 "lift_requires": "never", "restricts": ["automated_collection"],
                  "official_route": "fixture-video", "terms_url": "http://clips.test/terms", "clause": "fixture",
                  "sources": ["https://fixture.test/terms"], "checked_at": "2026-09-30", "verified_at": None,
                  "note": "fixture"}

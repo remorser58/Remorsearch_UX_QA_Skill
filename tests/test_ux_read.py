@@ -1459,6 +1459,64 @@ class ReaderEscalationTests(ServerCase):
         self.assertEqual((summary["trail"][0]["rung"], summary["trail"][0]["outcome"]), ("R0", "failed"))
         self.assertEqual(self.server.hits("rss.feedsite.test"), ["/robots.txt", "/bob.xml"])
 
+    def test_r0_access_controls_stop_before_extraction_and_never_fall_through(self):
+        cases = ((200, "captcha-ko.html", "human_check", "human_check"),
+                 (200, "js-check.html", "opted_out", "opted_out"),
+                 (403, "blocked-403.html", "opted_out", "opted_out"),
+                 (200, "login-wall.html", "auth_gate", None),
+                 (429, "post-short.html", "rate_limit", "rate_limit"),
+                 (503, "post-short.html", "rate_limit", "rate_limit"),
+                 (200, None, "rate_limit", "rate_limit"))
+        for kind in ("feed", "oembed"):
+            for index, (status, fixture, stop, site_stop) in enumerate(cases):
+                with self.subTest(kind=kind, status=status, fixture=fixture):
+                    self.server.reset()
+                    body = self.server.text(fixture) if fixture else "<html><body>Too many requests</body></html>"
+                    self.server.add("rss.feedsite.test", "/bob.xml", spec(status, body, headers=[("Retry-After", "1")]))
+                    self.server.page("feedsite.test", "/bob/7", "post-normal.html")
+                    table = json.loads(ROUTES.read_text(encoding="utf-8"))
+                    table["platforms"][0]["official"][0]["kind"] = kind
+                    path = self.tmp / f"r0-{kind}-{index}.json"
+                    path.write_text(json.dumps(table), encoding="utf-8")
+                    run_dir = self.tmp / f"run-r0-{kind}-{index}"
+                    self.start("--routes", path, run_dir=run_dir)
+                    with mock.patch.object(extract, "from_feed", side_effect=AssertionError("feed extraction")), \
+                            mock.patch.object(extract, "from_oembed", side_effect=AssertionError("oEmbed extraction")):
+                        code, result, out = self.read(self.url("feedsite.test", "/bob/7"), run_dir=run_dir)
+                    self.assertEqual((code, result["rung"], result["stop_class"]), (3, "R0", stop))
+                    self.assertEqual((result["untried"], result["next_step"]), ([], None))
+                    self.assertNotIn("NORMAL-POST-SENTINEL", out)
+                    self.assertEqual(self.server.hits("feedsite.test"), ["/robots.txt"])
+                    self.assertFalse([t for t in result["trail"] if t["rung"] != "R0"])
+                    saved = ledger.Run(run_dir, clock=self.clock).host_stop("feedsite.test")
+                    self.assertEqual((saved or {}).get("class"), site_stop)
+                    self.assertEqual(self.server.hits("rss.feedsite.test").count("/bob.xml"),
+                                     2 if stop == "rate_limit" else 1)
+
+    def test_r0_login_redirect_is_terminal(self):
+        self.server.redirect("rss.feedsite.test", "/bob.xml", self.url("rss.feedsite.test", "/login"))
+        self.server.page("feedsite.test", "/bob/7", "post-normal.html")
+        self.start()
+        code, result, _ = self.read(self.url("feedsite.test", "/bob/7"))
+        self.assertEqual((code, result["rung"], result["stop_class"]), (3, "R0", "auth_gate"))
+        self.assertEqual(self.server.hits("feedsite.test"), ["/robots.txt"])
+        self.assertNotIn("/login", self.server.hits("rss.feedsite.test"))
+
+    def test_r0_redirect_to_a_new_terms_host_is_terminal(self):
+        self.server.redirect("rss.feedsite.test", "/bob.xml", "https://itunes.apple.com/kr/rss/customerreviews/id=1/xml")
+        self.server.page("feedsite.test", "/bob/7", "post-normal.html")
+        self.start()
+        real_check = net.check_host
+        def check_host(host, port):
+            self.assertIn(host, ("feedsite.test", "rss.feedsite.test"))
+            return real_check(host, port)
+        with mock.patch.object(net, "check_host", side_effect=check_host):
+            code, result, _ = self.read(self.url("feedsite.test", "/bob/7"))
+        self.assertEqual((code, result["rung"], result["stop_class"]), (3, "R0", "terms_restricted"))
+        self.assertEqual((result["terms"]["entry"], result["terms"]["lift_requires"]), ("apple-app-store-terms", "never"))
+        self.assertIn("reached_by_redirect", result["reasons"])
+        self.assertEqual(self.server.hits("feedsite.test"), ["/robots.txt"])
+
     def test_user_key_routes_use_the_environment_and_never_record_the_key(self):
         feed = ('<?xml version="1.0"?><rss><channel><title>c</title><item><title>댓글</title>'
                 '<link>http://keyed.test/c/1</link><description>공식 경로로 읽은 댓글 본문입니다. 충전 버튼이 늦게 반응해요. '
@@ -2449,8 +2507,8 @@ class TermsRestrictedTests(ServerCase):
         for host in ("reported.test", "confirmed.test"):
             self.server.page(host, "/p", "post-normal.html")
         self.start()
-        cases = (("reported.test", "reported", "no_terms_check", "only the user can lift a reported restriction"),
-                 ("confirmed.test", "confirmed", "confirmed_never_lifted", "a confirmed restriction is never lifted"))
+        cases = (("reported.test", "reported", "no_terms_check", "only the user can lift this restriction"),
+                 ("confirmed.test", "confirmed", "lift_requires_never", "this restriction is never lifted"))
         for host, status, why, lift in cases:
             code, summary, out = self.read(self.url(host, "/p"))
             self.assertEqual((code, summary["bucket"], summary["stop_class"]), (3, "stopped", "terms_restricted"), host)
@@ -2474,7 +2532,7 @@ class TermsRestrictedTests(ServerCase):
         self.assertEqual((row["terms_restricted"], row["stopped"], row["urls"], row["refused"]), (1, {}, 1, 1))
         self.assertEqual(closed["totals"]["urls"], 2)  # a refused capture of a URL that has an outcome adds no URL
 
-    def test_a_users_terms_check_lifts_a_reported_entry_only(self):
+    def test_a_users_terms_check_obeys_each_entrys_lift_policy(self):
         for host in ("reported.test", "m.reported.test", "confirmed.test"):
             self.server.page(host, "/p", "post-normal.html")
         self.server.page("reported.test", "/shell", "js-shell-bare.html")
@@ -2496,11 +2554,14 @@ class TermsRestrictedTests(ServerCase):
         self.assertEqual((code, summary["terms"]["lifted"]), (0, True))  # a lifted host takes captures
         code, summary, _ = self.read(self.url("confirmed.test", "/p"))
         self.assertEqual((code, summary["stop_class"]), (3, "terms_restricted"))
-        self.assertIn("terms_check:confirmed_never_lifted", summary["reasons"])
+        self.assertIn("terms_check:lift_requires_never", summary["reasons"])
         self.assertEqual(self.server.hits("confirmed.test"), [])
         outcome = [e for e in self.ledger_entries() if e["kind"] == "outcome" and e["host"] == "reported.test"][0]
         self.assertEqual(outcome["terms"], {"entry": "fixture-reported", "status": "reported", "lifted": True,
-                                            "mode": None, "not_lifted_because": None,
+                                            "mode": None, "not_lifted_because": None, "lift_requires": "terms_check",
+                                            "entries": [{"entry": "fixture-reported", "status": "reported",
+                                                         "lift_requires": "terms_check", "lifted": True,
+                                                         "not_lifted_because": None, "check_host": "reported.test"}],
                                             "lifted_entries": ["fixture-reported"], "lift_checks": ["reported.test"]})
         self.assertEqual(self.robots_cmd(self.url("reported.test", "/p"))[1]["terms"]["lifted"], True)
         closed = json.loads(self.cli("close", "--run", self.run_dir)[1])
@@ -2593,7 +2654,7 @@ class TermsRestrictedTests(ServerCase):
                     "author_from": "page", "official": [route], "alternates": [], "login_hosts": [],
                     "terms_note": "fixture", "verified_at": None}
         entry = {"id": f"packaged-{kind}-tube-terms", "hosts": [host], "status": "confirmed",
-                 "lift_requires": "written_permission", "restricts": ["automated_collection"],
+                 "lift_requires": "never", "restricts": ["automated_collection"],
                  "official_route": platform["id"], "terms_url": f"http://{host}/terms", "clause": "fixture clause",
                  "read_via": "fixture", "sources": ["https://fixture.test/terms"], "checked_at": "2026-09-30",
                  "verified_at": None, "note": "fixture"}
@@ -2853,6 +2914,182 @@ class TermsRestrictedTests(ServerCase):
         self.assertIn("official_route_does_not_fit", summary["reasons"])
         self.assertNotIn(b"alias-key", self.run_bytes())  # tests/test_ux_youtube.py reads through a fake API
 
+    def test_evidence_status_does_not_decide_a_written_permission_lift(self):
+        table = json.loads(ROUTES.read_text(encoding="utf-8"))
+        next(e for e in table["terms_restricted"] if e["id"] == "fixture-permission")["status"] = "confirmed"
+        routes = self.tmp / "confirmed-permission.json"
+        routes.write_text(json.dumps(table), encoding="utf-8")
+        check = self.check("permission.test", terms_url="http://permission.test/terms")
+        code, out, _ = self.cli("start", "--run", self.tmp / "missing", "--routes", routes,
+                                "--brief", self.brief_with([check]))
+        self.assertEqual(code, 2)
+        self.assertIn("permission", json.loads(out)["reason"])
+        check["permission"] = {"granted_by": "fixture operator", "granted_on": self.today(), "reference": "letter P-1"}
+        self.server.page("permission.test", "/p", "post-normal.html")
+        created = self.start("--routes", routes, "--brief", self.brief_with([check]))
+        self.assertIn("lifts fixture-permission", created["terms_checked"][0]["effect"])
+        self.assertEqual(self.read(self.url("permission.test", "/p"))[0], 0)
+        closed = json.loads(self.cli("close", "--run", self.run_dir)[1])
+        self.assertEqual((closed["terms_lifts"][0]["status"], closed["terms_lifts"][0]["urls_under_lift"]),
+                         ("confirmed", 1))
+
+    def test_a_reported_never_entry_stays_closed_with_permission(self):
+        table = json.loads(ROUTES.read_text(encoding="utf-8"))
+        entry = next(e for e in table["terms_restricted"] if e["id"] == "fixture-confirmed")
+        entry["status"] = "reported"
+        entry["lift_requires"] = "never"
+        routes = self.tmp / "reported-never.json"
+        routes.write_text(json.dumps(table), encoding="utf-8")
+        check = self.check("confirmed.test", permission={"granted_by": "fixture operator",
+                                                        "granted_on": self.today(), "reference": "letter N-1"})
+        created = self.start("--routes", routes, "--brief", self.brief_with([check]))
+        self.assertEqual(created["terms_checked"][0]["lifts"], [])
+        code, result, _ = self.read(self.url("confirmed.test", "/p"))
+        self.assertEqual((code, result["terms"]["status"], result["terms"]["lift_requires"]), (3, "reported", "never"))
+        self.assertIn("terms_check:lift_requires_never", result["reasons"])
+        self.assertEqual(self.server.hits(), [])
+
+    def test_start_refuses_missing_or_unknown_lift_requirements(self):
+        for index, value in enumerate((None, "surprise", "")):
+            table = json.loads(ROUTES.read_text(encoding="utf-8"))
+            entry = table["terms_restricted"][0]
+            if value is None:
+                entry.pop("lift_requires")
+            else:
+                entry["lift_requires"] = value
+            path = self.tmp / f"invalid-requirement-{index}.json"
+            path.write_text(json.dumps(table), encoding="utf-8")
+            target = self.tmp / f"invalid-run-{index}"
+            code, out, _ = self.cli("start", "--run", target, "--routes", path)
+            self.assertEqual(code, 2, out)
+            self.assertIn("explicit lift_requires", json.loads(out)["reason"])
+            self.assertFalse(target.exists())
+            record = scope.lift_record(entry, "reported.test", {"terms_checked": [self.check("reported.test")]})
+            self.assertEqual((record["lifted"], record["lift_requires"], record["not_lifted_because"]),
+                             (False, "never", "lift_requires_never"))
+
+    def test_resume_refuses_legacy_tables_and_policies_without_rewriting_them(self):
+        for index, legacy_field in enumerate(("lift_requires", "terms_policy_version")):
+            path = self.tmp / f"legacy-{index}"
+            table = json.loads(ROUTES.read_text(encoding="utf-8"))
+            if legacy_field == "lift_requires":
+                for entry in table["terms_restricted"]:
+                    entry.pop("lift_requires")
+            ledger.create(path, ledger.build_policy(None, {}), routes=table, routes_source="legacy", clock=self.clock)
+            if legacy_field == "terms_policy_version":
+                meta = json.loads((path / "run.json").read_text())
+                meta.pop("terms_policy_version")
+                (path / "run.json").write_text(json.dumps(meta), encoding="utf-8")
+            originals = {name: (path / name).read_bytes() for name in ("run.json", "routes.json", "access-ledger.jsonl")}
+            for command in (("read", self.url("reported.test", "/p")),
+                            ("robots", self.url("reported.test", "/p")),
+                            ("author-key", "--platform", "fixture", "--handle", "tester"),
+                            ("ingest", "--url", self.url("reported.test", "/p"), "--file", CAPTURES / "capture-full.html",
+                             "--context", "anonymous")):
+                code, out, _ = self.cli(command[0], "--run", path, *command[1:])
+                self.assertEqual(code, 2, out)
+                self.assertIn("saved", json.loads(out)["reason"])
+                self.assertIn("start a new run", json.loads(out)["reason"])
+                self.assertEqual({name: (path / name).read_bytes() for name in originals}, originals)
+        self.assertEqual(self.server.hits(), [])
+
+    def test_checks_are_revalidated_on_every_open_run_command(self):
+        self.server.page("reported.test", "/p", "post-normal.html")
+        self.start("--brief", self.brief_with([self.check("reported.test")]))
+        self.clock.advance(365 * 86400)
+        self.assertEqual(self.read(self.url("reported.test", "/p"))[0], 0)  # the boundary still passes
+        self.clock.advance(86400)
+        self.server.log.clear()
+        for command in (("read", self.url("reported.test", "/q")), ("robots", self.url("reported.test", "/q")),
+                        ("author-key", "--platform", "fixture", "--handle", "tester"),
+                        ("ingest", "--url", self.url("reported.test", "/q"), "--file", CAPTURES / "capture-full.html",
+                         "--context", "anonymous"), ("close",)):
+            code, out, _ = self.cli(command[0], "--run", self.run_dir, *command[1:])
+            self.assertEqual(code, 2, out)
+            self.assertIn("stale", json.loads(out)["reason"])
+        self.assertEqual(self.server.hits(), [])
+        self.assertFalse((self.run_dir / "salt").exists())  # close still removes private records
+
+    def test_resume_revalidates_a_new_effective_date(self):
+        check = self.check("permission.test", terms_url="http://permission.test/terms",
+                           permission={"granted_by": "fixture", "granted_on": self.today(), "reference": "P-2"})
+        self.start("--brief", self.brief_with([check]))
+        newer = {"id": "newer-permission", "hosts": ["permission.test"], "status": "confirmed",
+                 "lift_requires": "written_permission", "official_route": None,
+                 "effective_from": time.strftime("%Y-%m-%d", time.gmtime(self.clock() + 86400)),
+                 "terms_url": "http://permission.test/terms"}
+        with packaged_with(terms=[newer]):
+            code, out, _ = self.cli("robots", "--run", self.run_dir, self.url("permission.test", "/p"))
+        self.assertEqual(code, 2)
+        self.assertIn("predates", json.loads(out)["reason"])
+        self.assertIn("newer-permission", json.loads(out)["reason"])
+        self.assertEqual(self.server.hits(), [])
+
+    def test_new_entries_stop_direct_short_redirect_and_feed_urls_before_contact(self):
+        self.start()
+        cases = (("https://www.daangn.com/kr/community/post/", "daangn-terms"),
+                 ("https://www.tiktok.com/@someone/video/1", "tiktok-terms"),
+                 ("https://vm.tiktok.com/abc/", "tiktok-terms"), ("https://vt.tiktok.com/abc/", "tiktok-terms"),
+                 ("https://www.clien.net/service/board/park/1", "clien-terms"),
+                 ("https://apps.apple.com/kr/app/id123456789", "apple-app-store-terms"),
+                 ("https://itunes.apple.com/kr/rss/customerreviews/id=123456789/json", "apple-app-store-terms"),
+                 ("https://www.reddit.com/r/fixture/comments/abc/", "reddit-terms"),
+                 ("https://redd.it/abc", "reddit-terms"),
+                 ("https://news.ycombinator.com/item?id=1", "hackernews-terms"))
+        for index, (url, entry) in enumerate(cases):
+            with self.subTest(url=url), mock.patch.object(net, "check_host", side_effect=AssertionError("DNS")), \
+                    mock.patch.object(ladder, "robots_decision", side_effect=AssertionError("robots")), \
+                    mock.patch.object(net, "fetch", side_effect=AssertionError("request")):
+                code, result, _ = self.read(url)
+                self.assertEqual((code, result["stop_class"], result["terms"]["entry"]), (3, "terms_restricted", entry))
+                self.assertEqual(result["untried"], [])
+                self.assertEqual(self.robots_cmd(url)[0], 3)
+                code, result, _ = self.ingest(url, CAPTURES / "capture-full.html", "--context", "anonymous")
+                self.assertEqual((code, result["terms"]["entry"]), (2, entry))
+                if entry == "hackernews-terms":
+                    self.assertIn("official_route_unavailable", self.read(url)[1]["reasons"])
+            self.server.redirect("shortlink.test", f"/new-{index}", url)
+            # Only the source short link is contacted; every target scope check precedes target DNS.
+            real_check = net.check_host
+            def check_host(host, port):
+                self.assertEqual(host, "shortlink.test")
+                return real_check(host, port)
+            with mock.patch.object(net, "check_host", side_effect=check_host):
+                code, result, _ = self.read(self.url("shortlink.test", f"/new-{index}"))
+            self.assertEqual((code, result["terms"]["entry"]), (3, entry))
+            self.assertIn("reached_by_redirect", result["reasons"])
+        for outcome in self.ledger_entries():
+            if outcome.get("terms"):
+                self.assertIn("lift_requires", outcome["terms"])
+                self.assertTrue(outcome["terms"]["entries"])
+        closed = json.loads(self.cli("close", "--run", self.run_dir)[1])
+        self.assertEqual(closed["totals"]["terms_restricted"], 2 * len(cases))
+        self.assertEqual(self.page_files(), [])
+
+    def test_x_has_no_oembed_request_even_after_a_permission_lift(self):
+        check = self.check("x.com", terms_url="https://x.com/ko/tos",
+                           permission={"granted_by": "X fixture", "granted_on": self.today(), "reference": "X-1"})
+        code, out, _ = self.cli("start", "--run", self.run_dir, "--brief", self.brief_with([check]))
+        self.assertEqual(code, 0, out)
+        url = "https://x.com/fixture/status/1"
+        body = self.server.text("post-normal.html").encode()
+        response = net.Response(url, url, 200, {"content-type": "text/html"}, body, len(body), 0)
+        decision = {"allowed": True, "decision": "allowed", "robots_status": "ok"}
+        with mock.patch.object(net, "check_host"), mock.patch.object(ladder, "robots_decision", return_value=decision), \
+                mock.patch.object(net, "fetch", return_value=response) as fetch:
+            code, result, _ = self.read(url)
+        self.assertEqual((code, result["rung"], result["terms"]["lifted"]), (0, "R1", True))
+        self.assertEqual([call.args[0] for call in fetch.call_args_list], [url])
+        old = json.loads((PACKAGE / "data" / "routes.json").read_text())
+        next(p for p in old["platforms"] if p["id"] == "x")["official"] = [
+            {"kind": "oembed", "auth": "none", "url": "https://publish.twitter.com/oembed?url={url_enc}"}]
+        legacy = self.tmp / "old-oembed"
+        ledger.create(legacy, ledger.build_policy(None, {}), routes=old, routes_source="older", clock=self.clock)
+        with mock.patch.object(net, "fetch", side_effect=AssertionError("old oEmbed requested")):
+            code, out, _ = self.cli("read", "--run", legacy, url)
+        self.assertEqual(code, 2)
+        self.assertIn("incompatible saved route table", json.loads(out)["reason"])
+
 
 class SearchPageTests(ServerCase):
     def test_search_pages_and_disabled_routes_are_refused_before_any_request(self):
@@ -3015,6 +3252,8 @@ class ReviewServerTests(ServerCase):
             self.assertEqual(self.server.hits(host), ["/robots.txt"], host)
         for host in ("confirmed.test", "denied.test", "disabled-api.test"):
             self.assertEqual(self.server.hits(host), [], host)
+        request = next(e for e in self.ledger_entries() if e.get("purpose") == "robots" and e["host"] == "hop.test")
+        self.assertEqual((request["terms"]["entry"], request["terms"]["lift_requires"]), ("fixture-confirmed", "never"))
 
     def test_the_robots_command_exits_4_when_the_host_cannot_be_reached(self):
         # C-13: a DNS or TLS failure while fetching robots.txt is exit 4 (unread), as documented in section 9.
@@ -3292,7 +3531,7 @@ class ReviewUnitTests(unittest.TestCase):
         entries = {e["id"]: e for e in scope.packaged()["terms_restricted"]}
         self.assertEqual({i for i, e in entries.items() if e.get("lift_requires") == "written_permission" and
                           e["status"] == "reported"},
-                         {"dcinside-terms", "naver-cafe-bulk-notice", "naver-terms", "coupang-terms", "x-terms"})
+                         {"dcinside-terms", "naver-cafe-bulk-notice", "naver-terms", "coupang-terms", "x-terms", "daangn-terms"})
         self.assertTrue(all(e.get("lift_requires") in scope.LIFT_REQUIREMENTS for e in entries.values()))
 
     def test_checks_dated_before_an_entry_takes_effect_lift_nothing(self):
@@ -3310,7 +3549,28 @@ class ReviewUnitTests(unittest.TestCase):
         self.assertTrue(scope.lift_record(entry, "dated.test", {"terms_checked": [on_time]})["lifted"])
         self.assertEqual({e["id"]: e.get("effective_from") for e in scope.packaged()["terms_restricted"]
                           if e.get("effective_from")},
-                         {"dcinside-terms": "2026-07-21", "naver-cafe-bulk-notice": "2026-08-31"})
+                         {"dcinside-terms": "2026-07-21", "naver-cafe-bulk-notice": "2026-08-31",
+                          "x-terms": "2026-01-15", "daangn-terms": "2026-01-02", "tiktok-terms": "2020-08-19",
+                         "clien-terms": "2019-12-04", "reddit-terms": "2026-07-01"})
+
+    def test_document_aliases_null_documents_and_overlapping_policies(self):
+        entry = next(e for e in scope.lists_for(None).terms if e["id"] == "x-terms")
+        check = {"host": "x.com", "terms_url": "https://x.com/ko/tos", "checked_on": "2026-09-30",
+                 "result": "permits_this_reading", "permission": {"granted_by": "fixture", "granted_on": "2026-09-30",
+                                                                    "reference": "X-2"}}
+        self.assertTrue(scope.lift_record(entry, "x.com", {"terms_checked": [check]})["lifted"])
+        other_language = {**check, "terms_url": "https://x.com/fr/tos"}
+        self.assertFalse(scope.lift_record(entry, "x.com", {"terms_checked": [other_language]})["lifted"])
+        no_document = {**entry, "terms_url": None}
+        self.assertFalse(scope.lift_record(no_document, "x.com", {"terms_checked": [check]})["lifted"])
+        closed = {**entry, "id": "another-entry", "status": "reported", "lift_requires": "never"}
+        lists = scope.Lists(terms=(entry, closed))
+        stop, lift = scope.evaluate("https://x.com/fixture/status/1", {"terms_checked": [check]}, lists)
+        self.assertIsNone(lift)
+        self.assertEqual(stop.terms["entry"], "another-entry")
+        self.assertEqual([r["lift_requires"] for r in stop.terms["entries"]], ["written_permission", "never"])
+        sibling = {**entry, "id": "other-host", "hosts": ["other.test"]}
+        self.assertFalse(scope.lift_record(sibling, "other.test", {"terms_checked": [check]})["lifted"])
 
     def test_other_engines_and_site_search_pages_are_refused(self):
         # L-23
@@ -3402,7 +3662,7 @@ class ContractTests(unittest.TestCase):
     def test_terms_restricted_entries_and_search_pages(self):
         routes = json.loads((PACKAGE / "data" / "routes.json").read_text(encoding="utf-8"))
         platform_ids = {p["id"] for p in routes["platforms"]}
-        fields = {"id", "hosts", "status", "restricts", "official_route", "terms_url", "clause", "sources",
+        fields = {"id", "hosts", "status", "lift_requires", "restricts", "official_route", "terms_url", "clause", "sources",
                   "checked_at", "verified_at", "note"}
         entries = {e["id"]: e for e in routes["terms_restricted"]}
         for entry in entries.values():
@@ -3427,10 +3687,15 @@ class ContractTests(unittest.TestCase):
                    "gall.dcinside.com": "dcinside-terms", "m.dcinside.com": "dcinside-terms",
                    "cafe.naver.com": "naver-cafe-bulk-notice", "m.cafe.naver.com": "naver-cafe-bulk-notice",
                    "blog.naver.com": "naver-terms", "rss.blog.naver.com": "naver-terms",
-                   "m.kin.naver.com": "naver-terms", "www.coupang.com": "coupang-terms"}
+                   "m.kin.naver.com": "naver-terms", "www.coupang.com": "coupang-terms",
+                   "www.daangn.com": "daangn-terms", "apps.apple.com": "apple-app-store-terms",
+                   "itunes.apple.com": "apple-app-store-terms", "www.tiktok.com": "tiktok-terms",
+                   "vm.tiktok.com": "tiktok-terms", "vt.tiktok.com": "tiktok-terms",
+                   "www.clien.net": "clien-terms", "reddit.com": "reddit-terms", "redd.it": "reddit-terms",
+                   "news.ycombinator.com": "hackernews-terms"}
         for host, entry in covered.items():  # the more specific entry comes first (the cafe notice before naver-terms)
             self.assertEqual((scope.terms_entry(host, lists) or {}).get("id"), entry, host)
-        for host in ("www.daangn.com", "bbs.ruliweb.com", "apps.apple.com", "cafe.daum.net", "www.fmkorea.com"):
+        for host in ("bbs.ruliweb.com", "cafe.daum.net", "www.fmkorea.com"):
             self.assertIsNone(scope.terms_entry(host, lists), host)  # no restriction is invented
         threads = next(p for p in routes["platforms"] if p["id"] == "threads")
         self.assertTrue({"threads.com", "threads.net"} <= set(threads["hosts"]))
@@ -3445,6 +3710,34 @@ class ContractTests(unittest.TestCase):
             self.assertEqual(scope.evaluate(url, policy, lists)[0].kind, "search_page", url)
         for url in ("https://www.google.com/maps", "https://duckduckgo.com/about"):
             self.assertIsNone(scope.evaluate(url, policy, lists)[0], url)
+
+    def test_terms_tables_match_packaged_policies_and_provenance(self):
+        entries = {e["id"]: e for e in scope.packaged()["terms_restricted"]}
+        text = (SKILL / "references/research/public-page-access.md").read_text(encoding="utf-8")
+        table = text.split("### 17.1 Entries", 1)[1].split("### 17.2 The stop", 1)[0]
+        rows = {}
+        for line in table.splitlines():
+            if line.startswith("| `"):
+                cells = [cell.strip() for cell in line.strip("|").split("|")]
+                if cells[0].strip("`") in entries:
+                    rows[cells[0].strip("`")] = cells
+        self.assertEqual(set(rows), set(entries))
+        for name, entry in entries.items():
+            self.assertEqual(rows[name][1].split(", "), entry["hosts"], name)
+            self.assertEqual(rows[name][2], entry["status"], name)
+            self.assertIn("`" + entry["lift_requires"] + "`", rows[name][3], name)
+            self.assertIsNone(entry["verified_at"])
+        self.assertEqual({entries[e]["lift_requires"] for e in ("youtube-terms", "meta-instagram", "meta-threads",
+                                                               "meta-facebook")}, {"never"})
+        for name in ("daangn-terms", "tiktok-terms", "clien-terms", "apple-app-store-terms", "reddit-terms",
+                     "hackernews-terms"):
+            self.assertEqual((entries[name]["checked_at"], entries[name]["read_via"]), ("2026-09-30", "direct_fetch"))
+            self.assertTrue(entries[name]["clause"])
+        self.assertNotIn("effective_from", entries["apple-app-store-terms"])
+        self.assertEqual(entries["apple-app-store-terms"]["last_updated"], "2026-09-14")
+        versions = entries["x-terms"]["reported_versions"]
+        self.assertEqual([v["effective_from"] for v in versions], ["2026-01-15", "2026-04-10", "2026-10-09"])
+        self.assertTrue(all(v["status"] == "reported" and v["verified_at"] is None for v in versions))
 
     def test_discovery_routes_stay_off_and_are_never_called(self):
         routes = json.loads((PACKAGE / "data" / "routes.json").read_text(encoding="utf-8"))

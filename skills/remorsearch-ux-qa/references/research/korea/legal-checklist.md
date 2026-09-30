@@ -532,12 +532,26 @@
 - 근거: 각 플랫폼의 약관(항목 id, 상태, 조항, 읽은 방식은 `uxresearch/data/routes.json`의 `terms_restricted`와
   `references/research/korea/platform-map.md`). 2021도1533.
 - 조항과 판: 약관은 법령이 아니라 계약 조건임. 조항, 약관 URL, 확인일은 routes.json의 `clause`, `terms_url`,
-  `checked_at`, `lift_requires`, `effective_from`을 따름. 2026-09-30 routes.json(판 `2026-09-30.3`) 기준 상태는 다음과 같음.
-  - `confirmed`: 유튜브 페이지(youtube.com, youtu.be, youtube-nocookie.com, youtubekids.com), 인스타그램, 스레드(threads.com,
-    threads.net), 페이스북.
-  - `reported`: 디시인사이드, 네이버 카페, 네이버 전체 호스트와 짧은 주소, 쿠팡과 coupa.ng, X(x.com, twitter.com,
-    t.co). 모두 `lift_requires: written_permission`임. 디시인사이드는 `effective_from: 2026-07-21`, 네이버 카페 공지는
-    `effective_from: 2026-08-31`이며 두 날짜와 X 약관은 검색 요약으로만 확인함 — 미확인(요약).
+  `checked_at`, `lift_requires`, `effective_from`을 따름. 2026-09-30 routes.json(판 `2026-09-30.4`)의 항목은 다음과 같음.
+
+| 항목 | 호스트 | 근거 상태 | 해제 조건 | 효력일 | 확인 |
+| --- | --- | --- | --- | --- | --- |
+| `youtube-terms` | youtube.com, youtu.be, youtube-nocookie.com, youtubekids.com | `confirmed` | `never`, 풀 수 없음 | 미확인 | 미확인(요약) |
+| `meta-instagram` | instagram.com, instagr.am, ig.me | `confirmed` | `never`, 풀 수 없음 | 미확인 | 미확인(요약) |
+| `meta-threads` | threads.com, threads.net | `confirmed` | `never`, 풀 수 없음 | 미확인 | 미확인(요약) |
+| `meta-facebook` | facebook.com, fb.com, fb.me, fb.watch, m.me | `confirmed` | `never`, 풀 수 없음 | 미확인 | 미확인(요약) |
+| `dcinside-terms` | dcinside.com | `reported` | `written_permission`, 현행 약관 확인·사전 서면 허락 | 2026-07-21 | 미확인(요약) |
+| `naver-cafe-bulk-notice` | cafe.naver.com, m.cafe.naver.com | `reported` | `written_permission`, 현행 약관 확인·사전 서면 허락; 약관 주소가 없어 현재 풀 수 없음 | 2026-08-31 | 미확인(요약) |
+| `naver-terms` | naver.com, naver.me, me2.do | `reported` | `written_permission`, 현행 약관 확인·사전 서면 허락 | 미확인 | 미확인(요약) |
+| `coupang-terms` | coupang.com, coupa.ng | `reported` | `written_permission`, 현행 약관 확인·사전 서면 허락 | 미확인 | 미확인(요약) |
+| `x-terms` | x.com, twitter.com, t.co | `reported` | `written_permission`, 현행 약관 확인·사전 서면 허락 | 2026-01-15 | 관찰됨(AI 조사, 사람 미확인); 영문 v21 2026-01-15, 한국어 2026-04-10, 예정판 2026-10-09를 각각 미확인으로 기록함 |
+| `daangn-terms` | daangn.com | `reported` | `written_permission`, 현행 약관 확인·사전 서면 허락 | 2026-01-02 | 관찰됨(AI 조사, 사람 미확인); 페이지 데이터로 읽음, 약관 페이지 재확인 실패. 효력일 2026-01-02는 조사 기록 기준 |
+| `tiktok-terms` | tiktok.com | `confirmed` | `never`, 풀 수 없음 | 2020-08-19 | 관찰됨(AI 조사, 사람 미확인) |
+| `clien-terms` | clien.net | `confirmed` | `never`, 풀 수 없음 | 2019-12-04 | 관찰됨(AI 조사, 사람 미확인); 권리자별 동의가 필요하여 플랫폼 허락으로 풀 수 없음 |
+| `apple-app-store-terms` | apps.apple.com, itunes.apple.com | `confirmed` | `never`, 풀 수 없음 | 미확인 | 관찰됨(AI 조사, 사람 미확인); 2026-09-14 최종 업데이트, 효력일 미확인. 팀 자기 앱은 App Store Connect 내보내기 자료 |
+| `reddit-terms` | reddit.com, redd.it | `confirmed` | `written_permission`, 현행 약관 확인·사전 서면 허락 | 2026-07-01 | 관찰됨(AI 조사, 사람 미확인); 제7절, 허락 뒤에도 robots.txt 적용 |
+| `hackernews-terms` | news.ycombinator.com | `confirmed` | `never`, 풀 수 없음 | 미확인 | 관찰됨(AI 조사, 사람 미확인); 공식 API 어댑터가 없어 official_route_unavailable |
+
 - 읽은 방식: 플랫폼마다 다르며 routes.json의 `read_via`를 따름. 유튜브와 Meta의 조항은 운영사 도메인으로 한정한 검색
   색인으로 읽었음(원문 직접 열람은 막힘) — 미확인(요약). 이 문서를 쓰면서 유튜브 서비스 약관의 자동화 접근 조항과
   Meta 자동 데이터 수집 약관의 서면 허가 조항을 같은 방식으로 다시 봄 — 미확인(요약). 네이버 카페 공지는 보도로만

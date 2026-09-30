@@ -27,8 +27,8 @@ discovery endpoints and third-party copies such as archives and reader proxies
 (refused with exit 2; a copy of a stopped URL stops like it), the route table's
 out-of-scope private channels, and terms_restricted hosts. A terms_restricted
 host is never requested, not even for robots.txt, unless the user's own terms
-checks lifted every reported entry that covers it for the run (then each lifted
-entry has a budget of 10 documents); a confirmed entry is never lifted. When the
+checks lifted every entry that covers it for the run (then each lifted entry has
+a budget of 10 documents); lift_requires: never prohibits a page lift. When the
 packaged entry names an official route whose kind has an adapter and whose key is
 set, only that route of the PACKAGED route table runs (official-only mode: R0, no
 page request, no alternate, no render capture); if it fails, the URL ends as
@@ -427,10 +427,8 @@ def _headers(run: Run, accept: str) -> dict:
 def _looks_html(response: net.Response) -> bool:
     if response.content_type in HTML_TYPES:
         return True
-    if response.content_type in ("", "text/plain", "application/octet-stream"):
-        head = response.body[:1024].lstrip().lower()
-        return head.startswith((b"<!doctype html", b"<html")) or b"<body" in head
-    return False
+    head = response.body[:1024].lstrip().lower()
+    return head.startswith((b"<!doctype html", b"<html")) or b"<body" in head
 
 
 def _robots_brief(decision: dict | None) -> dict | None:
@@ -452,11 +450,13 @@ def scope_stop(run: Run, routes: Routes, url: str) -> scope.ScopeStop | None:
     return scope_check(run, routes, url)[0]
 
 
-def _hop_refusal(run: Run, target: str) -> str | None:
+def _hop_refusal(run: Run, target: str, terms: list | None = None) -> str | None:
     """Why a robots.txt redirect hop is never requested: a scope stop (deny list, search page, switched-off
     endpoint, third-party copy, private channel, terms restriction) or a stopped host or site."""
     stop = scope.evaluate(target, run.policy, run.scope_lists)[0]
     if stop is not None:  # the terms entry by name when there is one, else the first reason
+        if stop.terms and terms is not None:
+            terms.append(_terms_brief(stop.terms))
         first = next((r for r in stop.reasons if r.startswith("terms_entry:")), None) or \
             (stop.reasons[0] if stop.reasons else stop.stop_class)
         return first if first.startswith((stop.kind + ":", "terms_entry:")) else f"{stop.kind}:{first}"
@@ -478,11 +478,12 @@ def robots_decision(run: Run, url: str, max_wait: float) -> dict:
         fetch_id = run.new_fetch_id()
         response, failure = None, None
         refused: list = []
+        refused_terms: list = []
         entry = {"kind": "request", "purpose": "robots", "fetch_id": fetch_id, "url": origin + "/robots.txt",
                  "host": host, "waited_s": round(slot.waited, 3)}
 
         def follow(source: str, target: str) -> bool:
-            why = _hop_refusal(run, target)
+            why = _hop_refusal(run, target, refused_terms)
             if why:
                 refused.append(why)
                 return False
@@ -524,6 +525,7 @@ def robots_decision(run: Run, url: str, max_wait: float) -> dict:
         agents = record.get("agents") or {}
         run.log({**entry, "error": failure.kind if failure else None, "robots_status": record["status"],
                  "robots_reason": record.get("reason"),
+                 "terms": refused_terms[0] if refused_terms else None,
                  "sha256": record["sha256"], "crawl_delay": record["crawl_delay"],
                  "ai_agent_groups": sorted(agents.get("fetch_on_behalf") or {}) or None,
                  "ai_training_groups": sorted(agents.get("training_or_index") or {}) or None})
@@ -621,11 +623,11 @@ def _request(st: _Read, url: str, rung: str, *, accept: str = PAGE_ACCEPT, purpo
                  "wire_bytes": response.wire_bytes, "elapsed_ms": response.elapsed_ms,
                  "waited_s": round(slot.waited, 3), "test_override": response.test_override,
                  "precheck": response.precheck})
-        if not redirects:  # an official API answers or fails; its redirects are never followed, to any origin
-            attempt.error, attempt.error_detail = "redirect_refused", "the official route answered with a redirect"
-            return attempt
         if not requested_login and verdict.is_login_url(response.location, st.routes.login_hosts):
             attempt.stop, attempt.reasons = "auth_gate", ["redirect:login_page"]
+            return attempt
+        if not redirects:  # an official API answers or fails; its redirects are never followed, to any origin
+            attempt.error, attempt.error_detail = "redirect_refused", "the official route answered with a redirect"
             return attempt
         if verdict.is_legal_block_url(response.location):
             attempt.stop, attempt.reasons = "legal_block", ["redirect:legal_block_host"]
@@ -677,13 +679,26 @@ def _evaluate(st: _Read, attempt: _Attempt, *, requested: str, feed_target: str 
         page = extract.from_feed(text, feed_target or response.final_url, feed_scope if feed_target else "all")
     elif response.content_type.startswith("text/"):
         page = extract.from_text(text)
-    optouts = robots.page_optouts(response.headers, page.meta_robots if page else [],
-                                  page.tdm_meta if page else None, ROBOTS_TOKEN, response.x_robots)
-    v = verdict.classify(status=response.status, headers=response.headers, page=page, requested_url=requested,
-                         final_url=response.final_url, redirect_urls=[r["to"] for r in attempt.chain],
-                         expect=st.expect, optouts=optouts, login_hosts=st.routes.login_hosts)
+    v = _classify_response(st, attempt, page, requested)
     _log_attempt(st.run, attempt, v, page)
     return page, v
+
+
+def _classify_response(st: _Read, attempt: _Attempt, page, requested: str) -> verdict.Verdict:
+    response = attempt.response
+    optouts = robots.page_optouts(response.headers, page.meta_robots if page else [],
+                                  page.tdm_meta if page else None, ROBOTS_TOKEN, response.x_robots)
+    return verdict.classify(status=response.status, headers=response.headers, page=page, requested_url=requested,
+                            final_url=response.final_url, redirect_urls=[r["to"] for r in attempt.chain],
+                            expect=st.expect, optouts=optouts, login_hosts=st.routes.login_hosts)
+
+
+def _route_control(st: _Read, attempt: _Attempt, text: str):
+    """Access controls in a route response, before feed, oEmbed or adapter parsing."""
+    response = attempt.response
+    page = extract.from_html(text, response.final_url) if _looks_html(response) else \
+        extract.from_text(text) if response.content_type.startswith("text/") else None
+    return page, _classify_response(st, attempt, page, attempt.url)
 
 
 def _trail(st: _Read, rung: str, outcome: str, *, url: str | None = None, attempt: _Attempt | None = None,
@@ -768,7 +783,8 @@ def _terms_brief(terms: dict | None) -> dict | None:
     of the check that lifted it (the close summary counts lifts per entry and per check)."""
     if not terms:
         return None
-    brief = {k: terms.get(k) for k in ("entry", "status", "lifted", "mode", "not_lifted_because")}
+    brief = {k: terms.get(k) for k in ("entry", "status", "lift_requires", "lifted", "mode", "not_lifted_because")}
+    brief["entries"] = list(terms.get("entries") or [])
     brief["lifted_entries"] = list(terms.get("lifted_entries") or [])
     brief["lift_checks"] = [e.get("check_host") for e in terms.get("entries") or [] if e.get("lifted")]
     return brief
@@ -855,7 +871,8 @@ def _done(st: _Read, bucket: str, *, stop: str | None = None, verdict_: str | No
 def _lift_note(terms: dict) -> str:
     entries = ", ".join(terms.get("lifted_entries") or [terms.get("entry")])
     checks = sorted({e.get("check_host") for e in terms.get("entries") or [] if e.get("lifted") and e.get("check_host")})
-    return (f"the terms_restricted entries {entries} (reported) are lifted for this run by the user's own terms checks "
+    return (f"the terms_restricted entries {entries} (lift_requires: {terms['lift_requires']}) are lifted for this run "
+            "by the user's own terms checks "
             f"({', '.join(checks)}); each lifted entry has a budget of {scope.LIFTED_HOST_BUDGET} documents across "
             "its hosts")
 
@@ -992,53 +1009,83 @@ def _rung0(st: _Read, platform: dict | None, values: dict, *, official_only: boo
                 st.route_reasons.append(withheld)
                 _trail(st, "R0", "skipped", note=withheld_note(withheld, user_key(route)[1]))
                 continue
-        try:
-            attempt = _request(st, candidate, "R0", accept=FEED_ACCEPT if kind == "feed" else JSON_ACCEPT,
-                               purpose="route")
-        except HostStopped as exc:
-            _trail(st, "R0", "skipped", url=candidate, note=f"route host stopped ({exc.stop.get('class')})")
-            continue
-        except BudgetExceeded as exc:
-            if exc.scope == "run":
-                raise
-            _trail(st, "R0", "skipped", url=candidate, note="route host budget used up")
-            continue
-        except net.NetError as exc:
-            _trail(st, "R0", "failed", url=candidate, note=f"route host unusable ({exc.kind})")
-            continue
-        if attempt.contacted or attempt.error:
-            requests += 1
-        if attempt.stop or attempt.error:
-            note = ", ".join(attempt.reasons[:2]) if attempt.scope else None
-            _trail(st, "R0", "skipped" if attempt.scope else "failed", url=candidate, attempt=attempt, note=note)
-            continue
-        response = attempt.response
-        if not 200 <= response.status < 300:
-            _log_attempt(st.run, attempt)
-            if response.status == 429:
-                st.run.note_rate_limit(net.host_of(response.final_url),
-                                       verdict.retry_after_seconds(response.headers.get("retry-after"),
-                                                                   st.run.clock()), ["status:429"])
-            _trail(st, "R0", "failed", url=candidate, attempt=attempt, note="unverified route; falls through")
-            continue
-        text, _ = response.text()
-        page = extract.from_feed(text, st.url, route.get("scope", "item")) if kind == "feed" \
-            else extract.from_oembed(text)
-        if page is None:
-            _log_attempt(st.run, attempt)
-            _trail(st, "R0", "failed", url=candidate, attempt=attempt, note="no entry for this page")
-            continue
-        optouts = robots.page_optouts(response.headers, [], None, ROBOTS_TOKEN, response.x_robots)
-        v = verdict.classify(status=response.status, headers=response.headers, page=page, requested_url=candidate,
-                             final_url=response.final_url, expect=st.expect, optouts=optouts,
-                             login_hosts=st.routes.login_hosts)
-        _log_attempt(st.run, attempt, v, page)
-        if v.ok:
-            basis = "official_api" if route.get("auth") == "user_key" else "public_anonymous"
-            extra = ["official_only"] if official_only else []
-            return _done(st, "read", verdict_=v.verdict, reasons=v.reasons + [f"route:{platform.get('id')}"] + extra,
-                         rung="R0", attempt=attempt, page=page, access_basis=basis)
-        _trail(st, "R0", "failed", url=candidate, attempt=attempt, v=v)
+        limited = None
+        while requests < R0_MAX_REQUESTS:
+            try:
+                attempt = _request(st, candidate, "R0", accept=FEED_ACCEPT if kind == "feed" else JSON_ACCEPT,
+                                   purpose="route")
+            except HostStopped as exc:
+                return _done(st, "stopped", stop="host_stopped", reasons=[f"host_stop:{exc.stop.get('class')}"],
+                             rung="R0", host_stop=exc.stop)
+            except BudgetExceeded as exc:
+                if exc.scope == "run" or limited:
+                    raise
+                _trail(st, "R0", "skipped", url=candidate, note="route host budget used up")
+                break
+            except net.NetError as exc:
+                if limited:
+                    return _done(st, "stopped", stop="rate_limit", reasons=limited.reasons, rung="R0")
+                _trail(st, "R0", "failed", url=candidate, note=f"route host unusable ({exc.kind})")
+                break
+            if attempt.contacted or attempt.error:
+                requests += 1
+            if attempt.stop:
+                if attempt.scope and not attempt.contacted and not limited:
+                    _trail(st, "R0", "skipped", url=candidate, attempt=attempt,
+                           note=", ".join(attempt.reasons[:2]))
+                    break  # an excluded route was never requested; the allowed source page remains eligible
+                found = attempt.scope_stop
+                return _done(st, "stopped", stop=attempt.stop, reasons=attempt.reasons, rung="R0", attempt=attempt,
+                             out_of_scope=attempt.out_of_scope, notes=[found.note] if found else (),
+                             terms=found.terms if found else None,
+                             host_stop=st.run.host_stop(net.host_of(candidate)))
+            if attempt.error:
+                if limited:
+                    return _done(st, "stopped", stop="rate_limit", reasons=limited.reasons, rung="R0", attempt=attempt)
+                if attempt.error == "redirect_loop":
+                    return _error_outcome(st, attempt)
+                _trail(st, "R0", "failed", url=candidate, attempt=attempt)
+                break
+            response = attempt.response
+            text, _ = response.text()
+            # Classify controls before feed/oEmbed extraction: an HTML check is never a route miss.
+            control_page, control = _route_control(st, attempt, text)
+            page, v = control_page, control
+            if 200 <= response.status < 300 and not control.stop_class:
+                page = extract.from_feed(text, st.url, route.get("scope", "item")) if kind == "feed" \
+                    else extract.from_oembed(text)
+                if page is None:
+                    _log_attempt(st.run, attempt)
+                    if limited:
+                        return _done(st, "stopped", stop="rate_limit", reasons=limited.reasons, rung="R0", attempt=attempt)
+                    _trail(st, "R0", "failed", url=candidate, attempt=attempt, note="no entry for this page")
+                    break
+                v = _classify_response(st, attempt, page, candidate)
+            _log_attempt(st.run, attempt, v, page)
+            if _host_signal(v):
+                stopped = _rate_limited(st, attempt, v, "R0")
+                if stopped is not None:
+                    return stopped
+                limited = v
+                if requests >= R0_MAX_REQUESTS:
+                    return _done(st, "stopped", stop="rate_limit", reasons=v.reasons, rung="R0", attempt=attempt)
+                continue
+            if v.stop_class and not (v.stop_class == "gone" and response.status in (404, 410)):
+                return _terminal(st, attempt, page, v, "R0")
+            if not 200 <= response.status < 300:
+                if limited:
+                    return _done(st, "stopped", stop="rate_limit", reasons=limited.reasons, rung="R0", attempt=attempt)
+                _trail(st, "R0", "failed", url=candidate, attempt=attempt, note="unverified route; falls through")
+                break
+            if v.ok:
+                basis = "official_api" if route.get("auth") == "user_key" else "public_anonymous"
+                extra = ["official_only"] if official_only else []
+                return _done(st, "read", verdict_=v.verdict, reasons=v.reasons + [f"route:{platform.get('id')}"] + extra,
+                             rung="R0", attempt=attempt, page=page, access_basis=basis)
+            if limited:
+                return _done(st, "stopped", stop="rate_limit", reasons=limited.reasons, rung="R0", attempt=attempt)
+            _trail(st, "R0", "failed", url=candidate, attempt=attempt, v=v)
+            break
     return None
 
 
@@ -1277,6 +1324,10 @@ def check_robots(run: Run, url: str, *, max_wait: float | None = None) -> dict:
                  "reasons": excluded.reasons, "out_of_scope": excluded.out_of_scope}
         if excluded.terms:
             value["terms"] = excluded.terms
+        run.log({"kind": "outcome", "source": "robots", "url": target, "url_key": run.url_key(target),
+                 "host": net.host_of(target), "bucket": "stopped", "stop_class": excluded.stop_class,
+                 "out_of_scope": excluded.out_of_scope, "reasons": excluded.reasons, "contacted": False,
+                 "terms": _terms_brief(excluded.terms)})
         return value
     parts = urlsplit(target)
     try:
@@ -1358,12 +1409,12 @@ def capture_check(doc: dict) -> tuple[str, list] | None:
     return None
 
 
-def _ingest_refused(run: Run, url: str, reason: str) -> dict:
+def _ingest_refused(run: Run, url: str, reason: str, *, terms: dict | None = None) -> dict:
     run.log({"kind": "outcome", "source": "ingest", "url": url, "url_key": _url_key(run, url),
              "host": net.host_of(url) if url else "", "bucket": "refused", "error": "ingest_refused",
-             "reasons": [reason]})
+             "reasons": [reason], "terms": _terms_brief(terms)})
     return {"source": "ingest", "bucket": "refused", "exit_code": EXIT["refused"], "url": privacy.mask_url(url),
-            "error": "ingest_refused", "reasons": [reason], "text": None}
+            "error": "ingest_refused", "reasons": [reason], "text": None, **({"terms": terms} if terms else {})}
 
 
 def _ingest_stopped(run: Run, target: str, host: str, context: str, stop_class: str, reasons: list,
@@ -1382,11 +1433,14 @@ def _capture_scope_refusal(stop: scope.ScopeStop) -> str:
     """Why `ingest` never takes in a capture of this URL (a scope stop decided from the URL alone)."""
     if stop.kind == "terms":
         record = stop.terms or {}
-        if record.get("status") == "reported":
-            lift = ("only the user can lift a reported restriction, by recording their own reading of the host's "
-                    "current terms in the brief (access_policy.terms_checked); an agent never writes that entry")
+        requires = record.get("lift_requires", "never")
+        if requires != "never":
+            permission = "; the check must record prior written permission" if requires == "written_permission" else ""
+            lift = ("only the user can lift this restriction, by recording their own reading of the host's "
+                    "current terms in the brief (access_policy.terms_checked)" + permission +
+                    "; an agent never writes that entry")
         else:
-            lift = "a confirmed restriction is never lifted"
+            lift = "lift_requires_never: this restriction is never lifted"
         official = (" Its official route, when it can run, is read by `read` alone (official-only mode), never "
                     "through a capture." if record.get("official_route") else "")
         return (f"this host's terms restrict automated collection ({', '.join(stop.reasons)}); a capture is never "
@@ -1474,7 +1528,7 @@ def ingest(run: Run, url: str, file_path, *, fmt: str | None = None, context: st
     routes = Routes(run.routes)
     excluded, lift = scope_check(run, routes, target)
     if excluded is not None:
-        return _ingest_refused(run, target, _capture_scope_refusal(excluded))
+        return _ingest_refused(run, target, _capture_scope_refusal(excluded), terms=excluded.terms)
     community = authorised_community(run, target) if context == "signed_in" else None
     if context == "signed_in" and community is None:
         return _ingest_refused(run, target, "signed-in captures are accepted only for communities the brief authorises "
@@ -1514,7 +1568,8 @@ def ingest(run: Run, url: str, file_path, *, fmt: str | None = None, context: st
                 hop_stop = scope_check(run, routes, hop_url)[0] if hop_url and hop_url != target else None
                 if hop_stop is not None:
                     return _ingest_refused(run, target, "the capture's browser reached another URL that is never "
-                                                        "captured: " + _capture_scope_refusal(hop_stop))
+                                                        "captured: " + _capture_scope_refusal(hop_stop),
+                                           terms=hop_stop.terms)
             checked = capture_check(doc)
         elif fmt == "html":
             page = extract.from_html(net.decode_body(data, "text/html")[0], target)
@@ -1581,7 +1636,7 @@ def ingest(run: Run, url: str, file_path, *, fmt: str | None = None, context: st
               "access_basis": basis, "host_stop": host_stop, "notes": notes, "text": None}
     if community is not None:
         result["community"] = community.get("name")
-    if lift:  # reported terms restrictions the user's own terms checks lifted for this run
+    if lift:  # terms restrictions the user's own terms checks lifted for this run
         result["terms"] = lift
         notes.append(_lift_note(lift))
     if v.ok:

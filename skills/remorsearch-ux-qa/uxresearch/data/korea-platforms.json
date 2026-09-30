@@ -195,7 +195,7 @@
       ],
       "route_notes": [
         {
-          "text": "routes.json의 naver-terms 항목(reported)이 네이버 호스트 전체를 덮어 RSS 피드와 공개 페이지가 함께 멈춤. reported는 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. confirmed는 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. RSS 제공 여부와 주소 형태는 실시간 확인 전임.",
+          "text": "routes.json의 naver-terms 항목(reported)이 네이버 호스트 전체를 덮어 RSS 피드와 공개 페이지가 함께 멈춤. lift_requires: written_permission 항목은 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. lift_requires: never 항목은 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. RSS 제공 여부와 주소 형태는 실시간 확인 전임.",
           "read_via": "skill_rule",
           "sources": [],
           "rule_ref": "uxresearch/data/routes.json"
@@ -381,7 +381,7 @@
       ],
       "route_notes": [
         {
-          "text": "네이버 카페 주소에는 naver-terms와 naver-cafe-bulk-notice가 함께 적용되어 항목마다 별도 확인이 필요함. reported는 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. confirmed는 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. 카페 공지 항목은 terms_url이 null이어서 사람이 공지 원문 주소를 기록하기 전에는 어떤 확인으로도 풀리지 않음.",
+          "text": "네이버 카페 주소에는 naver-terms와 naver-cafe-bulk-notice가 함께 적용되어 항목마다 별도 확인이 필요함. lift_requires: written_permission 항목은 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. lift_requires: never 항목은 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. 카페 공지 항목은 terms_url이 null이어서 사람이 공지 원문 주소를 기록하기 전에는 어떤 확인으로도 풀리지 않음.",
           "read_via": "skill_rule",
           "sources": [],
           "rule_ref": "uxresearch/data/routes.json"
@@ -568,7 +568,7 @@
       ],
       "route_notes": [
         {
-          "text": "routes.json의 naver-terms 항목(reported)이 덮음. reported는 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. confirmed는 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음.",
+          "text": "routes.json의 naver-terms 항목(reported)이 덮음. lift_requires: written_permission 항목은 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. lift_requires: never 항목은 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음.",
           "read_via": "skill_rule",
           "sources": [],
           "rule_ref": "uxresearch/data/routes.json"
@@ -772,7 +772,7 @@
           ]
         },
         {
-          "text": "routes.json의 naver-terms 항목(reported)이 덮음. reported는 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. confirmed는 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. 페이지 뒤의 내부 데이터 경로는 부르지 않음.",
+          "text": "routes.json의 naver-terms 항목(reported)이 덮음. lift_requires: written_permission 항목은 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. lift_requires: never 항목은 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. 페이지 뒤의 내부 데이터 경로는 부르지 않음.",
           "read_via": "skill_rule",
           "sources": [],
           "rule_ref": "references/research/public-page-access.md"
@@ -1297,7 +1297,7 @@
       ],
       "route_notes": [
         {
-          "text": "routes.json의 dcinside-terms 항목(reported)이 dcinside.com 전체를 덮음. reported는 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. confirmed는 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. 이 스킬은 약관이 그 읽기를 허용하는지 판단하지 않음(법률 자문 아님).",
+          "text": "routes.json의 dcinside-terms 항목(reported)이 dcinside.com 전체를 덮음. lift_requires: written_permission 항목은 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. lift_requires: never 항목은 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. 이 스킬은 약관이 그 읽기를 허용하는지 판단하지 않음(법률 자문 아님).",
           "read_via": "skill_rule",
           "sources": [],
           "rule_ref": "uxresearch/data/routes.json"
@@ -1642,14 +1642,14 @@
         ]
       },
       "routes": [
-        "reader_public_page"
+        "none"
       ],
       "route_notes": [
         {
-          "text": "공개 페이지만 읽음. 로그인, 회원 전용, 사람 확인, 봇 차단, 브라우저 확인 화면, 속도 제한이 나오면 그 자리에서 멈추고 수집 공백으로 적음.",
+          "text": "clien-terms는 lift_requires: never로 요청 전에 멈추며 캡처도 받지 않음. 제13조③은 정보 권리자의 동의를 요구함. 플랫폼의 허락으로 각 작성자의 동의를 확인할 수 없어 현재 호스트 단위 기록으로는 풀 수 없음.",
           "read_via": "skill_rule",
           "sources": [],
-          "rule_ref": "references/research/public-page-access.md"
+          "rule_ref": "uxresearch/data/routes.json"
         },
         {
           "text": "봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음.",
@@ -1658,22 +1658,30 @@
           "rule_ref": "references/research/public-page-access.md"
         }
       ],
-      "expected_stops": [],
+      "expected_stops": [
+        "terms_restricted"
+      ],
       "robots": {
-        "expectation": "unknown",
-        "text": "보고된 robots 정보를 찾지 못함. 실행 때 robots 확인이 판정함.",
-        "read_via": "not_found",
+        "expectation": "not_reached",
+        "text": "약관 제한이 요청 전에 멈추므로 robots.txt를 요청하지 않음.",
+        "read_via": "skill_rule",
         "sources": []
       },
       "terms": {
-        "status": "unchecked",
-        "routes_entry": null,
-        "restricts": [],
-        "terms_url": null,
-        "clause": null,
-        "read_via": "not_found",
-        "sources": [],
-        "note": "약관의 자동 수집 조항은 확인하지 못함."
+        "status": "confirmed",
+        "routes_entry": "clien-terms",
+        "restricts": [
+          "automated_collection"
+        ],
+        "lift_requires": "never",
+        "terms_url": "https://www.clien.net/service/cs/conditions",
+        "clause": "제13조③: \"서비스를 통해 얻은 정보를 그 정보 권리자의 동의없이 수집, 복제, 배포할 수 없습니다.\"",
+        "read_via": "direct_fetch",
+        "sources": [
+          "https://www.clien.net/service/cs/conditions"
+        ],
+        "note": "2026-09-30 AI 조사자가 운영사 약관 제13조③을 읽음. 근거 상태는 confirmed이며 해제 조건은 never임. 사람이 원문을 확인한 날짜는 없음.",
+        "effective_from": "2019-12-04"
       },
       "audience": {
         "text": "공개 사용자 구성 자료를 이번 확인에서 찾지 못함. 커뮤니티 성별·연령·정치 성향 추정치는 싣지 않음(4절).",
@@ -1699,7 +1707,7 @@
         }
       ],
       "discontinuities": [],
-      "checked_at": "2026-09-29",
+      "checked_at": "2026-09-30",
       "verified_at": null
     },
     {
@@ -2242,7 +2250,7 @@
       ],
       "route_notes": [
         {
-          "text": "공개 웹 페이지만 읽고 사이트 내부 데이터 경로는 부르지 않음. 로그인, 사람 확인, 봇 차단, 브라우저 확인 화면, 속도 제한이 나오면 그 자리에서 멈추고 수집 공백으로 적음.",
+          "text": "daangn-terms는 사용자의 현행 약관 확인과 사전 서면 허락이 있어야 풀림(lift_requires: written_permission). 허락은 해당 수집·저장·분석과 후속 처리를 포함해야 함. 그 뒤에도 robots.txt와 모든 중단 규칙을 따름. 사이트 내부 데이터 경로는 부르지 않음.",
           "read_via": "skill_rule",
           "sources": [],
           "rule_ref": "uxresearch/data/routes.json"
@@ -2254,22 +2262,33 @@
           "rule_ref": "references/research/public-page-access.md"
         }
       ],
-      "expected_stops": [],
+      "expected_stops": [
+        "terms_restricted"
+      ],
       "robots": {
-        "expectation": "unknown",
-        "text": "보고된 robots 정보를 찾지 못함. 실행 때 robots 확인이 판정함.",
-        "read_via": "not_found",
+        "expectation": "not_reached",
+        "text": "약관 제한이 요청 전에 멈추므로 robots.txt를 요청하지 않음.",
+        "read_via": "skill_rule",
         "sources": []
       },
       "terms": {
-        "status": "unchecked",
-        "routes_entry": null,
-        "restricts": [],
-        "terms_url": null,
-        "clause": null,
-        "read_via": "not_found",
-        "sources": [],
-        "note": "검색으로 자동 수집 조항을 찾지 못함. 제한이 없다는 뜻이 아니므로 reader의 일반 중단 규칙을 그대로 적용함."
+        "status": "reported",
+        "routes_entry": "daangn-terms",
+        "restricts": [
+          "automated_collection",
+          "ai_input",
+          "storage"
+        ],
+        "lift_requires": "written_permission",
+        "terms_url": "https://www.daangn.com/policy/terms/",
+        "clause": "데이터베이스에 대한 보호: \"당근의 명시적인 사전 서면 동의 없이 자동화된 도구\"를 활용한 \"데이터 수집·복제·저장·배포·출판·분석·색인화·수정·파생 저작물 생성\" 금지.",
+        "read_via": "direct_fetch",
+        "sources": [
+          "https://www.daangn.com/policy/terms/",
+          "https://terms-proxy.kr.karrotwebview.com/page-data/policy/terms/page-data.json"
+        ],
+        "note": "2026-09-30 AI 조사자가 운영사 페이지 데이터에서 조항과 2026-01-02 효력일을 읽음. 다른 조사자의 약관 페이지 요청은 실패하여 reported로 둠. 사람이 원문을 확인한 날짜는 없음.",
+        "effective_from": "2026-01-02"
       },
       "audience": {
         "text": "와이즈앱: 2025-08 사용자 2,185만 명, 40대 비중 30.3%로 가장 큼. 2026-08 사용자 2,317만 명(보도). 앱 사용자 수이며 글쓴이 구성이 아님.",
@@ -2296,7 +2315,7 @@
         }
       ],
       "discontinuities": [],
-      "checked_at": "2026-09-29",
+      "checked_at": "2026-09-30",
       "verified_at": null
     },
     {
@@ -2395,7 +2414,7 @@
         "sources": [
           "https://www.youtube.com/static?template=terms"
         ],
-        "note": "youtube.com 도메인 한정 검색으로 조항 문구를 읽음(원문 페이지 직접 열람은 이 환경에서 막힘). confirmed 항목은 브리프로 풀 수 없음. verified_at은 사람이 원문을 다시 읽은 뒤 채움. routes.json의 youtube-terms 항목은 youtu.be 짧은 주소와 youtube-nocookie.com도 덮음."
+        "note": "youtube.com 도메인 한정 검색으로 조항 문구를 읽음(원문 페이지 직접 열람은 이 환경에서 막힘). lift_requires: never 항목은 브리프로 풀 수 없음. verified_at은 사람이 원문을 다시 읽은 뒤 채움. routes.json의 youtube-terms 항목은 youtu.be 짧은 주소와 youtube-nocookie.com도 덮음."
       },
       "audience": {
         "text": "와이즈앱 추정 월평균 사용자 4,678만 명(2025-01~11). 한국갤럽 2025(만 13세 이상): 유튜브를 쓴다는 응답 95%. 한국언론진흥재단 2024(만 19세 이상): 84.9%. 조사마다 정의가 다름. 댓글 작성자는 그 영상을 본 사람 가운데 스스로 쓴 사람임.",
@@ -2494,7 +2513,7 @@
           "https://www.facebook.com/legal/automated_data_collection_terms",
           "https://help.instagram.com/581066165581870/"
         ],
-        "note": "facebook.com과 help.instagram.com 도메인 한정 검색으로 문구를 읽음(원문 페이지 직접 열람은 이 환경에서 막힘). confirmed 항목은 브리프로 풀 수 없음. verified_at은 사람이 원문을 다시 읽은 뒤 채움."
+        "note": "facebook.com과 help.instagram.com 도메인 한정 검색으로 문구를 읽음(원문 페이지 직접 열람은 이 환경에서 막힘). lift_requires: never 항목은 브리프로 풀 수 없음. verified_at은 사람이 원문을 다시 읽은 뒤 채움."
       },
       "audience": {
         "text": "한국언론진흥재단 2024(만 19세 이상): 20대 80.9%, 30대 70.7%가 씀. 와이즈앱 추정 2026-01~04 월평균 사용자 2,808만 명.",
@@ -2592,7 +2611,7 @@
           "https://help.instagram.com/769983657850450",
           "https://help.instagram.com/581066165581870/"
         ],
-        "note": "facebook.com과 help.instagram.com 도메인 한정 검색으로 읽음(원문 페이지 직접 열람은 이 환경에서 막힘). confirmed 항목은 브리프로 풀 수 없음. threads.com과 threads.net 모두 routes.json의 meta-threads 항목에 들어 있음."
+        "note": "facebook.com과 help.instagram.com 도메인 한정 검색으로 읽음(원문 페이지 직접 열람은 이 환경에서 막힘). lift_requires: never 항목은 브리프로 풀 수 없음. threads.com과 threads.net 모두 routes.json의 meta-threads 항목에 들어 있음."
       },
       "audience": {
         "text": "와이즈앱: 2026-01~04 월평균 사용자 729만 명, 전년 같은 기간보다 21.0% 늘어남.",
@@ -2644,7 +2663,8 @@
       "id": "app-store-kr",
       "name_ko": "앱스토어 리뷰(한국)",
       "hosts": [
-        "apps.apple.com"
+        "apps.apple.com",
+        "itunes.apple.com"
       ],
       "route_ids": [
         "app-store"
@@ -2657,53 +2677,52 @@
         "sources": []
       },
       "routes": [
-        "official_feed",
         "team_export"
       ],
       "route_notes": [
         {
-          "text": "공개 고객 리뷰 RSS는 나라별 최근 리뷰를 한 쪽에 50개씩 최대 10쪽(약 500개)까지 준다고 알려짐. Apple의 공식 문서는 찾지 못함. route table은 1쪽만 읽음.",
-          "read_via": "search_summary",
+          "text": "apple-app-store-terms는 apps.apple.com 페이지와 itunes.apple.com 피드를 요청 전에 멈춤(lift_requires: never). 공개 고객 리뷰 RSS 실행 경로는 제거함. 리뷰 피드가 200으로 응답했다는 조사 기록과 기존 소개 글은 경로의 과거 근거로만 남김.",
+          "read_via": "skill_rule",
           "sources": [
             "https://dev.to/antonio_fernandorincond/how-to-pull-app-store-reviews-via-apples-official-rss-feed-no-api-key-1hkk"
-          ]
+          ],
+          "rule_ref": "uxresearch/data/routes.json"
         },
         {
-          "text": "피드가 비어 있으면 읽기 성공이 아님. 비공식 경로로 바꾸지 않고 수집 공백으로 적음.",
-          "read_via": "skill_rule",
-          "sources": [],
-          "rule_ref": "references/research/public-page-access.md"
-        },
-        {
-          "text": "팀 자기 앱의 리뷰는 App Store Connect API(앱별 customerReviews 목록)나 콘솔 자료로 받음(team_export).",
-          "read_via": "search_index",
+          "text": "팀 자기 앱의 리뷰는 허가받은 App Store Connect 내보내기 파일로 받음(team_export, 출처 team_provided). 앱·국가·기간·취득 경위를 남기고 처리 범위와 개인정보를 확인함.",
+          "read_via": "direct_fetch",
           "sources": [
-            "https://developer.apple.com/documentation/appstoreconnectapi/get-v1-apps-_id_-customerreviews"
+            "https://developer.apple.com/documentation/appstoreconnectapi/get-v1-apps-_id_-customerreviews",
+            "https://developer.apple.com/documentation/appstoreconnectapi/customer-reviews"
           ]
-        },
-        {
-          "text": "봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음.",
-          "read_via": "skill_rule",
-          "sources": [],
-          "rule_ref": "references/research/public-page-access.md"
         }
       ],
-      "expected_stops": [],
+      "expected_stops": [
+        "terms_restricted"
+      ],
       "robots": {
-        "expectation": "unknown",
-        "text": "보고된 robots 정보를 찾지 못함. 실행 때 robots 확인이 판정함.",
-        "read_via": "not_found",
+        "expectation": "not_reached",
+        "text": "약관 제한이 요청 전에 멈추므로 robots.txt를 요청하지 않음.",
+        "read_via": "skill_rule",
         "sources": []
       },
       "terms": {
-        "status": "unchecked",
-        "routes_entry": null,
-        "restricts": [],
-        "terms_url": null,
-        "clause": null,
-        "read_via": "not_found",
-        "sources": [],
-        "note": "Apple의 RSS 이용 조건은 확인하지 못함."
+        "status": "confirmed",
+        "routes_entry": "apple-app-store-terms",
+        "restricts": [
+          "automated_collection",
+          "ai_input"
+        ],
+        "lift_requires": "never",
+        "terms_url": "https://www.apple.com/kr/legal/internet-services/itunes/kr/terms.html",
+        "clause": "F: \"소프트웨어, 기기, 자동화된 프로세스 또는 이와 유사하거나 동등한 수동 프로세스\"를 사용한 \"스크래핑, 복사, 측정, 분석 또는 모니터링\" 금지.",
+        "read_via": "direct_fetch",
+        "sources": [
+          "https://www.apple.com/kr/legal/internet-services/itunes/kr/terms.html",
+          "https://www.apple.com/legal/internet-services/itunes/",
+          "https://developer.apple.com/documentation/appstoreconnectapi/customer-reviews"
+        ],
+        "note": "2026-09-30 AI 조사자가 Apple 미디어 서비스 약관 F절을 읽음. 2026-09-14는 최종 업데이트 날짜이며 효력일은 확인하지 못함. 피드별 예외 조항을 찾지 못함. 사람이 원문을 확인한 날짜는 없음."
       },
       "audience": {
         "text": "한국갤럽 2025-07 조사(만 18세 이상 1,001명, 스마트폰 사용자 986명): 주로 쓰는 스마트폰은 삼성 72%, 애플 24%. 애플은 18-29세에서 60%, 60세 이상에서 4%. 여성 27%, 남성 21%가 애플을 쓴다고 보도됨. 스마트폰 사용자 기준이며 리뷰 작성자 구성이 아님. 리뷰 작성자 구성은 측정된 적 없음(단서만).",
@@ -2741,7 +2760,7 @@
           ]
         }
       ],
-      "checked_at": "2026-09-29",
+      "checked_at": "2026-09-30",
       "verified_at": null
     },
     {
@@ -2880,7 +2899,7 @@
           "sources": []
         },
         {
-          "text": "routes.json의 coupang-terms 항목(reported)이 덮음. reported는 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. confirmed는 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. 그 뒤에도 robots.txt가 허용할 때만 읽음.",
+          "text": "routes.json의 coupang-terms 항목(reported)이 덮음. lift_requires: written_permission 항목은 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. lift_requires: never 항목은 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. 그 뒤에도 robots.txt가 허용할 때만 읽음.",
           "read_via": "skill_rule",
           "sources": [],
           "rule_ref": "uxresearch/data/routes.json"

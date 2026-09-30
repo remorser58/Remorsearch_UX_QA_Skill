@@ -27,9 +27,8 @@ KWCAG = SKILL / "references" / "persona-qa" / "kwcag-2.2.md"
 KOREAN_DOCS = sorted(KOREA.glob("*.md")) + [KWCAG]
 PLATFORM_MAP = KOREA / "platform-map.md"
 
-# Facebook has no channel row (its groups are out of scope), and X is not in the Korean channel map, so their
-# terms entries have no row to point at.
-ENTRIES_WITHOUT_ROW = {"meta-facebook", "x-terms"}
+# These channels have no row in the Korean map; their stops still apply through the route table.
+ENTRIES_WITHOUT_ROW = {"meta-facebook", "x-terms", "tiktok-terms", "reddit-terms", "hackernews-terms"}
 # Member-only or closed communities are never named as audience leads (owner decision S2).
 CLOSED_COMMUNITIES = ("여성시대", "subdued20club")
 CAFE_PAGE = re.compile(r"cafe\.(?:naver|daum)\.(?:com|net)/[A-Za-z0-9_-]+")
@@ -225,12 +224,26 @@ class PlatformDataTests(unittest.TestCase):
             self.assertEqual(status, entries[entry_id]["status"], where)
             self.assertEqual(terms["routes_entry"], entry_id, where)
             self.assertEqual(terms["restricts"], entries[entry_id]["restricts"], where)
+            if "lift_requires" in terms:
+                self.assertEqual(terms["lift_requires"], entries[entry_id]["lift_requires"], where)
             self.assertIn("terms_restricted", row["expected_stops"], where)
             if status == "confirmed":  # only a clause that was read makes an entry confirmed
                 self.assertTrue(terms["terms_url"].startswith("https://") and terms["clause"], where)
         self.assertEqual(set(entries) - pointed_at, ENTRIES_WITHOUT_ROW & set(entries))
         for entry in entries.values():  # the route table says how an entry was read in the map's own words
             self.assertIn(entry["read_via"], self.vocab["read_via"], entry["id"])
+
+    def test_new_stops_and_own_app_exports_are_consistent(self):
+        rows = {row["id"]: row for row in self.rows}
+        for name, requirement, routes in (("daangn", "written_permission", ["reader_public_page"]),
+                                           ("clien", "never", ["none"]),
+                                           ("app-store-kr", "never", ["team_export"])):
+            self.assertEqual(rows[name]["terms"]["lift_requires"], requirement)
+            self.assertEqual(rows[name]["routes"], routes)
+            self.assertIn("terms_restricted", rows[name]["expected_stops"])
+            self.assertEqual(rows[name]["checked_at"], "2026-09-30")
+        self.assertEqual(rows["app-store-kr"]["hosts"], ["apps.apple.com", "itunes.apple.com"])
+        self.assertEqual(next(p for p in self.routes["platforms"] if p["id"] == "app-store")["official"], [])
 
     def test_every_statement_carries_its_provenance(self):
         for holder in (self.rows, self.data["corpus_norms"]):
