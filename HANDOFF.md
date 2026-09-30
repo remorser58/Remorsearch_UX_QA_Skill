@@ -48,9 +48,10 @@ python3 skills/remorsearch-ux-qa/scripts/smoke_loop.py
 
 **결정 D1~D13**
 
-- **D1 약관 제한(`terms_restricted`)**
-  - `reported`: 사용자가 기록한 확인으로만 풀립니다.
-  - `confirmed`: 풀리지 않습니다. 유튜브 페이지와 메타 플랫폼이 여기에 해당합니다.
+- **D1 약관 제한(`terms_restricted`)** (로컬 세션에서 2026-10-01 수정)
+  - 해제 여부는 `lift_requires`가 정합니다: `never`(풀리지 않음), `written_permission`(항목별 확인과 사전 서면 허락), `terms_check`.
+  - `status`(`reported`, `confirmed`)는 원문을 읽었는지만 나타냅니다. 원문 확인으로 표시를 올려도 해제 정책은 바뀌지 않습니다.
+  - 유튜브 페이지, 메타 플랫폼, 틱톡, 클리앙, 앱스토어, Hacker News는 `never`입니다. 디시인사이드, 네이버, 네이버 카페 공지, 쿠팡, X, 당근, Reddit은 `written_permission`입니다.
   - 요청하기 전에 멈추고, 리디렉션의 매 단계에서도 멈춥니다.
 - **D2 AI 에이전트용 robots.txt 그룹을 따릅니다.**
 - **D3 연구자 메모 기능은 뺍니다.**
