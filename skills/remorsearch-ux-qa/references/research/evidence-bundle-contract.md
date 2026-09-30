@@ -1,118 +1,129 @@
 # Evidence Bundle Contract
 
-This contract is shared by the research and QA skills. It makes provenance explicit without turning a research bundle into a claim that the sample is representative.
+Research and QA share ux-evidence-bundle.v1. This graph records provenance, not
+representative sampling. Copies in research/ and persona-qa/ stay byte-identical.
+Commands are the engine contract; check help. If unavailable, keep research
+unverified with labelled manual assessment; do not author a gate pass.
 
-The copies in `references/research/` and `references/persona-qa/` are identical. Change both together.
+## Permissions and graph
 
-## Permission record
+permissions has requested, granted and blocked [{capability, reason}]. Capabilities
+are read_only/design_write/test_data_write/code_write. Each requested capability
+is granted or blocked, never both; proposals cannot lift a block.
 
-```json
-{
-  "permissions": {
-    "requested": ["read_only", "design_write"],
-    "granted": ["read_only"],
-    "blocked": [
-      {"capability": "design_write", "reason": "No Figma write approval for this run"}
-    ]
-  }
-}
+records has ten arrays: sources, evidence, claims, personas, scenarios, runs,
+observations, findings, proposals, figma. IDs are globally unique. Links are:
+source_id, evidence_ids, persona_id, scenario_id, run_id, observation_ids,
+finding_ids, claim_ids, figma_id. Optional claim counter_evidence_ids,
+context_evidence_ids and original research support/context IDs are also validated,
+as are counter-search source/evidence, audience and scenario motivation links.
+Present optional lists may be empty; nonempty required support is checked by kind.
+
+Evidence/claims/observations/findings use epistemic_status observed/inferred/unknown.
+Verified requires eligible observed support, never inference alone. A research
+product_behavior can have evidence_ids empty with observed same-scope observations
+from completed runs; missing product observations yields needs_product_check.
+Other research candidates can be empty/unverified, yielding lead_only. No dummy
+source. Existing QA bundles keep legacy checks; their structural validity cannot
+bypass the research gate. Optional fields are checked even in legacy records.
+
+## Source provenance and privacy
+
+Sources require channel/source_ref/access_basis/access_method/public_scope/
+retention_status. Research adds source_type/family/channel family, producing org,
+salted author/thread identities (nullable), published_at/observed_at/valid_at/
+version, privacy_class, flags, promo_check and provenance. Reader provenance has
+fetch_id/content_sha256 and access rung/presentation/verdict/stop/fetched_at/
+robots/context/terms; it must match a successful authoritative capture and quote.
+A known fetch ID alone is insufficient. Every excerpt keeps its actual capture,
+not a later header's more convenient flags/dates.
+
+Research access bases: public_anonymous/public_teaser/official_api/team_provided/
+authorised_member/fixture. Older QA can say public. Import provenance has
+import_id/content_sha256, sanitized artifact and app/product/territory/date/
+permission provenance; never fake fetch_id. Automatic raw-export scrubbing is
+outside this contract: producer supplies sanitized, reviewed text; unsafe imports
+are refused. Source types/families/grades follow source-grading.md. Statistical
+size support needs stat_card frame/reference_period and neutral denominator.
+
+Terms lift_requires controls never/written_permission/terms_check; reported/
+confirmed status is evidence quality only. No source field authorizes a lift.
+Leads/stops/withdrawn/deleted/redacted/LLM/synthetic cannot count as verified support.
+Official_api needs authoritative retention_until. Recheck at consumption; expiry
+purges content and repairs claims with gaps. Non-content deleted tombstones are
+allowed; deleted status with an excerpt is not a waiver. Expired counters require
+new counter-search, not silent removal. New captures must recheck their quotes.
+
+Quotes come from scrubbed text, max 300 normalized characters/five per source.
+Placeholders remain. Never retain handles/profiles/IPs/contact/identifier numbers.
+Protected cues cannot link to an author/thread via any source/locator/alias or
+reverse reference. Remove the entire personal component or seek actual aggregate
+evidence; an unlinked segment hypothesis remains unsupported. Salted keys are
+still identities. Skip apparent minors. Shared member/API and sensitive-channel
+content is authored summary only without personal locators or quotes.
+
+## Claims and gate
+
+claim_kind uses source-grading.md. Research claims have typed subject/scope,
+about_current_version, stakes, scenario_priorities, audience_values, support/
+context/counter/observation links and counter_search receipts. Original
+research_support_evidence_ids/research_context_evidence_ids and
+research_epistemic_status survive regrade. Do not manually partition to obtain
+support. Verifier decisions bind kind/target/capture/content hash; no free-text
+promotion/injection/polarity or contradiction clearance. Typed scope change
+creates a new claim and preserves the old conflict.
+
+```sh
+python3 scripts/ux_research.py gate --run RUN --bundle RUN/bundle.json
+python3 scripts/ux_research.py gate --run RUN --bundle RUN/bundle.json --write-bundle
+python3 scripts/validate_bundle.py RUN/bundle.json
 ```
 
-Allowed capabilities are `read_only`, `design_write`, `test_data_write`, and `code_write`. A blocked capability stays blocked even when a proposal recommends that action.
+Gate alone writes verification. Pass may retain unsupported claims. Conflict/
+currency precede observations/support. Gate exits 0 pass/1 process/2 integrity/
+3 contention; failure invalidates gate.json and writes gate_failed.json.
+Standalone validator exits 0 valid/1 contract error/2 usage-I/O. Schema owns
+shape, validator owns links/observations/retention, gate owns grading/independence/
+process/denominators/currency/export eligibility. Validator success is not a gate.
 
-## Record graph
+Research root envelope and external merge receipt bind run/manifest/log/rules
+and provenance. Removing the envelope or marking a bundle legacy cannot bypass
+fresh gate checks. Consumers recompute supporting/context/counter source,
+observation/run, brief/version, rule, independence and verifier dependency hashes.
+Status writes do not change input hashes. Regrade is idempotent; live retention
+still applies even when hashes match. Interrupted/competing writes cannot publish
+an accepted mixed bundle/gate generation.
 
-The top-level `records` object contains arrays named `sources`, `evidence`, `claims`, `personas`, `scenarios`, `runs`, `observations`, `findings`, `proposals`, and `figma`. Every record has a unique `id`.
+## Audience and synthetic boundary
 
-```text
-source → evidence → claim
-persona → scenario → run → observation → finding → proposal
-figma → finding or proposal
+Export is ux-audience-draft.v1, incomplete/non-composable. No invented age/devices/
+tasks/data/frequency/criticality. bundle_ref is a source-ID string; typed segment/
+entity/field value_provenance carries claim IDs/hashes/eligible closure. News is
+withheld from automatic export; official population bounds stay bounds. Completed
+research audiences need audience-check --gate --bundle --run, comparing exact
+values and joins, not a supported source somewhere.
+
+Synthetic personas require adapter_revision/schema_fingerprint/seed/shard_or_config,
+max_scanned_rows/max_bytes_read/timeout_ms, selected_record_ids/filled_strata/
+unfilled_strata/stop_reason/original_attributes/scenario_assumptions. Keep original
+attributes separate from test assumptions. They do not support real-user preference,
+prevalence or discomfort. Audience-composed personas remain basis synthetic and
+carry audience_ref {audience_id, segment_id, facet, claim_ids}; claims must exist.
+Findings may list segments_affected, never inferred shares of users affected.
+
+## Loop hand-off and Figma
+
+```sh
+python3 scripts/ux_research.py minimize --run RUN --bundle RUN/bundle.json --gate RUN/gate.json
 ```
 
-Use `source_id`, `evidence_ids`, `persona_id`, `scenario_id`, `run_id`, `observation_ids`, `finding_ids`, and `figma_id` for the links. A missing link is a validation error.
+Writes bundle.min.json/minimize.json with safe authored summaries/required graph,
+no nested excerpt/raw/body/text/quote or personal locators. Missing summary refuses.
+Projection keeps permissions, cannot regrade/export and cannot relabel population
+bounds as measured users. Exits 0 success/1 unsafe or missing summary/2 stale gate,
+expiry or integrity/3 contention. Loop intake rejects excerpts; use the projection.
 
-## Epistemic status
-
-Every evidence item, claim, observation, and finding uses `epistemic_status`:
-
-- `observed`: directly captured from a source or the product surface;
-- `inferred`: reasoned from observed material;
-- `unknown`: not established by the available evidence.
-
-Use `verification_status: "verified"` only when the required observed support exists. Inference can guide a hypothesis and a next test. It cannot be the only support for a verified claim or finding.
-
-## Source policy
-
-Every source records `channel`, `source_ref`, `access_basis`, `access_method`, `public_scope`, and `retention_status`. Keep `withdrawn`, `deleted`, and `redacted` states visible. A withdrawn or deleted source must not continue to support a verified claim.
-
-- `access_basis`: research runs use `public_anonymous`, `public_teaser`, `official_api`, `team_provided`, `fixture` or `authorised_member`. Older bundles may say `public`.
-- `access_method`: the tool that read the page, such as `ux_research_read`, `aside`, `claude_in_chrome`, `claude_app_browser`, `playwright_mcp`, `chrome_devtools_mcp`, `drivers_web`, `web_search`, `web_fetch` or `team_export` (`references/research/public-page-access.md`, section 15). A source read through an official API adapter, such as the YouTube Data API, has `access_method: ux_research_read` and `access_basis: official_api`.
-- In shared outputs, a source with `access_basis: authorised_member` carries an authored summary only: no excerpt, no post URL and no member's personal data.
-- A source with `access_basis: official_api` carries `retention_until`. Delete it, or read it again, by then. Its video and comment IDs stay in the bundle, never in shared outputs.
-- Never record age, race, religion, political leaning, sexual orientation, health, disability or another protected attribute against an author key, whatever the source type. Such cues belong to segment-level claims, or to excerpts stripped of author and thread keys.
-- Excerpts come from the reader's scrubbed page text. Placeholders such as `[phone]` or `([ip])` stay as they are.
-
-Optional fields for research sources:
-
-| Field | Content |
-| --- | --- |
-| `source_type` | An `ergo-audience.v1` source type (`official_statistics`, `product_analytics`, `app_store_reviews`, `community`, `survey`, `interview`, `usability_test`, `support_tickets`, `official_docs`, `competitor`, `market_report`, `research_paper`, `product_brief`, `expert_judgment`), or `news`, `llm_output` or `synthetic` |
-| `access` | `{rung, presentation, verdict, stop_class, fetch_id, fetched_at, content_sha256, robots, context}`, copied from the reader's run ledger |
-| `published_at`, `observed_at`, `valid_at` | When the author published, when the reader read it, and when the content was true |
-| `retention_until` | For an official API source: the fetch time plus the route's retention days (30 for YouTube), after which the item is deleted or read again. Required when `access_basis` is `official_api`. |
-| `platform_family`, `org` | The channel family and the organisation used to count independence. `platform_family` is `blog`, `community`, `qna`, `video`, `app_store_reviews`, `microblog` or `commerce_reviews`. On a statistics portal, `org` is the agency that produced the table. |
-| `author_key`, `thread_key` | Salted keys from the run. Never a handle or a name. A record that carries them never carries a protected-attribute cue. |
-| `terms` | `{entry, status, lifted, mode}` from the reader, when a `terms_restricted` entry covers the host: the entry's id, `reported` or `confirmed`, whether the user's own terms check lifted it for the run, and `official_only` when only the official route ran |
-| `promo_flags`, `injection_flags` | Candidate promotion or affiliate disclosures (a verifier confirms them before the grade cap applies), and injection signals |
-| `incentive_flags`, `virtual_person_flags` | Candidate review-event incentives, each with its `kind` (`seller_event`, `seller_notice`, `platform_points` or `reward_unspecified`) and `position` (`lead`, `body` or `tail`), and candidate virtual-person labels. A verifier confirms them before a cap applies. |
-| `promo_check` | `text_only` or `text_and_images`: whether the disclosure check saw only the text, or the images and banners too |
-| `stat_card` | For a statistic: `{publisher, title, approval_no, table_id, reference_period, frame, n, method, sampling_error, unit, value_as_printed, url, retrieved_at, licence}` (`references/research/korea/statistics.md`, section 2) |
-
-Values in the `access` block:
-
-- `rung`: `R0` to `R3` for pages that were read; `search_snippet` or `summarizing_fetch` for leads;
-- `presentation`: `official_route`, `honest_ua`, `site_alternate` or `real_browser`;
-- `verdict`: `ok_strong`, `ok_weak`, `suspect`, `js_shell`, `js_check` or `bot_filter`;
-- `stop_class`: `none`, or one of `auth_gate`, `paywall`, `human_check`, `opted_out`, `terms_restricted`, `rate_limit`, `geo_block`, `legal_block`, `gone`, `budget`, `host_stopped`;
-- `robots`: the robots.txt decision for the path (`allowed` or `disallowed`) and the file's status (`ok`, `unavailable`, `unavailable_bot_filtered`, `unavailable_redirect` or `unreachable`);
-- `context`: `anonymous` or `signed_in`. Older records may say `unknown`; `ingest` now refuses captures from an unknown context.
-
-## Claims
-
-- `claim_kind` uses the kinds in `references/research/source-grading.md`: `segment_exists`, `segment_share`, `device_mix`, `condition_presence`, `condition_share`, `context_of_use`, `task`, `pain_point`, `workaround`, `product_behavior`, `intended_behavior`, and the population kinds `prevalence`, `user_preference`, `real_user_preference` and `discomfort`.
-- Optional fields: `segment_hint`, `counter_search` `{query, lang, tool, read_source_ids, summary, outcome, resolution}`, `counter_evidence_ids`, `context_evidence_ids`, `about_current_version`, and `observation_ids`.
-- For research claims, `verification_status` is written only by `ux_research.py gate --write-bundle` (planned). Evidence that did not count toward the status moves to `context_evidence_ids`, so every `evidence_ids` entry of a verified claim is eligible support.
-
-## Synthetic persona boundary
-
-Synthetic personas require an adapter revision, schema fingerprint, seed, shard or config, maximum rows or bytes, timeout, selected record IDs, filled and unfilled strata, stop reason, `original_attributes`, and `scenario_assumptions`. Keep original attributes separate from assumptions added for a test. Synthetic personas produce bounded scenarios; they do not support claims about real-user preference, prevalence, or discomfort.
-
-A persona composed from an audience file keeps `basis: "synthetic"` and adds `audience_ref` `{audience_id, segment_id, facet, claim_ids}`. The reference explains where the test condition came from. It never turns the persona into evidence about real users.
-
-## Findings
-
-A finding may carry `segments_affected`: an array of segment IDs whose composed personas triggered it. It names segments, never the share of users affected.
-
-## Validator checks for the new fields
-
-`scripts/validate_bundle.py` checks retention now: a source with `access_basis: official_api` needs `retention_until`, and a source whose `retention_until` has passed is an error until the item is deleted, or read again and the date updated. The reader only stamps the date. `examples/bundle/minimal.json` is a small valid bundle to try the validator on.
-
-It will add these checks (planned). Each applies only when its field is present, so existing bundles keep passing:
-
-- `sources[].access` has the shape and values listed above;
-- a verified claim cannot rely on a source that hit a stop, `terms_restricted` included, on a lead (`search_snippet` or `summarizing_fetch`), or on an `llm_output` or `synthetic` source;
-- a verified `segment_share`, `condition_share`, `device_mix` or `prevalence` claim needs evidence whose `evidence_type` is `quantitative` or `statistic`;
-- a statistical source that supports a size claim has a `stat_card` whose `frame` and `reference_period` are filled in;
-- a persona with `audience_ref` must have `basis: "synthetic"`, and every ID in its `claim_ids` must exist;
-- `segments_affected` must be an array of strings.
-
-One separate tightening is also planned: a verified `product_behavior` claim needs `observation_ids` that link observed observations from completed runs.
-
-## Loop intake
-
-The loop's intake rejects excerpt and raw text fields. Run `ux_research.py minimize` (planned) first: it removes them and keeps authored summaries.
-
-## Figma comparison
-
-When comparing implementation with Figma, record `file_key`, `branch_key`, `baseline_version`, `node_ids`, `read_at`, `readback_artifact_ref`, and `design_status`. Classify the difference as `implementation_defect`, `design_defect`, `spec_conflict`, or `approved_deviation`. A baseline and readback version conflict keeps comparison unverified until resolved.
+Figma comparison records file_key/branch_key/baseline_version/node_ids/read_at/
+readback_artifact_ref/design_status. Defect class: implementation_defect,
+design_defect, spec_conflict, approved_deviation. Baseline/readback conflict stays
+unverified until resolved.
