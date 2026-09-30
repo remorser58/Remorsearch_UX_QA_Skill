@@ -13,7 +13,8 @@
   so boxes, hit tests and taps must use screen coordinates. #out records the tap.
   #inner is its own scroll box: a swipe on it must scroll it while the driver captures
   frames for visual feedback (a downscaling capture clip stops such a scroll);
-  #inner-pos shows its scrollTop.
+  #inner-pos shows its scrollTop. #field is an empty text field: Backspace in it
+  changes nothing (its blinking caret is not feedback); a typed character is.
 -->
 <style>
   body { margin: 0; font-family: sans-serif; }
@@ -28,6 +29,7 @@
 </head>
 <body>
 <div id="wide" hidden>고정 폭 상자</div>
+<input id="field" type="text" aria-label="메모" style="font-size:16px;margin:8px;width:200px">
 <div id="inner"></div>
 <p id="inner-pos">0</p>
 <div id="spacer"></div>

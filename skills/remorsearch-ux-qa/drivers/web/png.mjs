@@ -448,11 +448,17 @@ export function indicatorPixels(on, off1, off2, level = 16, maskLevel = 4, regio
   return changed;
 }
 
-export function visualDiffFraction(a, b, level = 16) {
+export function visualDiffFraction(a, b, level = 16, mask = null) {
   if (!a || !b || a.rgb.length !== b.rgb.length) return null;
   const n = a.rgb.length / 3;
+  const w = a.width;
   let changed = 0;
   for (let i = 0; i < n; i++) {
+    if (mask) {
+      const x = i % w;
+      const y = (i - x) / w;
+      if (x >= mask.x0 && x < mask.x1 && y >= mask.y0 && y < mask.y1) continue;
+    }
     const o = i * 3;
     const d = Math.max(
       Math.abs(a.rgb[o] - b.rgb[o]),

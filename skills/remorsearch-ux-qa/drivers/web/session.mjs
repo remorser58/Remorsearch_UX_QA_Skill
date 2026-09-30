@@ -1219,7 +1219,7 @@ export class WebSession {
       if (wantVisual && visual.pre) {
         // The frame reflects the page when the capture was requested (t0): the
         // change happened before t0 and after the previous capture started.
-        const d = visualDiffFraction(frame, visual.pre, VISUAL_LEVEL);
+        const d = visualDiffFraction(frame, visual.pre, VISUAL_LEVEL, visual.mask);
         if (d !== null && d >= this.visualThreshold(frame)) fb.visual = t0;
       }
       if (wantFlash && this.flashSamples.length < MAX_FLASH_SAMPLES && this.flashBytes < MAX_FLASH_BYTES) {
@@ -1719,12 +1719,32 @@ export class WebSession {
     this.wholeFrames = GESTURES.has(kind);
     let pre = null;
     let visualAmbient = false;
+    let mask = null;
     if (visualOn) {
+      // A focused text field's caret blinks: changes inside that field are not
+      // feedback (typed characters are, through input events). Screen coordinates.
+      mask = await this.page.evaluate(() => {
+        let a = document.activeElement;
+        while (a && a.shadowRoot && a.shadowRoot.activeElement) a = a.shadowRoot.activeElement;
+        if (!a || a === document.body || a === document.documentElement) return null;
+        const t = (a.getAttribute('type') || 'text').toLowerCase();
+        const pressable = ['button', 'submit', 'reset', 'checkbox', 'radio', 'image', 'file', 'color', 'range'];
+        if (!(a.tagName === 'TEXTAREA' || a.isContentEditable || (a.tagName === 'INPUT' && !pressable.includes(t)))) return null;
+        const r = a.getBoundingClientRect();
+        const v = window.visualViewport;
+        const one = !!v && Math.abs(v.scale - 1) < 0.01;
+        return { x: r.left - (one ? v.offsetLeft : 0), y: r.top - (one ? v.offsetTop : 0), w: r.width, h: r.height };
+      }).catch(() => null);
       try {
         const a = await this.captureFrame();
         await sleep(40);
         pre = await this.captureFrame();
-        const d = visualDiffFraction(a, pre, VISUAL_LEVEL);
+        if (mask) {
+          const sx = pre.width / this.vw;
+          const sy = pre.height / this.vh;
+          mask = { x0: Math.floor((mask.x - 2) * sx), y0: Math.floor((mask.y - 2) * sy), x1: Math.ceil((mask.x + mask.w + 2) * sx), y1: Math.ceil((mask.y + mask.h + 2) * sy) };
+        }
+        const d = visualDiffFraction(a, pre, VISUAL_LEVEL, mask);
         visualAmbient = d !== null && d >= this.visualThreshold(pre);
       } catch {
         pre = null;
@@ -1738,7 +1758,7 @@ export class WebSession {
       dispatch,
       stepIndex: step.step_index,
       flashMs: this.opts.flashSampleMs,
-      visual: visualOn && pre && !visualAmbient ? { pre, deadline: dispatch + fbTimeout } : null,
+      visual: visualOn && pre && !visualAmbient ? { pre, mask, deadline: dispatch + fbTimeout } : null,
       fb,
     });
     let inputErr = null;

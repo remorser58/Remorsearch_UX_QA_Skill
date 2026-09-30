@@ -10,7 +10,7 @@ export const TW_BINDING = '__ergoqaDriverTimingWindow';
 /**
  * Installed with addInitScript before any page script runs (main frame only):
  * - MutationObserver ring buffer of callback timestamps (epoch ms) for
- *   feedback-latency measurement;
+ *   feedback-latency measurement (input events count too: a field's value change);
  * - optional timing-window poller (every cfg.pollMs, default 16 ms) that reports
  *   visibility transitions of CSS selectors through an exposed binding.
  */
@@ -61,6 +61,12 @@ export function pageInit(cfg) {
       subtree: true, childList: true, attributes: true, characterData: true,
     });
   } catch (e) { /* no document yet: nothing to observe */ }
+  // A field's value changing (typed or deleted characters) is feedback too, and it is
+  // not a DOM mutation. The driver masks the focused field in visual comparisons (the
+  // caret blinks), so this is how typing echo is seen.
+  try {
+    window.addEventListener('input', record, true);
+  } catch (e) { /* ignore */ }
 
   const windows = Array.isArray(cfg.windows) ? cfg.windows : [];
   if (!windows.length || !cfg.binding) return;

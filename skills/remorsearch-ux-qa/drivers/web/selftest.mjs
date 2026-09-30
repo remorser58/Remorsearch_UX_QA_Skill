@@ -821,6 +821,25 @@ async function viewportTest(base, tmp) {
     const pos = Number((last.elements.find((e) => e.dom_id === 'inner-pos') || {}).text);
     check('viewport: a swipe scrolls an inner scroll box while frames are captured (no downscaling clip during gestures)', pos > 50, pos);
   }
+  // Keys in a focused empty field: the caret blinks, which is not feedback; a typed
+  // character is (an input event).
+  writeJson(path.join(tmp, 'vp-caret.json'), {
+    ...scenario('SC-driver-vp-04', '', 'desktop-1920', { url_contains: 'viewport' }),
+    device_ids: ['desktop-1920'],
+    steps: [{ action: 'click', target: '#field' }, { action: 'press', key: 'Backspace' }, { action: 'press', key: 'Backspace' },
+      { action: 'press', key: 'Backspace' }, { action: 'type', target: '#field', text: 'a' }],
+  });
+  r = await runDriver(['run', '--scenario', path.join(tmp, 'vp-caret.json'), '--device', 'desktop-1920', '--out', outDir, '--run-id', 'R-vp-caret',
+    '--base', base, '--no-reflow', '--no-focus-walk']);
+  if (check('viewport desktop-1920 (caret): exit 0', r.code === 0, `${r.code} ${r.err}`)) {
+    const st = loadRun(path.join(outDir, 'R-vp-caret')).run.steps;
+    const keys = st.filter((s) => s.action.action === 'press');
+    const typed = st.find((s) => s.action.action === 'type');
+    check('viewport: Backspace in an empty focused field has no feedback (the blinking caret is masked)',
+      keys.every((s) => s.feedback_source === null), keys.map((s) => [s.feedback_source, s.feedback_latency_ms]));
+    check('viewport: a typed character is feedback at once (input event)', typed && typed.feedback_latency_ms !== null && typed.feedback_latency_ms < 300,
+      typed && [typed.feedback_source, typed.feedback_latency_ms]);
+  }
   // Content wider than the phone: the screen pans inside a wider layout viewport.
   writeJson(path.join(tmp, 'vp-wide.json'), scenario('SC-driver-vp-02', '?wide', 'galaxy-s24', { text_present: '눌림' }));
   r = await runDriver(['run', '--scenario', path.join(tmp, 'vp-wide.json'), '--device', 'galaxy-s24', '--out', outDir, '--run-id', 'R-vp-wide',
