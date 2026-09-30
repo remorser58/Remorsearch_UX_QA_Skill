@@ -153,6 +153,20 @@ class Reflow(unittest.TestCase):
         lost = dict(rec, styles_lost={"live_rules": 400, "copy_rules": 12})
         self.assertEqual(checks.check_reflow({"run_id": "R", "reflow": [lost]}, {"profile_id": "P"}, {}), [])
 
+    def test_a_screen_that_does_not_reflow_is_one_finding(self) -> None:
+        # A desktop-only page: many boxes stick out; one finding for the screen names them all.
+        offs = [{"selector": f"#b{i}", "dom_id": f"b{i}", "ancestor_ids": ["main"], "tag": "div",
+                 "box": {"x": 8, "y": 40 * i, "w": 380 + 20 * i, "h": 30}, "text": f"상자 {i}"} for i in range(5)]
+        rec = {"snapshot_id": "S-1", "url": "http://x/admin", "width": 320, "client_width": 320, "scroll_width": 813,
+               "root_clips": False, "offenders": offs, "lost": []}
+        obs = checks.check_reflow({"run_id": "R", "reflow": [rec, dict(rec, snapshot_id="S-2")]}, {"profile_id": "P"}, {})
+        self.assertEqual([(o.element_key, o.measurement["offender_count"], o.measurement["value"]) for o in obs], [("html|http://x/admin", 5, 468.0)])
+        self.assertEqual(obs[0].extra["anchor_selectors"], [f"#b{i}" for i in range(5)])
+        self.assertIn("재배치되지 않습니다", obs[0].message_ko)
+        # Up to three boxes stay separate findings.
+        few = dict(rec, offenders=offs[:3])
+        self.assertEqual(len(checks.check_reflow({"run_id": "R", "reflow": [few]}, {"profile_id": "P"}, {})), 3)
+
     def test_text_lost_at_320_without_page_scroll(self) -> None:
         # A one-line bar with overflow:hidden: the timer fits at the device width and is
         # cut away at 320 px, with no sideways scroll to reach it (F102).

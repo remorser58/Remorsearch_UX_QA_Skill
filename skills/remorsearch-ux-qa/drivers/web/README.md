@@ -13,7 +13,7 @@ Requirements: Node.js 22 and `playwright@1.56.1` with its Chromium. Install once
 cd drivers/web
 npm install                 # playwright 1.56.1 into drivers/web/node_modules
 npx playwright install chromium
-node selftest.mjs           # a few minutes; expects "232 passed", 0 failed
+node selftest.mjs           # a few minutes; expects "234 passed", 0 failed
 ```
 
 The package is resolved by normal module resolution (so `drivers/web/node_modules`
@@ -157,8 +157,9 @@ they belong to (0 = initial load), so a step can own two snapshots.
   ancestor chain when off-screen) are composited over the page canvas with group
   opacity; `color_bg` is `null` when an image, video, canvas, SVG or
   background-image/gradient is underneath (unknown, not guessed).
-- **Feedback latency**: an init-script `MutationObserver` timestamps DOM changes,
-  and `input` events of text-like fields count too (a typed character shows in the
+- **Feedback latency**: an init-script `MutationObserver` timestamps DOM changes
+  (only real ones: an attribute or text node written with the value it already had
+  changes nothing on screen), and `input` events of text-like fields count too (a typed character shows in the
   field without any DOM mutation; checkbox, radio, range, color, file and select
   inputs are left out, since their own look is what the user sees, and are judged by
   mutations and pixels); both are reported as `dom_mutation`.

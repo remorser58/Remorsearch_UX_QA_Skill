@@ -2091,6 +2091,12 @@ def check_focus_management(ctx: Context) -> list[Observation]:
 
 
 REFLOW_TOLERANCE_PX = 4  # borders and rounding; a few px of overflow hide no content
+REFLOW_GROUP_MAX = 3  # more boxes than this past the edge on one screen: one finding for the screen
+
+
+def _right_edge(offender: dict[str, Any]) -> float:
+    box = offender.get("box") or {}
+    return float(box.get("x") or 0) + float(box.get("w") or 0)
 
 
 def check_reflow(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[str, dict[str, Any]] | None = None) -> list[Observation]:
@@ -2133,14 +2139,32 @@ def check_reflow(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[s
                 extra={"anchor_selectors": [anchor], "context_selectors": [f"#{a}" for a in lost.get("ancestor_ids") or [] if a]},
             ))
         page_overflow = scrolls or bool(rec.get("root_clips"))
-        listed = False
-        for off in rec.get("offenders") or []:
-            box = off.get("box") or {}
-            if (box.get("x") or 0) + (box.get("w") or 0) <= width + REFLOW_TOLERANCE_PX:
+        eligible = [off for off in rec.get("offenders") or [] if isinstance(off, dict)
+                    and _right_edge(off) > width + REFLOW_TOLERANCE_PX and (page_overflow or off.get("fixed"))]
+        listed = bool(eligible)
+        if len(eligible) > REFLOW_GROUP_MAX:
+            # A layout that does not reflow at all (a desktop-only page): one finding for
+            # the screen, naming every box that sticks out, not one per box.
+            page_key = f"html|{rec.get('url') or ''}"
+            if page_key in seen:
                 continue
-            if not page_overflow and not off.get("fixed"):
-                continue
-            listed = True
+            seen.add(page_key)
+            rights = [_right_edge(o) for o in eligible]
+            names = [f"'{(o.get('text') or o.get('selector') or '')[:16]}'" for o in eligible[:3]]
+            how = "가로 스크롤이 생기거나 화면 밖으로 잘립니다" if scrolls else "화면 밖으로 잘려 볼 수 없습니다"
+            out.append(Observation(
+                "RF-01", run["run_id"], profile["profile_id"], rec.get("snapshot_id"), None, [], page_key,
+                {"name": "right_edge_css_px", "value": max(rights), "unit": "css_px", "threshold": width, "comparator": "<=",
+                 "viewport_css_px": rec.get("width"), "page_scroll_width": rec.get("scroll_width"), "root_clips": bool(rec.get("root_clips")),
+                 "offender_count": len(eligible), "in_fixed_bar": any(o.get("fixed") for o in eligible)},
+                False, "P2",
+                f"320 CSS px 폭(400 % 확대)에서 이 화면이 재배치되지 않습니다: 요소 {len(eligible)}개({', '.join(names)} 등)가 오른쪽으로 넘쳐 "
+                f"가장 먼 끝이 {max(rights):.0f}px이고 {how}(WCAG 1.4.10).",
+                extra={"anchor_selectors": [o["selector"] for o in eligible if o.get("selector")],
+                       "context_selectors": sorted({f"#{a}" for o in eligible for a in o.get("ancestor_ids") or [] if a})},
+            ))
+            continue
+        for off in eligible:
             element = None
             if off.get("dom_id") and snap:
                 element = next((e for e in snap.get("elements", []) if e.get("dom_id") == off["dom_id"]), None)

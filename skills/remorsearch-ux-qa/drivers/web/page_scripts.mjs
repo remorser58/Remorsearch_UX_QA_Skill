@@ -56,9 +56,19 @@ export function pageInit(cfg) {
     if (count < N) count++;
     state.mutations++;
   };
+  // Only real changes count: a script that writes an attribute or text node with the
+  // value it already has (a modality script on every mousedown, a style re-set) changes
+  // nothing on screen.
+  const changed = (m) => {
+    if (m.type === 'childList') return m.addedNodes.length > 0 || m.removedNodes.length > 0;
+    if (m.type === 'attributes') return m.oldValue !== m.target.getAttribute(m.attributeName);
+    return m.oldValue !== m.target.data;
+  };
   try {
-    new MutationObserver(record).observe(document, {
-      subtree: true, childList: true, attributes: true, characterData: true,
+    new MutationObserver((list) => {
+      if (list.some(changed)) record();
+    }).observe(document, {
+      subtree: true, childList: true, attributes: true, characterData: true, attributeOldValue: true, characterDataOldValue: true,
     });
   } catch (e) { /* no document yet: nothing to observe */ }
   // A field's value changing (typed or deleted characters) is feedback too, and it is

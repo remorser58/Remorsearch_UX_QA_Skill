@@ -20,7 +20,9 @@
   - #pair-a and #pair-b sit in one small group with a :focus ring: after a click on
     #pair-a (its ring stays), the probe of #pair-b must still see #pair-b's ring.
   - #wi-btn hides its ring in "mouse" modality set by a what-input-like script that
-    ignores modifier keys: the probe must still see the ring a keyboard user gets.
+    ignores modifier keys: the probe must still see the ring a keyboard user gets. The
+    script writes the same attribute value on every mousedown, which is not feedback
+    (the #cb-l check would fail if it counted).
 -->
 <style>
   body { margin: 0; font-family: sans-serif; }
