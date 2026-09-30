@@ -6,8 +6,7 @@
 `references/research/source-grading.md`를 그대로 따릅니다. 이 팩과 두 문서가 다르면 더 엄격한 쪽을 따릅니다.
 
 이 팩에는 중단을 넘는 방법이 없습니다. 멈춘 페이지는 수집 공백으로 보고서에 남깁니다. 이 팩은 법률 자문도
-아닙니다. 법령 근거는 `references/research/korea/legal-checklist.md`에 모았습니다. 확인일은 2026-09-29이고, 확인
-표시(관찰됨, 미확인, 추론)는 팩의 다른 문서와 같습니다.
+아닙니다. 법령 근거는 `references/research/korea/legal-checklist.md`에 모았습니다. 원문 확인 사실은 2026-09-30·2026-10-01 읽은 날짜를 적고, 그 밖의 사실은 기존 확인 표시를 유지합니다. 확인 표시(관찰됨, 미확인, 추론)는 팩의 다른 문서와 같습니다.
 
 ## 1. 언제 쓰는가
 
@@ -46,8 +45,8 @@ ergonomics Stage 0(`references/ergonomics/audience-research.md`)도 웹 근거�
   허락을 `permission {granted_by, granted_on, reference}`에 함께 적어야 함. `terms_url`은 항목의 약관 문서여야
   하고 `host`는 항목의 호스트이거나 더 좁으며 읽을 URL을 포함해야 함. `checked_on`은 `effective_from`이 있으면
   그날 이후이고, 오늘 기준 365일 이내여야 하며 미래 날짜는 무효임. `permits_this_reading`인 확인만 그 실행에서
-  `reported` 제한을 풀며 한 URL에 걸린 항목을 각각 모두 풀어야 함. 풀린 항목은 모든 호스트를 합쳐 실행당 문서
-  10건까지 읽음. `confirmed`는 풀리지 않음. 에이전트는 확인 항목을 쓰지 않고, 명령줄 스위치도 없음.
+  `lift_requires`가 해제를 허용하는 항목만 풀며 한 URL에 걸린 항목을 각각 모두 풀어야 함. 풀린 항목은 모든 호스트를 합쳐 실행당 문서
+  10건까지 읽음. `status`는 근거 상태이며 해제는 `lift_requires`로 정함. `never`는 풀 수 없고 `terms_check`는 사용자 확인이 필요함. 에이전트는 확인 항목을 쓰지 않고, 명령줄 스위치도 없음.
 - 윤리 심의는 `ethics_review`에 적음(`status`는 `none`, `exempt`, `approved`, `pending` 가운데 하나, `body`와
   `reference`는 선택). 기록만 하고 강제하지 않음.
 - 유튜브 댓글이 필요하면 사용자 본인의 키를 환경 변수 `REMORSEARCH_YOUTUBE_API_KEY`로 받음(예전 이름
@@ -60,9 +59,7 @@ ergonomics Stage 0(`references/ergonomics/audience-research.md`)도 웹 근거�
 ### A1 계획
 
 - 채널마다 정당한 경로, 예상 중단, 약관 상태를 계획에 적음(`references/research/korea/platform-map.md`).
-- 약관 제한은 계획 단계에서 수집 공백으로 적음. 디시인사이드, 네이버, 쿠팡, X의 `reported` 항목은 위 약관 확인과
-  서면 허락 기록이 있어야 읽음. 네이버 카페 공지는 `terms_url`이 null이라 사람이 공지 원문 주소를 기록하기 전에는
-  풀리지 않음. `confirmed` 항목(유튜브 페이지, 인스타그램, 스레드, 페이스북)은 풀리지 않음.
+- 약관 제한은 계획 단계에서 수집 공백으로 적음. `lift_requires: written_permission`인 디시인사이드·네이버·네이버 카페 공지·쿠팡·X·당근·Reddit은 항목별 사용자 확인과 해당 읽기의 사전 서면 허락이 필요함. 카페 공지는 원문 주소가 기록되어 있으며 네이버 이용약관과 각각 확인해야 함. `never`인 유튜브·인스타그램·스레드·페이스북·틱톡·클리앙·앱스토어·Hacker News 페이지는 풀 수 없음.
 - 한국 제품이면 `kr-communities` 축을 `global-communities` 축보다 먼저 돌림(`references/research/audience-pipeline.md`의
   기본 축).
 - 통계는 승인번호, 모집단, 기준 시점, 표본 수를 담은 출처 카드와 함께 고름(`references/research/korea/statistics.md`).

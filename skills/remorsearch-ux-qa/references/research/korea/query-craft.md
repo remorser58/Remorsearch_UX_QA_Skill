@@ -55,17 +55,16 @@
   - 날짜는 연산자 대신 검색어 안에 넣음: 연도, 버전, "업데이트 후", "개편 후". — 규칙
 - 전역 웹 검색 도구는 네이버 블로그와 카페 글을 적게 잡을 수 있음. 결과가 없다고 논의가 없다는 뜻이 아님. —
   미확인(출처 없는 설계 가정). 네이버가 robots.txt로 AI 학습·검색 크롤러를 막는다는 보도는
-  `references/research/korea/platform-map.md`에 있음 — 미확인(요약)
+  `references/research/korea/platform-map.md`에 있음. 2026-09-30 직접 읽은 robots 관찰도 그 문서에 적었으며 현재 실행의 판정은 별도로 함 — 관찰됨, 과거 보도는 미확인(요약)
 - 검색 결과가 약관 제한 호스트(`uxresearch/data/routes.json`의 `terms_restricted`)를 가리키면 reader는 요청 전에
-  멈춤. `reported`는 사용자가 그 항목의 약관 문서를 직접 읽고 `access_policy.terms_checked`에
+  멈춤. `lift_requires`가 해제를 허용하는 항목은 사용자가 그 항목의 약관 문서를 직접 읽고 `access_policy.terms_checked`에
   `result: permits_this_reading`으로 적은 실행에서만 풀림. `lift_requires: written_permission`이면 운영사의 사전
   서면 허락을 `permission {granted_by, granted_on, reference}`에 함께 적어야 함. `host`는 항목의 호스트이거나 더
   좁고 읽을 URL을 포함해야 함. `checked_on`은 `effective_from`이 있으면 그날 이후이며 오늘 기준 365일 이내여야 하고
   미래 날짜는 무효임. 한 URL에 걸린 항목은 각각 별도 확인으로 모두 풀어야 함. 풀린 항목은 모든 호스트를 합쳐
-  실행당 문서 10건까지 읽음. `confirmed`는 풀리지 않으며 에이전트는 확인 항목을 쓰지 않음. — 규칙
+  실행당 문서 10건까지 읽음. `status`는 근거 상태임. `lift_requires: never`는 풀 수 없고 `terms_check`는 사용자 확인이 필요함. 에이전트는 확인 항목을 쓰지 않음. — 규칙
 - X 페이지와 oEmbed는 `x-terms`에 걸리며 서면 허락을 포함한 확인으로 풀리기 전에는 모두 멈춤. `official_route`는
-  null임. naver.me, me2.do, coupa.ng, t.co 같은 짧은 주소도 요청 전에 멈춤. 네이버 카페 공지는 `terms_url`이
-  null이라 사람이 공지 원문 주소를 기록하기 전에는 풀리지 않음. — 규칙
+  null임. naver.me, me2.do, coupa.ng, t.co 같은 짧은 주소도 요청 전에 멈춤. 네이버 카페 공지 원문 주소는 기록되어 있으며 공지와 네이버 이용약관은 각각 별도 확인과 사전 서면 허락이 필요함. 해제 조건은 `references/research/public-page-access.md` 17.1절을 따름(2026-10-01). — 규칙
 - 봇 차단(`bot_filter`)과 브라우저 확인 화면(`js_check`)은 `opted_out`이며 등록 도메인 전체를 이번 실행에서 멈춤.
   robots.txt 자리에 확인 화면이 와도 같음. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를
   기다리지 않음. 확인 화면 표지가 있거나 `waited_ms`가 0보다 큰 캡처는 `ingest`가 받지 않음. — 규칙

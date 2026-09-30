@@ -136,22 +136,36 @@ clause sentences named below, quoted with attribution.
   WCAG 2.2, ISO 9241, RFC 9309, the TDM Reservation Protocol and human-factors
   studies) are cited, not reproduced.
 - The Korean pack (`references/research/korea/`,
-  `references/persona-qa/kwcag-2.2.md`) cites KWCAG 2.2 (KS X OT0003:2022), the
+  `references/persona-qa/kwcag-2.2.md`) cites KWCAG 2.2 (KS X OT0003 R3, amended 2022-12-28), the
   Korea Fair Trade Commission's guidelines on endorsements and testimonials,
   guides of the Personal Information Protection Commission, official statistics
   and surveys, and statutes, administrative rules and judgments as read in the
   public legalize-kr mirrors (github.com/legalize-kr). Each is cited with its
   version or date, and marked 미확인 where it was not compared with the primary
-  source. None of it is legal advice.
+  source. The primary-source updates read on 2026-09-30/2026-10-01 cite the
+  [RRA standard and official attachment](https://www.rra.go.kr/ko/reference/kcsList_view.do?nb_seq=5247&nb_type=6),
+  [NIA amendment announcement](https://www.nia.or.kr/site/nia_kor/ex/bbs/View.do?bcIdx=25083&cbIdx=90549),
+  [FTC ordinance attachment](https://www.ftc.go.kr/www/downloadBbsFile.do?atchmnflNo=53785),
+  [FTC monitoring results](https://www.ftc.go.kr/www/selectBbsNttView.do?key=12&bordCd=3&nttSn=45909),
+  [FTC Q&A release](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156732583),
+  [NIA digital-divide report](https://www.nia.or.kr/site/nia_kor/ex/bbs/View.do?cbIdx=81623&bcIdx=29168),
+  [NIA internet-usage report](https://www.nia.or.kr/site/nia_kor/ex/bbs/View.do?cbIdx=99870&bcIdx=29198),
+  [KCA kiosk report](https://www.kca.go.kr/home/sub.do?menukey=4002&mode=view&no=1003409020),
+  [KCA delivery-platform report](https://www.kca.go.kr/home/sub.do?menukey=4002&mode=view&no=1003708987),
+  [Naver's cafe notice](https://notice.naver.com/notices/cafe/33743),
+  [law.go.kr judgments](https://www.law.go.kr/판례/(2021도1533)) and operator
+  terms/robots documentation cited at each fact. Read facts are marked 관찰됨;
+  unreached facts retain 미확인. `verified_at` remains null until a person reads
+  the primary page. None of it is legal advice.
 - Field names, limits and error codes of the KOSIS OpenAPI were read in three
   third-party documents (github.com/WooilJeong/PublicDataReader,
   github.com/rubatoyd/kosis-openapi-mcp and github.com/seokhoonj/pykosis). No
   text or code from them is included.
 - Seven more repositories are cited for facts by the shipped Korean documents,
   each named where it is used, with no code included:
-  github.com/a11ykr/docs (the unofficial online KWCAG 2.2 edition behind the
-  KWCAG item numbers; `references/persona-qa/kwcag-2.2.md` quotes a few KWCAG
-  clause sentences from it, with attribution),
+  github.com/a11ykr/docs (the unofficial KWCAG 2.2 edition retained for the
+  detailed comparison excerpts not rechecked in the primary-source inputs;
+  standard metadata and item numbers now cite the RRA original),
   github.com/lak2211-columbia/project-babel (text extractions of two Personal
   Information Protection Commission guides, cited in
   `references/research/korea/legal-checklist.md`),

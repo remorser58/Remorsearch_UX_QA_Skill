@@ -837,9 +837,9 @@ The entries in route table version 2026-09-30.4 (the route table decides):
 | `meta-instagram` | instagram.com, instagr.am, ig.me | confirmed | `never` | none |
 | `meta-threads` | threads.com, threads.net | confirmed | `never` | none |
 | `meta-facebook` | facebook.com, fb.com, fb.me, fb.watch, m.me | confirmed | `never` | none |
-| `dcinside-terms` | dcinside.com | reported | `written_permission` | none |
-| `naver-cafe-bulk-notice` | cafe.naver.com, m.cafe.naver.com | reported | `written_permission` (no terms document yet; no lift) | none |
-| `naver-terms` | naver.com, naver.me, me2.do | reported | `written_permission` | none |
+| `dcinside-terms` | dcinside.com | confirmed | `written_permission` | none |
+| `naver-cafe-bulk-notice` | cafe.naver.com, m.cafe.naver.com | confirmed | `written_permission` | none |
+| `naver-terms` | naver.com, naver.me, me2.do | confirmed | `written_permission` | none |
 | `coupang-terms` | coupang.com, coupa.ng | reported | `written_permission` | none |
 | `x-terms` | x.com, twitter.com, t.co | reported | `written_permission` | none |
 | `daangn-terms` | daangn.com | reported | `written_permission` | none |
@@ -854,9 +854,19 @@ these were not independently verified as short-link operators. Unknown links
 still receive scope checks on every redirect. Every `verified_at` remains null:
 primary-source AI reads are evidence, never a person's terms check.
 
-The four existing YouTube/Meta policies remain `never`. Their clauses were read
-through an operator-page search index. The six additions are attributed to
-primary-source AI reads on 2026-09-30. Daangn stays reported: the clause and the
+The four existing YouTube/Meta policies remain `never`. YouTube's automated-access
+clause and Meta's restrictions were read on 2026-09-30; Instagram and Threads also
+publish their restriction in their robots.txt notices. Their individual help-center
+terms bodies and effective dates remain unverified. DC Inside's section 16 and
+2026-07-21 effective date were read directly on 2026-09-30. Naver's service terms
+and 2025-07-10 effective date were read on 2026-10-01. The
+[cafe notice](https://notice.naver.com/notices/cafe/33743) was read on 2026-10-01 and is dated 2026-08-25;
+2026-08-31 was the press date. The notice and Naver's general terms each need a
+separate current user check and applicable prior written permission. The separate
+[search-collection policy](https://policy.naver.com/policy/search_policy.html) has no
+revision or effective date; a September 2026 revision remains unverified.
+The six additions are attributed to primary-source reads on 2026-09-30.
+Daangn stays reported: the clause and the
 2026-01-02 effective date came from the operator's page-data, and the declared
 terms page failed for a second reader. TikTok's automation clause has no
 permission exception. Clien needs each information rights holder's consent,
@@ -983,6 +993,11 @@ The one adapter in this version is `uxresearch/youtube.py`.
   Until that is resolved, API items are qualitative evidence only: paraphrases and
   short quotes as evidence that an experience was reported. No sentiment,
   categorisation or count metrics are computed from them.
+- Developer Policies [III.E.4.d](https://developers.google.com/youtube/terms/developer-policies),
+  read directly on 2026-09-30, requires stored Non-Authorized Data to be deleted
+  or refreshed after 30 calendar days. Non-Authorized Data means API Data an API
+  Client can access without User Credentials. This source read does not verify
+  the separate derived-metrics examples or author-classification rules above.
 - Every item carries `retention_until`, the fetch time plus 30 days (the route's
   `retention_days`, at most 30). Keep API data no longer: delete the item, or
   read it again, by then. The reader stamps the date and deletes its own page

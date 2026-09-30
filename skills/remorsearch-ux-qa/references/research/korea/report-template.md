@@ -175,15 +175,14 @@
 
 ### 1.10 법령과 약관 표현
 
-- 약관 확인은 사용자만 기록함. `reported`는 그 항목의 약관 문서를 읽고 `access_policy.terms_checked`에
+- 약관 확인은 사용자만 기록함. `lift_requires`가 해제를 허용하는 항목은 그 항목의 약관 문서를 읽고 `access_policy.terms_checked`에
   `result: permits_this_reading`으로 적은 실행에서만 풀림. `lift_requires: written_permission`이면 사전 서면
   허락을 `permission {granted_by, granted_on, reference}`에 함께 적어야 함. 확인의 `host`는 항목의 호스트이거나 더
   좁고 읽을 URL을 포함해야 함. `checked_on`은 `effective_from`이 있으면 그날 이후이고 오늘 기준 365일 이내여야 하며
-  미래 날짜는 무효임. 한 URL에 걸린 항목은 각각 모두 풀어야 함. `confirmed`는 풀리지 않음. 에이전트는 확인 항목을
+  미래 날짜는 무효임. 한 URL에 걸린 항목은 각각 모두 풀어야 함. `status`는 근거 상태이며 `lift_requires: never`는 풀 수 없고 `terms_check`는 사용자 확인이 필요함. 에이전트는 확인 항목을
   쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지임(`references/research/public-page-access.md` 17절).
 - X 페이지와 oEmbed는 `x-terms`에 걸리며 공식 경로만 쓰는 방식도 없음(`official_route: null`). naver.me, me2.do,
-  coupa.ng, t.co 같은 짧은 주소도 요청 전에 멈춤. 네이버 카페 공지는 `terms_url`이 null이라 사람이 공지 원문 주소를
-  기록하기 전에는 풀리지 않음.
+  coupa.ng, t.co 같은 짧은 주소도 요청 전에 멈춤. 네이버 카페 공지는 원문 주소가 기록되어 있으며 네이버 이용약관과 각각 별도 확인·사전 서면 허락이 필요함(2026-10-01 확인).
 - "합법", "적법", "법적으로 문제없음"이라고 쓰지 않음.
 - 법령은 조항과 판(법령 번호, 공포일이나 시행일)을 함께 적고, law.go.kr에서 대조하지 못한 것은 미확인으로 적음
   (`references/research/korea/legal-checklist.md`).
@@ -229,7 +228,7 @@
 
 | 중단 유형 | 풀이 | 호스트 또는 채널 | URL 수 | 이유 코드 | 다음 방법 |
 | --- | --- | --- | --- | --- | --- |
-| terms_restricted | 약관 제한 | | | | 없음. `confirmed`는 풀리지 않음. `reported`는 항목별 약관 확인과 사전 서면 허락(`permission {granted_by, granted_on, reference}`) 기록이 있는 실행에서만 풀림. `checked_on`은 `effective_from` 이후, 오늘 기준 365일 이내이며 미래 날짜는 무효임. 에이전트는 확인 항목을 쓰지 않음 |
+| terms_restricted | 약관 제한 | | | | 해제 여부는 `lift_requires`를 따름. `never`는 풀 수 없음. `written_permission`은 항목별 사용자 확인과 사전 서면 허락(`permission {granted_by, granted_on, reference}`), `terms_check`는 항목별 사용자 확인이 필요함. `status`는 근거 상태만 기록함. `checked_on`은 `effective_from` 이후, 오늘 기준 365일 이내이며 미래 날짜는 무효임. 에이전트는 확인 항목을 쓰지 않음 |
 | opted_out | 거부 신호 | | | robots, noai, TDM, deny_hosts, bot_filter:*, js_check:* | 없음. 등록 도메인 전체가 이번 실행에서 닫힘. 거절 뒤 렌더하지 않음 |
 | auth_gate | 로그인·회원·본인인증 | | | | 없음. 사용자가 브리프에서 승인한 커뮤니티만 요약으로 다룸 |
 | paywall | 유료 | | | | 없음 |

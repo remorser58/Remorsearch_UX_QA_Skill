@@ -14,7 +14,7 @@
       ],
       "alternates": [{"kind": "mobile", "url": "https://m.blog.naver.com/{author}/{post}"}],
       "login_hosts": ["nid.naver.com"],
-      "terms_note": "terms_restricted (reported, naver-terms): the reader stops before any request, the RSS route included, unless the user's own terms check lifts it for the run. Public posts only. The desktop page is a frame shell; the mobile twin carries the text. Comments load separately and need a render. robots.txt blocks for AI training and search crawlers are reported since 2025-07 (a recorded signal, not a stop; unknown until a live robots check).",
+      "terms_note": "terms_restricted (confirmed, naver-terms): the reader stops before any request, the RSS route included, unless the user's own terms check lifts it for the run. Public posts only. The desktop page is a frame shell; the mobile twin carries the text. Comments load separately and need a render. robots.txt blocks for AI training and search crawlers are reported since 2025-07 (a recorded signal, not a stop; unknown until a live robots check). The primary terms were read on 2026-10-01; lift_requires: written_permission still requires a current entry-specific user check and prior written permission.",
       "sources": ["https://www.etnews.com/20250716000347", "https://v.daum.net/v/20250716143440337"],
       "verified_at": null
     },
@@ -29,7 +29,7 @@
       ],
       "alternates": [{"kind": "mobile", "url": "https://m.blog.naver.com/{q_blogId}/{q_logNo}"}],
       "login_hosts": ["nid.naver.com"],
-      "terms_note": "Older post URL form with blogId and logNo query parameters. terms_restricted (reported, naver-terms) like naver-blog.",
+      "terms_note": "Older post URL form with blogId and logNo query parameters. terms_restricted (confirmed, naver-terms) like naver-blog. The primary terms were read on 2026-10-01; lift_requires: written_permission still requires a current entry-specific user check and prior written permission.",
       "verified_at": null
     },
     {
@@ -41,7 +41,7 @@
       "official": [],
       "alternates": [{"kind": "mobile", "url": "https://m.cafe.naver.com/{cafe}/{article}"}],
       "login_hosts": ["nid.naver.com"],
-      "terms_note": "terms_restricted (reported): a cafe notice reported on 2026-08-31 bans bulk collection of posts and comments (Naver's terms apply as well). The reader stops before any request unless the user's own terms check lifts it for the run. Member-only boards stay auth_gate gaps; a signed-in capture is taken in only for a cafe the brief authorises (access_policy.signed_in_communities, with the cafe's path_prefix) and only after such a lift, and is kept as summaries only.",
+      "terms_note": "terms_restricted (confirmed): the cafe notice dated 2026-08-25 bans bulk collection of posts and comments (Naver's terms apply as well). The reader stops before any request unless the user's own terms check lifts it for the run. Member-only boards stay auth_gate gaps; a signed-in capture is taken in only for a cafe the brief authorises (access_policy.signed_in_communities, with the cafe's path_prefix) and only after such a lift, and is kept as summaries only. Primary URL: https://notice.naver.com/notices/cafe/33743, read on 2026-10-01. The notice and general terms each require a separate user check and prior written permission under lift_requires: written_permission.",
       "verified_at": null
     },
     {
@@ -53,7 +53,7 @@
       "official": [],
       "alternates": [{"kind": "mobile", "url": "https://m.kin.naver.com/qna/detail.naver?{query}"}],
       "login_hosts": ["nid.naver.com"],
-      "terms_note": "terms_restricted (reported, naver-terms): stops before any request unless the user's own terms check lifts it. Question and answers on one page; answerer names must be scrubbed.",
+      "terms_note": "terms_restricted (confirmed, naver-terms): stops before any request unless the user's own terms check lifts it. Question and answers on one page; answerer names must be scrubbed. The primary terms were read on 2026-10-01; lift_requires: written_permission still requires a current entry-specific user check and prior written permission.",
       "verified_at": null
     },
     {
@@ -64,7 +64,7 @@
       "official": [],
       "alternates": [],
       "login_hosts": ["nid.naver.com"],
-      "terms_note": "terms_restricted (reported, naver-terms). No documented review route; the team's own export comes first. Host and URL shapes unverified.",
+      "terms_note": "terms_restricted (confirmed, naver-terms). No documented review route; the team's own export comes first. Host and URL shapes unverified. The primary terms were read on 2026-10-01; lift_requires: written_permission still requires a current entry-specific user check and prior written permission.",
       "verified_at": null
     },
     {
@@ -78,7 +78,7 @@
       ],
       "alternates": [{"kind": "mobile", "url": "https://{host}/m/{post}"}],
       "login_hosts": [],
-      "terms_note": "Each subdomain is a separate author. The feed holds recent posts only.",
+      "terms_note": "Each subdomain is a separate author. The feed holds recent posts only. The available primary terms clause was read on 2026-09-30; the dated clause observation and unresolved scope are recorded in korea-platforms.json. User checks and collection permission remain unresolved; all existing stops apply.",
       "verified_at": null
     },
     {
@@ -89,7 +89,7 @@
       "official": [],
       "alternates": [],
       "login_hosts": [],
-      "terms_note": "Public cafes only; member-only cafes are auth_gate gaps. Terms unchecked.",
+      "terms_note": "Public cafes only; member-only cafes are auth_gate gaps. Terms unchecked. The available primary terms clause was read on 2026-09-30; the dated clause observation and unresolved scope are recorded in korea-platforms.json. User checks and collection permission remain unresolved; all existing stops apply.",
       "verified_at": null
     },
     {
@@ -101,7 +101,7 @@
       "official": [],
       "alternates": [{"kind": "mobile", "url": "https://m.dcinside.com/board/{q_id}/{q_no}"}],
       "login_hosts": [],
-      "terms_note": "terms_restricted (reported): the published terms reportedly bar automated means. The reader stops before any request unless the user's own terms check lifts it for the run. Logged-out posters show a nickname plus a partial IP address; the IP is scrubbed, and such posters and the default nickname 'ㅇㅇ' are counted by thread, never by author key.",
+      "terms_note": "terms_restricted (confirmed): section 16 was read directly on 2026-09-30 and prohibits crawling without prior written consent. The reader stops before any request unless the user's own terms check lifts it for the run. Logged-out posters show a nickname plus a partial IP address; the IP is scrubbed, and such posters and the default nickname 'ㅇㅇ' are counted by thread, never by author key. lift_requires: written_permission governs lifting.",
       "verified_at": null
     },
     {
@@ -113,7 +113,7 @@
       "official": [],
       "alternates": [{"kind": "mobile", "url": "https://m.ppomppu.co.kr/new/bbs_view.php?id={q_id}&no={q_no}"}],
       "login_hosts": [],
-      "terms_note": "Deal boards mix promotion and experience; check promotion markers.",
+      "terms_note": "Deal boards mix promotion and experience; check promotion markers. The available primary terms clause was read on 2026-09-30; the dated clause observation and unresolved scope are recorded in korea-platforms.json. User checks and collection permission remain unresolved; all existing stops apply.",
       "verified_at": null
     },
     {
@@ -125,7 +125,7 @@
       "official": [],
       "alternates": [{"kind": "mobile", "url": "https://m.ruliweb.com/{rest}"}],
       "login_hosts": [],
-      "terms_note": "Mobile twin keeps the board path. Terms unchecked.",
+      "terms_note": "Mobile twin keeps the board path. Terms unchecked. The available primary terms clause was read on 2026-09-30; the dated clause observation and unresolved scope are recorded in korea-platforms.json. User checks and collection permission remain unresolved; all existing stops apply.",
       "verified_at": null
     },
     {
@@ -137,7 +137,7 @@
       "official": [],
       "alternates": [{"kind": "mobile", "url": "https://m.fmkorea.com/{post}"}],
       "login_hosts": [],
-      "terms_note": "Terms unchecked: the site's rules bar AI-written posts and bot use of signed-in features; no collection clause for signed-out reading was found.",
+      "terms_note": "Terms unchecked: the site's rules bar AI-written posts and bot use of signed-in features; no collection clause for signed-out reading was found. The available primary terms clause was read on 2026-09-30; the dated clause observation and unresolved scope are recorded in korea-platforms.json. User checks and collection permission remain unresolved; all existing stops apply.",
       "verified_at": null
     },
     {
@@ -162,7 +162,7 @@
       "official": [],
       "alternates": [],
       "login_hosts": [],
-      "terms_note": "No known twin. Terms unchecked; some boards are member-only.",
+      "terms_note": "No known twin. Terms unchecked; some boards are member-only. The available primary terms clause was read on 2026-09-30; the dated clause observation and unresolved scope are recorded in korea-platforms.json. User checks and collection permission remain unresolved; all existing stops apply.",
       "verified_at": null
     },
     {
@@ -173,7 +173,7 @@
       "official": [],
       "alternates": [],
       "login_hosts": [],
-      "terms_note": "Terms unchecked. Anonymous first-person narratives are unverified, as on any board.",
+      "terms_note": "Terms unchecked. Anonymous first-person narratives are unverified, as on any board. The available primary terms clause was read on 2026-09-30; the dated clause observation and unresolved scope are recorded in korea-platforms.json. User checks and collection permission remain unresolved; all existing stops apply.",
       "verified_at": null
     },
     {
@@ -195,7 +195,7 @@
       "official": [],
       "alternates": [],
       "login_hosts": [],
-      "terms_note": "Logged-out posts only; company channels and most topics are member-only (auth_gate). Terms unchecked.",
+      "terms_note": "Logged-out posts only; company channels and most topics are member-only (auth_gate). Terms unchecked. The available primary terms clause was read on 2026-09-30; the dated clause observation and unresolved scope are recorded in korea-platforms.json. User checks and collection permission remain unresolved; all existing stops apply.",
       "verified_at": null
     },
     {
@@ -252,12 +252,12 @@
          "comments_url": "https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&textFormat=plainText&order=relevance&maxResults={page_size}&videoId={id}&key={key}",
          "page_size": 100, "max_pages": 2, "quota_units_per_call": 1, "quota_reset_tz": "America/Los_Angeles",
          "retention_days": 30,
-         "policy_note": "The key holder accepts and follows the YouTube API Services Terms of Service, the Developer Policies and their data-storage and derived-metrics rules. The Developer Policies bar using API Data to create new or derived data or metrics unless approved; the derived-metrics policy names viewer sentiment analysis and content categorisation and tagging as examples (미확인(요약), unverified: read only through search summaries; 법률가 판단, counsel decides whether approval covers this project and analysis). Until that is resolved, API items are qualitative evidence only: paraphrases and short quotes as evidence that an experience was reported. No sentiment, categorisation or count metrics are computed from them. Keep API data at most 30 days (retention_until): the user must delete or re-read each item in a bundle or report by that date. The reader stamps the date and purges its own run files; bundle items are not deleted automatically yet. Never profile commenters, and never record age, race, religion, political leaning, sexual orientation, health or another protected-attribute cue against an author key (use such cues in segment-level claims only).",
+         "policy_note": "YouTube Developer Policies III.E.4.d, read directly on 2026-09-30 at https://developers.google.com/youtube/terms/developer-policies: stored Non-Authorized Data must be deleted or refreshed after 30 calendar days. The user holds the API key and follows the API terms. The adapter sets retention_until to fetch time + 30 days; bundle/report items are deleted or refreshed by the user. Derived-metrics examples remain unverified; items are qualitative evidence only. Keep every item no longer than 30 days and never profile commenters by protected-attribute cues; these remain the skill’s rules.",
          "sources": ["https://developers.google.com/youtube/v3/docs/videos/list", "https://developers.google.com/youtube/v3/docs/commentThreads/list", "https://developers.google.com/youtube/v3/determine_quota_cost", "https://developers.google.com/youtube/v3/getting-started", "https://developers.google.com/youtube/terms/developer-policies"]}
       ],
       "alternates": [],
       "login_hosts": ["accounts.google.com"],
-      "terms_note": "terms_restricted (confirmed): pages are never read and never captured. Watch, youtu.be, shorts, live and embed URLs are read only through the Data API with the user's own key (official-only mode: the video ID is taken from the URL, the page is never requested). Channel, community, playlist and search pages have no route and stay terms_restricted gaps. API items carry retention_until (30 days), and commenters are never profiled by protected attributes. The quota resets at midnight Pacific time (reported, unverified).",
+      "terms_note": "terms_restricted (confirmed): pages are never read and never captured. Watch, youtu.be, shorts, live and embed URLs are read only through the Data API with the user's own key (official-only mode: the video ID is taken from the URL, the page is never requested). Channel, community, playlist and search pages have no route and stay terms_restricted gaps. API items carry retention_until (30 days), and commenters are never profiled by protected attributes. The quota-reset source was read on 2026-09-30: https://developers.google.com/youtube/v3/determine_quota_cost states midnight Pacific time. Page lifts are disabled by lift_requires: never.",
       "sources": ["https://www.youtube.com/static?template=terms", "https://developers.google.com/youtube/terms/developer-policies"],
       "verified_at": null
     },
@@ -310,7 +310,7 @@
       "official": [],
       "alternates": [],
       "login_hosts": ["accounts.google.com"],
-      "terms_note": "Terms unchecked; the general terms reportedly bar automated access against robots.txt instructions, which the reader honours. Reviews sit behind clicks; a render shows only the first few. Prefer the team's own Play Console export (team_provided).",
+      "terms_note": "Terms unchecked; the general terms reportedly bar automated access against robots.txt instructions, which the reader honours. Reviews sit behind clicks; a render shows only the first few. Prefer the team's own Play Console export (team_provided). The available primary terms clause was read on 2026-09-30; the dated clause observation and unresolved scope are recorded in korea-platforms.json. User checks and collection permission remain unresolved; all existing stops apply.",
       "verified_at": null
     },
     {
@@ -385,8 +385,11 @@
       ],
       "alternates": [],
       "login_hosts": [],
-      "terms_note": "Public API, no key.",
-      "verified_at": null
+      "terms_note": "Terms read directly on 2026-09-30 (last updated 2025-08-14): no clause prohibiting automated collection was found. robots.txt permits the generic group except /intent/compose and points to the protocol/firehose. Explicit bulk-collection permission and AppView usage-policy documentation remain unverified; no route or stop is changed.",
+      "verified_at": null,
+      "sources": ["https://bsky.social/about/support/tos", "https://bsky.app/robots.txt"],
+      "checked_at": "2026-09-30",
+      "read_via": "direct_fetch"
     }
   ],
   "search_pages": [
@@ -448,15 +451,16 @@
       ],
       "official_route": "youtube",
       "terms_url": "https://www.youtube.com/static?template=terms",
-      "clause": "Terms of Service, Permissions and Restrictions: no access to the Service by automated means (such as robots, botnets or scrapers) except by public search engines in accordance with YouTube's robots.txt file, or with YouTube's prior written permission.",
-      "read_via": "search_index",
+      "clause": "Permissions and Restrictions: automated access requires YouTube’s prior written permission, except for public search engines following robots.txt.",
+      "read_via": "direct_fetch",
       "sources": [
-        "https://www.youtube.com/static?template=terms",
+        "https://www.youtube.com/t/terms",
+        "https://www.youtube.com/t/terms?hl=en",
         "https://developers.google.com/youtube/terms/developer-policies"
       ],
-      "checked_at": "2026-09-29",
+      "checked_at": "2026-09-30",
       "verified_at": null,
-      "note": "The clause was read on 2026-09-29 through the search index of the primary URL (some versions add an exception as permitted by applicable law); a direct fetch was blocked by the checking environment's network proxy, so a person should re-read the page before verified_at is set. Comments come only through the Data API with the user's own key (official-only mode). Page lifts remain disabled under lift_requires: never; evidence status does not decide this policy."
+      "note": "Primary terms were read on 2026-09-30. The fetched English versions show different dates (2023-12-15 and the Korean English Courtesy Translation dated 2022-01-05); no effective_from is inferred. No person verified the terms. Page lifts remain disabled by lift_requires: never; comments come only through the packaged Data API route with the user’s own key. Developer Policies III.E.4.d requires stored Non-Authorized Data to be deleted or refreshed after 30 calendar days; read directly on the same date."
     },
     {
       "id": "meta-instagram",
@@ -472,15 +476,15 @@
       ],
       "official_route": null,
       "terms_url": "https://www.facebook.com/legal/automated_data_collection_terms",
-      "clause": "Automated Data Collection Terms: no Automated Data Collection (collecting data from Meta Company Products with automated tools) without Meta's express written permission. The Instagram Terms of Use also bar automated access or collection without express permission.",
-      "read_via": "search_index",
+      "clause": "Operator robots.txt notice: \"Collection of data on Instagram through automated means is prohibited unless you have express written permission from Instagram\".",
+      "read_via": "direct_fetch",
       "sources": [
-        "https://www.facebook.com/legal/automated_data_collection_terms",
-        "https://help.instagram.com/581066165581870"
+        "https://www.instagram.com/robots.txt",
+        "https://www.facebook.com/legal/automated_data_collection_terms"
       ],
-      "checked_at": "2026-09-29",
+      "checked_at": "2026-09-30",
       "verified_at": null,
-      "note": "Read on 2026-09-29 through the search index of the primary URLs; direct fetches were blocked by the checking environment's network proxy. Official routes need Meta App Review or Meta Content Library access. Page lifts remain disabled under lift_requires: never; evidence status does not decide this policy."
+      "note": "The operator’s robots.txt notice and Meta’s automated-collection clause were read on 2026-09-30. The Instagram help-center terms body and its effective date remain unverified because only a script shell was returned. No person verified the primary page. lift_requires: never keeps page lifts disabled."
     },
     {
       "id": "meta-threads",
@@ -495,16 +499,15 @@
       ],
       "official_route": null,
       "terms_url": "https://www.facebook.com/legal/automated_data_collection_terms",
-      "clause": "Automated Data Collection Terms: no Automated Data Collection without Meta's express written permission. The Threads Terms of Use apply the Instagram Terms of Use, which bar automated access or collection without express permission.",
-      "read_via": "search_index",
+      "clause": "Operator robots.txt notice: \"Collection of data on Threads through automated means is prohibited unless you have express written permission from Threads\".",
+      "read_via": "direct_fetch",
       "sources": [
-        "https://www.facebook.com/legal/automated_data_collection_terms",
-        "https://help.instagram.com/769983657850450",
-        "https://techcrunch.com/2025/04/24/threads-officially-moves-to-threads-com-and-updates-its-web-app/"
+        "https://www.threads.com/robots.txt",
+        "https://www.facebook.com/legal/automated_data_collection_terms"
       ],
-      "checked_at": "2026-09-29",
+      "checked_at": "2026-09-30",
       "verified_at": null,
-      "note": "threads.com is the primary host; threads.net redirects there. Read through the search index of the primary URLs; direct fetches were blocked. Page lifts remain disabled under lift_requires: never; evidence status does not decide this policy."
+      "note": "The operator’s robots.txt notice and Meta’s automated-collection clause were read on 2026-09-30. The Threads help-center terms body and its effective date remain unverified because only a script shell was returned. No person verified the primary page. lift_requires: never keeps page lifts disabled."
     },
     {
       "id": "meta-facebook",
@@ -522,22 +525,22 @@
       ],
       "official_route": null,
       "terms_url": "https://www.facebook.com/legal/automated_data_collection_terms",
-      "clause": "Automated Data Collection Terms: you will not engage in Automated Data Collection without first obtaining Meta's express written permission.",
-      "read_via": "search_index",
+      "clause": "Meta Terms section 3.2 prohibits automated access or collection of Meta product data without prior permission, whether logged in or not. Automated Data Collection Terms section 2 requires express written permission.",
+      "read_via": "direct_fetch",
       "sources": [
-        "https://www.facebook.com/legal/automated_data_collection_terms",
-        "https://www.facebook.com/terms"
+        "https://www.facebook.com/legal/terms",
+        "https://www.facebook.com/legal/automated_data_collection_terms"
       ],
-      "checked_at": "2026-09-29",
+      "checked_at": "2026-09-30",
       "verified_at": null,
-      "note": "Facebook groups stay out of scope (out_of_scope is checked first). Read through the search index of the primary URLs; direct fetches were blocked. Page lifts remain disabled under lift_requires: never; evidence status does not decide this policy."
+      "note": "Meta Terms section 3.2 (effective 2025-01-01) and the Automated Data Collection Terms section 2 (effective 2024-10-07) were read on 2026-09-30. No person verified them. Facebook groups remain out of scope. lift_requires: never keeps page lifts disabled."
     },
     {
       "id": "dcinside-terms",
       "hosts": [
         "dcinside.com"
       ],
-      "status": "reported",
+      "status": "confirmed",
       "lift_requires": "written_permission",
       "effective_from": "2026-07-21",
       "restricts": [
@@ -548,46 +551,46 @@
       "terms_urls": [
         "https://nstatic.dcinside.com/dc/m/policy/policy.html"
       ],
-      "clause": "이용약관 제16조(크롤링 및 인공지능 학습): crawling is allowed only for some sites under robots.txt, and crawling the service in any form or for any purpose without prior written consent is prohibited; using the content as AI training data needs a prior agreement.",
-      "read_via": "search_index",
+      "clause": "제16조①: \"당사의 사전 서면 동의 없이 어떤 형태로든 어떤 목적으로든 본 서비스를 크롤링하는 행위는 명시적으로 금지됩니다.\" 제16조②는 AI 학습에 사전 합의를 요구함.",
+      "read_via": "direct_fetch",
       "sources": [
-        "https://nstatic.dcinside.com/dc/w/policy/policy_index.html",
-        "https://nstatic.dcinside.com/dc/m/policy/policy.html"
+        "https://nstatic.dcinside.com/dc/w/policy/policy_index.html"
       ],
-      "checked_at": "2026-09-29",
+      "checked_at": "2026-09-30",
       "verified_at": null,
-      "note": "Evidence remains reported; lift_requires: written_permission permits a lift only with the prior written consent the clause requires, recorded in the user's terms check (lift_requires written_permission). The clause was read on 2026-09-29 through the search index of the primary URL; a direct fetch was blocked by the checking environment's network proxy. One search summary reports a revision of the terms announced on 2026-07-14 and in force from 2026-07-21 (unverified), so a check dated before 2026-07-21 lifts nothing (effective_from); which version the quoted clause comes from is not known."
+      "note": "Primary terms, effective 2026-07-21, were read on 2026-09-30. Evidence status is confirmed; no person verified the primary page. lift_requires: written_permission still requires the user’s current entry-specific check and applicable prior written consent. robots.txt and all other stops remain independently applicable."
     },
     {
       "id": "naver-cafe-bulk-notice",
       "hosts": ["cafe.naver.com", "m.cafe.naver.com"],
-      "status": "reported",
+      "status": "confirmed",
       "lift_requires": "written_permission",
-      "effective_from": "2026-08-31",
+      "effective_from": "2026-08-25",
       "restricts": ["bulk_collection", "automated_collection"],
       "official_route": null,
-      "terms_url": null,
-      "clause": null,
-      "read_via": "search_summary",
-      "sources": ["https://www.newsis.com/view/NISX20260831_0003769836", "https://v.daum.net/v/20260831151156866", "https://m.news.nate.com/view/20260831n21787"],
-      "checked_at": "2026-09-29",
+      "terms_url": "https://notice.naver.com/notices/cafe/33743",
+      "clause": "\"크롤러·봇·스크립트 등 자동화된 방식으로 게시물과 댓글을 대량으로 조회·수집하는 행위\" 금지.",
+      "read_via": "direct_fetch",
+      "sources": ["https://notice.naver.com/notices/cafe/33743"],
+      "checked_at": "2026-10-01",
       "verified_at": null,
-      "note": "A cafe notice reported on 2026-08-31 bans bulk collection of posts and comments without the consent of members and the cafe, by crawlers, bots or scripts, and copying them to outside sites. It covers public boards and parenting cafes alike. The primary notice was not read, so no terms document is recorded (terms_url null) and no check can lift this entry until a person records the notice's own address; a lift would also need the written consent the notice asks for. Cafe URLs are covered by this entry and by naver-terms, and each needs a check of its own."
+      "note": "The primary cafe notice was read on 2026-10-01. Its own date is 2026-08-25; 2026-08-31 was the press date. It bans bulk collection and external republication without members’ and the cafe’s consent and asks existing collectors to stop immediately and delete collected data. lift_requires: written_permission requires a current check of this notice and applicable prior written permission. Cafe URLs also meet naver-terms, which needs a separate check; a check of the general terms alone cannot lift the notice. No person verified the primary page."
     },
     {
       "id": "naver-terms",
       "hosts": ["naver.com", "naver.me", "me2.do"],
-      "status": "reported",
+      "status": "confirmed",
       "lift_requires": "written_permission",
       "restricts": ["automated_collection"],
       "official_route": null,
       "terms_url": "https://policy.naver.com/rules/service.html",
-      "clause": "네이버 이용약관, as quoted by a third party (who dates this version 2025-07-10; not re-verified): collecting members' IDs, posts and the like on Naver services by automated means (macro programs, robots or bots, spiders, scrapers) without Naver's prior permission is prohibited. A 2024-10-28 press report quotes the terms as protecting Naver's databases with robots.txt and not allowing search robots other than Naver's to collect them.",
-      "read_via": "third_party_quote",
-      "sources": ["https://github.com/EST-team-project/Qurious/issues/57", "https://policy.naver.com/rules/service.html", "https://news.nate.com/view/20241028n06350", "https://news.nate.com/view/20180404n37939"],
-      "checked_at": "2026-09-29",
+      "clause": "\"네이버의 사전 허락 없이 자동화된 수단\"을 이용하여 \"네이버 서비스에 게재된 회원의 아이디(ID), 게시물 등을 수집하거나\" 시도해서는 안 됨.",
+      "read_via": "direct_fetch",
+      "sources": ["https://policy.naver.com/rules/service.html", "https://policy.naver.com/policy/search_policy.html"],
+      "checked_at": "2026-10-01",
       "verified_at": null,
-      "note": "Covers every Naver host, the blog RSS feeds and the naver.me and me2.do short links included, so no Naver page or feed is read until the user's own terms check, with the prior permission the clause requires, lifts it for a run. The terms page itself could not be read here; the 2018 revision that first named automated means is reported by the press."
+      "note": "Primary service terms, effective 2025-07-10, were read on 2026-10-01. The separate search-collection policy disallows other search robots collecting databases protected by robots.txt; it shows no effective or revision date, so a September 2026 revision remains unverified. Covers every Naver host, blog RSS and the naver.me/me2.do short links. lift_requires: written_permission requires a current entry-specific user check and applicable prior written permission. No person verified the primary page.",
+      "effective_from": "2025-07-10"
     },
     {
       "id": "coupang-terms",
@@ -602,7 +605,7 @@
       "sources": ["https://www.coupang.com/np/policies/terms", "https://www.aboutcoupang.com/ko/terms/", "https://www.digitalmarketer.co.kr/insights/coupang-robots-txt-partners-strategy", "https://byline.network/2026/04/27_1928774/"],
       "checked_at": "2026-09-29",
       "verified_at": null,
-      "note": "Low confidence: the clause was read on the corporate site's terms; search summaries say the coupang.com member terms bar agents, robots, scripts and spiders without the company's prior consent, but a search of that page's own index on 2026-09-29 did not show the clause. robots.txt reportedly names ChatGPT-User, which the reader honours as an AI agent fetching for a person. coupa.ng is the operator's short-link host."
+      "note": "Low confidence: the clause was read on the corporate site's terms; search summaries say the coupang.com member terms bar agents, robots, scripts and spiders without the company's prior consent, but a search of that page's own index on 2026-09-29 did not show the clause. robots.txt reportedly names ChatGPT-User, which the reader honours as an AI agent fetching for a person. coupa.ng is the operator's short-link host. A primary-source read attempt on 2026-09-30 returned 403 for the shopping terms and robots.txt; neither was reached, so their wording and dates remain unverified."
     },
     {
       "id": "x-terms",
@@ -775,9 +778,10 @@
       "sources": [
         "https://www.redditinc.com/policies/user-agreement",
         "https://www.reddit.com/robots.txt",
-        "https://www.redditinc.com/policies/data-api-terms"
+        "https://www.redditinc.com/policies/data-api-terms",
+        "https://old.reddit.com/robots.txt"
       ],
-      "note": "An AI researcher read section 7 on 2026-09-30; no person verified it. Every lift needs the user's current entry-specific check and applicable prior written consent. robots.txt remains an independent stop after permission; the conditional crawl allowance and a published RSS feed do not waive it. redd.it is the operator's short-link domain.",
+      "note": "An AI researcher read section 7 on 2026-09-30; no person verified it. Every lift needs the user's current entry-specific check and applicable prior written consent. robots.txt remains an independent stop after permission; the conditional crawl allowance and a published RSS feed do not waive it. redd.it is the operator's short-link domain. Both www.reddit.com and old.reddit.com robots.txt were read directly on 2026-09-30 and showed User-agent: * / Disallow: /.",
       "checked_at": "2026-09-30",
       "verified_at": null
     },
@@ -797,9 +801,10 @@
       "read_via": "direct_fetch",
       "sources": [
         "https://www.ycombinator.com/legal",
-        "https://github.com/HackerNews/API"
+        "https://github.com/HackerNews/API",
+        "https://news.ycombinator.com/robots.txt"
       ],
-      "note": "An AI researcher read the primary terms on 2026-09-30; no person verified them. No terms effective date was shown. The separately documented official Firebase API can run only in official-only mode once an adapter exists; today it reports official_route_unavailable and never falls back to a site page.",
+      "note": "An AI researcher read the primary terms on 2026-09-30; no person verified them. No terms effective date was shown. The separately documented official Firebase API can run only in official-only mode once an adapter exists; today it reports official_route_unavailable and never falls back to a site page. robots.txt was read directly on 2026-09-30: Crawl-delay: 30 and internal action/login paths disallowed; item pages were not listed. This observation does not lift the terms stop.",
       "checked_at": "2026-09-30",
       "verified_at": null
     }
@@ -810,7 +815,7 @@
       "doc": "Naver Search Open API on openapi.naver.com (blog, cafearticle, kin, news); legacy since the move to NAVER API HUB",
       "enabled": false,
       "reason": "off until the owner reads the current terms",
-      "terms_note": "Revised search API special terms, reported effective 2026-09-07: results may be used only to show search results, and may not be fed to AI, stored or passed on. No new keys since 2026-07-31; existing keys end 2027-06-30. The primary text was not read.",
+      "terms_note": "Developer-center terms read directly on 2026-09-30: independent, unprocessed search-result display with Naver/source attribution and original links; no AI input/training/improvement/evaluation/exposure, third-party provision/sale, advertising revenue or caching outside the stated exceptions. New applications ended after 2026-07-30 24:00; eligible existing users receive the API until 2027-06-30 24:00. The separately reported API HUB 2026-09-07 effective date remains unverified.",
       "legacy_until": "2027-06-30",
       "endpoints": {
         "blog": "https://openapi.naver.com/v1/search/blog.json",
@@ -822,43 +827,48 @@
                "headers": {"X-Naver-Client-Id": "REMORSEARCH_NAVER_CLIENT_ID", "X-Naver-Client-Secret": "REMORSEARCH_NAVER_CLIENT_SECRET"}},
       "never_call": [{"host": "openapi.naver.com", "path_prefix": "/v1/search"}],
       "returns": "leads only (titles, snippets, links); never quoted as evidence",
-      "sources": ["https://www.tokenpost.kr/news/ai/403521", "https://www.dataeconomy.co.kr/news/articleView.html?idxno=42307", "https://www.digitaltoday.co.kr/en/view/100547/naver-tightens-access-to-cafe-posts-and-search-api-data", "https://github.com/Mode1221/CoursePilot/pull/406"],
-      "verified_at": null
+      "sources": ["https://www.tokenpost.kr/news/ai/403521", "https://www.dataeconomy.co.kr/news/articleView.html?idxno=42307", "https://www.digitaltoday.co.kr/en/view/100547/naver-tightens-access-to-cafe-posts-and-search-api-data", "https://github.com/Mode1221/CoursePilot/pull/406", "https://developers.naver.com/products/terms/"],
+      "verified_at": null,
+      "checked_at": "2026-09-30",
+      "read_via": "direct_fetch",
+      "note": "The developer-center terms were read directly on 2026-09-30 at https://developers.naver.com/products/terms/. Search results are for display, independently and unprocessed, with Naver/source attribution and original links. AI input, training, improvement, evaluation or exposure, third-party provision/sale and caching outside the stated exceptions are prohibited. Device storage is limited to the shorter of 24 hours or a new query; server history storage to 21 days. The 2026-07-31 addendum ends new applications after 2026-07-30 24:00 and supplies eligible existing users until 2027-06-30 24:00; shopping, books and academic data ended after 2026-07-31 24:00. NAVER API HUB’s own terms and the reported 2026-09-07 effective date remain unverified. This discovery route stays off until the owner reads its current terms."
     },
     {
       "id": "naver-api-hub",
       "doc": "NAVER API HUB on Naver Cloud Platform: the search API's new home (search/v1/{service}), with the same parameters reported",
       "enabled": false,
       "reason": "off until the owner reads the current terms",
-      "terms_note": "The search API special terms reported above apply to the moved API as well; every API on this host stays off.",
+      "terms_note": "API HUB’s own terms and the reported 2026-09-07 effective date were not reached. Developer-center terms were read separately on 2026-09-30; they do not establish the current API HUB terms. Every API on this host stays off.",
       "endpoints": {"search": "https://naverapihub.apigw.ntruss.com/search/v1/{service}"},
       "auth": {"type": "user_key", "env": ["REMORSEARCH_NCP_APIGW_API_KEY_ID", "REMORSEARCH_NCP_APIGW_API_KEY"],
                "headers": {"X-NCP-APIGW-API-KEY-ID": "REMORSEARCH_NCP_APIGW_API_KEY_ID", "X-NCP-APIGW-API-KEY": "REMORSEARCH_NCP_APIGW_API_KEY"}},
       "never_call": [{"host": "naverapihub.apigw.ntruss.com", "path_prefix": ""}],
       "returns": "leads only (titles, snippets, links); never quoted as evidence",
-      "sources": ["https://guide.ncloud-docs.com/docs/apihub-overview", "https://github.com/Mode1221/CoursePilot/pull/406"],
-      "verified_at": null
+      "sources": ["https://guide.ncloud-docs.com/docs/apihub-overview", "https://github.com/Mode1221/CoursePilot/pull/406", "https://developers.naver.com/products/terms/"],
+      "verified_at": null,
+      "note": "The developer-center terms were read directly on 2026-09-30 at https://developers.naver.com/products/terms/. Search results are for display, independently and unprocessed, with Naver/source attribution and original links. AI input, training, improvement, evaluation or exposure, third-party provision/sale and caching outside the stated exceptions are prohibited. Device storage is limited to the shorter of 24 hours or a new query; server history storage to 21 days. The 2026-07-31 addendum ends new applications after 2026-07-30 24:00 and supplies eligible existing users until 2027-06-30 24:00; shopping, books and academic data ended after 2026-07-31 24:00. NAVER API HUB’s own terms and the reported 2026-09-07 effective date remain unverified. This discovery route stays off until the owner reads its current terms."
     },
     {
       "id": "naver-datalab",
       "doc": "Naver DataLab search-trend API: a relative interest index by device, gender and age band, never a size",
       "enabled": false,
       "reason": "off until the owner reads the current terms",
-      "terms_note": "Moved to NAVER API HUB with the search API; whether the 2026-09 AI restrictions cover it was not confirmed.",
+      "terms_note": "The developer-center addendum was read on 2026-09-30 and names Search Trend API and Shopping Insight API in the migration/new-application rules. Whether API HUB’s AI restrictions cover this route remains unverified; it stays off.",
       "endpoints": {"search_trend_legacy": "https://openapi.naver.com/v1/datalab/search"},
       "auth": {"type": "user_key", "env": ["REMORSEARCH_NAVER_CLIENT_ID", "REMORSEARCH_NAVER_CLIENT_SECRET"],
                "headers": {"X-Naver-Client-Id": "REMORSEARCH_NAVER_CLIENT_ID", "X-Naver-Client-Secret": "REMORSEARCH_NAVER_CLIENT_SECRET"}},
       "never_call": [{"host": "openapi.naver.com", "path_prefix": "/v1/datalab"}],
       "returns": "an interest index (grade C estimate of interest, not of users)",
-      "sources": ["https://github.com/naver/naver-openapi-guide/blob/master/ko/naver-openapi-swagger.yaml"],
-      "verified_at": null
+      "sources": ["https://github.com/naver/naver-openapi-guide/blob/master/ko/naver-openapi-swagger.yaml", "https://developers.naver.com/products/terms/"],
+      "verified_at": null,
+      "note": "The developer-center terms were read directly on 2026-09-30 at https://developers.naver.com/products/terms/. Search results are for display, independently and unprocessed, with Naver/source attribution and original links. AI input, training, improvement, evaluation or exposure, third-party provision/sale and caching outside the stated exceptions are prohibited. Device storage is limited to the shorter of 24 hours or a new query; server history storage to 21 days. The 2026-07-31 addendum ends new applications after 2026-07-30 24:00 and supplies eligible existing users until 2027-06-30 24:00; shopping, books and academic data ended after 2026-07-31 24:00. NAVER API HUB’s own terms and the reported 2026-09-07 effective date remain unverified. This discovery route stays off until the owner reads its current terms."
     },
     {
       "id": "kakao-daum-search",
       "doc": "Kakao Daum Search REST API (web, video, image, blog, book, cafe); exact paths unverified",
       "enabled": false,
       "reason": "off until the owner reads the current terms",
-      "terms_note": "Kakao's operating policy reportedly limits caching; whether results may be stored or passed to an LLM was asked on the developer forum and not answered.",
+      "terms_note": "Operating policy section 5, read directly on 2026-09-30, limits caching to improving the app’s user experience and keeping data current, and restricts unauthorized copying, reuse and provision to others. Permission for this research’s model input remains unresolved; the route stays off.",
       "endpoints": {
         "web": "https://dapi.kakao.com/v2/search/web",
         "vclip": "https://dapi.kakao.com/v2/search/vclip",
@@ -871,8 +881,11 @@
                "headers": {"Authorization": "KakaoAK {REMORSEARCH_KAKAO_REST_API_KEY}"}},
       "never_call": [{"host": "dapi.kakao.com", "path_prefix": "/v2/search"}, {"host": "dapi.kakao.com", "path_prefix": "/v3/search"}],
       "returns": "leads only (titles, snippets, links); never quoted as evidence",
-      "sources": ["https://developers.kakao.com/terms/ko/site-policies", "https://devtalk.kakao.com/t/api-llm/151458", "https://developers.kakao.com/docs/latest/ko/daum-search/dev-guide"],
-      "verified_at": null
+      "sources": ["https://developers.kakao.com/terms/ko/site-policies", "https://devtalk.kakao.com/t/api-llm/151458", "https://developers.kakao.com/docs/latest/ko/daum-search/dev-guide", "https://developers.kakao.com/terms/latest/ko/site-policies", "https://developers.kakao.com/docs/latest/ko/getting-started/quota"],
+      "verified_at": null,
+      "checked_at": "2026-09-30",
+      "read_via": "direct_fetch",
+      "note": "Official next-search/quota/site-policy documents were read directly on 2026-09-30. The quota table lists Daum search at 50,000/day and each search type at 30,000/day, subject to change. Site Policies section 5 limits caching to improving the app’s user experience and keeping data current; use or provision without prior approval is restricted. A next-search attribution obligation and a search-specific paid conversion rule were not found. This route remains off until the owner reads the current terms."
     },
     {
       "id": "youtube-data-api-search",

@@ -1,9 +1,9 @@
 {
   "schema_version": "ux-research-korea-statistics.v1",
   "version": "2026-09-29.2",
-  "checked_at": "2026-09-29",
+  "checked_at": "2026-10-01",
   "verified_at": null,
-  "note": "통계는 모집단의 한계를 정할 뿐 제품 사용자 수를 재지 않음. 값은 회차와 함께 인쇄된 그대로 옮겼고 다시 계산하지 않음(계산한 값은 notes에 추론으로 적음). 원문 통계표와 보고서는 대부분 열지 못했고 값은 검색 결과 요약으로 확인한 단서임. 검색 요약으로 본 값은 D까지만 인정함(references/research/source-grading.md 4절). 주장에 쓰려면 통계표와 통계설명자료를 reader나 사용자가 내려받은 파일로 읽고 stat_card를 새로 채움. checked_at은 검색 확인일(KST)이고 verified_at은 원문 대조를 마친 뒤에만 채움. count_only 자료는 분모가 아님. org는 자료를 만든 기관이며 포털 도메인(kosis.kr, data.go.kr, korea.kr)으로 정하지 않음. 키는 환경 변수 REMORSEARCH_*로만 받음. 사람이 읽는 판은 references/research/korea/statistics.md임.",
+  "note": "통계는 모집단의 한계를 정할 뿐 제품 사용자 수를 재지 않음. 값은 회차와 함께 인쇄된 그대로 옮겼고 다시 계산하지 않음(계산한 값은 notes에 추론으로 적음). 2026-09-30 NIA·과기정통부·한국소비자원 원문, 2026-10-01 공정위 원문을 읽은 사실은 관찰됨으로 적음. 검증하지 못한 값·표본오차·허락 조건은 미확인으로 남김. 검색 요약으로 본 값은 D까지만 인정함(references/research/source-grading.md 4절). 주장에 쓰려면 통계표와 통계설명자료를 reader나 사용자가 내려받은 파일로 읽고 stat_card를 새로 채움. checked_at은 자료를 읽은 날짜이고 verified_at은 사람이 원문 대조를 마친 뒤에만 채움. 원문을 읽은 행 안에서도 개별 값의 read_via와 미확인 표시를 따로 따름. count_only 자료는 분모가 아님. org는 자료를 만든 기관이며 포털 도메인(kosis.kr, data.go.kr, korea.kr)으로 정하지 않음. 키는 환경 변수 REMORSEARCH_*로만 받음. 사람이 읽는 판은 references/research/korea/statistics.md임.",
   "vocab": {
     "source_type": {
       "official_statistics": "승인번호가 있는 국가 통계와 기관의 공개 행정 통계",
@@ -1068,7 +1068,7 @@
       "approval_no": "제120005호",
       "table_id": "공공데이터포털 15086936",
       "frame": {
-        "population": "전국 가구와 만 3세 이상 가구원",
+        "population": "전국 22,671가구와 만 3세 이상 가구원 50,750명",
         "unit": "person",
         "n": 50750,
         "n_households": 22671,
@@ -1083,25 +1083,34 @@
           "label": "인터넷 이용률(만 3세 이상)",
           "as_printed": "95.0%",
           "wave": "2025",
-          "note": "전년 대비 +0.5%p"
+          "note": "전년 대비 +0.5%p 미확인(요약): 이 값은 이번 원문 검증에서 대조하지 못함.",
+          "checked_at": "2026-09-29",
+          "read_via": "search_summary"
         },
         {
           "label": "가구 인터넷 접속률",
           "as_printed": "99.98%",
           "wave": "2025",
-          "note": "전년 대비 +0.01%p"
+          "note": "전년 대비 +0.01%p 미확인(요약): 이 값은 이번 원문 검증에서 대조하지 못함.",
+          "checked_at": "2026-09-29",
+          "read_via": "search_summary"
         },
         {
           "label": "생성형 AI 서비스 경험률",
           "as_printed": "44.5%",
           "wave": "2025",
-          "note": "2024년 33.3%, +11.2%p. 서비스별로는 ChatGPT 41.8%가 가장 높다고 보도됨"
+          "note": "2024년 33.3%, 전년 대비 +11.2%p. 2026-03-31 공식 발표 제목에서 44.5%를 읽음. 서비스별 ChatGPT 41.8%는 미확인(요약)으로 남김.",
+          "sources": ["https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751949"],
+          "checked_at": "2026-09-30",
+          "read_via": "direct_fetch"
         },
         {
           "label": "인터넷 주 평균 이용 시간",
           "as_printed": "21.6시간",
           "wave": "2025",
-          "note": "인터넷 사용자 기준으로 보도됨(정의 미확인)"
+          "note": "인터넷 사용자 기준으로 보도됨(정의 미확인) 미확인(요약): 이 값은 이번 원문 검증에서 대조하지 못함.",
+          "checked_at": "2026-09-29",
+          "read_via": "search_summary"
         }
       ],
       "answers": [
@@ -1125,19 +1134,22 @@
       },
       "sources": [
         "https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751949",
+        "https://www.nia.or.kr/site/nia_kor/ex/bbs/View.do?cbIdx=99870&bcIdx=29198",
         "https://www.newspim.com/news/view/20260331000211",
         "https://www.mt.co.kr/tech/2026/03/31/2026033111234563860",
         "https://www.daejonilbo.com/news/articleView.html?idxno=2266166",
         "https://www.data.go.kr/data/15086936/fileData.do",
         "https://www.nia.or.kr/site/nia_kor/ex/bbs/List.do?cbIdx=99870"
       ],
-      "read_via": "search_summary",
+      "read_via": "direct_fetch",
       "confidence": "high",
-      "checked_at": "2026-09-29",
+      "checked_at": "2026-09-30",
       "unverified": [
-        "승인번호 제120005호는 검색 요약 기준이라 승인통계 검색에서 대조 필요",
-        "조사 방법, 조사 기간, 표본오차"
-      ]
+        "조사 방법, 조사 기간, 표본오차·가중치",
+        "인터넷 이용률·가구 접속률·주 평균 이용 시간과 서비스별 경험률은 이번 검증에서 대조하지 못함"
+      ],
+      "verified_at": null,
+      "notes": ["2026-09-30 공식 보도자료와 NIA 보고서 설문지에서 표본과 승인번호 제120005호를 읽음. 다른 값은 개별 read_via를 따름."]
     },
     {
       "id": "nia-digital-divide",
@@ -1156,9 +1168,9 @@
         "population": "전국 17개 시도. 일반 국민과 취약계층(장애인, 저소득층, 농어민, 북한이탈주민, 결혼이민자)을 층별로 뽑음. 고령층은 만 55세 이상",
         "unit": "person",
         "n": 15000,
-        "n_note": "층별 표본 수는 일반 국민 7,000(55세 이상 2,300), 장애인 2,200, 저소득층 2,200, 농어민 2,200, 북한이탈주민 700, 결혼이민자 700으로 알려짐(미확인)",
+        "n_note": "유효 표본 총 15,000명. 일반 국민 7,000명 중 만 55세 이상 2,300명을 포함함. 나머지 층별 배분은 이번 검증에서 대조하지 못함(미확인).",
         "method": "면접조사(TAPI라는 설명이 있고 2021년 도입이라는 요약은 미확인). 층화 표본. 층별 표본 수가 모집단 비중과 다름",
-        "reference_period": "2025년 조사",
+        "reference_period": "2025년 10~12월 조사, 기준일 2025-08-01",
         "published_at": "2026-03-26",
         "weights_and_error": "가중치와 표본오차는 통계설명자료에서 확인 필요(미확인). 표본 수로 모집단 비율을 만들지 않음",
         "age_frame": "age_55plus_digital_divide"
@@ -1168,37 +1180,54 @@
           "label": "취약계층 종합 디지털 정보화 수준",
           "as_printed": "77.9%",
           "wave": "2025",
-          "note": "일반 국민=100 대비 지수. 사람의 비율이 아님. 장애인·고령층·저소득층·농어민 4개 취약계층 종합. 전년 대비 +0.4%p, 5년 연속 상승"
+          "note": "일반 국민=100 대비 지수. 사람의 비율이 아님. 장애인·고령층·저소득층·농어민 4개 취약계층 종합. 전년 대비 +0.4%p, 5년 연속 상승",
+          "sources": ["https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751063"],
+          "checked_at": "2026-09-30",
+          "read_via": "direct_fetch"
         },
         {
           "label": "고령층(만 55세 이상) 정보화 수준",
           "as_printed": "71.8%",
           "wave": "2025",
-          "note": "일반 국민=100 대비 지수. 전년 대비 +0.4%p. 공식 표 대조 전 미확인. 일부 검색 요약의 71.4%(+0.7%p)는 2024년 값으로 보임(추론)"
+          "note": "일반 국민=100 대비 지수. 2025년 71.8%, 전년 대비 +0.4%p. 일부 요약의 71.4%는 2024년 값임. 연도별 요약 문서 자체는 대조하지 못함.",
+          "sources": ["https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751063"],
+          "checked_at": "2026-09-30",
+          "read_via": "direct_fetch"
         },
         {
           "label": "농어민 정보화 수준",
           "as_printed": "80.6%",
           "wave": "2025",
-          "note": "지수. 전년 대비 +0.6%p"
+          "note": "지수. 전년 대비 +0.6%p",
+          "sources": ["https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751063"],
+          "checked_at": "2026-09-30",
+          "read_via": "direct_fetch"
         },
         {
           "label": "장애인 정보화 수준",
           "as_printed": "84.1%",
           "wave": "2025",
-          "note": "지수. 전년 대비 +0.6%p"
+          "note": "지수. 전년 대비 +0.6%p",
+          "sources": ["https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751063"],
+          "checked_at": "2026-09-30",
+          "read_via": "direct_fetch"
         },
         {
           "label": "저소득층 정보화 수준",
           "as_printed": "97.0%",
           "wave": "2025",
-          "note": "지수. 전년 대비 +0.5%p. 검색 요약 1건"
+          "note": "일반 국민=100 대비 지수. 전년 대비 +0.5%p.",
+          "sources": ["https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751063"],
+          "checked_at": "2026-09-30",
+          "read_via": "direct_fetch"
         },
         {
           "label": "부문별(취약계층 종합)",
           "as_printed": "접근 96.6%, 활용 80.5%, 역량 65.9%",
           "wave": "2025",
-          "note": "부문별 지수. 지수는 접근 0.2 + 역량 0.4 + 활용 0.4로 합산한다고 보도됨(미확인). 0.2×96.6+0.4×65.9+0.4×80.5=77.88로 취약계층 종합 77.9%와 맞음(계산은 추론)"
+          "note": "부문별 지수. 지수는 접근 0.2 + 역량 0.4 + 활용 0.4로 합산한다고 보도됨(미확인). 0.2×96.6+0.4×65.9+0.4×80.5=77.88로 취약계층 종합 77.9%와 맞음(계산은 추론) 미확인(요약): 이 값은 이번 원문 검증에서 대조하지 못함.",
+          "checked_at": "2026-09-29",
+          "read_via": "search_summary"
         }
       ],
       "answers": [
@@ -1219,8 +1248,10 @@
         "note": "유형은 데이터셋 페이지에서 확인. 이번에 확인하지 못함"
       },
       "sources": [
-        "https://www.k-stat.go.kr/metasvc/msea100/statsdcdta-popup?orgId=127&statsConfmNo=120017&kosisYn=Y",
         "https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751063",
+        "https://www.nia.or.kr/site/nia_kor/ex/bbs/View.do?cbIdx=81623&bcIdx=29168",
+        "https://mods.go.kr/board.es?mid=a10403040000&bid=107&act=view&list_no=438983",
+        "https://www.k-stat.go.kr/metasvc/msea100/statsdcdta-popup?orgId=127&statsConfmNo=120017&kosisYn=Y",
         "https://www.etoday.co.kr/news/view/2569509",
         "https://m.news.nate.com/view/20260326n41384",
         "https://www.asiaa.co.kr/news/articleView.html?idxno=207514",
@@ -1228,19 +1259,20 @@
         "https://www.nia.or.kr/site/nia_kor/ex/bbs/View.do?cbIdx=81623&bcIdx=27832&parentSeq=27832",
         "https://www.data.go.kr/data/15038422/fileData.do"
       ],
-      "read_via": "search_summary",
+      "read_via": "direct_fetch",
       "confidence": "medium",
-      "checked_at": "2026-09-29",
+      "checked_at": "2026-09-30",
       "notes": [
         "고령층 정의는 만 55세 이상. 한국소비자원 고령 소비자 조사(만 65세 이상)와 다름.",
         "지수는 사람의 비율이 아님. 표본 수(15,000)로 모집단 비율을 만들지 않음."
       ],
       "unverified": [
-        "고령층 71.8%를 포함한 부문별 값의 공식 표 대조",
-        "층별 표본 수와 지수 산식",
+        "부문별 접근·활용·역량 값과 지수 산식",
+        "일반 국민 외 층별 표본 배분",
         "가중치와 표본오차",
         "면접 방식(TAPI)과 도입 시점"
-      ]
+      ],
+      "verified_at": null
     },
     {
       "id": "nia-smartphone-overdependence",
@@ -1959,63 +1991,82 @@
       "approval_no": null,
       "table_id": null,
       "frame": {
-        "population": "키오스크 이용 경험이 있는 소비자. 20~60대 연령대별 100명씩(쿼터)",
+        "population": "키오스크 이용 경험이 있는 소비자 500명. 20대·30대·40대·50대·60대 이상 각 100명씩 할당",
         "unit": "person",
         "n": 500,
-        "method": "설문(조사기관 엠브레인퍼블릭, 2022-07, 방식 미확인)",
-        "reference_period": "2022-07",
+        "method": "온라인 설문(20~50대)·면접(60대 이상), 수행기관 ㈜엠브레인퍼블릭",
+        "reference_period": "2022-07-11~22 조사, 최근 1년간 이용 중 불편·피해 경험",
         "published_at": "2022-11-24",
         "weights_and_error": "리포트의 조사 개요에서 확인 필요(미확인)",
         "age_frame": "age_20s_60s_quota",
-        "published_at_note": "(보도 기준)"
+        "published_at_note": "한국소비자원 원문 등록일"
       },
       "values": [
         {
           "label": "키오스크 이용 중 불편·피해 경험",
           "as_printed": "46.6%",
           "wave": "2022",
-          "note": "500명 중 233명으로 알려짐. 쿼터 표본의 값이라 전국 비율이 아님"
+          "note": "키오스크 이용 경험자 500명 중 233명이 최근 1년간 이용 중 불편 또는 피해를 경험했다고 응답한 비율. 연령대별 할당 표본이므로 전국 비율로 옮기지 않음.",
+          "sources": ["https://www.kca.go.kr/home/sub.do?menukey=4002&mode=view&no=1003409020"],
+          "checked_at": "2026-09-30",
+          "read_via": "direct_fetch"
         },
         {
           "label": "불편 이유: 주문이 늦어서 뒷사람 눈치가 보임",
           "as_printed": "52.8%",
           "wave": "2022",
-          "note": "중복응답. 분모는 불편 경험자로 보이나 미확인"
+          "note": "중복응답. 분모는 불편 경험자로 보이나 미확인",
+          "sources": ["https://www.kca.go.kr/home/sub.do?menukey=4002&mode=view&no=1003409020"],
+          "checked_at": "2026-09-30",
+          "read_via": "direct_fetch"
         },
         {
           "label": "불편 이유: 조작 어려움",
           "as_printed": "46.8%",
           "wave": "2022",
-          "note": "중복응답"
+          "note": "중복응답 미확인(요약): 이 값은 이번 원문 검증에서 대조하지 못함.",
+          "checked_at": "2026-09-29",
+          "read_via": "search_summary"
         },
         {
           "label": "불편 이유: 기기 오류",
           "as_printed": "39.1%",
           "wave": "2022",
-          "note": "중복응답"
+          "note": "중복응답 미확인(요약): 이 값은 이번 원문 검증에서 대조하지 못함.",
+          "checked_at": "2026-09-29",
+          "read_via": "search_summary"
         },
         {
           "label": "60대 밴드: 뒷사람 눈치",
           "as_printed": "71.2%",
           "wave": "2022",
-          "note": "검색 요약 기준. 분모는 그 밴드의 불편 경험자로 보이나 미확인. '60대 이상'으로 적은 보도도 있음"
+          "note": "검색 요약 기준. 분모는 그 밴드의 불편 경험자로 보이나 미확인. '60대 이상'으로 적은 보도도 있음 미확인(요약): 이 값은 이번 원문 검증에서 대조하지 못함.",
+          "checked_at": "2026-09-29",
+          "read_via": "search_summary"
         },
         {
           "label": "60대 밴드: 조작 어려움",
           "as_printed": "53.6%",
           "wave": "2022",
-          "note": "'60대 이상'으로 적은 보도도 있음"
+          "note": "'60대 이상'으로 적은 보도도 있음 미확인(요약): 이 값은 이번 원문 검증에서 대조하지 못함.",
+          "checked_at": "2026-09-29",
+          "read_via": "search_summary"
         },
         {
           "label": "60대 밴드: 주문 화면의 작은 글씨로 인한 불편",
           "as_printed": "23.2%",
-          "wave": "2022"
+          "wave": "2022",
+          "note": "미확인(요약): 이 값은 이번 원문 검증에서 대조하지 못함.",
+          "checked_at": "2026-09-29",
+          "read_via": "search_summary"
         },
         {
           "label": "키오스크 이용 만족도(5점 만점)",
           "as_printed": "전체 3.58, 60대 3.31",
           "wave": "2022",
-          "note": "60대가 가장 낮았다고 보도됨"
+          "note": "60대가 가장 낮았다고 보도됨 미확인(요약): 이 값은 이번 원문 검증에서 대조하지 못함.",
+          "checked_at": "2026-09-29",
+          "read_via": "search_summary"
         }
       ],
       "answers": [
@@ -2036,6 +2087,7 @@
         "note": "이용 조건은 발행 기관 약관을 따름. 이번에 확인하지 못함"
       },
       "sources": [
+        "https://www.kca.go.kr/home/sub.do?menukey=4002&mode=view&no=1003409020",
         "https://www.consumer.go.kr/user/ftc/consumer/cnsmrBBS/740/selectInfoCDMGCSLCDetail.do?infoId=A1079491&cntntsId=00000347",
         "https://www.khan.co.kr/article/202211241559001",
         "https://imnews.imbc.com/news/2022/econo/article/6430119_35687.html",
@@ -2043,18 +2095,19 @@
         "https://www.kca.go.kr/home/sub.do?menukey=4002&mode=view&no=1002988750",
         "https://www.huffingtonpost.kr/article/100752"
       ],
-      "read_via": "search_summary",
+      "read_via": "direct_fetch",
       "confidence": "medium",
-      "checked_at": "2026-09-29",
+      "checked_at": "2026-09-30",
       "notes": [
         "연령대별 같은 수를 뽑은 쿼터 표본이라 46.6%는 전국 비율이 아님(추론).",
-        "허프포스트코리아 기사의 검색 요약이 이 조사와 2020년 65세 이상 조사를 섞어 적은 흔적이 있어 값은 소비자24·경향신문·MBC 보도로 대조함."
+        "2026-09-30 한국소비자원 보도자료 본문·첨부에서 조사 대상·기간·방법과 46.6%의 분모를 읽음. 나머지 값은 개별 미확인 표시를 따름."
       ],
       "unverified": [
-        "원문 보고서(열지 못함)",
-        "불편 이유의 분모",
-        "조사 방식"
-      ]
+        "확률 표본 여부·가중치·표본오차",
+        "불편 이유별 응답의 분모",
+        "46.6%와 52.8% 외 값의 원문 대조"
+      ],
+      "verified_at": null
     },
     {
       "id": "kca-kiosk-65plus-2020",
@@ -2149,13 +2202,13 @@
       "approval_no": null,
       "table_id": null,
       "frame": {
-        "population": "배달의민족, 요기요, 쿠팡이츠를 이용한 소비자(최근 이용 조건은 미확인). 온라인 조사로 보도됨",
+        "population": "최근 1년 이내 배달 플랫폼 이용 경험이 있는 소비자 1,000명",
         "unit": "person",
         "n": 1000,
         "method": "온라인 설문(자기 보고)",
-        "reference_period": "2024-04-14~16(보도 기준)",
+        "reference_period": "2024-04-14~16 온라인 조사",
         "published_at": "2024-07-23",
-        "weights_and_error": "리포트의 조사 개요에서 확인 필요(미확인)",
+        "weights_and_error": "95% 신뢰수준 ±3.10%p. 가중치·표본 추출 방법은 미확인",
         "age_frame": "age_unknown"
       },
       "values": [
@@ -2163,25 +2216,33 @@
           "label": "리뷰를 씀",
           "as_printed": "773명(77.3%)",
           "wave": "2024",
-          "note": "분모 응답자 1,000명"
+          "note": "분모 응답자 1,000명 미확인(요약): 이 값은 이번 원문 검증에서 대조하지 못함.",
+          "checked_at": "2026-09-29",
+          "read_via": "search_summary"
         },
         {
           "label": "리뷰 이벤트 참여를 위해 씀",
           "as_printed": "504명(65.2%)",
           "wave": "2024",
-          "note": "분모 리뷰 작성자 773명"
+          "note": "분모 리뷰 작성자 773명 미확인(요약): 이 값은 이번 원문 검증에서 대조하지 못함.",
+          "checked_at": "2026-09-29",
+          "read_via": "search_summary"
         },
         {
           "label": "이벤트가 별점에 영향을 줬다고 답함",
           "as_printed": "401명(79.6%)",
           "wave": "2024",
-          "note": "분모 이벤트 참여자 504명"
+          "note": "분모 이벤트 참여자 504명 미확인(요약): 이 값은 이번 원문 검증에서 대조하지 못함.",
+          "checked_at": "2026-09-29",
+          "read_via": "search_summary"
         },
         {
           "label": "실제 만족도보다 높은 별점을 줬다고 답함",
           "as_printed": "394명(98.3%)",
           "wave": "2024",
-          "note": "분모 영향을 줬다고 답한 401명. 보도 표제의 '98%'가 이 값임"
+          "note": "분모 영향을 줬다고 답한 401명. 보도 표제의 '98%'가 이 값임 미확인(요약): 이 값은 이번 원문 검증에서 대조하지 못함.",
+          "checked_at": "2026-09-29",
+          "read_via": "search_summary"
         }
       ],
       "answers": [],
@@ -2199,6 +2260,7 @@
         "note": "이용 조건은 발행 기관 약관을 따름. 이번에 확인하지 못함"
       },
       "sources": [
+        "https://www.kca.go.kr/home/sub.do?menukey=4002&mode=view&no=1003708987",
         "https://www.kmib.co.kr/article/view.asp?arcid=0020341507",
         "https://v.daum.net/v/20240723120031511",
         "https://www.ddaily.co.kr/m/page/view/2024072313572368748",
@@ -2207,17 +2269,19 @@
         "https://www.foodnews.co.kr/news/articleView.html?idxno=109090",
         "https://www.kca.go.kr/home/board/download.do?menukey=4002&fno=10043308&bid=00000013&did=1003708987"
       ],
-      "read_via": "search_summary",
+      "read_via": "direct_fetch",
       "confidence": "high",
-      "checked_at": "2026-09-29",
+      "checked_at": "2026-09-30",
       "notes": [
         "모두 응답자가 스스로 답한 값. 394명은 이벤트 참여자 504명의 약 78.2%, 리뷰 작성자 773명의 약 51.0%, 응답자 1,000명의 39.4%임(계산은 추론).",
-        "한국소비자원은 별점 방식 개선, 이벤트 참여 후기 표시, 후기 수정 허용을 권고했다고 함. 시행 여부 미확인."
+        "한국소비자원은 별점 방식 개선, 이벤트 참여 후기 표시, 후기 수정 허용을 권고했다고 함. 시행 여부 미확인.",
+        "2026-09-30 보도자료의 모집 대상·기간·방법을 읽음. 배달의 민족·요기요·쿠팡이츠 3사는 별도의 온라인 모니터링 대상이며 소비자 설문의 모집 대상과 구분함. 보도일시 2024-07-23 12:00, 배포 2024-07-22."
       ],
       "unverified": [
-        "표본 추출 방법",
-        "조사일과 이용 조건"
-      ]
+        "표본 추출 방법·가중치",
+        "리뷰 작성·이벤트 참여·별점 영향 수치의 원문 대조"
+      ],
+      "verified_at": null
     },
     {
       "id": "kocca-game-users-2025",
@@ -2665,29 +2729,37 @@
         "n": null,
         "method": "공정위 모니터링(한국인터넷광고재단 위탁 점검으로 보도됨. 선정 방법 미확인)",
         "reference_period": "2023-03~12 점검분과 2024년 점검분",
-        "published_at": "2025-03-16",
+        "published_at": "2025-03-14",
         "weights_and_error": "해당 없음",
         "age_frame": "not_applicable",
-        "published_at_note": "(2024년분 보도자료 요약 기준. 뉴시스 기사 주소는 2025-03-14)"
+        "published_at_note": "2024년 모니터링 결과의 공정위 게시일. 첨부 보도일시는 2025-03-17 조간"
       },
       "values": [
         {
           "label": "의심 게시물",
           "as_printed": "25,966건",
           "wave": "2023",
-          "note": "시정 29,792건. 점검 기간 2023-03~12. 인스타그램 13,767, 네이버 블로그 11,711, 유튜브 343(세 곳 합 25,821, 나머지 145건의 매체는 미확인)"
+          "note": "시정 29,792건. 점검 기간 2023-03~12. 인스타그램 13,767, 네이버 블로그 11,711, 유튜브 343(세 곳 합 25,821, 나머지 145건의 매체는 미확인) 미확인(요약): 이 값은 이번 원문 검증에서 대조하지 못함.",
+          "checked_at": "2026-09-29",
+          "read_via": "search_summary"
         },
         {
           "label": "의심 게시물",
           "as_printed": "22,011건",
           "wave": "2024",
-          "note": "시정 26,033건. 인스타그램 10,195, 네이버 블로그 9,423, 유튜브 1,409, 기타 984(나머지 계산값)"
+          "note": "의심 게시물 22,011건, 자진시정 게시물 26,033건을 원문에서 읽음. 기존 플랫폼별 건수·기타 984건은 이번 검증에서 대조하지 못함(미확인(요약)).",
+          "sources": ["https://www.ftc.go.kr/www/selectBbsNttView.do?key=12&bordCd=3&nttSn=45909"],
+          "checked_at": "2026-10-01",
+          "read_via": "direct_fetch"
         },
         {
           "label": "의심 게시물의 유형 구성",
           "as_printed": "미표시 26.5%, 부적절한 위치 39.4%, 부적절한 표현 17.3%",
           "wave": "2024",
-          "note": "세 유형의 합 83.2%(계산은 추론). 나머지 유형은 미확인. 보도 요약 기준"
+          "note": "분모는 위반 의심 게시물 22,011건. 한 게시물이 복수 유형에 해당할 수 있으며 유형별 건수 합은 26,783건임. 세 비율을 더해 나머지 유형의 비율을 만들지 않음.",
+          "sources": ["https://www.ftc.go.kr/www/selectBbsNttView.do?key=12&bordCd=3&nttSn=45909"],
+          "checked_at": "2026-10-01",
+          "read_via": "direct_fetch"
         }
       ],
       "answers": [],
@@ -2705,6 +2777,8 @@
         "note": "이용 조건은 발행 기관 약관을 따름. 이번에 확인하지 못함"
       },
       "sources": [
+        "https://www.ftc.go.kr/www/selectBbsNttView.do?key=12&bordCd=3&nttSn=45909",
+        "https://www.ftc.go.kr/www/downloadBbsFile.do?atchmnflNo=50389",
         "https://www.korea.kr/briefing/pressReleaseView.do?newsId=156679064",
         "https://eiec.kdi.re.kr/policy/materialView.do?num=264360",
         "https://www.newsis.com/view/NISX20250314_0003098900",
@@ -2713,19 +2787,20 @@
         "https://www.sisajournal.com/news/articleView.html?idxno=283281",
         "https://zdnet.co.kr/view/?no=20250317092935"
       ],
-      "read_via": "search_summary",
+      "read_via": "direct_fetch",
       "confidence": "medium",
-      "checked_at": "2026-09-29",
+      "checked_at": "2026-10-01",
       "notes": [
         "공정위가 찾은 건수일 뿐 광고 게시물의 비율이 아님. 플랫폼끼리 비교하지 않음.",
-        "시정 건수가 의심 건수보다 큰 까닭은 확인하지 못함."
+        "시정 건수가 의심 건수보다 큰 까닭은 확인하지 못함. 유형은 중복 집계할 수 있어 유형별 건수 합은 게시물 수와 다름."
       ],
       "unverified": [
         "살핀 범위와 선정 방법",
-        "2023년 나머지 145건의 매체",
-        "2024년 유형 구성의 나머지 16.8%(계산값)",
-        "발표일(3월 14일과 16일이 함께 보임)"
-      ]
+        "2023년 건수와 나머지 145건의 매체",
+        "플랫폼별 2024년 건수의 원문 대조",
+        "시정 건수가 의심 건수보다 큰 까닭"
+      ],
+      "verified_at": null
     }
   ],
   "todo": [
@@ -2743,9 +2818,9 @@
     },
     {
       "id": "sampling-errors",
-      "item_ko": "2025년 인터넷이용실태, 디지털정보격차, 방송매체 이용행태의 조사 기간·표본오차·가중치",
+      "item_ko": "2025년 인터넷이용실태·방송매체 이용행태의 조사 기간과 세 조사의 표본오차·가중치",
       "where_ko": "각 통계설명자료",
-      "checked_at": "2026-09-29"
+      "checked_at": "2026-09-30"
     },
     {
       "id": "smartphone-ownership-by-age",
@@ -2773,9 +2848,9 @@
     },
     {
       "id": "kca-methods",
-      "item_ko": "한국소비자원 조사의 표본 추출 방법과 원문 보고서",
+      "item_ko": "한국소비자원 조사의 확률 표본 여부·표본 추출 세부 방법과 가중치",
       "where_ko": "한국소비자원 보도자료 첨부, 소비자24",
-      "checked_at": "2026-09-29"
+      "checked_at": "2026-09-30"
     }
   ],
   "verify_before_use": [
@@ -2783,15 +2858,15 @@
       "id": "older-adult-table-check",
       "source_id": "nia-digital-divide",
       "item_ko": "고령층(만 55세 이상) 71.8%와 취약계층 종합 77.9%를 포함한 2025 값의 공식 표 대조",
-      "note_ko": "값은 있으나 검색 요약 기준. 일부 요약이 2024년 값(71.4%)을 2025년 값처럼 적었음. 표본 추출에 쓰기 전에 대조",
-      "where_ko": "NIA 통계표, 공공데이터포털 15038422",
-      "checked_at": "2026-09-29"
+      "note_ko": "2026-09-30 공식 발표에서 고령층 71.8%·종합 77.9%를 읽고 NIA 보고서에서 표본을 읽음. 71.4%는 2024년 값임. 후속 실행에서는 쓸 표의 회차·정의를 다시 확인함.",
+      "where_ko": "NIA 2025 보고서와 과기정통부 보도자료",
+      "checked_at": "2026-09-30"
     },
     {
       "id": "licence-types",
-      "item_ko": "데이터셋별 공공누리 유형과 승인번호(인터넷이용실태조사 제120005호 등) 대조",
+      "item_ko": "데이터셋별 공공누리 유형과 아직 원문을 읽지 못한 승인번호 대조. 인터넷이용실태 제120005호·디지털정보격차 제120017호는 원문에서 읽음",
       "where_ko": "공공데이터포털 데이터셋 페이지, 승인통계 검색",
-      "checked_at": "2026-09-29"
+      "checked_at": "2026-09-30"
     }
   ],
   "licence_types": {

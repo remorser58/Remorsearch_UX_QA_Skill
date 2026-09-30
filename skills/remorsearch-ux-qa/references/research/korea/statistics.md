@@ -6,24 +6,24 @@
 
 ## 확인일과 확인 표시
 
-확인일은 2026-09-29입니다. 표의 "확인" 칸에는 아래 표시를 씁니다.
+NIA·과기정통부·한국소비자원의 아래 확인 항목은 2026-09-30 원문에서 읽었습니다. 공정위 모니터링 확인일은 2026-10-01이며, 나머지는 기존 2026-09-29 표시를 유지합니다. 표의 "확인" 칸에는 아래 표시를 씁니다.
 
 | 표시 | 뜻 |
 | --- | --- |
-| 관찰됨 | 1차 출처(기관 누리집, 통계표, 통계설명자료)의 원문을 직접 열어 읽음. 이번 확인에는 해당하는 항목이 없음 |
+| 관찰됨 | 1차 출처(기관 누리집, 통계표, 통계설명자료)의 원문·첨부를 직접 열어 읽음 |
 | 미확인(미러) | 법령 전문과 개정 이력을 공개 저장소 사본(git 이력 포함)으로 읽음. law.go.kr 원문과 대조하지 못함 |
 | 미확인(요약) | 검색 결과 요약으로만 봄. 통계표와 보고서 원문을 열지 못함 |
 | 추론 | 위 사실에서 이 스킬이 끌어낸 판단이나 계산 |
 | 규칙 | 이 스킬의 규칙 |
 
-이번에 쓰면서 kosis.kr, data.go.kr, k-stat.go.kr, korea.kr, 부처·기관 누리집, 언론사 누리집은 네트워크 정책 때문에 열리지 않았습니다. 그래서 이 문서와 JSON의 값은 모두 단서입니다. 값 대부분은 웹 검색 결과 요약으로 여러 번 대조했지만 통계표와 통계설명자료 원문은 열지 못했습니다. 검색 요약으로 본 값은 D까지만 인정합니다(`references/research/source-grading.md` 4절). 값을 주장에 쓰려면 통계표와 통계설명자료를 reader나 사용자가 내려받은 파일로 읽고 출처 카드를 새로 채웁니다. 요약이 연도를 섞은 사례도 있었습니다(4절의 디지털정보격차 값).
+직접 읽은 항목은 값·분모·조사 대상·표본과 출처를 함께 적었습니다. 같은 자료 안에서도 이번 검증에서 닿지 못한 값과 조사 방법·오차·이용허락은 미확인으로 남깁니다. 검색 요약으로만 본 값은 D까지만 인정합니다(`references/research/source-grading.md` 4절). 값을 주장에 쓸 때는 해당 표와 통계설명자료로 출처 카드를 새로 채웁니다.
 
 ## 1. 범위
 
 - 통계는 모집단의 한계를 정함. 제품 사용자 수를 재지 않음. 통계 출처는 크기 주장에서 B까지이고, 그것도 한계(bound)로서만 셈(`references/research/source-grading.md` 3절).
 - 게시글, 리뷰, 좋아요 수는 분모가 아님. 스스로 전화하거나 신고한 사람의 건수(1372 상담, 공정위 모니터링)도 분모가 아님(3절).
 - 통계가 답하는 질문은 `references/research/audience-pipeline.md`의 여덟 가지 질문 가운데 세그먼트, 비중, 기기, 조건, 맥락, 불편임. 우선순위와 핵심 과제는 통계로 답하지 않음(팀 결정과 제품 화면).
-- 이 문서의 값은 단서임. 값을 주장에 쓰기 전에 원문을 읽고 2절의 카드를 새로 채움.
+- 원문에서 읽은 값은 관찰됨, 요약으로만 본 값은 미확인으로 구분함. 값을 주장에 쓰기 전에 필요한 표·정의·모집단을 다시 확인하고 2절의 카드를 새로 채움.
 
 ## 2. 출처 카드
 
@@ -63,30 +63,30 @@
 
 근거: [제1유형](https://www.kogl.or.kr/info/licenseType1.do), [제2유형](https://www.kogl.or.kr/info/licenseType2.do), [제3유형](https://www.kogl.or.kr/info/licenseType3.do), [제4유형](https://www.kogl.or.kr/info/licenseType4.do)(검색 결과의 페이지 제목 기준). 출처 표시는 기관명, 작성 연도, 저작물명, 출처 주소를 적는 것이며 온라인에서는 출처 사이트로 링크한다고 안내됨. 공공기관이 후원하거나 특별한 관계에 있는 것처럼 오인하게 하는 표시는 하지 않음(공공누리 안내, 미확인(요약) 2026-09-29).
 
-카드 예시입니다. 값은 단서이며 원문 대조 전입니다.
+카드 예시입니다. 승인번호와 표본은 원문에서 읽었으며 인터넷 이용률과 조사 방법·오차는 이번 검증에서 대조하지 못했습니다.
 
 | 필드 | 값 |
 | --- | --- |
 | 기관 | 과학기술정보통신부(수행: 한국지능정보사회진흥원) |
 | 통계명 | 2025 인터넷이용실태조사 |
-| 승인번호 | 제120005호(검색 요약, 미확인) |
+| 승인번호 | 제120005호([NIA 보고서 설문지](https://www.nia.or.kr/site/nia_kor/ex/bbs/View.do?cbIdx=99870&bcIdx=29198), 관찰됨 2026-09-30) |
 | 표 ID | 공공데이터포털 15086936 |
 | 기준 시점 | 2025년 조사(조사 기간 미확인) |
-| 모집단 | 전국 가구, 만 3세 이상 가구원. 가구 22,671, 사람 50,750 |
+| 모집단 | 전국 22,671가구, 만 3세 이상 가구원 50,750명. 관찰됨 2026-09-30 |
 | 조사 방법 | 통계설명자료에서 확인 필요(미확인) |
 | 표본오차 | 통계설명자료에서 확인 필요(미확인) |
 | 단위 | % |
-| 값 | 인터넷 이용률 95.0%(전년 대비 +0.5%p) |
+| 값 | 인터넷 이용률 95.0%(전년 대비 +0.5%p). 미확인(요약) 2026-09-29 |
 | URL | [korea.kr 156751949](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751949) |
-| 조회일 | 2026-09-29(시각 미기록) |
+| 조회일 | 승인번호·표본 원문 2026-09-30, 이용률 요약 2026-09-29(시각 미기록) |
 | 이용허락 | 공공누리 유형 미확인 |
 
-승인번호 모음입니다. 모두 검색 결과 요약 기준이며 승인통계 검색([narastat.kr](https://www.narastat.kr/pms/pub/scs/css/selectConfmStatsList.do), [k-stat.go.kr](https://www.k-stat.go.kr/metasvc/msea100/confmstatsprst))에서 대조합니다. 웹 접근성 실태조사와 게임이용자 실태조사의 승인번호는 찾지 못했습니다.
+승인번호 모음입니다. 인터넷이용실태·디지털정보격차는 원문에서 읽었고 나머지는 검색 결과 요약 기준이며 승인통계 검색([narastat.kr](https://www.narastat.kr/pms/pub/scs/css/selectConfmStatsList.do), [k-stat.go.kr](https://www.k-stat.go.kr/metasvc/msea100/confmstatsprst))에서 대조합니다. 웹 접근성 실태조사와 게임이용자 실태조사의 승인번호는 찾지 못했습니다.
 
 | 통계(JSON id) | 승인번호 | 근거 | 확인 |
 | --- | --- | --- | --- |
-| 인터넷이용실태조사(`msit-internet-usage`) | 제120005호 | [공공데이터포털 15086936](https://www.data.go.kr/data/15086936/fileData.do) | 미확인(요약) 2026-09-29 |
-| 디지털정보격차 실태조사(`nia-digital-divide`) | 제120017호 | [k-stat 승인통계](https://www.k-stat.go.kr/metasvc/msea100/statsdcdta-popup?orgId=127&statsConfmNo=120017&kosisYn=Y) | 미확인(요약) 2026-09-29 |
+| 인터넷이용실태조사(`msit-internet-usage`) | 제120005호 | [NIA 보고서의 공식 설문지](https://www.nia.or.kr/site/nia_kor/ex/bbs/View.do?cbIdx=99870&bcIdx=29198) | 관찰됨 2026-09-30 |
+| 디지털정보격차 실태조사(`nia-digital-divide`) | 제120017호 | [NIA 보고서](https://www.nia.or.kr/site/nia_kor/ex/bbs/View.do?cbIdx=81623&bcIdx=29168), [국가데이터처 고시](https://mods.go.kr/board.es?mid=a10403040000&bid=107&act=view&list_no=438983) | 관찰됨 2026-09-30 |
 | 스마트폰 과의존 실태조사(`nia-smartphone-overdependence`) | 제120019호 | [공공데이터포털 15038425](https://www.data.go.kr/data/15038425/fileData.do) | 미확인(요약) 2026-09-29 |
 | 방송매체 이용행태조사(`kmcc-broadcast-media-use`) | 제164002호 | [KDI 경제정보센터](https://eiec.kdi.re.kr/policy/materialView.do?num=261885) | 미확인(요약) 2026-09-29 |
 | 한국미디어패널조사(`kisdi-media-panel`) | 제405001호 | [k-stat 승인통계현황](https://www.k-stat.go.kr/metasvc/msea100/confmstatsprst) | 미확인(요약) 2026-09-29 |
@@ -98,7 +98,7 @@
 - 다른 틀의 비율을 더하거나 견주지 않음. 예를 들어 만 3세 이상 인터넷 이용률과 만 13세 이상 OTT 이용률을 한 문장에서 견주지 않음.
 - '고령층'의 기준을 적음. 디지털정보격차 실태조사는 만 55세 이상이고, 한국소비자원의 고령 소비자 조사는 만 65세 이상임. 페르소나가 노년을 60세나 65세로 정했으면 그 기준을 적고, 다른 기준의 값을 옮기지 않음.
 - 표본을 일부러 더 뽑은 층(디지털정보격차)은 표본 수가 모집단 비중과 다름. 표본 수(raw n)로 모집단 비율을 만들지 않음.
-- 연령대별 같은 수를 뽑은 쿼터 표본(한국소비자원 키오스크 2022, 연령대별 100명)은 그 구간 안의 비율만 말함. 46.6%를 전국 비율로 옮기지 않음(추론).
+- 연령대별 같은 수를 뽑은 쿼터 표본(한국소비자원 키오스크 2022, 연령대별 100명)은 그 구간 안의 비율만 말함. 46.6%는 이용 경험자 500명 중 233명이 최근 1년간 불편 또는 피해를 경험했다고 답한 비율임([한국소비자원 원문](https://www.kca.go.kr/home/sub.do?menukey=4002&mode=view&no=1003409020), 관찰됨 2026-09-30). 전국 비율로 옮기지 않음(추론).
 - 건수만 있는 자료(`count_only`)는 분모도 유병률도 아님. 크기·모집단 주장을 받치지 못하고 불편이 있다는 존재 근거로만 씀(JSON의 `count_only_rule`).
 - 지수와 점수는 사람의 비율이 아님. 디지털정보격차의 77.9%는 일반 국민을 100으로 둔 지수이고, 웹 접근성 70.4점은 조사한 웹사이트의 점수임.
 - 조사마다 자기 정의를 유지함. 같은 플랫폼도 조사마다 수치가 다름(유튜브: 한국언론진흥재단 84.9%, 한국갤럽 연간 이용률 95%, 와이즈앱 월평균 사용자 약 4,678만 명). 한국언론진흥재단은 이용 정의를 보고서에서 확인해야 하고(미확인), 한국갤럽은 연간 이용률임.
@@ -110,18 +110,18 @@
 
 | 통계(JSON id) | 모집단·나이 틀 | 표본 | 근거 | 확인 |
 | --- | --- | --- | --- | --- |
-| 인터넷이용실태조사 2025(`msit-internet-usage`) | 만 3세 이상 가구원(가구 단위 조사) | 가구 22,671, 사람 50,750 | [korea.kr 156751949](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751949), [뉴스핌](https://www.newspim.com/news/view/20260331000211) | 미확인(요약) 2026-09-29 |
+| 인터넷이용실태조사 2025(`msit-internet-usage`) | 전국 가구의 만 3세 이상 가구원 | 가구 22,671, 사람 50,750 | [과기정통부 보도자료](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751949) | 관찰됨 2026-09-30 |
 | 방송매체 이용행태조사 2025(`kmcc-broadcast-media-use`) | 만 13세 이상, 17개 시도, 대면 면접 | 가구 5,566, 사람 8,320 | [korea.kr 156737465](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156737465), [KDI 경제정보센터](https://eiec.kdi.re.kr/policy/materialView.do?num=275509&pg=&pp=&topic=L) | 미확인(요약) 2026-09-29 |
 | 한국미디어패널조사 2025(`kisdi-media-panel`) | 전국 17개 시도 패널 가구와 가구 내 만 6세 이상(조사 설계 설명 기준, 2025년 회차는 확인 필요) | 가구 3,956, 사람 8,411 | [KISDI 도서관](https://library.kisdi.re.kr/&/10230/contents/4333447?checkinId=3758009&articleId=1922596) | 미확인(요약) 2026-09-29 |
 | 소셜미디어 이용자 조사 2024(`kpf-social-media-2024`) | 만 19세 이상, 방문 면접, 2024-10~11 | 3,000 | [한국언론진흥재단](https://www.kpf.or.kr/front/board/boardContentsView.do?board_id=246&contents_id=940a3bc4be914ac2a065b8922021728e), [기자협회보](https://www.journalist.or.kr/news/article_print.html?no=57805) | 미확인(요약) 2026-09-29 |
 | 마켓70 2025(`gallup-market70-2025`) | 전국(제주 제외) 만 13세 이상, CAPI | 5,251(보고서 항목마다 다름. 5,148로 적힌 개요도 있음) | [한국갤럽](https://www.gallup.co.kr/gallupdb/reportContent.asp?seqNo=1586) | 미확인(요약) 2026-09-29 |
 | 스마트폰 관련 조사 2025(`gallup-smartphone-2025`) | 만 18세 이상 1,001명 가운데 스마트폰 사용자 986명(브랜드 문항), 2025-07-01~03 | 986 | [데이터뉴스](https://www.datanews.co.kr/news/article.html?no=139581), [세계일보](https://www.segye.com/newsView/20250708503898) | 미확인(요약) 2026-09-29 |
 | 게임이용자 실태조사 2025(`kocca-game-users-2025`) | 만 10~69세 | 10,000(최근 1년 게임 사용자로 보도됨. 이용률 50.2%를 낸 선별 표본은 미확인) | [한국콘텐츠진흥원](https://welcon.kocca.kr/ko/info/business/1956858) | 미확인(요약) 2026-09-29 |
-| 디지털정보격차 실태조사 2025(`nia-digital-divide`) | 고령층은 만 55세 이상. 층화 과표집 | 약 15,000 | [k-stat 승인통계](https://www.k-stat.go.kr/metasvc/msea100/statsdcdta-popup?orgId=127&statsConfmNo=120017&kosisYn=Y) | 미확인(요약) 2026-09-29 |
+| 디지털정보격차 실태조사 2025(`nia-digital-divide`) | 고령층은 만 55세 이상 | 유효 표본 15,000명. 일반 국민 7,000명 중 고령층 2,300명 포함 | [NIA 보고서](https://www.nia.or.kr/site/nia_kor/ex/bbs/View.do?cbIdx=81623&bcIdx=29168) | 표본·고령층 기준 관찰됨 2026-09-30. 층화·실사 세부 방식은 미확인 |
 | 스마트폰 과의존 실태조사 2025(`nia-smartphone-overdependence`) | 스마트폰 사용자. 유아동 3~9세, 청소년 10~19세 구간 | 미확인 | [korea.kr 156751063](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751063) | 미확인(요약) 2026-09-29 |
-| 키오스크 이용 실태조사 2022(`kca-kiosk-2022`) | 키오스크 이용 경험 소비자, 20~60대 연령대별 100명씩(쿼터) | 500 | [소비자24](https://www.consumer.go.kr/user/ftc/consumer/cnsmrBBS/740/selectInfoCDMGCSLCDetail.do?infoId=A1079491&cntntsId=00000347), [경향신문](https://www.khan.co.kr/article/202211241559001), [MBC](https://imnews.imbc.com/news/2022/econo/article/6430119_35687.html) | 미확인(요약) 2026-09-29 |
+| 키오스크 이용 실태조사 2022(`kca-kiosk-2022`) | 이용 경험자, 20대~60대 이상 각 100명 할당. 20~50대 온라인·60대 이상 면접, 2022-07-11~22 | 500 | [한국소비자원 원문](https://www.kca.go.kr/home/sub.do?menukey=4002&mode=view&no=1003409020) | 관찰됨 2026-09-30 |
 | 고령 소비자 비대면 거래 실태 2020(`kca-kiosk-65plus-2020`) | 최근 1년 비대면 거래 경험이 있는 만 65세 이상 | 300(키오스크 사용자 245) | [이투데이](https://www.etoday.co.kr/news/view/1944783) | 미확인(요약) 2026-09-29 |
-| 배달앱 리뷰 조사 2024(`kca-delivery-reviews-2024`) | 배달의민족·요기요·쿠팡이츠 이용 소비자, 온라인 | 1,000 | [국민일보](https://www.kmib.co.kr/article/view.asp?arcid=0020341507) | 미확인(요약) 2026-09-29 |
+| 배달앱 리뷰 조사 2024(`kca-delivery-reviews-2024`) | 최근 1년 이내 배달 플랫폼 이용 경험이 있는 소비자 1,000명. 2024-04-14~16 온라인 설문 | 1,000. 95% 신뢰수준 ±3.10%p | [한국소비자원 원문](https://www.kca.go.kr/home/sub.do?menukey=4002&mode=view&no=1003708987) | 모집 대상·표본·기간·방법 관찰됨 2026-09-30 |
 | 웹 접근성 실태조사 2025(`msit-web-accessibility`) | 조사 대상 웹사이트(사람이 아님). 8개 업종 1,000개로 보도됨 | 웹사이트 | [korea.kr 156751063](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751063) | 미확인(요약) 2026-09-29 |
 
 ## 4. 오디언스 질문별 출처
@@ -130,16 +130,16 @@
 
 | 질문 | 출처(JSON id) | 말해 주는 것(회차와 함께 인쇄된 값) | 조심할 점 | 근거 | 확인 |
 | --- | --- | --- | --- | --- | --- |
-| 1 세그먼트, 2 비중 | 팀 분석·VOC를 먼저. 그다음 `mois-resident-population`, `msit-internet-usage` | 주민등록 인구 51,117,378명(2025-12-31, 전년 말 51,217,221명 대비 -99,843명). 인터넷 이용률 95.0%(만 3세 이상), 생성형 AI 경험 44.5% | 제품 사용자 수가 아님. 주민등록 인구통계는 거주자, 거주불명자, 재외국민으로 구성된다고 안내됨. 등록 기준이라 총인구 추계와 다를 수 있음(추론) | [머니투데이](https://www.mt.co.kr/policy/2026/01/04/2026010216565058654), [뉴데일리](https://biz.newdaily.co.kr/site/data/html/2026/01/05/2026010500022.html), [행정안전부 주민등록 인구통계](https://jumin.mois.go.kr/), [korea.kr 156751949](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751949) | 미확인(요약) 2026-09-29 |
+| 1 세그먼트, 2 비중 | 팀 분석·VOC를 먼저. 그다음 `mois-resident-population`, `msit-internet-usage` | 주민등록 인구 51,117,378명(2025-12-31, 전년 말 51,217,221명 대비 -99,843명). 인터넷 이용률 95.0%(만 3세 이상), 생성형 AI 경험 44.5% | 제품 사용자 수가 아님. 주민등록 인구통계는 거주자, 거주불명자, 재외국민으로 구성된다고 안내됨. 등록 기준이라 총인구 추계와 다를 수 있음(추론) | [머니투데이](https://www.mt.co.kr/policy/2026/01/04/2026010216565058654), [뉴데일리](https://biz.newdaily.co.kr/site/data/html/2026/01/05/2026010500022.html), [행정안전부 주민등록 인구통계](https://jumin.mois.go.kr/), [korea.kr 156751949](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751949) | 생성형 AI 44.5%·인터넷 조사 표본 관찰됨 2026-09-30. 주민등록 값·인터넷 이용률은 미확인(요약) 2026-09-29 |
 | 4 기기와 잡는 방법 | `gallup-smartphone-2025`, `kmcc-broadcast-media-use`, `kocca-game-users-2025`, `kisdi-media-panel` | 스마트폰 브랜드(스마트폰 사용자 986명): 삼성 72%, 애플 24%. 18~29세는 갤럭시 40%, 아이폰 60%. 50대 89%, 60대 이상 92%가 삼성. 남성 76%, 여성 67%가 삼성. OTT 이용률 81.8%, 유료 OTT 65.5%(만 13세 이상). 게임 이용률 50.2%, 게임 사용자 중 모바일 89.1%, PC 58.1%, 콘솔 28.6% | 브랜드 점유율은 스마트폰 사용자 기준이며 리뷰 작성자 구성이 아님. 게임 플랫폼 비율은 게임 사용자 기준. 한국갤럽 스마트폰 조사는 만 18세 이상임 | [데이터뉴스](https://www.datanews.co.kr/news/article.html?no=139581), [세계일보](https://www.segye.com/newsView/20250708503898), [korea.kr 156737465](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156737465), [한국콘텐츠진흥원](https://welcon.kocca.kr/ko/info/business/1956858) | 미확인(요약) 2026-09-29 |
-| 5 능력과 조건 | `nia-digital-divide`, `nia-smartphone-overdependence` | 디지털 정보화 수준(일반 국민=100 대비 지수): 취약계층 종합 77.9%, 고령층(만 55세 이상) 71.8%, 농어민 80.6%, 장애인 84.1%. 부문별로는 접근 96.6%, 활용 80.5%, 역량 65.9%. 스마트폰 과의존 위험군 22.7%(스마트폰 사용자), 청소년 43.0%, 유아동 26.0% | 지수는 사람의 비율이 아님. 77.9%는 네 취약계층 종합이며 고령층 값이 아님. 과의존은 자기 보고 척도이지 UX 조건의 유병률이 아님. 고령층 값은 공식 표로 대조하기 전에 표본 추출에 쓰지 않음 | [korea.kr 156751063](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751063), [이투데이](https://www.etoday.co.kr/news/view/2569509), [네이트 뉴스](https://m.news.nate.com/view/20260326n41384), [asiaa.co.kr](https://www.asiaa.co.kr/news/articleView.html?idxno=207514) | 미확인(요약) 2026-09-29 |
+| 5 능력과 조건 | `nia-digital-divide`, `nia-smartphone-overdependence` | 디지털 정보화 수준(일반 국민=100 대비 지수): 취약계층 종합 77.9%, 고령층(만 55세 이상) 71.8%, 농어민 80.6%, 장애인 84.1%. 부문별로는 접근 96.6%, 활용 80.5%, 역량 65.9%. 스마트폰 과의존 위험군 22.7%(스마트폰 사용자), 청소년 43.0%, 유아동 26.0% | 지수는 사람의 비율이 아님. 77.9%는 네 취약계층 종합이며 고령층 값이 아님. 과의존은 자기 보고 척도이지 UX 조건의 유병률이 아님. 고령층 71.4%는 2024년 값이며 2025년 값은 71.8%임. 부문별 값과 과의존 값은 이번 검증에서 대조하지 못함 | [korea.kr 156751063](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751063), [이투데이](https://www.etoday.co.kr/news/view/2569509), [네이트 뉴스](https://m.news.nate.com/view/20260326n41384), [asiaa.co.kr](https://www.asiaa.co.kr/news/articleView.html?idxno=207514) | 종합·계층별 정보화 수준 관찰됨 2026-09-30. 부문별 지수·과의존 값은 미확인(요약) 2026-09-29 |
 | 6 사용 맥락 | `kca-kiosk-2022`, `kca-kiosk-65plus-2020`, `kmcc-broadcast-media-use` | 키오스크 불편·피해 경험 46.6%(500명 중, 연령대별 쿼터). 불편 이유(중복응답)는 뒷사람 눈치 52.8%, 조작 어려움 46.8%, 기기 오류 39.1%. 60대 밴드는 뒷사람 눈치 71.2%, 조작 어려움 53.6%(분모 미확인). 만 65세 이상 키오스크 사용자 245명 중 다음 단계 버튼 찾기 어려움 51.0%, 뒷사람 눈치 49.0% | 46.6%는 전국 비율이 아니라 쿼터 표본의 값. 불편 이유의 분모는 불편 경험자로 보이나 확인하지 못함. 눈치는 한국 맥락의 요인으로 쓰되 원문을 읽지 못함 | [소비자24](https://www.consumer.go.kr/user/ftc/consumer/cnsmrBBS/740/selectInfoCDMGCSLCDetail.do?infoId=A1079491&cntntsId=00000347), [경향신문](https://www.khan.co.kr/article/202211241559001), [이투데이](https://www.etoday.co.kr/news/view/1944783) | 미확인(요약) 2026-09-29 |
 | 7 핵심 과제 | 통계로 답하지 않음 | 팀 데이터와 제품 화면에서 구체적인 값을 얻음 | 통계는 과제 주장에서 D까지 | `references/research/source-grading.md` 3절 | 규칙 |
 | 8 알려진 불편 | `kca-1372`(건수만), `kca-kiosk-2022` | 1372소비자상담센터 상담 2026-08: 51,443건(전월 대비 -6.6%, 전년 같은 달 대비 -6.0%) | 상담 건수는 전화한 사람의 수이지 불편 발생률이 아님(`count_only`) | [연합뉴스 한민족센터](https://www.koreancenter.or.kr/news/articleView.html?idxno=1416729), [공공데이터포털 15120072](https://www.data.go.kr/data/15120072/fileData.do) | 미확인(요약) 2026-09-29 |
 | 채널 도달(계획용) | `kpf-social-media-2024`, `gallup-market70-2025`, `reuters-dnr-2025-kr`, `wiseapp`, `nasmedia-npr-2026`, `opensurvey-social-2025`, `univ20lab`, `similarweb` | 카카오톡 98.9%, 유튜브 84.9%(한국언론진흥재단, 만 19세 이상). 유튜브 연간 이용률 95%, 인스타그램 45%(한국갤럽 마켓70, 만 13세 이상). 뉴스 목적 주간 유튜브 이용 약 50%(로이터 저널리즘연구소 2025, 온라인 표본 2,038명) | 채널 이용 정도이며 글을 쓰는 사람의 구성이 아님. 조사마다 정의가 다름. 벤더 자료는 C | [한국언론진흥재단](https://www.kpf.or.kr/front/board/boardContentsView.do?board_id=246&contents_id=940a3bc4be914ac2a065b8922021728e), [한국갤럽](https://www.gallup.co.kr/gallupdb/reportContent.asp?seqNo=1586), [로이터 저널리즘연구소](https://reutersinstitute.politics.ox.ac.uk/digital-news-report/2025/south-korea) | 미확인(요약) 2026-09-29 |
 | 웹 접근성 기준선(persona-qa) | `msit-web-accessibility` | 조사 대상 웹사이트의 평균 점수 70.4점(2025, 전년 대비 +3.7점), 66.7점(2024, +0.9점) | 사이트 점수이지 사용자 비율이 아님. 점수 체계(100점 만점 여부)와 지침 판은 미확인. KWCAG와 WCAG는 따로 봄(`references/persona-qa/kwcag-2.2.md`) | [korea.kr 156751063](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751063), [korea.kr 156681128](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156681128) | 미확인(요약) 2026-09-29 |
 
-디지털정보격차 값의 출처 상태를 따로 적습니다. 2025년 고령층(만 55세 이상) 71.8%와 취약계층 종합 77.9%는 보도 여러 건과 연도별 계열 요약이 일치합니다. 일부 검색 요약은 고령층 71.4%(+0.7%p), 농어민 80.0%, 장애인 83.5%를 2025년 값처럼 적었습니다. 이 값들은 연도별 계열(2023년 70.7%, 2024년 71.4%, 2025년 71.8%)에서 2024년 값으로 보입니다(추론). 공식 표와 대조하기 전에는 미확인이며, 표본 추출에 쓰기 전에 대조합니다.
+디지털정보격차의 2025년 값은 일반 국민을 100으로 둔 정보화 수준입니다. 취약계층 종합 77.9%, 고령층(만 55세 이상) 71.8%, 농어민 80.6%, 장애인 84.1%, 저소득층 97.0%를 [공식 발표](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751063)에서 읽었습니다(관찰됨 2026-09-30). 일부 요약에 등장하는 71.4%는 2024년 고령층 값이며, 공식 발표의 전년 대비 +0.4%p와도 맞습니다. 요약 문서 자체는 대조하지 못했고 부문별 지수·산식은 미확인으로 남깁니다.
 
 ## 5. 숫자를 구하는 길
 
@@ -235,21 +235,21 @@ JSON의 `todo`에 같은 목록이 있습니다.
 
 - 등록장애인 수와 유형별 현황(보건복지부 등록장애인 현황, 장애인 실태조사).
 - 색각 이상 유병률, 노안 유병률(한국 자료).
-- 2025년 조사들(인터넷이용실태, 디지털정보격차, 방송매체 이용행태)의 조사 기간과 표본오차, 가중치.
+- 2025년 인터넷이용실태·방송매체 이용행태의 조사 기간과 세 조사의 표본오차·가중치. 디지털정보격차의 조사 기간은 2025년 10~12월, 기준일은 2025-08-01로 읽음(관찰됨 2026-09-30).
 - 연령별 스마트폰 보유율(방송매체 이용행태조사 통계표).
 - KOSIS 호출 제한 공지(2026-07-09) 원문과 서비스별 현행 한도.
 - KOSIS orgId와 통계표의 작성기관이 언제 다른지.
 - 지방청 다섯 곳의 현행 이름과 개칭일.
-- 한국소비자원 조사의 표본 추출 방법(확률 표본인지 패널인지)과 원문 보고서.
+- 한국소비자원 조사의 확률 표본 여부·표본 추출 세부 방법·가중치. 키오스크의 연령대별 할당과 조사 방식, 배달 플랫폼 설문의 모집 대상·기간·방법은 원문에서 읽음.
 
 ### 7.2 값은 있으나 쓰기 전에 대조할 것
 
 JSON의 `verify_before_use`에 같은 목록이 있습니다.
 
-고령층 정보화 수준은 이제 구하지 못한 값이 아니라 값이 있는 항목입니다(2025년 71.8%, 만 55세 이상). 다만 검색 결과 요약으로 얻은 값이므로 표본 추출에 쓰기 전에 공식 표와 대조합니다(4절).
+고령층 71.8%와 취약계층 종합 77.9%는 2026-09-30 공식 발표에서 읽었습니다. 후속 실행에서는 쓸 표의 회차·정의를 다시 확인합니다. 사람이 원문을 읽기 전까지 JSON의 `verified_at`은 null입니다.
 
-- 디지털정보격차 2025의 고령층 71.8%와 취약계층 종합 77.9%를 NIA 통계표(공공데이터포털 15038422)와 대조.
-- 공공누리 유형(데이터셋마다)과 승인번호(인터넷이용실태조사 제120005호 등)를 승인통계 검색과 데이터셋 페이지에서 대조.
+- 디지털정보격차 2025의 고령층 71.8%·종합 77.9%를 사용할 표의 정의·회차와 맞춤. 공식 발표 값의 원문 확인은 완료됨.
+- 데이터셋별 공공누리 유형과 아직 원문을 읽지 못한 승인번호를 대조함. 제120005호·제120017호는 원문에서 읽음.
 
 ## 8. 완료 기준과 실패 유형
 
@@ -284,10 +284,10 @@ JSON의 `verify_before_use`에 같은 목록이 있습니다.
 - 조사마다 정의가 다른 이용률을 한 문장에서 견줌(한국언론진흥재단 대 한국갤럽).
 - 보도자료의 값을 통계설명자료 없이 크기 주장에 씀.
 
-## 9. 읽지 못한 1차 출처
+## 9. 원문 확인 범위와 다음 확인
 
-- kosis.kr, data.go.kr, k-stat.go.kr, korea.kr, 과학기술정보통신부, 한국지능정보사회진흥원, 방송미디어통신위원회, 한국소비자원, 소비자24, 한국언론진흥재단, 한국갤럽, 한국콘텐츠진흥원, 정보통신정책연구원, 국가데이터처 누리집은 이번에 열리지 않았음. 각 행의 URL은 확인 경로이며 값의 원문 대조는 다음 확인 때 함.
-- 통계법과 정부조직법은 공개 저장소 사본([legalize-kr/legalize-kr](https://github.com/legalize-kr/legalize-kr))으로 읽었음. 사본은 원본이 아님.
-- 값을 옮길 때는 회차, 증감의 부호, 기준 연도를 통계표로 다시 대조함. 검색 요약이 연도를 섞은 사례가 있었음(4절).
-- 다음 확인 때 할 일: 각 통계의 통계표와 통계설명자료를 읽고 JSON의 `verified_at`을 채움. 이 문서의 "미확인"을 "관찰됨"으로 바꿈.
+- 2026-09-30 NIA 보고서·과기정통부 보도자료에서 디지털정보격차의 계층별 값·승인번호·표본, 인터넷이용실태의 승인번호·표본·생성형 AI 경험률을 읽음. 같은 날 한국소비자원 보도자료에서 키오스크 46.6%의 분모·조사 설계, 배달 플랫폼 설문의 모집 대상·기간·방법을 읽음.
+- 공정위 2024년 위반 의심 게시물 22,011건과 유형별 26.5%·39.4%·17.3%를 2026-10-01 원문에서 읽음. 유형은 중복될 수 있음(`references/research/korea/promotion.md`). 건수를 모집단 비율의 분모로 쓰지 않는 규칙은 유지함.
+- 다른 수치, 공공누리 유형, KOSIS 한도·기관 대응과 아직 닿지 못한 조사 설명은 기존 미확인 표시를 유지함. 통계법·정부조직법은 공개 저장소 사본 기준임.
+- 다음 확인에서는 필요한 통계표·설명자료의 회차·정의·오차·이용허락을 대조하고 사실별 확인일을 고침. `verified_at`은 사람이 원문을 읽은 뒤에만 채움.
 - 연결 문서: `references/research/korea/overview.md`(팩의 흐름), `references/research/korea/promotion.md`(협찬·리뷰 보상·별점), `references/research/korea/platform-map.md`(채널별 규범과 사용자 단서), `references/research/korea/query-craft.md`(검색어와 말투), `references/research/korea/report-template.md`(보고서 틀), `references/research/audience-pipeline.md`(여덟 가지 질문), `references/research/korea/legal-checklist.md`(법령 근거 대조표), `references/research/source-grading.md`(등급 규칙).
