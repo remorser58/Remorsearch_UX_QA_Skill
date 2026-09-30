@@ -3531,7 +3531,7 @@ class ReviewUnitTests(unittest.TestCase):
         entries = {e["id"]: e for e in scope.packaged()["terms_restricted"]}
         self.assertEqual({i for i, e in entries.items() if e.get("lift_requires") == "written_permission" and
                           e["status"] == "reported"},
-                         {"dcinside-terms", "naver-cafe-bulk-notice", "naver-terms", "coupang-terms", "x-terms", "daangn-terms"})
+                         {"coupang-terms", "x-terms", "daangn-terms"})
         self.assertTrue(all(e.get("lift_requires") in scope.LIFT_REQUIREMENTS for e in entries.values()))
 
     def test_checks_dated_before_an_entry_takes_effect_lift_nothing(self):
@@ -3549,7 +3549,8 @@ class ReviewUnitTests(unittest.TestCase):
         self.assertTrue(scope.lift_record(entry, "dated.test", {"terms_checked": [on_time]})["lifted"])
         self.assertEqual({e["id"]: e.get("effective_from") for e in scope.packaged()["terms_restricted"]
                           if e.get("effective_from")},
-                         {"dcinside-terms": "2026-07-21", "naver-cafe-bulk-notice": "2026-08-31",
+                         {"dcinside-terms": "2026-07-21", "naver-cafe-bulk-notice": "2026-08-25",
+                          "naver-terms": "2025-07-10",
                           "x-terms": "2026-01-15", "daangn-terms": "2026-01-02", "tiktok-terms": "2020-08-19",
                          "clien-terms": "2019-12-04", "reddit-terms": "2026-07-01"})
 
@@ -3677,7 +3678,13 @@ class ContractTests(unittest.TestCase):
                 self.assertTrue(entry["terms_url"] and entry["clause"], entry["id"])
         confirmed = ("youtube-terms", "meta-instagram", "meta-threads", "meta-facebook")
         self.assertEqual({entries[i]["status"] for i in confirmed}, {"confirmed"})
-        self.assertEqual({entries[i]["status"] for i in ("dcinside-terms", "naver-cafe-bulk-notice")}, {"reported"})
+        self.assertEqual({entries[i]["status"] for i in ("dcinside-terms", "naver-cafe-bulk-notice", "naver-terms")},
+                         {"confirmed"})
+        cafe = entries["naver-cafe-bulk-notice"]
+        self.assertEqual(cafe["terms_url"], "https://notice.naver.com/notices/cafe/33743")
+        self.assertEqual((cafe["effective_from"], cafe["checked_at"], cafe["read_via"]),
+                         ("2026-08-25", "2026-10-01", "direct_fetch"))
+        self.assertEqual(cafe["lift_requires"], "written_permission")
         self.assertEqual(entries["youtube-terms"]["official_route"], "youtube")
         lists = scope.lists_for(None)
         covered = {"www.youtube.com": "youtube-terms", "m.youtube.com": "youtube-terms", "youtu.be": "youtube-terms",
@@ -3730,9 +3737,13 @@ class ContractTests(unittest.TestCase):
         self.assertEqual({entries[e]["lift_requires"] for e in ("youtube-terms", "meta-instagram", "meta-threads",
                                                                "meta-facebook")}, {"never"})
         for name in ("daangn-terms", "tiktok-terms", "clien-terms", "apple-app-store-terms", "reddit-terms",
-                     "hackernews-terms"):
+                     "hackernews-terms", "dcinside-terms", "youtube-terms", "meta-instagram", "meta-threads",
+                     "meta-facebook"):
             self.assertEqual((entries[name]["checked_at"], entries[name]["read_via"]), ("2026-09-30", "direct_fetch"))
             self.assertTrue(entries[name]["clause"])
+        for name in ("naver-terms", "naver-cafe-bulk-notice"):
+            self.assertEqual((entries[name]["checked_at"], entries[name]["read_via"]), ("2026-10-01", "direct_fetch"))
+        self.assertEqual(entries["naver-terms"]["effective_from"], "2025-07-10")
         self.assertNotIn("effective_from", entries["apple-app-store-terms"])
         self.assertEqual(entries["apple-app-store-terms"]["last_updated"], "2026-09-14")
         versions = entries["x-terms"]["reported_versions"]

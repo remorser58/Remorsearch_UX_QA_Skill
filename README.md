@@ -156,7 +156,8 @@ per entry across its hosts. Open-run commands revalidate the 365-day limit and
 
 YouTube pages, Meta, TikTok, Clien and App Store pages/feeds use `never`.
 DC Inside, Naver, Coupang, X, Daangn and Reddit require written permission; the
-Naver Cafe notice still lacks a terms URL and cannot be lifted. YouTube keeps its
+Naver Cafe notice has its own terms URL and needs a separate current user check
+and applicable prior written permission. YouTube keeps its
 official-only Data API route. HN pages use `never`, and its official-only API
 reports `official_route_unavailable` until an adapter exists. X oEmbed is removed
 after an unauthenticated HTML response on 2026-09-30; no retirement notice was
@@ -168,20 +169,23 @@ the environment variable `REMORSEARCH_YOUTUBE_API_KEY` (`YOUTUBE_API_KEY` is
 accepted as an alias). Keys are read from environment variables only, never from a
 file. A missing key is a coverage gap and a question to you, never a reason to read
 the page another way. As the key holder you follow YouTube's API terms and
-developer policies. The reader stamps each API item with `retention_until`, 30 days
+developer policies. [Developer Policies III.E.4.d](https://developers.google.com/youtube/terms/developer-policies), read on 2026-09-30,
+requires stored Non-Authorized Data to be deleted or refreshed after 30 calendar days.
+The reader stamps each API item with `retention_until`, 30 days
 after the fetch, and deletes its own page text when the run closes; you must delete
 or re-read each item kept in bundles or reports by its `retention_until`
 (`validate_bundle.py` reports one that is past it), and no bundle items are deleted
 automatically yet.
 
-**Plain limits.** Most Naver content ends as a coverage gap. Press reports and
-quotes say that Naver's terms and a cafe notice of 2026-08-31 restrict automated
-collection, and the pack treats that as a stop until you record your own terms
-check with the written permission the terms ask for. The Naver and Kakao search APIs are switched off until the owner has read
-their current terms. Fill the gaps with your team's own data (VOC, support tickets,
-store-console exports), other channel families, surveys and interviews. Most
-platform facts in the pack come from search summaries and are marked 미확인
-(unverified).
+**Plain limits.** Most Naver posts cannot be read by the agent. The automation
+restrictions in [Naver’s terms](https://policy.naver.com/rules/service.html) and the
+[cafe notice dated 2026-08-25](https://notice.naver.com/notices/cafe/33743) were read from the primary pages on 2026-10-01.
+2026-08-31 was the press date. Each entry requires its own user check and applicable
+prior written permission under `lift_requires: written_permission`. Naver and Kakao
+search APIs stay off until the owner reads their current terms. Coverage gaps are
+filled with team data, other channel families, surveys and interviews. Directly read
+facts are marked 관찰됨; facts not reached in the primary source remain 미확인(...).
+`verified_at` stays null until a person reads the primary page.
 
 ## Repository layout
 

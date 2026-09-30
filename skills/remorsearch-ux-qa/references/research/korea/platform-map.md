@@ -22,11 +22,10 @@
   페이지, 사용자가 승인한 커뮤니티의 로그인 읽기입니다. 멈춘 페이지를 다른 호스트, 미러, 캐시, 아카이브, 앱, 요령으로
   가져오는 방법은 적지 않습니다. 중단은 그 자체로 답이며 보고서의 수집 공백이 됩니다.
 - 플랫폼 이름은 설명을 위해 씁니다. 이 스킬은 어떤 운영사와도 제휴 관계가 없습니다.
-- 모든 행의 확인일(checked_at)은 2026-09-29입니다. 사람이 실시간 확인(robots 확인과 약관 원문 읽기)을 마치기
-  전까지 verified_at은 비워 둡니다(null).
-- 이번 확인에서 원문을 직접 연 출처는 네이버 오픈 API 명세(GitHub)뿐입니다. 운영사 약관 페이지, 기관 누리집, 언론사
-  누리집, 커뮤니티 사이트는 네트워크 정책 때문에 열리지 않아 검색 결과 요약으로 읽었습니다. 그래서 대부분의 사실은
-  미확인(요약)입니다.
+- 원문을 읽은 약관·robots의 확인일(checked_at)은 2026-09-30 또는 2026-10-01이며, 다른 사실은 기존 확인일을 유지합니다.
+  사람이 실시간 확인(robots 확인과 약관 원문 읽기)을 마치기 전까지 verified_at은 비워 둡니다(null).
+- 직접 읽은 운영사 원문과 기관 첨부는 관찰됨으로 적었습니다. 원문에 닿지 못한 판·사용자 구성·보도는 미확인으로
+  남겨 두며, robots 관찰은 그날의 스냅샷입니다. 실제 실행에서는 현재 URL의 규칙과 중단을 다시 판정합니다.
 - 이 문서는 법률 자문이 아닙니다. 약관 문구는 읽은 방식과 함께 적고, 법적 적용은 판단하지 않습니다. 법령 근거는
   `references/research/korea/legal-checklist.md`에 있습니다.
 
@@ -35,7 +34,7 @@
 
 | 표시 | 뜻 | JSON `read_via` |
 | --- | --- | --- |
-| 관찰됨 | 1차 출처의 원문을 직접 열어 읽음. 이번 확인에서는 네이버 오픈 API 명세뿐임 | `direct_fetch` |
+| 관찰됨 | 1차 출처의 원문을 직접 열어 읽음. 출처와 읽은 날짜를 함께 적음 | `direct_fetch` |
 | 미확인(요약) | 검색 결과 요약으로만 봄. 운영사·기관 도메인으로 한정한 검색, 보도, 제3자 인용도 여기에 넣음 | `search_index`, `search_summary`, `third_party_quote` |
 | 미확인(미러) | 법령 원문을 옮긴 공개 저장소 사본으로 읽음. law.go.kr 원문과 대조하지 못함 | `mirror` |
 | 미확인 | 이번 확인에서 쓸 만한 자료를 찾지 못함 | `not_found` |
@@ -55,7 +54,7 @@
 | 약관 상태 | `confirmed` | 운영사의 조항을 읽고 대조한 근거 상태. 해제 여부는 lift_requires로 정함. 사람이 원문을 읽기 전까지 verified_at은 null임 |
 | 약관 상태 | `reported` | 원문·취득 경위·판이 아직 미확인인 근거 상태. 해제 여부는 lift_requires로 정함 |
 | 약관 상태 | `checked_by_user` | 사용자가 직접 확인해 기록한 상태(이 지도에는 아직 없음) |
-| 약관 상태 | `unchecked` | 확인하지 못함. 제한이 없다는 뜻이 아님. reader의 일반 중단 규칙만 적용됨 |
+| 약관 상태 | `unchecked` | 사용자 확인이나 자동 수집 허용 범위를 확정하지 못함. 원문 조항을 읽은 경우도 조항·확인 줄에 따로 표시함. reader의 일반 중단 규칙을 적용함 |
 | robots 예상 | `unknown` | 실행 때 robots 확인 전까지 모름 |
 | robots 예상 | `reported_closed` | 보도상 우리 토큰에 적용될 그룹이 막혀 있음 |
 | robots 예상 | `not_reached` | 약관 중단이나 범위 밖 중단이 먼저라 robots.txt를 요청하지 않음 |
@@ -64,11 +63,11 @@
 예상 중단 값은 `references/research/public-page-access.md` 5절의 중단 유형에 약관 중단 `terms_restricted`를 더한
 것입니다(`uxresearch/scope.py`). `terms_restricted`는 요청 전에, 그리고 리디렉션 단계마다 판정하므로 짧은 주소가 제한
 호스트로 넘어가도 멈춥니다. 운영사의 짧은 주소(naver.me, me2.do, coupa.ng, t.co 등)도 요청 전에 멈춥니다.
-X(x.com, twitter.com, t.co)는 `x-terms`의 `reported` 항목이며 사전 서면 허락을 기록해야 풀립니다. oEmbed 실행 경로는 제거했으며, `official_route`가 null이므로 공식 경로만 쓰는 방식으로 열 수 없습니다.
+근거 상태 `reported`·`confirmed`는 해제 여부를 정하지 않습니다. `lift_requires: never`인 유튜브·인스타그램·스레드·페이스북·틱톡·클리앙·앱스토어·Hacker News 페이지는 풀 수 없습니다. `written_permission`인 디시인사이드·네이버·네이버 카페 공지·쿠팡·X·당근·Reddit은 항목별 사용자 확인과 해당 읽기의 사전 서면 허락이 필요합니다. `terms_check`이면 항목별 사용자 확인이 필요합니다. X(x.com, twitter.com, t.co)는 `x-terms`의 `written_permission` 조건을 따릅니다. oEmbed 실행 경로는 제거했으며, `official_route`가 null이므로 공식 경로만 쓰는 방식으로 열 수 없습니다.
 
 약관 확인의 `terms_url`은 그 항목에 기록된 약관 문서여야 합니다. 확인의 `host`는 항목의 호스트이거나 더 좁고, 읽을
 URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 확인으로 모두 풀어야 합니다. 네이버 카페 공지는
-`terms_url`이 null이라 사람이 공지 원문 주소를 기록하기 전에는 풀리지 않습니다. 풀린 항목도 모든 호스트를 합쳐
+원문 주소가 기록되어 있으며, 공지와 네이버 이용약관을 각각 확인하고 사전 서면 허락을 기록해야 합니다. 풀린 항목도 모든 호스트를 합쳐
 실행당 문서 10건까지만 읽습니다(`references/research/public-page-access.md` 17절).
 
 공식 경로가 있는 제한 호스트(유튜브)는 그 경로만 씁니다. 실패해도 페이지나 대체 주소를 요청하거나 렌더하지 않으며,
@@ -86,14 +85,14 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 
 | id | 채널 | 계열 | 공개 범위 | 정당한 경로 | 예상 중단 | 약관 | 단서 신뢰도 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `naver-blog` | 네이버 블로그 | 블로그 | 공개 | `official_feed`, `reader_public_page` | `terms_restricted` | `reported` | medium |
-| `naver-cafe` | 네이버 카페(육아·지역 카페 포함) | 커뮤니티 | 혼합 | `reader_public_page`, `signed_in_authorised` | `terms_restricted`, `auth_gate` | `reported` | low |
-| `naver-kin` | 네이버 지식iN | 질문·답변 | 공개 | `reader_public_page` | `terms_restricted` | `reported` | medium |
-| `naver-place` | 네이버 플레이스 리뷰 | 상거래 리뷰 | 앱 중심 | `team_export`, `reader_public_page` | `terms_restricted` | `reported` | medium |
+| `naver-blog` | 네이버 블로그 | 블로그 | 공개 | `official_feed`, `reader_public_page` | `terms_restricted` | `confirmed` | medium |
+| `naver-cafe` | 네이버 카페(육아·지역 카페 포함) | 커뮤니티 | 혼합 | `reader_public_page`, `signed_in_authorised` | `terms_restricted`, `auth_gate` | `confirmed` | low |
+| `naver-kin` | 네이버 지식iN | 질문·답변 | 공개 | `reader_public_page` | `terms_restricted` | `confirmed` | medium |
+| `naver-place` | 네이버 플레이스 리뷰 | 상거래 리뷰 | 앱 중심 | `team_export`, `reader_public_page` | `terms_restricted` | `confirmed` | medium |
 | `kakao-map` | 카카오맵 리뷰 | 상거래 리뷰 | 앱 중심 | `reader_public_page` | - | `unchecked` | low |
 | `daum-cafe` | 다음 카페 | 커뮤니티 | 혼합 | `reader_public_page`, `signed_in_authorised` | `auth_gate` | `unchecked` | low |
 | `tistory` | 티스토리 | 블로그 | 공개 | `official_feed`, `reader_public_page` | - | `unchecked` | low |
-| `dcinside` | 디시인사이드 | 커뮤니티 | 공개 | `reader_public_page` | `terms_restricted` | `reported` | medium |
+| `dcinside` | 디시인사이드 | 커뮤니티 | 공개 | `reader_public_page` | `terms_restricted` | `confirmed` | medium |
 | `fmkorea` | 에펨코리아 | 커뮤니티 | 공개 | `reader_public_page` | - | `unchecked` | low |
 | `theqoo` | 더쿠 | 커뮤니티 | 혼합 | `reader_public_page` | `auth_gate` | `unchecked` | low |
 | `nate-pann` | 네이트판 | 커뮤니티 | 공개 | `reader_public_page` | - | `unchecked` | low |
@@ -121,47 +120,47 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 - 호스트: `blog.naver.com`, `m.blog.naver.com` · route table id: `naver-blog`, `naver-blog-postview`
 - 계열 `blog` · 공개 범위 `public`: 전체공개 글만 공개 페이지로 봄. 이웃공개·서로이웃공개·비공개 글은 로그인하지 않은 방문자가 읽을 수 없으므로 공개가 아님. — 규칙 (`references/research/public-page-access.md`)
 - 정당한 경로(선호 순): `official_feed` → `reader_public_page`
-  - routes.json의 naver-terms 항목(reported)이 네이버 호스트 전체를 덮어 RSS 피드와 공개 페이지가 함께 멈춤. lift_requires: written_permission 항목은 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. lift_requires: never 항목은 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. RSS 제공 여부와 주소 형태는 실시간 확인 전임. — 규칙 (`uxresearch/data/routes.json`)
-  - 네이버 검색 API와 NAVER API HUB는 꺼 둠(소유자가 현행 약관을 읽기 전까지). 2026-09-07 시행으로 보도된 검색 API 특약은 네이버 검색 결과를 보여 주는 용도로만 쓰게 하고, 결과를 AI에 넣거나 학습·개선·평가·노출에 쓰는 행위, 복사·저장·캐싱, 제3자 제공·판매, 광고 수익화를 금지함. — 미확인(요약) [P01, P02, P03]
-  - 검색 API는 NAVER API HUB(네이버 클라우드 플랫폼)로 옮겨 감. 개발자센터의 신규 키 발급은 2026-07-31에 끝났고 기존 키는 2027-06-30까지만 동작한다고 알려짐. — 미확인(요약) [P04, P05]
+  - routes.json의 naver-terms 항목(confirmed)이 네이버 호스트 전체를 덮어 RSS 피드와 공개 페이지가 함께 멈춤. lift_requires: written_permission 항목은 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. lift_requires: never 항목은 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. RSS 제공 여부와 주소 형태는 실시간 확인 전임. — 규칙 (`uxresearch/data/routes.json`)
+  - 네이버 검색 API와 NAVER API HUB는 소유자가 현행 약관을 읽기 전까지 꺼 둠. 2026-09-30 직접 읽은 개발자센터 약관은 검색 결과를 독립적으로 가공 없이 보여 주고 네이버·원본 출처와 링크를 표시하도록 함. AI 입력·학습·개선·평가·노출, 예외 밖의 복사·저장·캐싱, 제3자 제공·판매, 광고 수익화를 금지함. 기기 보관은 24시간과 새 질의 중 짧은 기간, 서버 이력 보관은 최대 21일임. API HUB 자체 약관과 보도된 2026-09-07 시행일은 미확인. — 관찰됨 2026-09-30 [P138]
+  - 2026-09-30 읽은 개발자센터 약관 부칙은 2026-07-30 24:00 이후 신규 신청을 중단하고, 그때까지 신청한 기존 이용자에게 2027-06-30 24:00까지 API를 제공한다고 적음. 쇼핑·책·학술정보는 2026-07-31 24:00에 종료됨. API HUB 자체의 현행 이용 조건은 미확인. — 관찰됨 2026-09-30 [P138]
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: `terms_restricted`
-- robots 예상 `unknown`: 실시간 robots 확인 전까지 모름. 2025-07 보도에 따르면 네이버는 블로그에서 OpenAI, Perplexity, Google, Anthropic(Claude), Meta, Apple의 AI 봇을, 카페에서는 여기에 더해 Amazon과 Microsoft Bing의 AI 봇을 robots.txt로 막음. 보도가 이름을 댄 봇은 학습·검색 크롤러이며, 이런 그룹은 기록용 신호(ai_training_disallow)일 뿐 중단 사유가 아님. 사용자 요청으로 페이지를 여는 AI 에이전트 토큰을 막는지는 미확인. 약관 제한이 먼저 멈추므로 robots는 제한이 풀린 실행에서만 확인함. — 미확인(요약) [P06, P07]
-- 약관 `reported`(routes.json `naver-terms`), 제한 `automated_collection`
-  - 조항: 2024-10-28 보도가 인용한 네이버 약관: 네이버 서비스로 쌓이는 데이터베이스를 robots.txt 같은 장치로 보호하며, robots.txt로 보호되는 데이터베이스를 네이버 로봇이 아닌 다른 검색 로봇이 수집하는 것을 허락하지 않음. 네이버의 사전 허락 없이 자동화된 수단(매크로, 로봇, 스파이더, 스크래퍼)으로 회원의 게시물 등을 수집하는 행위를 금지한다는 제3자 인용도 있으나 이번 확인에서 다시 열지 못함.
-  - 확인: 약관 원문은 이 환경에서 열리지 않음(미확인). routes.json의 naver-terms 항목과 같은 상태임. 사용자의 항목별 약관 확인과 사전 서면 허락(permission: granted_by, granted_on, reference)이 제한을 모두 풀기 전까지 요청하지 않음(1절). — 미확인(요약) [P08, P09, P10]
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 목록·미리보기·내보내기·댓글 경로 등을 막으며 PostView.naver는 금지 목록에 없음. GPTBot·OAI-SearchBot·ClaudeBot·Claude-SearchBot·PerplexityBot 등 명시 그룹은 전체 경로를 막음. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P135]
+- 약관 `confirmed`(routes.json `naver-terms`), 제한 `automated_collection`
+  - 조항: "네이버의 사전 허락 없이 자동화된 수단"을 이용하여 "네이버 서비스에 게재된 회원의 아이디(ID), 게시물 등을 수집하거나" 시도해서는 안 됨.
+  - 확인: 2026-10-01 네이버 이용약관 원문에서 자동 수집 제한과 2025-07-10 시행일을 읽음. 검색결과 수집 정책도 읽었으나 그 문서의 개정·시행일과 2026-09 개정 여부는 미확인. lift_requires: written_permission에 따라 항목별 사용자 확인과 해당 읽기의 사전 서면 허락이 있어야 풀림. verified_at은 사람이 원문을 읽기 전까지 null임. — 관찰됨 2026-10-01 [P08, P155]
 - 사용자 단서(신뢰도 `medium`): 네이버 발표를 전한 보도(2025-12): 2025년 블로그 새 글 3억 3천만 건, 순방문자 4,500만 명 이상. 작성자 연령 구성은 싣지 않음(측정 자료를 확인하지 못함). — 미확인(요약) [P11, P12]
 - 콘텐츠 규범:
   - 협찬·체험단 글이 많은 채널임. 공정위 2024년 SNS 뒷광고 모니터링에서 네이버 블로그 의심 게시물은 9,423건(전체 22,011건). 적발 건수일 뿐 비율이나 분모가 아님. — 미확인(요약) [P14, P15]
-  - 2024-12-01부터 블로그·카페의 추천·보증 글은 경제적 이해관계를 제목이나 첫 부분에 적어야 함(공정위 추천·보증 심사지침 개정). 그 전 글은 표시 위치가 다를 수 있으므로 게시일을 함께 봄. — 미확인(요약) [P16]
+  - 2024-12-01부터 블로그·카페의 추천·보증 글은 경제적 이해관계를 제목이나 첫 부분에 적어야 함(공정위 추천·보증 심사지침 개정). 그 전 글은 표시 위치가 다를 수 있으므로 게시일을 함께 봄. — 관찰됨 2026-10-01 [P163]
   - 표시가 없다고 협찬이 없는 글로 보지 않음. '내돈내산'은 자기 선언일 뿐 독립성의 근거가 아님. — 규칙 (`references/research/korea/promotion.md`)
 - 개인정보:
   - 블로그 ID가 URL에 들어 있음. 작성자는 author-key로 바꾸고 글 URL은 번들의 source_ref에만 둠. — 규칙 (`references/research/public-page-access.md`)
 - 불연속:
-  - 2024-12-01: 블로그·카페 추천·보증 글의 이해관계 표시를 제목이나 첫 부분에 두도록 한 공정위 지침 개정 시행 — 미확인(요약) [P16]
+  - 2024-12-01: 블로그·카페 추천·보증 글의 이해관계 표시를 제목이나 첫 부분에 두도록 한 공정위 지침 개정 시행 — 관찰됨 2026-10-01 [P163]
   - 2025-07: 네이버 블로그·카페 등에서 AI 봇 크롤링을 robots.txt로 막는다는 보도 — 미확인(요약) [P06, P07]
   - 2025-07-10: 네이버 이용약관 개정 시행: 사용자가 삭제·비공개로 돌린 글은 그 뒤 AI 연구 개발에 쓰지 않는다는 내용 보도 — 미확인(요약) [P17, P18]
   - 2025-12: 블로그 앱 추천 피드 개편 시험 보도(주제별 '내돈내산' 글 모아 보기 포함) — 미확인(요약) [P19]
-  - 2026-07-31: 네이버 검색 API 신규 키 발급 종료, NAVER API HUB로 이전 — 미확인(요약) [P04, P05]
+  - 2026-07-31: 개발자센터 검색 API 신규 신청 중단(2026-07-30 24:00 이후). 쇼핑·책·학술정보 데이터는 2026-07-31 24:00 종료 — 관찰됨 2026-09-30 [P138]
   - 2026-09-07: 네이버 검색 API 특약 개정 시행 보도: 결과를 AI에 넣거나 저장·제3자 제공하는 행위 금지 — 미확인(요약) [P01, P02]
-  - 2027-06-30: 개발자센터에서 받은 기존 네이버 검색 API 키 종료 예정 — 미확인(요약) [P04]
-- 확인일 2026-09-29 · verified_at 없음(null)
+  - 2027-06-30: 개발자센터의 기존 이용자 대상 검색 API 제공 종료 예정(2027-06-30 24:00) — 관찰됨 2026-09-30 [P138]
+- 확인일 2026-10-01 · verified_at 없음(null)
 
 ### `naver-cafe` 네이버 카페(육아·지역 카페 포함)
 
 - 호스트: `cafe.naver.com`, `m.cafe.naver.com` · route table id: `naver-cafe`
 - 계열 `community` · 공개 범위 `mixed`: 카페마다 공개 게시판과 회원 전용 게시판이 섞여 있고, 등급(등업) 조건이 붙은 게시판도 있음. 회원 전용·등업 게시판은 공개가 아님(auth_gate). — 규칙 (`references/research/public-page-access.md`)
 - 정당한 경로(선호 순): `reader_public_page` → `signed_in_authorised`
-  - 네이버 카페 주소에는 naver-terms와 naver-cafe-bulk-notice가 함께 적용되어 항목마다 별도 확인이 필요함. lift_requires: written_permission 항목은 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. lift_requires: never 항목은 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. 카페 공지 항목은 terms_url이 null이어서 사람이 공지 원문 주소를 기록하기 전에는 어떤 확인으로도 풀리지 않음. — 규칙 (`uxresearch/data/routes.json`)
+  - 네이버 카페 주소에는 naver-terms와 naver-cafe-bulk-notice가 함께 적용되어 항목마다 별도 확인이 필요함. lift_requires: written_permission 항목은 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. lift_requires: never 항목은 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. 카페 공지 원문 주소가 기록되어 있으며, 공지 항목과 네이버 이용약관은 각각 별도 확인과 사전 서면 허락이 필요함. — 규칙 (`uxresearch/data/routes.json`)
   - 로그인 읽기는 사용자가 브리프의 access_policy.signed_in_communities에 카페 경로(path_prefix)와 함께 직접 적은 카페만 해당함. 요약만 남기고 회원 정보는 남기지 않음. 에이전트는 이 목록에 카페를 더하지 않음. — 규칙 (`references/research/public-page-access.md`)
-  - 네이버 검색 API와 NAVER API HUB는 꺼 둠(소유자가 현행 약관을 읽기 전까지). 2026-09-07 시행으로 보도된 검색 API 특약은 네이버 검색 결과를 보여 주는 용도로만 쓰게 하고, 결과를 AI에 넣거나 학습·개선·평가·노출에 쓰는 행위, 복사·저장·캐싱, 제3자 제공·판매, 광고 수익화를 금지함. — 미확인(요약) [P01, P02, P03]
-  - 검색 API는 NAVER API HUB(네이버 클라우드 플랫폼)로 옮겨 감. 개발자센터의 신규 키 발급은 2026-07-31에 끝났고 기존 키는 2027-06-30까지만 동작한다고 알려짐. — 미확인(요약) [P04, P05]
+  - 네이버 검색 API와 NAVER API HUB는 소유자가 현행 약관을 읽기 전까지 꺼 둠. 2026-09-30 직접 읽은 개발자센터 약관은 검색 결과를 독립적으로 가공 없이 보여 주고 네이버·원본 출처와 링크를 표시하도록 함. AI 입력·학습·개선·평가·노출, 예외 밖의 복사·저장·캐싱, 제3자 제공·판매, 광고 수익화를 금지함. 기기 보관은 24시간과 새 질의 중 짧은 기간, 서버 이력 보관은 최대 21일임. API HUB 자체 약관과 보도된 2026-09-07 시행일은 미확인. — 관찰됨 2026-09-30 [P138]
+  - 2026-09-30 읽은 개발자센터 약관 부칙은 2026-07-30 24:00 이후 신규 신청을 중단하고, 그때까지 신청한 기존 이용자에게 2027-06-30 24:00까지 API를 제공한다고 적음. 쇼핑·책·학술정보는 2026-07-31 24:00에 종료됨. API HUB 자체의 현행 이용 조건은 미확인. — 관찰됨 2026-09-30 [P138]
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: `terms_restricted`, `auth_gate`
-- robots 예상 `unknown`: 실시간 robots 확인 전까지 모름. 2025-07 보도에 따르면 네이버는 블로그에서 OpenAI, Perplexity, Google, Anthropic(Claude), Meta, Apple의 AI 봇을, 카페에서는 여기에 더해 Amazon과 Microsoft Bing의 AI 봇을 robots.txt로 막음. 보도가 이름을 댄 봇은 학습·검색 크롤러이며, 이런 그룹은 기록용 신호(ai_training_disallow)일 뿐 중단 사유가 아님. 사용자 요청으로 페이지를 여는 AI 에이전트 토큰을 막는지는 미확인. 약관 제한이 먼저 멈추므로 robots는 제한이 풀린 실행에서만 확인함. — 미확인(요약) [P06, P07]
-- 약관 `reported`(routes.json `naver-cafe-bulk-notice`), 제한 `bulk_collection`, `automated_collection`
-  - 조항: 2026-08-31 보도된 카페 공지: 회원과 카페의 동의 없이 게시글·댓글을 대량 수집하거나 외부 사이트에 옮겨 쓰는 행위를 금지함. 크롤러·봇·스크립트 같은 자동화 방식의 대량 조회·수집, 공식 경로가 아닌 접근, 접근 차단 뒤에도 수집을 이어가는 행위, 수집한 글을 네이버 밖에 싣거나 가공해 다시 제공하는 행위를 예로 듦. 이미 수집한 경우 멈추고 데이터를 지우라고 요구함.
-  - 확인: 공지 원문은 읽지 못함(미확인). 네이버 이용약관(naver-terms, reported)도 함께 걸림. 공지와 이용약관은 각각 서면 허락을 포함한 확인이 필요함(1절). 공지 항목의 terms_url은 null이어서 사람이 공지 원문 주소를 기록하기 전에는 풀리지 않음. — 미확인(요약) [P20, P21]
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 Disallow: /로 전체 경로를 막음. GPTBot·OAI-SearchBot·ClaudeBot·Claude-SearchBot·PerplexityBot 등 명시 그룹도 전체 경로를 막음. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P137]
+- 약관 `confirmed`(routes.json `naver-cafe-bulk-notice`), 제한 `bulk_collection`, `automated_collection`
+  - 조항: "크롤러·봇·스크립트 등 자동화된 방식으로 게시물과 댓글을 대량으로 조회·수집하는 행위" 금지.
+  - 확인: 2026-10-01 공지 원문을 읽음. 공지 날짜는 2026-08-25이며 2026-08-31은 보도일임. lift_requires: written_permission에 따라 이 공지의 확인과 사전 서면 허락이 필요함. 네이버 이용약관도 별도로 확인해야 하며, 두 항목을 모두 풀어야 함. verified_at은 사람이 원문을 읽기 전까지 null임. — 관찰됨 2026-10-01 [P147]
 - 사용자 단서(신뢰도 `low`): 와이즈앱 추정 네이버 카페 앱 월평균 사용자 904만 명(2026-01~04). 앱 사용자 수는 글쓴이 수도 세그먼트 비율도 아님. 육아·지역 카페 구성원의 성별·연령·정치 성향 추정치는 싣지 않음(4절). — 미확인(요약) [P22, P23]
 - 콘텐츠 규범:
   - 업체가 회원인 척 쓴 가짜 후기와 숨은 마케팅 사례가 여러 차례 보도된 채널임. 공동구매·업체 홍보 글은 promotion 표지로 먼저 거름. — 미확인(요약) [P24, P25]
@@ -169,29 +168,29 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 - 개인정보:
   - 아이 이름·학교·병원·동네 같은 세부는 남기지 않음. 미성년자로 보이는 사람의 글은 건너뜀. 공유 산출물에는 풀어 쓴 요약만 둠. — 규칙 (`references/research/korea/legal-checklist.md`)
 - 불연속:
-  - 2024-12-01: 블로그·카페 추천·보증 글의 이해관계 표시를 제목이나 첫 부분에 두도록 한 공정위 지침 개정 시행 — 미확인(요약) [P16]
+  - 2024-12-01: 블로그·카페 추천·보증 글의 이해관계 표시를 제목이나 첫 부분에 두도록 한 공정위 지침 개정 시행 — 관찰됨 2026-10-01 [P163]
   - 2025-07: 네이버 블로그·카페 등에서 AI 봇 크롤링을 robots.txt로 막는다는 보도 — 미확인(요약) [P06, P07]
   - 2025-07-10: 네이버 이용약관 개정 시행: 사용자가 삭제·비공개로 돌린 글은 그 뒤 AI 연구 개발에 쓰지 않는다는 내용 보도 — 미확인(요약) [P17, P18]
-  - 2026-07-31: 네이버 검색 API 신규 키 발급 종료, NAVER API HUB로 이전 — 미확인(요약) [P04, P05]
-  - 2026-08-31: 게시글·댓글 대량 수집 금지 카페 공지 보도 — 미확인(요약) [P20, P21]
+  - 2026-07-31: 개발자센터 검색 API 신규 신청 중단(2026-07-30 24:00 이후). 쇼핑·책·학술정보 데이터는 2026-07-31 24:00 종료 — 관찰됨 2026-09-30 [P138]
+  - 2026-08-25: 게시글·댓글 대량 수집 금지 카페 공지 게시 — 관찰됨 2026-10-01 [P147]
   - 2026-09-07: 네이버 검색 API 특약 개정 시행 보도: 결과를 AI에 넣거나 저장·제3자 제공하는 행위 금지 — 미확인(요약) [P01, P02]
-  - 2027-06-30: 개발자센터에서 받은 기존 네이버 검색 API 키 종료 예정 — 미확인(요약) [P04]
-- 확인일 2026-09-29 · verified_at 없음(null)
+  - 2027-06-30: 개발자센터의 기존 이용자 대상 검색 API 제공 종료 예정(2027-06-30 24:00) — 관찰됨 2026-09-30 [P138]
+- 확인일 2026-10-01 · verified_at 없음(null)
 
 ### `naver-kin` 네이버 지식iN
 
 - 호스트: `kin.naver.com`, `m.kin.naver.com` · route table id: `naver-kin`
 - 계열 `qna` · 공개 범위 `public`: 질문과 답변이 한 페이지에 공개됨. 질문자와 답변자는 서로 다른 사람으로 셈. — 규칙 (`references/research/public-page-access.md`)
 - 정당한 경로(선호 순): `reader_public_page`
-  - routes.json의 naver-terms 항목(reported)이 덮음. lift_requires: written_permission 항목은 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. lift_requires: never 항목은 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. — 규칙 (`uxresearch/data/routes.json`)
-  - 네이버 검색 API와 NAVER API HUB는 꺼 둠(소유자가 현행 약관을 읽기 전까지). 2026-09-07 시행으로 보도된 검색 API 특약은 네이버 검색 결과를 보여 주는 용도로만 쓰게 하고, 결과를 AI에 넣거나 학습·개선·평가·노출에 쓰는 행위, 복사·저장·캐싱, 제3자 제공·판매, 광고 수익화를 금지함. — 미확인(요약) [P01, P02, P03]
-  - 검색 API는 NAVER API HUB(네이버 클라우드 플랫폼)로 옮겨 감. 개발자센터의 신규 키 발급은 2026-07-31에 끝났고 기존 키는 2027-06-30까지만 동작한다고 알려짐. — 미확인(요약) [P04, P05]
+  - routes.json의 naver-terms 항목(confirmed)이 덮음. lift_requires: written_permission 항목은 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. lift_requires: never 항목은 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. — 규칙 (`uxresearch/data/routes.json`)
+  - 네이버 검색 API와 NAVER API HUB는 소유자가 현행 약관을 읽기 전까지 꺼 둠. 2026-09-30 직접 읽은 개발자센터 약관은 검색 결과를 독립적으로 가공 없이 보여 주고 네이버·원본 출처와 링크를 표시하도록 함. AI 입력·학습·개선·평가·노출, 예외 밖의 복사·저장·캐싱, 제3자 제공·판매, 광고 수익화를 금지함. 기기 보관은 24시간과 새 질의 중 짧은 기간, 서버 이력 보관은 최대 21일임. API HUB 자체 약관과 보도된 2026-09-07 시행일은 미확인. — 관찰됨 2026-09-30 [P138]
+  - 2026-09-30 읽은 개발자센터 약관 부칙은 2026-07-30 24:00 이후 신규 신청을 중단하고, 그때까지 신청한 기존 이용자에게 2027-06-30 24:00까지 API를 제공한다고 적음. 쇼핑·책·학술정보는 2026-07-31 24:00에 종료됨. API HUB 자체의 현행 이용 조건은 미확인. — 관찰됨 2026-09-30 [P138]
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: `terms_restricted`
-- robots 예상 `unknown`: 실시간 robots 확인 전까지 모름. 2025-07 보도에 따르면 네이버는 블로그에서 OpenAI, Perplexity, Google, Anthropic(Claude), Meta, Apple의 AI 봇을, 카페에서는 여기에 더해 Amazon과 Microsoft Bing의 AI 봇을 robots.txt로 막음. 보도가 이름을 댄 봇은 학습·검색 크롤러이며, 이런 그룹은 기록용 신호(ai_training_disallow)일 뿐 중단 사유가 아님. 사용자 요청으로 페이지를 여는 AI 에이전트 토큰을 막는지는 미확인. 약관 제한이 먼저 멈추므로 robots는 제한이 풀린 실행에서만 확인함. — 미확인(요약) [P06, P07]
-- 약관 `reported`(routes.json `naver-terms`), 제한 `automated_collection`
-  - 조항: 2024-10-28 보도가 인용한 네이버 약관: 네이버 서비스로 쌓이는 데이터베이스를 robots.txt 같은 장치로 보호하며, robots.txt로 보호되는 데이터베이스를 네이버 로봇이 아닌 다른 검색 로봇이 수집하는 것을 허락하지 않음. 네이버의 사전 허락 없이 자동화된 수단(매크로, 로봇, 스파이더, 스크래퍼)으로 회원의 게시물 등을 수집하는 행위를 금지한다는 제3자 인용도 있으나 이번 확인에서 다시 열지 못함.
-  - 확인: 약관 원문은 이 환경에서 열리지 않음(미확인). routes.json의 naver-terms 항목과 같은 상태임. 사용자의 항목별 약관 확인과 사전 서면 허락(permission: granted_by, granted_on, reference)이 제한을 모두 풀기 전까지 요청하지 않음(1절). — 미확인(요약) [P08, P09, P10]
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 전문가·이벤트 일부 경로만 막고 /qna/detail은 금지 목록에 없음. ChatGPT-User·GPTBot·OAI-SearchBot·ClaudeBot·Claude-SearchBot·PerplexityBot 등 명시 그룹은 Disallow: /임. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P142]
+- 약관 `confirmed`(routes.json `naver-terms`), 제한 `automated_collection`
+  - 조항: "네이버의 사전 허락 없이 자동화된 수단"을 이용하여 "네이버 서비스에 게재된 회원의 아이디(ID), 게시물 등을 수집하거나" 시도해서는 안 됨.
+  - 확인: 2026-10-01 네이버 이용약관 원문에서 자동 수집 제한과 2025-07-10 시행일을 읽음. 검색결과 수집 정책도 읽었으나 그 문서의 개정·시행일과 2026-09 개정 여부는 미확인. lift_requires: written_permission에 따라 항목별 사용자 확인과 해당 읽기의 사전 서면 허락이 있어야 풀림. verified_at은 사람이 원문을 읽기 전까지 null임. — 관찰됨 2026-10-01 [P08, P155]
 - 사용자 단서(신뢰도 `medium`): 2022-10-06 발표를 전한 보도: 2021년 신규 사용자의 56%가 10-20대. 20년 누적 사용자 3,200만 명, 문답 8억 건. 글쓴이 구성으로 쓰지 않음. — 미확인(요약) [P27, P28]
 - 콘텐츠 규범:
   - 2024-04-25 개편으로 질문 마감이 없어지고 여러 답변을 채택할 수 있게 됨. 누구나 답변에 UP/DOWN 투표를 할 수 있고 UP이 많은 답변이 위에 보임. 눈에 띄는 답변은 투표로 골라진 답변임. — 미확인(요약) [P29, P30]
@@ -204,10 +203,10 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 2025-07: 네이버 블로그·카페 등에서 AI 봇 크롤링을 robots.txt로 막는다는 보도 — 미확인(요약) [P06, P07]
   - 2025-07-10: 네이버 이용약관 개정 시행: 사용자가 삭제·비공개로 돌린 글은 그 뒤 AI 연구 개발에 쓰지 않는다는 내용 보도 — 미확인(요약) [P17, P18]
   - 2026-05-24: 지식iN AI 자동 답변 '지식이' 종료 — 미확인(요약) [P32, P33]
-  - 2026-07-31: 네이버 검색 API 신규 키 발급 종료, NAVER API HUB로 이전 — 미확인(요약) [P04, P05]
+  - 2026-07-31: 개발자센터 검색 API 신규 신청 중단(2026-07-30 24:00 이후). 쇼핑·책·학술정보 데이터는 2026-07-31 24:00 종료 — 관찰됨 2026-09-30 [P138]
   - 2026-09-07: 네이버 검색 API 특약 개정 시행 보도: 결과를 AI에 넣거나 저장·제3자 제공하는 행위 금지 — 미확인(요약) [P01, P02]
-  - 2027-06-30: 개발자센터에서 받은 기존 네이버 검색 API 키 종료 예정 — 미확인(요약) [P04]
-- 확인일 2026-09-29 · verified_at 없음(null)
+  - 2027-06-30: 개발자센터의 기존 이용자 대상 검색 API 제공 종료 예정(2027-06-30 24:00) — 관찰됨 2026-09-30 [P138]
+- 확인일 2026-10-01 · verified_at 없음(null)
 
 ### `naver-place` 네이버 플레이스 리뷰
 
@@ -216,13 +215,13 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 - 정당한 경로(선호 순): `team_export` → `reader_public_page`
   - 업주인 팀은 스마트플레이스에서 자기 업체 리뷰를 먼저 봄(내보내기 형식은 확인하지 못함). — 추론
   - 네이버 오픈 API 명세에는 리뷰 본문을 주는 경로가 없음. 지역 검색 API는 업체 목록만 주며 정렬 옵션은 random(유사도순)과 comment(카페/블로그 리뷰 개수 순)뿐임. — 관찰됨 [P36]
-  - routes.json의 naver-terms 항목(reported)이 덮음. lift_requires: written_permission 항목은 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. lift_requires: never 항목은 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. 페이지 뒤의 내부 데이터 경로는 부르지 않음. — 규칙 (`references/research/public-page-access.md`)
+  - routes.json의 naver-terms 항목(confirmed)이 덮음. lift_requires: written_permission 항목은 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. lift_requires: never 항목은 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. 페이지 뒤의 내부 데이터 경로는 부르지 않음. — 규칙 (`references/research/public-page-access.md`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: `terms_restricted`
 - robots 예상 `unknown`: 보고된 robots 정보를 찾지 못함. 약관 제한이 풀린 실행에서 robots 확인이 판정함. — 미확인
-- 약관 `reported`(routes.json `naver-terms`), 제한 `automated_collection`
-  - 조항: 2024-10-28 보도가 인용한 네이버 약관: 네이버 서비스로 쌓이는 데이터베이스를 robots.txt 같은 장치로 보호하며, robots.txt로 보호되는 데이터베이스를 네이버 로봇이 아닌 다른 검색 로봇이 수집하는 것을 허락하지 않음. 네이버의 사전 허락 없이 자동화된 수단(매크로, 로봇, 스파이더, 스크래퍼)으로 회원의 게시물 등을 수집하는 행위를 금지한다는 제3자 인용도 있으나 이번 확인에서 다시 열지 못함.
-  - 확인: 약관 원문은 이 환경에서 열리지 않음(미확인). routes.json의 naver-terms 항목과 같은 상태임. 사용자의 항목별 약관 확인과 사전 서면 허락(permission: granted_by, granted_on, reference)이 제한을 모두 풀기 전까지 요청하지 않음(1절). — 미확인(요약) [P08, P09, P10]
+- 약관 `confirmed`(routes.json `naver-terms`), 제한 `automated_collection`
+  - 조항: "네이버의 사전 허락 없이 자동화된 수단"을 이용하여 "네이버 서비스에 게재된 회원의 아이디(ID), 게시물 등을 수집하거나" 시도해서는 안 됨.
+  - 확인: 2026-10-01 네이버 이용약관 원문에서 자동 수집 제한과 2025-07-10 시행일을 읽음. 검색결과 수집 정책도 읽었으나 그 문서의 개정·시행일과 2026-09 개정 여부는 미확인. lift_requires: written_permission에 따라 항목별 사용자 확인과 해당 읽기의 사전 서면 허락이 있어야 풀림. verified_at은 사람이 원문을 읽기 전까지 null임. — 관찰됨 2026-10-01 [P08, P155]
 - 사용자 단서(신뢰도 `medium`): 와이즈앱 추정 네이버지도 앱 월평균 사용자 3,044만 명(2025-01~11). 리뷰 작성자 구성은 측정된 적 없음. — 미확인(요약) [P37, P38]
 - 콘텐츠 규범:
   - 2026-04-06부터 별점을 다시 기록하고, 3개월 검토 뒤 2026-07-09부터 평균 별점과 사용자별 별점을 공개함. 업주가 평균 별점 노출을 켜고 끌 수 있고, 2021-10 이후 개업한 업체는 기본값이 미노출임. 보이는 평균 별점은 업주가 고른 것이므로 장소끼리 비교하지 않음. — 미확인(요약) [P39, P40, P41]
@@ -237,7 +236,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 2025-07-10: 네이버 이용약관 개정 시행: 사용자가 삭제·비공개로 돌린 글은 그 뒤 AI 연구 개발에 쓰지 않는다는 내용 보도 — 미확인(요약) [P17, P18]
   - 2026-04-06: 네이버 플레이스 별점 기록 재개 — 미확인(요약) [P39, P40]
   - 2026-07-09: 네이버 플레이스 평균 별점·사용자별 별점 공개 시작. 평균 별점 노출은 업주가 켜고 끔 — 미확인(요약) [P39, P45]
-- 확인일 2026-09-29 · verified_at 없음(null)
+- 확인일 2026-10-01 · verified_at 없음(null)
 
 ### `kakao-map` 카카오맵 리뷰
 
@@ -269,20 +268,22 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 카카오 다음 검색 API는 꺼 둠(소유자가 현행 약관을 읽기 전까지). — 규칙 (`uxresearch/data/routes.json`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: `auth_gate`
-- robots 예상 `unknown`: 실시간 robots 확인 전까지 모름. 2026-09-28 보도: 다음이 포털·카페·티스토리 공개 글을 외부 AI가 가져가는 범위를 다시 정하는 중이며, AI 검색·학습 크롤러와 AI 답변 에이전트까지 막는 방향이라고 함(시행일 미확인). 시행되면 사용자 요청으로 페이지를 여는 에이전트 그룹도 막힐 수 있음(추론). — 미확인(요약) [P51, P52]
-- 약관 `unchecked`: 카페 약관의 자동 수집 조항은 확인하지 못함. 운영사가 카카오에서 AXZ(현 주식회사 다음)로 바뀌었으므로 실행 전에 약관을 다시 확인함. — 미확인
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 /_c21_/를 막되 home, bbs_search_read, bbs_list, bbs_read 경로를 열어 둠. 이름 있는 AI 그룹은 없음. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P136]
+- 약관 `unchecked`
+  - 조항: 제12조제2호: "회사의 서비스 정보를 이용하여 얻은 정보를 회사의 사전 승낙 없이 복제 또는 유통시키거나 상업적으로 이용하는 행위" 금지.
+  - 확인: 2026-09-30 Daum 서비스 약관(2026-09-22 시행)의 복제·유통·상업 이용 제한과 개인정보 수집 금지를 읽음. 카페 약관 제19조도 읽었으나 카페 운영원칙 본문과 자동 수집 허용 범위는 미확인. 사용자 확인 기록은 없으므로 unchecked를 유지하고 일반 중단 규칙을 따름. — 관찰됨 2026-09-30 [P154, P144]
 - 사용자 단서(신뢰도 `low`): 공개 사용자 구성 자료를 이번 확인에서 찾지 못함. 커뮤니티 성별·연령·정치 성향 추정치는 싣지 않음(4절). — 미확인
 - 콘텐츠 규범:
   - 카페마다 운영 규칙과 말투가 다름. 카페 단위로 문맥을 읽음. — 추론
 - 개인정보:
   - 작성자 이름·닉네임은 author-key로 바꾸고, 글 URL은 번들의 source_ref에만 둠. 인용은 300자 이하이고 풀어 쓰기를 먼저 씀. — 규칙 (`references/research/public-page-access.md`)
 - 불연속:
-  - 2024-12-01: 블로그·카페 추천·보증 글의 이해관계 표시를 제목이나 첫 부분에 두도록 한 공정위 지침 개정 시행 — 미확인(요약) [P16]
+  - 2024-12-01: 블로그·카페 추천·보증 글의 이해관계 표시를 제목이나 첫 부분에 두도록 한 공정위 지침 개정 시행 — 관찰됨 2026-10-01 [P163]
   - 2025-12-01: 카카오가 다음 서비스(카페·티스토리 포함) 운영을 자회사 AXZ로 넘김 — 미확인(요약) [P53, P54]
   - 2026-05-07: 업스테이지가 AXZ 인수를 마침(보도) — 미확인(요약) [P55, P56]
   - 2026-07-27: AXZ가 사명을 '주식회사 다음'으로 바꿨다고 발표(2026-07-20 임시주주총회 의결) — 미확인(요약) [P57, P58, P59]
   - 2026-09-28: 다음이 외부 AI 크롤링 허용 범위를 다시 정하는 중이라는 보도(시행일 미확인) — 미확인(요약) [P51, P52]
-- 확인일 2026-09-29 · verified_at 없음(null)
+- 확인일 2026-09-30 · verified_at 없음(null)
 
 ### `tistory` 티스토리
 
@@ -292,33 +293,35 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 블로그별 /rss 피드는 최근 글만 담음(route table 기준, 실시간 확인 전). — 규칙 (`uxresearch/data/routes.json`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: 없음
-- robots 예상 `unknown`: 실시간 robots 확인 전까지 모름. 2026-09-28 보도: 다음이 포털·카페·티스토리 공개 글을 외부 AI가 가져가는 범위를 다시 정하는 중이며, AI 검색·학습 크롤러와 AI 답변 에이전트까지 막는 방향이라고 함(시행일 미확인). 시행되면 사용자 요청으로 페이지를 여는 에이전트 그룹도 막힐 수 있음(추론). — 미확인(요약) [P51, P52]
-- 약관 `unchecked`: 티스토리 약관의 자동 수집 조항은 확인하지 못함. 운영사가 바뀌었으므로 실행 전에 다시 확인함. — 미확인
+- robots 예상 `unknown`: 2026-09-30 관찰: 직접 읽은 개별 블로그는 * 그룹에서 guestbook·manage·owner·admin·search 등만 막고 게시글 경로는 금지 목록에 없음. bingbot은 Crawl-delay: 20임. www.tistory.com/robots.txt는 404를 반환했으며 다른 블로그에도 같은 규칙이 적용된다고 단정하지 않음. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P156, P171]
+- 약관 `unchecked`
+  - 조항: 운영정책 2.②: "서비스를 이용하여 얻은 정보를 회사의 사전 승낙 없이 영리 또는 비영리의 목적으로 복제, 출판, 방송 등에 사용하거나 제3자에게 제공하는 행위" 금지.
+  - 확인: 2026-09-30 운영정책의 복제·제공 제한과 공통 Daum 약관을 읽음. 운영정책의 시행일은 표기되지 않았고 자동 수집을 직접 지칭하는 문구는 찾지 못함. 사용자 확인 기록과 자동 수집 허용 범위는 미확인이므로 unchecked를 유지함. — 관찰됨 2026-09-30 [P170, P154]
 - 사용자 단서(신뢰도 `low`): 공개 사용자 구성 자료를 이번 확인에서 찾지 못함. 커뮤니티 성별·연령·정치 성향 추정치는 싣지 않음(4절). — 미확인
 - 콘텐츠 규범:
   - 하위 도메인 하나가 작성자 한 명임. — 규칙 (`references/research/source-grading.md`)
 - 개인정보:
   - 작성자 이름·닉네임은 author-key로 바꾸고, 글 URL은 번들의 source_ref에만 둠. 인용은 300자 이하이고 풀어 쓰기를 먼저 씀. — 규칙 (`references/research/public-page-access.md`)
 - 불연속:
-  - 2024-12-01: 블로그·카페 추천·보증 글의 이해관계 표시를 제목이나 첫 부분에 두도록 한 공정위 지침 개정 시행 — 미확인(요약) [P16]
+  - 2024-12-01: 블로그·카페 추천·보증 글의 이해관계 표시를 제목이나 첫 부분에 두도록 한 공정위 지침 개정 시행 — 관찰됨 2026-10-01 [P163]
   - 2025-12-01: 카카오가 다음 서비스(카페·티스토리 포함) 운영을 자회사 AXZ로 넘김 — 미확인(요약) [P53, P54]
   - 2026-05-07: 업스테이지가 AXZ 인수를 마침(보도) — 미확인(요약) [P55, P56]
   - 2026-07-27: AXZ가 사명을 '주식회사 다음'으로 바꿨다고 발표(2026-07-20 임시주주총회 의결) — 미확인(요약) [P57, P58, P59]
   - 2026-09-28: 다음이 외부 AI 크롤링 허용 범위를 다시 정하는 중이라는 보도(시행일 미확인) — 미확인(요약) [P51, P52]
-- 확인일 2026-09-29 · verified_at 없음(null)
+- 확인일 2026-09-30 · verified_at 없음(null)
 
 ### `dcinside` 디시인사이드
 
 - 호스트: `gall.dcinside.com`, `m.dcinside.com` · route table id: `dcinside`
 - 계열 `community` · 공개 범위 `public`: 갤러리 글은 로그인 없이 읽히고, 로그인 없이 글과 댓글도 쓸 수 있다고 보도됨. — 미확인(요약) [P60]
 - 정당한 경로(선호 순): `reader_public_page`
-  - routes.json의 dcinside-terms 항목(reported)이 dcinside.com 전체를 덮음. lift_requires: written_permission 항목은 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. lift_requires: never 항목은 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. 이 스킬은 약관이 그 읽기를 허용하는지 판단하지 않음(법률 자문 아님). — 규칙 (`uxresearch/data/routes.json`)
+  - routes.json의 dcinside-terms 항목(confirmed)이 dcinside.com 전체를 덮음. lift_requires: written_permission 항목은 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. lift_requires: never 항목은 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. 이 스킬은 약관이 그 읽기를 허용하는지 판단하지 않음(법률 자문 아님). — 규칙 (`uxresearch/data/routes.json`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: `terms_restricted`
-- robots 예상 `unknown`: 약관 제한이 풀린 실행에서만 robots를 확인함. 보고된 robots 정보 없음. — 규칙 (`uxresearch/data/routes.json`)
-- 약관 `reported`(routes.json `dcinside-terms`), 제한 `automated_collection`
-  - 조항: 이용약관 제16조(크롤링 및 인공지능 학습) ①: robots.txt에 적용한 일부 사이트에만 크롤링을 허용하며, 사전 서면 동의 없이 어떤 형태·목적으로든 서비스를 크롤링하는 행위를 금지함. ②: 콘텐츠를 인공지능 학습용 데이터로 쓰려면 공익·비영리 목적이라도 사전 합의가 필요함.
-  - 확인: 조항 문구는 dcinside.com 도메인 한정 검색으로 읽음(원문 페이지 직접 열람은 이 환경에서 막힘). 이 스킬은 이 항목을 reported로 둠. 사용자의 항목별 약관 확인과 사전 서면 허락(permission: granted_by, granted_on, reference)이 제한을 모두 풀기 전까지 요청하지 않음(1절). — 미확인(요약) [P61, P62]
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 기본 Allow: /이며 일부 갤러리·개별 글·시스템 경로는 막음. GPTBot·ClaudeBot·PerplexityBot 등 명시 그룹은 Disallow: /임. 모바일도 기본 허용과 일부 경로 금지, www 호스트는 * 그룹 전체 허용을 확인함. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P141, P145, P161]
+- 약관 `confirmed`(routes.json `dcinside-terms`), 제한 `automated_collection`
+  - 조항: 제16조①: "당사의 사전 서면 동의 없이 어떤 형태로든 어떤 목적으로든 본 서비스를 크롤링하는 행위는 명시적으로 금지됩니다." 제16조②는 AI 학습에 사전 합의를 요구함.
+  - 확인: 2026-09-30 원문 제16조와 2026-07-21 시행일을 읽음. 근거 상태는 confirmed이며 해제 조건은 lift_requires: written_permission임. 사용자의 항목별 확인과 해당 읽기의 사전 서면 허락이 필요함. verified_at은 사람이 원문을 읽기 전까지 null임. — 관찰됨 2026-09-30 [P61]
 - 사용자 단서(신뢰도 `medium`): 2025-02-10 보도: 2024-12 기준 국내 방문 순위 8위, 하루 약 300만 명이 쓰고 하루 게시글·댓글이 300만 건에 가까움. 성별·연령·정치 성향 추정치는 싣지 않음(4절). — 미확인(요약) [P60]
 - 콘텐츠 규범:
   - 갤러리마다 문화와 규범이 따로 자란다고 보도됨. 갤러리 단위로 문맥을 읽음. — 미확인(요약) [P60]
@@ -327,7 +330,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 로그인하지 않은 작성자는 닉네임 옆에 IP 일부가 보임. IP는 지우고, 기본 닉네임 'ㅇㅇ'과 IP가 붙은 닉네임은 author-key가 거절하므로 스레드 키(`author-key --thread-url`)로 셈. — 규칙 (`uxresearch/data/routes.json`)
 - 불연속:
   - 2026-02-09: 디시인사이드 경영권 매각 본계약(에이치PE, 약 2,000억 원). 3월 중 대금 납입 예정으로 보도, 종결 여부 미확인 — 미확인(요약) [P63, P64]
-- 확인일 2026-09-29 · verified_at 없음(null)
+- 확인일 2026-09-30 · verified_at 없음(null)
 
 ### `fmkorea` 에펨코리아
 
@@ -337,14 +340,16 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 공개 페이지만 읽음. 로그인, 회원 전용, 사람 확인, 봇 차단, 브라우저 확인 화면, 속도 제한이 나오면 그 자리에서 멈추고 수집 공백으로 적음. — 규칙 (`references/research/public-page-access.md`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: 없음
-- robots 예상 `unknown`: 보고된 robots 정보를 찾지 못함. 실행 때 robots 확인이 판정함. — 미확인
-- 약관 `unchecked`: 통합 규정은 인공지능·자동화 도구로 글과 댓글 문구를 만드는 행위를 금지하고(25번 항목), 이용약관은 자동화 프로그램·봇으로 로그인하거나 로그인 사용자 기능을 쓰는 행위를 금지한다고 요약됨. 로그인하지 않은 읽기에 관한 수집 조항은 찾지 못함. — 미확인(요약) [P65, P66]
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 Disallow: /와 메인·best·best2·humor 예외를 둠. 학습 크롤러는 메인만 열고, ChatGPT-User·Claude-User·Claude-SearchBot·OAI-SearchBot·Perplexity-User는 Allow: /임. 이 그룹의 허용은 * 그룹의 금지를 풀지 않음. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P162]
+- 약관 `unchecked`
+  - 조항: 제11조①18)는 자동화 프로그램·봇으로 로그인하거나 로그인 사용자 기능을 이용하는 행위와 사이트 내용을 추출해 광고를 제거한 뒤 다시 제공하는 행위를 금지함.
+  - 확인: 2026-09-30 이용약관(2023-04-17 시행) 제11조와 제13조를 읽음. 무로그인 표본 읽기의 허용 범위는 미확인이므로 unchecked를 유지함. 보안 시스템의 차단이 나오면 멈춤. — 관찰됨 2026-09-30 [P65]
 - 사용자 단서(신뢰도 `low`): 공개 사용자 구성 자료를 이번 확인에서 찾지 못함. 커뮤니티 성별·연령·정치 성향 추정치는 싣지 않음(4절). — 미확인
 - 콘텐츠 규범:
   - 게시판마다 정한 추천 수를 넘은 글이 첫 화면인 '포텐 터짐' 게시판에 모임. 눈에 띄는 글은 투표로 골라진 글이므로 어떤 목록과 정렬에서 읽었는지 기록함. — 미확인(요약) [P67, P68]
 - 개인정보:
   - 작성자 이름·닉네임은 author-key로 바꾸고, 글 URL은 번들의 source_ref에만 둠. 인용은 300자 이하이고 풀어 쓰기를 먼저 씀. — 규칙 (`references/research/public-page-access.md`)
-- 확인일 2026-09-29 · verified_at 없음(null)
+- 확인일 2026-09-30 · verified_at 없음(null)
 
 ### `theqoo` 더쿠
 
@@ -354,14 +359,16 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 공개 게시판만 읽음. 로그인이 필요한 분류는 auth_gate이며 수집 공백임. 로그인하지 않은 방문자에게 보이지 않는 최근 댓글도 수집 공백으로 적음. — 규칙 (`references/research/public-page-access.md`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: `auth_gate`
-- robots 예상 `unknown`: 보고된 robots 정보를 찾지 못함. 실행 때 robots 확인이 판정함. — 미확인
-- 약관 `unchecked`: 약관의 자동 수집 조항은 확인하지 못함. — 미확인
+- robots 예상 `unknown`: 2026-09-30 관찰: 404를 반환하여 robots 규칙을 읽지 못함. 파일 부재 관찰은 약관 허락을 뜻하지 않으며 실행 때 다시 확인함. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P157]
+- 약관 `unchecked`
+  - 조항: 제13조3: "회사가 전항 이외의 방법으로 회원의 게시물을 이용하고자 하는 경우 이메일 또는 기타 방식으로 회원의 사전 동의를 얻어야 합니다."
+  - 확인: 2026-09-30 이용약관(2023-06-25 시행)을 읽음. 이 조항은 회사의 게시물 이용에 관한 것이며 외부 수집 허락을 주지 않음. 별도 이용지침 본문과 자동 수집 허용 범위는 미확인이므로 unchecked를 유지함. — 관찰됨 2026-09-30 [P158]
 - 사용자 단서(신뢰도 `low`): 공개 사용자 구성 자료를 이번 확인에서 찾지 못함. 커뮤니티 성별·연령·정치 성향 추정치는 싣지 않음(4절). — 미확인
 - 콘텐츠 규범:
   - 연예·드라마 같은 대중문화 이야기가 많은 커뮤니티로 소개됨. — 미확인(요약) [P69]
 - 개인정보:
   - 작성자 이름·닉네임은 author-key로 바꾸고, 글 URL은 번들의 source_ref에만 둠. 인용은 300자 이하이고 풀어 쓰기를 먼저 씀. — 규칙 (`references/research/public-page-access.md`)
-- 확인일 2026-09-29 · verified_at 없음(null)
+- 확인일 2026-09-30 · verified_at 없음(null)
 
 ### `nate-pann` 네이트판
 
@@ -371,14 +378,16 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 공개 페이지만 읽음. 로그인, 회원 전용, 사람 확인, 봇 차단, 브라우저 확인 화면, 속도 제한이 나오면 그 자리에서 멈추고 수집 공백으로 적음. — 규칙 (`references/research/public-page-access.md`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: 없음
-- robots 예상 `unknown`: 보고된 robots 정보를 찾지 못함. 실행 때 robots 확인이 판정함. — 미확인
-- 약관 `unchecked`: 약관·로그인 규칙은 확인하지 못함. — 미확인
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 Disallow: /임. 일부 검색·SNS 봇의 명시 그룹은 /talk/를 열어 두지만 GPTBot·ClaudeBot은 Disallow: /임. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P149]
+- 약관 `unchecked`
+  - 조항: 제12조제2호는 사전 승낙 없는 서비스 정보의 복제·유통·상업 이용을, 제10호는 다른 이용자의 개인정보 수집·저장·공개를 금지함.
+  - 확인: 2026-09-30 판 서비스 약관(2025-02-18 시행)을 읽음. 크롤링·로봇을 직접 지칭하는 문구는 찾지 못했고 자동 수집 허용 범위와 사용자 확인은 미확인이므로 unchecked를 유지함. — 관찰됨 2026-09-30 [P148]
 - 사용자 단서(신뢰도 `low`): 공개 사용자 구성 자료를 이번 확인에서 찾지 못함. 커뮤니티 성별·연령·정치 성향 추정치는 싣지 않음(4절). — 미확인
 - 콘텐츠 규범:
   - 일상에 관한 고백적 사연 글이 중심인 커뮤니티로 연구됨. 같은 연구는 독자가 사연 조작을 의심하는 반응과 글쓴이가 진정성을 보이려는 서사 전략을 다룸(대중서사연구 24권 1호, 2018). 익명 1인칭 사연은 어느 게시판에서든 4절의 규칙을 따름. — 미확인(요약) [P70]
 - 개인정보:
   - 사연 속 가족·직장·지역 정보는 요약에서 뺌. — 규칙 (`references/research/public-page-access.md`)
-- 확인일 2026-09-29 · verified_at 없음(null)
+- 확인일 2026-09-30 · verified_at 없음(null)
 
 ### `clien` 클리앙
 
@@ -388,7 +397,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - clien-terms는 lift_requires: never로 요청 전에 멈추며 캡처도 받지 않음. 제13조③은 정보 권리자의 동의를 요구함. 플랫폼의 허락으로 각 작성자의 동의를 확인할 수 없어 현재 호스트 단위 기록으로는 풀 수 없음. — 규칙 (`uxresearch/data/routes.json`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: `terms_restricted`
-- robots 예상 `not_reached`: 약관 제한이 요청 전에 멈추므로 robots.txt를 요청하지 않음. — 규칙
+- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 /service/board/를 열고 sold·hongbo·검색·개인 경로와 쿼리 URL 등을 막음. ChatGPT-User·GPTBot·OAI-SearchBot 등은 Disallow: /임. lift_requires: never 정책은 그대로 적용됨. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P159]
 - 약관 `confirmed`(routes.json `clien-terms`), 제한 `automated_collection`
   - 조항: 제13조③: "서비스를 통해 얻은 정보를 그 정보 권리자의 동의없이 수집, 복제, 배포할 수 없습니다." — 관찰됨 [P126]
   - 확인: 2026-09-30 AI 조사자가 운영사 약관 제13조③을 읽음. 근거 상태는 confirmed이며 해제 조건은 never임. 사람이 원문을 확인한 날짜는 없음. — 관찰됨 [P126]
@@ -408,14 +417,16 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 공개 페이지만 읽음. 로그인, 회원 전용, 사람 확인, 봇 차단, 브라우저 확인 화면, 속도 제한이 나오면 그 자리에서 멈추고 수집 공백으로 적음. — 규칙 (`references/research/public-page-access.md`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: 없음
-- robots 예상 `unknown`: 보고된 robots 정보를 찾지 못함. 실행 때 robots 확인이 판정함. — 미확인
-- 약관 `unchecked`: 약관의 자동 수집 조항은 확인하지 못함. — 미확인
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 /zboard/를 열고 검색·개인정보·openapi 등 경로를 막음. 모바일은 Crawl-delay: 1과 검색·개인 경로 금지를 둠. 이름 있는 AI 그룹은 없음. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P165, P146]
+- 약관 `unchecked`
+  - 조항: 제13조2는 사전 승낙 없이 서비스에서 얻은 정보를 복제·전송·출판·배포·방송 등의 방법으로 영리 이용하거나 제3자에게 이용하게 하는 행위를 금지함.
+  - 확인: 2026-09-30 이용약관(2015-04-24 시행)을 읽음. 자동 수집 수단을 직접 지칭하는 문구는 찾지 못했고 자동 수집 허용 범위와 사용자 확인은 미확인이므로 unchecked를 유지함. — 관찰됨 2026-09-30 [P166]
 - 사용자 단서(신뢰도 `low`): 공개 사용자 구성 자료를 이번 확인에서 찾지 못함. 커뮤니티 성별·연령·정치 성향 추정치는 싣지 않음(4절). — 미확인
 - 콘텐츠 규범:
   - 핫딜 게시판에는 판매 홍보와 제휴 링크 글이 섞임. promotion 표지를 먼저 확인함. — 규칙 (`uxresearch/data/routes.json`)
 - 개인정보:
   - 작성자 이름·닉네임은 author-key로 바꾸고, 글 URL은 번들의 source_ref에만 둠. 인용은 300자 이하이고 풀어 쓰기를 먼저 씀. — 규칙 (`references/research/public-page-access.md`)
-- 확인일 2026-09-29 · verified_at 없음(null)
+- 확인일 2026-09-30 · verified_at 없음(null)
 
 ### `ruliweb` 루리웹
 
@@ -426,14 +437,16 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 공개 페이지만 읽음. 로그인, 회원 전용, 사람 확인, 봇 차단, 브라우저 확인 화면, 속도 제한이 나오면 그 자리에서 멈추고 수집 공백으로 적음. — 규칙 (`references/research/public-page-access.md`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: 없음
-- robots 예상 `unknown`: 보고된 robots 정보를 찾지 못함. 실행 때 robots 확인이 판정함. — 미확인
-- 약관 `unchecked`: 약관의 자동 수집 조항은 확인하지 못함. — 미확인
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 검색·타임라인·회원 경로와 여러 쿼리 파라미터를 막음. 게시글 경로는 금지 목록에 없고 이름 있는 AI 그룹은 없음. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P134]
+- 약관 `unchecked`
+  - 조항: 2026-07 이용약관 개정 안내의 제13조4는 허위 사실과 권리 침해, 허위조작정보 생산·유포를 금지함.
+  - 확인: 2026-09-30 개정 안내(2026-07-09 시행)를 읽음. 약관 전문을 확보하지 못하여 자동 수집 조항과 허용 범위는 미확인. unchecked를 유지함. — 관찰됨 2026-09-30 [P133]
 - 사용자 단서(신뢰도 `low`): 공개 사용자 구성 자료를 이번 확인에서 찾지 못함. 커뮤니티 성별·연령·정치 성향 추정치는 싣지 않음(4절). — 미확인
 - 콘텐츠 규범:
   - 콘솔·휴대용 비디오 게임을 주로 다루는 커뮤니티이며 애니메이션·만화·프라모델 게시판도 있음. 게임마다 공략 게시판이 따로 있음. — 미확인(요약) [P73]
 - 개인정보:
   - 작성자 이름·닉네임은 author-key로 바꾸고, 글 URL은 번들의 source_ref에만 둠. 인용은 300자 이하이고 풀어 쓰기를 먼저 씀. — 규칙 (`references/research/public-page-access.md`)
-- 확인일 2026-09-29 · verified_at 없음(null)
+- 확인일 2026-09-30 · verified_at 없음(null)
 
 ### `instiz` 인스티즈
 
@@ -460,15 +473,17 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 로그인 없이 보이는 글만 읽음. 로그인 읽기는 사용자가 브리프에 직접 승인한 경우에만 가능하며, 에이전트는 이 목록에 커뮤니티를 더하지 않음. — 규칙 (`references/research/public-page-access.md`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: `auth_gate`
-- robots 예상 `unknown`: 보고된 robots 정보를 찾지 못함. 실행 때 robots 확인이 판정함. — 미확인
-- 약관 `unchecked`: 수집 관련 약관은 확인하지 못함. — 미확인
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 사용자 이력·검색·일부 블로그 내부 경로를 막음. GPTBot·ClaudeBot·Google-Extended 등 학습 크롤러는 Disallow: /임. 이 관찰로 회원 전용 중단이 풀리지 않음. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P167]
+- 약관 `unchecked`
+  - 조항: 3. 금지사항: "Teamblind로부터 명시적 허가를 받은 경우를 제외하고" 자동·수동 수단의 크롤링·스크래핑·데이터 추출·복제 등을 금지함.
+  - 확인: 2026-09-30 게시된 약관의 금지사항과 계정 개설 의무를 읽음. 2026-10-04는 예정 시행일이며 읽은 날의 현행 판 시작일은 미확인. 회원 전용 중단을 유지하며 사용자 확인 기록과 현행 판이 미확인이므로 unchecked를 유지함. — 관찰됨 2026-09-30 [P143]
 - 사용자 단서(신뢰도 `medium`): 회사 발표(2025-03-12): 전 세계 가입자 1,200만 명. 2025-01 기준 국내 10대 그룹 재직자 10명 중 9명 이상이 가입. 회사 자체 수치임. — 미확인(요약) [P76, P77]
 - 콘텐츠 규범:
   - 재직 인증을 거친 직장인 익명 커뮤니티임. — 미확인(요약) [P76]
   - 직장 불만이 모이기 쉬운 구조이므로 일반 대중을 대표하지 않음. — 추론
 - 개인정보:
   - 회사 이름·직무·사건을 합치면 사람을 알아볼 수 있음. 회사명과 세부 사건은 요약에서 뺌. — 규칙 (`references/research/public-page-access.md`)
-- 확인일 2026-09-29 · verified_at 없음(null)
+- 확인일 2026-09-30 · verified_at 없음(null)
 
 ### `everytime` 에브리타임
 
@@ -477,10 +492,12 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 - 정당한 경로(선호 순): `none`
   - route table의 out_of_scope 채널임. 읽지 않고 요약하지 않음. 학생 사용자는 설문·인터뷰로 조사함. — 규칙 (`uxresearch/data/routes.json`)
 - 예상 중단: `auth_gate`
-- robots 예상 `not_reached`: out_of_scope 채널이라 요청하지 않음. — 규칙 (`uxresearch/data/routes.json`)
-- 약관 `unchecked`: 읽지 않는 채널이라 약관을 확인하지 않음. — 규칙 (`uxresearch/data/routes.json`)
+- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 Disallow: /이며 메인과 일부 광고·아이콘 경로만 예외로 둠. 회원 전용·범위 밖 정책을 유지함. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P140]
+- 약관 `unchecked`
+  - 조항: 제12조는 프로그램·스크립트·봇 등 컴퓨팅 시스템을 통한 서비스 접근을 금지하며, 제9조는 회사 승인 없는 데이터베이스 복제·배포·방송·전송을 금지함.
+  - 확인: 2026-09-30 약관 본문과 2026-08-07 개정일을 읽음. 사용자 확인 기록은 없으므로 unchecked를 유지함. 회원 전용 채널은 계속 범위 밖이며 이 관찰은 읽기 경로를 만들지 않음. — 관찰됨 2026-09-30 [P139]
 - 사용자 단서(신뢰도 `low`): 싣지 않음. 회원 전용 채널은 사용자 단서로 삼지 않음(1절). 학생 사용자는 설문·인터뷰로 조사함. — 규칙
-- 확인일 2026-09-29 · verified_at 없음(null)
+- 확인일 2026-09-30 · verified_at 없음(null)
 
 ### `band` 네이버 밴드
 
@@ -514,7 +531,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - daangn-terms는 사용자의 현행 약관 확인과 사전 서면 허락이 있어야 풀림(lift_requires: written_permission). 허락은 해당 수집·저장·분석과 후속 처리를 포함해야 함. 그 뒤에도 robots.txt와 모든 중단 규칙을 따름. 사이트 내부 데이터 경로는 부르지 않음. — 규칙 (`uxresearch/data/routes.json`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: `terms_restricted`
-- robots 예상 `not_reached`: 약관 제한이 요청 전에 멈추므로 robots.txt를 요청하지 않음. — 규칙
+- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 광고·관리·웹뷰·검색 경로 등을 막음. ChatGPT-User·Claude-User·Claude-SearchBot·OAI-SearchBot·Perplexity-User 등은 전체 금지와 일부 지역 프로필 예외를 둠. 학습 크롤러 그룹은 Disallow: /임. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P160]
 - 약관 `reported`(routes.json `daangn-terms`), 제한 `automated_collection`, `ai_input`, `storage`
   - 조항: 데이터베이스에 대한 보호: "당근의 명시적인 사전 서면 동의 없이 자동화된 도구"를 활용한 "데이터 수집·복제·저장·배포·출판·분석·색인화·수정·파생 저작물 생성" 금지. — 관찰됨 [P127, P128]
   - 확인: 2026-09-30 AI 조사자가 운영사 페이지 데이터에서 조항과 2026-01-02 효력일을 읽음. 다른 조사자의 약관 페이지 요청은 실패하여 reported로 둠. 사람이 원문을 확인한 날짜는 없음. — 관찰됨 [P127, P128]
@@ -532,16 +549,16 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 - 정당한 경로(선호 순): `official_api_user_key`
   - YouTube Data API v3를 사용자 본인의 키로 부르는 공식 경로(R0)만 씀. 영상 주소(watch, youtu.be, shorts, live, embed)에서 영상 ID만 읽고 페이지는 요청하지 않음. 키는 환경 변수 REMORSEARCH_YOUTUBE_API_KEY에서 읽고 예전 이름 YOUTUBE_API_KEY도 받음. videos.list와 commentThreads.list를 쓰며, 렌더 캡처는 하지 않고 ingest도 그 캡처를 받지 않음. 채널·커뮤니티·재생목록·검색 페이지는 경로가 없어 terms_restricted 수집 공백으로 남음. — 규칙 (`uxresearch/data/routes.json`)
   - 댓글은 관련도 순으로 받은 최상위 댓글이며 한 영상에 정해진 쪽 수까지만 받음(쪽 크기와 쪽 수는 routes.json의 youtube 경로 설정). 답글과 그 뒤의 댓글은 수집 공백으로 적음. — 규칙 (`uxresearch/data/routes.json`)
-  - commentThreads.list는 호출당 1단위임. 기본 할당은 search.list 하루 100회, videos.insert 하루 100회와 별도로 나머지 엔드포인트를 합쳐 하루 10,000단위이며, 일일 할당량은 태평양 시간 자정에 초기화됨. — 미확인(요약) [P86, P87, P88]
-  - API 클라이언트는 데이터 주인의 승인 없이 받은 데이터(Non-Authorized Data)를 최대 30일만 저장하고 그 뒤 지우거나 새로 받아야 함. — 미확인(요약) [P89]
+  - commentThreads.list는 호출당 1단위임. 기본 할당은 search.list 하루 100회, videos.insert 하루 100회와 별도로 나머지 엔드포인트를 합쳐 하루 10,000단위이며, 일일 할당량은 태평양 시간 자정에 초기화됨. — 관찰됨 2026-09-30 [P86, P87, P88]
+  - 개발자 정책 III.E.4.d: 사용자 자격 증명 없이 API 클라이언트가 접근할 수 있는 API Data가 Non-Authorized Data임. 저장한 데이터는 30일 뒤 삭제하거나 갱신해야 함. — 관찰됨 2026-09-30 [P89]
   - 개발자 정책은 승인 없이 API Data로 새 데이터·파생 데이터·지표를 만들지 못하게 함. 파생 지표의 예로 시청자 감정 분석과 콘텐츠 분류·태그를 듦. API 키 보유자는 YouTube API Services Terms of Service와 Developer Policies를 따라야 함. 적용은 법률가 판단이며, 그동안 API 항목은 정성 근거(풀어 쓰기, 짧은 인용의 존재 근거)로만 씀. API 항목으로 감정·분류·개수 지표를 계산하지 않음. — 미확인(요약) [P89, P125]
   - 나이·인종·종교·정치 성향·성적 지향·건강 상태 같은 보호 속성으로 사용자를 프로파일링하거나 시청자·제작자의 이런 속성을 추정해서는 안 됨. — 미확인(요약) [P89]
   - 키가 없으면 official_route_needs_key로 수집 공백이 되고 사용자에게 묻는 질문이 됨. 키 거절이나 그 밖의 실패로 공식 경로가 끝나면 그 주소는 terms_restricted로 끝나며 페이지로 바꾸지 않음. 댓글을 막은 영상은 gone(comments_disabled)으로 기록함. — 규칙 (`uxresearch/data/routes.json`)
 - 예상 중단: `terms_restricted`
-- robots 예상 `not_reached`: 약관 제한(confirmed)이 요청 전에 멈추므로 이 호스트의 robots.txt를 요청하지 않음. — 규칙 (`uxresearch/data/routes.json`)
+- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 내부 API·댓글·검색·로그인·live_chat·feeds/videos.xml 등을 막으며 /watch는 금지 목록에 없음. 페이지는 lift_requires: never로 계속 멈추고 Data API만 씀. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P172]
 - 약관 `confirmed`(routes.json `youtube-terms`), 제한 `automated_collection`
-  - 조항: 서비스 약관 '권한 및 제한사항': 공개 검색엔진이 YouTube의 robots.txt에 따라 접근하는 경우나 YouTube의 사전 서면 허가가 있는 경우를 빼고 자동화 수단(로봇, 봇넷, 스크레이퍼 등)으로 서비스에 접근할 수 없음.
-  - 확인: youtube.com 도메인 한정 검색으로 조항 문구를 읽음(원문 페이지 직접 열람은 이 환경에서 막힘). lift_requires: never 항목은 브리프로 풀 수 없음. verified_at은 사람이 원문을 다시 읽은 뒤 채움. routes.json의 youtube-terms 항목은 youtu.be 짧은 주소와 youtube-nocookie.com도 덮음. — 미확인(요약) [P90]
+  - 조항: Permissions and Restrictions: automated access requires YouTube’s prior written permission, except for public search engines following robots.txt.
+  - 확인: 2026-09-30 원문의 자동화 접근 제한을 읽음. 영문 페이지의 날짜가 2023-12-15와 한국 화면의 영문 번역 2022-01-05로 달라 효력일은 미확인. lift_requires: never이므로 페이지는 풀 수 없고 공식 Data API만 씀. verified_at은 사람이 원문을 읽기 전까지 null임. — 관찰됨 2026-09-30 [P173, P174, P89]
 - 사용자 단서(신뢰도 `medium`): 와이즈앱 추정 월평균 사용자 4,678만 명(2025-01~11). 한국갤럽 2025(만 13세 이상): 유튜브를 쓴다는 응답 95%. 한국언론진흥재단 2024(만 19세 이상): 84.9%. 조사마다 정의가 다름. 댓글 작성자는 그 영상을 본 사람 가운데 스스로 쓴 사람임. — 미확인(요약) [P37, P81, P82]
 - 콘텐츠 규범:
   - 댓글은 특정 영상에 묶이고 정렬 순서에 따라 보이는 댓글이 달라짐. 어떤 정렬로 받았는지 기록함. — 추론
@@ -549,7 +566,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 - 개인정보:
   - 작성자 이름은 솔트를 넣은 작성자 키로 바꾸고 채널 ID와 프로필 URL은 저장하지 않음. API로 받은 항목마다 retention_until(받은 시각 + 30일)을 두며, 사용자가 그 기한까지 지우거나 다시 받아야 함. 번들 항목을 자동으로 지우는 기능은 아직 없음. — 규칙 (`uxresearch/data/routes.json`)
   - 작성자 키에 나이·건강·정치 같은 단서를 붙이지 않음. 이런 단서는 세그먼트 수준 주장에만 씀. — 규칙 (`uxresearch/data/routes.json`)
-- 확인일 2026-09-29 · verified_at 없음(null)
+- 확인일 2026-09-30 · verified_at 없음(null)
 
 ### `instagram` 인스타그램
 
@@ -558,10 +575,10 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 - 정당한 경로(선호 순): `none`
   - Meta Content Library와 API는 자격을 갖춘 학술·비영리 연구자가 ICPSR 심사를 거쳐 쓰는 별도 경로이며, 이 스킬의 경로가 아님. — 미확인(요약) [P91, P92, P93]
 - 예상 중단: `terms_restricted`
-- robots 예상 `not_reached`: 약관 제한(confirmed)이 요청 전에 멈추므로 이 호스트의 robots.txt를 요청하지 않음. — 규칙 (`uxresearch/data/routes.json`)
+- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 Disallow: /이며 GPTBot·ClaudeBot·PerplexityBot 등도 전체 경로를 막음. 페이지는 lift_requires: never로 계속 멈춤. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P164]
 - 약관 `confirmed`(routes.json `meta-instagram`), 제한 `automated_collection`
-  - 조항: Meta 자동 데이터 수집 약관(2024-10-07 시행): Meta의 명시적 서면 허가 없이 자동 데이터 수집을 하지 않음. 약관에 동의한 것만으로는 허가가 아님. 인스타그램 이용약관: 로그인 여부와 관계없이 명시적 허가 없이 자동화된 방식으로 정보에 접근하거나 수집할 수 없음.
-  - 확인: facebook.com과 help.instagram.com 도메인 한정 검색으로 문구를 읽음(원문 페이지 직접 열람은 이 환경에서 막힘). lift_requires: never 항목은 브리프로 풀 수 없음. verified_at은 사람이 원문을 다시 읽은 뒤 채움. — 미확인(요약) [P94, P95]
+  - 조항: Operator robots.txt notice: "Collection of data on Instagram through automated means is prohibited unless you have express written permission from Instagram".
+  - 확인: 2026-09-30 운영사의 robots.txt 공지와 Meta 자동 수집 조항을 읽음. 인스타그램 약관 자체의 본문과 시행일은 미확인. lift_requires: never이므로 페이지는 풀 수 없음. verified_at은 사람이 원문을 읽기 전까지 null임. — 관찰됨 2026-09-30 [P164, P94]
 - 사용자 단서(신뢰도 `medium`): 한국언론진흥재단 2024(만 19세 이상): 20대 80.9%, 30대 70.7%가 씀. 와이즈앱 추정 2026-01~04 월평균 사용자 2,808만 명. — 미확인(요약) [P22, P82, P83]
 - 콘텐츠 규범:
   - 공정위 2024년 모니터링에서 뒷광고 의심 게시물이 가장 많았던 채널임(10,195건). 적발 건수일 뿐 비율이 아님. — 미확인(요약) [P14, P15]
@@ -569,7 +586,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 작성자 이름·닉네임은 author-key로 바꾸고, 글 URL은 번들의 source_ref에만 둠. 인용은 300자 이하이고 풀어 쓰기를 먼저 씀. — 규칙 (`references/research/public-page-access.md`)
 - 불연속:
   - 2024-10-07: Meta 자동 데이터 수집 약관 현행본 시행 — 미확인(요약) [P94]
-- 확인일 2026-09-29 · verified_at 없음(null)
+- 확인일 2026-09-30 · verified_at 없음(null)
 
 ### `threads` 스레드
 
@@ -578,10 +595,10 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 - 정당한 경로(선호 순): `none`
   - Threads API의 키워드 검색은 threads_keyword_search 권한이 필요하고, 그 권한을 승인받지 못한 앱은 인증한 사용자 자신의 글만 검색함. 이 스킬은 구현하지 않음. — 미확인(요약) [P96]
 - 예상 중단: `terms_restricted`
-- robots 예상 `not_reached`: 약관 제한(confirmed)이 요청 전에 멈추므로 이 호스트의 robots.txt를 요청하지 않음. — 규칙 (`uxresearch/data/routes.json`)
+- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 Disallow: /이며 GPTBot·ClaudeBot·PerplexityBot 등도 전체 경로를 막음. threads.net은 threads.com으로 이동함. 페이지는 lift_requires: never로 계속 멈춤. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P168, P169]
 - 약관 `confirmed`(routes.json `meta-threads`), 제한 `automated_collection`
-  - 조항: Meta 자동 데이터 수집 약관이 적용되며, 스레드 이용약관은 인스타그램 이용약관을 함께 적용함(인스타그램 약관은 명시적 허가 없는 자동 접근·수집을 금지함).
-  - 확인: facebook.com과 help.instagram.com 도메인 한정 검색으로 읽음(원문 페이지 직접 열람은 이 환경에서 막힘). lift_requires: never 항목은 브리프로 풀 수 없음. threads.com과 threads.net 모두 routes.json의 meta-threads 항목에 들어 있음. — 미확인(요약) [P94, P95, P97]
+  - 조항: Operator robots.txt notice: "Collection of data on Threads through automated means is prohibited unless you have express written permission from Threads".
+  - 확인: 2026-09-30 운영사의 robots.txt 공지와 Meta 자동 수집 조항을 읽음. 스레드 보충약관 본문과 시행일은 미확인. lift_requires: never이므로 페이지는 풀 수 없음. verified_at은 사람이 원문을 읽기 전까지 null임. — 관찰됨 2026-09-30 [P168, P94]
 - 사용자 단서(신뢰도 `medium`): 와이즈앱: 2026-01~04 월평균 사용자 729만 명, 전년 같은 기간보다 21.0% 늘어남. — 미확인(요약) [P22, P23]
 - 콘텐츠 규범:
   - 반말 중심의 가벼운 말투가 퍼졌다는 보도가 있음. — 미확인(요약) [P98, P99]
@@ -590,7 +607,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 작성자 이름·닉네임은 author-key로 바꾸고, 글 URL은 번들의 source_ref에만 둠. 인용은 300자 이하이고 풀어 쓰기를 먼저 씀. — 규칙 (`references/research/public-page-access.md`)
 - 불연속:
   - 2025-04-24: 스레드 기본 주소가 threads.com으로 바뀌고 threads.net은 threads.com으로 넘어감 — 미확인(요약) [P100]
-- 확인일 2026-09-29 · verified_at 없음(null)
+- 확인일 2026-09-30 · verified_at 없음(null)
 
 ### `app-store-kr` 앱스토어 리뷰(한국)
 
@@ -600,7 +617,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - apple-app-store-terms는 apps.apple.com 페이지와 itunes.apple.com 피드를 요청 전에 멈춤(lift_requires: never). 공개 고객 리뷰 RSS 실행 경로는 제거함. 리뷰 피드가 200으로 응답했다는 조사 기록과 기존 소개 글은 경로의 과거 근거로만 남김. — 규칙 [P101] (`uxresearch/data/routes.json`)
   - 팀 자기 앱의 리뷰는 허가받은 App Store Connect 내보내기 파일로 받음(team_export, 출처 team_provided). 앱·국가·기간·취득 경위를 남기고 처리 범위와 개인정보를 확인함. — 관찰됨 [P102, P129]
 - 예상 중단: `terms_restricted`
-- robots 예상 `not_reached`: 약관 제한이 요청 전에 멈추므로 robots.txt를 요청하지 않음. — 규칙
+- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 WebObjects·api·includes·v1·검색 쿼리 경로를 막고 앱 상세 페이지는 금지 목록에 없음. AI 명시 그룹은 없음. 페이지·리뷰 피드는 lift_requires: never로 계속 멈춤. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P132]
 - 약관 `confirmed`(routes.json `apple-app-store-terms`), 제한 `automated_collection`, `ai_input`
   - 조항: F: "소프트웨어, 기기, 자동화된 프로세스 또는 이와 유사하거나 동등한 수동 프로세스"를 사용한 "스크래핑, 복사, 측정, 분석 또는 모니터링" 금지. — 관찰됨 [P130, P131, P129]
   - 확인: 2026-09-30 AI 조사자가 Apple 미디어 서비스 약관 F절을 읽음. 2026-09-14는 최종 업데이트 날짜이며 효력일은 확인하지 못함. 피드별 예외 조항을 찾지 못함. 사람이 원문을 확인한 날짜는 없음. — 관찰됨 [P130, P131, P129]
@@ -622,8 +639,10 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 공개 페이지는 클릭 없이 처음 몇 개 리뷰만 보여 줌. 렌더는 스크롤만 하고 더 보기 버튼을 누르지 않음. — 규칙 (`references/research/public-page-access.md`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: 없음
-- robots 예상 `unknown`: 보고된 robots 정보를 찾지 못함. 실행 때 robots 확인이 판정함. — 미확인
-- 약관 `unchecked`: Google 서비스 약관은 robots.txt 같은 기계 판독 지시를 어기는 자동 접근을 금지함. reader는 robots.txt를 따르므로 별도 약관 중단은 두지 않음. — 미확인(요약) [P110]
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 /store/getreviews·/store/xhr·/store/search 등 내부·검색 경로를 막음. /store/apps/details는 금지 목록에 없고 AI 명시 그룹은 없음. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P152]
+- 약관 `unchecked`
+  - 조항: Google 약관은 robots.txt 등 기계 판독 지시를 어기는 자동 접근을 금지함. Google Play 약관은 계정명 등 다른 사용자의 개인정보 수집을 금지함.
+  - 확인: 2026-09-30 Google 서비스 약관(2026-07-30 시행)과 Google Play 약관(2026-07-29 판)을 읽음. 한국어 Play 페이지도 같은 날 읽음. 사용자 확인은 미확인이므로 unchecked를 유지하고 robots 및 개인정보 중단 규칙을 따름. — 관찰됨 2026-09-30 [P153, P150, P151]
 - 사용자 단서(신뢰도 `medium`): 한국갤럽 2025-07 조사(스마트폰 사용자 986명): 삼성 72%. 50대·60대는 90% 안팎이 삼성. 남성 76%, 여성 67%가 삼성을 쓴다고 보도됨. 스마트폰 사용자 기준이며 리뷰 작성자 구성은 측정된 적 없음(단서만). — 미확인(요약) [P103, P104, P105]
 - 콘텐츠 규범:
   - 스토어 리뷰는 업데이트나 장애 직후 몰림. 리뷰가 몰린 기간은 사용성 발견이 아니라 맥락이며, 날짜 구간을 나눠 읽음. — 추론
@@ -632,7 +651,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 - 불연속:
   - 2025-09-23: 카카오톡 대규모 개편 직후 두 스토어 평점이 급락함(보도 시점마다 수치가 다름) — 미확인(요약) [P106, P107]
   - 2025-10-02: 카카오톡 구글 플레이 평점 1.0 보도: 평가자 318만 5,098명 중 312만 4,788명(98.11%)이 1점 — 미확인(요약) [P106]
-- 확인일 2026-09-29 · verified_at 없음(null)
+- 확인일 2026-09-30 · verified_at 없음(null)
 
 ### `coupang` 쿠팡 상품 리뷰
 
@@ -741,7 +760,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 | 2024-09 | `coupang` | 쿠팡이 서울고법에 과징금·시정명령 취소 소송 제기 | 미확인(요약) P116 |
 | 2024-10 | `naver-place` | 네이버 플레이스 리뷰 방문 인증 강화(마케팅 커뮤니티 정리, 신뢰도 낮음) | 미확인(요약) P43 |
 | 2024-10-07 | `instagram` | Meta 자동 데이터 수집 약관 현행본 시행 | 미확인(요약) P94 |
-| 2024-12-01 | `naver-blog`, `naver-cafe`, `daum-cafe`, `tistory` | 블로그·카페 추천·보증 글의 이해관계 표시를 제목이나 첫 부분에 두도록 한 공정위 지침 개정 시행 | 미확인(요약) P16 |
+| 2024-12-01 | `naver-blog`, `naver-cafe`, `daum-cafe`, `tistory` | 블로그·카페 추천·보증 글의 이해관계 표시를 제목이나 첫 부분에 두도록 한 공정위 지침 개정 시행 | 관찰됨 2026-10-01 P163 |
 | 2025-02 | `kakao-map` | 카카오맵 웹 개편: 웹에서 '맛집' 평가가 사라지고 후기 노출이 줄었다는 보도(2025-03-15) | 미확인(요약) P46, P47 |
 | 2025-04-24 | `threads` | 스레드 기본 주소가 threads.com으로 바뀌고 threads.net은 threads.com으로 넘어감 | 미확인(요약) P100 |
 | 2025-05-12 | `naver-place` | 네이버 플레이스 리뷰에 네이버 POS 연동 인증 추가(마케팅 커뮤니티 정리, 신뢰도 낮음) | 미확인(요약) P43 |
@@ -757,11 +776,11 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 | 2026-05-24 | `naver-kin` | 지식iN AI 자동 답변 '지식이' 종료 | 미확인(요약) P32, P33 |
 | 2026-07-09 | `naver-place` | 네이버 플레이스 평균 별점·사용자별 별점 공개 시작. 평균 별점 노출은 업주가 켜고 끔 | 미확인(요약) P39, P45 |
 | 2026-07-27 | `daum-cafe`, `tistory` | AXZ가 사명을 '주식회사 다음'으로 바꿨다고 발표(2026-07-20 임시주주총회 의결) | 미확인(요약) P57, P58, P59 |
-| 2026-07-31 | `naver-blog`, `naver-cafe`, `naver-kin` | 네이버 검색 API 신규 키 발급 종료, NAVER API HUB로 이전 | 미확인(요약) P04, P05 |
-| 2026-08-31 | `naver-cafe` | 게시글·댓글 대량 수집 금지 카페 공지 보도 | 미확인(요약) P20, P21 |
+| 2026-07-31 | `naver-blog`, `naver-cafe`, `naver-kin` | 개발자센터 검색 API 신규 신청 중단(2026-07-30 24:00 이후). 쇼핑·책·학술정보 데이터는 2026-07-31 24:00 종료 | 관찰됨 2026-09-30 P138 |
+| 2026-08-25 | `naver-cafe` | 게시글·댓글 대량 수집 금지 카페 공지 게시 | 관찰됨 2026-10-01 P147 |
 | 2026-09-07 | `naver-blog`, `naver-cafe`, `naver-kin` | 네이버 검색 API 특약 개정 시행 보도: 결과를 AI에 넣거나 저장·제3자 제공하는 행위 금지 | 미확인(요약) P01, P02 |
 | 2026-09-28 | `daum-cafe`, `tistory` | 다음이 외부 AI 크롤링 허용 범위를 다시 정하는 중이라는 보도(시행일 미확인) | 미확인(요약) P51, P52 |
-| 2027-06-30 | `naver-blog`, `naver-cafe`, `naver-kin` | 개발자센터에서 받은 기존 네이버 검색 API 키 종료 예정 | 미확인(요약) P04 |
+| 2027-06-30 | `naver-blog`, `naver-cafe`, `naver-kin` | 개발자센터의 기존 이용자 대상 검색 API 제공 종료 예정(2027-06-30 24:00) | 관찰됨 2026-09-30 P138 |
 
 ## 8. 행을 고치는 방법
 
@@ -803,29 +822,21 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 
 ## 11. 출처
 
-확인일은 모두 2026-09-29입니다. 원문을 직접 열지 못한 출처는 본문에서 미확인으로 표시했습니다. 약관 URL은 3절의
+확인일은 각 사실에 적었습니다(2026-09-29, 2026-09-30, 2026-10-01). 원문을 직접 열지 못한 출처는 본문에서 미확인으로 표시했습니다. 약관 URL은 3절의
 약관 줄과 JSON의 `terms.terms_url`에 있습니다.
 
 - P01 https://www.newsway.co.kr/news/view?ud=2026090215314059117
 - P02 https://www.tokenpost.kr/news/ai/403521
-- P03 https://www.dataeconomy.co.kr/news/articleView.html?idxno=42307
-- P04 https://github.com/Mode1221/CoursePilot/pull/406
-- P05 https://waffleboard.io/blog/naver-search-api-hub-migration-guide
 - P06 https://www.etnews.com/20250716000347
 - P07 https://v.daum.net/v/20250716143440337
 - P08 https://policy.naver.com/rules/service.html
-- P09 https://news.nate.com/view/20241028n06350
-- P10 https://github.com/EST-team-project/Qurious/issues/57
 - P11 https://v.daum.net/v/20251222105605977
 - P12 https://zdnet.co.kr/view/?no=20251222220821
 - P14 https://www.korea.kr/briefing/pressReleaseView.do?newsId=156679064
 - P15 https://zdnet.co.kr/view/?no=20250317092935
-- P16 https://www.korea.kr/briefing/pressReleaseView.do?newsId=156660604
 - P17 https://www.mt.co.kr/tech/2025/07/10/2025071010042598666
 - P18 https://news.nate.com/view/20250711n01759
 - P19 https://www.hankyung.com/article/202512155313g
-- P20 https://www.newsis.com/view/NISX20260831_0003769836
-- P21 https://v.daum.net/v/20260831151156866
 - P22 https://www.wiseapp.co.kr/insight/detail/997
 - P23 https://platum.kr/archives/286798
 - P24 https://www.hankyung.com/society/article/2020100565571
@@ -866,11 +877,9 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 - P59 https://www.aitimes.com/news/articleView.html?idxno=213198
 - P60 https://www.koreaherald.com/article/10416369
 - P61 https://nstatic.dcinside.com/dc/w/policy/policy_index.html
-- P62 https://nstatic.dcinside.com/dc/m/policy/policy.html
 - P63 https://v.daum.net/v/20260209160127574
 - P64 https://www.kmnanews.com/news/articleView.html?idxno=10005
 - P65 https://www.fmkorea.com/policy
-- P66 https://www.fmkorea.com/567222051
 - P67 https://www.fmkorea.com/best
 - P68 https://www.mediaus.co.kr/news/articleView.html?idxno=197845
 - P69 https://namu.wiki/w/%EB%8D%94%EC%BF%A0
@@ -897,9 +906,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 - P92 https://www.icpsr.umich.edu/sites/icpsr/news/icpsr-to-facilitate-researcher-access-to-metas-api-products
 - P93 https://transparency.meta.com/researchtools/meta-content-library
 - P94 https://www.facebook.com/legal/automated_data_collection_terms
-- P95 https://help.instagram.com/581066165581870/
 - P96 https://developers.facebook.com/docs/threads/keyword-search/
-- P97 https://help.instagram.com/769983657850450
 - P98 https://biz.heraldcorp.com/article/10546627
 - P99 https://v.daum.net/v/3bSk2vLxgE?f=p
 - P100 https://techcrunch.com/2025/04/24/threads-officially-moves-to-threads-com-and-updates-its-web-app/
@@ -912,7 +919,6 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 - P107 https://v.daum.net/v/20250928072646243
 - P108 https://developers.google.com/android-publisher/api-ref/rest/v3/reviews/list
 - P109 https://developers.google.com/android-publisher/reply-to-reviews
-- P110 https://policies.google.com/terms/embedded?hl=en-US
 - P111 https://byline.network/2026/04/27_1928774/
 - P112 https://www.digitalmarketer.co.kr/insights/coupang-robots-txt-partners-strategy
 - P113 https://www.coupang.com/np/policies/terms
@@ -934,3 +940,46 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 - P129 https://developer.apple.com/documentation/appstoreconnectapi/customer-reviews
 - P130 https://www.apple.com/kr/legal/internet-services/itunes/kr/terms.html
 - P131 https://www.apple.com/legal/internet-services/itunes/
+- P132 https://apps.apple.com/robots.txt
+- P133 https://bbs.ruliweb.com/etcs/board/10/read/165
+- P134 https://bbs.ruliweb.com/robots.txt
+- P135 https://blog.naver.com/robots.txt
+- P136 https://cafe.daum.net/robots.txt
+- P137 https://cafe.naver.com/robots.txt
+- P138 https://developers.naver.com/products/terms/
+- P139 https://everytime.kr/page/serviceagreement
+- P140 https://everytime.kr/robots.txt
+- P141 https://gall.dcinside.com/robots.txt
+- P142 https://kin.naver.com/robots.txt
+- P143 https://kr.teamblind.com/setting/term
+- P144 https://m.cafe.daum.net/_agreement?svc=webview
+- P145 https://m.dcinside.com/robots.txt
+- P146 https://m.ppomppu.co.kr/robots.txt
+- P147 https://notice.naver.com/notices/cafe/33743
+- P148 https://pann.nate.com/notice/view?pann_id=373990365
+- P149 https://pann.nate.com/robots.txt
+- P150 https://play.google.com/about/play-terms.html
+- P151 https://play.google.com/intl/ko_kr/about/play-terms.html
+- P152 https://play.google.com/robots.txt
+- P153 https://policies.google.com/terms
+- P154 https://policy.daum.net/policy/info
+- P155 https://policy.naver.com/policy/search_policy.html
+- P156 https://ribi.tistory.com/robots.txt
+- P157 https://theqoo.net/robots.txt
+- P158 https://theqoo.net/service
+- P159 https://www.clien.net/robots.txt
+- P160 https://www.daangn.com/robots.txt
+- P161 https://www.dcinside.com/robots.txt
+- P162 https://www.fmkorea.com/robots.txt
+- P163 https://www.ftc.go.kr/www/downloadBbsFile.do?atchmnflNo=53785
+- P164 https://www.instagram.com/robots.txt
+- P165 https://www.ppomppu.co.kr/robots.txt
+- P166 https://www.ppomppu.co.kr/zboard/view.php?id=regulation&page=2&divpage=1&no=4
+- P167 https://www.teamblind.com/robots.txt
+- P168 https://www.threads.com/robots.txt
+- P169 https://www.threads.net/robots.txt
+- P170 https://www.tistory.com/info/policy
+- P171 https://www.tistory.com/robots.txt
+- P172 https://www.youtube.com/robots.txt
+- P173 https://www.youtube.com/t/terms
+- P174 https://www.youtube.com/t/terms?hl=en

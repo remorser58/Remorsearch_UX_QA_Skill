@@ -31,7 +31,8 @@ PLATFORM_MAP = KOREA / "platform-map.md"
 ENTRIES_WITHOUT_ROW = {"meta-facebook", "x-terms", "tiktok-terms", "reddit-terms", "hackernews-terms"}
 # Member-only or closed communities are never named as audience leads (owner decision S2).
 CLOSED_COMMUNITIES = ("여성시대", "subdued20club")
-CAFE_PAGE = re.compile(r"cafe\.(?:naver|daum)\.(?:com|net)/[A-Za-z0-9_-]+")
+CAFE_PAGE = re.compile(r"cafe\.(?:naver|daum)\.(?:com|net)/"
+                       r"(?!(?:robots\.txt|_agreement)(?:[?#\s\"<>]|$))[A-Za-z0-9_-]+")
 # A statement read some way other than from the primary text needs a source, unless it is our own rule.
 UNSOURCED_OK = {"inference", "skill_rule", "not_found"}
 LABEL = re.compile(r"관찰됨|미확인|추론|규칙|미검사")
