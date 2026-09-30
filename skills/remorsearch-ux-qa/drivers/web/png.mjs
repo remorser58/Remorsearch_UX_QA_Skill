@@ -492,12 +492,44 @@ export function indicatorPixelsMulti(on, offs, level = 16, maskLevel = 4, exclud
   return changed;
 }
 
-export function visualDiffFraction(a, b, level = 16, mask = null) {
+/**
+ * Pixels that changed between two frames by at least ``level`` in any channel, grown
+ * by one pixel: content that was already moving before an input (a pulsing button, a
+ * slowly shifting gradient). Returns a Uint8Array (1 = moving) or null.
+ */
+export function changeMask(a, b, level = 4) {
+  if (!a || !b || a.rgb.length !== b.rgb.length) return null;
+  const w = a.width;
+  const h = a.height;
+  const hit = new Uint8Array(w * h);
+  let any = false;
+  for (let i = 0; i < w * h; i++) {
+    const o = i * 3;
+    if (Math.max(Math.abs(a.rgb[o] - b.rgb[o]), Math.abs(a.rgb[o + 1] - b.rgb[o + 1]), Math.abs(a.rgb[o + 2] - b.rgb[o + 2])) >= level) {
+      hit[i] = 1;
+      any = true;
+    }
+  }
+  if (!any) return null;
+  const out = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (!hit[y * w + x]) continue;
+      for (let yy = Math.max(0, y - 1); yy <= Math.min(h - 1, y + 1); yy++) {
+        for (let xx = Math.max(0, x - 1); xx <= Math.min(w - 1, x + 1); xx++) out[yy * w + xx] = 1;
+      }
+    }
+  }
+  return out;
+}
+
+export function visualDiffFraction(a, b, level = 16, mask = null, moving = null) {
   if (!a || !b || a.rgb.length !== b.rgb.length) return null;
   const n = a.rgb.length / 3;
   const w = a.width;
   let changed = 0;
   for (let i = 0; i < n; i++) {
+    if (moving && moving[i]) continue;
     if (mask) {
       const x = i % w;
       const y = (i - x) / w;

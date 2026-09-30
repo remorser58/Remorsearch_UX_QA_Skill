@@ -13,7 +13,7 @@ Requirements: Node.js 22 and `playwright@1.56.1` with its Chromium. Install once
 cd drivers/web
 npm install                 # playwright 1.56.1 into drivers/web/node_modules
 npx playwright install chromium
-node selftest.mjs           # a few minutes; expects "234 passed", 0 failed
+node selftest.mjs           # a few minutes; expects "241 passed", 0 failed
 ```
 
 The package is resolved by normal module resolution (so `drivers/web/node_modules`
@@ -168,7 +168,9 @@ they belong to (0 = initial load), so a step can own two snapshots.
   observed). Only when neither occurs does a visual change of the viewport count
   (`feedback_source: "visual_change"`, ~30 ms resolution; covers canvas and
   CSS-only feedback; the focused field's box is masked, so a blinking caret is not
-  feedback). `feedback_ambient_mutations` / `feedback_visual_ambient` flag
+  feedback, and so are pixels that changed at all in the two frames before the input,
+  so a pulsing button or a slow gradient does not pass for a response;
+  `feedback_visual_moving_px` counts them). `feedback_ambient_mutations` / `feedback_visual_ambient` flag
   pages that were already changing before the input (latency then is ambiguous).
 - **Timing windows**: each selector is polled in the page every 16 ms; a window
   reports `visible_ms` (shortest completed visible interval, the tightest window a

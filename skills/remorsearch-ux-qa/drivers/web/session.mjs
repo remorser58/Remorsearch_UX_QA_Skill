@@ -12,7 +12,7 @@ import { resolveDevice } from './devices.mjs';
 import { STATE_KEY, TW_BINDING, controlOf, extractSnapshot, hitTest, idAtPoint, idForElement, pageInit } from './page_scripts.mjs';
 import {
   BLOCK_MIN_H_CSS, BLOCK_MIN_W_CSS, MOTION_MATCH, RED_EXCESS, RED_RATIO,
-  blockStats, cssScaleCopy, decodePng, frameFromImage, frameStats, indicatorPixels, indicatorPixelsMulti, makeBlockGrid, resampleImage, visualDiffFraction,
+  blockStats, changeMask, cssScaleCopy, decodePng, frameFromImage, frameStats, indicatorPixels, indicatorPixelsMulti, makeBlockGrid, resampleImage, visualDiffFraction,
 } from './png.mjs';
 import { KNOWN_ROLES } from './validate.mjs';
 import {
@@ -53,6 +53,9 @@ const FOCUS_ANIM_GAP_MS = 40;
 // Flash sampling: page scroll that reverses more often than this per second is treated
 // as flicker, not motion (smooth scrolling in one direction is exempt).
 const SCROLL_REVERSALS_PER_S = 3;
+// Visual feedback: a per-channel change this small between the two frames before an
+// input marks a pixel as already moving (left out of the feedback comparison).
+const AMBIENT_MOVE_LEVEL = 4;
 const SCROLL_REVERSAL_MIN_CSS = 4;
 const FOCUS_MASK_LEVEL = 4;
 const STEP_PROBE_MAX = 16; // focus probes before clicks, per run
@@ -1671,7 +1674,7 @@ export class WebSession {
       if (wantVisual && visual.pre) {
         // The frame reflects the page when the capture was requested (t0): the
         // change happened before t0 and after the previous capture started.
-        const d = visualDiffFraction(frame, visual.pre, VISUAL_LEVEL, visual.mask);
+        const d = visualDiffFraction(frame, visual.pre, VISUAL_LEVEL, visual.mask, visual.moving);
         if (d !== null && d >= this.visualThreshold(frame)) fb.visual = t0;
       }
       if (wantFlash && this.flashSamples.length < MAX_FLASH_SAMPLES && this.flashBytes < MAX_FLASH_BYTES) {
@@ -2203,6 +2206,7 @@ export class WebSession {
     let pre = null;
     let visualAmbient = false;
     let mask = null;
+    let moving = null;
     if (visualOn) {
       // A focused text field's caret blinks: changes inside that field are not
       // feedback (typed characters are, through input events). Screen coordinates.
@@ -2229,6 +2233,9 @@ export class WebSession {
         }
         const d = visualDiffFraction(a, pre, VISUAL_LEVEL, mask);
         visualAmbient = d !== null && d >= this.visualThreshold(pre);
+        // Slow animations change little in 40 ms but add up after the input: pixels that
+        // moved at all before the input are left out of the comparison.
+        moving = changeMask(a, pre, AMBIENT_MOVE_LEVEL);
       } catch {
         pre = null;
       }
@@ -2241,7 +2248,7 @@ export class WebSession {
       dispatch,
       stepIndex: step.step_index,
       flashMs: this.opts.flashSampleMs,
-      visual: visualOn && pre && !visualAmbient ? { pre, mask, deadline: dispatch + fbTimeout } : null,
+      visual: visualOn && pre && !visualAmbient ? { pre, mask, moving, deadline: dispatch + fbTimeout } : null,
       fb,
     });
     let inputErr = null;
@@ -2295,6 +2302,7 @@ export class WebSession {
     step.feedback_window_ms = round1(windowEnd - dispatch);
     step.feedback_ambient_mutations = await this.countMutations(dispatch - 500, dispatch);
     step.feedback_visual_ambient = visualOn ? visualAmbient : null;
+    if (moving) step.feedback_visual_moving_px = moving.reduce((a, v) => a + v, 0);
     if (scrollBefore) {
       const after = await this.scrollPos();
       if (after) step.scroll_delta = { x: round1(after.x - scrollBefore.x), y: round1(after.y - scrollBefore.y) };
