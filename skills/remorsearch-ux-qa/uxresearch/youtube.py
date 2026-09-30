@@ -55,6 +55,7 @@ no age, health, political or other protected-attribute cue is ever stored agains
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import re
@@ -538,6 +539,7 @@ class _Session:
         body = [f"comments: {len(comments)} read, order {self.order or '-'}, {self.pages} page(s) of up to "
                 f"{self.s.page_size}; {more}"]
         blocks = [{"block": "description", "text": description}]
+        research_items = []
         for i, item in enumerate(comments, 1):
             author = self.key(item["name"])
             header = [f"comment {i}", f"id {item['id'] or '-'}", f"author {author}" if author else "author not keyed",
@@ -551,6 +553,9 @@ class _Session:
             header.append(f"keep until {iso(item['at'] + days)}")
             text = self.clean(item["text"], COMMENT_MAX_CHARS)
             body.append("[" + " | ".join(header) + "]\n" + (text or "(empty)"))
+            research_items.append({"item_key": item["id"] or str(i), "text_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+                                   "author_key": author, "published_at": (item["published"] or "")[:10] or None,
+                                   "retention_until": iso(item["at"] + days), "block": f"comment:{item['id'] or i}"})
             blocks.append({"block": f"comment:{item['id'] or i}", "text": text, "by_uploader": item["by_uploader"]})
         if not comments:
             body.append("(no comments)")
@@ -562,6 +567,7 @@ class _Session:
         # The flag checks read each block on its own: the uploader's description has its own lead and tail, and
         # each comment is its own block, so a viewer's words are never the video's disclosure (verdict.content_flags).
         page.flag_blocks = blocks
+        page.research_items = research_items
         return page, until
 
     # ------------------------------------------------------------ the URL

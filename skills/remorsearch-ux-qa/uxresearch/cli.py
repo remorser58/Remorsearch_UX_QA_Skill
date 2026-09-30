@@ -26,12 +26,15 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
+import subprocess
 import sys
 import time
 from pathlib import Path
 
 from . import RULES_VERSION, USER_AGENT, VERSION, envelope, ladder, ledger, privacy, scope
 from .ledger import Run, RunError
+from .canonical import EngineError
 
 DATA = Path(__file__).resolve().parent / "data"
 _ACCEPT_LANGUAGE = re.compile(r"^[A-Za-z0-9,;=.* -]{1,200}$")
@@ -165,10 +168,22 @@ def build_parser() -> argparse.ArgumentParser:
     close = commands.add_parser("close", help="Print the coverage summary; delete page text and the salt; cut the "
                                               "ledger's URLs to their host")
     close.add_argument("--run", required=True)
+    from .commands import add_parser
+    add_parser(commands)
     return parser
 
 
 def _start(args) -> int:
+    if sys.version_info < (3, 10):
+        raise RunError("Python 3.10 or newer is required; found " + sys.version.split()[0])
+    node = shutil.which("node")
+    node_version = None
+    if node:
+        try:
+            node_version = subprocess.run([node, "--version"], capture_output=True, text=True, timeout=5).stdout.strip() or None
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    runtime_versions = {"python": sys.version.split()[0], "nodejs": node_version}
     brief = None
     if args.brief:
         brief = _load_json(args.brief, 1024 * 1024)
@@ -204,7 +219,7 @@ def _start(args) -> int:
                             agent_tokens_source=str(args.agent_tokens.resolve()) if args.agent_tokens else None)
     run = Run(created, clock=args.clock)
     tokens = run.agent_tokens()
-    value = {"run": str(created), "run_id": run.meta["run_id"], "user_agent": USER_AGENT, "policy": policy,
+    value = {"runtime_versions": runtime_versions, "run": str(created), "run_id": run.meta["run_id"], "user_agent": USER_AGENT, "policy": policy,
              "routes": run.meta["routes"],
              # Whether each official route's key is set (never its value): a missing key is a coverage gap.
              "keys": ladder.key_status(run.routes),
@@ -227,6 +242,11 @@ def main(argv: list[str] | None = None, *, clock=None, sleeper=None, jitter=None
         if args.command == "start":
             return _start(args)
         run = Run(_run_path(args.run), **options)
+        from .commands import COMMANDS, execute
+        if args.command in COMMANDS:
+            exit_code, files, issues, warnings = execute(args, run)
+            _emit(dict(command=args.command, result="pass" if exit_code == 0 else "fail", exit_code=exit_code, files=files, issues=issues, warnings=warnings))
+            return exit_code
         if args.command == "close":
             _emit(run.close())
             return 0
@@ -259,7 +279,13 @@ def main(argv: list[str] | None = None, *, clock=None, sleeper=None, jitter=None
         _print_page(result)
         print(_summary(result), file=sys.stderr)
         return result["exit_code"]
+    except EngineError as exc:
+        _emit(dict(command=args.command, result="fail", exit_code=exc.exit_code, files=[], issues=[exc.issue], warnings=[]))
+        return exc.exit_code
     except RunError as exc:
+        if args.command in {"merge", "gate", "report-check", "export-audience", "minimize"}:
+            _emit(dict(command=args.command, result="fail", exit_code=2, files=[], issues=[dict(code="policy", location="run", reason="Reader policy or run files are invalid.", next_step="Correct the run inputs.")], warnings=[]))
+            return 2
         _emit({"status": "refused", "reason": str(exc)})
         return 2
     except (OSError, ValueError) as exc:

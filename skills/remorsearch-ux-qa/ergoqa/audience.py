@@ -606,7 +606,7 @@ def _segment_state(seg: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def compose(audience: dict[str, Any], budget: int, floors: Iterable[str] | None = None) -> dict[str, Any]:
+def compose(audience: dict[str, Any], budget: int, floors: Iterable[str] | None = None, *, research_run=None, bundle_path=None, gate_path=None) -> dict[str, Any]:
     """Compose ``budget`` profiles from an audience file. Returns the persona plan.
 
     1. One typical member per segment (by priority, then weight, if the budget is
@@ -618,6 +618,19 @@ def compose(audience: dict[str, Any], budget: int, floors: Iterable[str] | None 
     4. Add floor profiles that the segments did not already satisfy; give unused
        reserve back to step 3.
     """
+    research_origin = any(x.get("basis") == "research_claim" for x in audience.get("value_provenance", []) if isinstance(x, dict)) or any(re.fullmatch(r"SRC-[0-9a-f]{8}", str(x.get("bundle_ref", ""))) for x in audience.get("sources", []) if isinstance(x, dict)) or any(k in audience for k in ("gate_bundle_input_sha256", "gate_process_input_sha256", "research"))
+    if research_origin:
+        if not all((research_run, bundle_path, gate_path)):
+            raise AudienceError("Research audience composition requires a fresh gate and completed value check")
+        from uxresearch.ledger import Run
+        from uxresearch.storage import Store, read_json
+        from uxresearch.engine import fresh
+        from uxresearch.audiences import check_audience
+        run = Run(research_run)
+        with Store(run.path) as store:
+            bundle, gate = fresh(run, store, bundle_path, gate_path)
+            if gate["mode"] != "live" or check_audience(audience, bundle, gate, read_json(run.path / "brief.json"))["exit_code"]:
+                raise AudienceError("Research audience is incomplete or stale for composition")
     errors = validate_audience(audience)
     if errors:
         raise AudienceError("; ".join(errors))

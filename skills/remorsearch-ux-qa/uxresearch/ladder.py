@@ -80,6 +80,7 @@ from pathlib import Path
 from urllib.parse import parse_qsl, quote, urlsplit
 
 from . import ROBOTS_TOKEN, USER_AGENT, extract, net, privacy, robots, scope, verdict
+from .flags import metadata as capture_metadata, captured as research_flags
 from .envelope import scan as scan_injection
 from .ledger import ROBOTS_RETRY_S, BudgetExceeded, Deferred, HostStopped, Run, RunError
 
@@ -799,6 +800,28 @@ def _api_brief(api: dict | None) -> dict | None:
     return {k: api.get(k) for k in API_BRIEF} if isinstance(api, dict) else None
 
 
+def _capture_metadata(result, terms, page=None, text=None):
+    value = capture_metadata(result)
+    value["access"]["terms"] = _terms_brief(terms)
+    # Only packaged adapters can provide item/author bindings; generic separators are hints.
+    items = getattr(page, "research_items", []) if page is not None else []
+    blocks = {x["block"]: x.get("text", "") for x in getattr(page, "flag_blocks", [])} if page is not None else {}
+    attested = {}
+    for item in items:
+        body = blocks.get(item["block"], "")
+        start = (text or "").find(body)
+        if body and start >= 0 and (text or "").find(body, start + 1) < 0 and hashlib.sha256(body.encode()).hexdigest() == item["text_sha256"]:
+            per_item = {key: [hit for hit in result.get(key, []) if hit.get("block") == item["block"]]
+                        for key in ("promotion_hits", "incentive_flags", "virtual_person_flags")}
+            per_item["injection"] = result.get("injection")
+            attested[item["item_key"]] = {**item, "start": start, "end": start + len(body),
+                                         "content_sha256": result["content_sha256"],
+                                         "flags": research_flags(per_item)}
+    if attested:
+        value["item_attestations"] = attested
+    return value
+
+
 def _done(st: _Read, bucket: str, *, stop: str | None = None, verdict_: str | None = None, reasons=(),
           rung: str | None = None, attempt: _Attempt | None = None, page=None, untried=(), error: str | None = None,
           retry_after_s: int | None = None, host_stop: dict | None = None, next_step: str | None = None,
@@ -840,6 +863,8 @@ def _done(st: _Read, bucket: str, *, stop: str | None = None, verdict_: str | No
         text, fields = _payload(page, prescrubbed)
         result.update(fields, meta=_meta(page))
         run.save_page(attempt.fetch_id, text)
+        result["research_flags"] = research_flags(result)
+        result["research_access"] = _capture_metadata(result, terms, page, text)["access"]
     elif stop == "paywall" and page is not None:
         result["meta"] = _meta(page)
     # Only a URL with no allowed rung left counts toward bot_filter_persistent: a page that is waiting
@@ -863,7 +888,8 @@ def _done(st: _Read, bucket: str, *, stop: str | None = None, verdict_: str | No
              "scrubbed": result.get("scrubbed") or None, "flags": _flag_counts(result),
              "ai_agent_token": (robots_info or {}).get("ai_agent_token"),
              "ai_training_disallow": (robots_info or {}).get("ai_training_disallow") or None,
-             "api": _api_brief(result.get("api")), "retention_until": result.get("retention_until")})
+             "api": _api_brief(result.get("api")), "retention_until": result.get("retention_until"),
+             "capture_metadata": _capture_metadata(result, terms, page, text) if text is not None else None})
     result["text"] = text
     return result
 
@@ -1335,9 +1361,15 @@ def check_robots(run: Run, url: str, *, max_wait: float | None = None) -> dict:
     except net.NetError as exc:
         if exc.kind in net.REFUSAL_KINDS:
             return {"url": masked, "exit_code": EXIT["refused"], "error": exc.kind, "reasons": [exc.detail]}
+    value = _robots_check(run, target, masked, wait)
     if lift:
-        return {**_robots_check(run, target, masked, wait), "terms": lift}
-    return _robots_check(run, target, masked, wait)
+        value["terms"] = lift
+    if value.get("exit_code") == EXIT["stopped"]:
+        run.log({"kind": "outcome", "source": "robots", "url": target, "url_key": run.url_key(target),
+                 "host": net.host_of(target), "bucket": "stopped", "stop_class": value.get("stop_class"),
+                 "contacted": False, "robots": {"decision": value.get("decision"),
+                                                "status": value.get("robots_status")}})
+    return value
 
 
 def _robots_check(run: Run, target: str, masked: str, wait: float) -> dict:
@@ -1648,6 +1680,10 @@ def ingest(run: Run, url: str, file_path, *, fmt: str | None = None, context: st
             result["meta"] = _meta(page)
         run.save_page(fetch_id, text)
         result.update(fields, text=text)
+        result["research_flags"] = research_flags(result)
+        result["research_access"] = _capture_metadata({**result, "robots": prior.get("robots")}, lift, page, text)["access"]
+        result["robots"] = {"decision": (prior.get("robots") or {}).get("decision"),
+                            "status": (prior.get("robots") or {}).get("status")}
     elif v.stop_class:
         notes.append("the capture text was discarded")
     run.log({"kind": "outcome", "source": "ingest", "url": target, "url_key": run.url_key(target), "host": host,
@@ -1661,7 +1697,8 @@ def ingest(run: Run, url: str, file_path, *, fmt: str | None = None, context: st
              "content_sha256": result.get("content_sha256"),
              "injection_risk": (result.get("injection") or {}).get("risk"),
              "host_stop": (host_stop or {}).get("class"), "terms": _terms_brief(lift),
-             "scrubbed": result.get("scrubbed") or None, "flags": _flag_counts(result)})
+             "scrubbed": result.get("scrubbed") or None, "flags": _flag_counts(result),
+             "capture_metadata": _capture_metadata({**result, "robots": prior.get("robots")}, lift, page, text) if text is not None else None})
     return result
 
 

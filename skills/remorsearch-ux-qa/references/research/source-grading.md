@@ -39,9 +39,9 @@ intended_behavior establishes intent only.
 
 | Family | source_type |
 | --- | --- |
-| measured | product_analytics, survey, interview, usability_test, support_tickets |
+| measured | product_analytics, non-vendor survey, interview, usability_test, support_tickets |
 | statistical | official_statistics, research_paper |
-| estimate | market_report, competitor |
+| estimate | market_report, competitor, vendor-stake survey |
 | intent | official_docs, product_brief |
 | voice | community, app_store_reviews |
 | secondary | news |
@@ -52,7 +52,7 @@ Korean approved/admin statistics use official_statistics; stated-n institute
 surveys research_paper; app/traffic/ad panels market_report; agency documents
 with counts official_docs. Case/complaint/monitoring counts are count_only:
 existence, never size. Use the cards in `references/research/korea/statistics.md`.
-A curated team review export remains voice. Vendor-stake surveys are estimates.
+A curated team review export remains voice. producer_stake is official/independent/vendor; vendor surveys are estimate.
 
 ## 3. Downgrades and verifier decisions
 
@@ -74,7 +74,7 @@ wins. Never raise a grade to compensate for another flag.
 | Injection uncleared for its exact capture | E |
 | Stopped/deleted/withdrawn/LLM/synthetic | E |
 | Copy-paste text | One independence unit |
-| Missing voice author and thread, institutional producer or channel identity | At most D; do not invent units |
+| Missing capture independence provenance, institutional producer or channel identity | At most D; do not invent units |
 | Community modelled demographics | At most D; never attributes of a poster/persona |
 
 Flags are candidates. A verifier records typed promotion, incentive, virtual_person,
@@ -94,8 +94,9 @@ checking presence only, not judging position. See promotion.md and markers.json.
 
 ## 4. Independence and denominators
 
-Count voice by salted author key, otherwise thread key. Default anonymous names
-and partial-IP handles are not identities: all replies in one thread are one unit.
+Count voice by a capture-attested salted author key, otherwise an attested thread key.
+Without item/author attestation use one captured page/thread unit, identity unknown.
+Default anonymous names and partial-IP handles are not person identities.
 Blogs hosted by path/subdomain count by author, not portal. Institutions count
 by producing organization; statistics portal tables use their producing agency.
 Normalized aliases count once. Two organizations on KOSIS can be independent.
@@ -115,7 +116,7 @@ Size/population/weight/frequency support needs a neutral population, period,
 product relation, sampling frame, n (or defined census), method and printed unit/
 value. Posts/reviews/likes/complaint counts and star averages are never denominators.
 Voice counting support for a numeric value is exit 2, even with measured support.
-Voice context is allowed. Each exported numeric component needs value_checks
+Voice context is allowed. Each exported share/weight component needs value_checks
 tied to the printed number; no guessed percentage or automatic normalization.
 Statistical general-population values stay bounds, never the product user share; export keeps them separately. Comparable estimates
 name the comparable product/date. Device mentions are leads, never device_mix.
@@ -133,7 +134,7 @@ First matching rule wins:
 | Status | Rule |
 | --- | --- |
 | conflicting | Unresolved counter evidence/result or expired-counter gap |
-| stale | Current claim lacks release date or all potential counting evidence/observations are old/undated |
+| stale | about_current_version && (missing_release_date || no_current_potential_support); historical claims are not stale for this reason |
 | needs_product_check | product_behavior without observed same-scope completed-run observations |
 | supported_high | product_behavior with those observations and no earlier blocker |
 | unfit | Non-product, nonempty support, all E |
@@ -169,7 +170,7 @@ python3 scripts/ux_research.py gate --run RUN --bundle RUN/bundle.json --write-b
 Exit 0 process pass (unsupported claims can remain); 1 process violation; 2
 integrity/size/reference error; 3 lock/write conflict. Failure invalidates gate.json
 and writes gate_failed.json. Only gate writes research verification. Consumers
-require the committed gate, matching dependency hashes and live retention checks.
+require the committed gate, the common whole-input hash and live retention checks.
 Read-only expiry refuses; --write-bundle purges and repairs dependent claims with
 a gap. Expired contrary evidence stays blocking until a new counter-search.
 
@@ -185,3 +186,26 @@ Computed claim status, independence, data-flow checking and annex placement were
 informed by studying insane-research (github.com/fivetaku/insane-research, MIT,
 Copyright 2026 fivetaku). No code or text was copied. Grades depend on claim kind;
 voice independence counts people/threads rather than portals.
+
+Claim identity includes only joins and values, never their proofs. Gate hashes the
+whole normalized input bundle with process/rules inputs and regrades every claim.
+There is one writer lock and a manifest pointing at the committed snapshot;
+consumers read that snapshot. No journal, mirror recovery or compare-and-swap.
+
+Without capture-bound item/author attestation, identity is unknown and the whole
+page/thread is one independence unit. `[author]` and `---` are hints only.
+
+Proportion proof applies only to shares/weights. Task amounts, counts and durations
+may be any safe scalar proved by completed product observations or approved brief values.
+
+Shared community/review/social citations use channel, date and source ID; report
+bodies may not contain their URLs. Official/statistical URLs remain allowed.
+
+Minimize checks field allowlists, identifier patterns and retained quotations.
+Authored summaries/statements/results need a content-bound reviewer attestation;
+a mechanical pass does not prove authorship.
+
+Mobile spelling alone never merges resources. Proven capture trails establish
+final URLs; exact copied text counts once even when resource aliases stay separate.
+The engine uses an atomic manifest and one writer lock; its tests cover injected
+commit interruptions and lock contention, not an exhaustive process-kill matrix.

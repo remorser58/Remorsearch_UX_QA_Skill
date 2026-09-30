@@ -89,7 +89,8 @@ process/denominators/currency/export eligibility. Validator success is not a gat
 Research root envelope and external merge receipt bind run/manifest/log/rules
 and provenance. Removing the envelope or marking a bundle legacy cannot bypass
 fresh gate checks. Consumers recompute supporting/context/counter source,
-observation/run, brief/version, rule, independence and verifier dependency hashes.
+observation/run, brief/version, rule, independence and verifier inputs in one
+whole-bundle hash.
 Status writes do not change input hashes. Regrade is idempotent; live retention
 still applies even when hashes match. Interrupted/competing writes cannot publish
 an accepted mixed bundle/gate generation.
@@ -98,7 +99,7 @@ an accepted mixed bundle/gate generation.
 
 Export is ux-audience-draft.v1, incomplete/non-composable. No invented age/devices/
 tasks/data/frequency/criticality. bundle_ref is a source-ID string; typed segment/
-entity/field value_provenance carries claim IDs/hashes/eligible closure. News is
+entity/field value_provenance carries claim IDs/the common input hash/eligible contributing records. News is
 withheld from automatic export; official population bounds stay bounds. Completed
 research audiences need audience-check --gate --bundle --run, comparing exact
 values and joins, not a supported source somewhere.
@@ -127,3 +128,29 @@ Figma comparison records file_key/branch_key/baseline_version/node_ids/read_at/
 readback_artifact_ref/design_status. Defect class: implementation_defect,
 design_defect, spec_conflict, approved_deviation. Baseline/readback conflict stays
 unverified until resolved.
+
+Claim identity includes only joins and values, never their proofs. Gate hashes the
+whole normalized input bundle with process/rules inputs and regrades every claim.
+There is one writer lock and a manifest pointing at the committed snapshot;
+consumers read that snapshot. No journal, mirror recovery or compare-and-swap.
+
+Without capture-bound item/author attestation, identity is unknown and the whole
+page/thread is one independence unit. `[author]` and `---` are hints only.
+
+Proportion proof applies only to shares/weights. Task amounts, counts and durations
+may be any safe scalar proved by completed product observations or approved brief values.
+
+Shared community/review/social citations use channel, date and source ID; report
+bodies may not contain their URLs. Official/statistical URLs remain allowed.
+
+Minimize checks field allowlists, identifier patterns and retained quotations.
+Authored summaries/statements/results need a content-bound reviewer attestation;
+a mechanical pass does not prove authorship.
+
+Legacy product verification without completed observed runs remains structurally
+valid with a plain-validator warning; research consumers refuse it.
+
+Mobile spelling alone never merges resources. Proven capture trails establish
+final URLs; exact copied text counts once even when resource aliases stay separate.
+The engine uses an atomic manifest and one writer lock; its tests cover injected
+commit interruptions and lock contention, not an exhaustive process-kill matrix.

@@ -25,6 +25,9 @@ def validate_packet(packet: Any) -> list[str]:
     errors.extend(validate_bundle(packet["bundle"]))
     if errors:
         return errors
+    minimized = packet["bundle"].get("minimized_from")
+    if minimized and minimized.get("mode") != packet["mode"]:
+        errors.append("bundle.minimized_from.mode must match the consuming loop mode")
     if set(packet["bundle"]["records"]) != set(RECORD_NAMES):
         return ["bundle.records: unexpected record collection"]
     maps = {key: index(packet[key]) for key in COLLECTIONS}

@@ -73,6 +73,28 @@ def cmd_profiles(args: argparse.Namespace) -> int:
 
 def cmd_audience_check(args: argparse.Namespace) -> int:
     doc = load_json(args.audience)
+    if args.draft or args.gate or args.bundle or args.run:
+        from uxresearch.canonical import EngineError
+        from uxresearch.storage import Store
+        from uxresearch.ledger import Run
+        from uxresearch.engine import fresh
+        from uxresearch.audiences import check_audience
+        try:
+            if not all((args.gate, args.bundle, args.run)):
+                raise EngineError("arguments", "--gate, --bundle and --run are required together.")
+            run = Run(args.run)
+            with Store(run.path) as store:
+                bundle, gate = fresh(run, store, args.bundle, args.gate)
+                brief = load_json(str(run.path / "brief.json"))
+                result = check_audience(doc, bundle, gate, brief, draft=args.draft)
+                print(json.dumps(result, ensure_ascii=False, allow_nan=False))
+                return result["exit_code"]
+        except EngineError as exc:
+            print(json.dumps(dict(schema_version="ux-audience-check.v1", mode="draft" if args.draft else "completed", result="fail", exit_code=exc.exit_code, audience_id=doc.get("audience_id"), bundle_id=None, checked_values=0, warnings=[], errors=[dict(join=None, **exc.issue)])))
+            return exc.exit_code
+    if doc.get("schema_version") == "ux-audience-draft.v1":
+        print("ERROR: incomplete draft requires --draft --gate --bundle --run", file=sys.stderr)
+        return 1
     errors = audience.validate_audience(doc)
     for error in errors:
         print(f"ERROR: {error}", file=sys.stderr)
@@ -272,6 +294,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("audience-check", help="validate an ergo-audience.v1 file (Stage 0 target-user research)")
     p.add_argument("audience")
+    p.add_argument("--draft", action="store_true")
+    p.add_argument("--gate")
+    p.add_argument("--bundle")
+    p.add_argument("--run")
     p.set_defaults(func=cmd_audience_check)
 
     p = sub.add_parser("personas", help="compose ergonomic profiles from an ergo-audience.v1 file")
