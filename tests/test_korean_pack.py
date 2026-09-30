@@ -455,6 +455,10 @@ class KoreanDocsTests(unittest.TestCase):
     def test_each_document_has_done_when_and_failure_modes(self):
         for path in KOREAN_DOCS:
             found = headings(read(path))
+            if path.name == "report-template.md":
+                # The skeleton's headings are the report's own; the writer's self-check closes it.
+                self.assertTrue(any("완료 점검" in h for h in found), f"{path.name}: no '완료 점검' heading")
+                continue
             self.assertTrue(any("Done when" in h for h in found), f"{path.name}: no 'Done when' heading")
             self.assertTrue(any("Failure modes" in h for h in found), f"{path.name}: no 'Failure modes' heading")
 
