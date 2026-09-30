@@ -1,5 +1,143 @@
 # ergoqa live web driver (`drivers/web/`)
 
+## Local persona-qa quickstart
+
+Run these commands from `skills/remorsearch-ux-qa/`. Use Node.js 22 with the
+installed Playwright package. For the example, serve the bundled fixture in a
+separate terminal with `python3 -m http.server 8765 --bind 127.0.0.1 --directory drivers/web/fixtures`.
+Replace the URL and action targets when testing your own local product.
+
+Viewport emulation covers Chromium's viewport, DPR and input settings. It does
+not test a real device or grip, an on-screen keyboard's occlusion, safe areas,
+or a screen reader. Inspecting ARIA state is a DOM check; screen-reader speech
+still needs a separate test.
+
+Before starting, create `agent.json` with your actual operator's model family
+and model name (or `human` for a human operator):
+
+```json
+{
+  "model_family": "human",
+  "model": "manual operator",
+  "input_channel": "screenshot+a11y",
+  "persona_arm": "neutral"
+}
+```
+
+This combined channel permits both screenshots and state inspection. A blind
+screenshot-only pass uses `"input_channel": "screenshot"`; run a separate
+`a11y` or `screenshot+a11y` session for state checks. The server rejects
+`inspect` in screenshot-only sessions.
+
+On a host that cannot start Chromium, export the browser server's
+`REMORSEARCH_BROWSER_WS` endpoint before command 3 (see the host setup below).
+The five command stages are:
+
+1. List device IDs and their viewport, DPR and input.
+
+   ```sh
+   node drivers/web/ergo_drive.mjs devices
+   ```
+
+2. Create a valid scenario with an empty step list and no assumed success criteria.
+
+   ```sh
+   node drivers/web/ergo_drive.mjs init --url http://127.0.0.1:8765/inspect.html --device desktop-1920 --task 'Check required options, error focus and order request persistence.' --out sc.json
+   ```
+
+3. Start one interactive session and leave it running in its terminal.
+
+   ```sh
+   node drivers/web/ergo_drive.mjs serve --scenario sc.json --device desktop-1920 --agent-json agent.json --out runs/ --run-id R-local --port 9477
+   ```
+
+4. In another terminal, send one request at a time. Repeat `act`, `inspect` and
+   `screenshot` as you test the flow; each prints JSON.
+
+   ```sh
+   node drivers/web/drive_client.mjs --port 9477 act '{"action":"type","target":"#request","text":"No peanuts please"}'
+   node drivers/web/drive_client.mjs --port 9477 act '{"action":"tap","target":"#submit-associated"}'
+   node drivers/web/drive_client.mjs --port 9477 inspect
+   node drivers/web/drive_client.mjs --port 9477 screenshot
+   ```
+
+   The fixture's omitted part produces `Choose a part.` and focuses `#part-a`.
+   Inspect shows the request value and the error reference. Open the returned
+   PNG path to view the screenshot. `observe` also captures a screen without acting.
+
+5. Finish with the task's actual result. This omission example has not completed
+   an order, so it finishes unsuccessful (exit 3).
+
+   ```sh
+   node drivers/web/drive_client.mjs --port 9477 finish '{"success":false}'
+   ```
+
+The `ready` event identifies `runs/R-local/` and the initial PNG. Each action or
+screen capture writes `S-*.json`, `S-*.png` and a CSS-scale PNG there. Inspect
+writes private, redacted `I-*.json` files in the same directory and returns their
+`inspection` paths; it does not add an action or capture a screenshot. Finish
+writes `run.json`, closes this session and stops serve. It can take up to about
+a minute for the existing focus walks and reflow checks. A success claim is used
+only when the scenario has no measured success criteria; an entered value being
+lost still needs to be recorded and considered in the release decision.
+
+For each required option, submit once with just that option omitted. After each
+failed submit, check feedback, focus, `aria_invalid`, the described-by text and
+`error_associated`. Compare every entered non-sensitive value before and after
+validation, coupons, back/forward navigation and re-renders. Review
+`reading_order` at intermediate screens too. On this fixture, choosing `#part-a`
+then submitting exposes the address error; `#submit-unassociated` demonstrates
+missing association and unchanged button focus, and `#keep` / `#clear` preserve
+or clear the request during a re-render.
+
+## Editing the generated scenario
+
+`init` validates the URL and catalogued device, includes every required scenario
+field (including `surface.kind`), and refuses to overwrite an existing file.
+`--task` is optional; the schema retains the name `task_goal_ko` even for English
+task text. Interactive actions do not require editing `steps`. To replay a
+scripted flow, add actions to `steps`, then use `run`:
+
+```json
+"steps": [
+  {"action": "type", "target": "#request", "text": "No peanuts please"},
+  {"action": "tap", "target": "#part-a"},
+  {"action": "tap", "target": "#submit-associated"}
+]
+```
+
+For a product with a completion page, replace `"success": null` with actual
+completion criteria. All listed conditions must hold:
+
+```json
+"success": {
+  "selector_visible": "#order-confirmed",
+  "text_present": ["Order confirmed", "No peanuts please"],
+  "url_contains": "/confirmation"
+}
+```
+
+These are JSON fragments to place in the generated object. Use the names and
+selectors your page actually exposes. A completion message alone does not show
+that options, quantity, price and entered requests survived the flow; use state
+checks and the confirmation details as well.
+
+## Analysing a run recorded without a profile
+
+Runs recorded with `--device` alone have `profile_id: "no-profile"`. Analyze the
+original run under supplied profiles for its recorded device and orientation
+with `--cross-profile`; no copies or profile edits are needed:
+
+```sh
+python3 scripts/ergo_qa.py profiles --count 4 --devices desktop-1920 --orientation landscape --out profiles.json
+python3 scripts/ergo_qa.py analyze --runs runs/R-local --profiles profiles.json --scenario sc.json --cross-profile --out analysis.json
+```
+
+Without `--cross-profile`, the error names the required flag and profile input.
+If no profile matches, the error identifies the recorded device and orientation.
+Detector rules and thresholds are unchanged. Operator judgment notes remain in
+the recorded evidence and are not assigned to any of these profiles.
+
 Drives a real Chromium page with Playwright, emulating one catalogued device, and
 writes the evidence that `ergoqa analyze` consumes: `ergo-snapshot.v1` files
 (screenshot + measured element geometry/colour) and one `ergo-run.v1` per run.
@@ -58,6 +196,10 @@ REMORSEARCH_BROWSER_WS=ws://127.0.0.1:PORT/PATH node selftest.mjs
 ## Commands
 
 ```sh
+# Catalog and scenario generator (no browser needed)
+node drivers/web/ergo_drive.mjs devices
+node drivers/web/ergo_drive.mjs init --url URL --device ID [--task TEXT] --out sc.json
+
 # Scripted: execute scenario.steps
 node drivers/web/ergo_drive.mjs run --scenario sc.json --profile p.json --out runs/ \
   [--run-id R-x] [--base http://127.0.0.1:8765] [--flash-sample-ms 1000]
@@ -65,6 +207,10 @@ node drivers/web/ergo_drive.mjs run --scenario sc.json --profile p.json --out ru
 # Interactive: an LLM persona agent looks at each screenshot and picks the next action
 # (--agent-json is required: the operator record, see persona-agent-protocol.md)
 node drivers/web/ergo_drive.mjs serve --scenario sc.json --profile p.json --agent-json agent.json --out runs/ --port 9477
+
+# One interactive request (see drive_client.mjs --help)
+node drivers/web/drive_client.mjs --port 9477 act '{"action":"tap","target":"#submit"}'
+node drivers/web/drive_client.mjs --port 9477 inspect
 
 # Self-test (local fixture server, a few minutes; --only focus2,reflow-copy runs groups)
 node drivers/web/selftest.mjs [--keep] [--only GROUPS]
@@ -94,6 +240,33 @@ error (nothing is run; an existing non-empty run directory is never overwritten)
 **4** driver/browser failure or a `blocked` run (run.json is still written when the
 run directory exists). `run` and `serve` print one JSON line per event on stdout
 (`ready`, `finished`).
+
+`drive_client.mjs` accepts `health`, `act`, `note`, `finish`, `inspect`, and
+`observe` / `screenshot` / `snapshot` (three names for the existing snapshot
+endpoint). `act` and `note` require a JSON object; `finish` accepts one optionally;
+the read requests take no body. It connects only to `127.0.0.1` and prints JSON
+for successes and errors. Its exits are 0 for a successful request, 2 for usage,
+3 for a failed action or unsuccessful run, and 4 for a connection or HTTP error.
+Finish returns the run's exit code.
+
+Inspect returns `fields`, `invalid_fields`, `focus` and `reading_order`. Fields
+include current values, checked/selected state, native validity, the raw
+`aria_invalid` attribute, described-by IDs/text and error-message IDs/text.
+`error_associated` means an invalid field has a non-empty `aria-describedby` or
+`aria-errormessage` reference; inspect the text to distinguish an error from a
+hint. Every field is included even when it has no invalid marker or association.
+`reading_order` is document order of rendered interactive elements, including
+off-screen controls; `in_viewport` distinguishes controls on the current screen.
+It is not a Tab walk or a screen-reader transcript. Main-document fields and open
+shadow roots are inspected; frame contents and closed shadow roots are omitted.
+
+Password, card/payment, security-code, account, hidden/file and explicitly
+`data-sensitive` / `data-private` field values are returned as `null` with
+`redacted: true`. Sensitive select values and option text are omitted too. The
+inspector also redacts long card-like numbers and known sensitive values echoed
+in descriptions or labels before returning or saving evidence. Redaction applies
+to inspection output; existing action records and screenshots retain their
+existing behavior, so use test data when entering values.
 
 ## Reading public pages (`read_page.mjs`, rung R3)
 
@@ -353,6 +526,7 @@ after the initial snapshot. `--port 0` picks a free port.
 | --- | --- | --- |
 | `GET /health` | | `{ok, run_id, steps, last_snapshot_id, finished}` |
 | `GET /snapshot` | | new snapshot without acting: `{snapshot, png, snapshot_id, step_index, url, title, result}` |
+| `GET /inspect` | | redacted form state: `{inspection, fields, invalid_fields, focus, reading_order, step_index, last_snapshot_id, observed_at}`; requires an accessibility channel |
 | `POST /act` | one action object (table above) | same plus `result` (`ok`/`no_target`/`error`), `error`, `point`, `target_element_id`, `target_hit`, `feedback_latency_ms`, `feedback_source`, `before`, `auto_scrolled` |
 | `POST /note` | `{intent, expected, observed, confusion: bool, step_index?, severity?}` | `{ok, note_index, step_index}`; stored as `persona_notes` with `basis: "judgment"` |
 | `POST /finish` | `{success?: bool}` | writes run.json, replies `{run, status, success, success_basis, exit_code}`, then exits |

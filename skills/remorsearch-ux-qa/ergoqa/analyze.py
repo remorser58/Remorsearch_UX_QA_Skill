@@ -164,14 +164,38 @@ def analyze_run(
     profile_list = list(profiles)
     by_id = {p["profile_id"]: p for p in profile_list}
     own = by_id.get(run.get("profile_id"))
-    if own is None:
+    no_profile = run.get("profile_id") == "no-profile"
+    if no_profile and not cross_profile:
+        raise ValueError(
+            f"run {run['run_id']} was recorded with --device and no profile; "
+            "add --cross-profile and supply --profiles with profiles for the recorded device, "
+            "or record the run again with --profile"
+        )
+    if own is None and not no_profile:
         raise ValueError(f"profile {run.get('profile_id')!r} of run {run['run_id']} not supplied")
     if not snapshots:
         raise ValueError(f"run {run['run_id']} has no snapshots")
-    device_id = own["attributes"]["device_id"]
-    orientation = snapshots[0].get("device", {}).get("orientation", own["attributes"].get("orientation", "portrait"))
-    evaluated = [own]
-    if cross_profile:
+    if no_profile:
+        recorded_device = snapshots[0].get("device", {})
+        device_id = recorded_device.get("id") or run.get("device", {}).get("id")
+        orientation = recorded_device.get("orientation", run.get("device", {}).get("orientation", "portrait"))
+        if not device_id:
+            raise ValueError(f"run {run['run_id']} has no recorded device ID; record it again with --device ID")
+        evaluated = [
+            p for p in profile_list
+            if p["attributes"]["device_id"] == device_id and p["attributes"].get("orientation", "portrait") == orientation
+        ]
+        if not evaluated:
+            raise ValueError(
+                f"run {run['run_id']}: no supplied profiles match recorded device {device_id!r} "
+                f"and orientation {orientation!r}; supply --profiles with matching profiles and use --cross-profile"
+            )
+        own = None  # No profile owns this operator's judgment notes.
+    else:
+        device_id = own["attributes"]["device_id"]
+        orientation = snapshots[0].get("device", {}).get("orientation", own["attributes"].get("orientation", "portrait"))
+        evaluated = [own]
+    if cross_profile and not no_profile:
         evaluated += [
             p for p in profile_list
             if p is not own and p["attributes"]["device_id"] == device_id and p["attributes"].get("orientation", "portrait") == orientation

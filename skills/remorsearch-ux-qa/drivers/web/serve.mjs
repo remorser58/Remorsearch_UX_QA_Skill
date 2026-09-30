@@ -174,8 +174,8 @@ export function startServer({ session, port, idleTimeoutS, onReady, onDone }) {
     const site = req.headers['sec-fetch-site'];
     if (site !== undefined && site !== 'same-origin' && site !== 'none') throw new HttpError(403, 'cross-site requests are not accepted');
     const { pathname } = new URL(req.url, `http://127.0.0.1:${actual}`);
-    const allow = { '/health': 'GET', '/snapshot': 'GET', '/act': 'POST', '/note': 'POST', '/finish': 'POST' }[pathname];
-    if (!allow) throw new HttpError(404, 'unknown endpoint; use GET /health, GET /snapshot, POST /act, POST /note, POST /finish');
+    const allow = { '/health': 'GET', '/snapshot': 'GET', '/inspect': 'GET', '/act': 'POST', '/note': 'POST', '/finish': 'POST' }[pathname];
+    if (!allow) throw new HttpError(404, 'unknown endpoint; use GET /health, GET /snapshot, GET /inspect, POST /act, POST /note, POST /finish');
     if (req.method !== allow) {
       send(res, 405, { error: `${pathname} accepts ${allow} only` }, { Allow: allow });
       return;
@@ -189,6 +189,12 @@ export function startServer({ session, port, idleTimeoutS, onReady, onDone }) {
       return;
     }
     if (finished) throw new HttpError(409, 'session already finished');
+    if (pathname === '/inspect') {
+      if (channel === 'screenshot') throw new HttpError(403, 'inspect returns DOM evidence; start a separate serve session with an a11y or screenshot+a11y input_channel in --agent-json');
+      const state = await enqueue(() => session.inspect());
+      send(res, 200, state);
+      return;
+    }
     if (pathname === '/snapshot') {
       const snap = await enqueue(() => session.snapshot(session.steps.length, ['on_demand']));
       send(res, 200, snapshotReply(snap, { result: 'ok' }, channel));

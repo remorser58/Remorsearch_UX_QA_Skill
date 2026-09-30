@@ -23,11 +23,13 @@ import { openBrowser, validateBrowserWs } from './browser_transport.mjs';
 import { loadPlaywright } from './playwright_loader.mjs';
 import { decodePng } from './png.mjs';
 import { snapshotReply } from './serve.mjs';
+import { normalizeScenario } from './validate.mjs';
 import { writeJsonAtomic } from './util.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..');
 const DRIVER = path.join(HERE, 'ergo_drive.mjs');
+const CLIENT = path.join(HERE, 'drive_client.mjs');
 const FIXTURE = path.join(HERE, 'fixtures', 'selftest.html');
 const KNOWN_ROLES = new Set(['primary', 'destructive', 'critical_message', 'error_message', 'status', 'navigation', 'ad_like', 'hud', 'game_control', 'timed']);
 const HEX = /^#[0-9a-f]{6}$/;
@@ -131,7 +133,7 @@ function readFixture(pathname, res, req) {
 }
 
 // Fixture files served at /<name> (same origin as the pages, no CORS headers).
-const FIXTURE_FILES = Object.fromEntries(['layers.html', 'dialog.html', 'reflow.html', 'reflow2.html', 'reflow2.css', 'viewport.html', 'focus.html', 'focus2.html']
+const FIXTURE_FILES = Object.fromEntries(['layers.html', 'dialog.html', 'reflow.html', 'reflow2.html', 'reflow2.css', 'viewport.html', 'focus.html', 'focus2.html', 'inspect.html']
   .map((f) => [`/${f}`, f]));
 
 function startFixtureServer() {
@@ -159,9 +161,9 @@ function startFixtureServer() {
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
 }
 
-function runDriver(args, { timeoutMs = 120000, onLine, env = process.env } = {}) {
+function runDriver(args, { timeoutMs = 120000, onLine, env = process.env, script = DRIVER } = {}) {
   return new Promise((resolve) => {
-    const child = spawn(process.execPath, [DRIVER, ...args], { stdio: ['ignore', 'pipe', 'pipe'], env });
+    const child = spawn(process.execPath, [script, ...args], { stdio: ['ignore', 'pipe', 'pipe'], env });
     let out = '';
     let err = '';
     const lines = [];
@@ -555,6 +557,168 @@ function checkActions(label, runDir, dev) {
   check(`${label}: {x,y} target taps that point and becomes the focus_point`,
     pt.point.x === 700 && pt.point.y === 300 && last.focus_point && last.focus_point.x === 700 && last.focus_point.y === 300, [pt.point, last.focus_point]);
   pythonLoadRun(label, runDir);
+}
+
+async function toolingTest(base, tmp) {
+  const noBrowserEnv = { ...process.env, REMORSEARCH_BROWSER_WS: 'invalid-browser-endpoint' };
+  let r = await runDriver(['devices'], { env: noBrowserEnv });
+  const rows = r.out.trim().split('\n').slice(1).map((line) => line.trim().split(/\s+/));
+  check('devices: lists every ID, CSS viewport, DPR and input without connecting to a browser', r.code === 0 && rows.length === CATALOG.size
+    && rows.every(([id, viewport, dpr, input]) => {
+      const d = CATALOG.get(id);
+      return d && viewport === d.viewport_css.join('x') && Number(dpr) === d.dpr && input === d.input;
+    }), r.out);
+  const sc = path.join(tmp, 'init.json');
+  const url = `${base}/inspect.html`;
+  r = await runDriver(['init', '--url', url, '--device', 'desktop-1920', '--task', 'Check required options and retain the order request.', '--out', sc], { env: noBrowserEnv });
+  check('init: writes a scenario without connecting to a browser', r.code === 0 && fs.existsSync(sc), r.err);
+  if (!fs.existsSync(sc)) return;
+  const doc = JSON.parse(fs.readFileSync(sc, 'utf8'));
+  let normalized;
+  try { normalized = normalizeScenario(doc, { requireSteps: true }); } catch (err) { normalized = { error: err.message }; }
+  check('init: all required fields are present and the driver validates the output', !normalized.error && normalized.warnings.length === 0
+    && doc.surface.kind === 'web' && doc.surface.url === url && doc.task_goal_ko === 'Check required options and retain the order request.'
+    && doc.device_ids[0] === 'desktop-1920' && Array.isArray(doc.steps) && doc.success === null, normalized);
+  if (pythonAvailable()) {
+    const py = spawnSync('python3', ['-c', 'import json, sys; from ergoqa.snapshot import validate_scenario; errors = validate_scenario(json.load(open(sys.argv[1]))); print(errors); sys.exit(bool(errors))', sc], { cwd: REPO, encoding: 'utf8' });
+    check('init: Python scenario validator accepts the output', py.status === 0, `${py.stdout} ${py.stderr}`);
+  } else skip('init: Python scenario validator accepts the output', 'python3 or ergoqa not importable');
+  const original = fs.readFileSync(sc, 'utf8');
+  r = await runDriver(['init', '--url', url, '--device', 'galaxy-s24', '--out', sc]);
+  check('init: refuses to overwrite an existing scenario', r.code === 2 && /already exists/.test(r.err) && fs.readFileSync(sc, 'utf8') === original, r.err);
+  const defaultSc = path.join(tmp, 'init-default.json');
+  r = await runDriver(['init', '--url', url, '--device', 'galaxy-s24', '--out', defaultSc]);
+  check('init: optional task has a non-empty default', r.code === 0 && JSON.parse(fs.readFileSync(defaultSc)).task_goal_ko.length > 0, r.err);
+  for (const [name, args] of [
+    ['missing URL', ['--device', 'galaxy-s24']],
+    ['unknown device', ['--url', url, '--device', 'unknown-device']],
+    ['invalid URL', ['--url', 'not-a-url', '--device', 'galaxy-s24']],
+    ['empty task', ['--url', url, '--device', 'galaxy-s24', '--task', ' ']],
+  ]) {
+    const output = path.join(tmp, `bad-${name.replaceAll(' ', '-')}.json`);
+    r = await runDriver(['init', ...args, '--out', output]);
+    check(`init: rejects ${name} before writing`, r.code === 2 && !fs.existsSync(output), r.err);
+  }
+
+  const start = async (channel, runId) => {
+    const agent = path.join(tmp, `${runId}-agent.json`);
+    writeJson(agent, { model_family: 'selftest', input_channel: channel, persona_arm: 'neutral' });
+    let resolveReady;
+    const readyP = new Promise((resolve) => { resolveReady = resolve; });
+    const proc = runDriver(['serve', '--scenario', sc, '--device', 'desktop-1920', '--agent-json', agent, '--out', path.join(tmp, 'runs'),
+      '--run-id', runId, '--port', '0', '--no-focus-walk', '--no-reflow', '--idle-timeout-s', '60'], {
+      onLine: (line) => { if (line.event === 'ready') resolveReady(line); },
+    });
+    proc.then(() => resolveReady(null));
+    const guard = setTimeout(() => resolveReady(null), 60000);
+    const ready = await readyP;
+    clearTimeout(guard);
+    return { ready, proc };
+  };
+  const { ready, proc } = await start('screenshot+a11y', 'R-client');
+  if (!check('drive_client: serve starts on the form fixture', !!ready && ready.endpoints.includes('GET /inspect'), ready)) {
+    console.log((await proc).err);
+    return;
+  }
+  const client = async (name, body, port = ready.port) => {
+    const reply = await runDriver(['--port', String(port), name, ...(body === undefined ? [] : [JSON.stringify(body)])], { script: CLIENT });
+    return { ...reply, json: reply.lines[0] };
+  };
+  const act = async (body) => {
+    const reply = await client('act', body);
+    check(`drive_client: ${body.action} ${body.target || body.key || ''}`, reply.code === 0 && reply.json?.result === 'ok', reply.out || reply.err);
+    return reply;
+  };
+  let state = await client('inspect');
+  check('inspect: reads current state and saves private JSON evidence without taking an action', state.code === 0 && state.json?.source === 'dom'
+    && state.json.step_index === 0 && fs.existsSync(state.json.inspection) && (fs.statSync(state.json.inspection).mode & 0o777) === 0o600, state.out);
+  const firstOrder = state.json?.reading_order.map((f) => f.dom_id) || [];
+  check('inspect: visible controls stay in document order even when CSS reverses their visual order', firstOrder.indexOf('reading-first') >= 0
+    && firstOrder.indexOf('reading-first') < firstOrder.indexOf('reading-second') && !firstOrder.includes('hidden') && !firstOrder.includes('invisible')
+    && !firstOrder.includes('zero-size') && firstOrder.includes('below'), firstOrder);
+  check('inspect: includes fields in open shadow roots', state.json?.fields.some((f) => f.dom_id === 'shadow-request' && f.value === 'shadow-value'), state.out);
+  for (const alias of ['health', 'observe', 'screenshot', 'snapshot']) {
+    r = await client(alias);
+    check(`drive_client: ${alias} returns JSON${alias === 'health' ? '' : ' with a screenshot path'}`, r.code === 0 && (alias === 'health'
+      ? r.json?.ok && r.json.steps === 0 : r.json?.result === 'ok' && fs.existsSync(r.json.png) && r.json.step_index === 0), r.out);
+  }
+  await act({ action: 'type', target: '#request', text: 'No peanuts please' });
+  await act({ action: 'tap', target: '#submit-associated' });
+  state = await client('inspect');
+  const part = state.json?.invalid_fields.find((f) => f.dom_id === 'part-group');
+  check('inspect: submitting without a required option exposes its feedback and focus', state.code === 0 && state.json.focus.dom_id === 'part-a'
+    && part?.aria_invalid === 'true' && part.described_by_text === 'Choose a part.' && part.error_associated === true, state.out);
+  await act({ action: 'tap', target: '#part-a' });
+  await act({ action: 'tap', target: '#terms' });
+  await act({ action: 'tap', target: '#submit-associated' });
+  state = await client('inspect');
+  const address = state.json?.invalid_fields.find((f) => f.dom_id === 'address');
+  check('inspect: failed submit reports focus, aria-invalid, described-by text and associated error', state.code === 0 && state.json.focus.dom_id === 'address'
+    && address?.aria_invalid === 'true' && address.error_associated === true && address.described_by_text.includes('Enter an address.')
+    && address.error_messages[0]?.id === 'address-error', state.out);
+  const fields = new Map(state.json?.fields.map((f) => [f.dom_id, f]));
+  check('inspect: reports entered values, checked radios/checkboxes and all selected options', fields.get('request')?.value === 'No peanuts please'
+    && fields.get('terms')?.checked === true && fields.get('part-a')?.checked === true && fields.get('part-b')?.checked === false
+    && fields.get('sauces')?.selected.map((s) => s.value).join(',') === 'mild,sweet', state.out);
+  await act({ action: 'tap', target: '#submit-unassociated' });
+  state = await client('inspect');
+  const missing = state.json?.fields.find((f) => f.dom_id === 'address');
+  check('inspect: exposes unchanged submit-button focus and absent error association', state.code === 0 && state.json.focus.dom_id === 'submit-unassociated'
+    && missing?.aria_invalid === null && missing.described_by_text === '' && missing.error_associated === false, state.out);
+  await act({ action: 'tap', target: '#keep' });
+  state = await client('inspect');
+  check('inspect: sees entered value surviving a re-render', state.json?.fields.find((f) => f.dom_id === 'request')?.value === 'No peanuts please', state.out);
+  await act({ action: 'tap', target: '#clear' });
+  state = await client('inspect');
+  check('inspect: sees entered value cleared by the next re-render', state.json?.fields.find((f) => f.dom_id === 'request')?.value === '', state.out);
+  await act({ action: 'type', target: '#password', text: 'secret-password-qa' });
+  await act({ action: 'type', target: '#card', text: '4242 4242 4242 4242' });
+  state = await client('inspect');
+  const privateIds = ['password', 'card', 'cvv2', 'holder', 'bank-account', 'reference', 'payment-method', 'private-editor', 'private-child', 'private-nested', 'token'];
+  check('inspect: redacts password, card, security code, account, hidden and custom sensitive values', state.code === 0 && privateIds.every((id) => {
+    const f = state.json?.fields.find((field) => field.dom_id === id);
+    return f?.redacted === true && f.value === null && (!f.selected || f.selected.every((s) => s.value === null && s.text === null));
+  }), state.out);
+  check('inspect: focus metadata never includes the focused card value', state.json?.focus.dom_id === 'card' && !('value' in state.json.focus), state.json?.focus);
+  await act({ action: 'tap', target: '#echo' });
+  state = await client('inspect');
+  const sensitiveValues = ['secret-password-qa', '4242 4242 4242 4242', '987', 'Private Card Holder', 'BANK-PRIVATE-123', '4111111111111111',
+    'private-card-token', 'private-editable-value', 'private-child-value', 'private-nested-value', 'hidden-private-token'];
+  const saved = fs.readFileSync(state.json.inspection, 'utf8');
+  check('inspect: response and saved evidence redact sensitive values echoed in error text', sensitiveValues.every((v) => !state.out.includes(v) && !saved.includes(v))
+    && state.json.fields.find((f) => f.dom_id === 'password').described_by_text.includes('[redacted]'), state.out);
+  r = await client('note', { confusion: false, observed: 'The request was cleared after a re-render.' });
+  check('drive_client: note records an observation', r.code === 0 && r.json?.ok, r.out);
+  r = await client('act', { action: 'evaluate', script: '1' });
+  check('drive_client: HTTP errors return JSON and a non-zero exit', r.code === 4 && typeof r.json?.error === 'string', r.out);
+  r = await client('act', { action: 'tap', target: '#missing', timeout_ms: 50 });
+  check('drive_client: missing target returns JSON and exit 3', r.code === 3 && r.json?.result === 'no_target', r.out);
+  r = await client('finish', { success: true });
+  check('drive_client: finish writes the original device-only run and returns its exit code', r.code === 0 && fs.existsSync(r.json?.run)
+    && JSON.parse(fs.readFileSync(r.json.run)).profile_id === 'no-profile', r.out);
+  check('drive_client: serve exits after finish', (await proc).code === 0);
+
+  const screenshot = await start('screenshot', 'R-client-screenshot');
+  if (check('inspect: screenshot-only fixture session starts', !!screenshot.ready)) {
+    r = await client('inspect', undefined, screenshot.ready.port);
+    check('inspect: screenshot-only sessions reject DOM inspection with a clear fix', r.code === 4 && /separate serve session.*a11y/.test(r.json?.error || '')
+      && !('fields' in r.json) && !('inspection' in r.json), r.out);
+    r = await client('finish', { success: false }, screenshot.ready.port);
+    check('drive_client: unsuccessful finish returns JSON and exit 3', r.code === 3 && r.json?.success === false, r.out);
+  }
+  check('drive_client: unsuccessful serve exits 3', (await screenshot.proc).code === 3);
+  for (const [label, args] of [
+    ['invalid port', ['--port', '0', 'health']],
+    ['invalid request', ['--port', '9477', 'evaluate']],
+    ['invalid JSON', ['--port', '9477', 'act', '{']],
+    ['non-object JSON', ['--port', '9477', 'act', '[]']],
+    ['body on inspect', ['--port', '9477', 'inspect', '{}']],
+  ]) {
+    r = await runDriver(args, { script: CLIENT });
+    check(`drive_client: ${label} is a JSON usage error`, r.code === 2 && typeof r.lines[0]?.error === 'string', r.out);
+  }
+  r = await client('health');
+  check('drive_client: a closed connection returns JSON and exit 4', r.code === 4 && typeof r.json?.error === 'string', r.out);
 }
 
 async function serveTest(base, tmp) {
@@ -1294,7 +1458,7 @@ async function connectTest(base, tmp) {
 async function main() {
   const keep = process.argv.includes('--keep');
   // --only a,b: run just these groups (scripted, actions, layers, focus, focus2, read,
-  // reflow, reflow-copy, viewport, dialog, serve, exit, connect) while iterating on one part.
+  // reflow, reflow-copy, viewport, dialog, serve, tooling, exit, connect) while iterating on one part.
   const oi = process.argv.indexOf('--only');
   const only = oi > 0 && process.argv[oi + 1] ? new Set(process.argv[oi + 1].split(',')) : null;
   const want = (g) => !only || only.has(g);
@@ -1354,6 +1518,7 @@ async function main() {
     if (want('viewport')) await viewportTest(base, tmp);
     if (want('dialog')) await dialogTest(base, tmp);
     if (want('serve')) await serveTest(base, tmp);
+    if (want('tooling')) await toolingTest(base, tmp);
     if (want('exit')) await exitCodeTests(base, tmp);
   } finally {
     server.close();
