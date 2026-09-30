@@ -1,150 +1,108 @@
-# Output Template
+# UX research report — [product]
 
-For a report in Korean (`report_lang: ko`), use `references/research/korea/report-template.md`: the same sections, with Korean headings and style rules.
+## Decision
 
-Use this structure for a deep research result. Keep the prose compact. Link official and product sources to their original location when the environment provides a usable link. Reports shared outside the team cite community sources by channel, date and source ID (for example `kr-communities, 2026-08-14, SRC-1a2b3c4d`), not by URL; post URLs stay in the bundle's `source_ref`.
+Include at most three supported findings, then at most three next steps, then one coverage line. Use product-team language and the claim's actual scope. Each finding has this form:
 
-## Research boundary
+1. **[Claim ID] · [gate status].** [One sentence describing the task, situation and supported finding.] [One short quote or number; source: channel/date/source ID or a direct official-source link.]
+   Counter: [none_found | qualifies | contradicts] - [outcome summary; query and source/record ID].
 
-- Product and surface:
-- Research date:
-- Tools available and used (browser tools by class, the reader, search tools) and fallbacks:
-- Search count / budget:
-- Channels checked:
-- Official sources checked:
-- Time windows:
-- User segments:
-- Signed-in communities authorised in the brief: none / list
-- Terms checks the user recorded in the brief: none / list (host, terms URL, checked on, result)
-- Ethics review: none / exempt / approved / pending
-- Official APIs used (route, calls, quota units, earliest `retention_until`): none / list
-- Model provider and processing region, and whether its terms exclude storage and training: (write "unknown" if unknown)
-- User groups the public web under-covers:
-- Unread after allowed rungs (with untried rungs):
-- Stopped by access control or opt-out (by class, `terms_restricted` apart):
-- Coverage limitation:
+**Next steps**
 
-### Reader access table
+1. [What to change or test; claim IDs; the observation or measure that would raise confidence.]
+2. [Only if needed.]
+3. [Only if needed.]
 
-One row per host or channel (`references/public-page-access.md`, sections 6 and 15).
+**Coverage:** [Pages read; main non-zero stops; what could not be seen or tested.]
 
-| Host or channel | Tools | Reads | Rungs used | Stops by class (terms_restricted apart) | Terms restricted | Unread (untried rungs) | robots / TDM decision | Browser context |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+Remove unused slots. Supported statuses are `supported_high` and `supported_medium`. Copy each status and counter outcome from the matching gate record; identify the record and input version in the evidence map. Unsupported claims belong in the annex. If the gate is unavailable, name that blocker and retain candidates there; do not claim a gate run. Label invented example inputs and illustrative gate outputs as fixture data, with execution explicitly false. Fixture outputs illustrate report fields; synthetic content cannot support live research claims.
 
-### Coverage gaps
+For Korean reports use [the Korean template](korea/report-template.md), with the same order.
 
-One row per stop class, plus one for missing keys. Write 0 when no URL ended that way.
+## Findings
 
-| Stop class | Hosts or channels | URLs | Reason codes | Next step |
-| --- | --- | --- | --- | --- |
-| `terms_restricted` | | | | None. A `confirmed` entry is never lifted; a `reported` one only when the user reads the terms and records the check in the brief. |
-| `opted_out` | | | | None |
-| `auth_gate` | | | | None. Only communities the user authorised in the brief, as summaries. |
-| `paywall` | | | | None |
-| `human_check` | | | | None |
-| `rate_limit` | | | | None. The host stays stopped for this run. |
-| `geo_block` | | | | None |
-| `legal_block` | | | | None |
-| `gone` | | | | None. Never recovered from an archive or a cache. |
-| `budget` | | | | Raise within the ceiling, with a recorded reason. A host whose terms restriction was lifted keeps 10. |
-| `host_stopped` | | | | None. The host is closed for this run. |
-| Key missing | | | `official_route_needs_key` | Ask the user to set the key. Never read the page another way. |
-
-Fill the gaps from other channel families, the team's own data, surveys and interviews. Never fetch what a stop withheld by another route.
-
-### Out of scope
-
-| Kind | Hosts or channels | URLs |
-| --- | --- | --- |
-| Private channels (`out_of_scope`) | | |
-| Search results pages (refused, or stopped on a redirect) | | |
-| Switched-off discovery routes (refused) | | |
-
-## Executive finding
-
-State the central UX problem, the most likely root cause, and the highest-value proposal in three short paragraphs.
-
-## Audience segments
-
-Include when the run answered who the users are (`references/audience-pipeline.md`). Shares come only from measured or statistical sources; otherwise write `unknown`.
-
-| Segment | Priority | Share and basis | Confidence | Supporting claim IDs | Key contexts, tasks and pains | Exclusions | Untested |
-| --- | --- | --- | --- | --- | --- | --- | --- |
+Explain the decision findings in task terms: what the evidence establishes, its boundaries and the test it motivates. Cite the same claim IDs and statuses. Distinguish a report of an experience from a reproduced current-product failure. Reported existence establishes neither prevalence nor cause. Keep optional detail only when it changes the test agenda.
 
 ## Evidence map
 
-| ID | Claim ID | User segment | Task and situation | Observed friction | Source (channel, date, source ID) | Evidence type | Grade | Status | Published / observed / valid at | Recurrence | Label |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+Gate record: [artifact/link, input version or hash, rules version, generated time; executed or illustrative fixture].
 
-Grade and status come from the gate (`references/source-grading.md`). Until the gate ships, write "graded by hand" next to the table. The label is `observed`, `inferred` or `unknown`. An item read through an official API also shows its `retention_until`, and it is deleted by then. Never restore a scrub placeholder such as `[phone]` in a quote. A community's modelled gender, age or political lean is never attributed to a poster, a claim or a persona.
+| Claim ID and scoped statement | Gate status | Sources and supporting excerpt/number | Fit/grade and independent units | Published / observed / valid at | Counter-search outcome, summary, query and record |
+| --- | --- | --- | --- | --- | --- |
+| [C-01 — statement] | [supported_high/medium] | [source IDs; channel/date; short evidence] | [claim-kind grade; units/families] | [dates; unknown where missing] | [outcome; summary; query; evidence ID] |
 
-## Causal analysis
+Copy grades/statuses from the gate; retain their scope and qualification. Cite official/product sources directly when usable links exist. Shared reports cite community sources by channel/date/source ID; post URLs stay in the bundle. Paraphrase first, add only a short verbatim fragment, and attribute it as the author's unverified statement. Keep scrub placeholders unchanged. No names, handles or profile links. Sensitive or authorised-member material uses summaries under its access rules. Add API retention dates only when applicable.
 
-For each priority issue:
+## Segments
 
-```text
-Observed situation:
-Direct friction:
-Immediate behavior:
-Structural cause:
-Organizational or business constraint:
-User outcome:
-Possible product outcome:
-Counterevidence:
-Claim IDs:
-Confidence:
-```
+Create interview-ready cards organised by situation and task. Segments may overlap. Each empirical field links to a supported claim and its gate status. Leave shares `null` unless a fitting measured/statistical source supplies the population, denominator, period and product relationship. Posts, reviews, likes and profile coverage supply no population share.
 
-## UX proposal
+### [Segment ID] · [behaviour-based description]
 
-For each proposal:
+- **Situation:** [Trigger and use context; claim ID + status.]
+- **Task:** [What the person is trying to finish; claim ID + status.]
+- **Pain:** [Reported effort/failure and its scope; claim ID + status.]
+- **Evidence status:** [Claim IDs, gate statuses, sources and transfer limits.]
+- **Share:** `null` [or value with fitting source, n, population and reference date].
+- **Unknown:** [Product transfer, frequency, device/input or condition fields lacking evidence.]
+- **Interview recruitment:** [Observable screening question about the situation; avoid inferred demographics.]
+- **Interview prompts:** [Recent concrete episode; actions before/after the friction; recovery or counterexample.]
 
-```text
-Problem addressed:
-Change:
-Design layer: copy / interaction / information architecture / service rule / data system
-Intended behavior change:
-Expected benefit:
-Trade-off:
-Priority:
-Validation:
-```
+## Cause hypotheses
 
-## Figma handoff
+Label every cause as a hypothesis unless independently verified. Ground it in supported findings; preserve unsupported empirical premises in the annex.
 
-- File URL:
-- Version or readback:
-- Relevant pages and node IDs:
-- User flow:
-- Component and token decisions:
-- States covered:
-- Responsive behavior:
-- Accessibility behavior:
-- Implementation acceptance criteria:
+| Hypothesis | Supported observations and claim statuses | Proposed mechanism | Alternative/counterevidence | What remains unknown | Test that could reject it |
+| --- | --- | --- | --- | --- | --- |
+| [H-01 — inferred] | [C-01; status] | [screen/information → behaviour → consequence] | [plausible competing account] | [implementation/organisation constraints] | [observable disconfirming result] |
 
-If Figma evidence is unavailable, write `blocked` and state the concrete reason.
+## Proposals and test agenda
 
-## Validation plan
+| Proposal | Problem and claim statuses | Layer and change/test | Intended behaviour change | Trade-off | Owner, order/timebox | Evidence that raises confidence; acceptance observation |
+| --- | --- | --- | --- | --- | --- | --- |
+| [T-01] | [C-01; status] | [copy/interaction/information architecture/service rule/data system] | [what the user could do differently] | [cost or competing need] | [role; next slot] | [task, measure, success and disconfirming result] |
 
-- Happy path:
-- Empty state:
-- Error and recovery:
-- Permission state:
-- Mobile:
-- Keyboard or assistive technology:
-- Measurement:
-- Open question:
+Specify the scenario, recruitment condition, test data, happy/recovery states and measurement needed to schedule each test. Treat expected benefits as hypotheses. Record approval or operational dependencies when they affect scheduling. Research recommendations do not constitute a release verdict or an observed product severity.
 
-## 미확정 / Unresolved (annex)
+## Figma flow — include only when the user requested a design change
 
-Claims that are not supported go here, and only here: `single_voice`, `lead_only`, `conflicting`, `stale`, `needs_product_check` and `unfit`. For each, give the claim ID, its status, and the evidence needed next. `ux_research.py report-check` (planned) fails a report that cites such a claim outside a heading that contains an annex term: 미확정, 확인 필요, 부록, Unresolved, Unverified, Annex, Appendix or Next evidence needed.
+Remove this entire section for other requests. When included: file URL; version/readback; page/node IDs; flow; components/tokens; loading, empty, error, permission and success states relevant to the change; responsive/accessibility behaviour; implementation acceptance criteria. If the requested design handoff is blocked, name the missing file/version/access. A research-only request needs no empty Figma section.
 
-| Claim ID | Statement | Status | Why not supported | Next evidence needed |
+## Coverage appendix
+
+Scope and method follow findings, segments and proposals.
+
+- Question, product/surface, research dates, depth, active/skipped axes and time window.
+- Searches and page reads against budgets; EXPAND rounds; host page counts. Count page reads, unique URLs and repeated/preflight calls separately.
+- Tools actually used, access card read before the first search, browser context, and available tools that could not run. Each reader/verifier task carries the applicable evidence/access card in its instructions.
+- Channels read; official/team-provided sources; under-covered situations; untested current-product behaviour.
+
+Depth limits: quick has 1–2 axes, ≤12 searches, ≤15 page reads, no EXPAND; standard has at most 4 relevant axes, ≥4 queries per axis, ≤40 searches, ≤40 reads/10 per host, 1 EXPAND; deep uses every default axis, ≥8 queries per axis, ≤120 searches, ≤200 reads/30 per host, up to 2 EXPAND rounds. Record the chosen plan and actual counts.
+
+| Host/channel | Pages read | Access rung/tools/context | Unread and untried rungs | Closed channel or access gap |
 | --- | --- | --- | --- | --- |
+| [channel] | [n] | [actual method] | [n; reason] | [recorded scope and reason] |
 
-### Items for counsel
+Report only stop classes with a non-zero count; keep zero counts in the bundle. Distinguish unique stopped pages from repeat attempts. Show `terms_restricted` separately. Follow the access policy's recorded scope and `lift_requires`; status alone supplies no lift permission. Closed channels without requests are planned gaps, and private channels/refused discovery routes are out of scope. Do not fetch withheld material by another route.
 
-Legal questions this run could not settle, such as whether leaving out authors' names fits a duty to name the source. For Korean law, see `references/research/korea/legal-checklist.md`. This report is not legal advice.
+| Stop class | Count and unit | Host/channel | Reason code and stop scope | Next evidence |
+| --- | --- | --- | --- | --- |
+| [non-zero class] | [URLs or attempts; specify] | [channel] | [record] | [allowed independent source/team data/interview] |
 
-| Item | Provision and version | Default in this run |
-| --- | --- | --- |
+**Keys missing:** [None, or environment variable, official route and affected coverage; no alternate route.] Include real API usage/retention, signed-in authorisation, user terms checks, out-of-scope counts, and processing/ethics constraints only when relevant to this run. Legal questions appear only if the brief/run raised one; put unresolved legal application in an optional counsel annex.
+
+## Annex: unsupported claims and next evidence
+
+Keep `single_voice`, `lead_only`, `conflicting`, `stale`, `needs_product_check` and `unfit` claims only here. Explain contradictions on both sides. Keep speculative demographics, unsupported sizes and untested product assertions here too.
+
+| Claim ID | Statement | Gate status or gate unavailable | Why unsupported | Next evidence/test |
+| --- | --- | --- | --- | --- |
+| [C-02] | [statement] | [status] | [scope/provenance gap] | [specific source or product replay] |
+
+## Writer self-check
+
+- Decision first: ≤3 findings with ID/status, sourced quote/number and `Counter: <outcome> - <summary>`; ≤3 next steps; one coverage line.
+- Every claim cited has its gate status and matching source; unsupported empirical claims stay in the annex; hypotheses/proposals are labelled.
+- Any observed P0/P1 imported from QA has its capture receipt and second pass; research-only reports mark that check inapplicable.
+- Segments are interview-ready; shares remain null without fitting sources; proposals state behaviour, trade-off and the confidence-raising test.
+- Only non-zero stop rows; Figma/legal detail is conditional; no names or handles; what was not tested is stated.
