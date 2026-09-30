@@ -59,7 +59,7 @@ MAPPED_HOSTS = (
     "confirmed.test", "tube.test", "apitube.test", "api.tubedata.test", "shortlink.test", "search.test", "portal.test",
     "askbox.test", "disabled-api.test", "agents.test", "pii.test", "permission.test", "overlap.test",
     "sub.overlap.test", "a.overlap.test", "mirror.test", "www.site.test", "m.site.test", "site.test", "loopy.test", "bf.test",
-    "m.bf.test", "js.test", "guarded.test", "robotsloop.test", "denyhop.test", "copy.test",
+    "m.bf.test", "js.test", "guarded.test", "robotsloop.test", "denyhop.test", "copy.test", "labels.test",
 )  # m.lonely.test and m.block.test are deliberately unmapped: they must not resolve. The scope tests map the hosts
 # that must never be contacted too, so a request that slipped through would show in the server's log.
 
@@ -3221,6 +3221,213 @@ class ScrubbingTests(ServerCase):
         code, summary, out = self.read(self.url("pii.test", "/paid"))
         self.assertEqual((code, summary["stop_class"]), (3, "paywall"))
         self.assertNotIn("paywall9@example.test", out + self.last_err)
+
+
+class AuthorLabelScrubbingTests(ServerCase):
+    """Structure-based privacy: author labels and page chrome never reach the reader's output.
+
+    The fixtures carry fictional names; nothing about them is real. What is tested is the pass itself:
+    a name the page marks structurally (itemprop/rel, an id/class/data-* token) goes, the body, the date
+    and the rating stay, and a visible boundary keeps items countable."""
+
+    NAMES = ("빛나는고슴도치", "잠자는수달", "지나가는사슴", "초코칩다람쥐", "가을하늘펭귄", "북극여우님", "이끼낀돌",
+             "반짝반짝돌멩이", "느린곰", "빠른토끼")
+
+    def reader_text(self, name: str, url: str = "http://labels.test/p") -> str:
+        """What `read` would print for the fixture: the page text after extraction and pattern scrubbing."""
+        page = extract.from_html((PAGES / name).read_text(encoding="utf-8"), url)
+        return privacy.scrub(page.text)[0]
+
+    def assert_no_names(self, text: str) -> None:
+        for name in self.NAMES:
+            self.assertNotIn(name, text, name)
+
+    def test_board_post_author_and_comment_labels_are_replaced(self):
+        text = self.reader_text("board-post-comments.html")
+        self.assert_no_names(text)
+        for kept in ("BOARD-BODY-SENTINEL", "COMMENT-ONE-SENTINEL", "COMMENT-TWO-SENTINEL",
+                     "COMMENT-THREE-SENTINEL", "2026.09.27 21:20", "2026.09.28 07:55"):
+            self.assertIn(kept, text, kept)
+        self.assertEqual(text.count("[author]"), 4)  # the post's author and three commenters
+        self.assertGreaterEqual(text.count("---"), 3)  # one boundary per comment item
+        for chrome in ("POPULAR-SENTINEL", "RELATED-SENTINEL", "인기 글", "댓글 3", "테스트 갤러리", "로그인"):
+            self.assertNotIn(chrome, text, chrome)
+
+    def test_store_review_list_keeps_dates_and_ratings(self):
+        text = self.reader_text("store-reviews.html")
+        self.assert_no_names(text)
+        for kept in ("REVIEW-ONE-SENTINEL", "REVIEW-TWO-SENTINEL", "2026-09-18", "2026-09-20", "별점 5", "별점 2"):
+            self.assertIn(kept, text, kept)
+        self.assertEqual(text.count("[author]"), 2)
+        self.assertIn("---", text.split("REVIEW-ONE-SENTINEL", 1)[1].split("REVIEW-TWO-SENTINEL", 1)[0])
+        self.assertNotIn("리뷰를 쓰려면", text)  # the sign-in prompt is chrome
+
+    def test_blog_post_rel_author_and_popular_sidebar(self):
+        text = self.reader_text("blog-popular-sidebar.html")
+        self.assert_no_names(text)
+        for kept in ("BLOG-BODY-SENTINEL", "COMMENT-SENTINEL", "2026.09.25"):
+            self.assertIn(kept, text, kept)
+        for chrome in ("SIDEBAR-SENTINEL", "SIDEBAR-TWO-SENTINEL", "인기 포스트"):
+            self.assertNotIn(chrome, text, chrome)
+        self.assertEqual(text.count("[author]"), 2)  # rel="author" and the comment's nick
+
+    def test_jsonld_reviews_drop_the_author_name(self):
+        page = extract.from_html((PAGES / "reviews-jsonld.html").read_text(encoding="utf-8"), "http://labels.test/p")
+        self.assertEqual(page.extraction_source, "json_ld")
+        self.assert_no_names(page.text)
+        self.assertEqual(page.text.count("[author]"), 2)
+        for kept in ("JSONLD-REVIEW-ONE", "JSONLD-REVIEW-TWO", "2026-09-10", "2026-09-12",
+                     "rating 4/5", "rating 1/5"):
+            self.assertIn(kept, page.text, kept)
+        self.assertNotIn("Person", page.text)  # only the author's @type is kept, and never as text
+
+    def test_page_read_capture_drops_jsonld_author_names(self):
+        doc = {"schema_version": "ux-page-read.v1", "url": "http://labels.test/p", "final_url": "http://labels.test/p",
+               "status": 200, "text": "전체 리뷰 1건",
+               "json_ld": [{"@type": "Review", "author": {"@type": "Person", "name": "느린곰"},
+                            "datePublished": "2026-09-10",
+                            "reviewRating": {"ratingValue": 4, "bestRating": 5},
+                            "reviewBody": "두께가 얇아서 가방에 다니기 좋습니다. PAGE-READ-REVIEW-ONE"}],
+               "meta": {}, "challenge": {"interactive": False, "markers": []}, "context": "anonymous",
+               "started_at": "t", "finished_at": "t"}
+        page = extract.from_page_read(doc)
+        self.assertEqual(page.extraction_source, "json_ld")
+        self.assertNotIn("느린곰", page.text)
+        self.assertIn("[author]", page.text)
+        self.assertIn("PAGE-READ-REVIEW-ONE", page.text)
+        self.assertIn("rating 4/5", page.text)
+
+    def test_an_author_marked_wrapper_keeps_the_post_body(self):
+        html = ('<main><article><h1>후기</h1>'
+                '<div class="user-review"><span class="user-name">테스트사용자</span>'
+                '<p>' + "이 충전기는 두 개의 포트가 있어서 두 대를 동시에 충전할 수 있습니다. " * 5
+                + 'WRAPPER-BODY-SENTINEL</p></div></article></main>')
+        text = extract.from_html(html, "http://labels.test/p").text
+        self.assertNotIn("테스트사용자", text)
+        self.assertIn("WRAPPER-BODY-SENTINEL", text)  # a wrapper must not hide the body with the name
+        self.assertIn("[author]", text)
+
+    def test_items_without_labels_stay_separated(self):
+        html = ('<main><article><h1>토론</h1><p>본문입니다. NO-LABEL-BODY</p></article>'
+                '<ul><li class="reply"><p>첫 의견 NO-LABEL-ONE</p></li>'
+                '<li class="reply"><p>둘째 의견 NO-LABEL-TWO</p></li></ul></main>')
+        text = extract.from_html(html, "http://labels.test/p").text
+        one, two = text.index("NO-LABEL-ONE"), text.index("NO-LABEL-TWO")
+        self.assertLess(one, two)
+        self.assertIn("---", text[one:two])  # a boundary sits between the two items
+
+    def test_data_attribute_names_mark_labels(self):
+        html = '<main><p>본문입니다. DATA-ATTR-BODY</p><div data-user-name="x">황금방울새</div></main>'
+        text = extract.from_html(html, "http://labels.test/p").text
+        self.assertNotIn("황금방울새", text)
+        self.assertIn("[author]", text)
+        self.assertIn("DATA-ATTR-BODY", text)
+
+    def test_marker_lists_for_the_label_pass(self):
+        markers = verdict.load_markers()
+        self.assertLessEqual({"author", "writer", "nick", "nickname", "user", "username", "member", "profile",
+                              "poster", "reviewer"}, set(markers["author_idents"]["tokens"]))
+        self.assertLessEqual({"comment", "reply", "review"}, set(markers["item_idents"]["tokens"]))
+        for section in ("author_idents", "item_idents"):
+            self.assertIn("version", markers[section], section)
+        for token in ("popular_posts", "related-posts", "ranking", "login_banner", "comment_count"):
+            self.assertIn(token, markers["chrome_idents"], token)
+
+    def test_platform_drop_and_author_overrides(self):
+        table = {"platforms": [{"id": "labelled", "hosts": ["labelled.test"], "drop": ["promo-strip"],
+                               "author": ["penname"]}]}
+        path = self.tmp / "routes-override.json"
+        path.write_text(json.dumps(table), encoding="utf-8")
+        extract._route_overrides.cache_clear()
+        self.addCleanup(extract._route_overrides.cache_clear)
+        with mock.patch.object(extract, "ROUTES_PATH", path):
+            html = ('<main><article><p>본문입니다. OVERRIDE-BODY</p></article>'
+                    '<div class="promo-strip">PROMO-WIDGET-SENTINEL</div>'
+                    '<div>글쓴이 <span class="penname">필명쟁이</span></div></main>')
+            text = extract.from_html(html, "http://labelled.test/p").text
+        self.assertNotIn("PROMO-WIDGET-SENTINEL", text)
+        self.assertNotIn("필명쟁이", text)
+        self.assertIn("[author]", text)
+        self.assertIn("OVERRIDE-BODY", text)
+
+    def test_the_author_placeholder_is_not_an_identity(self):
+        with self.assertRaises(ValueError):
+            privacy.author_key(b"s" * 32, "labels.test", "[author]")
+
+    def test_read_never_shows_names_or_neighbouring_lists(self):
+        self.server.page("labels.test", "/p", "board-post-comments.html")
+        self.start()
+        code, summary, out = self.read(self.url("labels.test", "/p"))
+        self.assertEqual(code, 0)
+        self.assertIn("BOARD-BODY-SENTINEL", out)
+        self.assertIn("[author]", out)
+        for leaked in self.NAMES + ("POPULAR-SENTINEL", "RELATED-SENTINEL", "댓글 3"):
+            self.assertNotIn(leaked, out + self.last_err, leaked)
+            self.assertNotIn(leaked.encode("utf-8"), self.run_bytes(), leaked)
+        saved = self.page_files()[0].read_text(encoding="utf-8")
+        self.assertIn("[author]", saved)  # the run folder holds the scrubbed text only
+
+
+class AuthorChildNameTests(ServerCase):
+    """The stricter label rule: a name in an unlabelled child of an author label drops with the label.
+
+    The common real markup puts the name in an '<a>' inside a writer cell, a '<span class="name">', a
+    '<strong>' or a '<b>'; the label's dates, counts and ratings must stay. Fictional names only."""
+
+    NAMES = ("홍길동", "kim_s", "별빛여우", "이슬나그네", "민들레연필", "초록지우개")
+
+    def reader_text(self, name: str, url: str = "http://labels.test/p") -> str:
+        page = extract.from_html((PAGES / name).read_text(encoding="utf-8"), url)
+        return privacy.scrub(page.text)[0]
+
+    def test_label_children_drop_names_and_keep_facts(self):
+        text = self.reader_text("board-writer-links.html", "http://labels.test/w")
+        for name in self.NAMES[:4]:
+            self.assertNotIn(name, text, name)  # the '<a>', '<span class="name">', '<strong>' and '<b>' children, and the img alt/title
+        for kept in ("2026.09.28 08:12", "조회 12", "2026-09-01", "추천 3", "3시간 전", "9월 1일", "★★★★☆",
+                     "WRITER-ROW-BODY-SENTINEL", "NAME-CHILD-BODY-SENTINEL", "STRONG-CHILD-BODY-SENTINEL",
+                     "TIME-CHILD-BODY-SENTINEL"):
+            self.assertIn(kept, text, kept)
+        self.assertEqual(text.count("[author]"), 4)  # one placeholder per label, whatever child held the name
+        self.assertGreaterEqual(text.count("---"), 3)
+
+    def test_read_cli_holds_no_child_name_anywhere(self):
+        self.server.page("labels.test", "/w", "board-writer-links.html")
+        self.start()
+        code, summary, out = self.read(self.url("labels.test", "/w"))
+        self.assertEqual(code, 0)
+        self.assertIn("WRITER-ROW-BODY-SENTINEL", out)
+        self.assertIn("3시간 전", out)
+        self.assertIn("[author]", out)
+        for leaked in self.NAMES:
+            self.assertNotIn(leaked, out + self.last_err, leaked)
+            self.assertNotIn(leaked.encode("utf-8"), self.run_bytes(), leaked)
+        saved = self.page_files()[0].read_text(encoding="utf-8")
+        self.assertIn("[author]", saved)
+        self.assertIn("★★★★☆", saved)
+
+    def test_a_member_link_inside_a_wrapper_still_drops_the_name(self):
+        html = ('<main><article><h1>후기</h1>'
+                '<div class="user-review"><p>' + "이 베개는 목을 잘 받쳐주어서 오래 써도 편합니다. " * 6
+                + 'MEMBER-LINK-WRAPPER-SENTINEL</p>'
+                '<a href="/member/77">민들레연필</a><span class="nick">초록지우개</span></div></article></main>')
+        text = extract.from_html(html, "http://labels.test/p").text
+        self.assertNotIn("민들레연필", text)  # the wrapper keeps its body text…
+        self.assertNotIn("초록지우개", text)  # …but a member link or a nested short label inside it still drops
+        self.assertIn("MEMBER-LINK-WRAPPER-SENTINEL", text)
+        self.assertEqual(text.count("[author]"), 2)
+
+    def test_profile_href_shapes_the_member_and_profile_paths(self):
+        for href in ("/member/123", "/u/9", "/@nick", "/people/p/2", "member/9", "http://x.test/members/1"):
+            self.assertTrue(privacy.profile_href(href), href)
+        for href in ("", "#top", "?page=2", "/board/991", "/login", "/members-only", "/usage/stats", "javascript:void(0)"):
+            self.assertFalse(privacy.profile_href(href), href)
+
+    def test_keep_in_author_idents_is_versioned_and_complete(self):
+        keep = verdict.load_markers()["keep_in_author_idents"]
+        self.assertIn("version", keep)
+        self.assertLessEqual({"date", "time", "regdate", "datetime", "ago", "count", "cnt", "like", "view",
+                              "hit", "rating", "star", "score"}, set(keep["tokens"]))
 
 
 class ReviewServerTests(ServerCase):
