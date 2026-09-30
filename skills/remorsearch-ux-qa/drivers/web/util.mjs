@@ -39,10 +39,10 @@ export function sha256(buf) {
 }
 
 /** Write file contents atomically: temp file in the same dir, fsync, rename. */
-export function writeFileAtomic(file, data) {
+export function writeFileAtomic(file, data, mode = 0o644) {
   const dir = path.dirname(file);
   const tmp = path.join(dir, `.${path.basename(file)}.${process.pid}.${crypto.randomBytes(4).toString('hex')}.tmp`);
-  const fd = fs.openSync(tmp, 'wx', 0o644);
+  const fd = fs.openSync(tmp, 'wx', mode);
   try {
     fs.writeSync(fd, data);
     fs.fsyncSync(fd);
@@ -52,8 +52,8 @@ export function writeFileAtomic(file, data) {
   fs.renameSync(tmp, file);
 }
 
-export function writeJsonAtomic(file, obj) {
-  writeFileAtomic(file, `${JSON.stringify(obj, null, 2)}\n`);
+export function writeJsonAtomic(file, obj, mode = 0o644) {
+  writeFileAtomic(file, `${JSON.stringify(obj, null, 2)}\n`, mode);
 }
 
 export function readJsonFile(file, what) {

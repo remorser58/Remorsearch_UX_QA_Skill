@@ -14,3 +14,6 @@ __pycache__/
 .ergo-runs/
 .ergo-bench-*.log
 node_modules/
+
+# Keep the pinned web driver install reproducible, including with local excludes.
+!skills/remorsearch-ux-qa/drivers/web/package-lock.json

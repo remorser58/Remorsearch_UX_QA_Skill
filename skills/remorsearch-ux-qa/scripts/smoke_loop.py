@@ -4,6 +4,7 @@ repository checkout): the fixtures come from examples/ and uxloop/demo_factory.p
 writes goes to a disposable folder (.ux-loop/ in a repository checkout, else the system temp folder)."""
 from __future__ import annotations
 
+import argparse
 import copy
 import json
 import subprocess
@@ -50,6 +51,12 @@ def invalid_bundles(folder: Path) -> list:
 
 
 def main() -> int:
+    argparse.ArgumentParser(
+        description='Run offline loop acceptance checks using authored fixtures only; '
+                    'no live integrations or browser are executed. Temporary outputs '
+                    'are removed after the run (.ux-loop/ in a checkout, otherwise '
+                    'the system temporary folder).'
+    ).parse_args()
     outcomes = []
     runtime = runtime_root()
 

@@ -19,8 +19,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { CATALOG } from './devices.mjs';
+import { openBrowser, validateBrowserWs } from './browser_transport.mjs';
+import { loadPlaywright } from './playwright_loader.mjs';
 import { decodePng } from './png.mjs';
 import { snapshotReply } from './serve.mjs';
+import { writeJsonAtomic } from './util.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..');
@@ -47,9 +50,9 @@ function skip(name, why) {
 }
 
 // read_page.mjs fixtures (ux-page-read.v1): an article below the fold with JSON-LD and
-// meta tags, a redirect to it, a check that clears by itself, an interactive human
-// check and a login form. Image requests are counted (they must be blocked).
-const READ_HITS = { image: 0 };
+// meta tags, redirects, persistent/self-clearing/late checks and a login form.
+// Requests count images, check clearing and scrolls to verify stop behavior.
+const READ_HITS = { image: 0, cleared: 0, navigations: 0, scrolls: {} };
 const READ_PAGES = {
   '/read/article.html': `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>공개 후기 모음</title>
 <meta name="description" content="가게 이용 후기"><meta property="og:title" content="후기 모음"><meta name="robots" content="index, follow">
@@ -60,14 +63,56 @@ const READ_PAGES = {
 <p id="late">아래쪽 본문</p><script>window.addEventListener('scroll',()=>{if(!document.getElementById('lazy')){const p=document.createElement('p');p.id='lazy';p.textContent='스크롤로 불러온 댓글';document.body.appendChild(p);}});</script></body></html>`,
   '/read/check.html': `<!doctype html><html><head><meta charset="utf-8"><title>Just a moment...</title></head>
 <body><div id="cf-please-wait">Checking your browser before accessing the site.</div>
-<script>setTimeout(()=>{document.title='본문';document.body.innerHTML='<main>확인이 끝난 본문</main>';},1500);</script></body></html>`,
+<script>setTimeout(()=>{fetch('/read/cleared');document.title='본문';document.body.innerHTML='<main>확인이 끝난 본문</main>';},1000);</script>
+<script async src="/read/delayed.js"></script><div style="height:3000px"></div></body></html>`,
+  '/read/persistent.html': `<!doctype html><html><body><div id="browser-check">Checking your browser</div>
+<script type="application/ld+json">{"secret":"private page content"}</script><div style="height:3000px"></div>
+<script>addEventListener('scroll',()=>fetch('/read/scroll-event?case=persistent'));</script></body></html>`,
+  '/read/late-load.html': `<!doctype html><html><body><main>private page content</main><div style="height:3000px"></div>
+<script>addEventListener('load',()=>{document.body.insertAdjacentHTML('afterbegin','<div id="browser-check">Checking your browser</div>');});
+addEventListener('scroll',()=>fetch('/read/scroll-event?case=late-load'));</script>
+<script async src="/read/delayed.js"></script></body></html>`,
+  '/read/during-load.html': `<!doctype html><html><body><main>private page content</main><div style="height:3000px"></div>
+<script>setTimeout(()=>{document.body.insertAdjacentHTML('afterbegin','<div id="browser-check">Checking your browser</div>');
+setTimeout(()=>{fetch('/read/cleared');document.getElementById('browser-check').remove();},250);},200);</script>
+<script async src="/read/delayed.js"></script></body></html>`,
+  '/read/late-scroll.html': `<!doctype html><html><body><main>private page content</main><div style="height:3000px"></div>
+<script>addEventListener('scroll',()=>{fetch('/read/scroll-event?case=late-scroll');
+document.body.insertAdjacentHTML('afterbegin','<div id="browser-check" style="position:fixed;left:0;top:0">Checking your browser</div>');});</script></body></html>`,
+  '/read/late-human-scroll.html': `<!doctype html><html><body><main>private page content</main><div style="height:3000px"></div>
+<script>addEventListener('scroll',()=>{fetch('/read/scroll-event?case=late-human-scroll');
+document.body.insertAdjacentHTML('afterbegin','<div class="g-recaptcha" style="position:fixed;left:0;top:0"></div>');});</script></body></html>`,
+  '/read/transient-scroll.html': `<!doctype html><html><body><main>private page content</main><div style="height:3000px"></div>
+<script>addEventListener('scroll',()=>{fetch('/read/scroll-event?case=transient-scroll');
+document.body.insertAdjacentHTML('afterbegin','<div id="browser-check" style="position:fixed;left:0;top:0">Checking your browser</div>');
+setTimeout(()=>{fetch('/read/cleared');document.getElementById('browser-check').remove();},250);});</script></body></html>`,
   '/read/captcha.html': `<!doctype html><html><head><meta charset="utf-8"><title>확인</title></head>
 <body><div class="g-recaptcha"></div><p>I'm not a robot</p><div style="height:3000px"></div></body></html>`,
   '/read/login.html': `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>로그인</title></head>
 <body><form><input name="id" aria-label="아이디"><input type="password" aria-label="비밀번호"><button>로그인</button></form></body></html>`,
+  '/read/storage.html': '<!doctype html><html><body>Connection isolation fixture</body></html>',
 };
 
 function readFixture(pathname, res, req) {
+  if (pathname === '/read/delayed.js') {
+    const timer = setTimeout(() => {
+      res.writeHead(200, { 'Content-Type': 'text/javascript', 'Cache-Control': 'no-store' });
+      res.end('// delayed load fixture');
+    }, 2000);
+    res.on('close', () => clearTimeout(timer));
+    return;
+  }
+  if (pathname === '/read/cleared' || pathname === '/read/scroll-event') {
+    if (pathname === '/read/cleared') READ_HITS.cleared += 1;
+    else {
+      const name = new URL(req.url, 'http://127.0.0.1').searchParams.get('case');
+      READ_HITS.scrolls[name] = (READ_HITS.scrolls[name] || 0) + 1;
+    }
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+  READ_HITS.navigations += 1;
   if (pathname === '/read/article.html') READ_HITS.ua = req.headers['user-agent'];
   if (pathname === '/read/redirect') {
     res.writeHead(302, { Location: '/read/article.html' });
@@ -114,9 +159,9 @@ function startFixtureServer() {
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
 }
 
-function runDriver(args, { timeoutMs = 120000, onLine } = {}) {
+function runDriver(args, { timeoutMs = 120000, onLine, env = process.env } = {}) {
   return new Promise((resolve) => {
-    const child = spawn(process.execPath, [DRIVER, ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(process.execPath, [DRIVER, ...args], { stdio: ['ignore', 'pipe', 'pipe'], env });
     let out = '';
     let err = '';
     const lines = [];
@@ -230,6 +275,10 @@ function writeJson(file, obj) {
 
 function loadRun(runDir) {
   const run = JSON.parse(fs.readFileSync(path.join(runDir, 'run.json'), 'utf8'));
+  check(`${path.basename(runDir)}: browser transport and versions recorded`,
+    run.driver.browser_connected === (process.env.REMORSEARCH_BROWSER_WS !== undefined)
+    && typeof run.driver.browser_version === 'string' && run.driver.browser_version.length > 0
+    && run.driver.playwright_client_version === '1.56.1', run.driver);
   const snaps = new Map();
   for (const s of run.snapshots || []) snaps.set(s.snapshot_id, JSON.parse(fs.readFileSync(path.join(runDir, s.path), 'utf8')));
   return { run, snaps };
@@ -1000,9 +1049,9 @@ async function dialogTest(base, tmp) {
     { hot: ctl('#chip-hot'), ok: ctl('#chip-ok-t') });
 }
 
-function runReader(args) {
+function runReader(args, { reader = path.join(HERE, 'read_page.mjs'), env = process.env } = {}) {
   return new Promise((resolve) => {
-    const child = spawn(process.execPath, [path.join(HERE, 'read_page.mjs'), ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(process.execPath, [reader, ...args], { stdio: ['ignore', 'pipe', 'pipe'], env });
     let out = '';
     let err = '';
     child.stdout.on('data', (d) => { out += d; });
@@ -1023,7 +1072,8 @@ function runReader(args) {
 }
 
 const PAGE_READ_KEYS = new Set(['schema_version', 'url', 'final_url', 'status', 'redirects', 'title', 'lang', 'text', 'json_ld', 'meta', 'challenge',
-  'login_form', 'context', 'waited_ms', 'scrolls', 'blocked_types', 'device_id', 'driver_version', 'started_at', 'finished_at']);
+  'login_form', 'context', 'waited_ms', 'scrolls', 'blocked_types', 'device_id', 'driver_version', 'browser_connected', 'browser_version',
+  'playwright_client_version', 'started_at', 'finished_at']);
 const PAGE_READ_REQUIRED = ['schema_version', 'url', 'final_url', 'status', 'text', 'context', 'started_at', 'finished_at'];
 
 function pageReadShape(doc) {
@@ -1041,6 +1091,15 @@ async function readPageTest(base, tmp) {
     const d = load('article');
     check('read_page: document has only ux-page-read.v1 fields', pageReadShape(d).length === 0 && d.schema_version === 'ux-page-read.v1'
       && d.context === 'anonymous', pageReadShape(d));
+    check('read_page: browser transport and versions recorded',
+      d.browser_connected === (process.env.REMORSEARCH_BROWSER_WS !== undefined) && d.browser_version.length > 0
+      && d.playwright_client_version === '1.56.1', d);
+    check('read_page: unscrubbed capture is private (mode 0600)', (fs.statSync(out('article')).mode & 0o777) === 0o600);
+    fs.chmodSync(out('article'), 0o644);
+    r = await runReader([`${base}/read/article.html`, '--allow-local', '--out', out('article'), '--scrolls', '0']);
+    check('read_page: replacing a public capture makes it private (mode 0600)', r.code === 0
+      && (fs.statSync(out('article')).mode & 0o777) === 0o600);
+    // The first capture is retained for its scrolling/content assertions below.
     check('read_page: scrolling reaches text below the fold and loads scroll-triggered content',
       d.text.includes('아래쪽 본문') && d.text.includes('스크롤로 불러온 댓글') && d.scrolls >= 1, { scrolls: d.scrolls, chars: d.text.length });
     check('read_page: JSON-LD kept (parsed, and raw when invalid), meta tags read',
@@ -1058,17 +1117,32 @@ async function readPageTest(base, tmp) {
     check('read_page: redirects recorded, final_url is the target', d.redirects.length === 1 && d.redirects[0].status === 302
       && d.final_url.endsWith('/read/article.html') && d.url.endsWith('/read/redirect'), { redirects: d.redirects, final: d.final_url });
   }
-  r = await runReader([`${base}/read/check.html`, '--allow-local', '--out', out('check')]);
-  if (check('read_page self-clearing check: exit 0', r.code === 0, `${r.code} ${r.err}`)) {
-    const d = load('check');
-    check('read_page: a check that clears by itself is waited for (not solved)', d.text.includes('확인이 끝난 본문') && d.waited_ms >= 1000
-      && d.waited_ms <= 15000 && d.challenge.interactive === false, { waited: d.waited_ms, text: d.text.slice(0, 60) });
+  for (const [name, file, interactive, scrolls, marker] of [
+    ['persistent', 'persistent', false, 0, 'browser-check'],
+    ['self-clearing', 'check', false, 0, 'cf-please-wait'],
+    ['after load', 'late-load', false, 0, 'browser-check'],
+    ['during load before it clears', 'during-load', false, 0, 'browser-check'],
+    ['after scroll', 'late-scroll', false, 1, 'browser-check'],
+    ['human after scroll', 'late-human-scroll', true, 1, 'g-recaptcha'],
+    ['self-clearing after scroll', 'transient-scroll', false, 1, 'browser-check'],
+  ]) {
+    r = await runReader([`${base}/read/${file}.html`, '--allow-local', '--out', out(file), '--max-wait-ms', '15000']);
+    if (check(`read_page ${name} check: exit 3 with a document`, r.code === 3 && fs.existsSync(out(file)), `${r.code} ${r.err}`)) {
+      const d = load(file);
+      check(`read_page ${name} check: markers recorded, no wait, no further scroll or page content`,
+        d.challenge.interactive === interactive && d.challenge.markers.some((m) => m.includes(marker))
+        && d.waited_ms === 0 && d.scrolls === scrolls && d.text === '' && d.json_ld.length === 0
+        && d.title === '' && pageReadShape(d).length === 0 && (READ_HITS.scrolls[file] || 0) <= scrolls, d);
+      check(`read_page ${name} check: stopped capture is private (mode 0600)`, (fs.statSync(out(file)).mode & 0o777) === 0o600);
+    }
   }
+  check('read_page: self-clearing checks stop before their clearing timers fire', READ_HITS.cleared === 0, READ_HITS);
   r = await runReader([`${base}/read/captcha.html`, '--allow-local', '--out', out('captcha')]);
   if (check('read_page human check: exit 3 (stopped) with a document', r.code === 3 && fs.existsSync(out('captcha')), `${r.code} ${r.err}`)) {
     const d = load('captcha');
     check('read_page: the interactive check is reported, not solved, and the page is not scrolled',
-      d.challenge.interactive === true && d.challenge.markers.some((m) => m.includes('g-recaptcha')) && d.scrolls === 0, d.challenge);
+      d.challenge.interactive === true && d.challenge.markers.some((m) => m.includes('g-recaptcha')) && d.scrolls === 0
+      && d.waited_ms === 0 && d.text === '' && d.json_ld.length === 0, d.challenge);
   }
   r = await runReader([`${base}/read/login.html`, '--allow-local', '--out', out('login')]);
   check('read_page: a password field is reported (exit 0; the reader decides whether the page is gated)',
@@ -1080,12 +1154,147 @@ async function readPageTest(base, tmp) {
   r = await runReader(['http://127.0.0.1:9/', '--allow-local', '--out', out('down'), '--timeout-s', '5']);
   check('read_page: an unreachable host is unread (exit 4, no document)', r.code === 4 && !fs.existsSync(out('down')) && r.line && r.line.exit === 4,
     `${r.code} ${JSON.stringify(r.line)}`);
+  const installed = path.join(tmp, 'reader-with-invalid-markers');
+  const driverDir = path.join(installed, 'drivers', 'web');
+  const markerDir = path.join(installed, 'uxresearch', 'data');
+  fs.mkdirSync(driverDir, { recursive: true });
+  fs.mkdirSync(markerDir, { recursive: true });
+  for (const file of ['read_page.mjs', 'devices.mjs', 'browser_transport.mjs', 'playwright_loader.mjs', 'util.mjs']) {
+    fs.copyFileSync(path.join(HERE, file), path.join(driverDir, file));
+  }
+  for (const [name, data] of [['missing', null], ['corrupt JSON', '{broken'], ['corrupt structure', '{}']]) {
+    const markerFile = path.join(markerDir, 'markers.json');
+    if (data !== null) fs.writeFileSync(markerFile, data);
+    const before = READ_HITS.navigations;
+    r = await runReader([`${base}/read/article.html`, '--allow-local', '--out', out(name)], { reader: path.join(driverDir, 'read_page.mjs') });
+    check(`read_page: ${name} markers fail closed before browser loading or navigation (exit 4)`,
+      r.code === 4 && r.line?.reason === 'invalid_markers' && /cannot read or parse challenge markers/.test(r.line.detail)
+      && !fs.existsSync(out(name)) && READ_HITS.navigations === before, r);
+  }
+  r = await runReader([`${base}/read/article.html`, '--allow-local', '--out', out('invalid-endpoint')],
+    { env: { ...process.env, REMORSEARCH_BROWSER_WS: 'wss://127.0.0.1:39123/refused' } });
+  check('read_page: invalid REMORSEARCH_BROWSER_WS fails with a clear error and no capture',
+    r.code === 4 && /REMORSEARCH_BROWSER_WS/.test(r.line?.detail || '') && !fs.existsSync(out('invalid-endpoint')), r);
+  const ordinary = path.join(tmp, 'ordinary-output.json');
+  writeJsonAtomic(ordinary, { ordinary: true });
+  check('atomic writer: other callers retain their ordinary file mode', (fs.statSync(ordinary).mode & 0o777) === (0o644 & ~process.umask()));
+}
+
+function connectClient(url) {
+  const child = spawn(process.execPath, [path.join(HERE, 'fixtures', 'connect_client.mjs'), url],
+    { stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
+  let err = '';
+  let sequence = 0;
+  const pending = new Map();
+  let readyResolve;
+  let readyReject;
+  const ready = new Promise((resolve, reject) => { readyResolve = resolve; readyReject = reject; });
+  const timer = setTimeout(() => { readyReject(new Error(`client ready timed out: ${err}`)); child.kill('SIGKILL'); }, 15000);
+  child.stderr.on('data', (data) => { err += data; });
+  child.on('message', (message) => {
+    if (message.event === 'ready') {
+      clearTimeout(timer);
+      readyResolve(message);
+      return;
+    }
+    const request = pending.get(message.id);
+    if (!request) return;
+    pending.delete(message.id);
+    clearTimeout(request.timer);
+    if (message.error) request.reject(new Error(message.error));
+    else request.resolve(message.result);
+  });
+  const exited = new Promise((resolve) => child.once('exit', (code, signal) => {
+    clearTimeout(timer);
+    readyReject(new Error(`client exited: ${code} ${signal} ${err}`));
+    for (const request of pending.values()) { clearTimeout(request.timer); request.reject(new Error(`client exited: ${err}`)); }
+    pending.clear();
+    resolve({ code, signal });
+  }));
+  return {
+    child, ready, exited,
+    request(op, value) {
+      return new Promise((resolve, reject) => {
+        const id = ++sequence;
+        const requestTimer = setTimeout(() => { pending.delete(id); reject(new Error(`client ${op} timed out: ${err}`)); }, 10000);
+        pending.set(id, { resolve, reject, timer: requestTimer });
+        child.send({ id, op, value });
+      });
+    },
+  };
+}
+
+async function connectTest(base, tmp) {
+  for (const url of ['ws://127.0.0.1:39123/path', 'ws://localhost:1234/path', 'ws://[::1]:1234/path']) {
+    check(`browser connection: accepts ${url}`, validateBrowserWs(url) === url);
+  }
+  for (const url of ['', 'not a URL', 'http://127.0.0.1/path', 'wss://127.0.0.1/path', 'ws://example.com/path',
+    'ws://127.0.0.2/path', 'ws://localhost.example.com/path', 'ws://127.0.0.1.example.com/path', 'ws://0.0.0.0/path',
+    'ws://[::ffff:127.0.0.1]/path', 'ws://user:secret@localhost/path', 'ws://localhost/path#fragment']) {
+    let error = null;
+    try { validateBrowserWs(url); } catch (err) { error = err; }
+    check(`browser connection: refuses ${url || 'an empty endpoint'} with the variable named`, /REMORSEARCH_BROWSER_WS/.test(error?.message || ''));
+  }
+  const refused = await runDriver(['run', '--scenario', path.join(tmp, 'scenario.json'), '--profile', path.join(tmp, 'p-desk.json'),
+    '--out', path.join(tmp, 'runs'), '--run-id', 'R-invalid-connection', '--base', base],
+    { env: { ...process.env, REMORSEARCH_BROWSER_WS: 'ws://example.com/refused' } });
+  const refusedRun = JSON.parse(fs.readFileSync(path.join(tmp, 'runs', 'R-invalid-connection', 'run.json'), 'utf8'));
+  check('live driver: invalid REMORSEARCH_BROWSER_WS blocks the run before opening a page',
+    refused.code === 4 && refusedRun.status === 'blocked' && refusedRun.snapshots.length === 0
+    && refusedRun.blocked_reasons.some((r) => /REMORSEARCH_BROWSER_WS/.test(r)), refusedRun.blocked_reasons);
+  if (process.env.REMORSEARCH_BROWSER_WS === undefined) {
+    skip('shared browser clients and version handshake', 'set REMORSEARCH_BROWSER_WS to a loopback launchServer endpoint');
+    return;
+  }
+  const { pw, info } = loadPlaywright();
+  let mismatch = null;
+  try {
+    const incompatible = { chromium: { connect: (url, options) => pw.chromium.connect(url,
+      { ...options, headers: { 'User-Agent': 'Playwright/0.0.0' } }) } };
+    const unexpected = await openBrowser(incompatible, { ...info, version: '0.0.0' }, { timeout: 5000 });
+    await unexpected.close();
+  } catch (err) { mismatch = err; }
+  check('browser connection: protocol rejects a mismatched client with both versions and the variable named',
+    /REMORSEARCH_BROWSER_WS: Playwright client\/server version mismatch \(client 0\.0\.0, server 1\.56\)/.test(mismatch?.message || ''), mismatch?.message);
+
+  const clients = [];
+  const start = () => { const client = connectClient(`${base}/read/storage.html`); clients.push(client); return client; };
+  const empty = (s) => s.cookies.length === 0 && s.storage.local === null && s.storage.session === null;
+  const owned = (s, value) => s.cookies.length === 1 && s.cookies[0].join() === `owner,${value}`
+    && s.storage.local === value && s.storage.session === value;
+  try {
+    const a = start();
+    const b = start();
+    const [ar, br] = await Promise.all([a.ready, b.ready]);
+    check('browser connection: two simultaneous clients open pages in fresh anonymous contexts',
+      ar.connected && br.connected && empty(ar.initial) && empty(br.initial)
+      && ar.browser_version === br.browser_version && ar.playwright_client_version === '1.56.1', { ar, br });
+    await a.request('seed', 'first-client');
+    check('browser connection: cookies, local storage and session storage do not leak to the second client', empty(await b.request('probe')));
+    await b.request('seed', 'second-client');
+    check('browser connection: both clients retain separate cookies and storage',
+      owned(await a.request('probe'), 'first-client') && owned(await b.request('probe'), 'second-client'));
+    await a.request('close');
+    const exit = await a.exited;
+    check('browser connection: a client exiting early leaves the other client and server working',
+      exit.code === 0 && owned(await b.request('navigate'), 'second-client'));
+    const c = start();
+    check('browser connection: a later client starts fresh after another client disconnects', empty((await c.ready).initial));
+    c.child.kill('SIGKILL');
+    await c.exited;
+    check('browser connection: abrupt client exit also leaves the other client working', owned(await b.request('navigate'), 'second-client'));
+    await b.request('close');
+    check('browser connection: surviving client closes its context and disconnects normally', (await b.exited).code === 0);
+  } finally {
+    for (const client of clients) if (client.child.exitCode === null && client.child.signalCode === null) client.child.kill('SIGKILL');
+    await Promise.all(clients.map((client) => client.exited));
+  }
 }
 
 async function main() {
   const keep = process.argv.includes('--keep');
   // --only a,b: run just these groups (scripted, actions, layers, focus, focus2, read,
-  // reflow, reflow-copy, viewport, dialog, serve, exit) while iterating on one part.
+  // reflow, reflow-copy, viewport, dialog, serve, exit, connect) while iterating on one part.
   const oi = process.argv.indexOf('--only');
   const only = oi > 0 && process.argv[oi + 1] ? new Set(process.argv[oi + 1].split(',')) : null;
   const want = (g) => !only || only.has(g);
@@ -1098,6 +1307,7 @@ async function main() {
     writeJson(path.join(tmp, 'p-s24.json'), profile('EP-S24', 'galaxy-s24'));
     writeJson(path.join(tmp, 'p-desk.json'), profile('EP-DESK', 'desktop-1920'));
     deviceTableTest();
+    if (want('connect')) await connectTest(base, tmp);
 
     const outDir = path.join(tmp, 'runs');
     let r = null;
