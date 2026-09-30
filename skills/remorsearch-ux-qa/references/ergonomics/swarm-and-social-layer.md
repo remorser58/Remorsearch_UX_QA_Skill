@@ -15,6 +15,7 @@ humans, and more so as agent counts grow. The same author's earlier BettaFish
 platforms, not persona simulation. Full notes:
 `docs/human-factors/llm-persona-simulation-validity.md` and
 `docs/mirofish-reference-review.md`.
+These are repository documents, not installed with the skill.
 
 ## What the swarm is here
 
@@ -65,7 +66,7 @@ Aside search queries. Not a forecast of real reactions.
    written back into findings, and every item text starts with
    「[시뮬레이션 · 합성 담론 · 실제 사용자 발화 아님]」.
 4. The report agent extracts argument types and risk hypotheses, each with a way
-   to verify it with real users or with `aside-community-ux-research` queries
+   to verify it with real users or with research mode queries
    (for example `[서비스] 왼손 불편`, `[서비스] 버튼 안 닿음`).
 5. No numbers come out of the board (no share of voice, no sentiment %).
 

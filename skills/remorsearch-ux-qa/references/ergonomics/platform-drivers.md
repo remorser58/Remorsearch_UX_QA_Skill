@@ -4,6 +4,7 @@ Every finding must come from the real surface. Drivers measure; they never score
 ergonomics or role-play a user. All of them emit `ergo-snapshot.v1` /
 `ergo-run.v1` (`docs/ergonomic-swarm-spec.md`), so `scripts/ergo_qa.py` analyses
 them the same way.
+These are repository documents, not installed with the skill.
 
 | Surface | Path | What is real | What is not exercised here |
 | --- | --- | --- | --- |

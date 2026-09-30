@@ -99,9 +99,11 @@ Comparison-ready/approved/implemented are eligible statuses; unresolved
 Each visual check links the run, route, viewport, Figma record and exact versions
 and nodes, actual capture, reference export, comparison report, method
 (`review` or `pixel_diff`), reviewer, explicit overall status and reason. Required
-aspect keys: `layout`, `interaction_states`, `typography`, `side_accents`. A passed
+aspect keys: `layout`, `interaction_states`, `typography`, `side_accents`. For a skill-authored proposal, a passed
 `side_accents` check means **no side accent bars, attached side-tab cards or
-equivalent decorative rails**, not approval of their appearance.
+equivalent decorative rails**. Existing-product QA reports a bar only when the
+task trace shows harm. If the CLI requires an absence receipt that the current
+product cannot supply, report a policy-gate limitation; never invent a pass.
 
 Live screenshots/reference exports must be PNG bytes at viewport times device
 scale. The comparator JSON repeats the run identity, uses `kind: visual_report`,

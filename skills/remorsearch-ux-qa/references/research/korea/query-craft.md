@@ -1,5 +1,7 @@
 # 한국어 검색어와 사용자 언어 읽기
 
+항목 조회용 문서입니다. 전체 읽기는 기본 경로에 포함하지 않습니다. 스킬 폴더에서 `python3 scripts/ref.py references/research/korea/query-craft.md 4`로 필요한 ID만 조회합니다.
+
 이 문서는 한국 채널에서 검색어를 짜는 방법과 한국 사용자가 쓴 글을 읽는 규칙을 적습니다. 영문 기본 규칙은
 `references/research/research-protocol.md`의 Query expansion, Capture record, What not to infer 절과
 `references/research/evidence-classification.md`, `references/research/source-grading.md`를 따릅니다. 발견과 읽기
@@ -138,7 +140,7 @@
 | `dictionary_check` | 우리말샘 확인 결과: `found`, `not_found`, `not_checked` |
 | `polarity` | 말의 극성: `positive`, `negative`, `neutral`, `unknown`(5.1절, 5.5절) |
 
-- 뜻을 풀기 전에 우리말샘(https://opendict.korean.go.kr/main)에서 먼저 찾아봄. 우리말샘은 국립국어원의 개방형
+- 문맥으로 뜻을 확인한 뒤 모호할 때 우리말샘(https://opendict.korean.go.kr/main)을 선택적으로 조회함. 조회하지 않으면 dictionary_check는 not_checked로 적음. 우리말샘은 국립국어원의 개방형
   사전으로, 사용자가 올린 표제어를 전문가가 감수하며, 신어·방언·생활어가 많이 실림. 표제어는 약 120만 개로 소개됨. —
   미확인(요약) [Q02]
 - 사전에 올라 있어도 표준어 인정이나 사용 빈도를 뜻하지 않음. 국립국어원은 신어 자료집에 실린 말이라고 표준어로
@@ -184,7 +186,7 @@
 - `scripts/ux_research.py author-key`는 닉네임의 앞뒤 공백을 지우고 NFKC로 맞춘 뒤, 끝에 붙은 IP 일부(예:
   `ㅇㅇ(203.0)`)를 떼어 냄. 기본 익명 닉네임(`uxresearch/data/markers.json`의 `anonymous_handles`)과 IP 일부가
   붙어 있던 닉네임은 거절함(exit 2). 이런 글은 `author-key --thread-url`로 만든 스레드 키로 셈. — 규칙
-- 익명 게시판은 사람 단위가 아니라 스레드 단위로 셈(`references/research/source-grading.md` 5절). — 규칙
+- 익명 게시판은 스레드 단위로 셈(`references/research/source-grading.md` 5절). — 규칙
 - IP 일부는 reader가 지움. 발췌에 남기거나 되살리지 않음. — 규칙
 - 익명 1인칭 사연은 어느 게시판에서든 사실 확인이 안 된 진술로 다루고 `narrative_unverified` 주의 표시를 붙임.
   존재 근거로만 씀(`references/research/korea/platform-map.md` 4절). — 규칙

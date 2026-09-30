@@ -12,6 +12,7 @@ behind them is in `docs/human-factors/`. Evidence tags used below:
 seen only in search excerpts (verify before treating as a gate), **[derived]**
 computed from a cited model, **[policy]** team-tunable threshold,
 **[assumption]** declared scenario assumption.
+These are repository documents, not installed with the skill.
 
 Unit conversion is always physical: `mm = css_px × display_mm / display_px ×
 dpr` from the device catalog (`ergoqa/devices.py`), never a nominal dp/pt size.
@@ -67,7 +68,7 @@ gaze-visual-attention.md.
 
 | ID | Basis | Rule | Severity |
 | --- | --- | --- | --- |
-| PC-01 | measured | WCAG 1.4.3: 4.5:1, or 3:1 for ≥ 24 px / ≥ 18.66 px bold (KWCAG 2.2 same), over the whole rendered page. Disabled controls exempt. | < 3:1 or primary/critical → P1, else P2 |
+| PC-01 | measured | WCAG 1.4.3: 4.5:1, or 3:1 for ≥ 24 px / ≥ 18.66 px bold (KWCAG 2.2 5.4.3 expansion exception is assessed separately), over the whole rendered page. Disabled controls exempt. | < 3:1 or primary/critical → P1, else P2 |
 | PC-02 | measured | WCAG 1.4.11 for components identified by their boundary: native form controls, switches and sliders (their track or thumb is the state indicator, even with a label), and unlabelled custom controls; border vs the layer below, or fill vs container ≥ 3:1. Icon-only buttons pass when the glyph has ≥ 3:1. Text buttons and text-labelled custom radio/checkbox cards are exempt (the text identifies them; 1.4.11 then concerns the state indicator). | P2 |
 | PC-03 | model | Colour-only states: within same-shaped groups, each channel (fill, border, text) that splits into clearly different colours (ΔE00 ≥ 20) is treated as a state code; different labels (times, names) are not a state cue, explicit state words (including 입금/출금, 승인/취소) and signed amounts (+/−) are. After Machado per-severity simulation, ΔE00 < 5 confusable, 5–10 marginal; exempt when the states differ by ≥ 3:1 luminance (G183). Tritan simulation is low confidence. | < 5 → P2; 5–10 → P3, but P2 when the colour encodes a status, warning or error |
 | PC-04 | model | Font-size visual angle at the profile's viewing distance: < 16′ (ISO 9241-303 minimum) → P2 (P1 for critical messages), all text; < Hangul critical print size (24.6′ young, 31.2′ 60s+/presbyopic; snippet-level, metric unconfirmed) → P3 for running Hangul prose only (≥ 12 Hangul syllables; not buttons, links, headings or table cells). Only elements that own their text are measured. The older-adult value is not combined with a longer viewing distance. | as rule |
@@ -94,6 +95,7 @@ default).
 | GM-06 (not emitted) | measured | Emits nothing until a press-rate and hold-time sweep (game brief GQA-02) measures the rate the game demands (XAG 107 / GAG: avoid mashing; offer hold/toggle/auto). The earlier rule counted the presses the script needed (≥ 8 on one target), which measured the script; it was cut (GQA-13). | – |
 | GM-03 | model | Timed input (QTE) window (measured) vs the profile's choice reaction time 95th percentile (log-normal, CV 0.2 assumption; per-age values provisional) + 100 ms motor + input latency. | margin < 0 → P2; P1 only when even a typical young adult (median, 20s) misses the window |
 | GM-04 | measured | WCAG 2.3.1 / ITU-R BT.1702 flash screening from two sources. (a) Sampled frames on a block grid: per block, transitions are opposing luminance changes ≥ 10 % with the darker state < 0.80 (general) or ≥ 10 % of the block moving into or out of saturated red (red); a block flashes while it has more than 6 transitions in any 1 s (50 ms sampling tolerance, so a 3 Hz flicker passes); the areas of concurrently flashing blocks are summed within any 10° field with the device pixel pitch and the profile viewing distance. More than 0.006 sr → P0. Extended failure → P1 when either rule holds on that area: `sustained_5s` (10 or more flashes within 5 s) or `iris_extended` (EA IRIS's rule, ported from `TransitionTracker.cpp`: at least 4 of the last 5 s at 4–6 transitions per second, exact 1 s window, and now at ≥ 4). `iris_warning` (4 or more transitions in 1 s over the area) is recorded, not reported. Blocks whose change is explained by content motion (scrolling in one direction; the page's own measured scroll is the motion) are not flashing; page scroll that reverses direction more than 3 times within 1 s, after at least 4 CSS px of travel each way (a shaking page), is not treated as motion. A pass is reported as `inconclusive` (not clean) when mean capture rate < 20 fps, a wait step had no samples or sampling was truncated. Runs without a block grid fall back to the whole-viewport mean. (b) DOM elements that appear and disappear more than 3 times in any second (16 ms in-page polling), cover the WCAG area, and are saturated red (linear R/(R+G+B) ≥ 0.8) or differ by ≥ 10 % luminance → P0. Live check: `docs/validation/flash-screening/`. Screening only. EA IRIS is not a certification either (its README says so), and its defaults count a transition only when 25 % of the frame changes, so a local flash can pass IRIS; an IRIS pass does not overturn this result. For broadcast or certification, use a certified process such as Harding FPA. | as rule |
+These are repository documents, not installed with the skill.
 
 Game timing must be measured, not inferred from an agent failing in real time.
 Photosensitivity, subtitles-for-dialogue and audio-only cues are covered in
@@ -137,3 +139,4 @@ precision; a full audit still needs axe-core or a manual WCAG review.
   consents). Run these as a separate auditor pass: agents can be manipulated by
   the patterns they are checking.
 - Game intent (QTE/mashing as design), left-handed HUD options, motion comfort.
+These are repository documents, not installed with the skill.

@@ -1,6 +1,8 @@
 # Public Page Access
 
-This is the reading contract for every mode that reads the web: research,
+This lookup reference details the reading contract. Operational rules are in
+`references/shared/access-card.md`, carried in every reader/persona/verifier prompt.
+It applies to every mode that reads the web: research,
 persona-qa community research, and ergonomics Stage 0 audience research. It says
 which tools to use, how far to go when a page is hard to read, where to stop, and
 what to record. The three access rules in `SKILL.md` are the short form. This page
@@ -9,7 +11,7 @@ which adds what changes in a Korean context and never loosens this contract.
 
 Run commands from the skill folder. `python3 scripts/ux_research.py <command>
 --help` shows the exact flags. Commands marked *planned* are designed but not
-shipped yet. Until one ships, apply its rules by hand and say so in the report.
+shipped yet. Missing commands require a labelled manual assessment with unverified research claims; agents never write computed gate statuses.
 
 ## 1. What "public" means
 
@@ -44,7 +46,7 @@ Use the best tool the host has. Do not depend on one product.
 | Order | Tool class | Examples | Detect it by | Use it for |
 | --- | --- | --- | --- | --- |
 | 1 | Agentic tools that drive the user's real browser | Aside; Claude in Chrome; the Claude app's built-in browser; another agentic browser the user installed | `aside` on the PATH; tools named `mcp__claude-in-chrome__*`; tools named `mcp__Claude_Browser__*` or `mcp__remote-devices__Claude_Browser__*`; other browser-control tools in the tool list | Interactive browsing; R3 captures only from a private or signed-out window, or a signed-in view of an authorised community (section 3) |
-| 2 | Automation browsers | Playwright MCP; Chrome DevTools MCP; the bundled page reader `drivers/web/read_page.mjs` (the live web driver `ergo_drive.mjs` is for product-surface QA, not for reading community pages) | tools such as `browser_navigate` and `browser_snapshot` (Playwright MCP) or `navigate_page` and `take_snapshot` (Chrome DevTools MCP); Node.js 22 or later with Playwright installed in `drivers/web` | R3 renders in a fresh profile |
+| 2 | Automation browsers | Playwright MCP; Chrome DevTools MCP; the bundled page reader `drivers/web/read_page.mjs` (the live web driver `ergo_drive.mjs` is for product-surface QA, not for reading community pages) | tools such as `browser_navigate` and `browser_snapshot` (Playwright MCP) or `navigate_page` and `take_snapshot` (Chrome DevTools MCP); Node.js 22 with Playwright installed in `drivers/web` | R3 renders in a fresh profile |
 | 3 | The reader ladder | `python3 scripts/ux_research.py read`: rungs R0-R2 | `python3 scripts/ux_research.py --help` runs | Every anonymous pre-read, and the evidence text whenever it can read the page |
 | 4 | The host's plain web search and fetch | a web search tool; a fetch tool that returns a summary | the tool list | Discovery only. Results are leads, grade D |
 
@@ -214,9 +216,8 @@ route (section 17.3). Another table can add platforms and entries, never change
 or remove a packaged one: `start` refuses it (exit 2) when it redefines a
 packaged terms entry, discovery route or third-party-copy rule, when its own
 terms entry names an official route, or when it adds or changes a platform for a
-host a packaged terms entry covers (section 17.7). `discover`, `merge`, `gate`,
-`export-audience`, `minimize` and `report-check` are planned
-(`references/audience-pipeline.md`).
+host a packaged terms entry covers (section 17.7). `merge`, `gate`, `export-audience`, `minimize` and `report-check` require available engine support
+(`references/research/audience-pipeline.md`).
 
 ## 5. Verdicts and stop classes
 
@@ -386,7 +387,7 @@ them.
   resets: every request to it is deferred (exit 5) until then (section 17).
 - Browsing with a browser tool follows the same pace by hand: one page at a time
   per host, at the host's interval. Open only pages you intend to read.
-- The search budget is in `references/audience-pipeline.md`.
+- The search budget is in `references/research/audience-pipeline.md`.
 
 ## 9. robots.txt and opt-outs
 
@@ -403,8 +404,7 @@ them.
   run whose files changed after `start`. A
   terms_restricted host exits 3, even when its official route can run, because
   browser tools never open it (section 17). Page-level opt-outs (`noai`, TDM)
-  sit inside the page, so only `read` sees them. Run `robots` before a browser
-  tool opens pages on a new host, and `read` each page before using it.
+  sit inside the page, so only `read` sees them. `robots` is optional preflight; branch on its exit before another action. `read` performs the checks itself and pre-reads every evidence page before rendering.
 - Matching follows RFC 9309, with the reader's own parser. The group for the token
   `RemorsearchUXQA` applies if present (case-insensitive), otherwise the `*` group.
   Groups for the same token are merged. The longest matching rule wins, `Allow`
@@ -479,7 +479,7 @@ them.
    it to `ingest`, which records the stop (for a check, a stop of the whole site)
    and keeps no text; if the tool saved nothing, write the stop in the access
    table.
-5. Save the tool's own output unchanged: the visible text, the page HTML, or a
+5. Save the tool's exact output: the visible text, the page HTML, or a
    `ux-page-read.v1` file (`schemas/ux-page-read.v1.schema.json`). Do not retype,
    translate or tidy it.
 6. Pass it to `ux_research.py ingest` with the URL and the browser context:
@@ -532,8 +532,7 @@ Discovery:
   refuse them with exit 2 (`search_results_page`). One reached through a redirect
   stops as `opted_out`, flagged `out_of_scope`. Discovery runs through the
   agent's own search tool, and each result page is read on its own.
-- `ux_research.py discover` (planned) will call only official search APIs whose
-  current terms allow this use, and it returns leads only. The route table lists
+- Discover with the host search tool; there is no bundled discovery command. Official search API routes remain unavailable pending their terms checks. The route table lists
   each discovery route with `enabled` and a `reason`. These are switched off
   until the owner reads their current terms: the Naver Search API
   (`naver-search-open-api`), NAVER API HUB (`naver-api-hub`), Naver DataLab
@@ -709,7 +708,7 @@ me2.do and coupa.ng (section 17).
 
 ## 15. Access table and records
 
-Every report carries this table (`references/output-template.md`,
+Every report carries this table (`references/research/output-template.md`,
 `references/persona-qa/qa-report-template.md`):
 
 ```text
@@ -752,7 +751,7 @@ Each source records the tool in `access_method`:
 | The team's own export | `team_export` |
 
 The source's `access` block and provenance fields are defined in
-`references/evidence-bundle-contract.md`. A source read through an official API
+`references/research/evidence-bundle-contract.md`. A source read through an official API
 keeps `retention_until` there too.
 
 Vocabulary shared by the reader, the bundle and the reports. The repository's
@@ -854,7 +853,7 @@ these were not independently verified as short-link operators. Unknown links
 still receive scope checks on every redirect. Every `verified_at` remains null:
 primary-source AI reads are evidence, never a person's terms check.
 
-The four existing YouTube/Meta policies remain `never`. YouTube's automated-access
+YouTube/Meta entries have `lift_requires: never`. YouTube's automated-access
 clause and Meta's restrictions were read on 2026-09-30; Instagram and Threads also
 publish their restriction in their robots.txt notices. Their individual help-center
 terms bodies and effective dates remain unverified. DC Inside's section 16 and
@@ -865,16 +864,14 @@ and 2025-07-10 effective date were read on 2026-10-01. The
 separate current user check and applicable prior written permission. The separate
 [search-collection policy](https://policy.naver.com/policy/search_policy.html) has no
 revision or effective date; a September 2026 revision remains unverified.
-The six additions are attributed to primary-source reads on 2026-09-30.
+TikTok, Clien, Apple and Reddit clauses and the HN robots notice have primary-source reads dated 2026-09-30.
 Daangn stays reported: the clause and the
 2026-01-02 effective date came from the operator's page-data, and the declared
 terms page failed for a second reader. TikTok's automation clause has no
 permission exception. Clien needs each information rights holder's consent,
 which a host-wide platform permission cannot supply.
 
-Apple section F covers pages and feeds. The public customer-review feed route
-was removed; its historical URL and the observed 200 response remain in the
-platform note. Apple's 2026-09-14 date is a last update, not an established
+Apple section F covers pages and feeds. The public customer-review feed has no executable route; the platform note records its historical URL and observed 200 response. Apple's 2026-09-14 date is a last update, not an established
 effective date. Authorized own-app App Store Connect exports remain
 `team_provided` files with app, territory, date and acquisition provenance.
 Reddit section 7 requires prior written consent; robots.txt still applies after
@@ -1072,7 +1069,7 @@ the host's current terms, recorded in the brief as `access_policy.terms_checked`
   data (section 12).
 - Record the model provider, its processing region and whether its terms exclude
   storage and training in the report's research boundary
-  (`references/output-template.md`).
+  (`references/research/output-template.md`).
 
 ### 17.7 Changing an entry
 

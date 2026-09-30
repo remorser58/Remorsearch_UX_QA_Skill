@@ -3,6 +3,7 @@
 How this skill is validated, what the numbers mean, and where it is known to be
 weak. Raw results: `docs/validation/`. Benchmark format: `docs/ergonomic-swarm-spec.md`
 section 12.
+These are repository documents, not installed with the skill.
 
 ## Method
 
@@ -107,6 +108,7 @@ Android ATF have not been run for comparison.
   - numeric keypads counted as choice overload.
   The adjudicated sample came from the development and held-out suites, so
   those fixes are also post-hoc for them.
+These are repository documents, not installed with the skill.
 
 ## Disclosures
 
@@ -202,3 +204,4 @@ Removal and addition experiments (leave-one-out per check and per profile
 condition, model toggles, swarm-size discovery curves, audience-based versus
 random composition) are recorded under `docs/validation/experiments/` with the
 decision each one led to.
+These are repository documents, not installed with the skill.

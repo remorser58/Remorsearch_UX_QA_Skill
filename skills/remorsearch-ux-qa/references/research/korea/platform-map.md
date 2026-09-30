@@ -1,5 +1,7 @@
 # 한국 플랫폼 지도
 
+항목 조회용 문서입니다. 전체 읽기는 기본 경로에 포함하지 않습니다. 스킬 폴더에서 `python3 scripts/ref.py references/research/korea/platform-map.md naver-blog`로 필요한 ID만 조회합니다.
+
 이 문서는 한국 채널 27곳에서 리서치를 계획할 때 쓰는 지도입니다. 채널마다 공개 범위, 정당한 경로, 예상 중단, 약관
 상태, 콘텐츠 규범, 개인정보 주의점, 불연속 날짜를 적습니다. 데이터 원본은 `uxresearch/data/korea-platforms.json`이고,
 이 문서는 같은 내용을 사람이 읽기 좋게 옮긴 판입니다. 한국 리서치 팩의 흐름은
@@ -22,7 +24,7 @@
   페이지, 사용자가 승인한 커뮤니티의 로그인 읽기입니다. 멈춘 페이지를 다른 호스트, 미러, 캐시, 아카이브, 앱, 요령으로
   가져오는 방법은 적지 않습니다. 중단은 그 자체로 답이며 보고서의 수집 공백이 됩니다.
 - 플랫폼 이름은 설명을 위해 씁니다. 이 스킬은 어떤 운영사와도 제휴 관계가 없습니다.
-- 원문을 읽은 약관·robots의 확인일(checked_at)은 2026-09-30 또는 2026-10-01이며, 다른 사실은 기존 확인일을 유지합니다.
+- 원문을 읽은 약관·robots의 확인일(checked_at)은 2026-09-30 또는 2026-10-01이며, 그 밖의 사실은 각 행에 확인일을 적었습니다.
   사람이 실시간 확인(robots 확인과 약관 원문 읽기)을 마치기 전까지 verified_at은 비워 둡니다(null).
 - 직접 읽은 운영사 원문과 기관 첨부는 관찰됨으로 적었습니다. 원문에 닿지 못한 판·사용자 구성·보도는 미확인으로
   남겨 두며, robots 관찰은 그날의 스냅샷입니다. 실제 실행에서는 현재 URL의 규칙과 중단을 다시 판정합니다.
@@ -125,7 +127,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 2026-09-30 읽은 개발자센터 약관 부칙은 2026-07-30 24:00 이후 신규 신청을 중단하고, 그때까지 신청한 기존 이용자에게 2027-06-30 24:00까지 API를 제공한다고 적음. 쇼핑·책·학술정보는 2026-07-31 24:00에 종료됨. API HUB 자체의 현행 이용 조건은 미확인. — 관찰됨 2026-09-30 [P138]
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: `terms_restricted`
-- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 목록·미리보기·내보내기·댓글 경로 등을 막으며 PostView.naver는 금지 목록에 없음. GPTBot·OAI-SearchBot·ClaudeBot·Claude-SearchBot·PerplexityBot 등 명시 그룹은 전체 경로를 막음. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P135]
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 목록·미리보기·내보내기·댓글 경로 등을 막으며 PostView.naver는 금지 목록에 없음. GPTBot·OAI-SearchBot·ClaudeBot·Claude-SearchBot·PerplexityBot 등 명시 그룹은 전체 경로를 막음. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P135]
 - 약관 `confirmed`(routes.json `naver-terms`), 제한 `automated_collection`
   - 조항: "네이버의 사전 허락 없이 자동화된 수단"을 이용하여 "네이버 서비스에 게재된 회원의 아이디(ID), 게시물 등을 수집하거나" 시도해서는 안 됨.
   - 확인: 2026-10-01 네이버 이용약관 원문에서 자동 수집 제한과 2025-07-10 시행일을 읽음. 검색결과 수집 정책도 읽었으나 그 문서의 개정·시행일과 2026-09 개정 여부는 미확인. lift_requires: written_permission에 따라 항목별 사용자 확인과 해당 읽기의 사전 서면 허락이 있어야 풀림. verified_at은 사람이 원문을 읽기 전까지 null임. — 관찰됨 2026-10-01 [P08, P155]
@@ -157,7 +159,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 2026-09-30 읽은 개발자센터 약관 부칙은 2026-07-30 24:00 이후 신규 신청을 중단하고, 그때까지 신청한 기존 이용자에게 2027-06-30 24:00까지 API를 제공한다고 적음. 쇼핑·책·학술정보는 2026-07-31 24:00에 종료됨. API HUB 자체의 현행 이용 조건은 미확인. — 관찰됨 2026-09-30 [P138]
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: `terms_restricted`, `auth_gate`
-- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 Disallow: /로 전체 경로를 막음. GPTBot·OAI-SearchBot·ClaudeBot·Claude-SearchBot·PerplexityBot 등 명시 그룹도 전체 경로를 막음. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P137]
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 Disallow: /로 전체 경로를 막음. GPTBot·OAI-SearchBot·ClaudeBot·Claude-SearchBot·PerplexityBot 등 명시 그룹도 전체 경로를 막음. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P137]
 - 약관 `confirmed`(routes.json `naver-cafe-bulk-notice`), 제한 `bulk_collection`, `automated_collection`
   - 조항: "크롤러·봇·스크립트 등 자동화된 방식으로 게시물과 댓글을 대량으로 조회·수집하는 행위" 금지.
   - 확인: 2026-10-01 공지 원문을 읽음. 공지 날짜는 2026-08-25이며 2026-08-31은 보도일임. lift_requires: written_permission에 따라 이 공지의 확인과 사전 서면 허락이 필요함. 네이버 이용약관도 별도로 확인해야 하며, 두 항목을 모두 풀어야 함. verified_at은 사람이 원문을 읽기 전까지 null임. — 관찰됨 2026-10-01 [P147]
@@ -187,7 +189,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 2026-09-30 읽은 개발자센터 약관 부칙은 2026-07-30 24:00 이후 신규 신청을 중단하고, 그때까지 신청한 기존 이용자에게 2027-06-30 24:00까지 API를 제공한다고 적음. 쇼핑·책·학술정보는 2026-07-31 24:00에 종료됨. API HUB 자체의 현행 이용 조건은 미확인. — 관찰됨 2026-09-30 [P138]
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: `terms_restricted`
-- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 전문가·이벤트 일부 경로만 막고 /qna/detail은 금지 목록에 없음. ChatGPT-User·GPTBot·OAI-SearchBot·ClaudeBot·Claude-SearchBot·PerplexityBot 등 명시 그룹은 Disallow: /임. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P142]
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 전문가·이벤트 일부 경로만 막고 /qna/detail은 금지 목록에 없음. ChatGPT-User·GPTBot·OAI-SearchBot·ClaudeBot·Claude-SearchBot·PerplexityBot 등 명시 그룹은 Disallow: /임. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P142]
 - 약관 `confirmed`(routes.json `naver-terms`), 제한 `automated_collection`
   - 조항: "네이버의 사전 허락 없이 자동화된 수단"을 이용하여 "네이버 서비스에 게재된 회원의 아이디(ID), 게시물 등을 수집하거나" 시도해서는 안 됨.
   - 확인: 2026-10-01 네이버 이용약관 원문에서 자동 수집 제한과 2025-07-10 시행일을 읽음. 검색결과 수집 정책도 읽었으나 그 문서의 개정·시행일과 2026-09 개정 여부는 미확인. lift_requires: written_permission에 따라 항목별 사용자 확인과 해당 읽기의 사전 서면 허락이 있어야 풀림. verified_at은 사람이 원문을 읽기 전까지 null임. — 관찰됨 2026-10-01 [P08, P155]
@@ -268,7 +270,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 카카오 다음 검색 API는 꺼 둠(소유자가 현행 약관을 읽기 전까지). — 규칙 (`uxresearch/data/routes.json`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: `auth_gate`
-- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 /_c21_/를 막되 home, bbs_search_read, bbs_list, bbs_read 경로를 열어 둠. 이름 있는 AI 그룹은 없음. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P136]
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 /_c21_/를 막되 home, bbs_search_read, bbs_list, bbs_read 경로를 열어 둠. 이름 있는 AI 그룹은 없음. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P136]
 - 약관 `unchecked`
   - 조항: 제12조제2호: "회사의 서비스 정보를 이용하여 얻은 정보를 회사의 사전 승낙 없이 복제 또는 유통시키거나 상업적으로 이용하는 행위" 금지.
   - 확인: 2026-09-30 Daum 서비스 약관(2026-09-22 시행)의 복제·유통·상업 이용 제한과 개인정보 수집 금지를 읽음. 카페 약관 제19조도 읽었으나 카페 운영원칙 본문과 자동 수집 허용 범위는 미확인. 사용자 확인 기록은 없으므로 unchecked를 유지하고 일반 중단 규칙을 따름. — 관찰됨 2026-09-30 [P154, P144]
@@ -293,7 +295,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 블로그별 /rss 피드는 최근 글만 담음(route table 기준, 실시간 확인 전). — 규칙 (`uxresearch/data/routes.json`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: 없음
-- robots 예상 `unknown`: 2026-09-30 관찰: 직접 읽은 개별 블로그는 * 그룹에서 guestbook·manage·owner·admin·search 등만 막고 게시글 경로는 금지 목록에 없음. bingbot은 Crawl-delay: 20임. www.tistory.com/robots.txt는 404를 반환했으며 다른 블로그에도 같은 규칙이 적용된다고 단정하지 않음. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P156, P171]
+- robots 예상 `unknown`: 2026-09-30 관찰: 직접 읽은 개별 블로그는 * 그룹에서 guestbook·manage·owner·admin·search 등만 막고 게시글 경로는 금지 목록에 없음. bingbot은 Crawl-delay: 20임. www.tistory.com/robots.txt는 404를 반환했으며 다른 블로그에도 같은 규칙이 적용된다고 단정하지 않음. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P156, P171]
 - 약관 `unchecked`
   - 조항: 운영정책 2.②: "서비스를 이용하여 얻은 정보를 회사의 사전 승낙 없이 영리 또는 비영리의 목적으로 복제, 출판, 방송 등에 사용하거나 제3자에게 제공하는 행위" 금지.
   - 확인: 2026-09-30 운영정책의 복제·제공 제한과 공통 Daum 약관을 읽음. 운영정책의 시행일은 표기되지 않았고 자동 수집을 직접 지칭하는 문구는 찾지 못함. 사용자 확인 기록과 자동 수집 허용 범위는 미확인이므로 unchecked를 유지함. — 관찰됨 2026-09-30 [P170, P154]
@@ -318,14 +320,14 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - routes.json의 dcinside-terms 항목(confirmed)이 dcinside.com 전체를 덮음. lift_requires: written_permission 항목은 사용자가 그 항목의 약관 문서를 직접 읽고 access_policy.terms_checked에 result permits_this_reading과 운영사의 사전 서면 허락(permission: granted_by, granted_on, reference)을 함께 적은 실행에서만 풀림. checked_on은 effective_from이 있으면 그날 이후여야 하며, 오늘 이후이거나 365일이 지난 확인은 무효임. lift_requires: never 항목은 풀리지 않음. 에이전트는 확인 항목을 쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지 읽음. 이 스킬은 약관이 그 읽기를 허용하는지 판단하지 않음(법률 자문 아님). — 규칙 (`uxresearch/data/routes.json`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: `terms_restricted`
-- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 기본 Allow: /이며 일부 갤러리·개별 글·시스템 경로는 막음. GPTBot·ClaudeBot·PerplexityBot 등 명시 그룹은 Disallow: /임. 모바일도 기본 허용과 일부 경로 금지, www 호스트는 * 그룹 전체 허용을 확인함. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P141, P145, P161]
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 기본 Allow: /이며 일부 갤러리·개별 글·시스템 경로는 막음. GPTBot·ClaudeBot·PerplexityBot 등 명시 그룹은 Disallow: /임. 모바일도 기본 허용과 일부 경로 금지, www 호스트는 * 그룹 전체 허용을 확인함. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P141, P145, P161]
 - 약관 `confirmed`(routes.json `dcinside-terms`), 제한 `automated_collection`
   - 조항: 제16조①: "당사의 사전 서면 동의 없이 어떤 형태로든 어떤 목적으로든 본 서비스를 크롤링하는 행위는 명시적으로 금지됩니다." 제16조②는 AI 학습에 사전 합의를 요구함.
   - 확인: 2026-09-30 원문 제16조와 2026-07-21 시행일을 읽음. 근거 상태는 confirmed이며 해제 조건은 lift_requires: written_permission임. 사용자의 항목별 확인과 해당 읽기의 사전 서면 허락이 필요함. verified_at은 사람이 원문을 읽기 전까지 null임. — 관찰됨 2026-09-30 [P61]
 - 사용자 단서(신뢰도 `medium`): 2025-02-10 보도: 2024-12 기준 국내 방문 순위 8위, 하루 약 300만 명이 쓰고 하루 게시글·댓글이 300만 건에 가까움. 성별·연령·정치 성향 추정치는 싣지 않음(4절). — 미확인(요약) [P60]
 - 콘텐츠 규범:
   - 갤러리마다 문화와 규범이 따로 자란다고 보도됨. 갤러리 단위로 문맥을 읽음. — 미확인(요약) [P60]
-  - 로그인 없는 익명 게시판은 사람 단위가 아니라 스레드 단위로 셈. — 규칙 (`references/research/source-grading.md`)
+  - 로그인 없는 익명 게시판은 스레드 단위로 셈. — 규칙 (`references/research/source-grading.md`)
 - 개인정보:
   - 로그인하지 않은 작성자는 닉네임 옆에 IP 일부가 보임. IP는 지우고, 기본 닉네임 'ㅇㅇ'과 IP가 붙은 닉네임은 author-key가 거절하므로 스레드 키(`author-key --thread-url`)로 셈. — 규칙 (`uxresearch/data/routes.json`)
 - 불연속:
@@ -340,7 +342,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 공개 페이지만 읽음. 로그인, 회원 전용, 사람 확인, 봇 차단, 브라우저 확인 화면, 속도 제한이 나오면 그 자리에서 멈추고 수집 공백으로 적음. — 규칙 (`references/research/public-page-access.md`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: 없음
-- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 Disallow: /와 메인·best·best2·humor 예외를 둠. 학습 크롤러는 메인만 열고, ChatGPT-User·Claude-User·Claude-SearchBot·OAI-SearchBot·Perplexity-User는 Allow: /임. 이 그룹의 허용은 * 그룹의 금지를 풀지 않음. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P162]
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 Disallow: /와 메인·best·best2·humor 예외를 둠. 학습 크롤러는 메인만 열고, ChatGPT-User·Claude-User·Claude-SearchBot·OAI-SearchBot·Perplexity-User는 Allow: /임. 이 그룹의 허용은 * 그룹의 금지를 풀지 않음. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P162]
 - 약관 `unchecked`
   - 조항: 제11조①18)는 자동화 프로그램·봇으로 로그인하거나 로그인 사용자 기능을 이용하는 행위와 사이트 내용을 추출해 광고를 제거한 뒤 다시 제공하는 행위를 금지함.
   - 확인: 2026-09-30 이용약관(2023-04-17 시행) 제11조와 제13조를 읽음. 무로그인 표본 읽기의 허용 범위는 미확인이므로 unchecked를 유지함. 보안 시스템의 차단이 나오면 멈춤. — 관찰됨 2026-09-30 [P65]
@@ -359,7 +361,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 공개 게시판만 읽음. 로그인이 필요한 분류는 auth_gate이며 수집 공백임. 로그인하지 않은 방문자에게 보이지 않는 최근 댓글도 수집 공백으로 적음. — 규칙 (`references/research/public-page-access.md`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: `auth_gate`
-- robots 예상 `unknown`: 2026-09-30 관찰: 404를 반환하여 robots 규칙을 읽지 못함. 파일 부재 관찰은 약관 허락을 뜻하지 않으며 실행 때 다시 확인함. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P157]
+- robots 예상 `unknown`: 2026-09-30 관찰: 404를 반환하여 robots 규칙을 읽지 못함. 파일 부재 관찰은 약관 허락을 뜻하지 않으며 실행 때 다시 확인함. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P157]
 - 약관 `unchecked`
   - 조항: 제13조3: "회사가 전항 이외의 방법으로 회원의 게시물을 이용하고자 하는 경우 이메일 또는 기타 방식으로 회원의 사전 동의를 얻어야 합니다."
   - 확인: 2026-09-30 이용약관(2023-06-25 시행)을 읽음. 이 조항은 회사의 게시물 이용에 관한 것이며 외부 수집 허락을 주지 않음. 별도 이용지침 본문과 자동 수집 허용 범위는 미확인이므로 unchecked를 유지함. — 관찰됨 2026-09-30 [P158]
@@ -378,7 +380,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 공개 페이지만 읽음. 로그인, 회원 전용, 사람 확인, 봇 차단, 브라우저 확인 화면, 속도 제한이 나오면 그 자리에서 멈추고 수집 공백으로 적음. — 규칙 (`references/research/public-page-access.md`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: 없음
-- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 Disallow: /임. 일부 검색·SNS 봇의 명시 그룹은 /talk/를 열어 두지만 GPTBot·ClaudeBot은 Disallow: /임. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P149]
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 Disallow: /임. 일부 검색·SNS 봇의 명시 그룹은 /talk/를 열어 두지만 GPTBot·ClaudeBot은 Disallow: /임. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P149]
 - 약관 `unchecked`
   - 조항: 제12조제2호는 사전 승낙 없는 서비스 정보의 복제·유통·상업 이용을, 제10호는 다른 이용자의 개인정보 수집·저장·공개를 금지함.
   - 확인: 2026-09-30 판 서비스 약관(2025-02-18 시행)을 읽음. 크롤링·로봇을 직접 지칭하는 문구는 찾지 못했고 자동 수집 허용 범위와 사용자 확인은 미확인이므로 unchecked를 유지함. — 관찰됨 2026-09-30 [P148]
@@ -397,7 +399,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - clien-terms는 lift_requires: never로 요청 전에 멈추며 캡처도 받지 않음. 제13조③은 정보 권리자의 동의를 요구함. 플랫폼의 허락으로 각 작성자의 동의를 확인할 수 없어 현재 호스트 단위 기록으로는 풀 수 없음. — 규칙 (`uxresearch/data/routes.json`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: `terms_restricted`
-- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 /service/board/를 열고 sold·hongbo·검색·개인 경로와 쿼리 URL 등을 막음. ChatGPT-User·GPTBot·OAI-SearchBot 등은 Disallow: /임. lift_requires: never 정책은 그대로 적용됨. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P159]
+- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 /service/board/를 열고 sold·hongbo·검색·개인 경로와 쿼리 URL 등을 막음. ChatGPT-User·GPTBot·OAI-SearchBot 등은 Disallow: /임. lift_requires: never 정책은 그대로 적용됨. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P159]
 - 약관 `confirmed`(routes.json `clien-terms`), 제한 `automated_collection`
   - 조항: 제13조③: "서비스를 통해 얻은 정보를 그 정보 권리자의 동의없이 수집, 복제, 배포할 수 없습니다." — 관찰됨 [P126]
   - 확인: 2026-09-30 AI 조사자가 운영사 약관 제13조③을 읽음. 근거 상태는 confirmed이며 해제 조건은 never임. 사람이 원문을 확인한 날짜는 없음. — 관찰됨 [P126]
@@ -417,7 +419,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 공개 페이지만 읽음. 로그인, 회원 전용, 사람 확인, 봇 차단, 브라우저 확인 화면, 속도 제한이 나오면 그 자리에서 멈추고 수집 공백으로 적음. — 규칙 (`references/research/public-page-access.md`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: 없음
-- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 /zboard/를 열고 검색·개인정보·openapi 등 경로를 막음. 모바일은 Crawl-delay: 1과 검색·개인 경로 금지를 둠. 이름 있는 AI 그룹은 없음. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P165, P146]
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 /zboard/를 열고 검색·개인정보·openapi 등 경로를 막음. 모바일은 Crawl-delay: 1과 검색·개인 경로 금지를 둠. 이름 있는 AI 그룹은 없음. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P165, P146]
 - 약관 `unchecked`
   - 조항: 제13조2는 사전 승낙 없이 서비스에서 얻은 정보를 복제·전송·출판·배포·방송 등의 방법으로 영리 이용하거나 제3자에게 이용하게 하는 행위를 금지함.
   - 확인: 2026-09-30 이용약관(2015-04-24 시행)을 읽음. 자동 수집 수단을 직접 지칭하는 문구는 찾지 못했고 자동 수집 허용 범위와 사용자 확인은 미확인이므로 unchecked를 유지함. — 관찰됨 2026-09-30 [P166]
@@ -437,7 +439,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 공개 페이지만 읽음. 로그인, 회원 전용, 사람 확인, 봇 차단, 브라우저 확인 화면, 속도 제한이 나오면 그 자리에서 멈추고 수집 공백으로 적음. — 규칙 (`references/research/public-page-access.md`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: 없음
-- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 검색·타임라인·회원 경로와 여러 쿼리 파라미터를 막음. 게시글 경로는 금지 목록에 없고 이름 있는 AI 그룹은 없음. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P134]
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 검색·타임라인·회원 경로와 여러 쿼리 파라미터를 막음. 게시글 경로는 금지 목록에 없고 이름 있는 AI 그룹은 없음. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P134]
 - 약관 `unchecked`
   - 조항: 2026-07 이용약관 개정 안내의 제13조4는 허위 사실과 권리 침해, 허위조작정보 생산·유포를 금지함.
   - 확인: 2026-09-30 개정 안내(2026-07-09 시행)를 읽음. 약관 전문을 확보하지 못하여 자동 수집 조항과 허용 범위는 미확인. unchecked를 유지함. — 관찰됨 2026-09-30 [P133]
@@ -473,7 +475,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 로그인 없이 보이는 글만 읽음. 로그인 읽기는 사용자가 브리프에 직접 승인한 경우에만 가능하며, 에이전트는 이 목록에 커뮤니티를 더하지 않음. — 규칙 (`references/research/public-page-access.md`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: `auth_gate`
-- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 사용자 이력·검색·일부 블로그 내부 경로를 막음. GPTBot·ClaudeBot·Google-Extended 등 학습 크롤러는 Disallow: /임. 이 관찰로 회원 전용 중단이 풀리지 않음. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P167]
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 사용자 이력·검색·일부 블로그 내부 경로를 막음. GPTBot·ClaudeBot·Google-Extended 등 학습 크롤러는 Disallow: /임. 이 관찰로 회원 전용 중단이 풀리지 않음. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P167]
 - 약관 `unchecked`
   - 조항: 3. 금지사항: "Teamblind로부터 명시적 허가를 받은 경우를 제외하고" 자동·수동 수단의 크롤링·스크래핑·데이터 추출·복제 등을 금지함.
   - 확인: 2026-09-30 게시된 약관의 금지사항과 계정 개설 의무를 읽음. 2026-10-04는 예정 시행일이며 읽은 날의 현행 판 시작일은 미확인. 회원 전용 중단을 유지하며 사용자 확인 기록과 현행 판이 미확인이므로 unchecked를 유지함. — 관찰됨 2026-09-30 [P143]
@@ -492,7 +494,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 - 정당한 경로(선호 순): `none`
   - route table의 out_of_scope 채널임. 읽지 않고 요약하지 않음. 학생 사용자는 설문·인터뷰로 조사함. — 규칙 (`uxresearch/data/routes.json`)
 - 예상 중단: `auth_gate`
-- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 Disallow: /이며 메인과 일부 광고·아이콘 경로만 예외로 둠. 회원 전용·범위 밖 정책을 유지함. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P140]
+- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 Disallow: /이며 메인과 일부 광고·아이콘 경로만 예외로 둠. 회원 전용·범위 밖 정책이 적용됨. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P140]
 - 약관 `unchecked`
   - 조항: 제12조는 프로그램·스크립트·봇 등 컴퓨팅 시스템을 통한 서비스 접근을 금지하며, 제9조는 회사 승인 없는 데이터베이스 복제·배포·방송·전송을 금지함.
   - 확인: 2026-09-30 약관 본문과 2026-08-07 개정일을 읽음. 사용자 확인 기록은 없으므로 unchecked를 유지함. 회원 전용 채널은 계속 범위 밖이며 이 관찰은 읽기 경로를 만들지 않음. — 관찰됨 2026-09-30 [P139]
@@ -531,7 +533,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - daangn-terms는 사용자의 현행 약관 확인과 사전 서면 허락이 있어야 풀림(lift_requires: written_permission). 허락은 해당 수집·저장·분석과 후속 처리를 포함해야 함. 그 뒤에도 robots.txt와 모든 중단 규칙을 따름. 사이트 내부 데이터 경로는 부르지 않음. — 규칙 (`uxresearch/data/routes.json`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: `terms_restricted`
-- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 광고·관리·웹뷰·검색 경로 등을 막음. ChatGPT-User·Claude-User·Claude-SearchBot·OAI-SearchBot·Perplexity-User 등은 전체 금지와 일부 지역 프로필 예외를 둠. 학습 크롤러 그룹은 Disallow: /임. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P160]
+- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 광고·관리·웹뷰·검색 경로 등을 막음. ChatGPT-User·Claude-User·Claude-SearchBot·OAI-SearchBot·Perplexity-User 등은 전체 금지와 일부 지역 프로필 예외를 둠. 학습 크롤러 그룹은 Disallow: /임. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P160]
 - 약관 `reported`(routes.json `daangn-terms`), 제한 `automated_collection`, `ai_input`, `storage`
   - 조항: 데이터베이스에 대한 보호: "당근의 명시적인 사전 서면 동의 없이 자동화된 도구"를 활용한 "데이터 수집·복제·저장·배포·출판·분석·색인화·수정·파생 저작물 생성" 금지. — 관찰됨 [P127, P128]
   - 확인: 2026-09-30 AI 조사자가 운영사 페이지 데이터에서 조항과 2026-01-02 효력일을 읽음. 다른 조사자의 약관 페이지 요청은 실패하여 reported로 둠. 사람이 원문을 확인한 날짜는 없음. — 관찰됨 [P127, P128]
@@ -555,7 +557,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 나이·인종·종교·정치 성향·성적 지향·건강 상태 같은 보호 속성으로 사용자를 프로파일링하거나 시청자·제작자의 이런 속성을 추정해서는 안 됨. — 미확인(요약) [P89]
   - 키가 없으면 official_route_needs_key로 수집 공백이 되고 사용자에게 묻는 질문이 됨. 키 거절이나 그 밖의 실패로 공식 경로가 끝나면 그 주소는 terms_restricted로 끝나며 페이지로 바꾸지 않음. 댓글을 막은 영상은 gone(comments_disabled)으로 기록함. — 규칙 (`uxresearch/data/routes.json`)
 - 예상 중단: `terms_restricted`
-- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 내부 API·댓글·검색·로그인·live_chat·feeds/videos.xml 등을 막으며 /watch는 금지 목록에 없음. 페이지는 lift_requires: never로 계속 멈추고 Data API만 씀. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P172]
+- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 내부 API·댓글·검색·로그인·live_chat·feeds/videos.xml 등을 막으며 /watch는 금지 목록에 없음. 페이지는 lift_requires: never로 계속 멈추고 Data API만 씀. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P172]
 - 약관 `confirmed`(routes.json `youtube-terms`), 제한 `automated_collection`
   - 조항: Permissions and Restrictions: automated access requires YouTube’s prior written permission, except for public search engines following robots.txt.
   - 확인: 2026-09-30 원문의 자동화 접근 제한을 읽음. 영문 페이지의 날짜가 2023-12-15와 한국 화면의 영문 번역 2022-01-05로 달라 효력일은 미확인. lift_requires: never이므로 페이지는 풀 수 없고 공식 Data API만 씀. verified_at은 사람이 원문을 읽기 전까지 null임. — 관찰됨 2026-09-30 [P173, P174, P89]
@@ -575,7 +577,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 - 정당한 경로(선호 순): `none`
   - Meta Content Library와 API는 자격을 갖춘 학술·비영리 연구자가 ICPSR 심사를 거쳐 쓰는 별도 경로이며, 이 스킬의 경로가 아님. — 미확인(요약) [P91, P92, P93]
 - 예상 중단: `terms_restricted`
-- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 Disallow: /이며 GPTBot·ClaudeBot·PerplexityBot 등도 전체 경로를 막음. 페이지는 lift_requires: never로 계속 멈춤. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P164]
+- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 Disallow: /이며 GPTBot·ClaudeBot·PerplexityBot 등도 전체 경로를 막음. 페이지는 lift_requires: never로 계속 멈춤. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P164]
 - 약관 `confirmed`(routes.json `meta-instagram`), 제한 `automated_collection`
   - 조항: Operator robots.txt notice: "Collection of data on Instagram through automated means is prohibited unless you have express written permission from Instagram".
   - 확인: 2026-09-30 운영사의 robots.txt 공지와 Meta 자동 수집 조항을 읽음. 인스타그램 약관 자체의 본문과 시행일은 미확인. lift_requires: never이므로 페이지는 풀 수 없음. verified_at은 사람이 원문을 읽기 전까지 null임. — 관찰됨 2026-09-30 [P164, P94]
@@ -595,7 +597,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
 - 정당한 경로(선호 순): `none`
   - Threads API의 키워드 검색은 threads_keyword_search 권한이 필요하고, 그 권한을 승인받지 못한 앱은 인증한 사용자 자신의 글만 검색함. 이 스킬은 구현하지 않음. — 미확인(요약) [P96]
 - 예상 중단: `terms_restricted`
-- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 Disallow: /이며 GPTBot·ClaudeBot·PerplexityBot 등도 전체 경로를 막음. threads.net은 threads.com으로 이동함. 페이지는 lift_requires: never로 계속 멈춤. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P168, P169]
+- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 Disallow: /이며 GPTBot·ClaudeBot·PerplexityBot 등도 전체 경로를 막음. threads.net은 threads.com으로 이동함. 페이지는 lift_requires: never로 계속 멈춤. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P168, P169]
 - 약관 `confirmed`(routes.json `meta-threads`), 제한 `automated_collection`
   - 조항: Operator robots.txt notice: "Collection of data on Threads through automated means is prohibited unless you have express written permission from Threads".
   - 확인: 2026-09-30 운영사의 robots.txt 공지와 Meta 자동 수집 조항을 읽음. 스레드 보충약관 본문과 시행일은 미확인. lift_requires: never이므로 페이지는 풀 수 없음. verified_at은 사람이 원문을 읽기 전까지 null임. — 관찰됨 2026-09-30 [P168, P94]
@@ -617,7 +619,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - apple-app-store-terms는 apps.apple.com 페이지와 itunes.apple.com 피드를 요청 전에 멈춤(lift_requires: never). 공개 고객 리뷰 RSS 실행 경로는 제거함. 리뷰 피드가 200으로 응답했다는 조사 기록과 기존 소개 글은 경로의 과거 근거로만 남김. — 규칙 [P101] (`uxresearch/data/routes.json`)
   - 팀 자기 앱의 리뷰는 허가받은 App Store Connect 내보내기 파일로 받음(team_export, 출처 team_provided). 앱·국가·기간·취득 경위를 남기고 처리 범위와 개인정보를 확인함. — 관찰됨 [P102, P129]
 - 예상 중단: `terms_restricted`
-- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 WebObjects·api·includes·v1·검색 쿼리 경로를 막고 앱 상세 페이지는 금지 목록에 없음. AI 명시 그룹은 없음. 페이지·리뷰 피드는 lift_requires: never로 계속 멈춤. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P132]
+- robots 예상 `not_reached`: 2026-09-30 관찰: * 그룹은 WebObjects·api·includes·v1·검색 쿼리 경로를 막고 앱 상세 페이지는 금지 목록에 없음. AI 명시 그룹은 없음. 페이지·리뷰 피드는 lift_requires: never로 계속 멈춤. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P132]
 - 약관 `confirmed`(routes.json `apple-app-store-terms`), 제한 `automated_collection`, `ai_input`
   - 조항: F: "소프트웨어, 기기, 자동화된 프로세스 또는 이와 유사하거나 동등한 수동 프로세스"를 사용한 "스크래핑, 복사, 측정, 분석 또는 모니터링" 금지. — 관찰됨 [P130, P131, P129]
   - 확인: 2026-09-30 AI 조사자가 Apple 미디어 서비스 약관 F절을 읽음. 2026-09-14는 최종 업데이트 날짜이며 효력일은 확인하지 못함. 피드별 예외 조항을 찾지 못함. 사람이 원문을 확인한 날짜는 없음. — 관찰됨 [P130, P131, P129]
@@ -639,7 +641,7 @@ URL을 포함해야 합니다. 한 URL에 걸린 제한은 항목마다 별도 �
   - 공개 페이지는 클릭 없이 처음 몇 개 리뷰만 보여 줌. 렌더는 스크롤만 하고 더 보기 버튼을 누르지 않음. — 규칙 (`references/research/public-page-access.md`)
   - 봇 차단(bot_filter)과 브라우저 확인 화면(js_check)은 opted_out이며 등록 도메인 전체를 이번 실행에서 멈춤. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. 확인 화면을 거친 캡처는 ingest가 받지 않음. — 규칙 (`references/research/public-page-access.md`)
 - 예상 중단: 없음
-- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 /store/getreviews·/store/xhr·/store/search 등 내부·검색 경로를 막음. /store/apps/details는 금지 목록에 없고 AI 명시 그룹은 없음. 실행 때 현재 URL의 robots와 기존 중단을 다시 판정함. — 관찰됨 2026-09-30 [P152]
+- robots 예상 `unknown`: 2026-09-30 관찰: * 그룹은 /store/getreviews·/store/xhr·/store/search 등 내부·검색 경로를 막음. /store/apps/details는 금지 목록에 없고 AI 명시 그룹은 없음. 실행 때 현재 URL의 robots와 기록된 중단을 다시 판정함. — 관찰됨 2026-09-30 [P152]
 - 약관 `unchecked`
   - 조항: Google 약관은 robots.txt 등 기계 판독 지시를 어기는 자동 접근을 금지함. Google Play 약관은 계정명 등 다른 사용자의 개인정보 수집을 금지함.
   - 확인: 2026-09-30 Google 서비스 약관(2026-07-30 시행)과 Google Play 약관(2026-07-29 판)을 읽음. 한국어 Play 페이지도 같은 날 읽음. 사용자 확인은 미확인이므로 unchecked를 유지하고 robots 및 개인정보 중단 규칙을 따름. — 관찰됨 2026-09-30 [P153, P150, P151]
