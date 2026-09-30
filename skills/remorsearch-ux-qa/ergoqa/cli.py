@@ -292,7 +292,7 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--runs", required=True, help="a run directory or a directory of run directories")
         p.add_argument("--profiles", required=True)
         p.add_argument("--scenario", action="append", help="scenario JSON file or directory (repeatable)")
-        p.add_argument("--cross-profile", action="store_true", help="also evaluate each run under every profile with the same device")
+        p.add_argument("--cross-profile", action="store_true", help="evaluate each run under every profile with the same device and orientation; required for runs recorded without a profile")
         p.add_argument("--no-gaze", action="store_true", help="skip screenshot conspicuity (faster)")
         p.add_argument("--out", required=True)
         if name == "swarm":

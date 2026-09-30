@@ -10,6 +10,7 @@ import path from 'node:path';
 
 import { openBrowser } from './browser_transport.mjs';
 import { resolveDevice } from './devices.mjs';
+import { inspectPage } from './inspect.mjs';
 import { STATE_KEY, TW_BINDING, controlOf, extractSnapshot, hitTest, idAtPoint, idForElement, pageInit } from './page_scripts.mjs';
 import {
   BLOCK_MIN_H_CSS, BLOCK_MIN_W_CSS, MOTION_MATCH, RED_EXCESS, RED_RATIO,
@@ -708,6 +709,7 @@ export class WebSession {
     this.blockedConsole = 0;
     this.blockReasons = [];
     this.snapSeq = 0;
+    this.inspectSeq = 0;
     this.lastSnapshotId = null;
     this.focusPoint = null;
     this.lastActive = null;
@@ -1809,6 +1811,15 @@ export class WebSession {
   }
 
   // ------------------------------------------------------------------ snapshots
+
+  async inspect() {
+    if (this.crashed || !this.page || this.page.isClosed()) throw new DriverFailure('cannot inspect a closed or crashed page');
+    const state = await this.page.evaluate(inspectPage);
+    const inspection = path.join(this.runDir, `I-${this.runId}-${String(this.inspectSeq++).padStart(3, '0')}.json`);
+    const record = { run_id: this.runId, step_index: this.steps.length, last_snapshot_id: this.lastSnapshotId, observed_at: isoNow(), ...state };
+    writeJsonAtomic(inspection, record, 0o600);
+    return { result: 'ok', inspection, ...record };
+  }
 
   async targetGroups() {
     const groups = [];

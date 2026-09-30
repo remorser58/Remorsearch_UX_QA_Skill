@@ -20,6 +20,8 @@ import { loadPlaywright } from './playwright_loader.mjs';
 import { DriverFailure, EXIT, UsageError, readJsonFile } from './util.mjs';
 
 const USAGE = `usage:
+  node drivers/web/ergo_drive.mjs devices
+  node drivers/web/ergo_drive.mjs init --url URL --device ID [--task TEXT] --out SC.json
   node drivers/web/ergo_drive.mjs run   --scenario SC.json (--profile P.json | --device ID) --out RUNS_DIR [options]
   node drivers/web/ergo_drive.mjs serve --scenario SC.json (--profile P.json | --device ID) --agent-json AGENT.json --out RUNS_DIR [--port 9477] [options]
 
@@ -67,7 +69,7 @@ function readAgentJson(file) {
 
 const VALUE_FLAGS = new Set([
   'scenario', 'profile', 'out', 'run-id', 'base', 'port', 'flash-sample-ms', 'device', 'device-json', 'orientation',
-  'allow-origin', 'feedback-timeout-ms', 'settle-ms', 'timeout-s', 'idle-timeout-s', 'locale', 'timezone', 'agent', 'agent-json',
+  'allow-origin', 'feedback-timeout-ms', 'settle-ms', 'timeout-s', 'idle-timeout-s', 'locale', 'timezone', 'agent', 'agent-json', 'url', 'task',
 ]);
 const BOOL_FLAGS = new Set(['headed', 'continue-on-error', 'no-auto-scroll', 'no-visual-feedback', 'focus-walk', 'no-focus-walk', 'no-reflow', 'help']);
 
@@ -126,14 +128,58 @@ function emit(obj) {
   process.stdout.write(`${JSON.stringify(obj)}\n`);
 }
 
+function checkCommandFlags(args, allowed) {
+  for (const flag of Object.keys(args.flags)) {
+    if (!allowed.includes(flag)) throw new UsageError(`--${flag} is not supported by ${args.command}`);
+  }
+  if (args.allowOrigins.length) throw new UsageError(`--allow-origin is not supported by ${args.command}`);
+}
+
+function initScenario(args) {
+  checkCommandFlags(args, ['url', 'device', 'task', 'out']);
+  const f = args.flags;
+  for (const flag of ['url', 'device', 'out']) if (!f[flag]) throw new UsageError(`--${flag} is required by init`);
+  if (!CATALOG.has(f.device)) throw new UsageError(`unknown device ${JSON.stringify(f.device)}; use the devices command to list IDs`);
+  if (f.task !== undefined && !f.task.trim()) throw new UsageError('--task must be non-empty');
+  const scenario = {
+    schema_version: 'ergo-scenario.v1',
+    scenario_id: `SC-${slug(path.basename(f.out, path.extname(f.out)), 64)}`,
+    surface: { kind: 'web', url: f.url },
+    task_goal_ko: f.task || 'Complete the task and check that entered values are preserved.',
+    device_ids: [f.device],
+    steps: [],
+    success: null,
+  };
+  normalizeScenario(scenario, { requireSteps: true });
+  const out = path.resolve(f.out);
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  try {
+    fs.writeFileSync(out, `${JSON.stringify(scenario, null, 2)}\n`, { flag: 'wx' });
+  } catch (err) {
+    throw new UsageError(err.code === 'EEXIST' ? `scenario ${out} already exists; choose a new --out path` : `cannot write scenario ${out}: ${err.message}`);
+  }
+  emit({ scenario: out, device_id: f.device });
+}
+
 async function main(argv) {
   const args = parseArgs(argv);
   if (args.flags.help || !args.command) {
     process.stdout.write(`${USAGE}\n`);
     return args.flags.help ? EXIT.OK : EXIT.USAGE;
   }
-  if (args.command !== 'run' && args.command !== 'serve') throw new UsageError(`unknown command ${JSON.stringify(args.command)} (use run or serve)`);
+  if (args.command === 'devices') {
+    checkCommandFlags(args, []);
+    process.stdout.write('id                     viewport (CSS px)  dpr    input\n');
+    for (const d of CATALOG.values()) process.stdout.write(`${d.id.padEnd(22)} ${`${d.viewport_css[0]}x${d.viewport_css[1]}`.padEnd(18)} ${String(d.dpr).padEnd(6)} ${d.input}\n`);
+    return EXIT.OK;
+  }
+  if (args.command === 'init') {
+    initScenario(args);
+    return EXIT.OK;
+  }
+  if (args.command !== 'run' && args.command !== 'serve') throw new UsageError(`unknown command ${JSON.stringify(args.command)} (use devices, init, run or serve)`);
   const f = args.flags;
+  for (const flag of ['url', 'task']) if (f[flag] !== undefined) throw new UsageError(`--${flag} is supported only by init`);
   if (!f.scenario) throw new UsageError('--scenario is required');
   if (!f.out) throw new UsageError('--out is required');
   if (!f.profile && !f.device && !f['device-json']) throw new UsageError('--profile or --device is required');
@@ -305,7 +351,7 @@ async function main(argv) {
         // A screenshot-channel operator gets no snapshot JSON path (serve.mjs DOM_REPLY_KEYS).
         ...(session.opts?.agentInfo?.input_channel === 'screenshot' ? {} : { snapshot: path.join(runDir, `${session.lastSnapshotId}.json`) }),
         png: path.join(runDir, `${session.lastSnapshotId}.png`),
-        endpoints: ['GET /health', 'GET /snapshot', 'POST /act', 'POST /note', 'POST /finish'],
+        endpoints: ['GET /health', 'GET /snapshot', 'GET /inspect', 'POST /act', 'POST /note', 'POST /finish'],
       }),
       onDone: (r, err) => {
         if (err) {
