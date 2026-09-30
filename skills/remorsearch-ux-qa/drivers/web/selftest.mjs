@@ -786,7 +786,8 @@ async function focusProbeTest(base, tmp) {
     task_goal_ko: '메뉴와 대화상자를 쓴다', device_ids: ['desktop-1920'], targets: {},
     steps: [click('#tick-btn'), click('#menu2-btn'), click('#mi-2'), click('#fb'), click('#card-img'), click('#fake-radio'), click('#cb-l'),
       click('#disc-btn'), click('#disc-btn'), click('#mui-btn'), click('#mui-close'), click('#late-btn'), click('#late-close'), click('#wi-btn'), click('#pair-a'), click('#pair-b'),
-      click('#card2-img'), click('#dock-btn'), click('#dock-close'), click('#pulse-btn'), { action: 'type', target: '#ac', text: '충전' }, click('#ac-go')],
+      click('#card2-img'), click('#dock-btn'), click('#dock-close'), click('#pulse-btn'), { action: 'type', target: '#ac', text: '충전' }, click('#ac-go'),
+      { action: 'type', target: '#fill', text: '5' }, click('#fill-btn'), click('#dead-btn')],
     success: { url_contains: 'focus2' },
   };
   writeJson(path.join(tmp, 'focus2.json'), sc);
@@ -837,6 +838,11 @@ async function focusProbeTest(base, tmp) {
     step('#ac-go')?.focus_probe?.skipped === 'field_focused', step('#ac-go')?.focus_probe);
   check('focus probe: focus is not given back to an ordinary previous control (blurred instead)',
     step('#pair-b')?.focus_probe?.restored === 'blur', step('#pair-b')?.focus_probe);
+  check('feedback: a script filling the focused field (value property) is feedback, although the field is masked for its caret',
+    step('#fill-btn')?.feedback_source === 'dom_mutation' && step('#fill-btn')?.feedback_latency_ms < 300, [step('#fill-btn')?.feedback_source, step('#fill-btn')?.feedback_latency_ms]);
+  check("feedback: a probed click on a button that does nothing has no feedback (the root's modality marker is not a response)",
+    step('#dead-btn')?.focus_probe && !step('#dead-btn').focus_probe.skipped && step('#dead-btn')?.feedback_source === null,
+    [step('#dead-btn')?.focus_probe?.skipped, step('#dead-btn')?.feedback_source, step('#dead-btn')?.feedback_latency_ms]);
   check('focus2: every step ok', run.steps.every((s) => s.result === 'ok'), run.steps.map((s) => [s.action.target, s.result, s.error]));
 }
 

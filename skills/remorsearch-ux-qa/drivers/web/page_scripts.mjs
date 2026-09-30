@@ -57,11 +57,15 @@ export function pageInit(cfg) {
     state.mutations++;
   };
   // Only real changes count: a script that writes an attribute or text node with the
-  // value it already has (a modality script on every mousedown, a style re-set) changes
-  // nothing on screen.
+  // value it already has (a style re-set) changes nothing on screen. Attributes of <html>
+  // and <body> are page-state markers (input modality, scroll lock, theme): what they
+  // change on screen, if anything, is seen by the visual comparison.
   const changed = (m) => {
     if (m.type === 'childList') return m.addedNodes.length > 0 || m.removedNodes.length > 0;
-    if (m.type === 'attributes') return m.oldValue !== m.target.getAttribute(m.attributeName);
+    if (m.type === 'attributes') {
+      if (m.target === document.documentElement || m.target === document.body) return false;
+      return m.oldValue !== m.target.getAttribute(m.attributeName);
+    }
     return m.oldValue !== m.target.data;
   };
   try {
@@ -83,6 +87,25 @@ export function pageInit(cfg) {
       record();
     }, true);
   } catch (e) { /* ignore */ }
+
+  // A script that changes a field's value (an amount chip filling the amount field)
+  // changes what is on screen without a DOM mutation or an input event.
+  for (const C of [window.HTMLInputElement, window.HTMLTextAreaElement]) {
+    try {
+      const d = C && Object.getOwnPropertyDescriptor(C.prototype, 'value');
+      if (!d || !d.get || !d.set || !d.configurable) continue;
+      Object.defineProperty(C.prototype, 'value', {
+        configurable: true,
+        enumerable: d.enumerable,
+        get() { return d.get.call(this); },
+        set(v) {
+          const before = d.get.call(this);
+          d.set.call(this, v);
+          if (this.isConnected && d.get.call(this) !== before && !NO_ECHO.includes((this.type || '').toLowerCase())) record();
+        },
+      });
+    } catch (e) { /* leave the property as it is */ }
+  }
 
   const windows = Array.isArray(cfg.windows) ? cfg.windows : [];
   if (!windows.length || !cfg.binding) return;

@@ -246,6 +246,10 @@ class FocusManagement(unittest.TestCase):
         dialog = {"selector": "#sheet > div:nth-of-type(2)", "dom_id": None, "kind": "modal", "contains_focus": False, "box": {"x": 20, "y": 300, "w": 320, "h": 300}}
         obs = checks.check_focus_management(self.ctx_for([], [scrim, dialog], focus, [ok]))
         self.assertEqual([o.element_key.split("|")[0] for o in obs], ["#sheet > div:nth-of-type(2)"])
+        # A backdrop seen anew while its dialog was already open (a busy overlay had covered it).
+        old_dialog = dict(dialog, contains_focus=True)
+        c = self.ctx_for([old_dialog], [scrim, old_dialog], focus, [ok])
+        self.assertEqual(checks.check_focus_management(c), [])
         # A disclosure the focused trigger controls, and one the next Tab reaches.
         mm = {"selector": "#mm", "dom_id": "mm", "kind": "sheet", "contains_focus": False, "box": box}
         nxt = {"selector": "#nx", "dom_id": "nx", "kind": "dialog", "contains_focus": False, "box": box, "follows_focus": True}

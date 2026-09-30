@@ -2048,11 +2048,12 @@ def check_focus_management(ctx: Context) -> list[Observation]:
             if kind == "sheet":
                 # An undeclared painted box: only a layer with something to operate needs
                 # focus (a busy overlay or a status sheet announces itself), and a scrim
-                # around a newly opened dialog is that dialog's layer.
+                # around a dialog is that dialog's layer.
                 if not any(_inside(e["box"], box) for e in interactive):
                     continue
-                if any(other is not layer and other.get("kind") in ("modal", "dialog") and _inside(other.get("box") or {}, box) for other in new_layers):
-                    continue
+                if any(other is not layer and isinstance(other, dict) and other.get("kind") in ("modal", "dialog") and _inside(other.get("box") or {}, box)
+                       for other in ctx.snapshot.get("layers") or []):
+                    continue  # the backdrop of a dialog (new or already open): the dialog carries focus
             element = next((e for e in ctx.elements if layer.get("dom_id") and e.get("dom_id") == layer["dom_id"]), None)
             key = element_key(element) if element else f"{layer.get('selector') or '?'}|{layer.get('kind')}"
             where = "문서 본문(body)으로 떨어져" if focus.get("on_body") else "층 바깥에 남아"

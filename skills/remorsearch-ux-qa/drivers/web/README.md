@@ -159,7 +159,9 @@ they belong to (0 = initial load), so a step can own two snapshots.
   background-image/gradient is underneath (unknown, not guessed).
 - **Feedback latency**: an init-script `MutationObserver` timestamps DOM changes
   (only real ones: an attribute or text node written with the value it already had
-  changes nothing on screen), and `input` events of text-like fields count too (a typed character shows in the
+  changes nothing on screen, and attributes of `<html>`/`<body>` are page-state
+  markers such as input modality; a script that changes a field's `value` counts),
+  and `input` events of text-like fields count too (a typed character shows in the
   field without any DOM mutation; checkbox, radio, range, color, file and select
   inputs are left out, since their own look is what the user sees, and are judged by
   mutations and pixels); both are reported as `dom_mutation`.

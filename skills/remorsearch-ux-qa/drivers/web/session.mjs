@@ -1330,6 +1330,11 @@ export class WebSession {
       await sleep(FOCUS_ANIM_GAP_MS);
       const off2 = await grab();
       const allOff2 = await this.viewportFrame(cdp);
+      // Modality scripts mark the root (data-whatinput, a "user-is-tabbing" class): its
+      // attributes are put back after the probe, so the click does not flip them back
+      // and pass for a response.
+      const rootAttrs = await page.evaluate(() => [document.documentElement, document.body].map((n) => (n
+        ? Object.fromEntries([...n.attributes].map((a) => [a.name, a.value])) : null))).catch(() => null);
       // Keyboard modality: F24 (CDP; no browser action, on no physical keyboard). Shift
       // gives Chromium's :focus-visible but modality scripts ignore modifier keys
       // (what-input's ignore list, Angular CDK), so pages that hide rings in "mouse"
@@ -1345,7 +1350,7 @@ export class WebSession {
         while (a && a.shadowRoot && a.shadowRoot.activeElement) a = a.shadowRoot.activeElement;
         return { focused: a === el, visible: el.matches(':focus-visible'), scroll: [window.scrollX, window.scrollY] };
       });
-      const restore = () => page.evaluate(() => {
+      const restore = () => page.evaluate((attrs) => {
         // Give focus back to what had it where losing it would change the page (see
         // probeTarget); else leave none.
         const el = window.__ergoProbeEl;
@@ -1356,7 +1361,13 @@ export class WebSession {
         window.__ergoProbeKeep = null;
         if (keep && p && p.isConnected && p !== el) p.focus({ preventScroll: true });
         else if (el) el.blur();
-      }).catch(() => {});
+        [document.documentElement, document.body].forEach((n, i) => {
+          const was = attrs && attrs[i];
+          if (!n || !was) return;
+          for (const a of [...n.attributes]) if (!(a.name in was)) n.removeAttribute(a.name);
+          for (const [k, v] of Object.entries(was)) if (n.getAttribute(k) !== v) n.setAttribute(k, v);
+        });
+      }, rootAttrs).catch(() => {});
       if (!got || !got.focused) {
         await restore();
         step.focus_probe = { skipped: 'focus_refused' };
