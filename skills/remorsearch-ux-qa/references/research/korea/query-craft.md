@@ -57,11 +57,27 @@
   미확인(출처 없는 설계 가정). 네이버가 robots.txt로 AI 학습·검색 크롤러를 막는다는 보도는
   `references/research/korea/platform-map.md`에 있음 — 미확인(요약)
 - 검색 결과가 약관 제한 호스트(`uxresearch/data/routes.json`의 `terms_restricted`)를 가리키면 reader는 요청 전에
-  멈춤. 사용자가 약관을 직접 읽고 브리프에 적은 확인으로 `reported` 항목이 풀린 실행만 예외이며, `confirmed` 항목은
-  풀리지 않음. 유튜브 영상 주소는 사용자 본인 키로 부르는 Data API로만 읽음. — 규칙
+  멈춤. `reported`는 사용자가 그 항목의 약관 문서를 직접 읽고 `access_policy.terms_checked`에
+  `result: permits_this_reading`으로 적은 실행에서만 풀림. `lift_requires: written_permission`이면 운영사의 사전
+  서면 허락을 `permission {granted_by, granted_on, reference}`에 함께 적어야 함. `host`는 항목의 호스트이거나 더
+  좁고 읽을 URL을 포함해야 함. `checked_on`은 `effective_from`이 있으면 그날 이후이며 오늘 기준 365일 이내여야 하고
+  미래 날짜는 무효임. 한 URL에 걸린 항목은 각각 별도 확인으로 모두 풀어야 함. 풀린 항목은 모든 호스트를 합쳐
+  실행당 문서 10건까지 읽음. `confirmed`는 풀리지 않으며 에이전트는 확인 항목을 쓰지 않음. — 규칙
+- X 페이지와 oEmbed는 `x-terms`에 걸리며 서면 허락을 포함한 확인으로 풀리기 전에는 모두 멈춤. `official_route`는
+  null임. naver.me, me2.do, coupa.ng, t.co 같은 짧은 주소도 요청 전에 멈춤. 네이버 카페 공지는 `terms_url`이
+  null이라 사람이 공지 원문 주소를 기록하기 전에는 풀리지 않음. — 규칙
+- 봇 차단(`bot_filter`)과 브라우저 확인 화면(`js_check`)은 `opted_out`이며 등록 도메인 전체를 이번 실행에서 멈춤.
+  robots.txt 자리에 확인 화면이 와도 같음. 거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를
+  기다리지 않음. 확인 화면 표지가 있거나 `waited_ms`가 0보다 큰 캡처는 `ingest`가 받지 않음. — 규칙
+- 유튜브 영상 주소는 사용자 본인 키로 부르는 Data API로만 읽음. 키 보유자는 YouTube API 약관과 개발자 정책을 따름.
+  승인 없이 API Data로 새 데이터·파생 데이터·지표를 만드는 제한은 미확인(요약)이며 적용은 법률가 판단임. 그동안
+  API 항목은 정성 근거(풀어 쓰기, 짧은 인용의 존재 근거)로만 쓰고 감정·분류·개수 지표를 계산하지 않음. 이 자료를
+  용어집의 극성 분류나 집계에 넣지 않음(`references/research/korea/legal-checklist.md` L17). — 규칙
 - 비공개 채널이나 약관 제한으로 멈춘 호스트의 글은 검색 결과의 요약문으로 대신하지 않음. 요약문은 단서로만 남기고
   그 호스트를 수집 공백으로 적음. 같은 글을 다른 호스트, 미러, 캐시, 보관소, 앱에서 찾지 않음
   (`references/research/public-page-access.md` 7절). — 규칙
+- 아카이브, 번역·리더 프록시, AMP 캐시, 대체 프런트엔드 같은 제3자 사본은 `third_party_copy`로 거절함.
+  브리프가 허용한 제품 공식 페이지의 과거 웨이백 사본만 예외임. — 규칙
 
 ## 3. 씨앗 단어(후보)
 

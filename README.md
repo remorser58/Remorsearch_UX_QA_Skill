@@ -157,9 +157,10 @@ accepted as an alias). Keys are read from environment variables only, never from
 file. A missing key is a coverage gap and a question to you, never a reason to read
 the page another way. As the key holder you follow YouTube's API terms and
 developer policies. The reader stamps each API item with `retention_until`, 30 days
-after the fetch, and deletes its own page text when the run closes; you delete or
-re-read items kept in bundles or reports by that date (`validate_bundle.py` reports
-one that is past it).
+after the fetch, and deletes its own page text when the run closes; you must delete
+or re-read each item kept in bundles or reports by its `retention_until`
+(`validate_bundle.py` reports one that is past it), and no bundle items are deleted
+automatically yet.
 
 **Plain limits.** Most Naver content ends as a coverage gap. Press reports and
 quotes say that Naver's terms and a cafe notice of 2026-08-31 restrict automated

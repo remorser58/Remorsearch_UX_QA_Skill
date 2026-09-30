@@ -931,7 +931,7 @@ The one adapter in this version is `uxresearch/youtube.py`.
   (`api_quota`). When the daily quota runs out, the URL is deferred (exit 5,
   `quota_exhausted`) until the quota resets at midnight in the route's
   `quota_reset_tz`, and the API host is held until then. A rate-limit signal gets
-  one wait; a second stops the API host (`rate_limit`). A rejected key stops the
+  one wait; a second stops the API site's registrable domain (`rate_limit`). A rejected key stops the
   API host for the run (`key_rejected`), so a fixed key needs a new run.
 - A video that is gone, or whose comments are turned off, ends as `gone`
   (`video_not_found`, `comments_disabled`). A failure after at least one comment
@@ -941,12 +941,15 @@ The one adapter in this version is `uxresearch/youtube.py`.
   keys. Channel IDs, channel URLs and avatars are never stored. Video and comment
   IDs are like post URLs: they stay in the bundle, never in shared reports.
 - The key holder accepts and follows the YouTube API Services Terms of Service,
-  the Developer Policies and their data-storage and derived-metrics rules. Search
-  summaries report an amendment that permits sentiment analysis and
-  categorisation of API data (미확인, unverified: the amendment was not read in
-  the original), so counsel or the owner decides before such a metric is
-  published. Numbers the team derives from API data (counts, shares, sentiment)
-  are the team's own analysis and are never presented as YouTube metrics.
+  the Developer Policies and their data-storage and derived-metrics rules. The
+  Developer Policies bar using API Data to create new or derived data or metrics
+  unless approved; the derived-metrics policy names viewer sentiment analysis and
+  content categorisation and tagging as examples (미확인(요약), unverified: read
+  only through search summaries). Whether an approval or exception covers the
+  user's API project and intended analysis is for counsel to decide (법률가 판단).
+  Until that is resolved, API items are qualitative evidence only: paraphrases and
+  short quotes as evidence that an experience was reported. No sentiment,
+  categorisation or count metrics are computed from them.
 - Every item carries `retention_until`, the fetch time plus 30 days (the route's
   `retention_days`, at most 30). Keep API data no longer: delete the item, or
   read it again, by then. The reader stamps the date and deletes its own page

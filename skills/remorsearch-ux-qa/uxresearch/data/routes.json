@@ -246,7 +246,7 @@
          "comments_url": "https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&textFormat=plainText&order=relevance&maxResults={page_size}&videoId={id}&key={key}",
          "page_size": 100, "max_pages": 2, "quota_units_per_call": 1, "quota_reset_tz": "America/Los_Angeles",
          "retention_days": 30,
-         "policy_note": "The key holder accepts and follows the YouTube API Services Terms of Service, the Developer Policies and their data-storage and derived-metrics rules. Keep API data at most 30 days (retention_until), then delete it or read it again: the reader stamps the date and purges its own run files, but excerpts copied into reports must be deleted or refreshed by the user. Numbers derived from API data are the team's own analysis, never YouTube metrics; whether sentiment or categorisation is permitted is unverified (read only through search summaries). Never profile commenters, and never record age, race, religion, political leaning, sexual orientation, health or another protected-attribute cue against an author key (use such cues in segment-level claims only).",
+         "policy_note": "The key holder accepts and follows the YouTube API Services Terms of Service, the Developer Policies and their data-storage and derived-metrics rules. The Developer Policies bar using API Data to create new or derived data or metrics unless approved; the derived-metrics policy names viewer sentiment analysis and content categorisation and tagging as examples (미확인(요약), unverified: read only through search summaries; 법률가 판단, counsel decides whether approval covers this project and analysis). Until that is resolved, API items are qualitative evidence only: paraphrases and short quotes as evidence that an experience was reported. No sentiment, categorisation or count metrics are computed from them. Keep API data at most 30 days (retention_until): the user must delete or re-read each item in a bundle or report by that date. The reader stamps the date and purges its own run files; bundle items are not deleted automatically yet. Never profile commenters, and never record age, race, religion, political leaning, sexual orientation, health or another protected-attribute cue against an author key (use such cues in segment-level claims only).",
          "sources": ["https://developers.google.com/youtube/v3/docs/videos/list", "https://developers.google.com/youtube/v3/docs/commentThreads/list", "https://developers.google.com/youtube/v3/determine_quota_cost", "https://developers.google.com/youtube/v3/getting-started", "https://developers.google.com/youtube/terms/developer-policies"]}
       ],
       "alternates": [],
@@ -344,7 +344,7 @@
       ],
       "alternates": [],
       "login_hosts": [],
-      "terms_note": "oEmbed of single posts only; no timelines and no search.",
+      "terms_note": "X pages and every route to them, including oEmbed at publish.twitter.com and short links at t.co, stop under the reported x-terms entry until the user's entry-specific terms check records prior written permission (permission {granted_by, granted_on, reference}) and lifts it for that run. oEmbed is not an official-only route: x-terms has official_route null.",
       "verified_at": null
     },
     {
