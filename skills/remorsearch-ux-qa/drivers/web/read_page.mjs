@@ -9,13 +9,12 @@
 // What it does: a fresh anonymous browser context (no stored cookies or sign-in),
 // the browser's own user agent (no stealth, no disguise), images, media and fonts
 // blocked, then scrolling only. It never clicks, types or presses keys. A check
-// that clears by itself ("checking your browser") is waited for up to
-// --max-wait-ms (at most 15 s). An interactive human check is reported and never
-// solved; a password field is reported (the reader's verdict decides whether the
-// page is gated).
+// of any kind stops the render immediately, even when it would clear by itself.
+// --max-wait-ms is accepted for compatibility but never waits out a check.
+// A password field is reported (the reader's verdict decides whether the page is gated).
 //
-// Exit codes (the reader's scheme): 0 read (document written); 3 stopped at an
-// interactive human check (document written, challenge.interactive true); 2 usage
+// Exit codes (the reader's scheme): 0 read (document written); 3 stopped at a
+// browser or human check (document written with empty text); 2 usage
 // or refused address; 4 unread (navigation failed, no document, browser missing).
 
 import fs from 'node:fs';
@@ -24,6 +23,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { CATALOG, hasTouch, isMobile } from './devices.mjs';
+import { openBrowser } from './browser_transport.mjs';
 import { loadPlaywright } from './playwright_loader.mjs';
 import { isoNow, sleep, writeJsonAtomic } from './util.mjs';
 
@@ -36,13 +36,14 @@ const JSON_LD_MAX_CHARS = 1_000_000;
 const WAIT_CAP_MS = 15000;
 const SCROLL_CAP = 50;
 const SCROLL_PAUSE_MS = 400;
-const POLL_MS = 500;
 const BLOCKED = ['image', 'media', 'font'];
+const CHECK_BINDING = '__remorsearchPageReadCheck';
 
 const USAGE = `usage: node drivers/web/read_page.mjs URL [--out FILE] [--device ID] [--max-wait-ms N<=15000]
                                      [--scrolls N<=50] [--timeout-s N] [--allow-local]
-Writes one ux-page-read.v1 document to FILE (or stdout). Exit 0 read, 3 stopped at an
-interactive human check, 2 usage or refused address, 4 unread.`;
+Writes one ux-page-read.v1 document to FILE (or stdout). Exit 0 read, 3 stopped at a
+browser or human check, 2 usage or refused address, 4 unread.
+--max-wait-ms is accepted for compatibility; checks are never waited out.`;
 
 class Usage extends Error {}
 
@@ -104,21 +105,44 @@ function checkUrl(raw, allowLocal) {
 function loadMarkers() {
   try {
     const m = JSON.parse(fs.readFileSync(MARKERS, 'utf8'));
-    const pick = (k) => ({
-      src: (m[k] && m[k].src) || [],
-      idents: (m[k] && m[k].idents) || [],
-      inputs: (m[k] && m[k].inputs) || [],
-      words: Object.values((m[k] && m[k].words) || {}).flat(),
-    });
+    const strings = (v) => Array.isArray(v) && v.every((s) => typeof s === 'string' && s.trim().length > 0);
+    const pick = (k) => {
+      const set = m && m[k];
+      if (!set || typeof set !== 'object' || Array.isArray(set)
+        || !strings(set.src) || !strings(set.idents)
+        || (set.inputs !== undefined && !strings(set.inputs))
+        || !set.words || typeof set.words !== 'object' || Array.isArray(set.words)
+        || !Object.values(set.words).every(strings)) throw new Error(`invalid ${k} marker data`);
+      const words = Object.values(set.words).flat();
+      if (!set.src.length || !set.idents.length || !words.length) throw new Error(`empty ${k} marker data`);
+      return { src: set.src, idents: set.idents, inputs: set.inputs || [], words };
+    };
     return { human: pick('human_check'), js: pick('js_check') };
-  } catch {
-    // The skill folder ships the markers; without them nothing is recognised as a check.
-    return { human: { src: [], idents: [], inputs: [], words: [] }, js: { src: [], idents: [], inputs: [], words: [] } };
+  } catch (err) {
+    throw new Error(`cannot read or parse challenge markers at ${MARKERS}: ${err.message}`);
   }
 }
 
 /** In-page: which challenge markers are present (scripts, frames, ids, classes, inputs, visible text). */
 function findMarkers(markers) {
+  if (markers.watch) {
+    if (window !== window.top) return;
+    // Use the same detector while navigation/load/scroll is pending, so a late
+    // check cannot disappear during a wait and be mistaken for an open page.
+    const inspect = () => {
+      const hits = findMarkers({ human: markers.human, js: markers.js });
+      if (hits.human.length || hits.js.length) {
+        observer.disconnect();
+        window[markers.binding](hits).catch(() => {});
+      }
+    };
+    const observer = new MutationObserver(inspect);
+    observer.observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
+    window.addEventListener('load', inspect, { once: true });
+    window.addEventListener('scroll', inspect, { passive: true });
+    inspect();
+    return;
+  }
   const lower = (s) => String(s || '').toLowerCase();
   const text = lower(document.body ? document.body.innerText : '').slice(0, 20000);
   const srcs = [...document.querySelectorAll('script[src], iframe[src]')].map((n) => lower(n.getAttribute('src')));
@@ -194,21 +218,31 @@ async function main() {
     return 2;
   }
   const report = (exit, extra) => process.stdout.write(`${JSON.stringify({ event: 'read_page', exit, url: args.url, ...extra })}\n`);
-  let pw;
+  let markers;
   try {
-    ({ pw } = loadPlaywright());
+    markers = loadMarkers();
+  } catch (err) {
+    report(4, { reason: 'invalid_markers', detail: err.message });
+    return 4;
+  }
+  let pw;
+  let pwInfo;
+  try {
+    ({ pw, info: pwInfo } = loadPlaywright());
   } catch (err) {
     report(4, { reason: 'no_browser', detail: String(err.message).slice(0, 300) });
     return 4;
   }
   const dev = CATALOG.get(args.device);
   const startedAt = isoNow();
-  const markers = loadMarkers();
   let browser = null;
+  let transport = null;
+  let context = null;
   try {
-    browser = await pw.chromium.launch({ headless: true, timeout: 60000 });
+    transport = await openBrowser(pw, pwInfo, { headless: true, timeout: 60000 });
+    browser = transport.browser;
     // Viewport only: the browser keeps its own user agent (no disguise).
-    const context = await browser.newContext({
+    context = await browser.newContext({
       viewport: { width: dev.viewport_css[0], height: dev.viewport_css[1] },
       deviceScaleFactor: dev.dpr,
       hasTouch: hasTouch(dev),
@@ -218,11 +252,30 @@ async function main() {
       javaScriptEnabled: true,
     });
     await context.route('**/*', (route) => (BLOCKED.includes(route.request().resourceType()) ? route.abort() : route.continue()));
+    let observed = null;
+    let stopCheck;
+    const checkSeen = new Promise((resolve) => { stopCheck = resolve; });
+    await context.exposeBinding(CHECK_BINDING, (source, hits) => {
+      if (source.frame.parentFrame() || !hits || !Array.isArray(hits.human) || !Array.isArray(hits.js)
+        || ![...hits.human, ...hits.js].every((s) => typeof s === 'string') || (!hits.human.length && !hits.js.length)) return;
+      observed = { human: [...new Set([...(observed?.human || []), ...hits.human])],
+        js: [...new Set([...(observed?.js || []), ...hits.js])] };
+      stopCheck();
+    });
+    await context.addInitScript(findMarkers, { ...markers, watch: true, binding: CHECK_BINDING });
     const page = await context.newPage();
     page.on('dialog', (d) => d.dismiss().catch(() => {}));
     let response;
+    page.on('response', (r) => {
+      const req = r.request();
+      if (req.isNavigationRequest() && req.frame() === page.mainFrame()) response = r;
+    });
     try {
-      response = await page.goto(args.url, { waitUntil: 'domcontentloaded', timeout: args.timeoutS * 1000 });
+      const navigated = await Promise.race([
+        page.goto(args.url, { waitUntil: 'domcontentloaded', timeout: args.timeoutS * 1000 }),
+        checkSeen.then(() => null),
+      ]);
+      if (navigated) response = navigated;
     } catch (err) {
       report(4, { reason: 'navigation_failed', detail: String(err.message).split('\n')[0].slice(0, 300) });
       return 4;
@@ -231,40 +284,51 @@ async function main() {
       report(4, { reason: 'no_document' });
       return 4;
     }
-    await page.waitForLoadState('load', { timeout: 5000 }).catch(() => {});
+    const hasCheck = (hits) => hits.human.length > 0 || hits.js.length > 0;
+    // Inspect before any load wait: a self-clearing check is still a stop.
+    const inspect = async () => {
+      if (observed) return observed;
+      const hits = await page.evaluate(findMarkers, markers);
+      return observed || hits;
+    };
+    let found = await inspect();
+    if (!hasCheck(found)) {
+      await Promise.race([page.waitForLoadState('load', { timeout: 5000 }).catch(() => {}), checkSeen]);
+      found = await inspect();
+    }
     const redirects = [];
     for (let req = response.request().redirectedFrom(); req && redirects.length < 20; req = req.redirectedFrom()) {
       const r = await req.response().catch(() => null);
       redirects.unshift({ status: r ? r.status() : 0, url: req.url().slice(0, 8192) });
     }
-    // A check that clears by itself: wait while its markers stay and no human check shows.
-    const t0 = Date.now();
-    let found = await page.evaluate(findMarkers, markers).catch(() => ({ human: [], js: [] }));
-    const checking = found.js.length > 0 && !found.human.length;
-    while (!found.human.length && found.js.length && Date.now() - t0 < args.maxWait) {
-      await sleep(POLL_MS);
-      await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => {});
-      found = await page.evaluate(findMarkers, markers).catch(() => ({ human: [], js: [] }));
-    }
-    const waited = checking ? Math.min(WAIT_CAP_MS, Date.now() - t0) : 0;
-    const interactive = found.human.length > 0;
     let scrolls = 0;
-    if (!interactive) {
-      for (; scrolls < args.scrolls; scrolls++) {
+    if (!hasCheck(found)) {
+      for (; scrolls < args.scrolls;) {
+        found = await inspect();
+        if (hasCheck(found)) break;
         const atEnd = await page.evaluate(() => {
           const before = window.scrollY;
           window.scrollBy(0, Math.max(200, Math.floor(window.innerHeight * 0.9)));
           return window.scrollY === before || window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
-        }).catch(() => true);
-        await sleep(SCROLL_PAUSE_MS);
-        if (atEnd) {
-          scrolls += 1;
-          break;
-        }
+        });
+        scrolls += 1;
+        found = await inspect();
+        if (hasCheck(found)) break;
+        await Promise.race([sleep(SCROLL_PAUSE_MS), checkSeen]);
+        found = await inspect();
+        if (hasCheck(found) || atEnd) break;
       }
     }
-    const cap = await page.evaluate(capture, { blocks: JSON_LD_MAX_BLOCKS, chars: JSON_LD_MAX_CHARS });
-    const headers = await response.allHeaders().catch(() => ({}));
+    if (!hasCheck(found)) found = await inspect();
+    // A stopped page contributes only navigation and challenge metadata.
+    const emptyCapture = { title: '', lang: '', text: '', json_ld: [], og: {}, login_form: false };
+    let cap = hasCheck(found) ? emptyCapture
+      : await page.evaluate(capture, { blocks: JSON_LD_MAX_BLOCKS, chars: JSON_LD_MAX_CHARS });
+    let headers = hasCheck(found) ? {} : await response.allHeaders().catch(() => ({}));
+    if (!hasCheck(found)) found = await inspect();
+    const stopped = hasCheck(found);
+    const interactive = found.human.length > 0;
+    if (stopped) { cap = emptyCapture; headers = {}; }
     const tdm = cap.tdm ?? (headers['tdm-reservation'] !== undefined ? String(headers['tdm-reservation']) : null);
     const meta = { og: cap.og, tdm_reservation: tdm };
     if (cap.description) meta.description = cap.description.slice(0, 2000);
@@ -283,24 +347,27 @@ async function main() {
       challenge: { interactive, markers: [...found.human, ...found.js].slice(0, 20).map((m) => m.slice(0, 100)) },
       login_form: cap.login_form,
       context: 'anonymous',
-      waited_ms: waited,
+      waited_ms: 0,
       scrolls,
       blocked_types: BLOCKED,
       device_id: args.device,
       driver_version: DRIVER_VERSION,
+      browser_connected: transport.connected,
+      browser_version: transport.browserVersion,
+      playwright_client_version: transport.playwrightVersion,
       started_at: startedAt,
       finished_at: isoNow(),
     };
-    if (args.out) writeJsonAtomic(args.out, doc);
+    if (args.out) writeJsonAtomic(args.out, doc, 0o600);
     else process.stdout.write(`${JSON.stringify(doc)}\n`);
-    const exit = interactive ? 3 : 0;
-    if (args.out) report(exit, { out: args.out, status: doc.status, chars: doc.text.length, challenge: interactive, login_form: doc.login_form });
+    const exit = stopped ? 3 : 0;
+    if (args.out) report(exit, { out: args.out, status: doc.status, chars: doc.text.length, challenge: stopped, login_form: doc.login_form });
     return exit;
   } catch (err) {
     report(4, { reason: 'browser_error', detail: String(err.message).split('\n')[0].slice(0, 300) });
     return 4;
   } finally {
-    if (browser) await browser.close().catch(() => {});
+    if (transport) await transport.close([context]);
   }
 }
 

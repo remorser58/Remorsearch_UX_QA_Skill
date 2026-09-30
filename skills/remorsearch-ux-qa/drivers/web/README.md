@@ -3,7 +3,7 @@
 Drives a real Chromium page with Playwright, emulating one catalogued device, and
 writes the evidence that `ergoqa analyze` consumes: `ergo-snapshot.v1` files
 (screenshot + measured element geometry/colour) and one `ergo-run.v1` per run.
-The contract is [`docs/ergonomic-swarm-spec.md`](../../docs/ergonomic-swarm-spec.md)
+The contract is [repository documentation: `docs/ergonomic-swarm-spec.md`](https://github.com/remorser58/Remorsearch_UX_QA_Skill/blob/main/docs/ergonomic-swarm-spec.md)
 sections 3, 5 and 10. The driver measures; it never scores ergonomics and never
 role-plays a user.
 
@@ -11,15 +11,49 @@ Requirements: Node.js 22 and `playwright@1.56.1` with its Chromium. Install once
 
 ```sh
 cd drivers/web
-npm install                 # playwright 1.56.1 into drivers/web/node_modules
+npm ci                      # pinned packages from package-lock.json
 npx playwright install chromium
-node selftest.mjs           # a few minutes; expects "243 passed", 0 failed
+node selftest.mjs           # a few minutes; expects 0 failed
 ```
 
 The package is resolved by normal module resolution (so `drivers/web/node_modules`
 or a global install both work), then each `NODE_PATH` entry, then
 `/opt/node22/lib/node_modules/playwright` (a pre-installed cloud container path).
 The driver itself never installs anything.
+
+## Hosts that sandbox commands (Codex)
+
+When a host's command sandbox cannot launch Chromium, start the browser server in
+a terminal outside that sandbox, using the same pinned Playwright package:
+
+```sh
+cd skills/remorsearch-ux-qa/drivers/web  # from the repository root
+npm ci
+node browser_server.mjs --port 39123  # omit --port to choose an unused port
+```
+
+The server prints one `export REMORSEARCH_BROWSER_WS=ws://127.0.0.1:...` line.
+Export that value in the environment inherited by the agent's commands. The
+server runs until Ctrl-C or SIGTERM. Its endpoint has a random path and listens
+only on 127.0.0.1. The clients accept only `ws://` URLs on `127.0.0.1`, `localhost`
+or `[::1]`, without credentials or fragments. An invalid value fails the run;
+it never falls back to launching locally.
+
+Both the live driver and the page reader use `chromium.connect` with the
+Playwright protocol to a `launchServer` endpoint. Playwright rejects incompatible
+client/server versions at connection time; keep both packages at 1.56.1. This
+changes only who launches Chromium. Each run creates a fresh context and closes
+its own context before disconnecting. It does not close the shared server or use
+another client's pages, cookies or storage.
+
+Evidence collection, catalogued devices, network policy and every access-control
+stop remain the same. The run records `browser_connected`, `browser_version` and
+`playwright_client_version` next to the existing driver metadata; page captures
+record the same fields. Run the complete self-test through the connection path:
+
+```sh
+REMORSEARCH_BROWSER_WS=ws://127.0.0.1:PORT/PATH node selftest.mjs
+```
 
 ## Commands
 
@@ -68,27 +102,43 @@ run directory exists). `run` and `serve` print one JSON line per event on stdout
 by the swarm runs.
 
 ```bash
-node drivers/web/read_page.mjs https://example.com/post/1 --out capture.json [--device desktop-1920]
-python3 scripts/ux_research.py ingest capture.json --run RUN_DIR --url https://example.com/post/1 --context anonymous
+capture_dir=$(mktemp -d "${TMPDIR:-/tmp}/remorsearch-capture.XXXXXXXX")
+chmod 700 "$capture_dir"
+trap 'rm -f "$capture_dir/page.json"; rmdir "$capture_dir"' EXIT
+node drivers/web/read_page.mjs https://example.com/post/1 --out "$capture_dir/page.json" [--device desktop-1920]
+python3 scripts/ux_research.py ingest "$capture_dir/page.json" --run RUN_DIR --url https://example.com/post/1 --context anonymous
+rm -f "$capture_dir/page.json"
+rmdir "$capture_dir"
+trap - EXIT
 ```
+
+Captures contain page text before `ux_research.py ingest` scrubs it. Every capture
+file is written with mode 0600 in a private temporary folder, handed to `ingest`,
+then deleted, including after a failed ingest. Captures never go into the project
+folder. When using `--out`, use a path in that private temporary folder.
 
 - A fresh anonymous context: no stored cookies, no sign-in. The browser keeps its
   own user agent; the device sets only the viewport. No stealth.
 - Images, media and fonts are blocked.
 - It only scrolls (8 screens by default, at most 50). It never clicks, types or
   presses keys, so "more comments" buttons and consent banners stay as they are.
-- A check that clears by itself ("checking your browser") is waited for, at most
-  15 s (`waited_ms`). An interactive human check is reported
-  (`challenge.interactive`) and never solved. A password field is reported
+- Any browser or human check stops immediately, including a "checking your
+  browser" page that would clear by itself. Checks are inspected after navigation,
+  after the load wait and after each scroll. No further scrolling or page text
+  follows a stop; `waited_ms` is always 0. Human checks set
+  `challenge.interactive`; both kinds record `challenge.markers`.
+  `--max-wait-ms` is accepted for compatibility and never waits out a check.
+  Missing, unreadable or corrupt marker data fails closed before navigation.
+  A password field is reported
   (`login_form`); the reader's verdict decides whether the page is gated.
 - Loopback, private and link-local addresses are refused unless `--allow-local`
   (for local fixtures).
 - Pacing and budgets are the reader's job (`references/research/public-page-access.md`
   section 8). Run it only after an anonymous read of the same URL that did not stop.
 
-Exit codes: 0 read (document written), 3 stopped at an interactive human check
-(document written), 2 usage or refused address, 4 unread (navigation failed or no
-browser).
+Exit codes: 0 read (document written), 3 stopped at a browser or human check
+(document written with empty text and JSON-LD), 2 usage or refused address,
+4 unread (invalid markers, navigation failed or browser/connection failure).
 
 ## Devices
 

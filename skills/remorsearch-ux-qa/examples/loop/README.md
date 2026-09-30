@@ -14,7 +14,7 @@ false`, and all artifacts have `provenance: fixture`.
 Run from the repository root:
 
 ```sh
-python3 scripts/ux_loop.py demo --output .ux-loop/example \
+python3 skills/remorsearch-ux-qa/scripts/ux_loop.py demo --output .ux-loop/example \
   --grant code_write --actor example-supervisor \
   --reason 'Approve the isolated fixture label patch'
 ```

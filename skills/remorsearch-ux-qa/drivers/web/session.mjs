@@ -8,6 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { openBrowser } from './browser_transport.mjs';
 import { resolveDevice } from './devices.mjs';
 import { STATE_KEY, TW_BINDING, controlOf, extractSnapshot, hitTest, idAtPoint, idForElement, pageInit } from './page_scripts.mjs';
 import {
@@ -744,12 +745,9 @@ export class WebSession {
   // ------------------------------------------------------------------ lifecycle
 
   async start() {
-    try {
-      this.browser = await this.pw.chromium.launch({ headless: !this.opts.headed, timeout: 60000 });
-    } catch (err) {
-      throw new DriverFailure(`cannot launch Chromium: ${firstLine(err.message)}`);
-    }
-    this.browserVersion = this.browser.version();
+    this.browserTransport = await openBrowser(this.pw, this.pwInfo, { headless: !this.opts.headed, timeout: 60000 });
+    this.browser = this.browserTransport.browser;
+    this.browserVersion = this.browserTransport.browserVersion;
     const dev = resolveDevice({
       ...this.deviceRequest,
       pwDevices: this.pw.devices,
@@ -2609,7 +2607,7 @@ export class WebSession {
         await this.boundedWalk(() => this.focusWalk(this.page, 'end', this.lastSnapshotId), 'end');
         await this.boundedWalk(() => this.focusWalkFresh(), 'load');
       }
-      if (this.reflowEnabled() && !reason && !this.crashed && !this.blockReasons.length) await this.reflowPass();
+      if (!reason && !this.crashed && !this.blockReasons.length && this.dev && this.reflowEnabled()) await this.reflowPass();
       if (success === null && !detail && typeof personaSuccess === 'boolean') {
         success = personaSuccess;
         basis = 'judgment';
@@ -2634,6 +2632,8 @@ export class WebSession {
           version: this.pwInfo.version,
           browser: 'chromium',
           browser_version: this.browserVersion || null,
+          browser_connected: this.browserTransport?.connected || false,
+          playwright_client_version: this.pwInfo.version,
           playwright_path: this.pwInfo.path,
           emulation: this.dev ? { ...this.dev.emulation, locale: this.opts.locale, timezone: this.opts.timezoneId } : null,
           network_policy: {
@@ -2698,11 +2698,12 @@ export class WebSession {
         blocked_reasons: this.blockReasons,
         warnings: this.warnings,
       };
-      if (!run.device) run.device = this.deviceRequest.fallbackDevice;
-      writeJsonAtomic(path.join(this.runDir, 'run.json'), run);
       try {
-        if (this.browser) await this.browser.close();
-      } catch { /* already gone */ }
+        if (!run.device) run.device = this.deviceRequest.fallbackDevice;
+        writeJsonAtomic(path.join(this.runDir, 'run.json'), run);
+      } finally {
+        if (this.browserTransport) await this.browserTransport.close([this.context]);
+      }
       let exitCode = 3;
       if (status === 'blocked') exitCode = 4;
       else if (status === 'completed' && success === true) exitCode = 0;

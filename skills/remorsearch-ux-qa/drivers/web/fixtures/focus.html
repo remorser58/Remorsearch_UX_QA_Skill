@@ -40,7 +40,9 @@
   iframe { width: 320px; height: 70px; border: 1px solid #cccccc; margin: 16px; }
   .spacer { height: 1600px; }
   #far:focus, #anim:focus { outline: none; }
-  #farmark { position: absolute; left: 1500px; top: 220px; width: 120px; height: 40px; background: #f1f3f4; }
+  /* Fixed, separated boxes keep the distant ring independent of font wrapping. */
+  #far { position: absolute; left: 16px; top: 440px; width: 120px; height: 40px; margin: 0; overflow: hidden; }
+  #farmark { position: absolute; left: 1500px; top: 440px; width: 120px; height: 40px; background: #f1f3f4; }
   body:has(#far:focus) #farmark { outline: 4px solid #d93025; }
   #dot { display: inline-block; width: 12px; height: 12px; margin-left: 6px; border-radius: 6px; background: #1a73e8; }
   .abs { position: absolute; margin: 0; }

@@ -24,13 +24,13 @@
         }
       }
     },
-    "title": {"type": "string", "maxLength": 2000},
-    "lang": {"type": "string", "maxLength": 35},
-    "text": {"type": "string", "maxLength": 409600, "description": "document.body.innerText after scrolling; at most 400 KB"},
+    "title": {"type": "string", "maxLength": 2000, "description": "page title; empty when a check stops the render before content collection"},
+    "lang": {"type": "string", "maxLength": 35, "description": "document language; empty when a check stops the render before content collection"},
+    "text": {"type": "string", "maxLength": 409600, "description": "document.body.innerText after scrolling; at most 400 KB. Empty when any browser or human check stops the render."},
     "json_ld": {
       "type": "array",
       "maxItems": 10,
-      "description": "JSON-LD blocks as parsed values or raw strings; at most 10 blocks and 1 MB in total",
+      "description": "JSON-LD blocks as parsed values or raw strings; at most 10 blocks and 1 MB in total. Empty when a check stops the render before content collection.",
       "items": {"type": ["object", "array", "string"]}
     },
     "meta": {
@@ -52,14 +52,17 @@
         "markers": {"type": "array", "maxItems": 20, "items": {"type": "string", "maxLength": 100}}
       }
     },
-    "login_form": {"type": "boolean", "description": "a password field was on the page"},
+    "login_form": {"type": "boolean", "description": "a password field was on the inspected page; false when a check stops the render before this inspection"},
     "context": {"const": "anonymous", "description": "a fresh context with no stored cookies or sign-in"},
     "waited_ms": {"type": "integer", "minimum": 0, "maximum": 15000,
-                  "description": "time spent waiting for a check to clear; anything above 0 means the render met a check, and ingest refuses it"},
+                  "description": "time spent waiting for a check to clear. The bundled driver never waits and always writes 0; values above 0 from other captures remain refused by ingest."},
     "scrolls": {"type": "integer", "minimum": 0, "maximum": 50},
     "blocked_types": {"type": "array", "uniqueItems": true, "items": {"enum": ["image", "media", "font"]}},
     "device_id": {"type": "string"},
     "driver_version": {"type": "string"},
+    "browser_connected": {"type": "boolean", "description": "Chromium was connected through REMORSEARCH_BROWSER_WS rather than launched by the driver"},
+    "browser_version": {"type": "string", "description": "Chromium version reported by Playwright"},
+    "playwright_client_version": {"type": "string", "description": "Playwright package version loaded by the driver"},
     "started_at": {"type": "string", "format": "date-time"},
     "finished_at": {"type": "string", "format": "date-time"}
   }
