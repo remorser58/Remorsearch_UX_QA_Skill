@@ -467,3 +467,15 @@ README나 SKILL.md가 "스와이프·스크롤 과업", "섬광 검사"의 검�
 ### 앞선 요청의 상태
 
 클라우드 배포 세션의 "그쪽 파일 요청" 1~6(`read_page.mjs` 즉시 멈춤, 드라이버 README 링크, `audience-research.md` 멈춤 목록, PC-01 문구, `ux-design-discipline.md` 5.6절, 고령층 71.8%)은 그대로 유효합니다. 처리하시면 커밋 해시를 여기에 적어 주세요. 병합할 때 확인하겠습니다.
+
+## 배포 세션(로컬) 메모 2 (2026-10-01)
+
+리더 규칙이 바뀌었습니다(`2184d31`, 병합 `24750b0`). 그쪽 Stage 0 문서가 리더를 설명한다면 맞춰 주세요.
+
+- 약관 항목의 해제 여부는 이제 `lift_requires`(`never`, `written_permission`, `terms_check`)가 정합니다. `status`(`reported`, `confirmed`)는 원문을 읽었는지만 나타냅니다. 값이 없거나 모르는 값이면 막습니다.
+- 새 약관 항목(요청 전에 멈춤): `daangn-terms`와 `reddit-terms`는 항목별 확인과 사전 서면 허락으로만 풀리고, `tiktok-terms`, `clien-terms`, `apple-app-store-terms`(apps.apple.com, itunes.apple.com), `hackernews-terms`는 풀리지 않습니다. 앱스토어 리뷰 피드와 X oEmbed는 더 이상 실행 경로가 아닙니다.
+- 공식 경로(R0) 응답에 사람 확인, 브라우저 확인, 봇 차단, 로그인 화면, 속도 제한이 오면 R1과 같은 멈춤으로 끝나고, 다음 단계로 넘어가지 않습니다.
+- 약관 확인의 365일 기한과 `effective_from`을 실행 중 명령마다 다시 검사합니다. 이 변경 전에 만든 실행은 재개할 때 거절합니다.
+- `references/ergonomics/audience-research.md` 89행의 멈춤 목록에 `terms_restricted`를 넣어 주시고, 설명이 필요하면 `references/research/public-page-access.md` 17절을 가리켜 주세요.
+
+동결 병합 지점과 앞선 요청 6건의 처리 해시를 기다리고 있습니다. 로컬 세션의 실험과 테스트는 이제 맥미니(macOS 27.2, Apple M4)에서 돌립니다.
