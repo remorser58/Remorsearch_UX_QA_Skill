@@ -21,6 +21,9 @@ import { fileURLToPath } from 'node:url';
 import { CATALOG } from './devices.mjs';
 import { openBrowser, validateBrowserWs } from './browser_transport.mjs';
 import { loadPlaywright } from './playwright_loader.mjs';
+import { capturePage } from './read_capture.mjs';
+import { STATE_KEY, pageInit } from './page_scripts.mjs';
+import { WebSession } from './session.mjs';
 import { decodePng } from './png.mjs';
 import { snapshotReply } from './serve.mjs';
 import { normalizeScenario } from './validate.mjs';
@@ -55,7 +58,11 @@ function skip(name, why) {
 // meta tags, redirects, persistent/self-clearing/late checks and a login form.
 // Requests count images, check clearing and scrolls to verify stop behavior.
 const READ_HITS = { image: 0, cleared: 0, navigations: 0, scrolls: {} };
+const LABEL_FIXTURES = ['board-post-comments', 'store-reviews', 'blog-popular-sidebar', 'board-writer-links'];
 const READ_PAGES = {
+  ...Object.fromEntries(LABEL_FIXTURES.map((name) => [`/read/${name}.html`, fs.readFileSync(path.join(HERE, 'fixtures', `read-${name}.html`), 'utf8')])),
+  '/read/structure.html': fs.readFileSync(path.join(HERE, 'fixtures', 'read_structure.html'), 'utf8'),
+  '/read/body-chrome.html': '<!doctype html><body class="sidebar">BODY-CHROME-SENTINEL</body>',
   '/read/article.html': `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>공개 후기 모음</title>
 <meta name="description" content="가게 이용 후기"><meta property="og:title" content="후기 모음"><meta name="robots" content="index, follow">
 <meta name="tdm-reservation" content="1">
@@ -133,7 +140,7 @@ function readFixture(pathname, res, req) {
 }
 
 // Fixture files served at /<name> (same origin as the pages, no CORS headers).
-const FIXTURE_FILES = Object.fromEntries(['layers.html', 'dialog.html', 'reflow.html', 'reflow2.html', 'reflow2.css', 'viewport.html', 'focus.html', 'focus2.html', 'inspect.html']
+const FIXTURE_FILES = Object.fromEntries(['layers.html', 'dialog.html', 'reflow.html', 'reflow2.html', 'reflow2.css', 'viewport.html', 'focus.html', 'focus2.html', 'feedback_ambient.html', 'inspect.html']
   .map((f) => [`/${f}`, f]));
 
 function startFixtureServer() {
@@ -1057,6 +1064,59 @@ async function focusProbeTest(base, tmp) {
     step('#dead-btn')?.focus_probe && !step('#dead-btn').focus_probe.skipped && step('#dead-btn')?.feedback_source === null,
     [step('#dead-btn')?.focus_probe?.skipped, step('#dead-btn')?.feedback_source, step('#dead-btn')?.feedback_latency_ms]);
   check('focus2: every step ok', run.steps.every((s) => s.result === 'ok'), run.steps.map((s) => [s.action.target, s.result, s.error]));
+  await feedbackReversalTest(base, tmp);
+}
+
+async function feedbackReversalTest(base, tmp) {
+  const { pw, info } = loadPlaywright();
+  const transport = await openBrowser(pw, info);
+  let context;
+  try {
+    context = await transport.browser.newContext({ viewport: { width: 1920, height: 1080 } });
+    await context.addInitScript(pageInit, { key: STATE_KEY });
+    for (const [target, phases, response] of [
+      ['#dead', [200, 300, 380], false],
+      ['#same-label', [200, 300, 380], false],
+      ['#paint-label', [100, 200, 300, 380], true],
+    ]) {
+      const page = await context.newPage();
+      await page.goto(`${base}/feedback_ambient.html`);
+      const { scenario } = normalizeScenario({ schema_version: 'ergo-scenario.v1', scenario_id: 'SC-feedback-reversal',
+        surface: { kind: 'web', url: `${base}/feedback_ambient.html` }, task_goal_ko: '반응을 본다',
+        device_ids: ['desktop-1920'], targets: {}, steps: [], success: { url_contains: 'feedback_ambient' } }, { requireSteps: false });
+      const session = new WebSession({ pw, pwInfo: info, scenario, runDir: tmp, runId: 'R-reversal',
+        options: { visualFeedback: true, feedbackTimeoutMs: 500, settleMs: 0, flashSampleMs: 0 } });
+      session.page = page;
+      session.cdp = await context.newCDPSession(page);
+      session.dev = { contextOptions: { hasTouch: false }, base: { input: 'mouse' } };
+      session.vw = 1920;
+      session.vh = 1080;
+      let captures = 0;
+      // Only animation time is controlled. Input dispatch, CDP screenshots,
+      // pixel comparison, motion masks and DOM/input feedback remain the real code.
+      session.captureFrame = async () => {
+        const phase = phases[Math.min(captures++, phases.length - 1)];
+        await page.evaluate((t) => {
+          const a = document.getElementById('pulse').getAnimations()[0];
+          a.pause();
+          a.currentTime = t;
+        }, phase);
+        return WebSession.prototype.captureFrame.call(session);
+      };
+      const point = await page.locator(target).evaluate((n) => {
+        const r = n.getBoundingClientRect();
+        return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+      });
+      const step = { step_index: 0 };
+      await session.performInput({ action: 'click' }, { point }, step);
+      check(`feedback reversal: ${target} ${response ? 'keeps real CSS-only feedback outside ambient motion' : 'has no response when equal pre-input colors alias the pulse'}`,
+        response ? step.feedback_source === 'visual_change' && step.feedback_dom_ms === null
+          && step.feedback_visual_ambient === false && step.feedback_visual_moving_px > 0
+          : step.feedback_source === null, step);
+      await session.cdp.detach();
+      await page.close();
+    }
+  } finally { await transport.close([context]); }
 }
 
 async function viewportTest(base, tmp) {
@@ -1255,6 +1315,9 @@ async function readPageTest(base, tmp) {
     const d = load('article');
     check('read_page: document has only ux-page-read.v1 fields', pageReadShape(d).length === 0 && d.schema_version === 'ux-page-read.v1'
       && d.context === 'anonymous', pageReadShape(d));
+    const markers = JSON.parse(fs.readFileSync(path.join(REPO, 'uxresearch', 'data', 'markers.json'), 'utf8'));
+    check('read_page: the driver version records the markers version without adding schema fields',
+      d.driver_version === `read_page/2; markers/${markers.version}`, d.driver_version);
     check('read_page: browser transport and versions recorded',
       d.browser_connected === (process.env.REMORSEARCH_BROWSER_WS !== undefined) && d.browser_version.length > 0
       && d.playwright_client_version === '1.56.1', d);
@@ -1323,7 +1386,7 @@ async function readPageTest(base, tmp) {
   const markerDir = path.join(installed, 'uxresearch', 'data');
   fs.mkdirSync(driverDir, { recursive: true });
   fs.mkdirSync(markerDir, { recursive: true });
-  for (const file of ['read_page.mjs', 'devices.mjs', 'browser_transport.mjs', 'playwright_loader.mjs', 'util.mjs']) {
+  for (const file of ['read_page.mjs', 'read_capture.mjs', 'devices.mjs', 'browser_transport.mjs', 'playwright_loader.mjs', 'util.mjs']) {
     fs.copyFileSync(path.join(HERE, file), path.join(driverDir, file));
   }
   for (const [name, data] of [['missing', null], ['corrupt JSON', '{broken'], ['corrupt structure', '{}']]) {
@@ -1335,6 +1398,72 @@ async function readPageTest(base, tmp) {
       r.code === 4 && r.line?.reason === 'invalid_markers' && /cannot read or parse challenge markers/.test(r.line.detail)
       && !fs.existsSync(out(name)) && READ_HITS.navigations === before, r);
   }
+  const markers = JSON.parse(fs.readFileSync(path.join(REPO, 'uxresearch', 'data', 'markers.json'), 'utf8'));
+  for (const key of ['chrome_idents', 'author_idents', 'item_idents', 'keep_in_author_idents']) {
+    for (const bad of ['missing', 'empty', 'invalid']) {
+      const m = structuredClone(markers);
+      if (bad === 'missing') delete m[key];
+      else m[key] = bad === 'empty' ? [] : { tokens: ['valid', 3] };
+      fs.writeFileSync(path.join(markerDir, 'markers.json'), JSON.stringify(m));
+      const before = READ_HITS.navigations;
+      const name = `${key}-${bad}`;
+      r = await runReader([`${base}/read/article.html`, '--allow-local', '--out', out(name)], { reader: path.join(driverDir, 'read_page.mjs') });
+      check(`read_page: ${bad} ${key} fail closed before browser loading or navigation`,
+        r.code === 4 && r.line?.reason === 'invalid_markers' && r.line.detail.includes(key)
+        && !fs.existsSync(out(name)) && READ_HITS.navigations === before, r);
+    }
+  }
+  const names = ['빛나는고슴도치', '잠자는수달', '지나가는사슴', '초코칩다람쥐', '가을하늘펭귄', '북극여우님', '이끼낀돌',
+    '반짝반짝돌멩이', '홍길동', 'kim_s', '별빛여우', '이슬나그네'];
+  for (const [name, count, kept, dropped, boundaries] of [
+    ['board-post-comments', 4, ['BOARD-BODY-SENTINEL', 'COMMENT-ONE-SENTINEL', 'COMMENT-TWO-SENTINEL', 'COMMENT-THREE-SENTINEL',
+      '2026.09.27 21:20', '2026.09.28 07:55'], ['POPULAR-SENTINEL', 'RELATED-SENTINEL', '인기 글', '댓글 3', '테스트 갤러리', '로그인'], 3],
+    ['store-reviews', 2, ['REVIEW-ONE-SENTINEL', 'REVIEW-TWO-SENTINEL', '2026-09-18', '2026-09-20', '별점 5', '별점 2'], ['리뷰를 쓰려면'], 2],
+    ['blog-popular-sidebar', 2, ['BLOG-BODY-SENTINEL', 'COMMENT-SENTINEL', '2026.09.25'], ['SIDEBAR-SENTINEL', 'SIDEBAR-TWO-SENTINEL', '인기 포스트'], 1],
+    ['board-writer-links', 4, ['WRITER-ROW-BODY-SENTINEL', 'NAME-CHILD-BODY-SENTINEL', 'STRONG-CHILD-BODY-SENTINEL', 'TIME-CHILD-BODY-SENTINEL',
+      '2026.09.28 08:12', '조회 12', '2026-09-01', '추천 3', '3시간 전', '9월 1일', '★★★★☆'], ['테스트 게시판', '로그인'], 3],
+  ]) {
+    r = await runReader([`${base}/read/${name}.html`, '--allow-local', '--out', out(name), '--scrolls', '0']);
+    if (!check(`read_page ${name}: exit 0`, r.code === 0, r)) continue;
+    const d = load(name), text = d.text;
+    check(`read_page ${name}: names and chrome absent, one placeholder per label, bodies/dates/ratings and item boundaries retained`,
+      [...names, ...dropped].every((s) => !text.includes(s)) && kept.every((s) => text.includes(s))
+      && text.split('[author]').length - 1 === count && text.split('\n---\n').length - 1 >= boundaries, text);
+    if (name === 'store-reviews') check('read_page: a boundary separates the two review bodies',
+      text.split('REVIEW-ONE-SENTINEL')[1].split('REVIEW-TWO-SENTINEL')[0].includes('\n---\n'), text);
+  }
+  r = await runReader([`${base}/read/structure.html`, '--allow-local', '--out', out('structure'), '--scrolls', '0']);
+  if (check('read_page structure: exit 0', r.code === 0, r)) {
+    const text = load('structure').text;
+    check('read_page: author wrappers keep bodies while nested member/profile links and data/rel/itemprop labels lose names',
+      ['WRAPPER-BODY-SENTINEL', 'NO-LABEL-ONE', 'NO-LABEL-TWO', 'WHOLE-TOKEN-SENTINEL', '2026년 9월 1일', '2 days ago',
+        'Sep 1, 2026', '12,000 views', 'rating 4/5', '★★★★☆', 'KEEP-TIME-SENTINEL', '２０２６-０９-０１'].every((s) => text.includes(s))
+      && ['민들레연필', '초록지우개', '황금방울새', '프로필작가', '블로그작가', '채널작가', '시간옆이름', '자리이름', '숨은이름',
+        'CHROME-WIDGET', 'PRIVATE-FORM-SENTINEL'].every((s) => !text.includes(s))
+      && text.split('[author]').length - 1 === 11 && text.split('\n---\n').length - 1 === 2, text);
+  }
+  r = await runReader([`${base}/read/body-chrome.html`, '--allow-local', '--out', out('body-chrome'), '--scrolls', '0']);
+  check('read_page: chrome marking on the body itself drops all body text', r.code === 0 && load('body-chrome').text === '', r);
+  const { pw, info } = loadPlaywright();
+  const transport = await openBrowser(pw, info);
+  let context;
+  try {
+    context = await transport.browser.newContext();
+    const page = await context.newPage();
+    await page.goto(`${base}/read/structure.html`);
+    const before = await page.evaluate(() => {
+      window.__captureMutations = 0;
+      new MutationObserver((list) => { window.__captureMutations += list.length; }).observe(document.body,
+        { subtree: true, childList: true, attributes: true, characterData: true });
+      return document.body.outerHTML;
+    });
+    await page.evaluate(capturePage, { blocks: 10, chars: 1_000_000, structure: { chrome: markers.chrome_idents,
+      author: markers.author_idents.tokens, item: markers.item_idents.tokens, keep: markers.keep_in_author_idents.tokens,
+      overrides: [], profilePatterns: [] } });
+    const after = await page.evaluate(() => ({ html: document.body.outerHTML, mutations: window.__captureMutations }));
+    check('read_page: the structure pass changes only a detached clone (live DOM identical, no mutations)',
+      before === after.html && after.mutations === 0, after.mutations);
+  } finally { await transport.close([context]); }
   r = await runReader([`${base}/read/article.html`, '--allow-local', '--out', out('invalid-endpoint')],
     { env: { ...process.env, REMORSEARCH_BROWSER_WS: 'wss://127.0.0.1:39123/refused' } });
   check('read_page: invalid REMORSEARCH_BROWSER_WS fails with a clear error and no capture',
@@ -1457,7 +1586,7 @@ async function connectTest(base, tmp) {
 
 async function main() {
   const keep = process.argv.includes('--keep');
-  // --only a,b: run just these groups (scripted, actions, layers, focus, focus2, read,
+  // --only a,b: run just these groups (scripted, actions, layers, focus, focus2, feedback, read,
   // reflow, reflow-copy, viewport, dialog, serve, tooling, exit, connect) while iterating on one part.
   const oi = process.argv.indexOf('--only');
   const only = oi > 0 && process.argv[oi + 1] ? new Set(process.argv[oi + 1].split(',')) : null;
@@ -1512,6 +1641,7 @@ async function main() {
     if (want('layers') || want('focus')) await layersTest(base, tmp); // focus reads the layers run (touch: no probe)
     if (want('focus')) await focusTest(base, tmp);
     if (want('focus2')) await focusProbeTest(base, tmp);
+    if (want('feedback') && !want('focus2')) await feedbackReversalTest(base, tmp);
     if (want('read')) await readPageTest(base, tmp);
     if (want('reflow')) await reflowTest(base, tmp);
     if (want('reflow-copy')) await reflowCopyTest(base, tmp);

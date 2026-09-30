@@ -293,6 +293,14 @@ folder. When using `--out`, use a path in that private temporary folder.
 - A fresh anonymous context: no stored cookies, no sign-in. The browser keeps its
   own user agent; the device sets only the viewport. No stealth.
 - Images, media and fonts are blocked.
+- Text is taken from a detached body copy after the reader's chrome and author
+  pass. Author labels become `[author]`, their dates/counts/ratings stay, and
+  repeated comments/reviews get `---` boundaries. Long author-marked wrappers
+  keep their bodies; nested labels and member/profile links are still scrubbed.
+  The chrome/author/item/keep lists come from `markers.json` and fail closed when
+  missing, empty or invalid. `driver_version` records `read_page/2; markers/VERSION`
+  within the existing capture schema. JSON-LD and metadata still require ingest's
+  privacy scrub, and capture files retain mode 0600.
 - It only scrolls (8 screens by default, at most 50). It never clicks, types or
   presses keys, so "more comments" buttons and consent banners stay as they are.
 - Any browser or human check stops immediately, including a "checking your
@@ -393,8 +401,9 @@ they belong to (0 = initial load), so a step can own two snapshots.
   observed). Only when neither occurs does a visual change of the viewport count
   (`feedback_source: "visual_change"`, ~30 ms resolution; covers canvas and
   CSS-only feedback; the focused field's box is masked, so a blinking caret is not
-  feedback, and so are pixels that changed at all in the two frames before the input,
-  so a pulsing button or a slow gradient does not pass for a response;
+  feedback, and so are pixels that changed in either adjacent pair of three frames
+  before the input. The extra earlier frame catches a pulsing color that reverses
+  between the last two samples and happens to look identical in both;
   `feedback_visual_moving_px` counts them). `feedback_ambient_mutations` / `feedback_visual_ambient` flag
   pages that were already changing before the input (latency then is ambiguous).
 - **Timing windows**: each selector is polled in the page every 16 ms; a window
