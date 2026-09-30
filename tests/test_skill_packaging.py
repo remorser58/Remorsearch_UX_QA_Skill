@@ -1,0 +1,356 @@
+"""Packaging checks: the SKILL.md front matter, the two READMEs, and where other projects may be named.
+
+Three groups, all offline file checks:
+
+  * SKILL.md must load in the hosts that read it: a plain one-line YAML description within the length limits,
+    a valid name, Korean trigger words, and no byte-order marks in the files a host parses.
+  * README.md and README.ko.md must say the same things under the same headings. Headings are read outside
+    fenced code blocks, because a shell comment such as "# Codex" inside a fence is not a heading.
+  * The reader no longer calls, installs or depends on another project's search tool. The name of that tool
+    may appear only in the credit texts, and the variables and the opt-in field of the removed rung must not
+    come back.
+"""
+from __future__ import annotations
+
+import re
+import unicodedata
+import unittest
+from pathlib import Path
+
+import _paths  # noqa: F401  (puts the skill folder on sys.path)
+
+REPO = _paths.REPO
+SKILL = _paths.SKILL
+README = REPO / "README.md"
+README_KO = REPO / "README.ko.md"
+SKILL_MD = SKILL / "SKILL.md"
+BOM = b"\xef\xbb\xbf"
+
+# The second-level headings of the English README, and the Korean heading each one maps to, in order.
+SECTIONS = (
+    ("What it does", "하는 일"),
+    ("Install", "설치"),
+    ("Use", "사용법"),
+    ("Evidence rules", "근거 규칙"),
+    ("Reading public pages", "공개 페이지 읽기"),
+    ("Korean research", "한국어 리서치"),
+    ("Repository layout", "저장소 구성"),
+    ("Development", "개발"),
+    ("Limits", "한계"),
+    ("License", "라이선스"),
+)
+CREDIT_SECTION = {README: "License", README_KO: "라이선스"}
+SKIPPED_DIRS = {"node_modules", "__pycache__", ".git", ".ux-loop", ".ux-research"}
+CODE_SUFFIXES = {".py", ".mjs", ".js", ".json", ".yaml", ".yml", ".sh"}
+TOOL_NAME = re.compile(r"insane[-_ ]?search", re.IGNORECASE)
+REMOVED_VARIABLE = re.compile(r"INSANE_[A-Z0-9_]+")
+REMOVED_FIELD = "engine_opt_in"
+YAML_INDICATORS = "-?:,[]{}#&*!|>'\"%@`"
+
+
+def read(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
+def front_matter(text: str) -> dict:
+    """The key and value of each line between the two opening '---' lines. Only 'key: value' lines are allowed."""
+    lines = text.split("\n")
+    if lines[0] != "---" or "---" not in lines[1:]:
+        raise ValueError("the file does not start with a front matter block")
+    fields = {}
+    for line in lines[1:lines.index("---", 1)]:
+        match = re.fullmatch(r"([a-z_][a-z0-9_-]*): (.*)", line)
+        if not match:
+            raise ValueError(f"not a plain 'key: value' line: {line[:60]!r}")
+        fields[match.group(1)] = match.group(2)
+    return fields
+
+
+def plain_scalar_problems(value: str) -> list:
+    """Reasons a value would not read back as the same plain (unquoted) YAML scalar."""
+    problems = []
+    if not value or value != value.strip():
+        problems.append("empty, or has leading or trailing space")
+    if value and value[0] in YAML_INDICATORS:
+        problems.append(f"starts with the YAML indicator {value[0]!r}")
+    if ": " in value or value.endswith(":"):
+        problems.append("contains ': '")
+    if " #" in value:
+        problems.append("contains ' #'")
+    if "<" in value or ">" in value:
+        problems.append("contains an angle bracket")
+    if any(ord(ch) < 32 for ch in value):
+        problems.append("contains a control character")
+    if value.lower() in {"true", "false", "null", "yes", "no", "on", "off", "~"} or re.fullmatch(r"[-+]?[\d.]+", value):
+        problems.append("would be read as a boolean, null or number")
+    return problems
+
+
+def outside_fences(text: str):
+    """(line number, line) for the lines of a Markdown text that are not inside a fenced code block."""
+    fenced = False
+    for number, line in enumerate(text.split("\n"), 1):
+        if line.lstrip().startswith(("```", "~~~")):
+            fenced = not fenced
+            continue
+        if not fenced:
+            yield number, line
+
+
+def headings(text: str) -> list:
+    """(level, title) of every heading outside fenced code blocks."""
+    found = []
+    for _, line in outside_fences(text):
+        match = re.match(r"(#{1,6})\s+(.+?)\s*#*\s*$", line)
+        if match:
+            found.append((len(match.group(1)), match.group(2)))
+    return found
+
+
+def sections(text: str) -> list:
+    """(second-level title, start offset, end offset) of each '##' section of a Markdown text.
+
+    Headings are read outside fenced code blocks. A section runs from its heading to the next second-level
+    heading or the end of the text, and it includes its own fenced blocks.
+    """
+    spans, fenced, offset = [], False, 0
+    for line in text.split("\n"):
+        if line.lstrip().startswith(("```", "~~~")):
+            fenced = not fenced
+        elif not fenced:
+            match = re.match(r"##\s+(.+?)\s*$", line)
+            if match:
+                if spans:
+                    spans[-1][2] = offset
+                spans.append([match.group(1), offset, len(text)])
+        offset += len(line) + 1
+    return [tuple(span) for span in spans]
+
+
+def shell_commands(text: str) -> list:
+    """The command lines (comments and blank lines left out) of every fenced 'sh' block."""
+    commands = []
+    for block in re.findall(r"^```sh\n(.*?)^```", text, flags=re.S | re.M):
+        for line in block.split("\n"):
+            if line.strip() and not line.lstrip().startswith("#"):
+                commands.append(line.strip())
+    return commands
+
+
+def links(text: str) -> list:
+    """The targets of the inline links outside fenced code blocks."""
+    body = "\n".join(line for _, line in outside_fences(text))
+    return re.findall(r"\]\(([^)\s]+)\)", body)
+
+
+def project_files():
+    """The text files of the skill folder and the two READMEs."""
+    for path in sorted(SKILL.rglob("*")):
+        if path.is_file() and not SKIPPED_DIRS & set(path.relative_to(SKILL).parts):
+            yield path
+    yield README
+    yield README_KO
+
+
+def text_of(path: Path):
+    try:
+        return path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return None  # a binary file: an image, a font
+
+
+def mentions_outside_credit(text: str, allowed_title) -> list:
+    """The offsets of the tool's name that lie outside every section whose title `allowed_title` accepts."""
+    allowed = [(start, end) for title, start, end in sections(text) if allowed_title(title)]
+    return [m.start() for m in TOOL_NAME.finditer(text) if not any(a <= m.start() < b for a, b in allowed)]
+
+
+class SkillFrontMatterTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.raw = SKILL_MD.read_bytes()
+        cls.fields = front_matter(cls.raw.decode("utf-8"))
+
+    def test_the_file_has_no_byte_order_mark(self):
+        self.assertFalse(self.raw.startswith(BOM))
+        self.assertTrue(self.raw.startswith(b"---\n"))
+
+    def test_only_name_and_description_are_set(self):
+        self.assertEqual(set(self.fields), {"name", "description"})
+
+    def test_name_follows_the_naming_rules(self):
+        name = self.fields["name"]
+        self.assertRegex(name, r"^[a-z0-9-]{1,64}$")
+        self.assertFalse(name.startswith("-") or name.endswith("-") or "--" in name)
+        self.assertEqual(name, SKILL.name)  # the name is the folder name
+        for reserved in ("anthropic", "claude"):
+            self.assertNotIn(reserved, name)
+
+    def test_description_is_within_the_length_limits(self):
+        description = self.fields["description"]
+        self.assertLessEqual(len(description), 1024)
+        self.assertLessEqual(len(description.encode("utf-8")), 1024)  # the byte limit bites first for Korean text
+
+    def test_description_is_nfc_and_a_plain_yaml_scalar(self):
+        description = self.fields["description"]
+        self.assertEqual(unicodedata.normalize("NFC", description), description)
+        self.assertEqual(plain_scalar_problems(description), [])
+
+    def test_description_has_korean_trigger_words(self):
+        words = set(re.findall(r"[가-힣]{2,}", self.fields["description"]))
+        self.assertGreaterEqual(len(words), 3, "the description should carry Korean trigger phrases")
+
+    def test_the_host_metadata_file_has_no_byte_order_mark(self):
+        raw = (SKILL / "agents" / "openai.yaml").read_bytes()
+        self.assertFalse(raw.startswith(BOM))
+        raw.decode("utf-8")
+
+    def test_the_checks_catch_a_bad_front_matter(self):
+        self.assertEqual(plain_scalar_problems("Evidence-first UX research (UX 리서치, UX QA)"), [])
+        for bad in ("Use it: for research", "Use it #1", "Find <things>", "[list] first", "true",
+                    "trailing space ", ""):
+            self.assertTrue(plain_scalar_problems(bad), bad)
+        for bad in ("name: x\nno colon here", "---\nname: x\n"):
+            with self.assertRaises(ValueError):
+                front_matter(bad)
+
+
+class ReadmeParityTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.en = read(README)
+        cls.ko = read(README_KO)
+
+    def test_fenced_lines_are_not_headings(self):
+        sample = "# Title\n\n```sh\n# Claude Code\ncp a b\n# Codex\n```\n\n## Section\n\n~~~\n# also code\n~~~\n"
+        self.assertEqual(headings(sample), [(1, "Title"), (2, "Section")])
+        self.assertEqual([title for title, _, _ in sections(sample)], ["Section"])
+
+    def test_both_readmes_have_the_same_title(self):
+        titles = [[t for level, t in headings(text) if level == 1] for text in (self.en, self.ko)]
+        self.assertEqual(titles, [["Remorsearch UX QA"], ["Remorsearch UX QA"]])
+
+    def test_the_second_level_headings_follow_the_map(self):
+        for text, column in ((self.en, 0), (self.ko, 1)):
+            found = [t for level, t in headings(text) if level == 2]
+            self.assertEqual(found, [pair[column] for pair in SECTIONS])
+
+    def test_the_heading_structure_is_the_same(self):
+        self.assertEqual([level for level, _ in headings(self.en)], [level for level, _ in headings(self.ko)])
+
+    def test_each_readme_links_to_the_other_under_its_title(self):
+        first_en = next(line for line in self.en.split("\n")[1:] if line.strip())
+        first_ko = next(line for line in self.ko.split("\n")[1:] if line.strip())
+        self.assertEqual(first_en, "English | [한국어](README.ko.md)")
+        self.assertEqual(first_ko, "[English](README.md) | 한국어")
+
+    def test_shell_commands_are_the_same_in_both_languages(self):
+        self.assertTrue(shell_commands(self.en))
+        self.assertEqual(shell_commands(self.en), shell_commands(self.ko))
+
+    def test_the_same_pages_are_linked(self):
+        def targets(text):
+            return {t.split("#")[0] for t in links(text)}
+        english, korean = targets(self.en) - {"README.ko.md"}, targets(self.ko) - {"README.md"}
+        self.assertEqual(english, korean)
+        self.assertIn("README.md", targets(self.ko))
+        self.assertIn("README.ko.md", targets(self.en))
+
+    def test_local_links_resolve(self):
+        for path, text in ((README, self.en), (README_KO, self.ko)):
+            for target in links(text):
+                if re.match(r"(?:https?:|mailto:|#)", target):
+                    continue
+                self.assertTrue((REPO / target.split("#")[0]).exists(), f"{path.name}: {target}")
+
+    def test_the_project_is_named_by_its_current_repository(self):
+        for text in (self.en, self.ko):
+            self.assertIn("github.com/remorser58/Remorsearch_UX_QA_Skill", text)
+            self.assertNotIn("ux-research-qa-skills", text)
+
+    def test_the_korean_readme_uses_one_word_for_a_user(self):
+        for word in ("유저", "이용자"):
+            self.assertNotIn(word, self.ko)
+
+
+class SkillFolderTests(unittest.TestCase):
+    def test_each_mode_workflow_keeps_its_first_line(self):
+        modes = {"research": "research", "persona-qa": "persona-qa", "ergonomics": "ergonomics", "loop": "loop"}
+        for folder, mode in modes.items():
+            first = read(SKILL / "references" / folder / "workflow.md").split("\n")[0]
+            self.assertRegex(first, rf"^<!-- Mode: {mode}\b.*Entry point: `SKILL\.md`\. -->$", folder)
+
+    def test_the_two_copies_of_the_bundle_contract_are_identical(self):
+        research = SKILL / "references" / "research" / "evidence-bundle-contract.md"
+        persona_qa = SKILL / "references" / "persona-qa" / "evidence-bundle-contract.md"
+        self.assertEqual(research.read_bytes(), persona_qa.read_bytes())
+
+    def test_no_file_names_the_old_repository(self):
+        for path in project_files():
+            text = text_of(path)
+            if text is not None:
+                self.assertNotIn("ux-research-qa-skills", text, path.relative_to(REPO))
+
+    def test_every_mode_named_in_the_router_has_a_workflow(self):
+        paths = re.findall(r"`(references/[a-z-]+/workflow\.md)`", read(SKILL_MD))
+        self.assertEqual(len(set(paths)), 4)  # research, persona-qa, ergonomics and loop
+        for path in paths:
+            self.assertTrue((SKILL / path).is_file(), path)
+
+
+class CreditOnlyTests(unittest.TestCase):
+    def test_the_guard_finds_a_mention_outside_the_credit_section(self):
+        text = "# T\n\n## Use\n\nTry insane-search here.\n\n## License\n\nCredit: Insane Search (MIT).\n"
+        found = mentions_outside_credit(text, lambda title: title == "License")
+        self.assertEqual(len(found), 1)
+        self.assertEqual(text[found[0]:found[0] + 13], "insane-search")
+        self.assertEqual(mentions_outside_credit(text, lambda title: title in ("License", "Use")), [])
+        # a mention inside a fenced block of the credit section counts as inside; one under another heading does not
+        fenced = "## License\n\n```text\ninsane-search\n```\n\n## Use\n\ninsane search\n"
+        self.assertEqual(len(mentions_outside_credit(fenced, lambda title: title == "License")), 1)
+
+    def test_the_tool_is_named_only_in_credit_texts(self):
+        credit_files = {SKILL / "THIRD_PARTY_NOTICES.md"}
+        for path in project_files():
+            text = text_of(path)
+            if text is None or not TOOL_NAME.search(text) or path in credit_files:
+                continue
+            relative = path.relative_to(REPO)
+            if path == SKILL / "references" / "research" / "public-page-access.md":
+                allowed = lambda title: re.match(r"\d+\.\s+Credit", title) is not None
+            elif path in CREDIT_SECTION:
+                allowed = lambda title, wanted=CREDIT_SECTION[path]: title == wanted
+            else:
+                self.fail(f"{relative} names the tool outside a credit text")
+            self.assertEqual(mentions_outside_credit(text, allowed), [],
+                             f"{relative} names the tool outside its credit section")
+
+    def test_the_credit_texts_exist(self):
+        notices = read(SKILL / "THIRD_PARTY_NOTICES.md")
+        self.assertRegex(notices, r"insane-search")
+        self.assertIn("Nothing in this folder calls, installs or depends on it", notices)
+        access = read(SKILL / "references" / "research" / "public-page-access.md")
+        self.assertTrue(any(re.match(r"\d+\.\s+Credit", title) for title, _, _ in sections(access)))
+        for path in (README, README_KO):
+            self.assertTrue(TOOL_NAME.search(read(path)), path.name)
+
+    def test_code_and_data_never_name_the_other_project(self):
+        for path in project_files():
+            if path.suffix not in CODE_SUFFIXES:
+                continue
+            text = text_of(path)
+            if text is not None:
+                self.assertNotIn("insane", text.lower(), path.relative_to(REPO))
+
+    def test_the_removed_variables_and_field_do_not_come_back(self):
+        for path in project_files():
+            text = text_of(path)
+            if text is None:
+                continue
+            relative = path.relative_to(REPO)
+            self.assertEqual(REMOVED_VARIABLE.findall(text), [], relative)
+            self.assertNotIn(REMOVED_FIELD, text, relative)
+
+
+if __name__ == "__main__":
+    unittest.main()

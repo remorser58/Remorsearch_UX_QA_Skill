@@ -1,5 +1,7 @@
 # Output Template
 
+For a report in Korean (`report_lang: ko`), use `references/research/korea/report-template.md`: the same sections, with Korean headings and style rules.
+
 Use this structure for a deep research result. Keep the prose compact. Link official and product sources to their original location when the environment provides a usable link. Reports shared outside the team cite community sources by channel, date and source ID (for example `kr-communities, 2026-08-14, SRC-1a2b3c4d`), not by URL; post URLs stay in the bundle's `source_ref`.
 
 ## Research boundary
@@ -13,16 +15,50 @@ Use this structure for a deep research result. Keep the prose compact. Link offi
 - Time windows:
 - User segments:
 - Signed-in communities authorised in the brief: none / list
+- Terms checks the user recorded in the brief: none / list (host, terms URL, checked on, result)
+- Ethics review: none / exempt / approved / pending
+- Official APIs used (route, calls, quota units, earliest `retention_until`): none / list
+- Model provider and processing region, and whether its terms exclude storage and training: (write "unknown" if unknown)
+- User groups the public web under-covers:
 - Unread after allowed rungs (with untried rungs):
-- Stopped by access control or opt-out (by class):
+- Stopped by access control or opt-out (by class, `terms_restricted` apart):
 - Coverage limitation:
 
 ### Reader access table
 
 One row per host or channel (`references/public-page-access.md`, sections 6 and 15).
 
-| Host or channel | Tools | Reads | Rungs used | Stops by class | Unread (untried rungs) | robots / TDM decision | Browser context |
-| --- | --- | --- | --- | --- | --- | --- | --- |
+| Host or channel | Tools | Reads | Rungs used | Stops by class (terms_restricted apart) | Terms restricted | Unread (untried rungs) | robots / TDM decision | Browser context |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+
+### Coverage gaps
+
+One row per stop class, plus one for missing keys. Write 0 when no URL ended that way.
+
+| Stop class | Hosts or channels | URLs | Reason codes | Next step |
+| --- | --- | --- | --- | --- |
+| `terms_restricted` | | | | None. A `confirmed` entry is never lifted; a `reported` one only when the user reads the terms and records the check in the brief. |
+| `opted_out` | | | | None |
+| `auth_gate` | | | | None. Only communities the user authorised in the brief, as summaries. |
+| `paywall` | | | | None |
+| `human_check` | | | | None |
+| `rate_limit` | | | | None. The host stays stopped for this run. |
+| `geo_block` | | | | None |
+| `legal_block` | | | | None |
+| `gone` | | | | None. Never recovered from an archive or a cache. |
+| `budget` | | | | Raise within the ceiling, with a recorded reason. A host whose terms restriction was lifted keeps 10. |
+| `host_stopped` | | | | None. The host is closed for this run. |
+| Key missing | | | `official_route_needs_key` | Ask the user to set the key. Never read the page another way. |
+
+Fill the gaps from other channel families, the team's own data, surveys and interviews. Never fetch what a stop withheld by another route.
+
+### Out of scope
+
+| Kind | Hosts or channels | URLs |
+| --- | --- | --- |
+| Private channels (`out_of_scope`) | | |
+| Search results pages (refused, or stopped on a redirect) | | |
+| Switched-off discovery routes (refused) | | |
 
 ## Executive finding
 
@@ -37,10 +73,10 @@ Include when the run answered who the users are (`references/audience-pipeline.m
 
 ## Evidence map
 
-| ID | Claim ID | User segment | Task and situation | Observed friction | Source (channel, date, source ID) | Evidence type | Grade | Status | Observed at / valid at | Recurrence |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ID | Claim ID | User segment | Task and situation | Observed friction | Source (channel, date, source ID) | Evidence type | Grade | Status | Published / observed / valid at | Recurrence | Label |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
-Grade and status come from the gate (`references/source-grading.md`). Until the gate ships, write "graded by hand" next to the table.
+Grade and status come from the gate (`references/source-grading.md`). Until the gate ships, write "graded by hand" next to the table. The label is `observed`, `inferred` or `unknown`. An item read through an official API also shows its `retention_until`, and it is deleted by then. Never restore a scrub placeholder such as `[phone]` in a quote. A community's modelled gender, age or political lean is never attributed to a poster, a claim or a persona.
 
 ## Causal analysis
 
@@ -105,3 +141,10 @@ Claims that are not supported go here, and only here: `single_voice`, `lead_only
 
 | Claim ID | Statement | Status | Why not supported | Next evidence needed |
 | --- | --- | --- | --- | --- |
+
+### Items for counsel
+
+Legal questions this run could not settle, such as whether leaving out authors' names fits a duty to name the source. For Korean law, see `references/research/korea/legal-checklist.md`. This report is not legal advice.
+
+| Item | Provision and version | Default in this run |
+| --- | --- | --- |

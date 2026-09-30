@@ -1,7 +1,7 @@
 {
   "schema_version": "ux-research-routes.v1",
   "version": "fixture",
-  "note": "Test route table. Only reserved .test names; served by the local fixture server in tests/test_ux_read.py.",
+  "note": "Test route table. Only reserved .test names; served by the local fixture server in tests/test_ux_read.py. The packaged scope lists (search pages, switched-off discovery endpoints, private channels, terms_restricted hosts) apply on top of this table, which only adds entries.",
   "platforms": [
     {
       "id": "fixture-blog",
@@ -106,6 +106,72 @@
       "login_hosts": [],
       "terms_note": "fixture",
       "verified_at": null
+    },
+    {
+      "id": "fixture-tube",
+      "hosts": [
+        "tube.test"
+      ],
+      "platform_family": "video",
+      "path": "^/watch$",
+      "author_from": "page",
+      "official": [
+        {
+          "kind": "feed",
+          "scope": "all",
+          "auth": "user_key",
+          "env": "REMORSEARCH_FIXTURE_TUBE_KEY",
+          "env_aliases": [
+            "REMORSEARCH_FIXTURE_TUBE_OLD_KEY",
+            "FIXTURE_TUBE_KEY"
+          ],
+          "url": "{scheme}://api.tubedata.test{port_suffix}/comments.xml?video={q_v}&key={key}"
+        }
+      ],
+      "alternates": [],
+      "login_hosts": [],
+      "terms_note": "fixture: a terms_restricted host with an official route",
+      "verified_at": null
+    },
+    {
+      "id": "fixture-apitube",
+      "hosts": [
+        "apitube.test"
+      ],
+      "platform_family": "video",
+      "path": "^/watch$",
+      "author_from": "page",
+      "official": [
+        {
+          "kind": "api",
+          "doc": "a route kind with no adapter in this version",
+          "auth": "user_key",
+          "env": "REMORSEARCH_FIXTURE_APITUBE_KEY",
+          "url": "{scheme}://api.tubedata.test{port_suffix}/v3/{q_v}?key={key}"
+        }
+      ],
+      "alternates": [],
+      "login_hosts": [],
+      "terms_note": "fixture: an official route with no adapter",
+      "verified_at": null
+    }
+  ],
+  "search_pages": [
+    {
+      "host": "search.test",
+      "path_prefix": "",
+      "reason": "fixture search results"
+    },
+    {
+      "host": "portal.test",
+      "path_prefix": "/search",
+      "reason": "fixture search results under a path"
+    },
+    {
+      "host": "askbox.test",
+      "path_prefix": "",
+      "query_param": "q",
+      "reason": "fixture search results by query"
     }
   ],
   "out_of_scope": [
@@ -115,5 +181,111 @@
       "reason": "private chat rooms"
     }
   ],
-  "discovery": []
+  "terms_restricted": [
+    {
+      "id": "fixture-reported",
+      "hosts": [
+        "reported.test"
+      ],
+      "status": "reported",
+      "restricts": [
+        "bulk_collection"
+      ],
+      "official_route": null,
+      "terms_url": "http://reported.test/terms",
+      "clause": null,
+      "read_via": "fixture",
+      "sources": [
+        "fixture"
+      ],
+      "checked_at": "2026-09-29",
+      "verified_at": null,
+      "note": "fixture: a reported restriction"
+    },
+    {
+      "id": "fixture-confirmed",
+      "hosts": [
+        "confirmed.test"
+      ],
+      "status": "confirmed",
+      "restricts": [
+        "automated_collection"
+      ],
+      "official_route": null,
+      "terms_url": "http://confirmed.test/terms",
+      "clause": "fixture clause",
+      "read_via": "fixture",
+      "sources": [
+        "fixture"
+      ],
+      "checked_at": "2026-09-29",
+      "verified_at": null,
+      "note": "fixture: a confirmed restriction"
+    },
+    {
+      "id": "fixture-tube-terms",
+      "hosts": [
+        "tube.test"
+      ],
+      "status": "confirmed",
+      "restricts": [
+        "automated_collection"
+      ],
+      "official_route": "fixture-tube",
+      "terms_url": "http://tube.test/terms",
+      "clause": "fixture clause",
+      "read_via": "fixture",
+      "sources": [
+        "fixture"
+      ],
+      "checked_at": "2026-09-29",
+      "verified_at": null,
+      "note": "fixture: official-only mode"
+    },
+    {
+      "id": "fixture-apitube-terms",
+      "hosts": [
+        "apitube.test"
+      ],
+      "status": "confirmed",
+      "restricts": [
+        "automated_collection"
+      ],
+      "official_route": "fixture-apitube",
+      "terms_url": "http://apitube.test/terms",
+      "clause": "fixture clause",
+      "read_via": "fixture",
+      "sources": [
+        "fixture"
+      ],
+      "checked_at": "2026-09-29",
+      "verified_at": null,
+      "note": "fixture: an official route kind with no adapter"
+    }
+  ],
+  "discovery": [
+    {
+      "id": "fixture-discovery",
+      "doc": "a discovery API that is switched off",
+      "enabled": false,
+      "reason": "off until the owner reads the current terms",
+      "endpoints": {
+        "search": "{scheme}://disabled-api.test{port_suffix}/v1/search/{service}"
+      },
+      "auth": {
+        "type": "user_key",
+        "env": [
+          "REMORSEARCH_FIXTURE_DISCOVERY_KEY"
+        ]
+      },
+      "never_call": [
+        {
+          "host": "disabled-api.test",
+          "path_prefix": "/v1/search"
+        }
+      ],
+      "returns": "leads only",
+      "verified_at": null
+    }
+  ]
 }

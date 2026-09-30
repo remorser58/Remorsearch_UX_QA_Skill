@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/remorser58/ux-research-qa-skills/schemas/ux-page-read.v1.schema.json",
+  "$id": "https://github.com/remorser58/Remorsearch_UX_QA_Skill/schemas/ux-page-read.v1.schema.json",
   "title": "UX Page Read v1",
   "description": "One render of one public URL in a fresh anonymous browser context: rung R3 of the public-page reader. Written by a render driver (drivers/web/read_page.mjs, owned by the ergonomics session) or assembled from a capture in the researcher's own private window, and consumed by `ux_research.py ingest`, which accepts it only after an anonymous read of the same URL that did not stop. The render never types, clicks or presses keys; it only scrolls, waits at most 15 s for checks that clear by themselves, keeps the browser's own identity and uses no stealth. An interactive challenge or a login form is reported, never solved.",
   "type": "object",

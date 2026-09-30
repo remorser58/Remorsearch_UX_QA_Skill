@@ -9,6 +9,7 @@ live in temporary directories outside the working tree.
 from __future__ import annotations
 
 import gzip
+import hashlib
 import io
 import ipaddress
 import json
@@ -29,7 +30,8 @@ from unittest import mock
 
 import _paths  # noqa: F401  (puts the skill folder on sys.path)
 from uxresearch import PROJECT_URL, ROBOTS_TOKEN, USER_AGENT, envelope, extract, ladder, ledger, net, privacy, \
-    robots, verdict
+    robots, scope, verdict
+from uxresearch.cli import build_parser
 from uxresearch.cli import main as cli_main
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "research"
@@ -37,6 +39,8 @@ PAGES = FIXTURES / "pages"
 ROBOTS_DIR = FIXTURES / "robots"
 CAPTURES = FIXTURES / "captures"
 ROUTES = FIXTURES / "routes.test.json"
+AGENT_TOKENS = FIXTURES / "agent-tokens.test.json"
+MARKER_CASES = FIXTURES / "promotion-ko.json"
 SKILL = _paths.SKILL
 PACKAGE = SKILL / "uxresearch"
 MAPPED_HOSTS = (
@@ -49,8 +53,11 @@ MAPPED_HOSTS = (
     "budget.test", "budget2.test", "block.test", "denied.test", "chat.test", "lang.test", "embed.test",
     "oembed.embed.test", "geo.test", "transient.test", "busy.test", "spa.test", "www.shop.test", "m.shop.test",
     "bad.test", "cafe.test", "m.cafe.test", "wall.test", "robotshtml.test", "xrt.test", "legacyfeed.test",
-    "rss.legacyfeed.test", "blog.test", "short.test", "notice.test",
-)  # m.lonely.test and m.block.test are deliberately unmapped: they must not resolve.
+    "rss.legacyfeed.test", "blog.test", "short.test", "notice.test", "reported.test", "m.reported.test",
+    "confirmed.test", "tube.test", "apitube.test", "api.tubedata.test", "shortlink.test", "search.test", "portal.test",
+    "askbox.test", "disabled-api.test", "agents.test", "pii.test",
+)  # m.lonely.test and m.block.test are deliberately unmapped: they must not resolve. The scope tests map the hosts
+# that must never be contacted too, so a request that slipped through would show in the server's log.
 
 # ------------------------------------------------------------------ network guard
 
@@ -360,8 +367,35 @@ class PrivacyTests(unittest.TestCase):
         self.assertNotEqual(key, privacy.author_key(other, "community.test", "닉네임"))
         self.assertNotEqual(key, privacy.author_key(salt, "other.test", "닉네임"))
         self.assertEqual(privacy.author_key(salt, "p", "Alice"), privacy.author_key(salt, "p", "alice"))
+        self.assertEqual(privacy.author_key(salt, "p", "ＡＢＣ닉"), privacy.author_key(salt, "p", " abc닉 "))  # NFKC, trim
         with self.assertRaises(ValueError):
             privacy.author_key(salt, "p", "  ")
+
+    def test_anonymous_nicknames_and_partial_ips_are_not_identities(self):
+        self.assertEqual(privacy.normalize_handle(" 닉네임(118.235) "), ("닉네임", True))
+        self.assertEqual(privacy.normalize_handle("닉네임（118.235）"), ("닉네임", True))  # full-width brackets
+        self.assertEqual(privacy.normalize_handle("버전(3.2)"), ("버전", True))
+        self.assertEqual(privacy.normalize_handle("홍길동"), ("홍길동", False))
+        for handle in ("ㅇㅇ", " ㅇㅇ ", "ㅇㅇㅇ", "ㅇㅇ(118.235)", "닉네임(118.235)", "익명12", "탈퇴한 회원", "(알 수 없음)",
+                       "Anonymous", "[deleted]"):
+            with self.assertRaises(ValueError, msg=handle) as caught:
+                privacy.author_key(b"s" * 32, "community.test", handle)
+            self.assertIn("--thread-url", str(caught.exception), handle)
+        for handle in ("ㅇㅎ", "익명의사용자님", "홍길동(서울)"):
+            self.assertRegex(privacy.author_key(b"s" * 32, "community.test", handle), r"^[0-9a-f]{16}$", handle)
+
+    def test_scrub_catches_account_numbers_and_masked_id_numbers(self):
+        cases = {"환불 계좌 110-222-333444 로 보내 주세요": "333444", "계좌번호: 3333 01 1234567": "1234567",
+                 "입금은 국민 123456-01-123456 으로": "123456-01-123456", "주민번호 900202-2******": "900202",
+                 "account no. 1002 345 678901 please": "678901"}
+        for text, leaked in cases.items():
+            scrubbed, counts = privacy.scrub(text)
+            self.assertNotIn(leaked, scrubbed, text)
+            self.assertTrue(counts, text)
+        phone, counts = privacy.scrub("연락 010-1234-5678")
+        self.assertEqual((phone, counts), ("연락 [phone]", {"phone": 1}))  # a mobile number stays a phone number
+        for kept in ("2026-09-28 출근", "주문 12-34-56 확인", "버전 3.2.0", "ISBN 978-89-1234-567-8", "가격 12,000원"):
+            self.assertEqual(privacy.scrub(kept)[0], kept)
 
     def test_thread_keys_ignore_tracking_and_twin_prefixes(self):
         salt = b"s" * 32
@@ -1881,7 +1915,8 @@ class ReaderScopeTests(ServerCase):
         self.server.page("chat.test", "/room/1", "post-normal.html")
         self.start("--deny-host", "denied.test", "--deny-host", "m.shop.test", "--deny-host", "rss.feedsite.test")
         code, summary, _ = self.read(self.url("hop.test", "/x"))
-        self.assertEqual((code, summary["stop_class"], summary["reasons"]), (3, "opted_out", ["deny_hosts"]))
+        self.assertEqual((code, summary["stop_class"], summary["reasons"]),
+                         (3, "opted_out", ["deny_hosts", "reached_by_redirect"]))
         code, summary, _ = self.read(self.url("www.shop.test", "/p"))
         self.assertEqual((code, summary["untried"]), (4, ["R3"]))
         self.assertIn(("R2", "skipped"), [(t["rung"], t["outcome"]) for t in summary["trail"]])
@@ -2048,6 +2083,23 @@ class AuthorKeyTests(ServerCase):
         code, _, _ = self.cli("author-key", "--run", self.run_dir, "--platform", "p", "--handle", "x")
         self.assertEqual(code, 2)
 
+    def test_default_nicknames_and_partial_ips_are_refused_as_identities(self):
+        self.start()
+        for handle in ("ㅇㅇ", " ㅇㅇ ", "ㅇㅇ(118.235)", "닉네임(118.235)", "ㅇㅇ（118.235）", "익명12", "탈퇴한 회원"):
+            code, out, _ = self.cli("author-key", "--run", self.run_dir, "--platform", "community.test",
+                                    "--handle", handle)
+            self.assertEqual(code, 2, handle)
+            self.assertIn("use --thread-url", json.loads(out)["reason"], handle)
+        with mock.patch("sys.stdin", io.StringIO("ㅇㅇ(118.235)\n")):
+            code, out, _ = self.cli("author-key", "--run", self.run_dir, "--platform", "community.test",
+                                    "--handle-stdin")
+        self.assertEqual((code, json.loads(out)["status"]), (2, "refused"))
+        code, out, _ = self.cli("author-key", "--run", self.run_dir, "--thread-url",
+                                "https://community.test/board/view?id=1")
+        self.assertEqual(code, 0)  # such posters are counted by thread instead
+        data = b"\n".join(p.read_bytes() for p in self.run_dir.rglob("*") if p.is_file())
+        self.assertNotIn("닉네임".encode("utf-8"), data)
+
 
 class CliShimTests(ServerCase):
     def test_shim_runs_start_robots_read_and_close(self):
@@ -2069,6 +2121,506 @@ class CliShimTests(ServerCase):
         self.assertGreaterEqual(json.loads(result.stderr.strip().splitlines()[-1])["retry_after_s"], 5)
         self.assertEqual(call("close", "--run", run_dir).returncode, 0)
         self.assertEqual(self.server.hits("community.test"), ["/robots.txt"])
+
+
+# ------------------------------------------------------------------ reader policy (K2)
+
+
+class AgentGroupRobotsTests(unittest.TestCase):
+    """robots.txt groups naming other AI agents, with fixture tokens only."""
+    TOKENS = {"fetch_on_behalf": ["FixtureFetcher-User"], "training_or_index": ["FixtureTrainBot", "FixtureQuietBot"]}
+
+    def record(self, text: str, tokens=TOKENS) -> dict:
+        return robots.record_from_fetch("http://x.test", status=200, body=text.encode("utf-8"), token=ROBOTS_TOKEN,
+                                        fetched_at="t", agent_tokens=tokens)
+
+    def decide(self, record: dict, path: str) -> dict:
+        return robots.decide(record, "http://x.test" + path)
+
+    def test_agent_groups_add_disallows_only_when_no_group_names_us(self):
+        record = self.record((ROBOTS_DIR / "ai-agent-group.txt").read_text(encoding="utf-8"))
+        self.assertEqual((record["format"], record["group"], record["own_group"]), (robots.RECORD_FORMAT, "*", False))
+        self.assertEqual(sorted(record["agents"]["fetch_on_behalf"]), ["FixtureFetcher-User"])
+        # only training groups that disallow something are kept
+        self.assertEqual(sorted(record["agents"]["training_or_index"]), ["FixtureTrainBot"])
+        blocked = self.decide(record, "/agent-blocked/1")
+        self.assertEqual((blocked["allowed"], blocked["ai_agent_token"], blocked["rule"]),
+                         (False, "FixtureFetcher-User", {"type": "disallow", "pattern": "/agent-blocked/"}))
+        private = self.decide(record, "/private/x")  # the agent group's Allow never lifts a '*' disallow
+        self.assertEqual((private["allowed"], private["ai_agent_token"]), (False, None))
+        public = self.decide(record, "/public")
+        self.assertEqual((public["allowed"], public["ai_agent_token"], public["ai_training_disallow"]),
+                         (True, None, ["FixtureTrainBot"]))  # a training crawler's group is a signal, not a stop
+        self.assertEqual(record["crawl_delay"], 11.0)  # a group honoured as ours also paces us
+
+    def test_a_group_naming_our_token_decides_alone(self):
+        own = self.record("User-agent: RemorsearchUXQA\nAllow: /\n\nUser-agent: FixtureFetcher-User\nDisallow: /\n")
+        self.assertTrue(own["own_group"])
+        self.assertEqual(self.decide(own, "/anything")["allowed"], True)
+        bare = self.record("User-agent: fixturefetcher-user\nDisallow: /x\n")  # no '*' group; tokens ignore case
+        self.assertIsNone(bare["group"])
+        self.assertEqual(self.decide(bare, "/x/1")["ai_agent_token"], "FixtureFetcher-User")
+        self.assertTrue(self.decide(bare, "/y")["allowed"])
+        self.assertTrue(self.decide(self.record("User-agent: FixtureFetcher-User\nDisallow: /\n", tokens=None),
+                                    "/x")["allowed"])  # without agent tokens the old behaviour stays
+        ours = self.record("User-agent: *\nAllow: /\n", tokens={"fetch_on_behalf": [ROBOTS_TOKEN]})
+        self.assertEqual(ours["agents"]["fetch_on_behalf"], {})  # our own token is never another agent
+        for kwargs in (dict(status=404), dict(status=503), dict(status=None, error="connect_error")):
+            unfetched = robots.record_from_fetch("http://x.test", body=b"", token=ROBOTS_TOKEN, fetched_at="t",
+                                                 agent_tokens=self.TOKENS, **kwargs)
+            self.assertEqual((unfetched["format"], unfetched["agents"]["fetch_on_behalf"]), (robots.RECORD_FORMAT, {}))
+
+
+class KoreanMarkerTests(unittest.TestCase):
+    BARE = {
+        "promotion": ("체험단", "협찬", "원고료", "광고", "서포터즈", "선물", "대가", "수수료", "유료 광고", "광고 포함",
+                      "제공", "협찬 광고", "sponsored", "sponsor", "ad", "AD", "PR"),
+        "incentive": ("리뷰 이벤트", "리뷰이벤트", "이벤트", "적립금", "포인트", "리뷰 적립", "서비스", "증정"),
+        "virtual_person": ("가상인물", "가상 인물", "가상인간", "가상 인간", "AI 인플루언서", "버추얼", "AI 모델",
+                           "virtual human", "virtual influencer"),
+        "gates": ("등업", "인증", "가입", "회원", "아이핀", "공동인증서", "간편인증", "성인", "실명", "정회원", "휴대폰"),
+    }
+
+    @staticmethod
+    def flags(text: str, title: str = "") -> list:
+        found = verdict.content_flags(text, title)
+        out = [(h["family"], h["position"]) for h in found["promotion_hits"]]
+        out += [("incentive:" + h["kind"], h["position"]) for h in found["incentive_flags"]]
+        out += [("virtual_person", h["position"]) for h in found["virtual_person_flags"]]
+        return out
+
+    def test_labelled_cases_keep_full_precision(self):
+        cases = json.loads(MARKER_CASES.read_text(encoding="utf-8"))
+        self.assertGreaterEqual((len(cases["positives"]), len(cases["negatives"])), (20, 20))
+        true_positive = false_positive = missed = 0
+        for case in cases["positives"]:
+            found = self.flags(case["text"], case.get("title", ""))
+            hit = any(family == case["family"] and position == case.get("position", position)
+                      for family, position in found)
+            true_positive, missed = true_positive + hit, missed + (not hit)
+            self.assertTrue(hit, (case, found))
+        for case in cases["negatives"]:  # negated disclaimers, questions, quotes, complaints
+            found = self.flags(case["text"], case.get("title", ""))
+            false_positive += bool(found)
+            self.assertEqual(found, [], (case["why"], case["text"][:80]))
+        self.assertEqual(true_positive / (true_positive + false_positive), 1.0)
+        self.assertEqual(true_positive / (true_positive + missed), 1.0)
+
+    def test_positions_and_placed_markers(self):
+        body = "사용해 본 소감을 적습니다. " + "배터리와 화면 밝기를 사흘 동안 비교했어요. " * 12
+        self.assertEqual([(h["family"], h["position"]) for h in verdict.promotion_scan(body + " 이 글은 광고입니다.")],
+                         [("promotion_placed", "tail")])
+        self.assertEqual([h["position"] for h in verdict.promotion_scan("#협찬 " + body)], ["lead"])
+        self.assertEqual([h["position"] for h in verdict.promotion_scan(body, title="[협찬] 보조배터리 후기")], ["lead"])
+        middle = body[:200] + " 친구는 광고입니다 라고 했다. " + body
+        self.assertEqual(verdict.promotion_scan(middle), [])  # a placed wording in the body counts nowhere
+        self.assertEqual([h["position"] for h in verdict.promotion_scan(body[:200] + " 제품을 제공받아 작성. " + body)],
+                         ["body"])
+        self.assertEqual(verdict.promotion_flags("협찬받았습니다. #협찬"), ["협찬받았습니다", "#협찬"])
+
+    def test_no_family_holds_a_bare_word(self):
+        markers = verdict.load_markers()
+        families = {"promotion": [m for key in ("promotion", "promotion_placed", "promotion_labels")
+                                  for m in verdict._langs(markers[key])],
+                    "incentive": [m for kind in verdict.INCENTIVE_KINDS
+                                  for m in verdict._langs(markers["incentive"][kind])],
+                    "virtual_person": verdict._langs(markers["virtual_person"]),
+                    "gates": verdict._langs(markers["membership"]["words"])
+                    + verdict._langs(markers["age_identity"]["words"])}
+        for family, values in families.items():
+            lowered = {" ".join(v.lower().split()) for v in values}
+            for bare in self.BARE[family]:
+                self.assertNotIn(bare.lower(), lowered, (family, bare))
+        for key in ("promotion", "promotion_placed", "promotion_labels", "virtual_person"):
+            for value in verdict._langs(markers[key]):
+                self.assertEqual(unicodedata.normalize("NFC", value), value)
+
+    def test_identity_and_cafe_level_gates_are_membership_walls(self):
+        for notice in ("<div class='notice'><p>등업 후 이용 가능한 게시판입니다.</p></div>",
+                       "<div class='notice'><p>휴대폰 본인인증 후 열람하실 수 있습니다.</p></div>",
+                       "<div class='notice'><p>정회원만 읽을 수 있는 글입니다.</p></div>"):
+            page = extract.from_html(notice, "http://x.test/p")
+            self.assertEqual(verdict.classify(status=200, headers={}, page=page, requested_url="http://x.test/p")
+                             .stop_class, "auth_gate", notice)
+        post = extract.from_html("<article><h1>질문</h1><p>카페 등업 후에 글이 보인다는데 저는 왜 안 보일까요? "
+                                 "등업 신청은 어제 했어요.</p></article>", "http://x.test/p")
+        result = verdict.classify(status=200, headers={}, page=post, requested_url="http://x.test/p")
+        self.assertIsNone(result.stop_class)
+
+
+class TermsRestrictedTests(ServerCase):
+    def today(self) -> str:
+        return time.strftime("%Y-%m-%d", time.gmtime(self.clock()))
+
+    def check(self, host: str, result: str = "permits_this_reading", **extra) -> dict:
+        return {"host": host, "terms_url": f"http://{host}/terms#automated-access", "checked_on": self.today(),
+                "result": result, **extra}
+
+    def brief_with(self, checks: list, **extra) -> Path:
+        brief = json.loads((FIXTURES / "brief.json").read_text(encoding="utf-8"))
+        brief["access_policy"]["terms_checked"] = checks
+        brief.update(extra)
+        path = self.tmp / f"brief-{len(list(self.tmp.glob('brief-*')))}.json"
+        path.write_text(json.dumps(brief, ensure_ascii=False), encoding="utf-8")
+        return path
+
+    def robots_cmd(self, url: str):
+        code, out, _ = self.cli("robots", "--run", self.run_dir, url)
+        return code, json.loads(out)
+
+    def test_a_terms_restricted_host_is_never_requested_or_captured(self):
+        for host in ("reported.test", "confirmed.test"):
+            self.server.page(host, "/p", "post-normal.html")
+        self.start()
+        cases = (("reported.test", "reported", "no_terms_check", "only the user can lift a reported restriction"),
+                 ("confirmed.test", "confirmed", "confirmed_never_lifted", "a confirmed restriction is never lifted"))
+        for host, status, why, lift in cases:
+            code, summary, out = self.read(self.url(host, "/p"))
+            self.assertEqual((code, summary["bucket"], summary["stop_class"]), (3, "stopped", "terms_restricted"), host)
+            self.assertTrue(summary["reasons"][0].startswith(f"terms:{status}:"), summary["reasons"])
+            self.assertIn(f"terms_check:{why}", summary["reasons"])
+            self.assertEqual((summary["terms"]["status"], summary["terms"]["lifted"]), (status, False))
+            self.assertIn("terms_restricted", out)
+            self.assertNotIn("NORMAL-POST-SENTINEL", out)
+            code, result = self.robots_cmd(self.url(host, "/p"))
+            self.assertEqual((code, result["stop_class"], result["allowed"]), (3, "terms_restricted", False))
+            code, summary, _ = self.ingest(self.url(host, "/p"), CAPTURES / "capture-full.html",
+                                           "--context", "anonymous")
+            self.assertEqual(code, 2)
+            self.assertIn("terms restrict automated collection", summary["reasons"][0])
+            self.assertIn(lift, summary["reasons"][0])
+            self.assertEqual(self.server.hits(host), [], host)  # not even robots.txt
+        closed = json.loads(self.cli("close", "--run", self.run_dir)[1])
+        self.assertEqual((closed["totals"]["terms_restricted"], closed["totals"]["stopped"]), (2, 0))
+        self.assertIn("terms_restricted", closed["stop_classes"])
+        self.assertEqual({r["host"]: r for r in closed["hosts"]}["reported.test"]["stopped"], {"terms_restricted": 1})
+
+    def test_a_users_terms_check_lifts_a_reported_entry_only(self):
+        for host in ("reported.test", "m.reported.test", "confirmed.test"):
+            self.server.page(host, "/p", "post-normal.html")
+        self.server.page("reported.test", "/shell", "js-shell-bare.html")
+        created = self.start("--brief", self.brief_with([self.check("reported.test", note="read the service terms"),
+                                                         self.check("confirmed.test")]))
+        effects = {row["host"]: row["effect"] for row in created["terms_checked"]}
+        self.assertIn("lifts fixture-reported", effects["reported.test"])
+        self.assertIn("never lifted", effects["confirmed.test"])
+        code, summary, out = self.read(self.url("reported.test", "/p"))
+        self.assertEqual((code, summary["bucket"], summary["terms"]["lifted"]), (0, "read", True))
+        self.assertEqual(summary["terms"]["check"]["terms_url"], "http://reported.test/terms#automated-access")
+        self.assertTrue(any("budget is 10 documents" in note for note in summary["notes"]))
+        self.assertIn("lifted by the user's terms check", out)
+        self.assertIn("NORMAL-POST-SENTINEL", out)
+        self.assertEqual(self.read(self.url("m.reported.test", "/p"))[0], 0)  # a check covers the subdomains
+        self.assertEqual(self.read(self.url("reported.test", "/shell"))[0], 4)
+        code, summary, _ = self.ingest(self.url("reported.test", "/shell"), CAPTURES / "capture-full.html",
+                                       "--context", "anonymous")
+        self.assertEqual((code, summary["terms"]["lifted"]), (0, True))  # a lifted host takes captures
+        code, summary, _ = self.read(self.url("confirmed.test", "/p"))
+        self.assertEqual((code, summary["stop_class"]), (3, "terms_restricted"))
+        self.assertIn("terms_check:confirmed_never_lifted", summary["reasons"])
+        self.assertEqual(self.server.hits("confirmed.test"), [])
+        outcome = [e for e in self.ledger_entries() if e["kind"] == "outcome" and e["host"] == "reported.test"][0]
+        self.assertEqual(outcome["terms"], {"entry": "fixture-reported", "status": "reported", "lifted": True,
+                                            "mode": None, "not_lifted_because": None})
+        self.assertEqual(self.robots_cmd(self.url("reported.test", "/p"))[1]["terms"]["lifted"], True)
+        closed = json.loads(self.cli("close", "--run", self.run_dir)[1])
+        rows = {row["host"]: row for row in closed["terms_checked"]}
+        self.assertEqual(rows["reported.test"]["urls_under_lift"], 3)  # /p, m./p and /shell (read, then captured)
+        self.assertEqual(rows["confirmed.test"]["urls_under_lift"], 0)
+
+    def test_a_lifted_host_has_a_budget_of_ten_documents(self):
+        for i in range(11):
+            self.server.page("reported.test", f"/p/{i}", "post-normal.html")
+        self.server.page("lang.test", "/p", "post-normal.html")
+        self.start("--brief", self.brief_with([self.check("reported.test")]))
+        for i in range(10):
+            self.assertEqual(self.read(self.url("reported.test", f"/p/{i}"))[0], 0, i)
+        code, summary, _ = self.read(self.url("reported.test", "/p/10"))
+        self.assertEqual((code, summary["stop_class"], summary["reasons"]), (3, "budget", ["budget:host:10"]))
+        self.assertNotIn("/p/10", self.server.hits("reported.test"))
+        run = ledger.Run(self.run_dir, clock=self.clock)
+        self.assertEqual((run.host_limit("reported.test"), run.host_limit("lang.test")), (10, 20))
+
+    def test_a_check_that_does_not_permit_the_reading_lifts_nothing(self):
+        self.server.page("reported.test", "/p", "post-normal.html")
+        self.start("--brief", self.brief_with([self.check("reported.test", result="restricts_this_reading")]))
+        code, summary, _ = self.read(self.url("reported.test", "/p"))
+        self.assertEqual((code, summary["stop_class"]), (3, "terms_restricted"))
+        self.assertIn("terms_check:check_result:restricts_this_reading", summary["reasons"])
+        self.assertEqual(self.server.hits("reported.test"), [])
+
+    def test_terms_checks_and_ethics_review_come_only_from_the_brief(self):
+        good = self.check("reported.test")
+        cases = {"good": ([good], None, 0), "no-url": ([{k: v for k, v in good.items() if k != "terms_url"}], None, 2),
+                 "not-http": ([{**good, "terms_url": "file:///etc/terms"}], None, 2),
+                 "future": ([{**good, "checked_on": "2999-01-01"}], None, 2),
+                 "bad-date": ([{**good, "checked_on": "2026-13-01"}], None, 2),
+                 "old-result": ([{**good, "result": "no_restriction_for_this_use"}], None, 2),
+                 "url-not-host": ([{**good, "host": "https://reported.test/x"}], None, 2),
+                 "extra-field": ([{**good, "lifted": True}], None, 2), "empty-note": ([{**good, "note": " "}], None, 2),
+                 "too-many": ([good] * 21, None, 2),
+                 "ethics": ([], {"status": "approved", "body": "기관생명윤리위원회", "reference": "IRB-2026-001"}, 0),
+                 "ethics-bad-status": ([], {"status": "maybe"}, 2),
+                 "ethics-extra": ([], {"status": "none", "enforced": True}, 2)}
+        for name, (checks, ethics, expected) in cases.items():
+            path = self.brief_with(checks, **({"ethics_review": ethics} if ethics is not None else {}))
+            code, out, _ = self.cli("start", "--run", self.tmp / f"run-{name}", "--routes", ROUTES, "--brief", path)
+            self.assertEqual(code, expected, (name, out))
+            if name == "good":
+                self.assertEqual(json.loads(out)["policy"]["terms_checked"], [good])
+            if name == "ethics":
+                meta = json.loads((self.tmp / "run-ethics" / "run.json").read_text(encoding="utf-8"))
+                self.assertEqual(meta["ethics_review"]["status"], "approved")  # recorded, never enforced
+        options = [o for action in build_parser()._subparsers._group_actions[0].choices["start"]._actions
+                   for o in action.option_strings]
+        self.assertFalse([o for o in options if "terms" in o])  # no command-line switch lifts a restriction
+
+    def test_a_short_link_to_a_restricted_host_stops_at_the_hop(self):
+        self.server.redirect("shortlink.test", "/v", self.url("tube.test", "/watch?v=abc"))
+        self.server.redirect("shortlink.test", "/r", self.url("reported.test", "/p"))
+        self.server.page("reported.test", "/p", "post-normal.html")
+        self.start()
+        for path, host, entry in (("/v", "tube.test", "fixture-tube-terms"),
+                                  ("/r", "reported.test", "fixture-reported")):
+            code, summary, out = self.read(self.url("shortlink.test", path))
+            self.assertEqual((code, summary["stop_class"], summary["terms"]["entry"]), (3, "terms_restricted", entry))
+            self.assertIn("reached_by_redirect", summary["reasons"])
+            self.assertNotIn("NORMAL-POST-SENTINEL", out)
+            self.assertEqual(self.server.hits(host), [], host)
+        self.assertEqual(self.server.hits("shortlink.test"), ["/robots.txt", "/v", "/r"])
+
+    def comments_feed(self) -> str:
+        return ('<?xml version="1.0"?><rss><channel><title>c</title><item><title>댓글</title>'
+                '<link>http://tube.test/c/1</link><description>공식 경로로 읽은 댓글입니다. 충전 버튼이 늦게 반응해요. '
+                'TUBE-API-SENTINEL</description></item></channel></rss>')
+
+    def test_official_only_mode_reads_the_official_route_and_nothing_else(self):
+        self.server.add("api.tubedata.test", "/comments.xml",
+                        spec(body=self.comments_feed(), ctype="application/rss+xml"))
+        self.server.page("tube.test", "/watch", "post-normal.html")
+        self.start()
+        url = self.url("tube.test", "/watch?v=abc")
+        no_key = {"REMORSEARCH_FIXTURE_TUBE_KEY": "", "REMORSEARCH_FIXTURE_TUBE_OLD_KEY": "", "FIXTURE_TUBE_KEY": ""}
+        with mock.patch.dict(os.environ, {**no_key, "FIXTURE_TUBE_KEY": "NOT-READ"}):  # D6: only REMORSEARCH_* names
+            code, summary, _ = self.read(url)
+        self.assertEqual((code, summary["stop_class"]), (3, "terms_restricted"))
+        self.assertIn("official_route_needs_key:REMORSEARCH_FIXTURE_TUBE_KEY", summary["reasons"])
+        self.assertEqual(self.server.hits("api.tubedata.test"), [])
+        with mock.patch.dict(os.environ, {**no_key, "REMORSEARCH_FIXTURE_TUBE_OLD_KEY": "TUBE-KEY-123"}):  # an alias
+            code, summary, out = self.read(url)
+        self.assertEqual((code, summary["rung"], summary["access_basis"]), (0, "R0", "official_api"))
+        self.assertIn("official_only", summary["reasons"])
+        self.assertEqual((summary["terms"]["mode"], summary["terms"]["lifted"]), ("official_only", False))
+        self.assertIn("TUBE-API-SENTINEL", out)
+        self.assertNotIn("TUBE-KEY-123", out + self.last_err)
+        self.assertNotIn(b"TUBE-KEY-123", self.run_bytes())
+        code, summary, _ = self.ingest(url, CAPTURES / "capture-full.html", "--context", "anonymous")
+        self.assertEqual(code, 2)  # official-only mode never admits a capture
+        self.assertIn("official-only mode", summary["reasons"][0])
+        self.assertEqual(self.cli("robots", "--run", self.run_dir, url)[0], 3)  # browser tools never open the page
+        self.server.add("api.tubedata.test", "/comments.xml", spec(404, "gone", "text/plain"))
+        with mock.patch.dict(os.environ, {**no_key, "REMORSEARCH_FIXTURE_TUBE_KEY": "TUBE-KEY-123"}):
+            code, summary, _ = self.read(self.url("tube.test", "/watch?v=def"))
+            self.assertEqual((code, summary["stop_class"]), (3, "terms_restricted"))
+            self.assertIn("official_route_failed", summary["reasons"])
+            code, summary, _ = self.read(self.url("tube.test", "/channel/xyz"))
+            self.assertIn("official_route_does_not_fit", summary["reasons"])
+        self.assertEqual(self.server.hits("tube.test"), [])  # never the page, not even its robots.txt
+
+    def test_a_render_that_ended_on_a_restricted_host_is_refused(self):
+        self.server.page("shell.test", "/app/post/9", "js-shell-bare.html")
+        self.start()
+        target = self.url("shell.test", "/app/post/9")
+        self.assertEqual(self.read(target)[0], 4)
+        doc = json.loads((CAPTURES / "page-read.json").read_text(encoding="utf-8").replace("{{URL}}", target))
+        for changes in ({"final_url": self.url("tube.test", "/watch?v=abc")},
+                        {"redirects": [{"status": 302, "url": self.url("search.test", "/?q=x")}]}):
+            path = self.tmp / f"hop-{len(list(self.tmp.glob('hop-*')))}.json"
+            path.write_text(json.dumps({**doc, **changes}, ensure_ascii=False), encoding="utf-8")
+            code, summary, out = self.ingest(target, path, "--context", "anonymous")
+            self.assertEqual(code, 2, changes)
+            self.assertIn("another URL that is never captured", summary["reasons"][0])
+            self.assertNotIn("PAGE-READ-SENTINEL", out)
+        self.assertEqual(self.page_files(), [])
+
+    def test_an_official_route_without_an_adapter_is_unavailable(self):
+        self.start()
+        with mock.patch.dict(os.environ, {"REMORSEARCH_FIXTURE_APITUBE_KEY": "K"}):
+            code, summary, _ = self.read(self.url("apitube.test", "/watch?v=abc"))
+        self.assertEqual((code, summary["stop_class"]), (3, "terms_restricted"))
+        self.assertIn("official_route_unavailable", summary["reasons"])
+        self.assertFalse([r for r in summary["reasons"] if r.startswith("official_route_needs_key")])
+        self.assertEqual(self.server.hits("apitube.test") + self.server.hits("api.tubedata.test"), [])
+
+    def test_the_packaged_scope_lists_apply_with_any_route_table(self):
+        self.start()  # the fixture route table names no real host
+        cases = {"https://www.youtube.com/watch?v=abc": (3, "terms_restricted"),
+                 "https://youtu.be/abc": (3, "terms_restricted"),
+                 "https://www.threads.com/@someone/post/1": (3, "terms_restricted"),
+                 "https://threads.net/@someone": (3, "terms_restricted"),
+                 "https://www.instagram.com/p/abc/": (3, "terms_restricted"),
+                 "https://m.dcinside.com/board/x/1": (3, "terms_restricted"),
+                 "https://cafe.naver.com/somecafe/1": (3, "terms_restricted"),
+                 "https://blog.naver.com/someone/223344556677": (3, "terms_restricted"),
+                 "https://www.facebook.com/groups/x": (3, "auth_gate"),  # private channels come first
+                 "https://search.naver.com/search.naver?query=x": (2, None),
+                 "https://www.google.com/search?q=x": (2, None),
+                 "https://openapi.naver.com/v1/search/blog.json?query=x": (2, None),
+                 "https://naverapihub.apigw.ntruss.com/search/v1/blog?query=x": (2, None),
+                 "https://dapi.kakao.com/v2/search/web?query=x": (2, None)}
+        for url, (expected, stop) in cases.items():  # decided from the URL alone: no DNS lookup, no request
+            code, summary, _ = self.read(url)
+            self.assertEqual((code, summary.get("stop_class")), (expected, stop), url)
+        self.assertEqual(self.server.hits(), [])
+
+    def test_youtube_pages_need_the_users_key(self):
+        code, out, _ = self.cli("start", "--run", self.run_dir)  # the packaged route table
+        self.assertEqual(code, 0, out)
+        no_key = {"REMORSEARCH_YOUTUBE_API_KEY": "", "YOUTUBE_API_KEY": ""}
+        with mock.patch.dict(os.environ, no_key):
+            code, summary, _ = self.read("https://www.youtube.com/watch?v=abc")
+        self.assertEqual((code, summary["stop_class"], summary["terms"]["status"]),
+                         (3, "terms_restricted", "confirmed"))
+        self.assertNotIn("official_route_unavailable", summary["reasons"])  # the Data API adapter ships
+        self.assertIn("official_route_needs_key:REMORSEARCH_YOUTUBE_API_KEY", summary["reasons"])
+        with mock.patch.dict(os.environ, {**no_key, "YOUTUBE_API_KEY": "alias-key"}):
+            code, summary, _ = self.read("https://www.youtube.com/watch?v=abd")  # not a video ID: no call at all
+        self.assertEqual(code, 3)
+        self.assertNotIn("official_route_needs_key:REMORSEARCH_YOUTUBE_API_KEY", summary["reasons"])
+        self.assertIn("official_route_does_not_fit", summary["reasons"])
+        self.assertNotIn(b"alias-key", self.run_bytes())  # tests/test_ux_youtube.py reads through a fake API
+
+
+class SearchPageTests(ServerCase):
+    def test_search_pages_and_disabled_routes_are_refused_before_any_request(self):
+        self.server.page("portal.test", "/help", "post-normal.html")
+        self.server.page("portal.test", "/searching-tips", "post-normal.html")
+        self.server.page("askbox.test", "/about", "post-normal.html")
+        self.start()
+        for url, error in ((self.url("search.test", "/?q=%EC%B6%A9%EC%A0%84"), "search_results_page"),
+                           (self.url("portal.test", "/search?q=x"), "search_results_page"),
+                           (self.url("portal.test", "/search/images?q=x"), "search_results_page"),
+                           (self.url("askbox.test", "/?q=x"), "search_results_page"),
+                           (self.url("disabled-api.test", "/v1/search/blog?query=x"), "disabled_route")):
+            code, summary, _ = self.read(url)
+            self.assertEqual((code, summary["bucket"], summary["error"]), (2, "refused", error), url)
+            code, out, _ = self.cli("robots", "--run", self.run_dir, url)
+            self.assertEqual((code, json.loads(out)["error"]), (2, error), url)
+            code, summary, _ = self.ingest(url, CAPTURES / "capture-full.html", "--context", "anonymous")
+            self.assertEqual(code, 2, url)
+            self.assertIn("never captured", summary["reasons"][0])
+        for path in ("/help", "/searching-tips"):  # the rest of the host is read as usual
+            self.assertEqual(self.read(self.url("portal.test", path))[0], 0, path)
+        self.assertEqual(self.read(self.url("askbox.test", "/about"))[0], 0)
+        self.assertEqual(self.server.hits("search.test") + self.server.hits("disabled-api.test"), [])
+        self.assertEqual(self.server.hits("portal.test"), ["/robots.txt", "/help", "/searching-tips"])
+
+    def test_a_redirect_into_a_search_page_or_a_disabled_route_is_a_stop(self):
+        self.server.redirect("shortlink.test", "/s", self.url("search.test", "/results?q=x"))
+        self.server.redirect("shortlink.test", "/d", self.url("disabled-api.test", "/v1/search/blog"))
+        self.start()
+        for path, reason in (("/s", "search_results_page"), ("/d", "never_call:fixture-discovery")):
+            code, summary, _ = self.read(self.url("shortlink.test", path))
+            self.assertEqual((code, summary["stop_class"], summary["out_of_scope"]), (3, "opted_out", True), path)
+            self.assertIn(reason, summary["reasons"])
+            self.assertIn("reached_by_redirect", summary["reasons"])
+        self.assertEqual(self.server.hits("search.test") + self.server.hits("disabled-api.test"), [])
+        closed = json.loads(self.cli("close", "--run", self.run_dir)[1])
+        self.assertEqual((closed["totals"]["out_of_scope"], closed["totals"]["stopped"]), (2, 0))
+
+
+class ReaderAgentTokenTests(ServerCase):
+    def test_groups_for_ai_agents_that_fetch_for_users_are_honoured(self):
+        self.server.robots("agents.test", "ai-agent-group.txt")
+        for path in ("/agent-blocked/1", "/public"):
+            self.server.page("agents.test", path, "post-normal.html")
+        created = self.start("--agent-tokens", AGENT_TOKENS)
+        self.assertEqual(created["agent_tokens"]["extra_source"], str(AGENT_TOKENS.resolve()))
+        self.assertGreater(created["agent_tokens"]["fetch_on_behalf"], 1)
+        code, summary, out = self.read(self.url("agents.test", "/agent-blocked/1"))
+        self.assertEqual((code, summary["stop_class"], summary["robots"]["ai_agent_token"]),
+                         (3, "opted_out", "FixtureFetcher-User"))
+        self.assertIn("robots:ai_agent:FixtureFetcher-User", summary["reasons"])
+        self.assertNotIn("NORMAL-POST-SENTINEL", out)
+        code, summary, _ = self.read(self.url("agents.test", "/public"))
+        self.assertEqual((code, summary["robots"]["ai_training_disallow"]), (0, ["FixtureTrainBot"]))
+        outcome = [e for e in self.ledger_entries() if e["kind"] == "outcome"][-1]
+        self.assertEqual(outcome["ai_training_disallow"], ["FixtureTrainBot"])
+        code, out, _ = self.cli("robots", "--run", self.run_dir, self.url("agents.test", "/agent-blocked/2"))
+        self.assertEqual((code, json.loads(out)["ai_agent_token"]), (3, "FixtureFetcher-User"))
+        self.assertEqual(self.server.hits("agents.test"), ["/robots.txt", "/public"])
+        self.assertIn(11.0, self.clock.sleeps)  # the honoured group's Crawl-delay paced the second request
+
+    def test_without_the_fixture_tokens_their_groups_do_not_apply(self):
+        self.server.robots("agents.test", "ai-agent-group.txt")
+        self.server.page("agents.test", "/agent-blocked/1", "post-normal.html")
+        self.start()
+        self.assertEqual(self.read(self.url("agents.test", "/agent-blocked/1"))[0], 0)
+        bad = self.tmp / "tokens.json"
+        bad.write_text(json.dumps({"schema_version": "x", "tokens": []}), encoding="utf-8")
+        code, out, _ = self.cli("start", "--run", self.tmp / "bad-tokens", "--routes", ROUTES, "--agent-tokens", bad)
+        self.assertEqual((code, json.loads(out)["status"]), (2, "refused"))
+
+    def test_robots_records_in_an_older_format_are_fetched_again(self):
+        self.server.robots("agents.test", body="User-agent: *\nDisallow: /old/\n")
+        self.server.page("agents.test", "/p", "post-normal.html")
+        self.start("--agent-tokens", AGENT_TOKENS)
+        self.assertEqual(self.read(self.url("agents.test", "/p"))[0], 0)
+        path = self.run_dir / "hosts.json"
+        state = json.loads(path.read_text(encoding="utf-8"))
+        state["robots"][f"http://agents.test:{self.server.port}"].pop("format")
+        path.write_text(json.dumps(state), encoding="utf-8")
+        self.server.robots("agents.test", "ai-agent-group.txt")
+        self.server.page("agents.test", "/agent-blocked/1", "post-normal.html")
+        code, summary, _ = self.read(self.url("agents.test", "/agent-blocked/1"))
+        self.assertEqual((code, summary["robots"]["ai_agent_token"]), (3, "FixtureFetcher-User"))
+        self.assertEqual(self.server.hits("agents.test").count("/robots.txt"), 2)
+
+
+class ScrubbingTests(ServerCase):
+    IDENTIFIERS = ("010-2222-3333", "buyer9@example.test", "110-222-333444", "4111 1111 1111 1111", "900101-1234567",
+                   "900202-2******", "118.235")
+
+    def assert_scrubbed(self, out: str) -> None:
+        for value in self.IDENTIFIERS:
+            self.assertNotIn(value, out + self.last_err, value)
+            self.assertNotIn(value.encode("utf-8"), self.run_bytes(), value)
+
+    def test_read_scrubs_identifiers_before_anything_is_printed_or_saved(self):
+        self.server.page("pii.test", "/p", "pii-post.html")
+        self.start()
+        code, summary, out = self.read(self.url("pii.test", "/p"))
+        self.assertEqual(code, 0)
+        self.assertIn("PII-POST-SENTINEL", out)
+        self.assert_scrubbed(out)
+        self.assertTrue({"phone", "email", "account", "card", "id_number", "partial_ip"} <= set(summary["scrubbed"]))
+        self.assertEqual(summary["meta"]["title"], "환불 문의 [phone] - 테스트 커뮤니티")
+        saved = self.page_files()[0].read_text(encoding="utf-8")
+        self.assertEqual(summary["content_sha256"], hashlib.sha256(saved.encode("utf-8")).hexdigest())
+        self.assertIn("[account]", saved)
+
+    def test_ingest_scrubs_the_same_way_in_every_context(self):
+        self.server.page("pii.test", "/shell", "js-shell-bare.html")
+        self.server.page("pii.test", "/shell2", "js-shell-bare.html")
+        self.start()
+        text = self.tmp / "capture.txt"
+        text.write_text((PAGES / "pii-post.html").read_text(encoding="utf-8").split("<h1>", 1)[1], encoding="utf-8")
+        for path, capture, context in (("/shell", PAGES / "pii-post.html", "anonymous"), ("/shell2", text, "unknown")):
+            self.assertEqual(self.read(self.url("pii.test", path))[0], 4)
+            code, summary, out = self.ingest(self.url("pii.test", path), capture, "--context", context)
+            self.assertEqual(code, 0, path)
+            self.assertIn("PII-POST-SENTINEL", out)
+            self.assert_scrubbed(out)
+            self.assertIn("phone", summary["scrubbed"])
+
+    def test_paywall_metadata_is_scrubbed_too(self):
+        page = ("<html><head><title>문의 paywall9@example.test</title><script type='application/ld+json'>"
+                "{\"isAccessibleForFree\": false}</script></head><body><p>구독자 전용 기사입니다.</p></body></html>")
+        self.server.add("pii.test", "/paid", spec(body=page))
+        self.start()
+        code, summary, out = self.read(self.url("pii.test", "/paid"))
+        self.assertEqual((code, summary["stop_class"]), (3, "paywall"))
+        self.assertNotIn("paywall9@example.test", out + self.last_err)
 
 
 # ------------------------------------------------------------------ contracts
@@ -2104,36 +2656,144 @@ class ContractTests(unittest.TestCase):
     def test_site_data_is_unverified_and_keys_come_from_the_environment(self):
         routes = json.loads((PACKAGE / "data" / "routes.json").read_text(encoding="utf-8"))
         known = {"scheme", "host", "port_suffix", "path", "query", "url_enc", "registrable", "key"}
+        adapter_known = known | {"id", "page_size"}  # the variables an adapter fills in itself
         for platform in routes["platforms"]:
             self.assertIsNone(platform["verified_at"], platform["id"])
             for field in ("id", "hosts", "platform_family", "official", "alternates", "login_hosts", "author_from",
                           "terms_note"):
                 self.assertIn(field, platform, platform["id"])
-            groups = set(re.compile(platform["path"]).groupindex) if platform.get("path") else set()
-            templates = [r["url"] for r in platform["official"]] + [a["url"] for a in platform["alternates"]]
-            for template in templates:
+            patterns = [platform.get("path")] + list((platform.get("path_by_host") or {}).values())
+            groups = {g for p in patterns if p for g in re.compile(p).groupindex}
+            templates = [(r, r[k]) for r in platform["official"] for k in r if k == "url" or k.endswith("_url")]
+            templates += [({}, a["url"]) for a in platform["alternates"]]
+            for route, template in templates:
+                allowed = adapter_known if route.get("adapter") else known
                 for name in re.findall(r"\{([A-Za-z_][A-Za-z0-9_]*)\}", template):
-                    self.assertTrue(name in known or name in groups or name.startswith("q_"), (platform["id"], name))
+                    self.assertTrue(name in allowed or name in groups or name.startswith("q_"), (platform["id"], name))
             for route in platform["official"]:
                 self.assertIn(route["kind"], ("feed", "oembed", "api"))
                 self.assertIn(route["auth"], ("none", "user_key"))
                 if route["auth"] == "user_key":
-                    self.assertRegex(route["env"], r"^[A-Z][A-Z0-9_]+$")
+                    self.assertRegex(route["env"], r"^REMORSEARCH_[A-Z0-9_]+$")  # keys come only from REMORSEARCH_*
                     self.assertIn("{key}", route["url"])
+                    self.assertTrue(ladder._key_slots_ok(route), platform["id"])  # only in a masked query parameter
+                if route.get("adapter"):
+                    self.assertIsNotNone(ladder.route_adapter(route), platform["id"])  # a shipped adapter
+                self.assertTrue(set(route.get("env_aliases", [])) <= {"YOUTUBE_API_KEY"}, platform["id"])
         for provider in routes["discovery"]:
             self.assertIsNone(provider["verified_at"])
-            self.assertTrue(all(re.fullmatch(r"[A-Z][A-Z0-9_]+", name) for name in provider["auth"]["env"]))
-        for name in ("markers.json", "suffixes.json"):
+            self.assertTrue(all(re.fullmatch(r"REMORSEARCH_[A-Z0-9_]+", name) for name in provider["auth"]["env"]))
+            self.assertTrue(set(provider["auth"].get("env_aliases", [])) <= {"YOUTUBE_API_KEY"}, provider["id"])
+        youtube = [r.get("env") for p in routes["platforms"] if p["id"] == "youtube" for r in p["official"]]
+        youtube += [e for p in routes["discovery"] if p["id"].startswith("youtube") for e in p["auth"]["env"]]
+        self.assertEqual(set(youtube), {"REMORSEARCH_YOUTUBE_API_KEY"})  # one name for every YouTube route
+        aliased = {"env": "REMORSEARCH_T_KEY", "env_aliases": ["REMORSEARCH_T_OLD_KEY", "T_KEY"]}
+        self.assertEqual(ladder.user_key(aliased)[1], "REMORSEARCH_T_KEY")
+        with mock.patch.dict(os.environ, {"REMORSEARCH_T_KEY": "", "REMORSEARCH_T_OLD_KEY": "alias-value"}):
+            self.assertEqual(ladder.user_key(aliased), ("alias-value", "REMORSEARCH_T_KEY"))
+        with mock.patch.dict(os.environ, {"REMORSEARCH_T_KEY": "", "REMORSEARCH_T_OLD_KEY": "", "T_KEY": "x",
+                                          "HOME_TOKEN": "y"}):  # D6: other names are never read
+            self.assertEqual(ladder.user_key(aliased), (None, "REMORSEARCH_T_KEY"))
+            self.assertIsNone(ladder.user_key({"env": "HOME_TOKEN"})[0])
+        for name in ("markers.json", "suffixes.json", "agent-tokens.json"):
             self.assertIsNone(json.loads((PACKAGE / "data" / name).read_text(encoding="utf-8"))["verified_at"], name)
+
+    def test_terms_restricted_entries_and_search_pages(self):
+        routes = json.loads((PACKAGE / "data" / "routes.json").read_text(encoding="utf-8"))
+        platform_ids = {p["id"] for p in routes["platforms"]}
+        fields = {"id", "hosts", "status", "restricts", "official_route", "terms_url", "clause", "sources",
+                  "checked_at", "verified_at", "note"}
+        entries = {e["id"]: e for e in routes["terms_restricted"]}
+        for entry in entries.values():
+            self.assertLessEqual(fields, set(entry), entry["id"])
+            self.assertIn(entry["status"], scope.STATUSES)
+            self.assertTrue(entry["restricts"] and set(entry["restricts"]) <= set(scope.RESTRICTS), entry["id"])
+            self.assertTrue(entry["sources"] and all(s.startswith("https://") for s in entry["sources"]), entry["id"])
+            self.assertRegex(entry["checked_at"], r"^\d{4}-\d{2}-\d{2}$")
+            self.assertIsNone(entry["verified_at"])
+            self.assertTrue(entry["official_route"] is None or entry["official_route"] in platform_ids, entry["id"])
+            if entry["status"] == "confirmed":  # only a clause that was read makes an entry confirmed
+                self.assertTrue(entry["terms_url"] and entry["clause"], entry["id"])
+        confirmed = ("youtube-terms", "meta-instagram", "meta-threads", "meta-facebook")
+        self.assertEqual({entries[i]["status"] for i in confirmed}, {"confirmed"})
+        self.assertEqual({entries[i]["status"] for i in ("dcinside-terms", "naver-cafe-bulk-notice")}, {"reported"})
+        self.assertEqual(entries["youtube-terms"]["official_route"], "youtube")
+        lists = scope.lists_for(None)
+        covered = {"www.youtube.com": "youtube-terms", "m.youtube.com": "youtube-terms", "youtu.be": "youtube-terms",
+                   "www.instagram.com": "meta-instagram", "www.threads.com": "meta-threads",
+                   "threads.com": "meta-threads", "www.threads.net": "meta-threads",
+                   "www.facebook.com": "meta-facebook",
+                   "gall.dcinside.com": "dcinside-terms", "m.dcinside.com": "dcinside-terms",
+                   "cafe.naver.com": "naver-cafe-bulk-notice", "m.cafe.naver.com": "naver-cafe-bulk-notice",
+                   "blog.naver.com": "naver-terms", "rss.blog.naver.com": "naver-terms",
+                   "m.kin.naver.com": "naver-terms", "www.coupang.com": "coupang-terms"}
+        for host, entry in covered.items():  # the more specific entry comes first (the cafe notice before naver-terms)
+            self.assertEqual((scope.terms_entry(host, lists) or {}).get("id"), entry, host)
+        for host in ("www.daangn.com", "bbs.ruliweb.com", "apps.apple.com", "cafe.daum.net", "www.fmkorea.com"):
+            self.assertIsNone(scope.terms_entry(host, lists), host)  # no restriction is invented
+        threads = next(p for p in routes["platforms"] if p["id"] == "threads")
+        self.assertTrue({"threads.com", "threads.net"} <= set(threads["hosts"]))
+        ruliweb = next(p for p in routes["platforms"] if p["id"] == "ruliweb")
+        self.assertIn("m.ruliweb.com", ruliweb["hosts"])
+        for item in routes["search_pages"]:
+            self.assertEqual(set(item) - {"host", "path_prefix", "query_param", "reason"}, set(), item)
+        policy = {"deny_hosts": [], "terms_checked": []}
+        for url in ("https://search.naver.com/search.naver?query=x", "https://m.search.naver.com/search.naver?query=x",
+                    "https://search.daum.net/search?q=x", "https://www.google.com/search?q=x",
+                    "https://www.bing.com/search?q=x", "https://duckduckgo.com/?q=x"):
+            self.assertEqual(scope.evaluate(url, policy, lists)[0].kind, "search_page", url)
+        for url in ("https://www.google.com/maps", "https://duckduckgo.com/about"):
+            self.assertIsNone(scope.evaluate(url, policy, lists)[0], url)
+
+    def test_discovery_routes_stay_off_and_are_never_called(self):
+        routes = json.loads((PACKAGE / "data" / "routes.json").read_text(encoding="utf-8"))
+        providers = {p["id"]: p for p in routes["discovery"]}
+        for name in ("naver-search-open-api", "naver-api-hub", "naver-datalab", "kakao-daum-search"):
+            self.assertIs(providers[name]["enabled"], False, name)
+            self.assertEqual(providers[name]["reason"], "off until the owner reads the current terms", name)
+        lists = scope.lists_for(None)
+        policy = {"deny_hosts": [], "terms_checked": []}
+        for provider in providers.values():
+            self.assertIsInstance(provider["enabled"], bool, provider["id"])
+            if provider["enabled"]:
+                continue
+            self.assertTrue(provider["never_call"], provider["id"])
+            for endpoint in provider["endpoints"].values():
+                url = endpoint.replace("{service}", "blog")
+                stop = scope.evaluate(url, policy, lists)[0]
+                self.assertEqual((stop.kind, stop.error), ("never_call", "disabled_route"), url)
+
+    def test_agent_tokens_come_from_operator_documentation(self):
+        data = json.loads((PACKAGE / "data" / "agent-tokens.json").read_text(encoding="utf-8"))
+        self.assertEqual(data["schema_version"], ledger.AGENT_TOKENS_SCHEMA)
+        lists = ledger.agent_token_lists(data)
+        self.assertTrue(lists["fetch_on_behalf"] and lists["training_or_index"])
+        names = [t["token"].lower() for t in data["tokens"]]
+        self.assertEqual(len(names), len(set(names)))
+        self.assertNotIn(ROBOTS_TOKEN.lower(), names)
+        for item in data["tokens"]:
+            self.assertIn(item["category"], robots.AGENT_CATEGORIES)
+            self.assertIsInstance(item["verified"], bool)
+            if item["verified"]:  # a verified token names the operator page it was read on
+                self.assertTrue(item["doc"].startswith("https://") and item["operator"], item["token"])
+        for token in ("ChatGPT-User", "Claude-User", "Perplexity-User"):
+            self.assertIn(token, lists["fetch_on_behalf"])
+        for token in ("GPTBot", "ClaudeBot", "Google-Extended", "CCBot"):
+            self.assertIn(token, lists["training_or_index"])
 
     def test_markers_cover_korean_promotion_login_and_captcha(self):
         markers = verdict.load_markers()
-        for phrase in ("체험단으로 참여", "#협찬", "[협찬]", "소정의 원고료", "제품을 제공받아", "쿠팡 파트너스 활동",
-                       "수수료를 제공받", "[광고]", "유료 광고 포함"):
+        for phrase in ("체험단으로 참여", "#협찬", "[협찬]", "소정의 원고료를 받", "제품을 제공받아", "쿠팡 파트너스 활동",
+                       "수수료를 제공받", "[광고]", "유료 광고 포함", "경제적 대가를 받", "협찬 받음"):
             self.assertIn(phrase, markers["promotion"]["ko"])
-        for bare in ("체험단", "협찬", "원고료", "광고", "서포터즈"):  # a word alone is not a disclosure
-            self.assertNotIn(bare, markers["promotion"]["ko"])
+        self.assertIn("광고입니다", markers["promotion_placed"]["ko"])
+        self.assertIn("#ad", markers["promotion"]["en"])  # '#ad' stays an anywhere marker
+        self.assertNotIn("#AD", markers["promotion_labels"]["en"])
         self.assertNotIn("sponsored", markers["promotion"]["en"])
+        self.assertIn("ㅇㅇ", markers["anonymous_handles"]["ko"])
+        for key, phrase in (("membership", "등업 후"), ("membership", "정회원만"), ("age_identity", "휴대폰 본인인증"),
+                            ("age_identity", "PASS 인증")):
+            self.assertIn(phrase, markers[key]["words"]["ko"])
         self.assertIn("로그인", markers["login"]["words"]["ko"])
         self.assertIn("보안문자", markers["human_check"]["words"]["ko"])
         self.assertIn("g-recaptcha", markers["human_check"]["idents"])
@@ -2144,8 +2804,10 @@ class ContractTests(unittest.TestCase):
         page = json.loads((SKILL / "schemas" / "ux-page-read.v1.schema.json").read_text(encoding="utf-8"))
         for name, schema in (("ux-research-brief.v1", brief), ("ux-page-read.v1", page)):
             self.assertEqual(schema["$schema"], "https://json-schema.org/draft/2020-12/schema")
-            self.assertTrue(schema["$id"].endswith(f"/schemas/{name}.schema.json"))
+            self.assertEqual(schema["$id"], f"{PROJECT_URL}/schemas/{name}.schema.json")
             self.assertEqual(schema["properties"]["schema_version"], {"const": name})
+        bundle = json.loads((SKILL / "schemas" / "ux-evidence-bundle.v1.schema.json").read_text(encoding="utf-8"))
+        self.assertEqual(bundle["$id"], f"{PROJECT_URL}/schemas/ux-evidence-bundle.v1.schema.json")
         self.assertEqual(sorted(brief["properties"]), sorted(ledger.BRIEF_FIELDS))
         for name, fields in ledger._NESTED_FIELDS.items():
             self.assertEqual(sorted(brief["properties"][name]["properties"]), sorted(fields), name)
@@ -2162,6 +2824,14 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(sorted(communities["items"]["properties"]), sorted(ledger.COMMUNITY_FIELDS))
         self.assertEqual((sorted(communities["items"]["required"]), communities["maxItems"]),
                          (["host", "name", "why"], ledger.MAX_COMMUNITIES))
+        checks = brief["properties"]["access_policy"]["properties"]["terms_checked"]
+        self.assertEqual(sorted(checks["items"]["properties"]), sorted(scope.CHECK_FIELDS))
+        self.assertEqual((sorted(checks["items"]["required"]), checks["maxItems"]),
+                         (sorted(scope.CHECK_REQUIRED), scope.MAX_TERMS_CHECKS))
+        self.assertEqual(checks["items"]["properties"]["result"]["enum"], list(scope.CHECK_RESULTS))
+        ethics = brief["properties"]["ethics_review"]
+        self.assertEqual((ethics["properties"]["status"]["enum"], ethics["required"]),
+                         (list(ledger.ETHICS_STATUSES), ["status"]))
         self.assertEqual(sorted(page["required"]), sorted(ladder.PAGE_READ_REQUIRED))
         self.assertEqual(page["properties"]["text"]["maxLength"], extract.TEXT_CAP_CHARS)
         self.assertEqual(page["properties"]["json_ld"]["maxItems"], extract.JSONLD_MAX_BLOCKS)
@@ -2172,15 +2842,40 @@ class ContractTests(unittest.TestCase):
 
     def test_vocabulary_and_identity(self):
         self.assertEqual(verdict.VERDICTS, ("ok_strong", "ok_weak", "suspect", "js_shell", "js_check", "bot_filter"))
-        self.assertEqual(verdict.STOP_CLASSES, ("auth_gate", "paywall", "human_check", "opted_out", "rate_limit",
-                                                "geo_block", "legal_block", "gone", "budget", "host_stopped"))
+        self.assertEqual(verdict.STOP_CLASSES, ("auth_gate", "paywall", "human_check", "opted_out", "terms_restricted",
+                                                "rate_limit", "geo_block", "legal_block", "gone", "budget",
+                                                "host_stopped"))
+        self.assertEqual(verdict.PRE_REQUEST_STOPS, {"terms_restricted", "budget", "host_stopped"})
+        self.assertEqual((robots.RECORD_FORMAT, scope.LIFTED_HOST_BUDGET), (2, 10))
+        self.assertEqual(USER_AGENT.split(" ", 1)[0], "RemorsearchUXQA/0.2.0")
         self.assertEqual(verdict.PRESENTATIONS, ("official_route", "honest_ua", "site_alternate", "real_browser"))
         self.assertEqual(tuple(ladder.PRESENTATION.values()), verdict.PRESENTATIONS)
         self.assertEqual(ladder.RUNGS, ("R0", "R1", "R2", "R3"))
         self.assertEqual(ROBOTS_TOKEN, "RemorsearchUXQA")
         self.assertTrue(USER_AGENT.startswith("RemorsearchUXQA/") and PROJECT_URL in USER_AGENT)
+        self.assertEqual(PROJECT_URL, "https://github.com/remorser58/Remorsearch_UX_QA_Skill")
         self.assertEqual(ladder.EXIT, {"read": 0, "refused": 2, "stopped": 3, "unread": 4, "deferred": 5})
         self.assertEqual(ladder.CONTEXTS, ("anonymous", "unknown", "signed_in"))
+
+    def test_the_access_contract_prints_the_code_vocabulary(self):
+        text = (SKILL / "references" / "research" / "public-page-access.md").read_text(encoding="utf-8")
+        block = text.split("Vocabulary shared by the reader", 1)[1].split("```text\n", 1)[1].split("```", 1)[0]
+        lists = {}
+        for line in block.strip().split("\n"):
+            name, values = line.split(":", 1)
+            lists[name.strip()] = tuple(value.strip() for value in values.split(","))
+        scrub_categories = tuple(dict.fromkeys(name for name, _, _ in privacy._PATTERNS))
+        expected = {"verdicts": verdict.VERDICTS, "stop classes": verdict.STOP_CLASSES,
+                    "presentations": verdict.PRESENTATIONS, "report buckets": verdict.BUCKETS,
+                    "rungs": ladder.RUNGS, "browser contexts": ladder.CONTEXTS,
+                    "robots.txt statuses": robots.STATUSES, "agent token categories": robots.AGENT_CATEGORIES,
+                    "terms statuses": scope.STATUSES, "terms restrictions": scope.RESTRICTS,
+                    "terms check results": scope.CHECK_RESULTS, "incentive kinds": verdict.INCENTIVE_KINDS,
+                    "flag positions": verdict.POSITIONS, "injection signals": envelope.SIGNALS,
+                    "injection risk": envelope.SEVERITIES, "ethics review statuses": ledger.ETHICS_STATUSES,
+                    "scrub categories": scrub_categories}
+        for name, values in expected.items():
+            self.assertEqual(lists.get(name), tuple(values), name)
 
     def test_registrable_domains(self):
         cases = {"a.b.example.co.kr": "example.co.kr", "alice.tistory.com": "alice.tistory.com",

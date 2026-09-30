@@ -40,14 +40,14 @@ Fill this when the run should say who the users are (`references/audience-pipeli
 
 ## Channel selection
 
-Choose channels that reveal different parts of the experience. The reader route is where the reader usually starts (`references/public-page-access.md`, channel notes); verify it live.
+Choose channels that reveal different parts of the experience. The reader route is where the reader usually starts (`references/public-page-access.md`, channel notes); verify it live. Korean channels, with their routes, expected stops and terms status, are in `references/research/korea/platform-map.md`. A host whose terms restrict automated collection (`terms_restricted`) is a gap to plan for, never a route to find.
 
 | Need | Useful sources | What they reveal | Reader route |
 | --- | --- | --- | --- |
-| First-use friction | app reviews, YouTube comments, beginner communities | confusion, onboarding, terminology | R0 review feed or API; R3 render |
+| First-use friction | app reviews, YouTube comments, beginner communities | confusion, onboarding, terminology | R0 review feed; YouTube comments only through the Data API (R0) with the user's key; R3 render for other public pages |
 | Repeated workflow friction | expert communities, Reddit, product forums | shortcuts, state loss, missing controls | R0 feed; R2 mobile twin |
 | Trust and failure | complaints, consumer forums, support threads | refunds, safety, policy, recovery | R1; R2 mobile twin |
-| Content and recommendation | comments, creator communities, review posts | relevance, fatigue, control | R0 API with the user's key; R3 render |
+| Content and recommendation | comments, creator communities, review posts | relevance, fatigue, control | R0 official API with the user's key (YouTube: the Data API only); R3 render for other public pages |
 | Local or peer transaction | regional communities, trade boards, chat-related posts | identity, trust, scheduling, disputes | R2 mobile twin; often member-only (`auth_gate`) |
 | B2B workflow | product forums, issue trackers, team communities | permissions, collaboration, automation | R0 feed or API; R1 |
 | Product intent | official help, release notes, design docs | intended behavior and constraints | R1; Wayback for past versions |
@@ -78,6 +78,8 @@ Rules:
 
 After the first pass, add terms found in user language. Preserve spelling variants, slang, abbreviations, and product-specific names.
 
+For Korean queries, follow `references/research/korea/query-craft.md`: the operators each portal supports, 초성체 (initial-consonant spellings), 야민정음 (look-alike letter swaps), price and quality slang, hearsay endings and sarcasm. Record the run's user terms in `lexicon.json` in the run folder (its section 4). Seed words are candidates; keep one only when the run's own posts show it.
+
 ## Capture record
 
 For each material item, record:
@@ -85,27 +87,35 @@ For each material item, record:
 ```text
 Source URL (bundle only):
 Channel and channel family:
+Store and storefront, and review window (store reviews):
 Tool used (access_method):
+Access basis: public_anonymous / public_teaser / official_api / team_provided / authorised_member
+Terms status of the host: none / reported (lifted by the user's check?) / confirmed
 Rung trail, verdict or stop class, fetch_id:
 Browser context: anonymous / unknown / signed_in (authorised community only)
 Title or thread context:
 Published date (published_at):
 Read date (observed_at):
 Valid for (valid_at) and product-version hint:
+Keep until (retention_until; required for an official API source):
 Author key (never the handle) and thread key:
 Segment, context, task, condition and device cues:
 Firsthand / secondhand / unclear:
-Excerpt (verbatim, at most 300 characters):
+Caution label: narrative_unverified (an anonymous first-person story) / none:
+Speech cues: hearsay ending, register shift, sarcasm marker:
+Polarity: clear / uncertain:
+Excerpt (verbatim from the scrubbed text, at most 300 characters):
 Observed behavior:
 Stated consequence:
 Possible cause:
 Contradicting evidence:
-Promotion or affiliate disclosure:
+Promotion check: text_only / text_and_images; disclosure found (lead / body / tail) or not checked:
+Incentive (seller_event / seller_notice / platform_points / reward_unspecified) and virtual person:
 Injection flag:
 Grade and status (from the gate):
 ```
 
-Keep quotes short and contextual: at most 300 characters and at most 5 per source. Never record names, handles, profile links or contact details; get an author key with `ux_research.py author-key`. Post URLs stay in the bundle, not in reports shared outside the team.
+Keep quotes short and contextual: at most 300 characters and at most 5 per source. Never record names, handles, profile links or contact details; get an author key with `ux_research.py author-key` (default anonymous nicknames and handles with a partial IP are counted by thread key). Post URLs stay in the bundle, not in reports shared outside the team. For a source read through an official API, such as YouTube comments, never record age, health, political or other protected-attribute cues against an author key: use such cues in segment-level claims only, and delete the item by its `retention_until`.
 
 ## Breadth-first pass
 
@@ -128,3 +138,12 @@ Keep quotes short and contextual: at most 300 characters and at most 5 per sourc
 - A device mention is not a device mix.
 - A self-disclosed condition is not a condition share.
 - An `ok_weak` read is not proof that the full context was captured.
+- A community's modelled gender, age or political lean is never attributed to a poster, a claim or a persona. Describe content norms at the level of a corpus, evenly across communities.
+- A community's gender or age mix from traffic panels or wikis is not a segment share.
+- Register and address terms (존댓말, 반말, 형, 언니, 이모, 님) are not age or gender. Neither is slang.
+- The store a review sits in is not the reviewer's age or gender.
+- 내돈내산 ("bought with my own money") is not proof of independence, and a missing disclosure is not proof of an organic post.
+- A star average where review events or review points run is not satisfaction.
+- A complaint-line or regulator count, such as 1372 consultation cases or hidden-ad monitoring counts, is not a prevalence.
+- A default anonymous nickname such as ㅇㅇ is not an identity.
+- An anonymous first-person story, on any board, is the author's account, not a verified fact: label it `narrative_unverified` and use it as existence evidence only.

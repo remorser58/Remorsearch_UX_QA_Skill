@@ -47,8 +47,10 @@ Use `verification_status: "verified"` only when the required observed support ex
 Every source records `channel`, `source_ref`, `access_basis`, `access_method`, `public_scope`, and `retention_status`. Keep `withdrawn`, `deleted`, and `redacted` states visible. A withdrawn or deleted source must not continue to support a verified claim.
 
 - `access_basis`: research runs use `public_anonymous`, `public_teaser`, `official_api`, `team_provided`, `fixture` or `authorised_member`. Older bundles may say `public`.
-- `access_method`: the tool that read the page, such as `ux_research_read`, `aside`, `claude_in_chrome`, `claude_app_browser`, `playwright_mcp`, `chrome_devtools_mcp`, `drivers_web`, `web_search`, `web_fetch` or `team_export` (`references/research/public-page-access.md`, section 15).
+- `access_method`: the tool that read the page, such as `ux_research_read`, `aside`, `claude_in_chrome`, `claude_app_browser`, `playwright_mcp`, `chrome_devtools_mcp`, `drivers_web`, `web_search`, `web_fetch` or `team_export` (`references/research/public-page-access.md`, section 15). A source read through an official API adapter, such as the YouTube Data API, has `access_method: ux_research_read` and `access_basis: official_api`.
 - In shared outputs, a source with `access_basis: authorised_member` carries an authored summary only: no excerpt, no post URL and no member's personal data.
+- A source with `access_basis: official_api` carries `retention_until`. Delete it, or read it again, by then. Never record age, race, religion, political leaning, sexual orientation, health or another protected attribute against its author keys; such cues belong in segment-level claims only. Its video and comment IDs stay in the bundle, never in shared outputs.
+- Excerpts come from the reader's scrubbed page text. Placeholders such as `[phone]` or `([ip])` stay as they are.
 
 Optional fields for research sources:
 
@@ -57,16 +59,21 @@ Optional fields for research sources:
 | `source_type` | An `ergo-audience.v1` source type (`official_statistics`, `product_analytics`, `app_store_reviews`, `community`, `survey`, `interview`, `usability_test`, `support_tickets`, `official_docs`, `competitor`, `market_report`, `research_paper`, `product_brief`, `expert_judgment`), or `news`, `llm_output` or `synthetic` |
 | `access` | `{rung, presentation, verdict, stop_class, fetch_id, fetched_at, content_sha256, robots, context}`, copied from the reader's run ledger |
 | `published_at`, `observed_at`, `valid_at` | When the author published, when the reader read it, and when the content was true |
-| `platform_family`, `org` | The channel family and the organisation used to count independence |
+| `retention_until` | For an official API source: the fetch time plus the route's retention days (30 for YouTube), after which the item is deleted or read again. Required when `access_basis` is `official_api`. |
+| `platform_family`, `org` | The channel family and the organisation used to count independence. `platform_family` is `blog`, `community`, `qna`, `video`, `app_store_reviews`, `microblog` or `commerce_reviews`. On a statistics portal, `org` is the agency that produced the table. |
 | `author_key`, `thread_key` | Salted keys from the run. Never a handle or a name. |
+| `terms` | `{entry, status, lifted, mode}` from the reader, when a `terms_restricted` entry covers the host: the entry's id, `reported` or `confirmed`, whether the user's own terms check lifted it for the run, and `official_only` when only the official route ran |
 | `promo_flags`, `injection_flags` | Candidate promotion or affiliate disclosures (a verifier confirms them before the grade cap applies), and injection signals |
+| `incentive_flags`, `virtual_person_flags` | Candidate review-event incentives, each with its `kind` (`seller_event`, `seller_notice`, `platform_points` or `reward_unspecified`) and `position` (`lead`, `body` or `tail`), and candidate virtual-person labels. A verifier confirms them before a cap applies. |
+| `promo_check` | `text_only` or `text_and_images`: whether the disclosure check saw only the text, or the images and banners too |
+| `stat_card` | For a statistic: `{publisher, title, approval_no, table_id, reference_period, frame, n, method, sampling_error, unit, value_as_printed, url, retrieved_at, licence}` (`references/research/korea/statistics.md`, section 2) |
 
 Values in the `access` block:
 
 - `rung`: `R0` to `R3` for pages that were read; `search_snippet` or `summarizing_fetch` for leads;
 - `presentation`: `official_route`, `honest_ua`, `site_alternate` or `real_browser`;
 - `verdict`: `ok_strong`, `ok_weak`, `suspect`, `js_shell`, `js_check` or `bot_filter`;
-- `stop_class`: `none`, or one of `opted_out`, `gone`, `auth_gate`, `paywall`, `human_check`, `rate_limit`, `geo_block`, `legal_block`, `budget`, `host_stopped`;
+- `stop_class`: `none`, or one of `auth_gate`, `paywall`, `human_check`, `opted_out`, `terms_restricted`, `rate_limit`, `geo_block`, `legal_block`, `gone`, `budget`, `host_stopped`;
 - `robots`: the robots.txt decision for the path (`allowed` or `disallowed`) and the file's status (`ok`, `unavailable`, `unavailable_bot_filtered` or `unreachable`);
 - `context`: `anonymous`, `unknown` or `signed_in`.
 
@@ -91,8 +98,10 @@ A finding may carry `segments_affected`: an array of segment IDs whose composed 
 `scripts/validate_bundle.py` will add these checks (planned). Each applies only when its field is present, so existing bundles keep passing:
 
 - `sources[].access` has the shape and values listed above;
-- a verified claim cannot rely on a source that hit a stop, on a lead (`search_snippet` or `summarizing_fetch`), or on an `llm_output` or `synthetic` source;
+- a verified claim cannot rely on a source that hit a stop, `terms_restricted` included, on a lead (`search_snippet` or `summarizing_fetch`), or on an `llm_output` or `synthetic` source;
+- a source with `access_basis: official_api` has `retention_until`, and a verified claim cannot rely on one whose `retention_until` has passed;
 - a verified `segment_share`, `condition_share`, `device_mix` or `prevalence` claim needs evidence whose `evidence_type` is `quantitative` or `statistic`;
+- a statistical source that supports a size claim has a `stat_card` whose `frame` and `reference_period` are filled in;
 - a persona with `audience_ref` must have `basis: "synthetic"`, and every ID in its `claim_ids` must exist;
 - `segments_affected` must be an array of strings.
 

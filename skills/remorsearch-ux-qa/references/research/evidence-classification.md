@@ -15,7 +15,7 @@ Different people describe a similar situation without copying one another.
 Count independence in three units (`references/source-grading.md`):
 
 - per person: a salted author key, or one thread on anonymous boards;
-- per channel family: one kind of channel, such as blogs, forums and communities, Q&A boards, video comments, app-store reviews or microblogs;
+- per channel family: one kind of channel, such as blogs, forums and communities, Q&A boards, video comments, app-store reviews, microblogs, or shopping and place reviews (`commerce_reviews`);
 - per organisation: the registrable domain, with Korean second-level suffixes such as `co.kr` and `go.kr`. Blogs hosted by path or subdomain count per author.
 
 Identical text counts once. Korean examples:
@@ -41,13 +41,17 @@ Strong for intended behavior and constraints. It does not prove that users under
 
 ### Promotion or incentive-driven content
 
-Sponsored reviews, affiliate posts, event entries, coordinated campaigns, repeated marketing language, and competitive attacks.
+Sponsored reviews, affiliate posts, event entries (including reviews written for a review event, 리뷰 이벤트), coordinated campaigns, repeated marketing language, and competitive attacks.
 
-Useful for identifying messaging and perception. Weak as direct evidence of ordinary user experience: a disclosed promotion caps the source at grade D, so it never counts toward a claim.
+Useful for identifying messaging and perception. Weak as direct evidence of ordinary user experience. The caps are in `references/source-grading.md`, section 4:
 
-Korean disclosures to look for, in the form a disclosure takes: 체험단으로 참여하여, [체험단], 협찬을 받아 작성, #협찬, [협찬], 소정의 원고료를 받아, 제품을 무상으로 제공받아, 업체로부터 지원받아, #광고, [광고], 유료 광고 포함, 쿠팡 파트너스 활동의 일환으로, 수수료를 제공받, 서포터즈 활동으로. English: #ad, #sponsored, "this video is sponsored", paid partnership, "contains affiliate links".
+- A confirmed promotion or affiliate disclosure caps the source at grade D, so it never counts toward a claim.
+- A confirmed review-event incentive caps satisfaction, preference, counter-search use and star averages at D. A complaint or a workaround in the same review keeps its voice grade minus at most one step, and never drops below C because of the incentive.
+- A seller's notice of a review event is a per-review candidate, never a cap on the whole page. Platform-wide review points are kept apart from seller-run events.
+- A review of a platform's own-brand item, on that platform, needs corroboration from another channel family.
+- A disclosed virtual person (an AI-generated persona, AI 가상인물) is not a user's voice: grade E.
 
-A word alone is not a disclosure. A review that complains "광고가 너무 많다" (too many ads in the app) or "체험단 후기만 잔뜩이다" is a user complaint, not promotion. The reader's `promo_flags` are candidates that a verifier confirms before the D cap applies (`references/source-grading.md`, section 4).
+A word alone is not a disclosure. A review that complains "광고가 너무 많다" (too many ads in the app) or "체험단 후기만 잔뜩이다" is a user complaint, not promotion. The reader flags complete disclosure and label forms only (the lists are in `uxresearch/data/markers.json`). Its flags are candidates that a verifier confirms before a cap applies. The Korean disclosure rules, how they changed over time, and worked examples are in `references/research/korea/promotion.md`.
 
 ### Lead
 
@@ -80,13 +84,14 @@ The levels below explain what confidence means. In a research run the level is c
 
 - a single post or comment;
 - vague emotional language;
+- sarcasm or irony that the thread does not resolve;
 - one narrow community;
 - unclear user context;
 - a proposed cause without a reproduced situation.
 
 ### Blocked
 
-- the relevant source is private or inaccessible;
+- the relevant source is private or inaccessible, or its host's terms restrict automated collection (`terms_restricted`);
 - the product state cannot be reproduced;
 - sources disagree in a way that changes the recommendation;
 - current evidence is too old for the claim.
@@ -95,7 +100,10 @@ The levels below explain what confidence means. In a research run the level is c
 
 - Keep source URLs and dates in the bundle: `source_ref`, `published_at` and `observed_at`. Reports shared outside the team cite community sources by channel, date and source ID, not by URL.
 - Keep the smallest quote that preserves meaning: at most 300 characters, and at most 5 excerpts per source.
-- Never store handles, display names, profile links, IPs (including partial IPs such as `(118.235)`), contact details or ID numbers. Authors become salted keys (`ux_research.py author-key`), and `merge` (planned) scrubs excerpts.
+- Never store handles, display names, profile links, IPs (including partial IPs such as `(118.235)`), contact details or ID numbers. `read` and `ingest` scrub them from page text before the agent sees it; never restore a placeholder such as `[phone]`. Authors become salted keys (`ux_research.py author-key`), and `merge` (planned) checks excerpts against the scrubbed text.
+- A default nickname such as ㅇㅇ on an anonymous board, or a nickname shown with a partial IP, is not an identity. Count those posts by thread.
+- A community's modelled gender, age or political lean is never attributed to a poster, a claim or a persona.
+- Items read through an official API, such as YouTube comments, carry `retention_until` and are deleted by then. Never record a protected attribute against their author keys.
 - Health, disability and age details appear only in segment-level claims. Communities centred on health, disability, older adults or minors get paraphrase only in shared outputs.
 - Skip content from apparent minors.
 - Temporary page text lives outside the project at mode 0600 and is deleted at close or after 72 h.

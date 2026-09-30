@@ -36,12 +36,26 @@ own words; the page is read and the marker is kept as a `mention:` reason. A
 sentence that is little more than the marker ('삭제된 게시글이에요') and holds
 most of the text is a notice whatever its ending. On a page served with a
 non-2xx status every marker counts. Structural markers are checked before words.
+
+Three stop classes are decided before any request, never from a response:
+terms_restricted (the host's terms restrict automated collection, see
+scope.py), budget and host_stopped.
+
+Content flags (promotion_scan, incentive_flags, virtual_person_flags) mark
+candidate disclosures in page text: complete disclosure or label forms from
+data/markers.json, never bare words, each with the position it was found in
+(lead: the title and the first thresholds.promotion_lead_chars characters;
+tail: the last thresholds.promotion_tail_chars characters; body: elsewhere). A
+match is dropped when a negation follows it, when it is quoted, or when its
+sentence is a question. A verifier confirms every flag before a grade cap
+applies; an incentive flag is a per-review candidate, never a page-wide cap.
 """
 from __future__ import annotations
 
 import functools
 import json
 import re
+import unicodedata
 from dataclasses import dataclass, field
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -49,8 +63,11 @@ from urllib.parse import urlsplit
 
 DATA = Path(__file__).resolve().parent / "data"
 VERDICTS = ("ok_strong", "ok_weak", "suspect", "js_shell", "js_check", "bot_filter")
-STOP_CLASSES = ("auth_gate", "paywall", "human_check", "opted_out", "rate_limit", "geo_block", "legal_block",
-                "gone", "budget", "host_stopped")
+STOP_CLASSES = ("auth_gate", "paywall", "human_check", "opted_out", "terms_restricted", "rate_limit", "geo_block",
+                "legal_block", "gone", "budget", "host_stopped")
+PRE_REQUEST_STOPS = frozenset({"terms_restricted", "budget", "host_stopped"})
+INCENTIVE_KINDS = ("seller_event", "seller_notice", "platform_points", "reward_unspecified")
+POSITIONS = ("lead", "body", "tail")
 ESCALATE = frozenset({"js_shell", "js_check", "bot_filter", "suspect"})
 OK = frozenset({"ok_strong", "ok_weak"})
 HOST_STOPPING = frozenset({"human_check"})
@@ -107,9 +124,14 @@ def _alternation(markers) -> re.Pattern | None:
 
 
 def _langs(section: dict | None) -> list:
-    if not section:
+    """Every marker of a {language: [markers]} section; other values (such as a note) are skipped."""
+    if not isinstance(section, dict):
         return []
-    return [m for values in section.values() for m in values]
+    return [m for values in section.values() if isinstance(values, list) for m in values if isinstance(m, str)]
+
+
+def _regexes(values) -> list:
+    return [re.compile(p, re.I) for p in values or () if isinstance(p, str)]
 
 
 class _Compiled:
@@ -123,6 +145,21 @@ class _Compiled:
         self.noscript = _alternation(_langs(markers["spa_root"]["noscript_words"]))
         self.any_word = _alternation([m for key in WORD_FAMILIES for m in _langs(markers[key].get("words"))])
         self.promotion = _alternation(_langs(markers["promotion"]))
+        self.promotion_patterns = _regexes(_langs(markers.get("promotion_patterns")))
+        self.promotion_placed = _alternation(_langs(markers.get("promotion_placed")))
+        self.promotion_labels = _alternation(_langs(markers.get("promotion_labels")))
+        incentive = markers.get("incentive") or {}
+        self.incentive = {kind: _alternation(_langs(incentive.get(kind))) for kind in INCENTIVE_KINDS}
+        self.virtual_person = _alternation(_langs(markers.get("virtual_person")))
+        guards = markers.get("guards") or {}
+        self.negation_after = _regexes(guards.get("negation_after"))
+        self.negation_clause = _regexes(guards.get("negation_clause"))
+        self.question_endings = tuple(_langs(guards.get("question_endings")))
+        handles = markers.get("anonymous_handles") or {}
+        self.anonymous_handles = frozenset(handle_form(h) for h in _langs(
+            {k: v for k, v in handles.items() if k != "patterns"}))
+        # NFKC maps compatibility jamo (ㅇ) to conjoining jamo, so the patterns get the same form as the handles.
+        self.anonymous_patterns = _regexes(unicodedata.normalize("NFKC", p) for p in handles.get("patterns") or [])
         self.human_src = _alternation(markers["human_check"]["src"])
         self.human_ident = _alternation(markers["human_check"]["idents"])
         self.human_input = _alternation(markers["human_check"]["inputs"])
@@ -356,8 +393,136 @@ def _logged_in(page) -> list[str]:
     return reasons
 
 
-def promotion_flags(text: str) -> list[str]:
-    return _hits(compiled().promotion, text, limit=10)
+def _quoted(text: str, start: int, end: int) -> bool:
+    """True when the span sits inside quotation marks within its sentence."""
+    left, right = _sentence_bounds(text, start, end)
+    before, after = text[left:start], text[end:right]
+    for opening, closing in _QUOTE_PAIRS:
+        if opening == closing:
+            if before.count(opening) % 2 == 1 and opening in after:
+                return True
+        elif before.rfind(opening) > before.rfind(closing) and closing in after:
+            return True
+    return False
+
+
+def _question(text: str, start: int, end: int) -> bool:
+    """True when the span's sentence is a question: it ends with '?' or with a Korean question ending."""
+    left, right = _sentence_bounds(text, start, end)
+    if right < len(text) and text[right] == "?":
+        return True
+    core = _TRAILING.sub("", text[left:right])
+    endings = compiled().question_endings
+    return bool(endings and core and core.endswith(endings) and not core.endswith("니다"))
+
+
+def _dropped(text: str, start: int, end: int) -> bool:
+    """A marker that is negated right after it, quoted, or asked about is not a disclosure."""
+    c = compiled()
+    after = text[end:end + 60]
+    if any(p.match(after) for p in c.negation_after) or any(p.match(after) for p in c.negation_clause):
+        return True
+    return _quoted(text, start, end) or _question(text, start, end)
+
+
+def _position(start: int, end: int, length: int) -> str:
+    t = compiled().thresholds
+    if start < t.get("promotion_lead_chars", 150):
+        return "lead"
+    if end > length - t.get("promotion_tail_chars", 200):
+        return "tail"
+    return "body"
+
+
+def _scan(patterns, text: str, title: str, *, placed: bool = False, limit: int = 10) -> list[tuple[str, str]]:
+    """(marker as found, position) for each kept match, title first. `placed` keeps only the lead and
+    the tail, for markers that count only where a disclosure is expected."""
+    found: list[tuple[str, str]] = []
+    seen: set = set()
+    for source, is_title in ((title or "", True), (text or "", False)):
+        if not source:
+            continue
+        for pattern in patterns:
+            if pattern is None:
+                continue
+            for match in pattern.finditer(source):
+                position = "lead" if is_title else _position(match.start(), match.end(), len(source))
+                if placed and position == "body":
+                    continue
+                if _dropped(source, match.start(), match.end()):
+                    continue
+                value = " ".join(match.group(0).split())
+                key = (value.lower(), position)
+                if key in seen:
+                    continue
+                seen.add(key)
+                found.append((value, position))
+                if len(found) >= limit:
+                    return found
+    return found
+
+
+def promotion_scan(text: str, title: str = "") -> list[dict]:
+    """Candidate promotion disclosures: [{marker, family, position}], family one of promotion
+    (clear wordings, anywhere), promotion_placed (clear wordings in the lead or tail) and
+    promotion_label (foreign labels the KFTC counts as unclear, in the lead or tail)."""
+    c = compiled()
+    hits = [{"marker": m, "family": "promotion", "position": p}
+            for m, p in _scan([c.promotion, *c.promotion_patterns], text, title)]
+    hits += [{"marker": m, "family": "promotion_placed", "position": p}
+             for m, p in _scan([c.promotion_placed], text, title, placed=True)]
+    hits += [{"marker": m, "family": "promotion_label", "position": p}
+             for m, p in _scan([c.promotion_labels], text, title, placed=True)]
+    return hits[:12]
+
+
+def promotion_flags(text: str, title: str = "") -> list[str]:
+    """The markers of promotion_scan, in order, without duplicates."""
+    flags: list[str] = []
+    for hit in promotion_scan(text, title):
+        if hit["marker"].lower() not in (f.lower() for f in flags):
+            flags.append(hit["marker"])
+    return flags[:10]
+
+
+def incentive_flags(text: str, title: str = "") -> list[dict]:
+    """Candidate review incentives: [{marker, kind, position}], kind one of INCENTIVE_KINDS
+    (seller_event, seller_notice, platform_points, reward_unspecified). Each is a per-review
+    candidate for the verifier, never a page-wide cap."""
+    c = compiled()
+    flags = []
+    for kind in INCENTIVE_KINDS:
+        flags += [{"marker": m, "kind": kind, "position": p} for m, p in _scan([c.incentive[kind]], text, title)]
+    return flags[:10]
+
+
+def virtual_person_flags(text: str, title: str = "") -> list[dict]:
+    """Candidate AI virtual-person labels or sentences: [{marker, position}]."""
+    return [{"marker": m, "position": p} for m, p in _scan([compiled().virtual_person], text, title)][:5]
+
+
+def content_flags(text: str, title: str = "") -> dict:
+    """Every candidate flag of one page's main text, as read and ingest report them."""
+    hits = promotion_scan(text, title)
+    flags: list[str] = []
+    for hit in hits:
+        if hit["marker"].lower() not in (f.lower() for f in flags):
+            flags.append(hit["marker"])
+    return {"promo_flags": flags[:10], "promotion_hits": hits, "incentive_flags": incentive_flags(text, title),
+            "virtual_person_flags": virtual_person_flags(text, title)}
+
+
+def handle_form(handle: str) -> str:
+    """The form handles are compared in: NFKC, case-folded, single spaces."""
+    return " ".join(unicodedata.normalize("NFKC", handle).casefold().split())
+
+
+def anonymous_handle(handle: str) -> bool:
+    """True for a default anonymous nickname (data/markers.json anonymous_handles), which is never
+    an identity. A trailing partial-IP group should already be split off (privacy.normalize_handle)."""
+    c = compiled()
+    value = handle_form(handle)
+    return value in c.anonymous_handles or any(p.search(value) for p in c.anonymous_patterns)
 
 
 def _stop(stop_class: str, reasons: list) -> Verdict:

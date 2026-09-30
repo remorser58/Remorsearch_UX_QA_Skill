@@ -51,7 +51,7 @@ def main() -> int:
             assert before['run_id'] == after['run_id'] and before['permissions'] == after['permissions']
             assert before['packet']['bundle']['records']['evidence'] == after['packet']['bundle']['records']['evidence']
             assert completed['accepted_fix_ids'] == ['fix-1'] and completed['product_complete'] is False
-            assert '상품 상세 보기' in (site / 'site/index.html').read_text()
+            assert '상품 상세 보기' in (site / 'site/index.html').read_text(encoding='utf-8')
             command(['scripts/ux_loop.py', 'resume', '--checkpoint', str(checkpoint)], 0)
             for case, code, status in [('failed_visual', 5, 'failed'), ('unknown_evidence', 4, 'unknown'),
                                        ('regression_failure', 5, 'failed'), ('missing_browser', 3, 'blocked')]:
@@ -65,7 +65,7 @@ def main() -> int:
                     '--grant', 'code_write', '--actor', 'smoke-supervisor', '--reason', 'Approve isolated fixture code'], code)
                 assert result['status'] == status and not result['product_complete'] and result['accepted_fix_ids'] == []
             malformed = root / 'malformed.json'
-            malformed.write_text('{"schema_version":"ux-loop.v1","schema_version":"unsafe"}')
+            malformed.write_text('{"schema_version":"ux-loop.v1","schema_version":"unsafe"}', encoding='utf-8')
             command(['scripts/ux_loop.py', 'validate', str(malformed)], 2)
         print(json.dumps({'passed': True, 'command_count': len(outcomes), 'checks': outcomes,
                           'live_integrations_executed': False}, indent=2))

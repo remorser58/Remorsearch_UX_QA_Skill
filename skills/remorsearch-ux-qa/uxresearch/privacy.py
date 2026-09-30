@@ -5,15 +5,26 @@
   code, state, password and their common variants).
 - scrub replaces e-mail addresses, Korean phone numbers (with or without spaces
   around the dashes, and area codes in brackets), resident-registration-like
-  numbers, card-like digit runs, @handles, profile URLs and full or partial IP
-  addresses such as '(118.235)'. Profile and post URLs that carry an author's
-  name come from the data files: hosts whose first path segment or subdomain is
-  the author (data/suffixes.json path_hosted and hosting_suffixes, and routes
-  whose author_from is path_segment or subdomain). The patterns are imperfect;
-  excerpts are also kept short and verifier-sampled later.
+  numbers (also with the last digits masked, such as '900101-1******'),
+  card-like digit runs, bank-account-like numbers (dashed groups of 10 to 16
+  digits, or a digit run after an account word such as '계좌'), @handles
+  (including dots and hyphens), profile URLs and full or partial IP addresses
+  such as '(118.235)'. Profile and post URLs that carry an author's name come
+  from the data files: hosts whose first path segment or subdomain is the author
+  (data/suffixes.json path_hosted and hosting_suffixes, and routes whose
+  author_from is path_segment or subdomain), and a route's profile_paths (such
+  as a channel path) on its hosts. `read` and `ingest` scrub all page text before it is printed,
+  saved or scanned, so the planned merge verbatim check compares against the
+  scrubbed text. The patterns are imperfect; excerpts are also kept short and
+  verifier-sampled later.
 - origin_only keeps only a URL's scheme and host, for records kept after a run closes.
 - author_key is an HMAC-SHA256 of the run's salt with the platform and handle,
   truncated to 16 hex characters. The handle itself is never written anywhere.
+  Before keying, the handle is trimmed, NFKC-normalised and case-folded, and a
+  trailing partial-IP group such as '(118.235)' is split off. A handle that
+  carried such a group (a logged-out poster) or that is a default anonymous
+  nickname (data/markers.json anonymous_handles, such as 'ㅇㅇ') is refused: it
+  is not an identity, so such posts are counted by thread key instead.
   thread_key is the same over a normalised thread URL.
 - Excerpts are at most 300 characters, and at most 5 per source.
 """
@@ -28,6 +39,8 @@ import unicodedata
 from pathlib import Path
 from urllib.parse import parse_qsl, quote, unquote, urlencode, urlsplit, urlunsplit
 
+from . import verdict
+
 DATA = Path(__file__).resolve().parent / "data"
 MAX_EXCERPT_CHARS = 300
 MAX_EXCERPTS_PER_SOURCE = 5
@@ -41,18 +54,34 @@ _TRACKING = re.compile(r"^(utm_[a-z]+|fbclid|gclid|dclid|msclkid|igshid|mc_eid|_
 
 _SEP = r"(?:\s?[-.]\s?|\s)"  # a dash or dot with optional spaces around it, or one space
 _URL_TAIL = r"[^\s<>\"')]*"
+ACCOUNT_DIGITS = (10, 16)  # digits in a bank-account-like number
+
+
+def _account(match: re.Match) -> str | None:
+    """The replacement for an account-like number, or None when its digit count does not fit."""
+    number = match.group("number") if "number" in match.re.groupindex else match.group(0)
+    digits = sum(ch.isdigit() for ch in number)
+    if not ACCOUNT_DIGITS[0] <= digits <= ACCOUNT_DIGITS[1]:
+        return None
+    return match.group(0).replace(number, "[account]")
+
+
 _PATTERNS = [
     ("email", re.compile(r"[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,253}\.[A-Za-z]{2,24}"), "[email]"),
     ("id_number", re.compile(r"(?<!\d)\d{6}(?:\s?-\s?|\s)[1-8]\d{6}(?!\d)"), "[id-number]"),
+    ("id_number", re.compile(r"(?<!\d)\d{6}\s?-\s?[1-8][*＊xX●○]{6}"), "[id-number]"),
     ("card", re.compile(r"(?<!\d)(?:\d{4}[ -]?){3}\d{1,7}(?!\d)"), "[card]"),
     ("phone", re.compile(r"(?<![\d+])(?:\+?82[ -]?)?0?1[016789]" + _SEP + r"?\d{3,4}" + _SEP + r"?\d{4}(?!\d)"), "[phone]"),
     ("phone", re.compile(r"(?<!\d)\(?0(?:2|[3-6][1-5]|70|50\d?)(?:\)\s?|" + _SEP + r")\d{3,4}" + _SEP + r"\d{4}(?!\d)"),
      "[phone]"),
+    ("account", re.compile(r"(?:계좌|입금|송금|account)[^\d\n]{0,16}?(?P<number>\d[\d -]{8,22}\d)(?![\d-])", re.I),
+     _account),
+    ("account", re.compile(r"(?<![\d.-])\d{2,6}(?:-\d{2,7}){2,3}(?![\d-]|\.\d)"), _account),
     ("profile_url", re.compile(r"https?://[^\s<>\"')]+/(?:@[\w.-]+|(?:user|users|u|profile|profiles|member|members|"
                                r"people|author|authors|mypage)/" + _URL_TAIL + ")", re.I), "[profile-url]"),
     ("ip", re.compile(r"(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?!\d|\.\d)"), "[ip]"),
     ("partial_ip", re.compile(r"\(\s*\d{1,3}\.\d{1,3}\s*\)"), "([ip])"),
-    ("handle", re.compile(r"(?<![\w@.])@(?=[\w.]*[^\W\d_])\w[\w.]{1,30}"), "[handle]"),
+    ("handle", re.compile(r"(?<![\w@.])@(?=[\w.-]*[^\W\d_])\w[\w.-]{1,30}"), "[handle]"),
 ]
 
 
@@ -74,12 +103,22 @@ def _author_urls() -> re.Pattern | None:
              for h in sorted(path_hosts, key=len, reverse=True)]
     parts += [r"[a-z0-9-]+(?:\.[a-z0-9-]+)*\." + re.escape(h) + r"(?![a-z0-9.-])(?:/" + _URL_TAIL + ")?"
               for h in sorted(sub_hosts, key=len, reverse=True)]
+    for platform in routes.get("platforms", []):  # channel or profile paths, such as /channel/<id>
+        paths = [p for p in platform.get("profile_paths") or [] if isinstance(p, str) and re.fullmatch(r"[\w.-]+", p)]
+        if paths:
+            parts += [re.escape(h) + r"/(?:" + "|".join(re.escape(p) for p in paths) + r")/[^\s<>\"'/)]+" + _URL_TAIL
+                      for h in platform.get("hosts", []) if isinstance(h, str) and not h.startswith("*.")]
     return re.compile(r"https?://(?:" + "|".join(parts) + ")", re.I) if parts else None
 
 
 def _is_secret(name: str) -> bool:
     lowered = unquote(name).strip().lower()
     return lowered in _SECRET_EXACT or bool(_SECRET_SUFFIX.search(lowered))
+
+
+def masks_param(name: str) -> bool:
+    """True when mask_url masks the value of a query or fragment parameter with this name."""
+    return _is_secret(name)
 
 
 def _mask_pairs(value: str) -> str:
@@ -126,7 +165,21 @@ def scrub(text: str) -> tuple[str, dict]:
         if n:
             counts["profile_url"] = n
     for name, pattern, replacement in _PATTERNS:
-        text, n = pattern.subn(replacement, text)
+        if callable(replacement):  # a check decides whether the match is an identifier at all
+            hits = 0
+
+            def replace(match: re.Match, _check=replacement) -> str:
+                nonlocal hits
+                value = _check(match)
+                if value is None:
+                    return match.group(0)
+                hits += 1
+                return value
+
+            text = pattern.sub(replace, text)
+            n = hits
+        else:
+            text, n = pattern.subn(replacement, text)
         if n:
             counts[name] = counts.get(name, 0) + n
     return text, counts
@@ -137,10 +190,34 @@ def _key(salt: bytes, *parts: str) -> str:
     return hmac.new(salt, message, hashlib.sha256).hexdigest()[:16]
 
 
-def author_key(salt: bytes, platform: str, handle: str) -> str:
-    if not handle or not handle.strip():
+_TRAILING_IP = re.compile(r"\s*\(\s*\d{1,3}(?:\s*\.\s*\d{1,3}){1,3}\s*\)\s*$")
+USE_THREAD_KEY = "use --thread-url for a thread key instead"
+
+
+def normalize_handle(handle: str) -> tuple[str, bool]:
+    """(the handle trimmed and NFKC-normalised without a trailing partial-IP group, whether it had one).
+    'ㅇㅇ(118.235)' becomes ('ㅇㅇ', True)."""
+    value = unicodedata.normalize("NFKC", handle or "").strip()
+    stripped = _TRAILING_IP.sub("", value)
+    return stripped.strip(), stripped != value
+
+
+def check_handle(handle: str) -> str:
+    """The normalised handle, or ValueError when it is not an identity: empty, carrying a partial IP
+    address (a logged-out poster, who can type any nickname) or a default anonymous nickname."""
+    value, had_ip = normalize_handle(handle)
+    if had_ip:
+        raise ValueError("a handle with a partial IP address, such as 'ㅇㅇ(118.235)', is a logged-out poster, "
+                         f"not an identity; {USE_THREAD_KEY}")
+    if not value:
         raise ValueError("handle is empty")
-    normalized = unicodedata.normalize("NFC", handle.strip()).casefold()
+    if verdict.anonymous_handle(value):  # data/markers.json anonymous_handles
+        raise ValueError(f"a default anonymous nickname is not an identity; {USE_THREAD_KEY}")
+    return value
+
+
+def author_key(salt: bytes, platform: str, handle: str) -> str:
+    normalized = check_handle(handle).casefold()
     return _key(salt, "author", platform.strip().lower(), normalized)
 
 

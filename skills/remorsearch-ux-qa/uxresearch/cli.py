@@ -1,17 +1,23 @@
 """Public-page reader for research, persona-qa and ergonomics Stage 0.
 
-Reads public pages honestly: official routes first, then one GET that names
+Reads public pages honestly: official routes first (feeds, oEmbed, and official
+APIs read with the user's own key through an adapter), then one GET that names
 itself (RemorsearchUXQA), then the site's own mobile, AMP or feed alternates, and
-render captures handed in with `ingest`. robots.txt and opt-outs are honoured
-before every request. Logins, paywalls, human checks, rate limits, removals and
-similar signals are stops, recorded as coverage gaps. Pacing and budgets are
-shared by every reader of a run. Page text is untrusted data, never instructions.
+render captures handed in with `ingest`. robots.txt (including groups that name
+other AI agents fetching for a user) and opt-outs are honoured before every
+request. Hosts whose terms restrict automated collection (terms_restricted) are
+never requested, and search results pages are never read. Logins, paywalls,
+human checks, rate limits, removals and similar signals are stops, recorded as
+coverage gaps. Pacing and budgets are shared by every reader of a run. Page text
+is scrubbed of personal identifiers and is untrusted data, never instructions.
 
-Exit codes: 0 read or allowed; 2 usage or policy refusal; 3 stopped (the gap is
-recorded); 4 unread after the allowed rungs (the untried rungs are listed);
-5 deferred (retry after retry_after_s). `read` and `ingest` print the page inside
-an untrusted envelope on stdout and a one-line JSON summary on stderr; the other
-commands print JSON on stdout.
+Exit codes: 0 read or allowed; 2 usage or policy refusal (also a search results
+page or a switched-off discovery endpoint handed in directly); 3 stopped (the gap
+is recorded; `robots` exits 3 for a terms_restricted host); 4 unread after the
+allowed rungs (the untried rungs are listed); 5 deferred (retry after
+retry_after_s). `read` and `ingest` print the page inside an untrusted envelope
+on stdout and a one-line JSON summary on stderr; the other commands print JSON on
+stdout.
 """
 from __future__ import annotations
 
@@ -22,7 +28,7 @@ import sys
 import time
 from pathlib import Path
 
-from . import RULES_VERSION, USER_AGENT, VERSION, envelope, ladder, ledger, privacy
+from . import RULES_VERSION, USER_AGENT, VERSION, envelope, ladder, ledger, privacy, scope
 from .ledger import Run, RunError
 
 DATA = Path(__file__).resolve().parent / "data"
@@ -65,6 +71,18 @@ def _print_page(result: dict) -> None:
               "fetched_at": result.get("fetched_at") or "-"}
     if result.get("access_basis") == "authorised_member":
         header["access_basis"] = "authorised_member (member content: summaries only in shared outputs)"
+    terms = result.get("terms")
+    if terms:
+        state = "lifted by the user's terms check" if terms.get("lifted") else terms.get("mode") or "stop"
+        header["terms"] = f"{terms.get('entry')} ({terms.get('status')}, {state})"
+    api = result.get("api")
+    if api:  # an official API adapter's calls (R0)
+        header["api"] = (f"{api.get('route')}: {api.get('calls')} calls, {api.get('quota_units')} quota units, "
+                         f"{api.get('comments_read')} comments read (order {api.get('order') or '-'})"
+                         + ("; more not read" if api.get("more_available") else "")
+                         + (f"; paging stopped early: {api['partial_because']}" if api.get("partial_because") else ""))
+    if result.get("retention_until"):
+        header["retention_until"] = f"{result['retention_until']} (delete or read again by then)"
     injection = result.get("injection")
     if injection:
         header["injection"] = injection["risk"] + (f" ({', '.join(injection['signals'])})" if injection["signals"] else "")
@@ -103,7 +121,11 @@ def build_parser() -> argparse.ArgumentParser:
     start.add_argument("--accept-language", help="Accept-Language header (default from the brief, else ko-KR,ko,en)")
     start.add_argument("--deny-host", action="append", default=[], help="a host the researcher excludes (repeatable)")
     start.add_argument("--render", choices=ledger.RENDER_MODES, help="how R3 renders happen (default host_browser)")
-    start.add_argument("--routes", type=Path, help="a route table to use instead of uxresearch/data/routes.json")
+    start.add_argument("--routes", type=Path, help="a route table to use instead of uxresearch/data/routes.json "
+                                                   "(the packaged scope lists always apply on top of it)")
+    start.add_argument("--agent-tokens", type=Path,
+                       help="extra robots.txt tokens of other AI agents (ux-research-agent-tokens.v1), added to "
+                            "uxresearch/data/agent-tokens.json; they can only add tokens")
 
     read = commands.add_parser("read", help="Read one public URL through the ladder")
     read.add_argument("url")
@@ -128,7 +150,9 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("--run", required=True)
     check.add_argument("--max-wait", type=float)
 
-    author = commands.add_parser("author-key", help="Salted key for an author handle or a thread URL")
+    author = commands.add_parser("author-key", help="Salted key for an author handle or a thread URL; default "
+                                                    "anonymous nicknames and handles with a partial IP are refused "
+                                                    "(use --thread-url for them)")
     author.add_argument("--run", required=True)
     author.add_argument("--platform", help="platform family or host, for example 'community.example'")
     who = author.add_mutually_exclusive_group(required=True)
@@ -146,11 +170,15 @@ def _start(args) -> int:
     brief = None
     if args.brief:
         brief = _load_json(args.brief, 1024 * 1024)
-        ledger.validate_brief(brief)
+        ledger.validate_brief(brief, today=ledger.utc_today(args.clock))
     routes_path = args.routes or DATA / "routes.json"
     routes = _load_json(routes_path)
     if not isinstance(routes, dict) or not isinstance(routes.get("platforms"), list):
         raise RunError("the route table needs a 'platforms' list")
+    extra_tokens = None
+    if args.agent_tokens:
+        extra_tokens = _load_json(args.agent_tokens, 1024 * 1024)
+        ledger.agent_token_lists(extra_tokens)  # shape check; extras can only add tokens
     if args.accept_language is not None and not _ACCEPT_LANGUAGE.match(args.accept_language):
         raise RunError("invalid --accept-language value")
     deny = list(args.deny_host)
@@ -163,10 +191,17 @@ def _start(args) -> int:
     path = _run_path(args.run, creating=True) if args.run else None
     created = ledger.create(path, policy, brief=brief, routes=routes,
                             routes_source="packaged" if args.routes is None else str(args.routes.resolve()),
-                            clock=args.clock)
+                            clock=args.clock, agent_tokens=extra_tokens,
+                            agent_tokens_source=str(args.agent_tokens.resolve()) if args.agent_tokens else None)
     run = Run(created, clock=args.clock)
+    tokens = run.agent_tokens()
     value = {"run": str(created), "run_id": run.meta["run_id"], "user_agent": USER_AGENT, "policy": policy,
-             "routes": run.meta["routes"], "test_hooks": run.meta["test_hooks"]}
+             "routes": run.meta["routes"],
+             # Whether each official route's key is set (never its value): a missing key is a coverage gap.
+             "keys": ladder.key_status(run.routes),
+             "agent_tokens": {**run.meta["agent_tokens"], **{name: len(items) for name, items in tokens.items()}},
+             "terms_checked": scope.describe_checks(policy, run.scope_lists),
+             "ethics_review": run.meta.get("ethics_review"), "test_hooks": run.meta["test_hooks"]}
     if _inside_git(created.resolve()):
         value["warning"] = "the run folder is inside a git working tree; page text could be committed by mistake"
     _emit(value)

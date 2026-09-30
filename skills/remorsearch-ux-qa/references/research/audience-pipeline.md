@@ -73,6 +73,22 @@ An axis is one reader's beat: a set of sources and the questions it serves.
 
 - For a Korean product, run `kr-communities` before `global-communities`. For a
   global product, the reverse.
+- `kr-communities`: take the channels, their legitimate routes, the stops to
+  expect and each host's terms status from
+  `references/research/korea/platform-map.md`. Several Korean hosts stop by
+  default because their terms restrict automated collection
+  (`references/public-page-access.md`, section 17); plan those gaps from the
+  start.
+- `store-reviews`: split the reviews by store and storefront (country). Store
+  choice is not reviewer demographics. For example, in Korea iPhone users skew
+  younger and are relatively more often women (Gallup 2025, smartphone users, not
+  reviewers); who writes reviews is unmeasured, so any such skew is a lead only.
+  A review-bomb window, such as the days after a disputed redesign, is context:
+  read it as its own time window. Shopping and place reviews
+  (`commerce_reviews`) come first from the team's own seller or store-console
+  exports.
+- `stats`: for Korean statistics, use the source cards, frames and agency names of
+  `references/research/korea/statistics.md`.
 - Drop axes the brief excludes, and record each dropped axis in the report.
 - Statistics tables often come as PDF or spreadsheet files, which the reader does
   not parse. Read the file's URL with `read` first; it ends unread (`no_page`).
@@ -92,13 +108,27 @@ An axis is one reader's beat: a set of sources and the questions it serves.
    - product, surface and locale, and the release date or current version when a
      claim is about the current version;
    - who the personas are for: persona-qa, ergonomics or both;
-   - whether team analytics or store-console exports exist and can be shared;
+   - whether team analytics, VOC or support tickets, or store-console and seller
+     exports exist and can be shared, with phone numbers, e-mail addresses, ID,
+     card and account numbers removed first (no command scrubs them yet; planned);
    - communities the user belongs to and authorises for signed-in reading, each with
      its host, name and why, plus the path prefix when several communities share a
-     host (default: none; see `references/public-page-access.md`, section 3).
+     host (default: none; see `references/public-page-access.md`, section 3);
+   - hosts whose current terms the user has read personally, when the route table
+     marks them `reported` (`terms_checked`: host, terms URL with the clause,
+     date read and result). Record exactly what the user reports. Never suggest a
+     result, never add a check the user did not make, and never offer to lift a
+     `confirmed` entry (`references/public-page-access.md`, section 17);
+   - for research done for a university, a hospital or a research institute only:
+     the ethics review status (`ethics_review`: none, exempt, approved or pending,
+     with the reviewing body and a reference when there is one). It is recorded,
+     never enforced;
+   - when YouTube comments matter: whether the user's YouTube Data API key is set
+     in the environment variable `REMORSEARCH_YOUTUBE_API_KEY`. The user sets it
+     themselves; never ask for the key in chat. `start` shows whether it is set.
 4. Defaults for anything unanswered: all eight questions; Korean then English for
-   a Korean product; the budgets below; no signed-in communities; no
-   `deny_hosts`.
+   a Korean product; the budgets below; no signed-in communities; no terms checks,
+   so reported restrictions stay stops; no `ethics_review`; no `deny_hosts`.
 5. Write `brief.json` and run `python3 scripts/ux_research.py start --brief
    brief.json`. Every later command writes into the run folder it prints.
 
@@ -106,7 +136,8 @@ The brief (`ux-research-brief.v1`) holds: `product` {name, surface, url, locale,
 category, release_date, current_version}; `personas_for`; `audience_questions`;
 `languages` {primary, secondary}; `channels` {include, exclude}; `time_windows`;
 `budgets`; `access_policy` {deny_hosts, allow_wayback_for_official, render,
-signed_in_communities}; `team_analytics_available`; and `report_lang`.
+signed_in_communities, terms_checked}; `team_analytics_available`; `report_lang`;
+and an optional `ethics_review` {status, body, reference}.
 `render` says how R3 renders happen: `driver` (the bundled page reader, `drivers/web/read_page.mjs`),
 `host_browser` (a browser tool from the host, then `ingest`) or `off`.
 
@@ -115,10 +146,14 @@ signed_in_communities}; `team_analytics_available`; and `report_lang`.
 For each axis, write down in `plan.md`:
 
 - the audience questions it serves and the source families it will use;
-- the channels, and the reader route to try first (see the channel notes in
-  `references/public-page-access.md`);
+- the channels, the reader route to try first and the stops to expect (see the
+  channel notes in `references/public-page-access.md`, and for Korean channels
+  `references/research/korea/platform-map.md`), with terms_restricted hosts
+  written down as gaps from the start;
 - at least 8 distinct queries, varying operators and dates (`site:`, `"exact"`,
-  `-term`, `OR`, `after:` and `before:` where the search tool supports them);
+  `-term`, `OR`, `after:` and `before:` where the search tool supports them).
+  Korean portals support different operators
+  (`references/research/korea/query-craft.md`);
 - segment-cue queries, such as [product] 부모님, 출퇴근, 노안, 한 손, 처음;
 - counter-search queries, such as [product] 편해요, 만족, 문제없음;
 - the language policy: Korean topics Korean first, then English in terms real
@@ -140,10 +175,12 @@ Every call to a search tool or a search API counts as a search.
 
 ## A2: discover and read
 
-Discovery uses a search tool the host provides, an official search API with the
-user's key (`ux_research.py discover`, planned), or links on pages already read.
-Snippets and summarising fetches are leads (grade D). Never load search-engine
-result pages to harvest links.
+Discovery uses a search tool the host provides, an official search API whose
+terms allow this use, with the user's key (`ux_research.py discover`, planned), or
+links on pages already read. The Naver and Kakao search APIs are switched off
+until the owner reads their current terms (`references/public-page-access.md`,
+section 11). Snippets and summarising fetches are leads (grade D). Never load
+search-engine result pages to harvest links; the reader refuses them.
 
 Reading, for each page:
 
@@ -152,10 +189,15 @@ Reading, for each page:
    itself.
 3. On exit 4 with R3 untried, render the page with the best browser tool available,
    in an anonymous context, and pass the capture to `ux_research.py ingest`.
-4. On exit 3, record the gap and move on. On exit 5, read another host first.
+4. On exit 3, record the gap with its class and move on; a `terms_restricted` stop
+   is never opened in a browser tool. On exit 2, fix the call. On exit 5, read
+   another host first. A missing key (`official_route_needs_key:<ENV>`) is a gap
+   and a question for the user.
 5. Get author keys with `ux_research.py author-key`. Never write a handle down.
-6. Quote at most 300 characters, verbatim from the reader's text, and at most 5
-   excerpts per source.
+   Default anonymous nicknames and handles with a partial IP are refused; count
+   those posts with `author-key --thread-url`.
+6. Quote at most 300 characters, verbatim from the reader's scrubbed text, and at
+   most 5 excerpts per source.
 
 Readers are subagents. Run 2-3 per batch, or 5-6 when the host enforces the return
 schema (schema-forced fan-out). Never run 10 or more at once. The run ledger keeps
@@ -181,9 +223,10 @@ windows are covered, or two query rounds in a row add nothing new.
 How to read: follow references/research/public-page-access.md. Read every page
 with `python3 scripts/ux_research.py read --run <RUN> URL`, after `robots` on a
 new host. If it exits 4 with R3 untried, render the page with the best browser
-tool available in an anonymous context and `ingest` the capture. Never write your
-own fetch code. Signed-in reading is allowed only for: <authorised communities, or
-"none">.
+tool available in an anonymous context and `ingest` the capture. Exit 3 is a stop,
+terms_restricted included: record it as a gap and never open that page another
+way. Never write your own fetch code. Signed-in reading is allowed only for:
+<authorised communities, or "none">.
 
 Evidence: quote at most 300 characters, verbatim from the reader's text, and at
 most 5 excerpts per source. Never record names or handles; get author keys with
@@ -201,11 +244,11 @@ Return one JSON object in the ux-reader-return.v1 shape. End it with expand_lead
 | `audience_questions` | The question numbers served |
 | `queries_run` | `[{q, lang, tool, results_n}]` |
 | `search_count` | Searches spent |
-| `sources` | `[{url, fetch_id, access_method, author_key, thread_key, published_at}]`: every source needs a ledger `fetch_id` |
-| `excerpts` | Verbatim excerpts of at most 300 characters, each with its source and cue fields for segment, context, task, condition and device, plus promotion and injection flags |
+| `sources` | `[{url, fetch_id, access_method, access_basis, author_key, thread_key, published_at, retention_until}]`: every source needs a ledger `fetch_id`; `retention_until` is required for a source read through an official API |
+| `excerpts` | Verbatim excerpts of at most 300 characters, each with its source and cue fields for segment, context, task, condition and device, plus promotion, incentive, virtual-person and injection flags. Excerpts from an official API source never carry age, health, political or other protected-attribute cues against an author key. |
 | `audience_signals` | Candidate claims: claim kind, statement, the excerpts behind it, and a segment hint |
 | `expand_leads` or `dead_ends` | `[{lead, why, angle}]`, or the leads that went nowhere |
-| `gaps` | `[{url, stop_class, note}]` |
+| `gaps` | `[{url, stop_class, note}]`, `terms_restricted` and missing keys included |
 | `budget_used` | Searches and page reads spent |
 
 Hosts that support a schema-forced return can enforce this shape at the tool
@@ -227,6 +270,12 @@ and nobody acknowledged it.
 - Stop earlier when a round adds no new problem cluster or segment cue. Report why
   the loop stopped: no leads left, two rounds without anything new, or the round
   limit.
+- Keep the run's lexicon in the run folder as `lexicon.json`: the user terms this
+  run's posts showed, each with its variants, meaning, the source ID of an
+  example, the date first seen, the channel, a dictionary check and its polarity
+  (fields in `references/research/korea/query-craft.md`, section 4). Terms only:
+  no names, handles, URLs or quotes. Use it for the next round's queries. The
+  agent writes it; no command checks it.
 
 ## A4: merge (planned)
 
@@ -237,7 +286,11 @@ and nobody acknowledged it.
   the path;
 - deduplicates sources and requires a ledger `fetch_id` for each;
 - checks that every excerpt, after NFC and whitespace normalisation, appears
-  verbatim in the run's page text, then scrubs personal data from it;
+  verbatim in the run's page text. That text was scrubbed by `read` and `ingest`,
+  so the check compares against the scrubbed text; merge scrubs the excerpt again
+  as a backstop;
+- carries `retention_until` for sources read through an official API, and drops
+  excerpts whose date has passed;
 - assigns stable IDs (`SRC-`, `EV-`, `CLM-` plus 8 hex characters) that do not
   depend on input order;
 - collapses identical text across sources into one unit, flagged `copypaste`;
@@ -279,6 +332,11 @@ axis is missing without acknowledgement.
   because the loop's intake rejects them.
 - `ux_research.py report-check` (planned) checks that unsupported claims appear only
   under annex headings.
+- A report in Korean (`report_lang: ko`) uses
+  `references/research/korea/report-template.md`: the same sections as
+  `references/output-template.md`, with Korean headings and style rules.
+- Items read through an official API are deleted, or read again, by their
+  `retention_until`.
 - `ux_research.py close` deletes the temporary page text and prints the coverage
   summary for the access table.
 
@@ -308,13 +366,13 @@ offline fixture run will ship in `examples/research/` (planned).
 Product: a transit card app (ko-KR). Axes: kr-communities, store-reviews, stats.
 
 CLM-3f2a91c0  segment_exists  "출퇴근 중 한 손으로 잔액을 확인하고 충전하는 직장인"
-  EV-0a1b2c3d  kr-communities, Naver blog, person P1, grade B
+  EV-0a1b2c3d  kr-communities, Tistory blog, person P1, grade B
   EV-7e8f9a0b  store-reviews, App Store, person P2, grade B
   counter_search: "[앱] 충전 편해요" (ko), outcome none_found
   -> 2 people across 2 channel families: supported_high. Exported as a segment,
      confidence high.
 
-CLM-9b04d2e7  segment_share  "이용자의 55%가 직장인이다"
+CLM-9b04d2e7  segment_share  "사용자의 55%가 직장인이다"
   EV-4b5c6d7e  kr-communities, post volume on one board: grade E for a size claim
   -> a community source cited for a share: gate exit 2 (hard error). Drop it from
      the claim. The share needs analytics or statistics and is listed in

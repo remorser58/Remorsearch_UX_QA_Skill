@@ -57,20 +57,26 @@ Otherwise classify it as P2 friction.
 - Does corroboration come from other people and other channel families, not from other URLs on one host?
 - Is the claim `single_voice` or `lead_only`? Then the scenario is exploratory only.
 - Is the post promotional, coordinated, or emotionally amplified?
+- Was promotion checked beyond the text? The reader sees text only, and a disclosure can sit in an image, a banner, a later hashtag, a comment or behind "더보기". Record whether the check saw text only or text and images. With text only, no marker means "not confirmed", never "no disclosure" (`references/research/korea/promotion.md`, section 4b). Markers are candidates for a verifier, and neither 내돈내산 nor 광고 아님 changes a grade.
+- Could it be sarcasm? Read the parent post and the neighbouring comments before taking praise or a complaint at face value. When the polarity stays unclear, keep it unclear (`references/research/korea/query-craft.md`, section 5.5).
 - Is there a counterexample?
 - Can the scenario be reproduced in the actual product?
 
 ## Search channel roles
 
-Reader routes and stops are starting points. Verify them live (`references/research/public-page-access.md`, channel notes).
+Reader routes and stops are starting points. The route table (`uxresearch/data/routes.json`) decides what is read, so verify every route live (`references/research/public-page-access.md`, channel notes). For Korean channels, `references/research/korea/platform-map.md` gives each channel's legitimate route, the stops to expect and its terms status.
 
 | Channel | What it shows | Reader route | Typical stop |
 | --- | --- | --- | --- |
-| YouTube comments | Natural language, immediate reactions, setup and expectation gaps | R3 render (first comments only); the Data API route with the user's key is planned | Usually none; long threads are only partly read |
-| DC Inside and open forums | Strong dissatisfaction, workarounds, edge cases, and version reactions | R2 mobile twin | `human_check` or `rate_limit` on busy boards |
-| Naver Cafes | Focused user groups, local context, recurring practical workflows | R2 mobile twin or R3, public boards only | `auth_gate` on member-only boards, unless the user authorised that cafe |
+| YouTube comments | Natural language, immediate reactions, setup and expectation gaps | The Data API only, with the user's own key (`REMORSEARCH_YOUTUBE_API_KEY`): top-level comments in relevance order, at R0. The page is never requested or rendered | A YouTube page is `terms_restricted` (confirmed, never lifted). No key: a coverage gap and a question to the user. Quota used up: deferred. Comments switched off: `gone`. Items are kept 30 days (`retention_until`) |
+| DC Inside | Strong dissatisfaction, workarounds, edge cases, and version reactions | None until the user's recorded terms check lifts the stop. Then the R2 mobile twin, at most 10 documents per run | `terms_restricted` (reported). After a lift, `human_check` or `rate_limit` on busy boards. Anonymous posters count by thread |
+| Naver Cafes (parenting, regional and other cafes) | Focused user groups, local context, recurring practical workflows | None until the user's recorded terms check lifts the stop. Then public boards only (the R2 mobile twin, or an R3 render passed to `ingest`), at most 10 documents per run | `terms_restricted` (reported, from a cafe notice of 2026-08-31 on bulk collection), then `auth_gate` on member-only boards. A cafe the user authorised in `signed_in_communities` is read as summaries only, and only after the same lift |
+| Naver blogs, 지식iN and 플레이스 | Individual experiences, how-to answers, place reviews | None until the user's recorded terms check lifts `naver-terms` (reported). Then the blog RSS feed or the public page, at most 10 documents per run | `terms_restricted`. The Naver and Kakao search APIs are switched off, so discovery uses the agent's own search tool |
+| Other open forums (Ppomppu, Ruliweb, FMKorea, Clien, theqoo) | Strong dissatisfaction, workarounds, edge cases, and version reactions | R1, the R2 mobile twin where the route table names one, or an R3 render of a page the reader reached | `human_check` or `rate_limit` on busy boards; `auth_gate` on member-only boards |
 | Reddit and product forums | Expert workflows, comparisons, shortcuts, and migration reasons | R0 `.rss` feeds | `rate_limit`; robots.txt opt-outs |
-| App reviews | Onboarding, reliability, permissions, crashes, and broad sentiment | R0 App Store reviews feed; Google Play R3 or the team's export | Google Play renders show only the first reviews |
+| App reviews | Onboarding, reliability, permissions, crashes, and broad sentiment | R0 App Store reviews feed; Google Play R3 or the team's export | Google Play renders show only the first reviews. Read by date window: a rating drop after a release or a news event is context, not a usability finding. Stores skew by phone brand and reward events (`references/research/korea/platform-map.md`, section 6) |
 | Support and policy pages | Intended behavior, limits, and recovery paths | R1 | Rarely any |
+
+A lift comes only from the user's own reading of the host's current terms, recorded in the brief as `access_policy.terms_checked` with `result: permits_this_reading` (`references/research/public-page-access.md`, section 17.5). An agent never writes that entry. Where the team has its own data (VOC, support tickets, store-console or seller exports), it comes first. Those are `team_provided` sources, not reads.
 
 No channel represents all users. Use channel differences as part of the finding.

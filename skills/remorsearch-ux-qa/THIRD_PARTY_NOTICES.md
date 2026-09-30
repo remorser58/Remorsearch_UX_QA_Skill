@@ -78,7 +78,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   an untrusted-content envelope for page text; and the rule that generic code
   names no sites. We deliberately did not adopt its TLS-impersonation grid,
   stealth browsers, cookie and clearance bridging, search-page scraping or archive
-  sidecars.
+  sidecars. Nothing in this folder calls, installs or depends on it.
 - **insane-research** (github.com/fivetaku/insane-research, MIT License, Copyright
   (c) 2026 fivetaku). Ideas used in `references/research/audience-pipeline.md` and
   `references/research/source-grading.md`: phase contracts; claim status computed
@@ -86,11 +86,62 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   schema-forced reader returns merged by code; and a report gate with an annex. We
   changed its grading, so grades depend on the claim kind, and its unit of
   independence, so people count and not only organisations.
+- **K-skill** (github.com/NomaDamas/k-skill, MIT License at the repository root;
+  its AGPL-3.0-only proxy packages were not used). Studied from 2026-09-28 to
+  2026-09-30. Ideas used in the Korean research pack
+  (`references/research/korea/`), in the reader's key handling (`uxresearch/`) and
+  in the README:
+  - a dated per-source registry: the official surface, the route, the
+    authentication, the licence and the date it was observed;
+  - the missing-credential rule: a missing key is recorded as a gap and a question
+    to the user, and the reader never switches to another route;
+  - namespaced key names, here `REMORSEARCH_<SERVICE>_<ITEM>`;
+  - provenance cards for official statistics: publisher, table, reference period,
+    unit, address and retrieval date;
+  - the staged order for retrieving statistics from KOSIS: find the table, read
+    its metadata, pull a small slice, then widen (from its kosis-stats skill);
+  - a detect-only mode and a review threshold at a 30% change ratio for the
+    Korean prose check (from its korean-humanizer document, which credits
+    github.com/epoko77-ai/im-not-ai, MIT License; that project's README was read
+    on 2026-09-30);
+  - a capability table with a requirements column in the README;
+  - "Done when" and "Failure modes" sections in each reference, and natural Korean
+    requests as triggers.
 
-No code, text, marker lists or tables from insane-search or insane-research are
-included in this folder, and the skill does not depend on, install or call either
-project.
+  We deliberately did not adopt its hosted proxy with operator-held keys,
+  instructions loaded at run time, reading of search-result pages or undocumented
+  endpoints.
+- **DaleSeo/korean-skills** (github.com/DaleSeo/korean-skills, MIT License).
+  Ideas: the register follows the document type, and translationese patterns (for
+  example ~에 대해, ~를 통해) form a lint category. The pattern list in
+  `references/research/korea/report-template.md` is our own.
+- **SoDam-Persona-Codex** (github.com/sodam-ai/SoDam-Persona-Codex, Apache License
+  2.0). Ideas: Korean cue words that change how deep a run goes, and the 미확인
+  label for statements that were not verified.
+- **gptaku_plugins** (github.com/fivetaku/gptaku_plugins, MIT License; the
+  collection that also holds insane-search and insane-research). Idea: the
+  bilingual README pattern, an English README, a README.ko.md with the same section
+  skeleton, and a language switcher line at the top.
 
-Research papers, standards and guidelines cited in the references (for example
-WCAG 2.2, ISO 9241, RFC 9309, the TDM Reservation Protocol and human-factors
-studies) are cited, not reproduced.
+No code, text, marker lists, word lists or tables from the projects above are
+included in this folder, and the skill does not depend on, install or call any of
+them.
+
+## Cited or read for facts (nothing reproduced)
+
+- Research papers, standards and guidelines cited in the references (for example
+  WCAG 2.2, ISO 9241, RFC 9309, the TDM Reservation Protocol and human-factors
+  studies) are cited, not reproduced.
+- The Korean pack (`references/research/korea/`,
+  `references/persona-qa/kwcag-2.2.md`) cites KWCAG 2.2 (KS X OT0003:2022), the
+  Korea Fair Trade Commission's guidelines on endorsements and testimonials,
+  guides of the Personal Information Protection Commission, official statistics
+  and surveys, and statutes, administrative rules and judgments as read in the
+  public legalize-kr mirrors (github.com/legalize-kr). Each is cited with its
+  version or date, and marked 미확인 where it was not compared with the primary
+  source. None of it is legal advice.
+- Field names, limits and error codes of the KOSIS OpenAPI were read in two
+  third-party documents (github.com/WooilJeong/PublicDataReader and
+  github.com/rubatoyd/kosis-openapi-mcp). No text or code from them is included.
+- Platform, agency and company names in the Korean pack are descriptive. There is
+  no affiliation with any of them.

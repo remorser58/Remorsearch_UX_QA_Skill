@@ -70,6 +70,7 @@ Expected success:
 Likely failure:
 Claim IDs:
 Evidence that motivated the scenario:
+Untested steps and why (optional):
 ```
 
 ## Example
@@ -96,3 +97,36 @@ Evidence that motivated the scenario: two people in one community report that pa
 ```
 
 The example is a test condition. It is not evidence that every member of the segment behaves this way, and the segment's share says nothing about how many users would meet this failure.
+
+## Korean products
+
+Use this section when the product's users speak Korean, the channels are Korean, or the report is in Korean. It adds test conditions. None of it is evidence about real users. A cue from the Korean context becomes part of a claim only when a gate-supported claim, or a statistic with a source card (`references/research/korea/statistics.md`), backs it. Until then it is an assumption and is labelled as one. Accessibility for these flows is in `references/persona-qa/kwcag-2.2.md`. The channels behind the claims are in `references/research/korea/platform-map.md`.
+
+- **Identity and payment gates.** 본인인증, 간편인증, SMS 인증번호, CAPTCHA, 보안 키패드 and payment-module popups are stops on production. The agent does not pass them. Run the scenario on staging with mock verification, test numbers or a test payment mode, or mark the step untested (미검사) and say why. Use the team's test identities only. Never enter a real 주민등록번호, phone number, card or account number, and never take one from a dataset persona.
+- **Entry through an in-app browser** (a link opened inside KakaoTalk, Naver or another app) is a context facet. Add it when the brief or a supported claim says users arrive that way. Mark the step untested when the driver cannot reproduce that entry.
+- **초성 search** (typing only the initial consonants, such as ㅅㅅ), **English-only menus** and **queue pressure (눈치)** at a kiosk or counter are cues only when a claim supports them. The KCA kiosk studies in `references/research/korea/statistics.md` (section 4, question 6) are quota samples and self-reports. They can justify a time-pressed kiosk condition. They do not give a share of users.
+- **Age thresholds differ by source.** The digital divide survey counts older adults from 55, the KCA older-consumer study from 65, and personas often use 60. Record the threshold the persona uses and where it comes from. Do not carry a value from one age frame to another (`references/research/korea/statistics.md`, section 3).
+- **Speech register is an assumption.** A persona's 반말 or 존댓말, slang or 초성체 is a way to write test input. It says nothing about age, gender or ability. Dataset fields such as age or region change a scenario only when they change the task (`references/research/korea/query-craft.md`, section 5.6).
+- **Community norms describe content, not people.** A board's usual tone, sarcasm or voting habits never become a persona's gender, age or political lean. A community's modelled audience is never attached to a poster, a claim or a persona (`references/research/korea/platform-map.md`, section 4).
+
+Example of a Korean scenario (the IDs are illustrative):
+
+```text
+Scenario ID: S-05
+Audience ref: none (no audience file; a manual scenario for a sign-up check)
+Persona source: manual, basis synthetic
+Sample rule: one first-time user, varied in one facet (entry)
+Relevant attributes: opens the sign-up link inside a chat app's in-app browser (from the brief)
+User segment: first-time user
+Task ID and concrete data: T-signup: create an account with the team's test identity
+Task goal: complete sign-up
+Context: entry through the in-app browser; no other facet
+Device and input: small mobile, touch
+Starting state: staging with mock 본인인증 and a test SMS number the team provided
+Constraints: the SMS code expires
+Expected success: verification completes and the form keeps its input
+Likely failure: the verification popup is blocked or lost in the in-app browser
+Claim IDs: none (exploratory scenario)
+Evidence that motivated the scenario: the brief lists in-app entry
+Untested steps and why: production 본인인증 is a stop; recorded as untested (미검사)
+```

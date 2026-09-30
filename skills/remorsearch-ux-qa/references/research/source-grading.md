@@ -53,6 +53,20 @@ The bundle's `source_type` uses the `ergo-audience.v1` source types, plus `news`
 | expert_judgment | `expert_judgment` | A last resort, labelled as such |
 | none | `llm_output`, `synthetic` | Never evidence. Always E. |
 
+Mapping Korean sources onto these types (details and source cards in
+`references/research/korea/statistics.md`; the `ergo-audience.v1` contract does
+not change):
+
+- Approved national statistics with an approval number (승인통계), and an
+  agency's public administrative statistics: `official_statistics`.
+- Sample surveys by public research institutes or independent research firms
+  that state their n: `research_paper`.
+- Estimates by app-panel, traffic and ad-research vendors: `market_report`.
+- Documents an agency issued, such as a regulator's counts: `official_docs`.
+- A source that only counts cases, such as complaint-line or monitoring counts,
+  is marked `count_only` there. It never supports a size or population claim
+  (section 6).
+
 ## 3. Fit table
 
 Grades:
@@ -90,6 +104,12 @@ Notes:
   a segment's size, it does not measure the product's users.
 - A device named in a post is a device cue. Keep it as a lead for finding measured
   device data, never as `device_mix` support.
+- A community's audience as a traffic panel models it (its visitors' gender or
+  age mix) is at most D for every size kind. It never becomes a segment's share,
+  and a community's modelled gender, age or political lean is never attributed
+  to a poster, a claim or a persona.
+- Store choice is not reviewer demographics. A phone brand's user mix describes
+  smartphone users, not the people who write reviews.
 - `product_behavior` is confirmed only on the product surface. It needs linked
   product observations (section 7), never sources alone.
 
@@ -104,29 +124,48 @@ the caps. A grade never goes below E.
 | Secondhand ("a friend said", "I heard") | One grade lower |
 | Unclear context: the task or the situation cannot be told | One grade lower |
 | Member-only content from an authorised community (`references/public-page-access.md`, section 3) | One grade lower, because outsiders cannot re-check it |
-| Promotion or affiliate disclosure | At most D |
+| Promotion or affiliate disclosure, or a tie to the seller that the page or a public record shows (such as a post by the advertiser's own staff), confirmed by a verifier | At most D, for every claim kind |
+| Review-event incentive (the reviewer took part in a review event, or got a reward for the review), confirmed by a verifier | `user_preference`, `real_user_preference` and other satisfaction statements, use as a counter-search result, and star averages: at most D. `pain_point` and `workaround`: at most one grade below the voice grade, and never below C because of this flag. |
+| A seller's or a board's notice of a review event on the page | A per-review candidate for the verifier. It never caps the whole page: without a trace of the event in the review's own words, no cap applies. |
+| Platform-wide review points (a platform's standing reward for every review) | Kept apart from seller-run events. A candidate only when the reviewer's own words mention them. |
+| Disclosed virtual person (such as an AI-generated persona, 가상인물) | E: not a user's voice |
+| A review of the platform's own-brand item, on that platform | At most D until another channel family corroborates it; then its own grade |
+| Reviews on a seller's own review board | Grade unchanged, but tagged as seller-managed. No complaints there is not a counter-search result. |
+| Polarity uncertain: sarcasm or irony the thread does not resolve, a laugh marker or quote marks around praise, a result that contradicts the praise | Never used for a satisfaction or preference statement or as a counter-search result. A verifier decides when unsure. |
 | Snippet, teaser or summarising fetch (a tool that returns model-written text) | At most D |
 | Injection flag not yet cleared by a verifier | E |
 | The source hit a stop, or it was deleted or withdrawn | E |
 | LLM output or a synthetic source | E |
 | The same text appears in several sources | Counts once, as one unit, flagged `copypaste` |
 
-Promotion and affiliate disclosures to look for, in the form a disclosure takes:
+When several rows apply to one source, the lowest result wins. The incentive
+rows are the skill owner's decision. Survey evidence shows that review rewards
+inflate ratings; it does not show that they make people invent complaints. So
+complaints and workarounds keep most of their weight, and praise does not.
 
-- Korean: 체험단으로 참여하여, [체험단], 협찬을 받아 작성, #협찬, [협찬], 소정의
-  원고료를 받아, 제품을 무상으로 제공받아, 업체로부터 지원받아, #광고, [광고], 유료
-  광고 포함, 쿠팡 파트너스 활동의 일환으로, 수수료를 제공받, 서포터즈 활동으로.
-- English: #ad, #sponsored, "this video is sponsored", paid partnership, "this post
-  contains affiliate links", "I may earn a commission", "I received this product
-  for free".
+Promotion disclosures and incentives, as principles. The marker lists are in
+`uxresearch/data/markers.json`; the Korean rules, with their dates and worked
+examples, are in `references/research/korea/promotion.md`.
 
-A word alone is not a disclosure. A review that complains "광고가 너무 많다" (too
-many ads in the app), "체험단 후기만 잔뜩이다" or "half of these reviews are
-sponsored" is a user complaint, not promotion. The reader's marker file
-(`uxresearch/data/markers.json`) holds the full lists, compiled for this skill, in
-disclosure forms. Even a disclosure form can sit inside a complaint, so the
-reader's `promo_flags` are candidates: a verifier confirms that the source itself
-discloses promotion before the D cap applies.
+- Any wording of a disclosure reveals the relationship: a clear one, one the
+  regulator's guideline calls unclear, or a foreign label such as [AD]. The
+  wording class and the position (lead, body or tail) are recorded, but they never
+  change the grade.
+- No disclosure in the text is not proof of an organic post. When only the text
+  was read (`promo_check: text_only`), write "disclosure not checked", not "no
+  disclosure": disclosures can sit in images, banners or collapsed text.
+- Self-declarations such as 내돈내산 ("bought with my own money") or 광고 아님 ("not
+  an ad") carry no weight. They neither raise nor lower a grade, and they never
+  dismiss a candidate.
+- A word alone is not a disclosure. The reader flags complete disclosure and label
+  forms only, and drops a match that is negated, quoted or asked about. A review
+  that complains "광고가 너무 많다" (too many ads in the app) or "half of these
+  reviews are sponsored" is a user complaint, not promotion. The flags
+  (`promo_flags`, `promotion_hits`, `incentive_flags`, `virtual_person_flags`)
+  are candidates: a verifier confirms that the source itself discloses the
+  relationship before a cap applies.
+- Judge where a disclosure sits against the rule in force at the post's
+  `published_at` (section 10).
 
 ## 5. Independence
 
@@ -134,9 +173,9 @@ Count independent units, not URLs.
 
 | Unit | One unit is | Used for |
 | --- | --- | --- |
-| Person | One author key (a salted key, never the handle). On anonymous boards, one thread key per thread. | Voice sources |
-| Channel family | One kind of channel, as the route table's `platform_family` names it: blogs (`blog`), forums and communities (`community`), Q&A boards (`qna`), video comments (`video`), app-store reviews (`app_store_reviews`) or microblogs (`microblog`). A source outside the route table uses its source type. | Corroboration across channels |
-| Organisation | One registrable domain, with Korean second-level suffixes (`co.kr`, `or.kr`, `go.kr`, `ac.kr`, `ne.kr`, `re.kr`, `pe.kr` and the regional ones such as `seoul.kr`). Blogs hosted by path or subdomain count per author. An explicit `org` value overrides. | Institutional sources: statistics, docs, market reports, news |
+| Person | One author key (a salted key, never the handle). On anonymous boards, one thread key per thread. A default nickname such as "ㅇㅇ", or a handle shown with a partial IP, is not an identity: count those posts by thread. | Voice sources |
+| Channel family | One kind of channel, as the route table's `platform_family` names it: blogs (`blog`), forums and communities (`community`), Q&A boards (`qna`), video comments (`video`), app-store reviews (`app_store_reviews`), microblogs (`microblog`) or shopping and place reviews (`commerce_reviews`). A source outside the route table uses its source type. | Corroboration across channels |
+| Organisation | One registrable domain, with Korean second-level suffixes (`co.kr`, `or.kr`, `go.kr`, `ac.kr`, `ne.kr`, `re.kr`, `pe.kr` and the regional ones such as `seoul.kr`). Blogs hosted by path or subdomain count per author. An explicit `org` value overrides. On a statistics portal the organisation is the agency that produced the table, never the portal. | Institutional sources: statistics, docs, market reports, news |
 
 Korean examples:
 
@@ -149,11 +188,21 @@ Korean examples:
   (`blog`, `app_store_reviews`).
 - A DCInside poster and a Naver Cafe member: 2 people, 1 channel family
   (`community`).
-- Five anonymous replies in one DCInside thread: 1 unit, the thread.
+- Five anonymous replies in one DCInside thread: 1 unit, the thread. Posts signed
+  with the default nickname "ㅇㅇ" in different threads are never one person.
+- A Coupang review and a Naver Place review: 2 people, 1 channel family
+  (`commerce_reviews`).
 - Two news articles that repeat one press release: 1 unit (copy-paste), and news is
   secondary.
-- Statistics Korea's site and KOSIS: set `org` to Statistics Korea, so they count
-  as one organisation.
+- Tables on KOSIS, the national statistics portal: set `org` to the agency that
+  produced each table (its 작성기관), not to KOSIS and not to 국가데이터처. A
+  population table from the Ministry of the Interior and Safety and an internet
+  survey table from the Ministry of Science and ICT are two organisations, even
+  on one portal.
+- 국가데이터처 (Ministry of Data and Statistics) was named 통계청 (Statistics Korea)
+  until 2025-10-01. Its old and new names count as one organisation, for its own
+  tables only; the aliases are in `uxresearch/data/korea-statistics.json`
+  (`org_aliases`, `references/research/korea/statistics.md`, section 6).
 
 Thresholds:
 
@@ -179,9 +228,13 @@ neutral denominator:
 - a defined population, from a study.
 
 The people who chose to post are never a denominator. Post counts, review counts,
-like counts and the share of posts that mention something are not sizes. A number
-from a party with a stake, such as a vendor's own marketing survey, is an estimate
-at best. A voice source cited for a size value is a hard error (gate exit 2).
+like counts and the share of posts that mention something are not sizes. Neither
+are counts of people who chose to complain or report, such as the 1372 consumer
+counselling centre's case counts or a regulator's monitoring counts: they show
+that a problem exists, never how common it is. A star average is never a
+satisfaction measure. A number from a party with a stake, such as a vendor's own
+marketing survey, is an estimate at best. A voice source cited for a size value
+is a hard error (gate exit 2).
 
 ## 7. Statuses
 
@@ -293,6 +346,19 @@ its counting evidence predates the brief's `release_date` (or the date of the
 current version), the status is `stale`. Reports show `observed_at` and
 `valid_at` next to each piece of evidence.
 
+Platforms change too. A change of host, owner, review policy or star display
+splits a channel's evidence into before and after: read each side as its own time
+window, and never compare numbers across the date. The Korean dates are in
+`references/research/korea/platform-map.md`, section 7.
+
+A promotion disclosure is judged against the rule in force at the post's
+`published_at`. In Korea the endorsement guideline changed on 2020-09-01 (how to
+disclose, by medium), on 2024-12-01 (text posts disclose in the title or at the
+start) and on 2026-06-01 (disclosed virtual persons). A post from before a rule
+is never faulted for missing it. When `published_at` is unknown, check only
+whether a disclosure exists, not where it sits
+(`references/research/korea/promotion.md`, section 3).
+
 ## 11. The gate
 
 `python3 scripts/ux_research.py gate` (planned) computes every claim's status.
@@ -337,6 +403,8 @@ that code and data use the same lists.
 ```text
 claim kinds: segment_exists, segment_share, device_mix, condition_presence, condition_share, context_of_use, task, pain_point, workaround, product_behavior, intended_behavior, prevalence, user_preference, real_user_preference, discomfort
 source families: measured, statistical, estimate, intent, voice, secondary, expert_judgment
+channel families: blog, community, qna, video, app_store_reviews, microblog, commerce_reviews
+incentive kinds: seller_event, seller_notice, platform_points, reward_unspecified
 grades: A, B, C, D, E
 statuses: supported_high, supported_medium, single_voice, lead_only, conflicting, needs_product_check, stale, unfit
 counter-search outcomes: none_found, qualifies, contradicts

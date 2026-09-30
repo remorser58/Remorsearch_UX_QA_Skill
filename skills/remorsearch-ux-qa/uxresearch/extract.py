@@ -20,7 +20,10 @@ the page has them. `notice_text` is the text a site notice could be in: outside
 navigation chrome and outside links.
 
 The JSON-LD body replaces the visible text only when it is longer, and
-`extraction_source` says which one was used. Text is NFC-normalised.
+`extraction_source` says which one was used. `main_text` is the main content
+as text (the JSON-LD body when that was used); the promotion, incentive and
+virtual-person checks read their lead and tail positions from it. Text is
+NFC-normalised.
 """
 from __future__ import annotations
 
@@ -82,6 +85,7 @@ class Page:
     kind: str
     text: str = ""
     visible_text: str = ""
+    main_text: str = ""  # the main content only (outside chrome; inside main or article when the page has them)
     extraction_source: str = "html"
     visible_chars: int = 0
     main_chars: int = 0
@@ -163,8 +167,12 @@ class _Parser(HTMLParser):
                       "jsonld": 0, "script": 0}
         self.parts: list[str] = []
         self.notice_parts: list[str] = []
+        self.body_parts: list[str] = []  # outside chrome
+        self.main_parts: list[str] = []  # outside chrome, inside main or article
         self.size = 0
         self.notice_size = 0
+        self.body_size = 0
+        self.main_size = 0
         self.main_seen = False
         self.main_count = 0
         self.body_count = 0
@@ -182,6 +190,13 @@ class _Parser(HTMLParser):
         if notice and self.notice_size < TEXT_CAP_CHARS:
             self.notice_parts.append(text)
             self.notice_size += len(text)
+        if not self.depth["chrome"]:
+            if self.body_size < TEXT_CAP_CHARS:
+                self.body_parts.append(text)
+                self.body_size += len(text)
+            if self.depth["main"] and self.main_size < TEXT_CAP_CHARS:
+                self.main_parts.append(text)
+                self.main_size += len(text)
         if self.size >= TEXT_CAP_CHARS:
             self.page.truncated = True
             return
@@ -434,8 +449,11 @@ def _finish(page: Page, visible: str, body: str) -> Page:
     page.visible_chars = nonspace(visible)
     if body and nonspace(body) > page.visible_chars:
         page.text, page.extraction_source = nfc(tidy(body)), "json_ld"
+        page.main_text = page.text
     else:
         page.text = visible
+    if not page.main_text:
+        page.main_text = page.text
     return page
 
 
@@ -456,6 +474,7 @@ def from_html(html: str, base_url: str, markers: dict | None = None) -> Page:
     page.free_chars = parser.main_free_count if parser.main_seen else parser.free_count
     page.main_free_chars = parser.main_free_count
     page.notice_text = nfc(tidy("".join(parser.notice_parts)))
+    page.main_text = nfc(tidy("".join(parser.main_parts if parser.main_seen else parser.body_parts)))
     body = _apply_jsonld(page, parser.jsonld)
     return _finish(page, tidy("".join(parser.parts)), body)
 
@@ -474,7 +493,7 @@ def from_text(text: str) -> Page:
     page = Page(kind="text", extraction_source="text")
     body = nfc(tidy(text[:TEXT_CAP_CHARS]))
     page.truncated = len(text) > TEXT_CAP_CHARS
-    page.text = page.visible_text = page.notice_text = body
+    page.text = page.visible_text = page.notice_text = page.main_text = body
     page.visible_chars = page.main_chars = page.free_chars = nonspace(body)
     return page
 
@@ -506,7 +525,7 @@ def from_page_read(doc: dict) -> Page:
     result = _finish(page, visible, body)
     result.main_chars = result.free_chars = result.visible_chars
     result.notice_text = result.visible_text
-    return result
+    return result  # main_text: the render's text, or the JSON-LD body when that was used (_finish)
 
 
 def _same_link(a: str, b: str) -> bool:

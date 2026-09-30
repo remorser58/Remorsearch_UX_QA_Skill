@@ -29,10 +29,16 @@ to that address for the reader; test names never reach real DNS or a proxy.
 | `pages/euckr-page.utf8.html` | stored as UTF-8; the tests serve it as CP949 under EUC-KR, ks_c_5601-1987 and x-windows-949 labels |
 | `pages/injection-post.html` | injection phrases (en and ko) and a forged envelope END line |
 | `pages/feed.xml` | an RSS feed for the R0 route-table test |
+| `pages/pii-post.html` | a post and metadata carrying invented phone, e-mail, account, card, resident-registration and partial-IP identifiers (scrubbed before `read` or `ingest` prints or saves anything) |
 | `captures/` | render captures for `ingest`: HTML, text, a ux-page-read.v1 document, and a signed-in view that must be refused |
 | `robots/*.txt` | RFC 9309 precedence, product-token groups, wildcards, percent-encoding, Crawl-delay |
-| `routes.test.json` | a route table with `.test` hosts only |
+| `robots/ai-agent-group.txt` | groups naming other AI agents with fixture tokens: a fetch-for-a-user agent (honoured as our own, disallows only) and a training crawler (a recorded signal) |
+| `agent-tokens.test.json` | the fixture tokens, handed to `start --agent-tokens` |
+| `promotion-ko.json` | labelled synthetic cases for the Korean promotion, incentive and virtual-person markers: disclosures by position, and negated disclaimers, questions, quotes and complaints that must not be flagged |
+| `routes.test.json` | a route table with `.test` hosts only, including terms_restricted entries (reported, confirmed, and two with an official route for official-only mode), search pages and a switched-off discovery endpoint. The official-only route reads REMORSEARCH_FIXTURE_TUBE_KEY or its alias REMORSEARCH_FIXTURE_TUBE_OLD_KEY; the listed alias FIXTURE_TUBE_KEY is never read (keys come only from REMORSEARCH_* variables) |
 | `brief.json` | a ux-research-brief.v1 example |
+
+`tests/test_ux_youtube.py` needs no files here: its fake Data API (videos and commentThreads answers, error bodies and robots.txt) is built in memory and served on 127.0.0.1, and its route tables are the packaged one or a copy of it with fixture hosts.
 
 The 10 MB page and the gzip bomb are generated inside the tests instead of being
 stored here.

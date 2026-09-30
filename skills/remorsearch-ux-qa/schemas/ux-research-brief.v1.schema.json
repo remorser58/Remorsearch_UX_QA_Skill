@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/remorser58/ux-research-qa-skills/schemas/ux-research-brief.v1.schema.json",
+  "$id": "https://github.com/remorser58/Remorsearch_UX_QA_Skill/schemas/ux-research-brief.v1.schema.json",
   "title": "UX Research Brief v1",
   "description": "What one research run is about and the limits it runs under. Read by `ux_research.py start --brief`, which checks these shapes itself. Budgets above the defaults need a recorded reason and can never pass the maxima.",
   "type": "object",
@@ -113,11 +113,43 @@
                               "description": "for a community that shares its host with others (one cafe on a cafe host), the path it lives under, such as /mycafe; matched on whole path segments"}
             }
           }
+        },
+        "terms_checked": {
+          "type": "array",
+          "maxItems": 20,
+          "default": [],
+          "description": "The user's own reading of a host's current terms of service. Only the user adds entries, after reading the terms themselves; an agent never does, there is no command-line switch, and nothing a page says counts. An entry whose result is permits_this_reading lifts a 'reported' terms_restricted entry of the route table for this run (the lift is recorded in the run ledger, and that host's document budget becomes 10); a 'confirmed' entry is never lifted. A check covers its host and the host's subdomains.",
+          "items": {
+            "type": "object",
+            "required": ["host", "terms_url", "checked_on", "result"],
+            "additionalProperties": false,
+            "properties": {
+              "host": {"type": "string", "pattern": "^([A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\.)+[A-Za-z0-9-]{1,63}$",
+                       "description": "the host whose terms were read, without a scheme or a path; its subdomains are covered too"},
+              "terms_url": {"type": "string", "format": "uri", "maxLength": 2000,
+                            "description": "the http(s) address of the terms that were read, with the clause's anchor or identifier when there is one"},
+              "checked_on": {"type": "string", "format": "date", "description": "the day the user read the terms; not after today"},
+              "result": {"enum": ["permits_this_reading", "restricts_this_reading", "unclear"],
+                         "description": "what the terms say about this reading; only permits_this_reading lifts a reported entry"},
+              "note": {"type": "string", "minLength": 1, "description": "the clause or the reasoning, in the user's words"}
+            }
+          }
         }
       }
     },
     "team_analytics_available": {"type": "boolean",
                                  "description": "the team can provide analytics or store-console exports (team_provided sources)"},
-    "report_lang": {"type": "string"}
+    "report_lang": {"type": "string"},
+    "ethics_review": {
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "description": "An institutional ethics review (for example an IRB) of this research, as the user reports it. Recorded in the run, never enforced.",
+      "properties": {
+        "status": {"enum": ["none", "exempt", "approved", "pending"]},
+        "body": {"type": "string", "minLength": 1, "maxLength": 500, "description": "the reviewing body"},
+        "reference": {"type": "string", "minLength": 1, "maxLength": 500, "description": "an approval or exemption reference"}
+      }
+    }
   }
 }

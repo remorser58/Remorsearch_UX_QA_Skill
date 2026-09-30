@@ -19,6 +19,19 @@ type and whatever its comments say.
 X-Robots-Tag: each header is read on its own. Inside one header, a
 'product-token:' prefix scopes the directives after it to that crawler; a known
 directive with a value (such as 'unavailable_after: <date>') is not a crawler name.
+
+Other AI agents (data/agent-tokens.json). The reader is itself an AI agent that
+fetches pages for a person, so robots.txt groups naming another agent that
+fetches on a user's behalf (fetch_on_behalf) are honoured as if they named our
+own token, with two limits: a group naming our own token decides alone, and
+such a group only adds disallows (its Allow lines never lift a '*' disallow).
+The cached record keeps each of those groups' merged rules, and decide()
+consults them only when the base decision came from the '*' group or from no
+group. Groups naming training or AI-search crawlers (training_or_index) never
+change the decision: the record keeps only those that disallow something, and
+decide() returns the tokens that disallow the URL as ai_training_disallow, a
+recorded signal. Records carry RECORD_FORMAT; a record in another format is
+fetched again.
 """
 from __future__ import annotations
 
@@ -29,6 +42,8 @@ from urllib.parse import urlsplit
 
 PARSE_LIMIT_BYTES = 512 * 1024
 STATUSES = ("ok", "unavailable", "unavailable_bot_filtered", "unreachable")
+RECORD_FORMAT = 2  # 2: records keep the rules of other AI agents' groups (agents)
+AGENT_CATEGORIES = ("fetch_on_behalf", "training_or_index")
 _UNRESERVED = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
 _HEX = frozenset("0123456789abcdefABCDEF")
 _AGENT_KEYS = {"user-agent", "useragent", "user agent"}
@@ -131,14 +146,13 @@ def _agent_token(agent: str) -> str:
     return re.split(r"[/\s]", agent.strip().lower(), maxsplit=1)[0]
 
 
-def select(groups: list[Group], token: str) -> dict:
-    """Merge the groups for `token`, else the '*' groups. Returns rules and pacing hints."""
-    wanted = token.lower()
-    chosen = [g for g in groups if any(_agent_token(a) == wanted for a in g.agents)]
-    label = token
-    if not chosen:
-        chosen = [g for g in groups if any(a.strip() == "*" for a in g.agents)]
-        label = "*" if chosen else None
+def _groups_naming(groups: list[Group], token: str) -> list[Group]:
+    """Every group whose user-agent lines name this product token (case-insensitive; never '*')."""
+    wanted = token.strip().lower()
+    return [g for g in groups if wanted and any(_agent_token(a) == wanted for a in g.agents)]
+
+
+def _merged(chosen: list[Group]) -> dict:
     rules: list = []
     for group in chosen:
         for rule in group.rules:
@@ -146,8 +160,39 @@ def select(groups: list[Group], token: str) -> dict:
                 rules.append(rule)
     delays = [g.crawl_delay for g in chosen if g.crawl_delay is not None]
     rates = [g.request_rate_s for g in chosen if g.request_rate_s is not None]
-    return {"group": label, "rules": rules, "crawl_delay": max(delays) if delays else None,
+    return {"rules": rules, "crawl_delay": max(delays) if delays else None,
             "request_rate_s": max(rates) if rates else None}
+
+
+def select(groups: list[Group], token: str) -> dict:
+    """Merge the groups for `token`, else the '*' groups. Returns rules and pacing hints."""
+    chosen = _groups_naming(groups, token)
+    label = token
+    if not chosen:
+        chosen = [g for g in groups if any(a.strip() == "*" for a in g.agents)]
+        label = "*" if chosen else None
+    return {"group": label, **_merged(chosen)}
+
+
+def agent_groups(groups: list[Group], agent_tokens: dict | None, own_token: str) -> dict:
+    """The merged rules of other AI agents' groups: every fetch_on_behalf token with a group, and
+    the training_or_index tokens whose groups disallow something. Our own token is never listed."""
+    found: dict = {name: {} for name in AGENT_CATEGORIES}
+    own = own_token.strip().lower()
+    for category in AGENT_CATEGORIES:
+        for token in (agent_tokens or {}).get(category) or []:
+            if not isinstance(token, str) or token.strip().lower() == own or token in found[category]:
+                continue
+            chosen = _groups_naming(groups, token)
+            if not chosen:
+                continue
+            merged = _merged(chosen)
+            if category == "training_or_index":
+                if any(not allow and pattern for allow, pattern in merged["rules"]):
+                    found[category][token] = merged["rules"]
+            else:
+                found[category][token] = merged
+    return found
 
 
 def pattern_matches(pattern: str, target: str) -> bool:
@@ -192,11 +237,13 @@ def match(rules: list, target: str) -> tuple[bool, dict | None]:
 
 
 def record_from_fetch(origin: str, *, status: int | None, body: bytes = b"", error: str | None = None,
-                      challenge: bool = False, token: str, fetched_at: str) -> dict:
-    """Interpret one robots.txt fetch as a cacheable record."""
-    record = {"origin": origin, "http_status": status, "fetched_at": fetched_at, "error": error,
-              "sha256": hashlib.sha256(body).hexdigest() if body else None,
-              "group": None, "rules": [], "crawl_delay": None, "request_rate_s": None}
+                      challenge: bool = False, token: str, fetched_at: str, agent_tokens: dict | None = None) -> dict:
+    """Interpret one robots.txt fetch as a cacheable record. `agent_tokens` maps each of
+    AGENT_CATEGORIES to a list of other AI agents' product tokens."""
+    record = {"format": RECORD_FORMAT, "origin": origin, "http_status": status, "fetched_at": fetched_at,
+              "error": error, "sha256": hashlib.sha256(body).hexdigest() if body else None,
+              "group": None, "own_group": False, "rules": [], "crawl_delay": None, "request_rate_s": None,
+              "agents": {name: {} for name in AGENT_CATEGORIES}}
     if error == "redirect_loop":
         record["status"] = "unavailable"  # RFC 9309: more than five redirects may be treated as unavailable
     elif error is not None or status is None:
@@ -207,7 +254,16 @@ def record_from_fetch(origin: str, *, status: int | None, body: bytes = b"", err
         record["status"] = "unavailable_bot_filtered"
     elif 200 <= status < 300:
         record["status"] = "ok"
-        record.update(select(parse(body[:PARSE_LIMIT_BYTES].decode("utf-8-sig", "replace")), token))  # BOM-safe
+        groups = parse(body[:PARSE_LIMIT_BYTES].decode("utf-8-sig", "replace"))  # BOM-safe
+        record.update(select(groups, token))
+        record["own_group"] = record["group"] == token
+        record["agents"] = agent_groups(groups, agent_tokens, token)
+        if not record["own_group"]:
+            # A group honoured as if it named us also paces us; the slower pace wins.
+            for name in ("crawl_delay", "request_rate_s"):
+                values = [v for v in [record[name], *(a[name] for a in record["agents"]["fetch_on_behalf"].values())]
+                          if v is not None]
+                record[name] = max(values) if values else None
     else:
         record["status"] = "unavailable"
     return record
@@ -217,13 +273,26 @@ def decide(record: dict, url: str) -> dict:
     """Decision for one URL against a cached robots record."""
     status = record["status"]
     base = {"robots_status": status, "http_status": record.get("http_status"), "group": record.get("group"),
-            "sha256": record.get("sha256"), "crawl_delay": record.get("crawl_delay")}
+            "sha256": record.get("sha256"), "crawl_delay": record.get("crawl_delay"), "ai_agent_token": None,
+            "ai_training_disallow": []}
     if status == "unreachable":
         return {**base, "allowed": False, "decision": "disallowed",
                 "rule": {"type": "disallow", "pattern": "/*", "reason": "robots.txt unreachable: complete disallow"}}
     if status != "ok":
         return {**base, "allowed": True, "decision": "allowed", "rule": None}
-    allowed, rule = match(record["rules"], target_of(url))
+    target = target_of(url)
+    allowed, rule = match(record["rules"], target)
+    agents = record.get("agents") or {}
+    if allowed and not record.get("own_group"):
+        # Only when no group names our own token: another AI agent's group can add a disallow, never an allow.
+        for token, data in (agents.get("fetch_on_behalf") or {}).items():
+            agent_allowed, agent_rule = match(data.get("rules") or [], target)
+            if not agent_allowed:
+                allowed, rule = False, agent_rule
+                base["ai_agent_token"] = token
+                break
+    base["ai_training_disallow"] = [token for token, rules in (agents.get("training_or_index") or {}).items()
+                                    if not match(rules, target)[0]]
     return {**base, "allowed": allowed, "decision": "allowed" if allowed else "disallowed", "rule": rule}
 
 

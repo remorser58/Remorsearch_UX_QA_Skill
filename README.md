@@ -1,5 +1,7 @@
 # Remorsearch UX QA
 
+English | [한국어](README.ko.md)
+
 **Research before release. No remorse after.**
 
 Remorsearch (*ree-mor-search*, 리모서치) UX QA is an evidence-first agent skill for
@@ -12,23 +14,23 @@ apart, so a report never passes off a simulation as user research.
 
 One skill, four modes. The skill picks the mode from your request.
 
-| Mode | What it does |
-| --- | --- |
-| **research** | Collects real user experiences from communities, comments, app reviews and official sources; separates firsthand evidence from inference; traces root causes; proposes Figma-ready flows. Also researches who the users are, as audience segments that personas are built from. |
-| **persona-qa** | Builds persona scenarios, runs them on the real product in a browser, compares against Figma, and reports P0–P3 findings with reproduction steps and root causes. |
-| **ergonomics** *(experimental)* | Persona agents with body and sense profiles (one-handed or left-handed grip, thumb reach, tremor, walking, colour vision deficiency, presbyopia) operate the real screen; deterministic human-factors models score reach, touch accuracy, gaze, contrast, reading time, game timing and flashing. Results are coverage over simulated profiles, never prevalence. |
-| **loop** | Composes research and QA into a bounded, resumable goal: an explicitly authorised fix, then a same-scenario replay, then an evidence-backed stop report. |
+| Mode | What it does | Needs |
+| --- | --- | --- |
+| **research** | Collects real user experiences from communities, comments, app reviews and official sources; separates firsthand evidence from inference; traces root causes; proposes Figma-ready flows. Also researches who the users are, as audience segments that personas are built from. | Public pages need no account. YouTube comments need your own YouTube Data API key (`REMORSEARCH_YOUTUBE_API_KEY`). |
+| **persona-qa** | Builds persona scenarios, runs them on the real product in a browser, compares against Figma, and reports P0–P3 findings with reproduction steps and root causes. | Node.js 22 and Playwright for live web pages. A Figma file is optional. |
+| **ergonomics** *(experimental)* | Persona agents with body and sense profiles (one-handed or left-handed grip, thumb reach, tremor, walking, colour vision deficiency, presbyopia) operate the real screen; deterministic human-factors models score reach, touch accuracy, gaze, contrast, reading time, game timing and flashing. Results are coverage over simulated profiles, never prevalence. | Node.js 22 and Playwright for live web pages. Screening only. |
+| **loop** | Composes research and QA into a bounded, resumable goal: an explicitly authorised fix, then a same-scenario replay, then an evidence-backed stop report. | A separate write grant for the fix. Browser and Figma receipts come from your agent host. |
 
 ## Install
 
 Copy one folder into your skills directory.
 
 ```sh
-git clone https://github.com/remorser58/ux-research-qa-skills.git
+git clone https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
 # Claude Code (personal); use .claude/skills/ inside a project to share it with a team
-cp -R ux-research-qa-skills/skills/remorsearch-ux-qa ~/.claude/skills/
+cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
 # Codex
-cp -R ux-research-qa-skills/skills/remorsearch-ux-qa ~/.codex/skills/
+cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.codex/skills/
 ```
 
 The folder contains everything the skill runs: Python tools (3.10+, standard
@@ -50,6 +52,7 @@ Ask in plain words, or call it by name:
 /remorsearch-ux-qa Find out why people abandon our checkout, from reviews and community posts.
 /remorsearch-ux-qa 결제 화면을 처음 쓰는 사용자 페르소나로 QA해 줘. Figma 파일은 이거야.
 /remorsearch-ux-qa Check one-handed and colour-blind usability of the signup flow on a Galaxy S24.
+/remorsearch-ux-qa 간편결제 실패 경험을 한국어 커뮤니티와 앱 리뷰에서 근거 붙여서 정리해 줘.
 ```
 
 **First run.** If the run needs subagents (persona agents, parallel research,
@@ -101,15 +104,60 @@ Research and persona-qa read what anyone can read without an account.
   own mobile or feed version, then a real-browser render.
 - **Stops.** It stops at logins, paywalls, member-only groups, age checks, human
   checks such as CAPTCHAs, robots.txt and AI or TDM opt-outs, rate limits and
-  removed posts, and reports each as a coverage gap. It never disguises itself,
-  and it reads one page at a time per host, at least 8 seconds apart by default,
-  within a budget.
+  removed posts, and reports each as a coverage gap. It also stops where a
+  platform's published terms or an official notice restrict automated collection
+  or AI use (`terms_restricted`), and it honours robots.txt rules for AI agents
+  that fetch pages on a user's behalf. It never reads search results pages. It
+  never disguises itself, and it reads one page at a time per host, at least 8
+  seconds apart by default, within a budget.
 - **Privacy.** Quotes are short, authors become salted keys, and temporary page
-  text is kept outside your project and deleted when the run closes. Signed-in
-  reading happens only in communities you authorise for the run, and keeps
-  summaries only.
+  text is kept outside your project and deleted when the run closes. Phone
+  numbers, e-mail addresses, ID numbers, card and account numbers and IP addresses
+  are removed before the agent sees the text. Signed-in reading happens only in
+  communities you authorise for the run, and keeps summaries only.
 
 Details: [`public-page-access.md`](skills/remorsearch-ux-qa/references/research/public-page-access.md).
+
+## Korean research
+
+For a Korean product, Korean-speaking users or a report in Korean, research mode
+also follows the Korean pack, which starts at
+[`overview.md`](skills/remorsearch-ux-qa/references/research/korea/overview.md).
+persona-qa adds the accessibility notes in
+[`kwcag-2.2.md`](skills/remorsearch-ux-qa/references/persona-qa/kwcag-2.2.md). The
+pack is written in Korean and adds:
+
+- a map of 27 Korean channels: how public each is, the legitimate way to read it,
+  the stops to expect and its terms status;
+- Korean query craft and user-language reading (초성체, sarcasm, register);
+- disclosure and review-reward markers, and the grading rules that follow from them;
+- provenance cards and population frames for Korean statistics;
+- a legal checklist (not legal advice) and a report template in Korean;
+- KWCAG 2.2 and WCAG 2.2 accessibility results, reported apart.
+
+**Terms stops.** Where a platform's terms restrict automated collection, the reader
+stops before it sends any request. YouTube pages, Instagram, Threads and Facebook
+are marked `confirmed` (the restricting clause was found) and are never lifted. DC
+Inside, Naver (including Naver Cafe) and Coupang are marked `reported` (press
+reports and quotes) and are lifted only for a run in which you have read the host's
+current terms yourself and recorded the result in the brief
+(`access_policy.terms_checked`). A lifted host is read for at most 10 documents per
+run. An agent never writes that entry.
+
+**YouTube comments** come only through the YouTube Data API, with your own key in
+the environment variable `REMORSEARCH_YOUTUBE_API_KEY` (`YOUTUBE_API_KEY` is
+accepted as an alias). Keys are read from environment variables only, never from a
+file. A missing key is a coverage gap and a question to you, never a reason to read
+the page another way. Items from the API are kept 30 days (`retention_until`).
+
+**Plain limits.** Most Naver content ends as a coverage gap. Press reports and
+quotes say that Naver's terms and a cafe notice of 2026-08-31 restrict automated
+collection, and the pack treats that as a stop until you record your own terms
+check. The Naver and Kakao search APIs are switched off until the owner has read
+their current terms. Fill the gaps with your team's own data (VOC, support tickets,
+store-console exports), other channel families, surveys and interviews. Most
+platform facts in the pack come from search summaries and are marked 미확인
+(unverified).
 
 ## Repository layout
 
@@ -117,6 +165,8 @@ Details: [`public-page-access.md`](skills/remorsearch-ux-qa/references/research/
 skills/remorsearch-ux-qa/    the installable skill (copy this folder)
   SKILL.md                   entry point: modes, shared rules, tools
   references/                mode workflows and reference material
+    research/korea/          Korean research pack (in Korean): platform map, query craft, markers, statistics, legal checklist, report template
+    persona-qa/kwcag-2.2.md  KWCAG 2.2 and WCAG 2.2 notes for Korean products (in Korean)
   scripts/                   CLIs: validate_bundle, ux_loop, ux_research, ergo_qa, benchmarks
   uxloop/ uxresearch/        Python packages behind the loop CLI and the public-page reader
   ergoqa/ schemas/           ergonomics package and the JSON schemas used by the CLIs
@@ -125,6 +175,7 @@ skills/remorsearch-ux-qa/    the installable skill (copy this folder)
 tests/                       unit tests and fixtures
 benchmarks/                  blind benchmark suites with answer keys
 docs/                        design notes, human-factors research, validation records
+README.md, README.ko.md      this page in English and in Korean
 ```
 
 ## Development
@@ -152,6 +203,9 @@ server on 127.0.0.1.
 - The reader honours robots.txt and AI or TDM opt-outs, so some hosts end up as
   coverage gaps. Renders never click, so long comment threads and "more reviews"
   lists are only partly read.
+- Many Korean platforms restrict automated collection, so DC Inside, Naver and
+  Coupang end as coverage gaps unless you record a terms check, and YouTube is read
+  only through its API with your key. The Korean pack is not legal advice.
 - The ergonomics mode's thumb-reach model is uncalibrated, and its benchmark suites
   are small and authored by agents. Treat its findings as screening, not
   certification. See `docs/validation/`.
@@ -167,17 +221,10 @@ Credits: the public-page reader and the research gate were designed after studyi
 fivetaku's [insane-search](https://github.com/fivetaku/insane-search) and
 [insane-research](https://github.com/fivetaku/insane-research) (both MIT). Ideas
 only; no code or text from them is included, and the skill does not depend on or
-call either project.
-
-## 한국어 요약
-
-Remorsearch UX QA는 근거 중심의 UX 리서치·QA 스킬입니다. 커뮤니티와 리뷰에서 실제
-사용자 경험을 모으고(research), 페르소나로 실제 화면을 테스트하고(persona-qa),
-한 손 조작·색각·노안 같은 인체공학 조건을 점검하고(ergonomics, 실험적), 권한을
-받은 수정 뒤 같은 시나리오로 다시 확인합니다(loop). 관찰된 사실, 추론, 합성
-페르소나를 끝까지 구분해서, 시뮬레이션을 실제 사용자 조사처럼 보고하지 않습니다.
-대상 사용자 리서치로 세그먼트를 먼저 찾고, 그 근거로 페르소나를 만듭니다. 공개
-페이지는 정직하게 읽습니다. 로그인, 유료 벽, 캡차, robots.txt 거부 앞에서는
-멈추고, 정체를 숨기거나 차단을 우회하지 않습니다.
-설치는 `skills/remorsearch-ux-qa` 폴더 하나를 `~/.claude/skills/`나
-`~/.codex/skills/`에 복사하면 됩니다.
+call either project. The Korean pack and this README's bilingual layout also draw
+ideas from [K-skill](https://github.com/NomaDamas/k-skill) (MIT), DaleSeo's
+[korean-skills](https://github.com/DaleSeo/korean-skills) (MIT),
+[SoDam-Persona-Codex](https://github.com/sodam-ai/SoDam-Persona-Codex) (Apache-2.0)
+and fivetaku's [gptaku_plugins](https://github.com/fivetaku/gptaku_plugins) (MIT),
+again ideas only. Platform names are descriptive; there is no affiliation with
+any of them.
