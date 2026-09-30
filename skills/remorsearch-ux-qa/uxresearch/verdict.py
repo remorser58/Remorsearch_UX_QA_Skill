@@ -9,18 +9,20 @@ Precedence (the first match wins):
                notice on a thin page; for captures, signs of a signed-in view
                (except in a community the brief authorises)
   paywall      JSON-LD isAccessibleForFree=false, or a paywall notice on a thin page
-  human_check  an interactive challenge widget on a thin or challenge-status page
-               (stops the whole host), or a challenge notice: with a widget or an
-               error status it stops the whole host, on its own only this URL (in a
-               render capture every human check stops the host, see ladder.ingest).
-               A captcha inside a comment or sign-in form of a readable post is not
-               a stop.
-  rate_limit   429 or 503 with Retry-After (a host signal: one wait, then the host
-               stops), or a rate-limit notice on a thin page (this URL only)
+  human_check  an interactive challenge widget on a thin or challenge-status page,
+               or a challenge notice (word_only when nothing backs it): every human
+               check stops the whole site. A captcha inside a comment or sign-in form
+               of a readable post is not a stop.
+  rate_limit   429 or 503 with Retry-After, or a rate-limit notice on a thin page
+               (word_only): a site signal, one wait, then the site stops
   geo_block    a geo notice on a thin page
   legal_block  451, a redirect to a legal-block host, or a legal notice on a thin page
-  js_check     a self-clearing interstitial (escalates)
-  bot_filter   403/405/406 or other 4xx without other markers, or a block notice (escalates)
+  js_check     a browser-check interstitial ("checking your browser"), even one that
+               would clear by itself: opted_out, reasons prefixed 'js_check:', and the
+               whole site stops (it is never waited out or rendered past)
+  bot_filter   403/405/406 or other 4xx without other markers, or a block notice: the
+               site refused our honest request, so opted_out, reasons prefixed
+               'bot_filter:', and the whole site stops (never escalated)
   js_shell     almost no visible text plus an SPA root or a noscript notice (escalates)
   suspect      no usable text, or a redirect to the site root (escalates)
   ok_weak      readable text, including a short post inside a main or article element
@@ -47,11 +49,20 @@ data/markers.json, never bare words, each with the position it was found in
 (lead: the title and the first thresholds.promotion_lead_chars characters;
 tail: the last thresholds.promotion_tail_chars characters; body: elsewhere). A
 match is dropped when a negation follows it, when it is quoted, or when its
-sentence is a question. A verifier confirms every flag before a grade cap
-applies; an incentive flag is a per-review candidate, never a page-wide cap.
+sentence is a question. Width and dash variants are folded first (fold: NFKC
+per character, and dashes such as the en dash or 'ㅡ' become '-'), so a
+full-width '＃광고' counts. When the text comes in blocks (an official API's
+video: its title, its description and each comment), each block is scanned on
+its own, so lead and tail are the block's own, and each flag names its block; a
+viewer's comment is that comment's text, never the video's disclosure. The scan
+is linear: sentence ends are found once per text, the look-around is bounded
+and the matches examined per marker family are capped. A verifier confirms
+every flag before a grade cap applies; an incentive flag is a per-review
+candidate, never a page-wide cap.
 """
 from __future__ import annotations
 
+import bisect
 import functools
 import json
 import re
@@ -68,9 +79,10 @@ STOP_CLASSES = ("auth_gate", "paywall", "human_check", "opted_out", "terms_restr
 PRE_REQUEST_STOPS = frozenset({"terms_restricted", "budget", "host_stopped"})
 INCENTIVE_KINDS = ("seller_event", "seller_notice", "platform_points", "reward_unspecified")
 POSITIONS = ("lead", "body", "tail")
-ESCALATE = frozenset({"js_shell", "js_check", "bot_filter", "suspect"})
+ESCALATE = frozenset({"js_shell", "suspect"})  # the only verdicts that climb to the next rung
+CHECK_VERDICTS = frozenset({"js_check", "bot_filter"})  # a refusal or a browser check: a site-wide opted_out stop
 OK = frozenset({"ok_strong", "ok_weak"})
-HOST_STOPPING = frozenset({"human_check"})
+HOST_STOPPING = frozenset({"human_check", "opted_out"})  # with host_wide: the whole site stops for the run
 PRESENTATIONS = ("official_route", "honest_ua", "site_alternate", "real_browser")
 BUCKETS = ("read", "deferred", "unread", "stopped")
 WORD_FAMILIES = ("deleted", "membership", "age_identity", "paywall", "human_check", "rate_limit", "geo", "legal",
@@ -84,9 +96,8 @@ class Verdict:
     stop_class: str | None = None
     reasons: list = field(default_factory=list)
     transient: bool = False
-    # A human check backed by a widget or a challenge status stops the whole host; a 429 or a 503 with
-    # Retry-After is a host-level rate-limit signal. Word-only human checks and rate-limit notices stop
-    # only their URL.
+    # Every human check, bot filter and browser check stops the whole site; every rate-limit status or
+    # notice is a site-level rate-limit signal (one wait, then the site stops).
     host_wide: bool = False
 
     @property
@@ -189,8 +200,7 @@ _QUOTE_PAIRS = (('"', '"'), ("'", "'"), ("“", "”"), ("‘", "’"), ("「", 
                 ("『", "』"))
 _HANGUL = re.compile("[가-힣]")
 # punctuation, emoticons and chat jamo after the last word of a sentence
-_TRAILING = re.compile("[\\s~^.!?,;:)\\]}\"'*\\-…。”’」』♡♥♪☆★"
-                       "ㄱ-ㅣ]+$")
+_TRAILING_CHARS = frozenset("~^.!?,;:)]}\"'*-…。”’」』♡♥♪☆★" + "".join(chr(c) for c in range(0x3131, 0x3164)))
 _CHAT_JAMO = re.compile("[ㅋㅎㅠㅜ]{2,}")  # ㅋㅋ ㅎㅎ ㅠㅠ ㅜㅜ
 _KO_FIRST_PERSON = re.compile("(?<![가-힣])(저는|제가|저만|저도|저한테|나는|내가|나만|나도)(?![가-힣])")
 _EN_FIRST_PERSON = re.compile(r"(?<![a-z'])(i|i'm|i've|i'd|i'll|me|my|mine|myself)(?![a-z'])", re.I)
@@ -217,7 +227,7 @@ def _conversational(sentence: str, terminator: str) -> bool:
         return True
     if not _HANGUL.search(sentence):
         return False
-    core = _TRAILING.sub("", sentence)
+    core = _strip_trailing(sentence)
     if not core:
         return False
     if terminator == "?":
@@ -252,7 +262,7 @@ def _bare(blanked: str, terminator: str) -> bool:
     services write notices in the 해요체 too. A Korean question is still someone asking."""
     if len(_WORD_CHAR.findall(blanked)) > BARE_OTHER_CHARS:
         return False
-    return not (terminator == "?" and _HANGUL.search(blanked) and not _TRAILING.sub("", blanked).endswith("니까"))
+    return not (terminator == "?" and _HANGUL.search(blanked) and not _strip_trailing(blanked).endswith("니까"))
 
 
 @functools.lru_cache(maxsize=16)
@@ -387,16 +397,70 @@ def _logged_in(page) -> list[str]:
     limit = c.thresholds["standalone_line_chars"]
     for line in page.visible_text.splitlines():
         value = " ".join(line.lower().split())
-        if 0 < len(value) <= limit and (value in c.logged_in_lines or value.endswith(c.greetings or ("\0",))):
-            reasons.append(f"line:{value}")
+        if 0 < len(value) <= limit and value in c.logged_in_lines:
+            reasons.append(f"line:{value}")  # a fixed marker line from data/markers.json
+            break
+        if 0 < len(value) <= limit and value.endswith(c.greetings or ("\0",)):
+            reasons.append("line:greeting")  # never the line itself: a greeting names a member
             break
     return reasons
 
 
-def _quoted(text: str, start: int, end: int) -> bool:
+_SENTENCE_ENDS = re.compile("[" + re.escape(_SENTENCE_END) + "]")
+FLAG_WINDOW_CHARS = 300  # the look-around of a flag's quote and question checks, each side
+FLAG_CANDIDATES_MAX = 400  # matches examined per marker family in one text
+_DASHES = frozenset("\u2010\u2011\u2012\u2013\u2014\u2015\u2212\u3161\ufe58\ufe63\uff0d")
+# Characters that may fold: not ASCII, not Hangul syllables or compatibility jamo (chat jamo such as 'ㅋㅋ' must
+# stay as they are), not kana or CJK ideographs. 'ㅡ' (U+3161), often typed as a dash, is folded.
+_FOLDABLE = re.compile("[^\x00-\x7f\uac00-\ud7a3\u3131-\u3160\u3162-\u318f\u3040-\u30ff\u4e00-\u9fff]")
+
+
+@functools.lru_cache(maxsize=8192)
+def _fold_char(char: str) -> str:
+    if char in _DASHES:
+        return "-"
+    folded = unicodedata.normalize("NFKC", char)
+    return folded if len(folded) == 1 else char
+
+
+def fold(text: str) -> str:
+    """Width and dash variants folded, one character for one: NFKC per character when it gives a single
+    character ('＃' '#', '（' '(', '０' '0', '＠' '@'), and dashes ('–', '—', '―', '−', 'ㅡ') become '-'.
+    The text keeps its length, so offsets found in the folded text are offsets in the original."""
+    if not text or text.isascii():
+        return text
+    return _FOLDABLE.sub(lambda m: _fold_char(m.group()), text)
+
+
+def _strip_trailing(text: str) -> str:
+    """The text without the punctuation, emoticons and chat jamo after its last word (linear)."""
+    i = len(text)
+    while i and (text[i - 1].isspace() or text[i - 1] in _TRAILING_CHARS):
+        i -= 1
+    return text[:i]
+
+
+class _FlagText:
+    """One text prepared for the content-flag scan: folded, with its sentence ends found once, so each
+    match's sentence is found by bisection and its look-around is bounded."""
+
+    def __init__(self, text: str):
+        self.text = fold(text or "")
+        self.ends = [m.start() for m in _SENTENCE_ENDS.finditer(self.text)]
+
+    def bounds(self, start: int, end: int) -> tuple[int, int]:
+        i = bisect.bisect_left(self.ends, start)
+        left = self.ends[i - 1] + 1 if i else 0
+        j = bisect.bisect_left(self.ends, end)
+        right = self.ends[j] if j < len(self.ends) else len(self.text)
+        return max(left, start - FLAG_WINDOW_CHARS), min(right, end + FLAG_WINDOW_CHARS)
+
+
+def _quoted(text, start: int, end: int) -> bool:
     """True when the span sits inside quotation marks within its sentence."""
-    left, right = _sentence_bounds(text, start, end)
-    before, after = text[left:start], text[end:right]
+    flag_text = text if isinstance(text, _FlagText) else _FlagText(text)
+    left, right = flag_text.bounds(start, end)
+    before, after = flag_text.text[left:start], flag_text.text[end:right]
     for opening, closing in _QUOTE_PAIRS:
         if opening == closing:
             if before.count(opening) % 2 == 1 and opening in after:
@@ -406,23 +470,26 @@ def _quoted(text: str, start: int, end: int) -> bool:
     return False
 
 
-def _question(text: str, start: int, end: int) -> bool:
+def _question(text, start: int, end: int) -> bool:
     """True when the span's sentence is a question: it ends with '?' or with a Korean question ending."""
-    left, right = _sentence_bounds(text, start, end)
-    if right < len(text) and text[right] == "?":
+    flag_text = text if isinstance(text, _FlagText) else _FlagText(text)
+    left, right = flag_text.bounds(start, end)
+    source = flag_text.text
+    if right < len(source) and source[right] == "?":
         return True
-    core = _TRAILING.sub("", text[left:right])
+    core = _strip_trailing(source[left:right])
     endings = compiled().question_endings
     return bool(endings and core and core.endswith(endings) and not core.endswith("니다"))
 
 
-def _dropped(text: str, start: int, end: int) -> bool:
+def _dropped(text, start: int, end: int) -> bool:
     """A marker that is negated right after it, quoted, or asked about is not a disclosure."""
     c = compiled()
-    after = text[end:end + 60]
+    flag_text = text if isinstance(text, _FlagText) else _FlagText(text)
+    after = flag_text.text[end:end + 60]
     if any(p.match(after) for p in c.negation_after) or any(p.match(after) for p in c.negation_clause):
         return True
-    return _quoted(text, start, end) or _question(text, start, end)
+    return _quoted(flag_text, start, end) or _question(flag_text, start, end)
 
 
 def _position(start: int, end: int, length: int) -> str:
@@ -436,24 +503,32 @@ def _position(start: int, end: int, length: int) -> str:
 
 def _scan(patterns, text: str, title: str, *, placed: bool = False, limit: int = 10) -> list[tuple[str, str]]:
     """(marker as found, position) for each kept match, title first. `placed` keeps only the lead and
-    the tail, for markers that count only where a disclosure is expected."""
+    the tail, for markers that count only where a disclosure is expected. Linear in the text: each
+    match's sentence comes from a precomputed index, a repeat of a kept marker at the same position is
+    skipped before its checks, and at most FLAG_CANDIDATES_MAX matches are examined per text."""
     found: list[tuple[str, str]] = []
     seen: set = set()
     for source, is_title in ((title or "", True), (text or "", False)):
         if not source:
             continue
+        flag_text = _FlagText(source)
+        folded, length = flag_text.text, len(flag_text.text)
         for pattern in patterns:
             if pattern is None:
                 continue
-            for match in pattern.finditer(source):
-                position = "lead" if is_title else _position(match.start(), match.end(), len(source))
+            examined = 0
+            for match in pattern.finditer(folded):
+                position = "lead" if is_title else _position(match.start(), match.end(), length)
                 if placed and position == "body":
-                    continue
-                if _dropped(source, match.start(), match.end()):
                     continue
                 value = " ".join(match.group(0).split())
                 key = (value.lower(), position)
                 if key in seen:
+                    continue
+                examined += 1
+                if examined > FLAG_CANDIDATES_MAX:
+                    break
+                if _dropped(flag_text, match.start(), match.end()):
                     continue
                 seen.add(key)
                 found.append((value, position))
@@ -501,15 +576,45 @@ def virtual_person_flags(text: str, title: str = "") -> list[dict]:
     return [{"marker": m, "position": p} for m, p in _scan([compiled().virtual_person], text, title)][:5]
 
 
-def content_flags(text: str, title: str = "") -> dict:
-    """Every candidate flag of one page's main text, as read and ingest report them."""
-    hits = promotion_scan(text, title)
-    flags: list[str] = []
-    for hit in hits:
+BLOCK_LIMITS = {"promotion_hits": 30, "incentive_flags": 30, "virtual_person_flags": 10}
+
+
+def content_flags(text: str, title: str = "", blocks=None) -> dict:
+    """Every candidate flag of one page's main text, as read and ingest report them.
+
+    `blocks` (from an official API's page, such as a video: [{"block": id, "text": text, "by_uploader":
+    bool}]) replaces `text`: each block is scanned on its own, so lead and tail are measured within it,
+    and every flag names its block ('title', 'description' or 'comment:<id>'). A viewer's comment is that
+    comment's own text: its flags stay in the lists with their block, but never count as the page's own
+    disclosure (promo_flags lists the title's, the description's and the uploader's comments' only)."""
+    if blocks is None:
+        hits = promotion_scan(text, title)
+        flags: list[str] = []
+        for hit in hits:
+            if hit["marker"].lower() not in (f.lower() for f in flags):
+                flags.append(hit["marker"])
+        return {"promo_flags": flags[:10], "promotion_hits": hits, "incentive_flags": incentive_flags(text, title),
+                "virtual_person_flags": virtual_person_flags(text, title)}
+    out: dict = {"promotion_hits": [], "incentive_flags": [], "virtual_person_flags": []}
+    parts = ([{"block": "title", "text": title, "is_title": True}] if title else []) + list(blocks)
+    for part in parts:
+        is_title = bool(part.get("is_title"))
+        body, head = ("", part["text"]) if is_title else (part.get("text") or "", "")
+        extra = {"block": part["block"]}
+        if str(part["block"]).startswith("comment:"):
+            extra["by_uploader"] = bool(part.get("by_uploader"))
+        out["promotion_hits"] += [{**hit, **extra} for hit in promotion_scan(body, head)]
+        out["incentive_flags"] += [{**hit, **extra} for hit in incentive_flags(body, head)]
+        out["virtual_person_flags"] += [{**hit, **extra} for hit in virtual_person_flags(body, head)]
+    for name, cap in BLOCK_LIMITS.items():
+        out[name] = out[name][:cap]
+    flags = []
+    for hit in out["promotion_hits"]:
+        if hit.get("by_uploader") is False:  # a viewer's comment is never the page's own disclosure
+            continue
         if hit["marker"].lower() not in (f.lower() for f in flags):
             flags.append(hit["marker"])
-    return {"promo_flags": flags[:10], "promotion_hits": hits, "incentive_flags": incentive_flags(text, title),
-            "virtual_person_flags": virtual_person_flags(text, title)}
+    return {"promo_flags": flags[:10], **out}
 
 
 def handle_form(handle: str) -> str:
@@ -529,6 +634,12 @@ def _stop(stop_class: str, reasons: list) -> Verdict:
     return Verdict(stop_class=stop_class, reasons=reasons)
 
 
+def _check_stop(kind: str, reasons: list) -> Verdict:
+    """A bot filter or a browser check: verdict `kind` (bot_filter or js_check), stop class opted_out, every
+    reason prefixed with the kind, and the whole site stops for the run (never escalated, never rendered)."""
+    return Verdict(kind, stop_class="opted_out", reasons=[f"{kind}:{r}" for r in reasons], host_wide=True)
+
+
 def classify(*, status: int, headers: dict, page, requested_url: str, final_url: str | None = None,
              redirect_urls=(), expect=(), optouts=(), login_hosts=(), capture: bool = False,
              signed_in: bool = False) -> Verdict:
@@ -546,9 +657,10 @@ def classify(*, status: int, headers: dict, page, requested_url: str, final_url:
     plain_status = 200 <= status < 300
     # What a visitor sees; a JSON-LD body never hides or causes a stop. Navigation chrome and link
     # text (menus, related-post lists) are not notices about this page.
-    body_notice = page.notice_text[:20000] if page is not None else ""
-    site_messages = "\n".join([*page.alerts, page.noscript_text]) if page is not None else ""
-    title = page.title if page is not None else ""
+    # Width and dash variants are folded before any marker is matched (fold keeps offsets).
+    body_notice = fold(page.notice_text[:20000]) if page is not None else ""
+    site_messages = fold("\n".join([*page.alerts, page.noscript_text])) if page is not None else ""
+    title = fold(page.title) if page is not None else ""
 
     def words(key: str) -> list[str]:
         if not thin or page is None:
@@ -585,7 +697,7 @@ def classify(*, status: int, headers: dict, page, requested_url: str, final_url:
     # field outside the navigation chrome on a thin page. A login box in the header of a short post
     # is neither.
     if page is not None and page.login_form and (empty or (thin and page.open_password_inputs)):
-        login_words = _hits(c.words["login"], "\n".join([title, page.visible_text[:20000], site_messages]))
+        login_words = _hits(c.words["login"], "\n".join([title, fold(page.visible_text[:20000]), site_messages]))
         if login_words:
             return _stop("auth_gate", ["structure:password_field", f"word:{login_words[0]}", thin_note])
     for key in ("membership", "age_identity"):
@@ -613,16 +725,17 @@ def classify(*, status: int, headers: dict, page, requested_url: str, final_url:
         hint = outside or inside or hints or status >= 400 or main < t["suspect_main_chars"]
         if hint and not form_captcha and (hit := words("human_check")):
             backed = bool(outside or inside) or status >= 400
-            return Verdict(stop_class="human_check", host_wide=backed,
+            return Verdict(stop_class="human_check", host_wide=True,
                            reasons=[f"word:{w}" for w in hit] + outside + inside + hints + [thin_note] +
                            ([] if backed else ["word_only"]))
-    # rate_limit: only a status is a host signal; a notice on the page stops this URL only
+    # rate_limit: a status or a notice is a site signal (one wait, then the site stops)
     if status == 429:
         return Verdict(stop_class="rate_limit", reasons=["status:429"], host_wide=True)
     if status == 503 and headers.get("retry-after"):
         return Verdict(stop_class="rate_limit", reasons=["status:503", "header:retry-after"], host_wide=True)
     if hit := words("rate_limit"):
-        return _stop("rate_limit", [f"word:{w}" for w in hit] + [thin_note, "word_only"])
+        return Verdict(stop_class="rate_limit", reasons=[f"word:{w}" for w in hit] + [thin_note, "word_only"],
+                       host_wide=True)
     # geo_block
     if hit := words("geo"):
         return _stop("geo_block", [f"word:{w}" for w in hit] + [thin_note])
@@ -634,19 +747,19 @@ def classify(*, status: int, headers: dict, page, requested_url: str, final_url:
             return _stop("legal_block", ["redirect:legal_block_host"])
     if hit := words("legal"):
         return _stop("legal_block", [f"word:{w}" for w in hit] + [thin_note])
-    # js_check
+    # js_check: a browser check, even one that clears by itself, is a stop for the whole site
     if page is not None and thin:
         structure = _structure_js(page)
         hit = words("js_check")
         if structure or hit:
-            return Verdict("js_check", reasons=structure + [f"word:{w}" for w in hit] + [thin_note])
+            return _check_stop("js_check", structure + [f"word:{w}" for w in hit] + [thin_note])
     if 500 <= status < 600 or status == 408:
         return Verdict(transient=True, reasons=[f"status:{status}"])
-    # bot_filter
+    # bot_filter: the site refused our honest request, so the whole site stops
     if status >= 400:
-        return Verdict("bot_filter", reasons=[f"status:{status}"] + [f"word:{w}" for w in words("bot_filter")])
+        return _check_stop("bot_filter", [f"status:{status}"] + [f"word:{w}" for w in words("bot_filter")])
     if hit := words("bot_filter"):
-        return Verdict("bot_filter", reasons=[f"word:{w}" for w in hit] + [thin_note])
+        return _check_stop("bot_filter", [f"word:{w}" for w in hit] + [thin_note])
     if page is None:
         return Verdict("suspect", reasons=[f"status:{status}", "no_page"])
     rescued = page.extraction_source in ("json_ld", "feed", "oembed")
@@ -692,22 +805,30 @@ def classify(*, status: int, headers: dict, page, requested_url: str, final_url:
     return Verdict("ok_weak", reasons=[f"main:{main}"] + notes + (["expect_missing"] if expect else []))
 
 
-def robots_challenge(status: int | None, page) -> bool:
-    """A challenge page served instead of robots.txt (recorded as unavailable_bot_filtered). Called
-    only when the body holds no robots.txt lines (ladder.robots_decision)."""
+def robots_challenge_kind(status: int | None, page) -> str | None:
+    """'js_check' or 'bot_filter' when a challenge or block page was served instead of robots.txt (recorded
+    as unavailable_bot_filtered: robots.txt then disallows everything and the site stops), else None.
+    Called only when the body holds no robots.txt lines (ladder.robots_decision)."""
     if page is None or status is None:
-        return False
+        return None
     c = compiled()
     thin = page.main_chars < c.thresholds["thin_main_chars"]
     outside, inside, hints = _human_widgets(page)
-    if outside or inside or [h for h in hints if h.startswith("script:")] or (thin and _structure_js(page)):
-        return True
+    notice = fold("\n".join([page.title, page.visible_text[:20000]]))
+    if thin and (_structure_js(page) or _hits(c.words["js_check"], notice)):
+        return "js_check"
+    if outside or inside or [h for h in hints if h.startswith("script:")]:
+        return "bot_filter"
     if not thin:
-        return False
-    notice = "\n".join([page.title, page.visible_text[:20000]])
-    if any(_hits(c.words[k], notice) for k in ("human_check", "js_check", "bot_filter")):
-        return True
-    return status in (401, 403, 406) and page.visible_chars > 0
+        return None
+    if any(_hits(c.words[k], notice) for k in ("human_check", "bot_filter")):
+        return "bot_filter"
+    return "bot_filter" if status in (401, 403, 406) and page.visible_chars > 0 else None
+
+
+def robots_challenge(status: int | None, page) -> bool:
+    """True when a challenge or block page was served instead of robots.txt (robots_challenge_kind)."""
+    return robots_challenge_kind(status, page) is not None
 
 
 def retry_after_seconds(value: str | None, now: float) -> float | None:

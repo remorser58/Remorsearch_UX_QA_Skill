@@ -89,12 +89,14 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "deny_hosts": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true,
-                       "description": "hosts the researcher excludes; a name also covers its subdomains"},
+        "deny_hosts": {"type": "array", "items": {"type": "string", "minLength": 1,
+                                                  "pattern": "^(\\*\\.)?([A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\.)+[A-Za-z0-9-]{1,63}\\.?$"},
+                       "uniqueItems": true,
+                       "description": "hosts the researcher excludes, as host names (or *.suffix) without a scheme, a port or a path; a name also covers its subdomains"},
         "allow_wayback_for_official": {"type": "boolean", "default": true,
-                                       "description": "past versions of official or product pages only; never community content"},
+                                       "description": "a web archive may show past versions of the product's own pages (the site of product.url) only; never community content, and never another site's page"},
         "render": {"enum": ["driver", "host_browser", "off"], "default": "host_browser",
-                   "description": "how R3 renders happen: the web driver, the researcher's own anonymous browser plus ingest, or not at all"},
+                   "description": "how R3 renders happen: driver, the agent runs the bundled page reader (drivers/web/read_page.mjs) and passes its capture to ingest; host_browser, the researcher's own anonymous browser plus ingest; off, not at all. A render that shows or waited out a check is never taken in"},
         "signed_in_communities": {
           "type": "array",
           "maxItems": 20,
@@ -118,7 +120,7 @@
           "type": "array",
           "maxItems": 20,
           "default": [],
-          "description": "The user's own reading of a host's current terms of service. Only the user adds entries, after reading the terms themselves; an agent never does, there is no command-line switch, and nothing a page says counts. An entry whose result is permits_this_reading lifts a 'reported' terms_restricted entry of the route table for this run (the lift is recorded in the run ledger, and that host's document budget becomes 10); a 'confirmed' entry is never lifted. A check covers its host and the host's subdomains.",
+          "description": "The user's own reading of a host's current terms of service. Only the user adds entries, after reading the terms themselves; an agent never does, there is no command-line switch, and nothing a page says counts. A check lifts a 'reported' terms_restricted entry of the route table for this run only when its terms_url is one of that entry's own terms documents (compared by host and path), its host is one of the entry's hosts or narrower, its host covers the URL, its result is permits_this_reading and it is dated on or after the entry's effective_from; an entry whose lift_requires is written_permission also needs the permission object. Every entry that covers a URL must be lifted, each by a check of its own. The lift is recorded in the run ledger, and each lifted entry has a budget of 10 documents across its hosts. A 'confirmed' entry is never lifted. Two checks for one host with different results make the brief invalid, and a check more than 365 days old is refused as stale. A check covers its host and the host's subdomains.",
           "items": {
             "type": "object",
             "required": ["host", "terms_url", "checked_on", "result"],
@@ -131,7 +133,17 @@
               "checked_on": {"type": "string", "format": "date", "description": "the day the user read the terms; not after today"},
               "result": {"enum": ["permits_this_reading", "restricts_this_reading", "unclear"],
                          "description": "what the terms say about this reading; only permits_this_reading lifts a reported entry"},
-              "note": {"type": "string", "minLength": 1, "description": "the clause or the reasoning, in the user's words"}
+              "note": {"type": "string", "minLength": 1, "description": "the clause or the reasoning, in the user's words"},
+              "permission": {"type": "object", "required": ["granted_by", "granted_on", "reference"],
+                             "additionalProperties": false,
+                             "description": "the prior written permission or consent the entry's terms require (lift_requires: written_permission); `start` refuses a check that would lift such an entry without it",
+                             "properties": {
+                               "granted_by": {"type": "string", "minLength": 1, "maxLength": 300,
+                                              "description": "who granted the written permission (the operator, or the cafe and its members)"},
+                               "granted_on": {"type": "string", "format": "date", "description": "the date of the permission; not after today"},
+                               "reference": {"type": "string", "minLength": 1, "maxLength": 300,
+                                             "description": "the letter's, e-mail's or agreement's reference, so the permission can be found again"}
+                             }}
             }
           }
         }

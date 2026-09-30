@@ -2,6 +2,9 @@
   "schema_version": "ux-research-marker-cases.v1",
   "note": "Synthetic, labelled cases for the Korean promotion, incentive and virtual-person markers (verdict.content_flags). Every text was written for this test; nothing was copied from a real post. positives: each case expects at least one flag of 'family' (promotion, promotion_placed, promotion_label, incentive:<kind> or virtual_person), and at 'position' (lead, body or tail) when one is given. negatives: each case expects no flag of any family: negated disclaimers, questions, quotes, complaints and complaint titles.",
   "positives": [
+    {"text": "＃광고 새 충전기를 일주일 동안 써 본 후기입니다.", "family": "promotion", "position": "lead", "why": "a full-width label is folded before matching"},
+    {"title": "［광고］ 무선 충전기 후기", "text": "충전 속도는 빠르지만 발열이 조금 있었어요.", "family": "promotion", "position": "lead", "why": "full-width brackets"},
+    {"title": "（협찬） 보조배터리 후기", "text": "무게가 가벼워서 가방에 넣고 다니기 좋아요.", "family": "promotion", "position": "lead", "why": "full-width parentheses"},
     {"text": "본 포스팅은 업체로부터 제품을 무상으로 제공받아 작성되었습니다. 일주일 동안 매일 아침 써 봤어요.", "family": "promotion", "position": "lead"},
     {"text": "이 글은 소정의 원고료를 지급받아 작성한 솔직 후기입니다.", "family": "promotion"},
     {"text": "상품 협찬을 받아 한 달 동안 써 보고 남기는 후기예요.", "family": "promotion"},
@@ -54,6 +57,13 @@
     {"text": "적립금 준다고 해서 쓴 리뷰들은 다 비슷하네요.", "why": "complaint about incentives"},
     {"text": "출근길에 이틀 동안 써 본 소감입니다. 배터리는 하루를 넘기고 케이스는 손에 잘 잡혔어요. 소음 차단은 지하철에서도 꽤 괜찮았고 통화할 때 상대방이 제 목소리를 잘 들었다고 했습니다. 귀에 닿는 부분이 부드러워서 두 시간 넘게 끼고 있어도 아프지 않았고, 운동할 때도 빠지지 않았어요. 그런데 친구는 이 제품 홍보 글이 결국 다 광고입니다 하고 웃더라고요. 다만 앱에서 버튼 설정을 바꾸는 메뉴가 깊숙이 숨어 있어서 한참 찾았어요. 설정을 저장하는 버튼도 화면 아래쪽에 작게 붙어 있어서 한 손으로 누르기가 어려웠습니다. 전체적으로는 만족하지만 앱은 개선이 필요해 보입니다. 사용감 위주로 적었고 사진은 따로 올리지 않았습니다. 상자에는 충전 케이블과 여분 이어팁이 들어 있었고 설명서도 한국어로 잘 되어 있었습니다. 색상은 두 가지 중에서 골랐는데 밝은 색은 때가 잘 탈 것 같아서 어두운 색으로 샀어요.", "why": "a placed wording in the middle of a post counts nowhere"},
     {"text": "Half of these reviews are sponsored, so I tested it myself.", "why": "complaint"},
-    {"text": "Is this post sponsored? It reads like an ad.", "why": "question"}
+    {"text": "Is this post sponsored? It reads like an ad.", "why": "question"},
+    {"text": "경제적 대가를 받은 적 없는 솔직 후기입니다.", "why": "negated disclaimer: '-은 적 없는'"},
+    {"text": "경제적 대가를 받은 것이 아닌 내돈내산 후기예요.", "why": "negated disclaimer: '-은 것이 아닌'"},
+    {"text": "업체로부터 제품을 제공받은 것이 아니라 직접 구매했습니다.", "why": "negated disclaimer: '-은 것이 아니라'"},
+    {"text": "제품을 제공받았다는 오해가 있는데 직접 샀습니다.", "why": "a denied rumour: '-다는 오해'"},
+    {"text": "#협찬 없이 내돈내산으로 산 충전기예요.", "why": "negated label: '#협찬 없이'"},
+    {"text": "리뷰 이벤트 참여는 안 했지만 맛은 좋아요.", "why": "negated incentive: '-는 안 했지만'"},
+    {"text": "무상으로 제공받았으면 좋겠네요 ㅋㅋ", "why": "a wish, not a disclosure"}
   ]
 }

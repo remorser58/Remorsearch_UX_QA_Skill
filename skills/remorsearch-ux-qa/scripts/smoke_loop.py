@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-"""Offline acceptance smoke; all mutations stay in disposable checkout-local dirs."""
+"""Offline acceptance smoke for the loop. It needs only the skill folder (an installed copy or a
+repository checkout): the fixtures come from examples/ and uxloop/demo_factory.py, and everything it
+writes goes to a disposable folder (.ux-loop/ in a repository checkout, else the system temp folder)."""
 from __future__ import annotations
 
+import copy
 import json
 import subprocess
 import sys
@@ -9,18 +12,46 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]  # skill folder: scripts, uxloop, examples
-REPO = ROOT.parents[1]  # repository checkout: tests and fixtures (not shipped with the skill)
 sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(REPO / 'tests'))
 
-from loop_factory import make_packet  # Authored fixtures, never live provider output.
+from uxloop.demo_factory import BASE_BUNDLE, make_packet  # Authored fixtures, never live provider output.
 from uxloop.io import load_json
+
+
+def runtime_root() -> Path:
+    """Where disposable output goes: .ux-loop/ (git-ignored) in a repository checkout, else the system
+    temp folder. Resolved, because the loop refuses output paths that pass through a symlink."""
+    checkout = ROOT.parents[1]
+    if (checkout / 'tests' / '_paths.py').is_file():
+        runtime = checkout / '.ux-loop'
+        runtime.mkdir(exist_ok=True)
+        return runtime.resolve()
+    return Path(tempfile.gettempdir()).resolve()
+
+
+def invalid_bundles(folder: Path) -> list:
+    """Broken copies of the example bundle, one for each validator rule the smoke check exercises."""
+    base = json.loads(BASE_BUNDLE.read_text(encoding='utf-8'))
+    edits = {
+        'broken-ref': lambda records: records['evidence'][0].update(source_id='source-missing'),
+        'missing-id': lambda records: records['claims'][0].pop('id'),
+        'synthetic-claim': lambda records: records['claims'][0].update(claim_kind='user_preference',
+                                                                       persona_ids=['persona-1']),
+        'verified-no-observation': lambda records: records['findings'][0].update(observation_ids=['observation-missing']),
+    }
+    paths = []
+    for name, edit in edits.items():
+        bundle = copy.deepcopy(base)
+        edit(bundle['records'])
+        path = folder / f'invalid-{name}.json'
+        path.write_text(json.dumps(bundle, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+        paths.append(path)
+    return paths
 
 
 def main() -> int:
     outcomes = []
-    runtime = REPO / '.ux-loop'
-    runtime.mkdir(exist_ok=True)
+    runtime = runtime_root()
 
     def command(arguments: list[str], expected: int) -> dict:
         result = subprocess.run([sys.executable, *arguments], cwd=ROOT, capture_output=True,
@@ -31,13 +62,13 @@ def main() -> int:
         return json.loads(result.stdout) if result.stdout.lstrip().startswith('{') else {}
 
     try:
-        command(['scripts/validate_bundle.py', str(REPO / 'tests/fixtures/valid-bundle.json')], 0)
-        for path in sorted((REPO / 'tests/fixtures').glob('invalid-*.json')):
-            command(['scripts/validate_bundle.py', str(path)], 1)
+        command(['scripts/validate_bundle.py', 'examples/bundle/minimal.json'], 0)
         value = command(['scripts/ux_loop.py', 'validate', 'examples/loop/packet.json', '--evidence-root', 'examples/loop'], 0)
         assert value['valid'] and value['completion_assessed'] is False
         with tempfile.TemporaryDirectory(dir=runtime, prefix='smoke-') as temporary:
             root = Path(temporary)
+            for path in invalid_bundles(root):
+                command(['scripts/validate_bundle.py', str(path)], 1)
             denied = command(['scripts/ux_loop.py', 'demo', '--output', str(root / 'denied')], 3)
             assert denied['status'] == 'blocked' and denied['accepted_fix_ids'] == []
             site = root / 'resumable'

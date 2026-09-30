@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -139,6 +140,36 @@ def _validate_sources(sources: dict[str, dict[str, Any]], errors: list[str]) -> 
             value = source.get(field)
             if not isinstance(value, str) or not value.strip():
                 errors.append(f"records.sources[{source_id}].{field} is required")
+
+
+def _retention_end(value: str) -> datetime | None:
+    """When a retention_until value runs out: an ISO 8601 date-time (UTC when it has no offset), or a date,
+    which is kept through that day (UTC). None when the value is neither."""
+    text = value.strip()
+    try:
+        if len(text) == 10:
+            return datetime.strptime(text, "%Y-%m-%d").replace(tzinfo=timezone.utc) + timedelta(days=1)
+        moment = datetime.fromisoformat(text[:-1] + "+00:00" if text.endswith(("Z", "z")) else text)
+    except ValueError:
+        return None
+    return moment if moment.tzinfo else moment.replace(tzinfo=timezone.utc)
+
+
+def _validate_retention(sources: dict[str, dict[str, Any]], errors: list[str], now: datetime) -> None:
+    """Items read through an official API carry retention_until, and none is kept past it: the reader only
+    stamps the date, so an expired item in a bundle is an error until it is deleted or read again."""
+    for source_id, source in sources.items():
+        until = source.get("retention_until")
+        if until is None:
+            if source.get("access_basis") == "official_api":
+                errors.append(f"records.sources[{source_id}].retention_until is required for an official_api source")
+            continue
+        end = _retention_end(until) if isinstance(until, str) else None
+        if end is None:
+            errors.append(f"records.sources[{source_id}].retention_until must be an ISO 8601 date or date-time")
+        elif end <= now:
+            errors.append(f"records.sources[{source_id}].retention_until {until} has passed: delete the item, "
+                          "or read it again and update the date")
 
 
 def _validate_personas(personas: dict[str, dict[str, Any]], errors: list[str]) -> None:
@@ -304,7 +335,7 @@ def _input_shapes(bundle: dict[str, Any]) -> list[str]:
                      "epistemic_status", "verification_status", "claim_kind", "support_basis",
                      "basis", "retention_status", "design_status", "defect_class",
                      "baseline_version", "readback_version", "severity", "readback_artifact_ref",
-                     "file_key", "branch_key", "read_at", "status"}
+                     "file_key", "branch_key", "read_at", "status", "retention_until"}
     list_fields = {"evidence_ids", "persona_ids", "observation_ids", "claim_ids", "finding_ids", "node_ids"}
     for name in RECORD_NAMES:
         values = records.get(name, [])
@@ -322,7 +353,9 @@ def _input_shapes(bundle: dict[str, Any]) -> list[str]:
     return errors
 
 
-def validate_bundle(bundle: Any) -> list[str]:
+def validate_bundle(bundle: Any, *, now: datetime | None = None) -> list[str]:
+    """Every contract error in the bundle (empty when it is valid). `now` is the moment retention dates are
+    checked against (default: the current time)."""
     errors: list[str] = []
     if not isinstance(bundle, dict):
         return ["bundle must be a JSON object"]
@@ -355,6 +388,7 @@ def validate_bundle(bundle: Any) -> list[str]:
                 if run.get("status") != "completed" or run.get("scenario_id") != finding.get("scenario_id"):
                     errors.append(f"records.findings[{finding_id}] requires a completed same-scenario run")
     _validate_sources(indexed["sources"], errors)
+    _validate_retention(indexed["sources"], errors, now or datetime.now(timezone.utc))
     _validate_personas(indexed["personas"], errors)
     _validate_links(*(indexed[name] for name in RECORD_NAMES), errors)
     _validate_semantics(

@@ -74,8 +74,8 @@ Values in the `access` block:
 - `presentation`: `official_route`, `honest_ua`, `site_alternate` or `real_browser`;
 - `verdict`: `ok_strong`, `ok_weak`, `suspect`, `js_shell`, `js_check` or `bot_filter`;
 - `stop_class`: `none`, or one of `auth_gate`, `paywall`, `human_check`, `opted_out`, `terms_restricted`, `rate_limit`, `geo_block`, `legal_block`, `gone`, `budget`, `host_stopped`;
-- `robots`: the robots.txt decision for the path (`allowed` or `disallowed`) and the file's status (`ok`, `unavailable`, `unavailable_bot_filtered` or `unreachable`);
-- `context`: `anonymous`, `unknown` or `signed_in`.
+- `robots`: the robots.txt decision for the path (`allowed` or `disallowed`) and the file's status (`ok`, `unavailable`, `unavailable_bot_filtered`, `unavailable_redirect` or `unreachable`);
+- `context`: `anonymous` or `signed_in`. Older records may say `unknown`; `ingest` now refuses captures from an unknown context.
 
 ## Claims
 
@@ -95,11 +95,12 @@ A finding may carry `segments_affected`: an array of segment IDs whose composed 
 
 ## Validator checks for the new fields
 
-`scripts/validate_bundle.py` will add these checks (planned). Each applies only when its field is present, so existing bundles keep passing:
+`scripts/validate_bundle.py` checks retention now: a source with `access_basis: official_api` needs `retention_until`, and a source whose `retention_until` has passed is an error until the item is deleted, or read again and the date updated. The reader only stamps the date. `examples/bundle/minimal.json` is a small valid bundle to try the validator on.
+
+It will add these checks (planned). Each applies only when its field is present, so existing bundles keep passing:
 
 - `sources[].access` has the shape and values listed above;
 - a verified claim cannot rely on a source that hit a stop, `terms_restricted` included, on a lead (`search_snippet` or `summarizing_fetch`), or on an `llm_output` or `synthetic` source;
-- a source with `access_basis: official_api` has `retention_until`, and a verified claim cannot rely on one whose `retention_until` has passed;
 - a verified `segment_share`, `condition_share`, `device_mix` or `prevalence` claim needs evidence whose `evidence_type` is `quantitative` or `statistic`;
 - a statistical source that supports a size claim has a `stat_card` whose `frame` and `reference_period` are filled in;
 - a persona with `audience_ref` must have `basis: "synthetic"`, and every ID in its `claim_ids` must exist;

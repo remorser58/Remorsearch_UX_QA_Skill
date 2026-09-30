@@ -44,6 +44,8 @@ read whose api.partial_because says why paging stopped.
 
 Privacy (D9, D12): titles, descriptions and comment text are scrubbed field by field (privacy.scrub)
 before anything is printed or saved, so the structured headers (IDs, author keys, dates) stay intact.
+Promotion, incentive and virtual-person flags are scanned block by block (the title, the description and
+each comment), and each flag names its block, so a viewer's comment never counts as the video's disclosure.
 Commenters' display names and the uploader's channel title become salted author keys
 (privacy.author_key with the route's platform id, the key `ux_research.py author-key --platform <id>`
 gives) and are never written. Channel IDs, channel URLs and avatars are never copied; a comment by the
@@ -513,6 +515,7 @@ class _Session:
         more = "more not read" if self.more else "no more pages"
         body = [f"comments: {len(comments)} read, order {self.order or '-'}, {self.pages} page(s) of up to "
                 f"{self.s.page_size}; {more}"]
+        blocks = [{"block": "description", "text": description}]
         for i, item in enumerate(comments, 1):
             author = self.key(item["name"])
             header = [f"comment {i}", f"id {item['id'] or '-'}", f"author {author}" if author else "author not keyed",
@@ -524,15 +527,19 @@ class _Session:
             if item["by_uploader"]:
                 header.append("by uploader")
             header.append(f"keep until {iso(item['at'] + days)}")
-            body.append("[" + " | ".join(header) + "]\n" + (self.clean(item["text"], COMMENT_MAX_CHARS) or "(empty)"))
+            text = self.clean(item["text"], COMMENT_MAX_CHARS)
+            body.append("[" + " | ".join(header) + "]\n" + (text or "(empty)"))
+            blocks.append({"block": f"comment:{item['id'] or i}", "text": text, "by_uploader": item["by_uploader"]})
         if not comments:
             body.append("(no comments)")
         listing = "\n\n".join(body)
         page = extract.from_text("\n".join(head) + "\n\n" + listing)
         page.kind = page.extraction_source = "api"
         page.title, page.lang, page.description = title[:500], lang[:20], description[:1000]
-        # The promotion checks read lead and tail from the main text: the uploader's description first.
         page.main_text = extract.nfc(extract.tidy((description or "") + "\n\n" + listing))[:extract.TEXT_CAP_CHARS]
+        # The flag checks read each block on its own: the uploader's description has its own lead and tail, and
+        # each comment is its own block, so a viewer's words are never the video's disclosure (verdict.content_flags).
+        page.flag_blocks = blocks
         return page, until
 
     # ------------------------------------------------------------ the URL
@@ -608,7 +615,7 @@ class _Session:
         notes = [IDS_NOTE]
         policy = self.route.get("policy_note")
         if isinstance(policy, str) and policy.strip():
-            notes.insert(0, policy.strip()[:500])
+            notes.insert(0, policy.strip()[:1200])
         if self.partial:
             reasons.append("comments_partial")
             notes.append(f"comment paging stopped early ({self.partial}); api.more_available says whether comments "

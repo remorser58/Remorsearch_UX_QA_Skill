@@ -1,8 +1,9 @@
 """Offline tests for the public-page reader (uxresearch).
 
 Every page comes from a threaded http.server on 127.0.0.1. The reader reaches it
-through reserved .test names (REMORSEARCH_TEST_RESOLVE) with the loopback test
-flag; a module-wide guard fails any connection or name lookup that is not local.
+through reserved .test names mapped in process (net._TEST_RESOLVE, with the
+loopback hook net._TEST_ALLOW_LOOPBACK; no environment variable can set either); a
+module-wide guard fails any connection or name lookup that is not local.
 Pacing uses an injected clock and sleeper, so nothing sleeps for real. Run folders
 live in temporary directories outside the working tree.
 """
@@ -23,7 +24,8 @@ import threading
 import time
 import unicodedata
 import unittest
-from contextlib import redirect_stderr, redirect_stdout
+import copy
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from unittest import mock
@@ -55,7 +57,9 @@ MAPPED_HOSTS = (
     "bad.test", "cafe.test", "m.cafe.test", "wall.test", "robotshtml.test", "xrt.test", "legacyfeed.test",
     "rss.legacyfeed.test", "blog.test", "short.test", "notice.test", "reported.test", "m.reported.test",
     "confirmed.test", "tube.test", "apitube.test", "api.tubedata.test", "shortlink.test", "search.test", "portal.test",
-    "askbox.test", "disabled-api.test", "agents.test", "pii.test",
+    "askbox.test", "disabled-api.test", "agents.test", "pii.test", "permission.test", "overlap.test",
+    "sub.overlap.test", "a.overlap.test", "mirror.test", "www.site.test", "m.site.test", "site.test", "loopy.test", "bf.test",
+    "m.bf.test", "js.test", "guarded.test", "robotsloop.test", "denyhop.test", "copy.test",
 )  # m.lonely.test and m.block.test are deliberately unmapped: they must not resolve. The scope tests map the hosts
 # that must never be contacted too, so a request that slipped through would show in the server's log.
 
@@ -208,6 +212,21 @@ class FixtureServer:
             pass  # the reader closed the connection early (size caps)
 
 
+@contextmanager
+def packaged_with(*, platforms=(), terms=()):
+    """The packaged route table plus fixture platforms and terms entries. Official-only mode reads only the
+    packaged table, so its tests add their fixture routes there, never to a run's own table."""
+    table = copy.deepcopy(scope.packaged())
+    table["platforms"] += copy.deepcopy(list(platforms))
+    table["terms_restricted"] += copy.deepcopy(list(terms))
+    ladder._packaged_keys.cache_clear()
+    try:
+        with mock.patch.object(scope, "packaged", lambda: table):
+            yield table
+    finally:
+        ladder._packaged_keys.cache_clear()
+
+
 class FakeClock:
     def __init__(self):
         self.now = time.time()
@@ -285,15 +304,32 @@ class RobotsMatcherTests(unittest.TestCase):
         self.assertTrue(self.allowed(loose, "/robots.txt"))
 
     def test_fetch_status_handling(self):
-        cases = [(dict(status=404), "unavailable", True), (dict(status=403), "unavailable", True),
-                 (dict(status=403, challenge=True), "unavailable_bot_filtered", True),
-                 (dict(status=500), "unreachable", False), (dict(status=503), "unreachable", False),
-                 (dict(status=429), "unreachable", False), (dict(status=None, error="connect_error"), "unreachable", False),
-                 (dict(status=None, error="redirect_loop"), "unavailable", True)]
-        for kwargs, status, allowed in cases:
+        # A challenge page, a redirect loop and a refused redirect hop make robots.txt unavailable in the stricter
+        # direction: everything on the origin is disallowed, with the reason recorded.
+        cases = [(dict(status=404), "unavailable", True, None), (dict(status=403), "unavailable", True, None),
+                 (dict(status=403, challenge=True), "unavailable_bot_filtered", False, "bot_filter:robots_txt"),
+                 (dict(status=200, challenge="js_check"), "unavailable_bot_filtered", False, "js_check:robots_txt"),
+                 (dict(status=500), "unreachable", False, None), (dict(status=503), "unreachable", False, None),
+                 (dict(status=429), "unreachable", False, None),
+                 (dict(status=None, error="connect_error"), "unreachable", False, None),
+                 (dict(status=None, error="redirect_loop"), "unavailable_redirect", False, "redirect_loop"),
+                 (dict(status=302, refused_redirect="terms:terms:confirmed"), "unavailable_redirect", False,
+                  "redirect_refused:terms:terms:confirmed")]
+        for kwargs, status, allowed, reason in cases:
             record = robots.record_from_fetch("http://x.test", body=b"", token=ROBOTS_TOKEN, fetched_at="t", **kwargs)
-            self.assertEqual(record["status"], status, kwargs)
-            self.assertEqual(robots.decide(record, "http://x.test/any")["allowed"], allowed, kwargs)
+            self.assertEqual((record["status"], record["reason"]), (status, reason), kwargs)
+            decision = robots.decide(record, "http://x.test/any")
+            self.assertEqual(decision["allowed"], allowed, kwargs)
+            if not allowed:
+                self.assertEqual(decision["rule"]["pattern"], "/*", kwargs)
+
+    def test_dot_segments_and_empty_segments_meet_the_rule(self):
+        record = robots.record_from_fetch("http://x.test", status=200, body=b"User-agent: *\nDisallow: /search\n",
+                                          token=ROBOTS_TOKEN, fetched_at="t")
+        for path in ("/./search?q=x", "/a/../search?q=x", "//search?q=x", "/%73earch?q=x", "/search;x?q=x"):
+            self.assertFalse(robots.decide(record, "http://x.test" + path)["allowed"], path)
+        for path in ("/other", "/a/search", "/robots.txt"):  # a rule is a prefix (RFC 9309): '/searching' matches too
+            self.assertTrue(robots.decide(record, "http://x.test" + path)["allowed"], path)
 
     def test_pacing_hints(self):
         delay = self.record((ROBOTS_DIR / "crawl-delay.txt").read_text(encoding="utf-8"))
@@ -575,11 +611,22 @@ class VerdictTests(unittest.TestCase):
                  ("paywall-jsonld.html", 200, "paywall", None), ("deleted-post.html", 200, "gone", None),
                  ("captcha-recaptcha.html", 200, "human_check", None),
                  ("captcha-turnstile.html", 403, "human_check", None), ("captcha-ko.html", 200, "human_check", None),
-                 ("js-check.html", 503, None, "js_check"), ("js-shell-bare.html", 200, None, "js_shell"),
-                 ("jsonld-shell.html", 200, None, "ok_strong"), ("blocked-403.html", 403, None, "bot_filter")]
+                 ("js-check.html", 503, "opted_out", "js_check"), ("js-shell-bare.html", 200, None, "js_shell"),
+                 ("jsonld-shell.html", 200, None, "ok_strong"), ("blocked-403.html", 403, "opted_out", "bot_filter")]
         for name, status, stop, found in table:
             result = self.classify(name, status)
             self.assertEqual((result.stop_class, result.verdict), (stop, found), (name, result.reasons))
+
+    def test_a_refusal_or_a_browser_check_is_a_site_wide_stop(self):
+        # S1: a site that refuses our honest request or shows a bot check is a stop, never escalated.
+        for name, status, kind in (("js-check.html", 503, "js_check"), ("js-check.html", 200, "js_check"),
+                                   ("blocked-403.html", 403, "bot_filter"), ("<p>" + "본문 " * 100 + "</p>", 406, "bot_filter"),
+                                   ("<div><p>비정상적인 접근이 감지되었습니다.</p></div>", 200, "bot_filter")):
+            result = self.classify(name, status)
+            self.assertEqual((result.verdict, result.stop_class, result.host_wide, result.ok, result.escalate),
+                             (kind, "opted_out", True, False, False), (name, status, result.reasons))
+            self.assertTrue(result.reasons and all(r.startswith(kind + ":") for r in result.reasons), result.reasons)
+        self.assertEqual(verdict.ESCALATE, {"js_shell", "suspect"})
 
     def test_status_codes(self):
         body = "<p>" + "본문 " * 100 + "</p>"
@@ -589,8 +636,8 @@ class VerdictTests(unittest.TestCase):
             self.assertEqual(self.classify(body, status).stop_class, stop, status)
         self.assertEqual(self.classify(body, 503, headers={"retry-after": "30"}).stop_class, "rate_limit")
         self.assertTrue(self.classify(body, 500).transient)
-        self.assertEqual(self.classify(body, 406).verdict, "bot_filter")
-        self.assertEqual(self.classify(body, 999).verdict, "bot_filter")
+        self.assertEqual((self.classify(body, 406).verdict, self.classify(body, 406).stop_class), ("bot_filter", "opted_out"))
+        self.assertEqual((self.classify(body, 999).verdict, self.classify(body, 999).stop_class), ("bot_filter", "opted_out"))
 
     def test_words_on_a_full_page_never_stop(self):
         body = ("<article><p>" + "후기 본문입니다. " * 30 + "삭제된 게시물이 많다는 이야기, 성인인증 절차, 구독자 전용 "
@@ -610,9 +657,10 @@ class VerdictTests(unittest.TestCase):
         for html, stop in notices.items():
             self.assertEqual(self.classify(html).stop_class, stop, html)
 
-    def test_only_structural_human_checks_stop_the_host(self):
-        words_only = self.classify("<p>자동입력 방지 문자를 입력해 주세요.</p>")
-        self.assertEqual((words_only.stop_class, words_only.host_wide), ("human_check", False))
+    def test_every_human_check_stops_the_site(self):
+        words_only = self.classify("<p>자동입력 방지 문자를 입력해 주세요.</p>")  # a notice with no widget: the site too
+        self.assertEqual((words_only.stop_class, words_only.host_wide), ("human_check", True))
+        self.assertIn("word_only", words_only.reasons)
         self.assertTrue(self.classify("captcha-ko.html").host_wide)
         self.assertTrue(self.classify("<p>자동입력 방지 문자를 입력해 주세요.</p>", 403).host_wide)
 
@@ -687,14 +735,14 @@ class VerdictTests(unittest.TestCase):
         for html, stop in notices.items():
             self.assertEqual(self.classify(html).stop_class, stop, html)
 
-    def test_widgets_in_a_comment_form_and_rate_limit_words_stay_with_the_url(self):
+    def test_widgets_in_a_comment_form_are_read_and_rate_limit_words_are_a_site_signal(self):
         comment = self.classify("post-comment-captcha.html")
         self.assertEqual((comment.stop_class, comment.verdict), (None, "ok_weak"))
         self.assertIn("captcha_in_form", comment.reasons)
         challenge = self.classify("captcha-recaptcha.html")  # the widget's form is the whole page
         self.assertEqual((challenge.stop_class, challenge.host_wide), ("human_check", True))
         notice = self.classify("<p>요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.</p>")
-        self.assertEqual((notice.stop_class, notice.host_wide), ("rate_limit", False))
+        self.assertEqual((notice.stop_class, notice.host_wide), ("rate_limit", True))  # a site signal like a 429
         self.assertIn("word_only", notice.reasons)
         self.assertTrue(self.classify("<p>요청이 너무 많습니다.</p>", 429).host_wide)
         self.assertTrue(self.classify("<p>잠시 후 다시 시도해 주세요.</p>", 503, headers={"retry-after": "30"}).host_wide)
@@ -736,7 +784,7 @@ class VerdictTests(unittest.TestCase):
 
 class NetTests(unittest.TestCase):
     def test_private_and_special_addresses_are_refused(self):
-        with mock.patch.dict(os.environ, {net.ENV_ALLOW_PRIVATE: "0"}):
+        with mock.patch.object(net, "_TEST_ALLOW_LOOPBACK", False):
             for address in ("127.0.0.1", "10.1.2.3", "169.254.169.254", "100.64.0.1", "::ffff:127.0.0.1", "0.0.0.0",
                             "224.0.0.1", "fe80::1", "fc00::1", "::1", "2002:7f00:1::1", "64:ff9b::a00:1"):
                 with self.assertRaises(net.NetError) as caught:
@@ -745,11 +793,13 @@ class NetTests(unittest.TestCase):
             self.assertEqual(str(net.check_host("8.8.8.8", 443)[0][0]), "8.8.8.8")
 
     def test_test_names_need_the_flag_and_loopback(self):
-        with mock.patch.dict(os.environ, {net.ENV_ALLOW_PRIVATE: "0", net.ENV_TEST_RESOLVE: "a.test=127.0.0.1"}):
+        with mock.patch.object(net, "_TEST_ALLOW_LOOPBACK", False), \
+                mock.patch.object(net, "_TEST_RESOLVE", {"a.test": "127.0.0.1"}):
             with self.assertRaises(net.NetError) as caught:
                 net.check_host("a.test", 80)
             self.assertEqual(caught.exception.kind, "dns_error")
-        with mock.patch.dict(os.environ, {net.ENV_ALLOW_PRIVATE: "1", net.ENV_TEST_RESOLVE: "a.test=10.0.0.1"}):
+        with mock.patch.object(net, "_TEST_ALLOW_LOOPBACK", True), \
+                mock.patch.object(net, "_TEST_RESOLVE", {"a.test": "10.0.0.1"}):
             with self.assertRaises(net.NetError) as caught:
                 net.check_host("a.test", 80)
             self.assertEqual(caught.exception.kind, "ssrf_blocked")
@@ -825,7 +875,7 @@ class NetTests(unittest.TestCase):
                     return
                 stop.wait(0.2)
         port = self.one_shot_server(drip)
-        with mock.patch.dict(os.environ, {net.ENV_ALLOW_PRIVATE: "1"}):
+        with mock.patch.object(net, "_TEST_ALLOW_LOOPBACK", True):
             started = time.monotonic()
             with self.assertRaises(net.NetError) as caught:
                 net.fetch(f"http://127.0.0.1:{port}/", timeout=1.0)
@@ -836,7 +886,7 @@ class NetTests(unittest.TestCase):
         def short(conn, stop):
             conn.sendall(b"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nContent-Length: 100\r\n\r\nabc")
         port = self.one_shot_server(short)
-        with mock.patch.dict(os.environ, {net.ENV_ALLOW_PRIVATE: "1"}):
+        with mock.patch.object(net, "_TEST_ALLOW_LOOPBACK", True):
             with self.assertRaises(net.NetError) as caught:
                 net.fetch(f"http://127.0.0.1:{port}/", timeout=5.0)
         self.assertEqual(caught.exception.kind, "protocol_error")
@@ -869,10 +919,10 @@ class ServerCase(unittest.TestCase):
 
     def setUp(self):
         self.server.reset()
-        env = {net.ENV_ALLOW_PRIVATE: "1", net.ENV_TEST_RESOLVE: ",".join(f"{h}=127.0.0.1" for h in MAPPED_HOSTS)}
-        patcher = mock.patch.dict(os.environ, env)
-        patcher.start()
-        self.addCleanup(patcher.stop)
+        for patcher in (mock.patch.object(net, "_TEST_ALLOW_LOOPBACK", True),
+                        mock.patch.object(net, "_TEST_RESOLVE", {h: "127.0.0.1" for h in MAPPED_HOSTS})):
+            patcher.start()
+            self.addCleanup(patcher.stop)
         temp = tempfile.TemporaryDirectory(prefix="ux-read-")
         self.addCleanup(temp.cleanup)
         self.tmp = Path(temp.name)
@@ -989,8 +1039,15 @@ class ReaderRobotsTests(ServerCase):
         self.assertEqual(self.server.hits("down5xx.test"), ["/robots.txt", "/robots.txt", "/p"])
         code, summary, _ = self.read(self.url("missing.test", "/p"))
         self.assertEqual((code, summary["robots"]["robots_status"]), (0, "unavailable"))
+        # A check served instead of robots.txt is a refusal, never permission: robots.txt disallows the whole origin,
+        # the whole site stops, and the page is never requested.
         code, summary, _ = self.read(self.url("challenge.test", "/p"))
-        self.assertEqual((code, summary["robots"]["robots_status"]), (0, "unavailable_bot_filtered"))
+        self.assertEqual((code, summary["stop_class"], summary["robots"]["robots_status"]),
+                         (3, "opted_out", "unavailable_bot_filtered"))
+        self.assertEqual((summary["reasons"][0], summary["host_stop"]["class"]), ("js_check:robots_txt", "opted_out"))
+        self.assertEqual(self.server.hits("challenge.test"), ["/robots.txt"])
+        code, out, _ = self.cli("robots", "--run", self.run_dir, self.url("challenge.test", "/q"))
+        self.assertEqual((code, json.loads(out)["stop_class"]), (3, "host_stopped"))
         closed = socket.socket()
         closed.bind(("127.0.0.1", 0))
         port = closed.getsockname()[1]
@@ -1157,7 +1214,7 @@ class ReaderStopTests(ServerCase):
         self.assertEqual((code, summary["stop_class"]), (0, None))
         self.assertIn("CAPTCHA-DISCUSSION-SENTINEL", out)
 
-    def test_short_posts_are_read_and_rate_limit_words_stop_only_their_url(self):
+    def test_short_posts_are_read_and_a_rate_limit_notice_is_a_site_signal(self):
         post = ("<html><body><article><h1>충전 느림</h1><p>아침마다 트래픽이 많아서 그런지 충전 화면이 한참 걸려요. "
                 "다른 분들은 어떤가요? BUSY-POST-SENTINEL</p></article></body></html>")
         notice = "<html><body><div class='msg'><p>요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.</p></div></body></html>"
@@ -1168,14 +1225,13 @@ class ReaderStopTests(ServerCase):
         code, summary, out = self.read(self.url("busy.test", "/post/1"))
         self.assertEqual((code, summary["verdict"]), (0, "ok_weak"))
         self.assertIn("BUSY-POST-SENTINEL", out)
+        # A notice counts like a 429: one polite wait and one retry, and a second notice stops the whole site.
         code, summary, _ = self.read(self.url("busy.test", "/notice"))
-        self.assertEqual((code, summary["stop_class"], summary["host_stop"]), (3, "rate_limit", None))
-        code, summary, out = self.read(self.url("busy.test", "/post/2"))
-        self.assertEqual((code, summary["verdict"]), (0, "ok_weak"))
-        self.assertIn("SHORT-POST-SENTINEL", out)
-        self.assertEqual(self.server.hits("busy.test"), ["/robots.txt", "/post/1", "/notice", "/post/2"])  # no retry
-        hosts = json.loads((self.run_dir / "hosts.json").read_text(encoding="utf-8"))["hosts"]["busy.test"]
-        self.assertEqual((hosts["rate_limits"], hosts["stopped"]), (0, None))
+        self.assertEqual((code, summary["stop_class"], summary["host_stop"]["class"]), (3, "rate_limit", "rate_limit"))
+        self.assertIn(60.0, self.clock.sleeps)
+        code, summary, _ = self.read(self.url("busy.test", "/post/2"))
+        self.assertEqual((code, summary["stop_class"]), (3, "host_stopped"))
+        self.assertEqual(self.server.hits("busy.test"), ["/robots.txt", "/post/1", "/notice", "/notice"])
 
     def test_short_posts_under_a_login_box_a_form_or_a_comment_captcha_are_read(self):
         pages = {"/p/1": ("post-comment-captcha.html", "COMMENT-FORM-SENTINEL"),
@@ -1254,14 +1310,57 @@ class ReaderStopTests(ServerCase):
 
 
 class ReaderEscalationTests(ServerCase):
-    def test_self_clearing_check_is_unread_not_a_gap(self):
-        self.server.page("shell.test", "/check", "js-check.html", status=503)
+    def test_a_browser_check_stops_the_site_and_is_never_rendered(self):
+        # S1: a 'checking your browser' page, even one that would clear by itself, is a stop: no alternate, no
+        # render, and the whole site stops for the run.
+        self.server.page("js.test", "/check", "js-check.html", status=503)
+        self.server.page("m.js.test", "/check", "mobile-post.html")
+        self.server.page("js.test", "/other", "post-normal.html")
         self.start()
-        code, summary, _ = self.read(self.url("shell.test", "/check"))
-        self.assertEqual((code, summary["bucket"], summary["verdict"], summary["stop_class"]),
-                         (4, "unread", "js_check", None))
-        self.assertEqual(summary["untried"], ["R3"])
-        self.assertIn("ingest", summary["next_step"])
+        code, summary, _ = self.read(self.url("js.test", "/check"))
+        self.assertEqual((code, summary["bucket"], summary["stop_class"], summary["untried"], summary["next_step"]),
+                         (3, "stopped", "opted_out", [], None))
+        self.assertTrue(all(r.startswith("js_check:") for r in summary["reasons"]), summary["reasons"])
+        self.assertEqual((summary["host_stop"]["class"], summary["host_stop"]["site"]), ("opted_out", "js.test"))
+        self.assertFalse([t for t in summary["trail"] if t["rung"] in ("R2", "R3")])
+        for url in (self.url("js.test", "/other"), self.url("m.js.test", "/check")):  # the same site, any host
+            code, summary, _ = self.read(url)
+            self.assertEqual((code, summary["stop_class"], summary["reasons"]), (3, "host_stopped", ["host_stop:opted_out"]))
+        self.assertEqual(self.server.hits("js.test"), ["/robots.txt", "/check"])
+        self.assertEqual(self.server.hits("m.js.test"), [])
+        code, summary, _ = self.ingest(self.url("js.test", "/check"), CAPTURES / "capture-full.html",
+                                       "--context", "anonymous")
+        self.assertEqual(code, 2)
+        self.assertIn("ended in opted_out", summary["reasons"][0])
+
+    def test_a_refused_request_stops_the_site_and_no_capture_follows(self):
+        # S1: a bot filter (a 4xx with no other marker, or a block notice) is a stop, never escalated to R2 or R3.
+        self.server.page("bf.test", "/early", "js-shell-bare.html")  # read before the refusal: waits for a render
+        self.server.page("bf.test", "/p", "blocked-403.html", status=403)
+        self.server.page("m.bf.test", "/p", "mobile-post.html")
+        self.server.page("bf.test", "/q", "post-normal.html")
+        self.start()
+        self.assertEqual(self.read(self.url("bf.test", "/early"))[0], 4)
+        code, summary, _ = self.read(self.url("bf.test", "/p"))
+        self.assertEqual((code, summary["bucket"], summary["stop_class"], summary["untried"]),
+                         (3, "stopped", "opted_out", []))
+        self.assertEqual(summary["reasons"][0], "bot_filter:status:403")
+        self.assertEqual(summary["host_stop"]["class"], "opted_out")
+        self.assertNotIn("/p", self.server.hits("m.bf.test"))  # the mobile twin is never tried
+        code, summary, _ = self.read(self.url("bf.test", "/q"))
+        self.assertEqual((code, summary["stop_class"]), (3, "host_stopped"))
+        self.assertNotIn("/q", self.server.hits("bf.test"))
+        # An R3 capture after the refusal is refused: the same URL ended in a stop, and the site is stopped.
+        code, summary, out = self.ingest(self.url("bf.test", "/p"), CAPTURES / "capture-full.html",
+                                         "--context", "anonymous")
+        self.assertEqual(code, 2)
+        self.assertIn("ended in opted_out", summary["reasons"][0])
+        self.assertNotIn("CAPTURE-SENTINEL", out)
+        code, summary, out = self.ingest(self.url("bf.test", "/early"), CAPTURES / "capture-full.html",
+                                         "--context", "anonymous")
+        self.assertEqual((code, summary["stop_class"], summary["reasons"]), (3, "host_stopped", ["host_stop:opted_out"]))
+        self.assertNotIn("CAPTURE-SENTINEL", out)
+        self.assertEqual(self.page_files(), [])
 
     def test_js_shell_uses_the_declared_same_site_alternate(self):
         self.server.page("shell.test", "/app/post/7", "js-shell-alternate.html")
@@ -1439,7 +1538,7 @@ class ReaderSafetyTests(ServerCase):
     def test_private_targets_are_refused_without_the_test_flag(self):
         self.start()
         port = self.server.port
-        with mock.patch.dict(os.environ, {net.ENV_ALLOW_PRIVATE: "0"}):
+        with mock.patch.object(net, "_TEST_ALLOW_LOOPBACK", False):
             for url in (f"http://127.0.0.1:{port}/x", "http://10.0.0.1/", "http://169.254.169.254/latest/meta-data/",
                         "http://100.64.0.1/", f"http://[::ffff:127.0.0.1]:{port}/", f"http://localhost:{port}/"):
                 code, summary, _ = self.read(url)
@@ -1458,10 +1557,21 @@ class ReaderSafetyTests(ServerCase):
     def test_more_than_five_redirects_is_a_loop(self):
         for i in range(10):
             self.server.redirect("loop.test", f"/r/{i}", f"/r/{i + 1}")
+        self.server.redirect("loopy.test", "/p", "/p?cookie-check=1")  # a loop that a cookie-keeping browser passes
+        self.server.redirect("loopy.test", "/p?cookie-check=1", "/p")
         self.start()
         code, summary, _ = self.read(self.url("loop.test", "/r/0"))
-        self.assertEqual((code, summary["error"]), (4, "redirect_loop"))
+        # A redirect loop is a stop, never an escalation: no alternate, no render and no capture follows.
+        self.assertEqual((code, summary["bucket"], summary["stop_class"], summary["reasons"][0], summary["untried"]),
+                         (3, "stopped", "opted_out", "redirect_loop", []))
+        self.assertIsNone(summary["next_step"])
         self.assertEqual(len([p for p in self.server.hits("loop.test") if p.startswith("/r/")]), 6)
+        code, summary, _ = self.read(self.url("loopy.test", "/p"))
+        self.assertEqual((code, summary["stop_class"], summary["reasons"][0]), (3, "opted_out", "redirect_loop"))
+        code, summary, _ = self.ingest(self.url("loopy.test", "/p"), CAPTURES / "capture-full.html",
+                                       "--context", "anonymous")
+        self.assertEqual(code, 2)
+        self.assertIn("ended in opted_out", summary["reasons"][0])
 
     def test_a_cross_origin_hop_is_checked_like_a_new_url(self):
         self.server.redirect("hop.test", "/x", self.url("hop2.test", "/y"))
@@ -1659,12 +1769,12 @@ class ReaderBudgetTests(ServerCase):
 
     def test_three_unreadable_urls_in_a_row_stop_the_host(self):
         for path in ("/a", "/b", "/c", "/d"):
-            self.server.page("block.test", path, "blocked-403.html", status=403)
+            self.server.page("block.test", path, "js-shell-bare.html")  # m.block.test does not resolve: no alternate
         self.start("--render", "off")  # no render: no allowed rung is left after R2
         for path in ("/a", "/b"):
             code, summary, _ = self.read(self.url("block.test", path))
             self.assertEqual((code, summary["verdict"], summary["host_stop"], summary["untried"]),
-                             (4, "bot_filter", None, []))
+                             (4, "js_shell", None, []))
         code, summary, _ = self.read(self.url("block.test", "/c"))
         self.assertEqual((code, summary["host_stop"]["class"]), (4, "bot_filter_persistent"))
         code, summary, _ = self.read(self.url("block.test", "/d"))
@@ -1756,16 +1866,74 @@ class IngestTests(ServerCase):
         self.assertEqual((code, summary["rung"], summary["presentation"], summary["context"]),
                          (0, "R3", "real_browser", "anonymous"))
         self.assertIn("CAPTURE-SENTINEL", out)
-        code, summary, out = self.ingest(self.target, CAPTURES / "capture.txt", "--context", "unknown")
-        self.assertEqual((code, summary["context"]), (0, "unknown"))
+        code, summary, out = self.ingest(self.target, CAPTURES / "capture.txt", "--context", "anonymous")
+        self.assertEqual((code, summary["context"]), (0, "anonymous"))
         self.assertIn("TEXT-CAPTURE-SENTINEL", out)
         code, summary, out = self.ingest(self.target, self.page_read(), "--context", "anonymous")
         self.assertEqual((code, summary["format"]), (0, "page-read"))
         self.assertIn("PAGE-READ-SENTINEL", out)
         self.assertEqual(len(self.server.hits()), before)  # ingest never touches the network
         contexts = [e["context"] for e in self.ledger_entries() if e["kind"] == "ingest"]
-        self.assertEqual(contexts, ["anonymous", "unknown", "anonymous"])
+        self.assertEqual(contexts, ["anonymous", "anonymous", "anonymous"])
         self.assertEqual(len(self.page_files()), 3)
+
+    def test_a_capture_from_an_unknown_context_is_refused(self):
+        self.read(self.target)
+        code, summary, out = self.ingest(self.target, CAPTURES / "capture.txt", "--context", "unknown")
+        self.assertEqual((code, summary["bucket"]), (2, "refused"))
+        self.assertIn("private or signed-out window", summary["reasons"][0])
+        self.assertNotIn("TEXT-CAPTURE-SENTINEL", out)
+        self.assertEqual(self.page_files(), [])
+
+    def test_a_capture_that_went_through_a_check_is_refused_and_stops_the_site(self):
+        # S1: a render that met a check, one that cleared by itself included, is never taken in; the whole site
+        # stops as it would on a read.
+        paths = [f"/app/post/{n}" for n in (41, 42, 43, 44)]
+        urls = [self.url("shell.test", path) for path in paths]
+        for path, url in zip(paths, urls):
+            self.server.page("shell.test", path, "js-shell-bare.html")
+            self.assertEqual(self.read(url)[0], 4)
+        self.target = urls[0]
+        code, summary, out = self.ingest(urls[0], self.page_read(waited_ms=2400), "--context", "anonymous")
+        self.assertEqual((code, summary["bucket"], summary["stop_class"]), (3, "stopped", "opted_out"))
+        self.assertEqual(summary["reasons"], ["js_check:capture:waited_ms:2400"])
+        self.assertEqual((summary["host_stop"]["class"], summary["host_stop"]["site"]), ("opted_out", "shell.test"))
+        self.assertNotIn("PAGE-READ-SENTINEL", out)
+        # The site is stopped now: no other capture is taken in, whatever it shows.
+        for url in urls[1:]:
+            code, summary, out = self.ingest(url, CAPTURES / "capture-full.html", "--context", "anonymous")
+            self.assertEqual((code, summary["stop_class"]), (3, "host_stopped"), url)
+            self.assertNotIn("CAPTURE-SENTINEL", out)
+        self.assertEqual(self.page_files(), [])
+
+    def test_check_markers_and_check_verdicts_in_captures_stop_the_site(self):
+        cases = ({"challenge": {"interactive": False, "markers": ["cf-browser-verification"]}}, "opted_out",
+                 "js_check:capture:marker:cf-browser-verification"), \
+                ({"challenge": {"interactive": True, "markers": ["g-recaptcha"]}}, "human_check",
+                 "human_check:capture:challenge.interactive")
+        for index, (changes, stop, reason) in enumerate(cases):
+            host = f"cap{index}.test"
+            with mock.patch.dict(net._TEST_RESOLVE, {host: "127.0.0.1"}):
+                url = self.url(host, "/p")
+                self.server.page(host, "/p", "js-shell-bare.html")
+                self.assertEqual(self.read(url)[0], 4)
+                self.target = url
+                code, summary, out = self.ingest(url, self.page_read(**changes), "--context", "anonymous")
+            self.assertEqual((code, summary["stop_class"], summary["reasons"][0]), (3, stop, reason), changes)
+            self.assertEqual(summary["host_stop"]["class"], stop)
+            self.assertNotIn("PAGE-READ-SENTINEL", out)
+        # Captured text whose verdict is a bot filter or a browser check stops the site the same way.
+        for index, page in enumerate(("blocked-403.html", "js-check.html")):
+            host = f"verdict{index}.test"
+            with mock.patch.dict(net._TEST_RESOLVE, {host: "127.0.0.1"}):
+                url = self.url(host, "/p")
+                self.server.page(host, "/p", "js-shell-bare.html")
+                self.assertEqual(self.read(url)[0], 4)
+                code, summary, _ = self.ingest(url, PAGES / page, "--context", "anonymous")
+            kind = ("bot_filter", "js_check")[index]
+            self.assertEqual((code, summary["stop_class"], summary["verdict"]), (3, "opted_out", kind), page)
+            self.assertTrue(summary["reasons"][0].startswith(kind + ":"), summary["reasons"])
+            self.assertEqual(summary["host_stop"]["class"], "opted_out")
 
     def test_no_capture_after_a_stopped_read(self):
         self.assertEqual(self.read(self.url("auth.test", "/wall"))[0], 3)
@@ -2103,24 +2271,33 @@ class AuthorKeyTests(ServerCase):
 
 class CliShimTests(ServerCase):
     def test_shim_runs_start_robots_read_and_close(self):
+        # A separate process has no test hooks (they are set in process only, never from the environment), so it
+        # exercises only decisions made before any request: the scope checks.
         script = SKILL / "scripts" / "ux_research.py"
         run_dir = self.tmp / "shim-run"
-        self.server.page("community.test", "/p", "post-normal.html")
+        env = {k: v for k, v in os.environ.items() if not k.startswith("REMORSEARCH_")}
+        env["REMORSEARCH_ALLOW_PRIVATE"] = "1"  # the old switch: no longer read by anything
+        env["REMORSEARCH_TEST_RESOLVE"] = "community.test=127.0.0.1"
 
         def call(*argv):
             return subprocess.run([sys.executable, str(script), *map(str, argv)], capture_output=True, text=True,
-                                  timeout=60, env=dict(os.environ))
+                                  timeout=60, env=env)
 
         self.assertIn("ingest", call("--help").stdout)
-        self.assertEqual(call("start", "--run", run_dir, "--routes", ROUTES).returncode, 0)
-        result = call("robots", "--run", run_dir, self.url("community.test", "/p"))
+        result = call("start", "--run", run_dir, "--routes", ROUTES, "--deny-host", "denied.test")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertTrue(json.loads(result.stdout)["allowed"])
+        self.assertIs(json.loads(result.stdout)["test_hooks"], False)
+        result = call("robots", "--run", run_dir, self.url("denied.test", "/p"))
+        self.assertEqual((result.returncode, json.loads(result.stdout)["stop_class"]), (3, "opted_out"))
+        result = call("read", "--run", run_dir, self.url("search.test", "/?q=x"))
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        result = call("read", "--run", run_dir, self.url("reported.test", "/p"))
+        self.assertEqual(result.returncode, 3, result.stdout + result.stderr)
         result = call("read", "--run", run_dir, self.url("community.test", "/p"), "--max-wait", "0")
-        self.assertEqual(result.returncode, 5, result.stdout + result.stderr)
-        self.assertGreaterEqual(json.loads(result.stderr.strip().splitlines()[-1])["retry_after_s"], 5)
+        self.assertEqual(result.returncode, 4, result.stdout + result.stderr)  # a test name never resolves here
+        self.assertEqual(json.loads(result.stderr.strip().splitlines()[-1])["error"], "dns_error")
         self.assertEqual(call("close", "--run", run_dir).returncode, 0)
-        self.assertEqual(self.server.hits("community.test"), ["/robots.txt"])
+        self.assertEqual(self.server.hits(), [])
 
 
 # ------------------------------------------------------------------ reader policy (K2)
@@ -2293,7 +2470,9 @@ class TermsRestrictedTests(ServerCase):
         closed = json.loads(self.cli("close", "--run", self.run_dir)[1])
         self.assertEqual((closed["totals"]["terms_restricted"], closed["totals"]["stopped"]), (2, 0))
         self.assertIn("terms_restricted", closed["stop_classes"])
-        self.assertEqual({r["host"]: r for r in closed["hosts"]}["reported.test"]["stopped"], {"terms_restricted": 1})
+        row = {r["host"]: r for r in closed["hosts"]}["reported.test"]  # kept apart per host too, as in the totals
+        self.assertEqual((row["terms_restricted"], row["stopped"], row["urls"], row["refused"]), (1, {}, 1, 1))
+        self.assertEqual(closed["totals"]["urls"], 2)  # a refused capture of a URL that has an outcome adds no URL
 
     def test_a_users_terms_check_lifts_a_reported_entry_only(self):
         for host in ("reported.test", "m.reported.test", "confirmed.test"):
@@ -2307,7 +2486,7 @@ class TermsRestrictedTests(ServerCase):
         code, summary, out = self.read(self.url("reported.test", "/p"))
         self.assertEqual((code, summary["bucket"], summary["terms"]["lifted"]), (0, "read", True))
         self.assertEqual(summary["terms"]["check"]["terms_url"], "http://reported.test/terms#automated-access")
-        self.assertTrue(any("budget is 10 documents" in note for note in summary["notes"]))
+        self.assertTrue(any("budget of 10 documents" in note for note in summary["notes"]))
         self.assertIn("lifted by the user's terms check", out)
         self.assertIn("NORMAL-POST-SENTINEL", out)
         self.assertEqual(self.read(self.url("m.reported.test", "/p"))[0], 0)  # a check covers the subdomains
@@ -2321,12 +2500,17 @@ class TermsRestrictedTests(ServerCase):
         self.assertEqual(self.server.hits("confirmed.test"), [])
         outcome = [e for e in self.ledger_entries() if e["kind"] == "outcome" and e["host"] == "reported.test"][0]
         self.assertEqual(outcome["terms"], {"entry": "fixture-reported", "status": "reported", "lifted": True,
-                                            "mode": None, "not_lifted_because": None})
+                                            "mode": None, "not_lifted_because": None,
+                                            "lifted_entries": ["fixture-reported"], "lift_checks": ["reported.test"]})
         self.assertEqual(self.robots_cmd(self.url("reported.test", "/p"))[1]["terms"]["lifted"], True)
         closed = json.loads(self.cli("close", "--run", self.run_dir)[1])
         rows = {row["host"]: row for row in closed["terms_checked"]}
         self.assertEqual(rows["reported.test"]["urls_under_lift"], 3)  # /p, m./p and /shell (read, then captured)
         self.assertEqual(rows["confirmed.test"]["urls_under_lift"], 0)
+        lifts = {row["entry"]: row for row in closed["terms_lifts"]}  # the same per terms entry
+        self.assertEqual((lifts["fixture-reported"]["urls_under_lift"], lifts["fixture-reported"]["lifted_by"]),
+                         (3, ["reported.test"]))
+        self.assertEqual(lifts["fixture-confirmed"]["lifted_by"], [])
 
     def test_a_lifted_host_has_a_budget_of_ten_documents(self):
         for i in range(11):
@@ -2394,38 +2578,214 @@ class TermsRestrictedTests(ServerCase):
                 '<link>http://tube.test/c/1</link><description>공식 경로로 읽은 댓글입니다. 충전 버튼이 늦게 반응해요. '
                 'TUBE-API-SENTINEL</description></item></channel></rss>')
 
-    def test_official_only_mode_reads_the_official_route_and_nothing_else(self):
+    def official_fixture(self, kind: str = "feed") -> tuple[dict, dict]:
+        """A platform with an official route and a terms entry naming it, for the PACKAGED table (packaged_with):
+        official-only mode never reads a run's own route table."""
+        origin = f"http://api.tubedata.test:{self.server.port}"
+        route = {"kind": "feed", "scope": "all", "auth": "user_key", "env": "REMORSEARCH_FIXTURE_TUBE_KEY",
+                 "env_aliases": ["REMORSEARCH_FIXTURE_TUBE_OLD_KEY"],
+                 "url": origin + "/comments.xml?video={q_v}&key={key}"}
+        if kind == "api":  # a route kind with no adapter in this version
+            route = {"kind": "api", "doc": "no adapter", "auth": "user_key", "env": "REMORSEARCH_FIXTURE_APITUBE_KEY",
+                     "url": origin + "/v3/{q_v}?key={key}"}
+        host = "tube.test" if kind == "feed" else "apitube.test"
+        platform = {"id": f"packaged-{kind}-tube", "hosts": [host], "platform_family": "video", "path": "^/watch$",
+                    "author_from": "page", "official": [route], "alternates": [], "login_hosts": [],
+                    "terms_note": "fixture", "verified_at": None}
+        entry = {"id": f"packaged-{kind}-tube-terms", "hosts": [host], "status": "confirmed",
+                 "lift_requires": "written_permission", "restricts": ["automated_collection"],
+                 "official_route": platform["id"], "terms_url": f"http://{host}/terms", "clause": "fixture clause",
+                 "read_via": "fixture", "sources": ["https://fixture.test/terms"], "checked_at": "2026-09-30",
+                 "verified_at": None, "note": "fixture"}
+        return platform, entry
+
+    def test_official_only_mode_reads_the_packaged_official_route_and_nothing_else(self):
         self.server.add("api.tubedata.test", "/comments.xml",
                         spec(body=self.comments_feed(), ctype="application/rss+xml"))
         self.server.page("tube.test", "/watch", "post-normal.html")
-        self.start()
+        platform, entry = self.official_fixture()
         url = self.url("tube.test", "/watch?v=abc")
         no_key = {"REMORSEARCH_FIXTURE_TUBE_KEY": "", "REMORSEARCH_FIXTURE_TUBE_OLD_KEY": "", "FIXTURE_TUBE_KEY": ""}
-        with mock.patch.dict(os.environ, {**no_key, "FIXTURE_TUBE_KEY": "NOT-READ"}):  # D6: only REMORSEARCH_* names
-            code, summary, _ = self.read(url)
-        self.assertEqual((code, summary["stop_class"]), (3, "terms_restricted"))
-        self.assertIn("official_route_needs_key:REMORSEARCH_FIXTURE_TUBE_KEY", summary["reasons"])
-        self.assertEqual(self.server.hits("api.tubedata.test"), [])
-        with mock.patch.dict(os.environ, {**no_key, "REMORSEARCH_FIXTURE_TUBE_OLD_KEY": "TUBE-KEY-123"}):  # an alias
-            code, summary, out = self.read(url)
-        self.assertEqual((code, summary["rung"], summary["access_basis"]), (0, "R0", "official_api"))
-        self.assertIn("official_only", summary["reasons"])
-        self.assertEqual((summary["terms"]["mode"], summary["terms"]["lifted"]), ("official_only", False))
-        self.assertIn("TUBE-API-SENTINEL", out)
-        self.assertNotIn("TUBE-KEY-123", out + self.last_err)
-        self.assertNotIn(b"TUBE-KEY-123", self.run_bytes())
-        code, summary, _ = self.ingest(url, CAPTURES / "capture-full.html", "--context", "anonymous")
-        self.assertEqual(code, 2)  # official-only mode never admits a capture
-        self.assertIn("official-only mode", summary["reasons"][0])
-        self.assertEqual(self.cli("robots", "--run", self.run_dir, url)[0], 3)  # browser tools never open the page
-        self.server.add("api.tubedata.test", "/comments.xml", spec(404, "gone", "text/plain"))
-        with mock.patch.dict(os.environ, {**no_key, "REMORSEARCH_FIXTURE_TUBE_KEY": "TUBE-KEY-123"}):
-            code, summary, _ = self.read(self.url("tube.test", "/watch?v=def"))
+        with packaged_with(platforms=[platform], terms=[entry]):
+            code, out, _ = self.cli("start", "--run", self.run_dir)  # the packaged route table
+            self.assertEqual(code, 0, out)
+            with mock.patch.dict(os.environ, {**no_key, "FIXTURE_TUBE_KEY": "NOT-READ"}):  # D6: only REMORSEARCH_*
+                code, summary, _ = self.read(url)
             self.assertEqual((code, summary["stop_class"]), (3, "terms_restricted"))
-            self.assertIn("official_route_failed", summary["reasons"])
-            code, summary, _ = self.read(self.url("tube.test", "/channel/xyz"))
-            self.assertIn("official_route_does_not_fit", summary["reasons"])
+            self.assertIn("official_route_needs_key:REMORSEARCH_FIXTURE_TUBE_KEY", summary["reasons"])
+            self.assertEqual(self.server.hits("api.tubedata.test"), [])
+            with mock.patch.dict(os.environ, {**no_key, "REMORSEARCH_FIXTURE_TUBE_OLD_KEY": "TUBE-KEY-123"}):  # an alias
+                code, summary, out = self.read(url)
+            self.assertEqual((code, summary["rung"], summary["access_basis"]), (0, "R0", "official_api"))
+            self.assertIn("official_only", summary["reasons"])
+            self.assertEqual((summary["terms"]["mode"], summary["terms"]["lifted"]), ("official_only", False))
+            self.assertIn("TUBE-API-SENTINEL", out)
+            self.assertNotIn("TUBE-KEY-123", out + self.last_err)
+            self.assertNotIn(b"TUBE-KEY-123", self.run_bytes())
+            code, summary, _ = self.ingest(url, CAPTURES / "capture-full.html", "--context", "anonymous")
+            self.assertEqual(code, 2)  # official-only mode never admits a capture
+            self.assertIn("official-only mode", summary["reasons"][0])
+            self.assertEqual(self.cli("robots", "--run", self.run_dir, url)[0], 3)  # browser tools never open the page
+            self.server.add("api.tubedata.test", "/comments.xml", spec(404, "gone", "text/plain"))
+            with mock.patch.dict(os.environ, {**no_key, "REMORSEARCH_FIXTURE_TUBE_KEY": "TUBE-KEY-123"}):
+                code, summary, _ = self.read(self.url("tube.test", "/watch?v=def"))
+                self.assertEqual((code, summary["stop_class"]), (3, "terms_restricted"))
+                self.assertIn("official_route_failed", summary["reasons"])
+                code, summary, _ = self.read(self.url("tube.test", "/channel/xyz"))
+                self.assertIn("official_route_does_not_fit", summary["reasons"])
         self.assertEqual(self.server.hits("tube.test"), [])  # never the page, not even its robots.txt
+
+    def test_a_run_tables_own_official_route_is_never_read_for_a_restricted_host(self):
+        # C-01: the fixture table defines a feed route for tube.test, whose own terms entry names no official route;
+        # official-only mode reads the packaged table only, so the route never runs, key or no key.
+        self.server.add("api.tubedata.test", "/comments.xml",
+                        spec(body=self.comments_feed(), ctype="application/rss+xml"))
+        self.start()
+        with mock.patch.dict(os.environ, {"REMORSEARCH_FIXTURE_TUBE_KEY": "TUBE-KEY-123"}):
+            code, summary, out = self.read(self.url("tube.test", "/watch?v=abc"))
+        self.assertEqual((code, summary["stop_class"]), (3, "terms_restricted"))
+        self.assertNotIn("TUBE-API-SENTINEL", out)
+        self.assertEqual(self.server.hits("api.tubedata.test") + self.server.hits("tube.test"), [])
+
+    def test_a_route_table_cannot_open_change_or_weaken_a_restricted_route(self):
+        packaged = json.loads((PACKAGE / "data" / "routes.json").read_text(encoding="utf-8"))
+
+        def table(change) -> Path:
+            routes = copy.deepcopy(packaged)
+            change(routes)
+            path = self.tmp / f"routes-{len(list(self.tmp.glob('routes-*')))}.json"
+            path.write_text(json.dumps(routes, ensure_ascii=False), encoding="utf-8")
+            return path
+
+        def mirror_youtube(routes):  # the review's proof: the youtube platform read through a mirror feed
+            platform = next(p for p in routes["platforms"] if p["id"] == "youtube")
+            platform["official"] = [{"kind": "feed", "url": self.url("mirror.test", "/feed?v={video}"), "scope": "all"}]
+
+        def new_platform_on_restricted_host(routes):
+            routes["platforms"].append({"id": "board-mirror", "hosts": ["gall.dcinside.com"], "platform_family": "community",
+                                        "author_from": "page", "alternates": [], "login_hosts": [], "terms_note": "x",
+                                        "official": [{"kind": "feed", "auth": "none", "scope": "all",
+                                                      "url": self.url("mirror.test", "/{path}")}], "verified_at": None})
+
+        def weaker_entry(routes):
+            entry = next(e for e in routes["terms_restricted"] if e["id"] == "youtube-terms")
+            entry["status"] = "reported"
+
+        def own_official_route(routes):
+            routes["terms_restricted"].append({"id": "own-terms", "hosts": ["own.test"], "status": "confirmed",
+                                               "restricts": ["automated_collection"], "official_route": "youtube"})
+
+        def switched_on(routes):
+            next(d for d in routes["discovery"] if d["id"] == "kakao-daum-search")["enabled"] = True
+
+        for index, change in enumerate((mirror_youtube, new_platform_on_restricted_host, weaker_entry,
+                                        own_official_route, switched_on)):
+            target = self.tmp / f"refused-run-{index}"
+            code, out, _ = self.cli("start", "--run", target, "--routes", table(change))
+            self.assertEqual(code, 2, (change.__name__, out))
+            self.assertIn("this route table cannot be used", json.loads(out)["reason"], change.__name__)
+            self.assertFalse(target.exists(), change.__name__)
+        # A copy of the packaged table with new platforms for other hosts is fine.
+        code, out, _ = self.cli("start", "--run", self.tmp / "copy-run", "--routes", table(
+            lambda routes: routes["platforms"].append({"id": "extra", "hosts": ["extra.test"], "official": [],
+                                                       "alternates": [], "login_hosts": []})))
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.server.hits(), [])
+
+    def test_a_run_folder_edited_after_start_is_refused(self):
+        # L-21: an edit of the run folder can never add a lift, an authorised community or a route.
+        self.server.page("reported.test", "/p", "post-normal.html")
+        self.start()
+        run_json = self.run_dir / "run.json"
+        meta = json.loads(run_json.read_text(encoding="utf-8"))
+        edited = json.loads(json.dumps(meta))
+        edited["policy"]["terms_checked"] = [{"host": "reported.test", "terms_url": "http://reported.test/terms",
+                                              "checked_on": time.strftime("%Y-%m-%d"), "result": "permits_this_reading"}]
+        run_json.write_text(json.dumps(edited), encoding="utf-8")
+        code, out, _ = self.cli("read", "--run", self.run_dir, self.url("reported.test", "/p"))
+        self.assertEqual(code, 2)
+        self.assertIn("changed after start", json.loads(out)["reason"])
+        run_json.write_text(json.dumps(meta), encoding="utf-8")
+        routes = self.run_dir / "routes.json"
+        routes.write_text(routes.read_text(encoding="utf-8").replace("fixture-reported", "fixture-renamed"),
+                          encoding="utf-8")
+        for argv in (("robots", "--run", self.run_dir, self.url("reported.test", "/p")),
+                     ("author-key", "--run", self.run_dir, "--platform", "p", "--handle", "홍길동")):
+            code, out, _ = self.cli(*argv)
+            self.assertEqual(code, 2, argv)
+            self.assertIn("routes.json", json.loads(out)["reason"])
+        code, out, _ = self.cli("close", "--run", self.run_dir)  # close still deletes page text and the salt
+        self.assertEqual(code, 2)
+        self.assertFalse((self.run_dir / "salt").exists())
+        self.assertFalse((self.run_dir / "pages").exists())
+        self.assertEqual(self.server.hits(), [])
+
+    def test_every_entry_that_covers_a_url_needs_its_own_check(self):
+        # C-02 and L-02: overlap.test (parent) and sub.overlap.test (child) are separate entries with separate terms.
+        for host in ("overlap.test", "sub.overlap.test", "a.overlap.test"):
+            self.server.page(host, "/p", "post-normal.html")
+        parent = self.check("overlap.test", terms_url="http://overlap.test/terms")
+        child = self.check("sub.overlap.test", terms_url="http://sub.overlap.test/notice")
+        child_citing_parent = self.check("sub.overlap.test", terms_url="http://overlap.test/terms#clause-3")
+        cases = {"parent only": ([parent], {"a.overlap.test": 0, "sub.overlap.test": 3}),
+                 "child only": ([child], {"a.overlap.test": 3, "sub.overlap.test": 3}),
+                 "child citing the parent's terms": ([child_citing_parent], {"a.overlap.test": 3, "sub.overlap.test": 3}),
+                 "both": ([parent, child], {"a.overlap.test": 0, "sub.overlap.test": 0})}
+        for index, (name, (checks, expected)) in enumerate(cases.items()):
+            run_dir = self.tmp / f"overlap-{index}"
+            created = self.start("--brief", self.brief_with(checks), run_dir=run_dir)
+            lifts = {row["entry"]: row["lifted_by"] for row in created["terms_lifts"]}
+            for host, code in expected.items():
+                got, summary, _ = self.read(self.url(host, "/p"), run_dir=run_dir)
+                self.assertEqual(got, code, (name, host, summary.get("reasons")))
+            if name == "parent only":  # the parent's check never lifts the child's notice
+                self.assertEqual(lifts, {"fixture-parent": ["overlap.test"], "fixture-child": []})
+                summary = self.read(self.url("sub.overlap.test", "/p"), run_dir=run_dir)[1]
+                self.assertIn("terms_entry:fixture-child", summary["reasons"])
+            if name == "both":
+                summary = self.read(self.url("sub.overlap.test", "/p"), run_dir=run_dir)[1]
+                self.assertEqual(sorted(summary["terms"]["lifted_entries"]), ["fixture-child", "fixture-parent"])
+                closed = json.loads(self.cli("close", "--run", run_dir)[1])
+                per_entry = {row["entry"]: row["urls_under_lift"] for row in closed["terms_lifts"]}
+                self.assertEqual(per_entry, {"fixture-parent": 2, "fixture-child": 1})
+
+    def test_a_lift_of_terms_that_need_written_permission_records_it(self):
+        # L-07: without the permission the brief is refused at start and says what is missing.
+        check = self.check("permission.test", terms_url="http://permission.test/terms-mobile")
+        code, out, _ = self.cli("start", "--run", self.tmp / "no-permission", "--routes", ROUTES, "--brief",
+                                self.brief_with([check]))
+        self.assertEqual(code, 2)
+        self.assertIn("permission {granted_by, granted_on, reference}", json.loads(out)["reason"])
+        self.server.page("permission.test", "/p", "post-normal.html")
+        permission = {"granted_by": "fixture operator", "granted_on": self.today(), "reference": "letter F-1"}
+        created = self.start("--brief", self.brief_with([{**check, "permission": permission}]))
+        self.assertEqual(created["terms_lifts"][0]["permission"], permission)
+        code, summary, _ = self.read(self.url("permission.test", "/p"))
+        self.assertEqual((code, summary["terms"]["lift_requires"]), (0, "written_permission"))
+        closed = json.loads(self.cli("close", "--run", self.run_dir)[1])
+        self.assertEqual(closed["terms_lifts"][0]["permission"], permission)
+
+    def test_conflicting_or_stale_checks_are_refused(self):
+        # C-10: two checks for one host that disagree; L-20: a check more than 365 days old.
+        permits, restricts = self.check("reported.test"), self.check("reported.test", result="restricts_this_reading")
+        old = self.check("reported.test", checked_on=time.strftime("%Y-%m-%d", time.gmtime(self.clock() - 400 * 86400)))
+        for name, checks, words in (("conflict", [permits, restricts], "disagree"), ("stale", [old], "stale")):
+            code, out, _ = self.cli("start", "--run", self.tmp / f"run-{name}", "--routes", ROUTES, "--brief",
+                                    self.brief_with(checks))
+            self.assertEqual(code, 2, name)
+            self.assertIn(words, json.loads(out)["reason"], name)
+
+    def test_a_lifted_entrys_budget_counts_across_its_hosts(self):
+        # L-19: one lift gives ten documents in all, not ten on each host the entry covers.
+        for i in range(6):
+            for host in ("reported.test", "m.reported.test"):
+                self.server.page(host, f"/p/{i}", "post-normal.html")
+        self.start("--brief", self.brief_with([self.check("reported.test")]))
+        codes = [self.read(self.url(host, f"/p/{i}"))[0] for i in range(6) for host in ("reported.test", "m.reported.test")]
+        self.assertEqual(codes[:10], [0] * 10)
+        code, summary, _ = self.read(self.url("m.reported.test", "/p/5"))
+        self.assertEqual((code, summary["stop_class"], summary["reasons"]), (3, "budget", ["budget:terms:10"]))
+        self.assertEqual(len(self.server.hits("reported.test")) + len(self.server.hits("m.reported.test")) - 2, 10)
 
     def test_a_render_that_ended_on_a_restricted_host_is_refused(self):
         self.server.page("shell.test", "/app/post/9", "js-shell-bare.html")
@@ -2444,9 +2804,12 @@ class TermsRestrictedTests(ServerCase):
         self.assertEqual(self.page_files(), [])
 
     def test_an_official_route_without_an_adapter_is_unavailable(self):
-        self.start()
-        with mock.patch.dict(os.environ, {"REMORSEARCH_FIXTURE_APITUBE_KEY": "K"}):
-            code, summary, _ = self.read(self.url("apitube.test", "/watch?v=abc"))
+        platform, entry = self.official_fixture("api")
+        with packaged_with(platforms=[platform], terms=[entry]):
+            code, out, _ = self.cli("start", "--run", self.run_dir)
+            self.assertEqual(code, 0, out)
+            with mock.patch.dict(os.environ, {"REMORSEARCH_FIXTURE_APITUBE_KEY": "K"}):
+                code, summary, _ = self.read(self.url("apitube.test", "/watch?v=abc"))
         self.assertEqual((code, summary["stop_class"]), (3, "terms_restricted"))
         self.assertIn("official_route_unavailable", summary["reasons"])
         self.assertFalse([r for r in summary["reasons"] if r.startswith("official_route_needs_key")])
@@ -2605,7 +2968,7 @@ class ScrubbingTests(ServerCase):
         self.start()
         text = self.tmp / "capture.txt"
         text.write_text((PAGES / "pii-post.html").read_text(encoding="utf-8").split("<h1>", 1)[1], encoding="utf-8")
-        for path, capture, context in (("/shell", PAGES / "pii-post.html", "anonymous"), ("/shell2", text, "unknown")):
+        for path, capture, context in (("/shell", PAGES / "pii-post.html", "anonymous"), ("/shell2", text, "anonymous")):
             self.assertEqual(self.read(self.url("pii.test", path))[0], 4)
             code, summary, out = self.ingest(self.url("pii.test", path), capture, "--context", context)
             self.assertEqual(code, 0, path)
@@ -2623,7 +2986,327 @@ class ScrubbingTests(ServerCase):
         self.assertNotIn("paywall9@example.test", out + self.last_err)
 
 
+class ReviewServerTests(ServerCase):
+    """Regression tests for the review findings that need the fixture server."""
+
+    def test_a_robots_redirect_into_a_scoped_host_is_never_followed(self):
+        # C-03 / L-03: every robots.txt redirect hop gets the scope checks first. A refused hop is never requested,
+        # and robots.txt then disallows the whole origin for the run.
+        self.server.redirect("hop.test", "/robots.txt", self.url("confirmed.test", "/robots.txt"))
+        self.server.redirect("hop2.test", "/robots.txt", self.url("denied.test", "/robots.txt"))
+        self.server.redirect("redir.test", "/robots.txt", self.url("disabled-api.test", "/v1/search/robots.txt"))
+        for host in ("confirmed.test", "denied.test"):
+            self.server.robots(host, body="User-agent: *\nAllow: /\n")
+        self.server.add("disabled-api.test", "/v1/search/robots.txt",
+                        spec(body="User-agent: *\nAllow: /\n", ctype="text/plain"))
+        for host in ("hop.test", "hop2.test", "redir.test"):
+            self.server.page(host, "/p", "post-normal.html")
+        self.start("--deny-host", "denied.test")
+        for host, why in (("hop.test", "fixture-confirmed"), ("hop2.test", "deny_hosts"),
+                          ("redir.test", "never_call:fixture-discovery")):
+            code, summary, out = self.read(self.url(host, "/p"))
+            self.assertEqual((code, summary["stop_class"], summary["robots"]["robots_status"]),
+                             (3, "opted_out", "unavailable_redirect"), host)
+            self.assertTrue(summary["reasons"][0].startswith("robots_redirect:"), summary["reasons"])
+            self.assertIn(why, summary["reasons"][0])
+            self.assertNotIn("NORMAL-POST-SENTINEL", out)
+            code, out, _ = self.cli("robots", "--run", self.run_dir, self.url(host, "/q"))
+            self.assertEqual((code, json.loads(out)["robots_status"]), (3, "unavailable_redirect"), host)
+            self.assertEqual(self.server.hits(host), ["/robots.txt"], host)
+        for host in ("confirmed.test", "denied.test", "disabled-api.test"):
+            self.assertEqual(self.server.hits(host), [], host)
+
+    def test_the_robots_command_exits_4_when_the_host_cannot_be_reached(self):
+        # C-13: a DNS or TLS failure while fetching robots.txt is exit 4 (unread), as documented in section 9.
+        self.start()
+        code, out, _ = self.cli("robots", "--run", self.run_dir, self.url("m.lonely.test", "/x"))
+        result = json.loads(out)
+        self.assertEqual((code, result["error"], result["allowed"]), (4, "dns_error", False))
+
+    def test_request_entries_hash_the_scrubbed_text(self):
+        # C-15: nothing the run keeps refers to page text that still held identifiers.
+        self.server.page("pii.test", "/p", "pii-post.html")
+        self.start()
+        self.assertEqual(self.read(self.url("pii.test", "/p"))[0], 0)
+        saved = self.page_files()[0].read_text(encoding="utf-8")
+        digest = hashlib.sha256(saved.encode("utf-8")).hexdigest()
+        entries = self.ledger_entries()
+        request = [e for e in entries if e["kind"] == "request" and e.get("purpose") == "page"][0]
+        outcome = [e for e in entries if e["kind"] == "outcome"][0]
+        self.assertEqual((request["content_sha256"], outcome["content_sha256"]), (digest, digest))
+        self.assertEqual(request["text_chars"], len(saved))
+
+    def test_a_stop_on_one_host_covers_its_whole_site(self):
+        # L-05 / L-09: human checks and rate limits stop the registrable domain, not only the host that showed
+        # them, and no capture is taken in anywhere on that site afterwards.
+        self.server.page("m.site.test", "/early", "js-shell-bare.html")
+        self.server.page("www.site.test", "/p", "captcha-recaptcha.html")
+        for host in ("m.site.test", "site.test"):
+            self.server.page(host, "/p", "post-normal.html")
+        self.server.add("www.shop.test", "/p", spec(429, "too many requests", "text/plain", [("Retry-After", "1")]))
+        self.server.page("m.shop.test", "/p", "post-normal.html")
+        self.start()
+        self.assertEqual(self.read(self.url("m.site.test", "/early"))[0], 4)
+        code, summary, _ = self.read(self.url("www.site.test", "/p"))
+        self.assertEqual((code, summary["stop_class"], summary["host_stop"]["site"]), (3, "human_check", "site.test"))
+        for host in ("m.site.test", "site.test"):
+            code, summary, _ = self.read(self.url(host, "/p"))
+            self.assertEqual((code, summary["stop_class"], summary["reasons"]),
+                             (3, "host_stopped", ["host_stop:human_check"]), host)
+            code, out, _ = self.cli("robots", "--run", self.run_dir, self.url(host, "/p"))
+            self.assertEqual((code, json.loads(out)["stop_class"]), (3, "host_stopped"), host)
+        code, summary, out = self.ingest(self.url("m.site.test", "/early"), CAPTURES / "capture-full.html",
+                                         "--context", "anonymous")
+        self.assertEqual((code, summary["stop_class"]), (3, "host_stopped"))
+        self.assertNotIn("CAPTURE-SENTINEL", out)
+        self.assertEqual((self.server.hits("m.site.test"), self.server.hits("site.test")), (["/robots.txt", "/early"], []))
+        code, summary, _ = self.read(self.url("www.shop.test", "/p"))
+        self.assertEqual((code, summary["stop_class"], summary["host_stop"]["site"]), (3, "rate_limit", "shop.test"))
+        code, summary, _ = self.read(self.url("m.shop.test", "/p"))
+        self.assertEqual((code, summary["reasons"]), (3, ["host_stop:rate_limit"]))
+        self.assertEqual(self.server.hits("m.shop.test"), [])
+        closed = json.loads(self.cli("close", "--run", self.run_dir)[1])
+        self.assertEqual({name: stop["class"] for name, stop in closed["site_stops"].items()},
+                         {"site.test": "human_check", "shop.test": "rate_limit"})
+
+    def test_the_render_driver_note_names_the_bundled_reader(self):
+        # D-03: render 'driver' means the agent renders with the bundled page reader and hands the capture in.
+        self.server.page("spa.test", "/p", "js-shell-bare.html")
+        self.start("--render", "driver")
+        code, summary, _ = self.read(self.url("spa.test", "/p"))
+        self.assertEqual((code, summary["untried"]), (4, ["R3"]))
+        self.assertIn(ladder.DRIVER_NOTE, summary["notes"])
+        self.assertIn("drivers/web/read_page.mjs", ladder.DRIVER_NOTE)
+        self.assertNotIn("not available", json.dumps(summary))
+
+    def test_close_keeps_no_greeting_text_in_old_reasons(self):
+        # L-16: a reason that carries a line of page text keeps only its marker after close, in every entry.
+        self.server.page("community.test", "/p", "post-normal.html")
+        self.start()
+        self.assertEqual(self.read(self.url("community.test", "/p"))[0], 0)
+        with (self.run_dir / "access-ledger.jsonl").open("a", encoding="utf-8") as ledger_file:
+            ledger_file.write(json.dumps({"kind": "outcome", "source": "ingest", "url": self.url("community.test", "/q"),
+                                          "host": "community.test", "bucket": "stopped", "stop_class": "auth_gate",
+                                          "reasons": ["signed_in_view", "line:김민수님 환영합니다"]},
+                                         ensure_ascii=False) + "\n")
+        self.assertEqual(self.cli("close", "--run", self.run_dir)[0], 0)
+        self.assertNotIn("김민수".encode("utf-8"), self.run_bytes())
+        reasons = [r for e in self.ledger_entries() for r in e.get("reasons") or []]
+        self.assertIn("line:greeting", reasons)
+
+    def test_a_refused_capture_is_not_another_url(self):
+        # C-12: a refusal of a URL that already has an outcome adds no URL to the close totals.
+        self.start()
+        self.assertEqual(self.read(self.url("reported.test", "/p"))[0], 3)
+        for _ in range(2):
+            code, _, _ = self.ingest(self.url("reported.test", "/p"), CAPTURES / "capture-full.html",
+                                     "--context", "anonymous")
+            self.assertEqual(code, 2)
+        closed = json.loads(self.cli("close", "--run", self.run_dir)[1])
+        self.assertEqual((closed["totals"]["urls"], closed["totals"]["terms_restricted"], closed["totals"]["refused"]),
+                         (1, 1, 1))
+        row = {r["host"]: r for r in closed["hosts"]}["reported.test"]
+        self.assertEqual((row["urls"], row["terms_restricted"], row["stopped"]), (1, 1, {}))
+        self.assertEqual(self.server.hits(), [])
+
+
 # ------------------------------------------------------------------ contracts
+
+
+class ReviewUnitTests(unittest.TestCase):
+    """Regression tests for the code and legal review findings that need no server."""
+
+    lists = None
+
+    @classmethod
+    def setUpClass(cls):
+        cls.lists = scope.lists_for(None)
+        cls.policy = {"deny_hosts": [], "terms_checked": []}
+
+    def stop(self, url: str, policy: dict | None = None):
+        return scope.evaluate(url, policy or self.policy, self.lists)[0]
+
+    def test_scrubbed_and_ipv6_handles_are_never_keyed(self):
+        # C-04: the agent sees 'ㅇㅇ([ip])', never the raw handle; IPv6 groups are scrubbed and refused too.
+        seen = privacy.scrub("ㅇㅇ(118.235)")[0]
+        self.assertEqual(seen, "ㅇㅇ([ip])")
+        salt = b"s" * 32
+        for handle in (seen, "닉네임([ip])", "ㅇㅇ[ip]", "ㅇㅇ(2001:2d8)", "닉네임(2001:e60)", "[handle]", "메일[email]",
+                       "ㅇㅇ(118.235.*.*)", "ㅇㅇ(118.235.xxx.xxx)", "(118.235)고양이", "고양이[118.235]", "고양이 118.235",
+                       "ㅇㅇ(118.235)\u200b", "ㅇ ㅇ", "익명12345"):
+            with self.assertRaises(ValueError, msg=handle) as caught:
+                privacy.author_key(salt, "community.test", handle)
+            self.assertIn("--thread-url", str(caught.exception), handle)
+        self.assertEqual(privacy.scrub("ㅇㅇ(2001:2d8) 글")[0], "ㅇㅇ([ip]) 글")
+        self.assertRegex(privacy.author_key(salt, "community.test", "홍길동"), r"^[0-9a-f]{16}$")
+
+    def test_width_and_dash_variants_are_folded_before_scrubbing_and_matching(self):
+        # C-08: full-width and dash variants of identifiers and labels.
+        for text, leaked in (("주민 ９００１０１-１２３４５６７", "１２３４５６７"), ("메일 kim＠naver.com", "kim＠naver"),
+                             ("메일 ｋｉｍ＠ｎａｖｅｒ．ｃｏｍ", "ｋｉｍ"), ("ㅇㅇ（118.235）", "118.235"),
+                             ("연락 010–1234–5678", "5678"), ("연락 010ㅡ1234ㅡ5678", "5678"),
+                             ("연락 ０１０-１２３４-５６７８", "５６７８"), ("신한 110222333444 입금", "110222333444")):
+            scrubbed, counts = privacy.scrub(text)
+            self.assertNotIn(leaked, scrubbed, text)
+            self.assertTrue(counts, text)
+        scrubbed = privacy.scrub("주식회사 ㈜한빛… 연락 010–1234–5678 ㅋㅋ")[0]
+        self.assertEqual(scrubbed, "주식회사 ㈜한빛… 연락 [phone] ㅋㅋ")  # only the identifier changes
+        for text, flag in (("＃광고 제품 리뷰", "#광고"), ("［광고］ 충전기 후기", "[광고]"), ("（협찬） 충전기 후기", "(협찬)"),
+                           ("#ＡＤ new charger", "#AD")):
+            self.assertEqual(verdict.content_flags(text)["promo_flags"], [flag], text)
+
+    def test_ratings_versions_and_speeds_are_kept(self):
+        # C-09: a parenthesised decimal in running text is not a partial IP.
+        for kept in ("평점 (4.5)", "별점(4.8) 만점", "버전 (3.2) 업데이트", "(1.5)배속", "속도 (1.5)", "시간 10:30",
+                     "모임(10:30) 공지"):
+            self.assertEqual(privacy.scrub(kept), (kept, {}), kept)
+        for text in ("ㅇㅇ(118.235)", "ㅇㅇ (118.235)", "ㅇㅇ\n(211.36)", "ㅇㅇ(39.7)"):  # attached, or in a table cell
+            self.assertEqual(privacy.scrub(text)[1], {"partial_ip": 1}, text)
+
+    def test_masked_and_labelled_partial_ips_are_scrubbed(self):
+        # L-17
+        for text, leaked in (("작성자 IP: 211.36.***.***", "211.36"), ("ㅇㅇ(118.235.xxx.xxx)", "118.235"),
+                             ("118.235.*.* 에서 작성", "118.235"), ("(IP 118.235)", "118.235"),
+                             ("***.***.12.34 접속", "12.34"), ("아이피 118.235 입니다", "118.235")):
+            scrubbed, counts = privacy.scrub(text)
+            self.assertNotIn(leaked, scrubbed, text)
+            self.assertIn("partial_ip", counts, text)
+
+    def test_scope_paths_are_matched_in_every_normal_form(self):
+        # C-06: encoded, dot, empty and ';' forms of a refused path are refused too.
+        for url in ("https://www.google.com/%73earch?q=x", "https://www.google.com/./search?q=x",
+                    "https://www.google.com/a/../search?q=x", "https://www.google.com//search?q=x",
+                    "https://www.google.com/search;x?q=x", "https://www.google.com/Search?q=x",
+                    "https://duckduckgo.com/?Q=x"):
+            self.assertEqual(self.stop(url).kind, "search_page", url)
+        for url in ("https://dapi.kakao.com/v2/%73earch/web?query=x", "https://dapi.kakao.com/V2/search/web?query=x",
+                    "https://www.googleapis.com/youtube/v3/%73earch?part=snippet&q=x"):
+            self.assertEqual(self.stop(url).kind, "never_call", url)
+        self.assertEqual(self.stop("https://www.facebook.com//groups/1").stop_class, "auth_gate")
+        for url in ("https://www.google.com/searching", "https://www.google.com/maps"):
+            self.assertIsNone(self.stop(url), url)
+
+    def test_deny_hosts_are_host_names(self):
+        # C-11: a trailing dot is removed, and a scheme or a path is refused.
+        self.assertEqual(ledger.build_policy(None, {"deny_hosts": ["Example.COM.", "*.x.test"]})["deny_hosts"],
+                         ["*.x.test", "example.com"])
+        for bad in ("https://example.com", "example.com/", "example.com:8080", "exa mple.com"):
+            with self.assertRaises(ledger.RunError, msg=bad):
+                ledger.build_policy(None, {"deny_hosts": [bad]})
+            brief = {"schema_version": "ux-research-brief.v1", "product": {"name": "x"},
+                     "access_policy": {"deny_hosts": [bad]}}
+            with self.assertRaises(ledger.RunError, msg=bad):
+                ledger.validate_brief(brief)
+        policy = ledger.build_policy(None, {"deny_hosts": ["example.com."]})
+        self.assertEqual(self.stop("https://www.example.com/p", policy).kind, "deny")
+
+    def test_a_greeting_names_nobody_in_the_reasons(self):
+        # C-14 and L-16: only the marker is kept.
+        html = "<div>kim1234@naver.com님 환영합니다</div><main><p>" + "본문입니다. " * 30 + "</p></main>"
+        page = extract.from_html(html, "http://x.test/p")
+        result = verdict.classify(status=200, headers={}, page=page, requested_url="http://x.test/p", capture=True)
+        self.assertEqual((result.stop_class, result.reasons), ("auth_gate", ["capture:signed_in_view", "line:greeting"]))
+
+    def test_embed_urls_on_the_no_cookie_host_give_the_video_id(self):
+        # C-16
+        routes = ladder.Routes(scope.packaged())
+        for url in ("https://www.youtube-nocookie.com/embed/Vid0000001A", "https://youtube-nocookie.com/embed/Vid0000001A"):
+            platform, values = routes.match(net.parse_url(url))
+            self.assertEqual(platform["id"], "youtube", url)
+            self.assertEqual(values.get("video"), "Vid0000001A", url)
+
+    def test_content_flags_stay_linear_on_hostile_text(self):
+        # C-17: 400 KB with no sentence end and a marker every few characters.
+        for text in ("#광고 " * 100000 + "맞나요?", "가" * 399990 + " #광고입니다", ("#협찬 " + "x" * 50) * 7000):
+            started = time.monotonic()
+            verdict.content_flags(text[:extract.TEXT_CAP_CHARS])
+            self.assertLess(time.monotonic() - started, 5.0)
+
+    def test_negated_disclaimers_are_not_flagged(self):
+        # C-07
+        for text in ("경제적 대가를 받은 적 없는 솔직 후기입니다.", "경제적 대가를 받은 것이 아닌 내돈내산 후기",
+                     "업체로부터 제품을 제공받은 것이 아니라 직접 구매했습니다.", "제품을 제공받았다는 오해가 있는데 직접 샀습니다.",
+                     "#협찬 없이 내돈내산", "리뷰 이벤트 참여는 안 했지만 맛은 좋아요"):
+            flags = verdict.content_flags(text)
+            self.assertEqual((flags["promotion_hits"], flags["incentive_flags"]), ([], []), text)
+
+    def test_copies_of_other_pages_are_judged_by_the_page_they_show(self):
+        # L-04: a copy of a stopped page stops with the same class; other copies are refused outright.
+        stopped = {"https://web.archive.org/web/2026/https://gall.dcinside.com/board/view/?id=x&no=1": "terms",
+                   "https://web.archive.org/web/2026id_/https://cafe.naver.com/imsanbu/123": "terms",
+                   "https://archive.ph/newest/https://www.coupang.com/vp/products/123": "terms",
+                   "https://gall-dcinside-com.translate.goog/board/view/?id=x&_x_tr_sl=ko": "terms",
+                   "https://m-youtube-com.translate.goog/watch?v=dQw4w9WgXcQ": "terms",
+                   "https://r.jina.ai/https://gall.dcinside.com/board/view/?id=x": "terms",
+                   "https://m-dcinside-com.cdn.ampproject.org/c/s/m.dcinside.com/board/x/1": "terms",
+                   "https://webcache.googleusercontent.com/search?q=cache:abcdef12:https://gall.dcinside.com/x": "terms",
+                   "https://yewtu.be/watch?v=dQw4w9WgXcQ": "terms", "https://example.org/watch?v=dQw4w9WgXcQ": "terms",
+                   "https://web.archive.org/web/2026/https://www.google.com/search?q=x": "search_page",
+                   "https://r.jina.ai/https://www.example.com/help": "third_party_copy",
+                   "https://piped.video/channel/x": "third_party_copy", "https://nitter.net/a/status/1": "third_party_copy",
+                   "https://web.archive.org/web/2026/https://www.example.com/help": "third_party_copy"}
+        for url, kind in stopped.items():
+            found = self.stop(url)
+            self.assertEqual(found.kind if found else None, kind, url)
+            if kind == "third_party_copy":
+                self.assertEqual((found.stop_class, found.out_of_scope, found.error), ("opted_out", True, "third_party_copy"))
+        official = {"deny_hosts": [], "terms_checked": [], "allow_wayback_for_official": True,
+                    "official_sites": ["example.com"]}
+        self.assertIsNone(self.stop("https://web.archive.org/web/2026/https://www.example.com/help", official))
+        self.assertEqual(self.stop("https://web.archive.org/web/2026/https://other.example.net/help", official).kind,
+                         "third_party_copy")
+        self.assertEqual(self.stop("https://web.archive.org/web/2026/https://www.example.com/help",
+                                   {**official, "allow_wayback_for_official": False}).kind, "third_party_copy")
+        self.assertEqual(ledger.build_policy({"product": {"name": "x", "url": "https://app.example.com/help"}}, {})
+                         ["official_sites"], ["example.com"])
+
+    def test_short_links_and_x_stop_before_any_request(self):
+        # L-13 and L-15
+        for url, entry in (("https://naver.me/xAbCdE", "naver-terms"), ("https://me2.do/xAbCdE", "naver-terms"),
+                           ("https://coupa.ng/abc", "coupang-terms"), ("https://ig.me/abc", "meta-instagram"),
+                           ("https://m.me/abc", "meta-facebook"), ("https://www.youtubekids.com/watch?v=dQw4w9WgXcQ",
+                                                                   "youtube-terms"),
+                           ("https://x.com/someone/status/1", "x-terms"), ("https://twitter.com/someone/status/1", "x-terms"),
+                           ("https://mobile.twitter.com/someone", "x-terms"), ("https://t.co/abc", "x-terms"),
+                           ("https://publish.twitter.com/oembed?url=x", "x-terms")):
+            found = self.stop(url)
+            self.assertEqual((found.kind, found.terms["entry"]), ("terms", entry), url)
+        entries = {e["id"]: e for e in scope.packaged()["terms_restricted"]}
+        self.assertEqual({i for i, e in entries.items() if e.get("lift_requires") == "written_permission" and
+                          e["status"] == "reported"},
+                         {"dcinside-terms", "naver-cafe-bulk-notice", "naver-terms", "coupang-terms", "x-terms"})
+        self.assertTrue(all(e.get("lift_requires") in scope.LIFT_REQUIREMENTS for e in entries.values()))
+
+    def test_checks_dated_before_an_entry_takes_effect_lift_nothing(self):
+        # L-20: the entry's effective_from is a lower bound for a check's date.
+        entry = {"id": "dated", "hosts": ["dated.test"], "status": "reported", "lift_requires": "terms_check",
+                 "effective_from": "2026-07-21", "terms_url": "http://dated.test/terms", "packaged": True}
+        lists = scope.Lists(terms=(entry,))
+        early = {"host": "dated.test", "terms_url": "http://dated.test/terms", "checked_on": "2026-07-20",
+                 "result": "permits_this_reading"}
+        record = scope.lift_record(entry, "dated.test", {"terms_checked": [early]})
+        self.assertEqual((record["lifted"], record["not_lifted_because"]), (False, "check_predates_restriction"))
+        with self.assertRaises(ValueError):
+            scope.validate_lifts({"terms_checked": [early]}, lists)
+        on_time = {**early, "checked_on": "2026-07-21"}
+        self.assertTrue(scope.lift_record(entry, "dated.test", {"terms_checked": [on_time]})["lifted"])
+        self.assertEqual({e["id"]: e.get("effective_from") for e in scope.packaged()["terms_restricted"]
+                          if e.get("effective_from")},
+                         {"dcinside-terms": "2026-07-21", "naver-cafe-bulk-notice": "2026-08-31"})
+
+    def test_other_engines_and_site_search_pages_are_refused(self):
+        # L-23
+        for url in ("https://search.brave.com/search?q=x", "https://www.ecosia.org/search?q=x",
+                    "https://www.startpage.com/do/search?q=x", "https://www.startpage.com/sp/search?query=x",
+                    "https://html.duckduckgo.com/html/", "https://lite.duckduckgo.com/lite/",
+                    "https://yandex.com/search/?text=x", "https://www.baidu.com/s?wd=x", "https://search.nate.com/search/all?q=x",
+                    "https://search.yahoo.co.jp/search?p=x", "https://www.fmkorea.com/search.php?act=IS&query=x",
+                    "https://bbs.ruliweb.com/search?q=x", "https://www.reddit.com/r/x/search?q=y"):
+            found = self.stop(url)
+            self.assertEqual((found.kind, found.error), ("search_page", "search_results_page"), url)
+        for url in ("https://bbs.ruliweb.com/research/x?y=1", "https://bbs.ruliweb.com/search",
+                    "https://www.example.com/search?q=x"):
+            self.assertIsNone(self.stop(url), url)
 
 
 class ContractTests(unittest.TestCase):
@@ -2864,7 +3547,7 @@ class ContractTests(unittest.TestCase):
         for line in block.strip().split("\n"):
             name, values = line.split(":", 1)
             lists[name.strip()] = tuple(value.strip() for value in values.split(","))
-        scrub_categories = tuple(dict.fromkeys(name for name, _, _ in privacy._PATTERNS))
+        scrub_categories = tuple(dict.fromkeys(name for name, *_ in privacy._PATTERNS))
         expected = {"verdicts": verdict.VERDICTS, "stop classes": verdict.STOP_CLASSES,
                     "presentations": verdict.PRESENTATIONS, "report buckets": verdict.BUCKETS,
                     "rungs": ladder.RUNGS, "browser contexts": ladder.CONTEXTS,

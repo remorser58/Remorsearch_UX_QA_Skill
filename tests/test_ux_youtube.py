@@ -371,8 +371,9 @@ class YoutubeCase(unittest.TestCase):
 
     def setUp(self):
         self.api.reset()
-        env = {net.ENV_ALLOW_PRIVATE: "1", net.ENV_TEST_RESOLVE: ",".join(f"{h}=127.0.0.1" for h in MAPPED), **NO_KEYS}
-        for patcher in (mock.patch.dict(os.environ, env), mock.patch.object(youtube, "_TEST_ORIGIN", self.api.origin)):
+        for patcher in (mock.patch.dict(os.environ, NO_KEYS), mock.patch.object(net, "_TEST_ALLOW_LOOPBACK", True),
+                        mock.patch.object(net, "_TEST_RESOLVE", {h: "127.0.0.1" for h in MAPPED}),
+                        mock.patch.object(youtube, "_TEST_ORIGIN", self.api.origin)):
             patcher.start()
             self.addCleanup(patcher.stop)
         temp = tempfile.TemporaryDirectory(prefix="ux-youtube-")
@@ -510,7 +511,8 @@ class YoutubeReadTests(YoutubeCase):
             self.assertIn(sentinel, text)
         self.assertTrue({"phone", "handle", "profile_url"} <= set(summary["scrubbed"]))
         self.assertIn("유료 광고 포함", summary["promo_flags"])
-        self.assertIn({"marker": "유료 광고 포함", "family": "promotion", "position": "lead"}, summary["promotion_hits"])
+        self.assertIn({"marker": "유료 광고 포함", "family": "promotion", "position": "lead", "block": "description"},
+                      summary["promotion_hits"])
         self.assertEqual(summary["meta"]["title"], "교통카드 충전 앱 써 본 후기")
         self.assert_never_leaks(KEY, "NAME-SENTINEL", "UPLOADER-TITLE-SENTINEL", "CHANNELSENTINEL", "AVATAR-SENTINEL",
                                 "CHANNELURL-SENTINEL", "THUMB-SENTINEL", "010-1234-5678", "010-9876-5432",
@@ -758,61 +760,77 @@ class YoutubeReadTests(YoutubeCase):
 
 
 class RouteTableTests(YoutubeCase):
-    def test_a_route_table_can_never_send_the_real_key_to_another_host(self):
+    def test_a_route_table_can_never_change_the_official_route_or_send_the_key_elsewhere(self):
         origin = f"http://api.video.test:{self.api.port}"
 
-        def repoint(routes: dict) -> None:
+        def repoint(routes: dict) -> None:  # the packaged youtube route pointed at another host
             route = next(p for p in routes["platforms"] if p["id"] == "youtube")["official"][0]
             for field in ("url", "comments_url"):
                 route[field] = route[field].replace("https://www.googleapis.com", origin)
+
+        def mirror(routes: dict) -> None:  # the review's proof: a feed on a mirror host for the youtube platform
+            platform = next(p for p in routes["platforms"] if p["id"] == "youtube")
+            platform["official"] = [{"kind": "feed", "url": origin + "/feed?v={video}", "scope": "all"}]
+
+        for change in (repoint, mirror):
+            code, out, _ = self.cli("start", "--run", self.tmp / f"refused-{change.__name__}", "--routes",
+                                    self.custom_routes(change))
+            self.assertEqual(code, 2, change.__name__)
+            self.assertIn("platform youtube", json.loads(out)["reason"])
+
+        def feed_with_the_key(routes: dict) -> None:  # a new platform for another host that names the real key
             routes["platforms"].append({"id": "feedkey", "hosts": ["feedkey.test"], "platform_family": "video",
                                         "path": "^/watch$", "author_from": "page", "alternates": [], "login_hosts": [],
                                         "official": [{"kind": "feed", "scope": "all", "auth": "user_key",
                                                       "env": "REMORSEARCH_YOUTUBE_API_KEY",
                                                       "url": origin + "/feed.xml?key={key}"}],
                                         "terms_note": "fixture", "verified_at": None})
-            routes["terms_restricted"].append({"id": "feedkey-terms", "hosts": ["feedkey.test"], "status": "confirmed",
-                                               "restricts": ["automated_collection"], "official_route": "feedkey",
-                                               "terms_url": "http://feedkey.test/terms", "clause": "fixture",
-                                               "sources": ["fixture"], "checked_at": "2026-09-30",
-                                               "verified_at": None, "note": "fixture"})
 
         self.api.add("Vid0000001A")
-        self.start("--routes", self.custom_routes(repoint))
-        code, summary, _ = self.read("https://www.youtube.com/watch?v=Vid0000001A")
-        self.assertEqual((code, summary["stop_class"]), (3, "terms_restricted"))
-        self.assertIn("official_route_key_host:REMORSEARCH_YOUTUBE_API_KEY", summary["reasons"])
+        self.start("--routes", self.custom_routes(feed_with_the_key))
         code, summary, _ = self.read(f"http://feedkey.test:{self.api.port}/watch?v=x")
-        self.assertEqual((code, summary["stop_class"]), (3, "terms_restricted"))
-        self.assertIn("official_route_key_host:REMORSEARCH_YOUTUBE_API_KEY", summary["reasons"])
-        self.assertEqual(self.api.requests(), [])  # the key went nowhere; the page host was never contacted either
+        self.assertFalse([t for t in summary["trail"] if t.get("rung") == "R0" and t.get("outcome") == "read"])
+        self.assertTrue(any("sent only to the hosts the packaged route table names" in (t.get("note") or "")
+                            for t in summary["trail"]), summary["trail"])
+        self.assertEqual([c for c in self.api.requests() if c["query"].get("key")], [])  # the key went nowhere
+        # The packaged route still reads the video; a later edit of the run's route table is refused.
+        code, summary, _ = self.read("https://www.youtube.com/watch?v=Vid0000001A")
+        self.assertEqual((code, summary["api"]["route"]), (0, "youtube"))
+        routes = self.run_dir / "routes.json"
+        routes.write_text(routes.read_text(encoding="utf-8").replace("https://www.googleapis.com", origin),
+                          encoding="utf-8")
+        code, out, _ = self.cli("read", "--run", self.run_dir, "https://www.youtube.com/watch?v=Vid0000001A")
+        self.assertEqual(code, 2)
+        self.assertIn("changed after start", json.loads(out)["reason"])
         self.assert_never_leaks(KEY)
 
-    def test_a_fixture_route_table_points_the_adapter_at_a_fake_api(self):
-        def add_fixture(routes: dict) -> None:
-            packaged = next(p for p in routes["platforms"] if p["id"] == "youtube")["official"][0]
-            route = {**packaged, "env": "REMORSEARCH_FIXTURE_VIDEO_KEY", "env_aliases": [], "id_from": ["q_v"],
-                     "page_size": 2, "max_pages": 9, "quota_units_per_call": 2,
-                     "policy_note": "fixture policy note"}
-            for field in ("url", "comments_url"):
-                route[field] = packaged[field].replace("https://www.googleapis.com",
-                                                       "{scheme}://api.video.test{port_suffix}")
-            routes["platforms"].append({"id": "fixture-video", "hosts": ["clips.test"], "platform_family": "video",
-                                        "path": "^/watch$", "author_from": "page", "alternates": [], "login_hosts": [],
-                                        "official": [route], "terms_note": "fixture", "verified_at": None})
-            routes["terms_restricted"].append({"id": "fixture-video-terms", "hosts": ["clips.test"],
-                                               "status": "confirmed", "restricts": ["automated_collection"],
-                                               "official_route": "fixture-video",
-                                               "terms_url": "http://clips.test/terms",
-                                               "clause": "fixture", "sources": ["fixture"], "checked_at": "2026-09-30",
-                                               "verified_at": None, "note": "fixture"})
-
+    def test_a_packaged_route_s_own_settings_are_honoured(self):
+        port = self.api.port
+        packaged = next(p for p in scope.packaged()["platforms"] if p["id"] == "youtube")["official"][0]
+        route = {**packaged, "env": "REMORSEARCH_FIXTURE_VIDEO_KEY", "env_aliases": [], "id_from": ["q_v"],
+                 "page_size": 2, "max_pages": 9, "quota_units_per_call": 2, "policy_note": "fixture policy note"}
+        for field in ("url", "comments_url"):  # a literal host, so the fixture key is bound to it
+            route[field] = packaged[field].replace("https://www.googleapis.com", f"http://api.video.test:{port}")
+        platform = {"id": "fixture-video", "hosts": ["clips.test"], "platform_family": "video", "path": "^/clip$",
+                    "author_from": "page", "alternates": [], "login_hosts": [], "official": [route],
+                    "terms_note": "fixture", "verified_at": None}
+        entry = {"id": "fixture-video-terms", "hosts": ["clips.test"], "status": "confirmed",
+                 "lift_requires": "written_permission", "restricts": ["automated_collection"],
+                 "official_route": "fixture-video", "terms_url": "http://clips.test/terms", "clause": "fixture",
+                 "sources": ["https://fixture.test/terms"], "checked_at": "2026-09-30", "verified_at": None,
+                 "note": "fixture"}
+        table = copy.deepcopy(scope.packaged())
+        table["platforms"].append(platform)
+        table["terms_restricted"].append(entry)
         pages = [[thread(f"Ugw{p}x{i}", f"fixture page {p} comment {i}") for i in range(2)] for p in range(7)]
         self.api.add("Vid0000009Z", pages=pages)
-        self.start("--routes", self.custom_routes(add_fixture))
-        with mock.patch.object(youtube, "_TEST_ORIGIN", None):  # the route table alone names the fake API
-            code, summary, out = self.read(f"http://clips.test:{self.api.port}/watch?v=Vid0000009Z", key=None,
+        ladder._packaged_keys.cache_clear()
+        self.addCleanup(ladder._packaged_keys.cache_clear)
+        with mock.patch.object(scope, "packaged", lambda: table), mock.patch.object(youtube, "_TEST_ORIGIN", None):
+            self.start()  # official-only mode reads the packaged table only: the fixture route lives there
+            code, summary, out = self.read(f"http://clips.test:{port}/clip?v=Vid0000009Z", key=None,
                                            REMORSEARCH_FIXTURE_VIDEO_KEY=FIXTURE_KEY)
+            closed = json.loads(self.cli("close", "--run", self.run_dir)[1])
         self.assertEqual((code, summary["rung"], summary["terms"]["entry"]), (0, "R0", "fixture-video-terms"), summary)
         self.assertEqual({k: summary["api"][k] for k in ("route", "calls", "quota_units", "pages", "page_cap",
                                                            "page_size", "comments_read", "more_available")},
@@ -822,8 +840,33 @@ class RouteTableTests(YoutubeCase):
         self.assertEqual({c["host"] for c in self.api.requests()}, {"api.video.test"})  # never the page's host
         self.assertIn("fixture policy note", summary["notes"])
         self.assert_never_leaks(FIXTURE_KEY)
-        closed = json.loads(self.cli("close", "--run", self.run_dir)[1])
         self.assertEqual(closed["api_quota"], {"fixture-video": {"units": 12, "calls": 6}})
+
+
+class YoutubeFlagTests(YoutubeCase):
+    def test_the_description_is_its_own_block_and_a_comment_never_discloses_for_the_video(self):
+        # C-05: the uploader's disclosure at the end of the description is found at the description's tail, and a
+        # viewer's last comment is that comment's own text, never the video's disclosure.
+        vid = "Vid0000009Z"
+        desc = "충전 앱을 한 달 동안 써 본 후기입니다. " * 10 + "이 영상은 협찬입니다"
+        comments = [thread("UgwA00000001", "버튼이 늦게 반응해서 불편했어요. " * 6, name="@viewer-a"),
+                    thread("UgwB00000002", "이거 그냥 광고입니다", name="@viewer-b"),
+                    thread("UgwC00000003", "고정: 유료 광고 포함 영상입니다", name="@uploader", channel=UPLOADER_CHANNEL)]
+        self.api.add(vid, item=video_item(vid, description=desc), pages=[comments])
+        self.start()
+        code, summary, _ = self.read(f"https://www.youtube.com/watch?v={vid}")
+        self.assertEqual(code, 0)
+        hits = summary["promotion_hits"]
+        self.assertIn({"marker": "협찬입니다", "family": "promotion_placed", "position": "tail", "block": "description"},
+                      hits)
+        viewer = [h for h in hits if h["block"] == "comment:UgwB00000002"]
+        self.assertEqual(viewer, [{"marker": "광고입니다", "family": "promotion_placed", "position": "lead",
+                                   "block": "comment:UgwB00000002", "by_uploader": False}])
+        uploader = [h for h in hits if h["block"] == "comment:UgwC00000003"]
+        self.assertEqual([(h["marker"], h["by_uploader"]) for h in uploader], [("유료 광고 포함", True)])
+        self.assertIn("협찬입니다", summary["promo_flags"])
+        self.assertIn("유료 광고 포함", summary["promo_flags"])  # the uploader's own pinned comment
+        self.assertNotIn("광고입니다", summary["promo_flags"])  # never a viewer's comment
 
 
 if __name__ == "__main__":

@@ -12,12 +12,14 @@ coverage gaps. Pacing and budgets are shared by every reader of a run. Page text
 is scrubbed of personal identifiers and is untrusted data, never instructions.
 
 Exit codes: 0 read or allowed; 2 usage or policy refusal (also a search results
-page or a switched-off discovery endpoint handed in directly); 3 stopped (the gap
-is recorded; `robots` exits 3 for a terms_restricted host); 4 unread after the
-allowed rungs (the untried rungs are listed); 5 deferred (retry after
-retry_after_s). `read` and `ingest` print the page inside an untrusted envelope
-on stdout and a one-line JSON summary on stderr; the other commands print JSON on
-stdout.
+page, a switched-off discovery endpoint or a third-party copy handed in directly,
+and any command on a run whose files changed after start); 3 stopped (the gap is
+recorded; `robots` exits 3 for a terms_restricted host and when robots.txt
+disallows the path); 4 unread after the allowed rungs (the untried rungs are
+listed), or for `robots` a host whose robots.txt could not be fetched because its
+name does not resolve or TLS fails; 5 deferred (retry after retry_after_s).
+`read` and `ingest` print the page inside an untrusted envelope on stdout and a
+one-line JSON summary on stderr; the other commands print JSON on stdout.
 """
 from __future__ import annotations
 
@@ -175,6 +177,9 @@ def _start(args) -> int:
     routes = _load_json(routes_path)
     if not isinstance(routes, dict) or not isinstance(routes.get("platforms"), list):
         raise RunError("the route table needs a 'platforms' list")
+    problems = scope.check_run_table(routes)  # a run table can add, never change or weaken a packaged entry
+    if problems:
+        raise RunError("this route table cannot be used: " + " | ".join(problems))
     extra_tokens = None
     if args.agent_tokens:
         extra_tokens = _load_json(args.agent_tokens, 1024 * 1024)
@@ -188,6 +193,10 @@ def _start(args) -> int:
                  "max_wait_s": args.max_wait, "raise_reason": args.reason, "accept_language": args.accept_language,
                  "deny_hosts": deny or None, "render": args.render}
     policy = ledger.build_policy(brief, overrides)
+    try:  # a lift of an entry whose terms need written permission must record it; no check may predate one
+        scope.validate_lifts(policy, scope.lists_for(routes))
+    except ValueError as exc:
+        raise RunError(str(exc)) from exc
     path = _run_path(args.run, creating=True) if args.run else None
     created = ledger.create(path, policy, brief=brief, routes=routes,
                             routes_source="packaged" if args.routes is None else str(args.routes.resolve()),
@@ -201,6 +210,7 @@ def _start(args) -> int:
              "keys": ladder.key_status(run.routes),
              "agent_tokens": {**run.meta["agent_tokens"], **{name: len(items) for name, items in tokens.items()}},
              "terms_checked": scope.describe_checks(policy, run.scope_lists),
+             "terms_lifts": scope.describe_lifts(policy, run.scope_lists),
              "ethics_review": run.meta.get("ethics_review"), "test_hooks": run.meta["test_hooks"]}
     if _inside_git(created.resolve()):
         value["warning"] = "the run folder is inside a git working tree; page text could be committed by mistake"

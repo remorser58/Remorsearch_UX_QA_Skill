@@ -138,8 +138,13 @@ category, release_date, current_version}; `personas_for`; `audience_questions`;
 `budgets`; `access_policy` {deny_hosts, allow_wayback_for_official, render,
 signed_in_communities, terms_checked}; `team_analytics_available`; `report_lang`;
 and an optional `ethics_review` {status, body, reference}.
-`render` says how R3 renders happen: `driver` (the bundled page reader, `drivers/web/read_page.mjs`),
-`host_browser` (a browser tool from the host, then `ingest`) or `off`.
+`render` says how R3 renders happen: `driver` (the agent renders with the bundled
+page reader, `node drivers/web/read_page.mjs URL --out capture.json`, and passes the
+capture to `ingest`; `read` names the command in its notes when R3 is untried),
+`host_browser` (a browser tool from the host, then `ingest`) or `off` (no renders).
+The reader itself never starts a browser. A render stops at any check and never
+waits for one to clear; `ingest` refuses a capture that shows a check or waited for
+one, and the site stops for the run.
 
 ## A1: the plan
 
@@ -188,9 +193,12 @@ Reading, for each page:
 2. `ux_research.py read --run RUN URL`: the anonymous pre-read, and often the read
    itself.
 3. On exit 4 with R3 untried, render the page with the best browser tool available,
-   in an anonymous context, and pass the capture to `ux_research.py ingest`.
-4. On exit 3, record the gap with its class and move on; a `terms_restricted` stop
-   is never opened in a browser tool. On exit 2, fix the call. On exit 5, read
+   in an anonymous context (a private or signed-out window), and pass the capture
+   to `ux_research.py ingest --context anonymous`. Stop at any check, a "checking
+   your browser" page included: never wait for it to clear.
+4. On exit 3, record the gap with its class and move on; a stopped page, a
+   `terms_restricted` one included, is never opened in a browser tool, and a
+   check, a bot block or a rate limit stops every host of that site for the run. On exit 2, fix the call. On exit 5, read
    another host first. A missing key (`official_route_needs_key:<ENV>`) is a gap
    and a question for the user.
 5. Get author keys with `ux_research.py author-key`. Never write a handle down.
@@ -223,9 +231,10 @@ windows are covered, or two query rounds in a row add nothing new.
 How to read: follow references/research/public-page-access.md. Read every page
 with `python3 scripts/ux_research.py read --run <RUN> URL`, after `robots` on a
 new host. If it exits 4 with R3 untried, render the page with the best browser
-tool available in an anonymous context and `ingest` the capture. Exit 3 is a stop,
-terms_restricted included: record it as a gap and never open that page another
-way. Never write your own fetch code. Signed-in reading is allowed only for:
+tool available in a private or signed-out window and `ingest` the capture with
+`--context anonymous`; stop at any check and never wait for one to clear. Exit 3
+is a stop, terms_restricted included: record it as a gap and never open that page,
+or another page of a stopped site, another way. Never write your own fetch code. Signed-in reading is allowed only for:
 <authorised communities, or "none">.
 
 Evidence: quote at most 300 characters, verbatim from the reader's text, and at

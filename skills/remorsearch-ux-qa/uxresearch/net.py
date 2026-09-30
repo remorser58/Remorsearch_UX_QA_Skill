@@ -12,11 +12,13 @@ uncaught ValueError. The time limit covers the whole body: each read waits at
 most for the time that is left, so a server that trickles bytes cannot hold the
 reader (and its host slot) past the limit.
 
-Test hooks (never for real use): with REMORSEARCH_ALLOW_PRIVATE=1 the reader may
-connect to loopback addresses, and REMORSEARCH_TEST_RESOLVE="a.test=127.0.0.1,..."
-maps reserved test names (.test, .example, .invalid, .localhost) to loopback
-addresses. Test names are never looked up in real DNS and never go through a
-proxy. Responses record when a test hook was used.
+Test hooks (never for real use): two module attributes that only the
+repository's tests set, in the same process: _TEST_ALLOW_LOOPBACK lets the reader
+connect to loopback addresses, and _TEST_RESOLVE maps reserved test names (.test,
+.example, .invalid, .localhost) to loopback addresses. No environment variable,
+command-line switch, brief, route table or page text can turn them on. Test names
+are never looked up in real DNS and never go through a proxy. Responses record
+when a test hook was used, and `start` records test_hooks in run.json.
 """
 from __future__ import annotations
 
@@ -41,8 +43,9 @@ MAX_REDIRECTS = 5
 REDIRECT_BODY_BYTES = 64 * 1024
 REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
 TEST_SUFFIXES = (".test", ".example", ".invalid", ".localhost")
-ENV_ALLOW_PRIVATE = "REMORSEARCH_ALLOW_PRIVATE"
-ENV_TEST_RESOLVE = "REMORSEARCH_TEST_RESOLVE"
+# Tests only, set in process (mock.patch.object): never read from the environment or any file.
+_TEST_ALLOW_LOOPBACK = False
+_TEST_RESOLVE: dict = {}
 # Python maps euc-kr and ks_c_5601-1987 to strict EUC-KR and does not know
 # x-windows-949; pages with these labels are nearly always CP949 in practice.
 CP949_LABELS = frozenset({"euc-kr", "euc_kr", "euckr", "ks_c_5601-1987", "ks_c_5601_1987", "ks_c_5601",
@@ -184,16 +187,12 @@ def _is_loopback(ip) -> bool:
 
 
 def test_hooks_enabled() -> bool:
-    return os.environ.get(ENV_ALLOW_PRIVATE) == "1"
+    return _TEST_ALLOW_LOOPBACK is True
 
 
 def _test_map() -> dict[str, str]:
-    mapping: dict[str, str] = {}
-    for item in os.environ.get(ENV_TEST_RESOLVE, "").split(","):
-        name, sep, address = item.partition("=")
-        if sep and name.strip():
-            mapping[name.strip().lower().rstrip(".")] = address.strip()
-    return mapping
+    return {str(name).strip().lower().rstrip("."): str(address).strip()
+            for name, address in dict(_TEST_RESOLVE).items() if str(name).strip()}
 
 
 def is_test_host(host: str) -> bool:

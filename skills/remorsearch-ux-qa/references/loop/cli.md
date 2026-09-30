@@ -95,11 +95,17 @@ assess goal completion. A valid failed/blocked receipt is still valid input.
 
 ### Validation and design trade-offs
 
-From the skill folder:
+From the skill folder, also in an installed copy:
 
 ```sh
 python3 scripts/ux_loop.py validate examples/loop/packet.json --evidence-root examples/loop
+python3 scripts/validate_bundle.py examples/bundle/minimal.json
+python3 scripts/smoke_loop.py
 ```
+
+`smoke_loop.py` builds its packets with `uxloop/demo_factory.py` from the shipped
+examples, and writes only to a disposable folder: `.ux-loop/` in a repository
+checkout, the system temp folder otherwise.
 
 From a repository checkout (tests and fixtures are not installed with the skill):
 

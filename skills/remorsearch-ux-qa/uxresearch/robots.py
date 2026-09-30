@@ -4,17 +4,24 @@ Our own parser and matcher. The group is chosen by product token
 (case-insensitive; every group naming the token is merged; '*' groups are the
 fallback). Among the rules of that group the longest matching pattern wins and
 Allow wins a tie. '*' matches any run of characters and a trailing '$' anchors
-the end. Paths and patterns are compared after percent-encoding normalisation.
+the end. Paths and patterns are compared after percent-encoding normalisation,
+and a URL is allowed only when every form a server may map its path to is
+allowed: as sent, with dot segments removed, and with empty segments collapsed
+('/./search', '/a/../search' and '//search' all meet 'Disallow: /search').
 urllib.robotparser is not used for decisions: it takes the first matching rule
 and matches prefixes only, so 'Disallow: /board/' plus 'Allow: /board/view'
 would deny /board/view there.
 
 Fetch status: 2xx is parsed; 4xx means unavailable (allowed); 5xx, 429 or a
 network failure means unreachable (disallow everything for now, so the reader
-defers and checks again later); a challenge page instead of the file is
-recorded as unavailable_bot_filtered (allowed, like unavailable). A 2xx body
-that holds robots.txt lines is always parsed as robots.txt, whatever its content
-type and whatever its comments say.
+defers and checks again later). Three answers make robots.txt unavailable in the
+stricter direction, disallowing everything on the origin for the run:
+unavailable_bot_filtered, a challenge or block page served instead of the file
+(the site stops too, see ladder.robots_decision); and unavailable_redirect, a
+redirect loop or a redirect hop into a host the scope checks stop or a stopped
+site (never requested). Each record says why (reason). A 2xx body that holds
+robots.txt lines is always parsed as robots.txt, whatever its content type and
+whatever its comments say.
 
 X-Robots-Tag: each header is read on its own. Inside one header, a
 'product-token:' prefix scopes the directives after it to that crawler; a known
@@ -41,7 +48,8 @@ from dataclasses import dataclass, field
 from urllib.parse import urlsplit
 
 PARSE_LIMIT_BYTES = 512 * 1024
-STATUSES = ("ok", "unavailable", "unavailable_bot_filtered", "unreachable")
+STATUSES = ("ok", "unavailable", "unavailable_bot_filtered", "unavailable_redirect", "unreachable")
+DISALLOW_ALL = frozenset({"unreachable", "unavailable_bot_filtered", "unavailable_redirect"})
 RECORD_FORMAT = 2  # 2: records keep the rules of other AI agents' groups (agents)
 AGENT_CATEGORIES = ("fetch_on_behalf", "training_or_index")
 _UNRESERVED = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
@@ -83,6 +91,34 @@ def target_of(url: str) -> str:
     parts = urlsplit(url)
     path = parts.path or "/"
     return normalize_path(path + (f"?{parts.query}" if parts.query else ""))
+
+
+def _dot_free(path: str) -> str:
+    """RFC 3986 section 5.2.4 on an already normalised path."""
+    output: list[str] = []
+    for segment in path.split("/"):
+        if segment == "..":
+            if len(output) > 1:
+                output.pop()
+        elif segment != ".":
+            output.append(segment)
+    result = "/".join(output)
+    if path.endswith(("/.", "/..")):
+        result += "/"
+    return result if result.startswith("/") else "/" + result
+
+
+def targets_of(url: str) -> list:
+    """The forms a server may map this URL's path to, each normalised like target_of: as sent, with dot
+    segments removed, and with empty segments collapsed as well."""
+    parts = urlsplit(url)
+    query = f"?{parts.query}" if parts.query else ""
+    path = normalize_path(parts.path or "/")
+    dot_free = _dot_free(path)
+    collapsed = "/" + "/".join(s for s in dot_free.split("/") if s)
+    if dot_free.endswith("/") and collapsed != "/":
+        collapsed += "/"
+    return list(dict.fromkeys(p + query for p in (path, dot_free, collapsed)))
 
 
 def _float(value: str) -> float | None:
@@ -237,21 +273,28 @@ def match(rules: list, target: str) -> tuple[bool, dict | None]:
 
 
 def record_from_fetch(origin: str, *, status: int | None, body: bytes = b"", error: str | None = None,
-                      challenge: bool = False, token: str, fetched_at: str, agent_tokens: dict | None = None) -> dict:
+                      challenge=False, token: str, fetched_at: str, agent_tokens: dict | None = None,
+                      refused_redirect: str | None = None) -> dict:
     """Interpret one robots.txt fetch as a cacheable record. `agent_tokens` maps each of
-    AGENT_CATEGORIES to a list of other AI agents' product tokens."""
+    AGENT_CATEGORIES to a list of other AI agents' product tokens. `challenge` is the kind of a challenge
+    or block page served instead of the file ('js_check' or 'bot_filter'; True means 'bot_filter'), and
+    `refused_redirect` why a redirect hop was never requested."""
     record = {"format": RECORD_FORMAT, "origin": origin, "http_status": status, "fetched_at": fetched_at,
               "error": error, "sha256": hashlib.sha256(body).hexdigest() if body else None,
               "group": None, "own_group": False, "rules": [], "crawl_delay": None, "request_rate_s": None,
-              "agents": {name: {} for name in AGENT_CATEGORIES}}
-    if error == "redirect_loop":
-        record["status"] = "unavailable"  # RFC 9309: more than five redirects may be treated as unavailable
+              "agents": {name: {} for name in AGENT_CATEGORIES}, "reason": None, "challenge": None}
+    if refused_redirect:  # the hop was never requested: robots.txt is unavailable in the stricter direction
+        record["status"], record["reason"] = "unavailable_redirect", f"redirect_refused:{refused_redirect}"
+    elif error == "redirect_loop":  # a loop is how some checks keep a client out: the stricter direction too
+        record["status"], record["reason"] = "unavailable_redirect", "redirect_loop"
     elif error is not None or status is None:
         record["status"] = "unreachable"
     elif status == 429 or status >= 500:
         record["status"] = "unreachable"
     elif challenge:
         record["status"] = "unavailable_bot_filtered"
+        record["challenge"] = challenge if isinstance(challenge, str) else "bot_filter"
+        record["reason"] = f"{record['challenge']}:robots_txt"
     elif 200 <= status < 300:
         record["status"] = "ok"
         groups = parse(body[:PARSE_LIMIT_BYTES].decode("utf-8-sig", "replace"))  # BOM-safe
@@ -274,23 +317,34 @@ def decide(record: dict, url: str) -> dict:
     status = record["status"]
     base = {"robots_status": status, "http_status": record.get("http_status"), "group": record.get("group"),
             "sha256": record.get("sha256"), "crawl_delay": record.get("crawl_delay"), "ai_agent_token": None,
-            "ai_training_disallow": []}
-    if status == "unreachable":
+            "ai_training_disallow": [], "challenge": record.get("challenge"), "reason": record.get("reason")}
+    if status in DISALLOW_ALL:
+        why = {"unreachable": "robots.txt unreachable: complete disallow",
+               "unavailable_bot_filtered": "a challenge or block page instead of robots.txt: complete disallow",
+               "unavailable_redirect": "robots.txt redirected into a loop or to a host never requested: complete "
+                                       "disallow"}[status]
         return {**base, "allowed": False, "decision": "disallowed",
-                "rule": {"type": "disallow", "pattern": "/*", "reason": "robots.txt unreachable: complete disallow"}}
+                "rule": {"type": "disallow", "pattern": "/*", "reason": why}}
     if status != "ok":
         return {**base, "allowed": True, "decision": "allowed", "rule": None}
-    target = target_of(url)
-    allowed, rule = match(record["rules"], target)
     agents = record.get("agents") or {}
-    if allowed and not record.get("own_group"):
-        # Only when no group names our own token: another AI agent's group can add a disallow, never an allow.
-        for token, data in (agents.get("fetch_on_behalf") or {}).items():
-            agent_allowed, agent_rule = match(data.get("rules") or [], target)
-            if not agent_allowed:
-                allowed, rule = False, agent_rule
-                base["ai_agent_token"] = token
-                break
+    allowed, rule = True, None
+    for target in targets_of(url):  # every form must be allowed
+        form_allowed, form_rule = match(record["rules"], target)
+        if form_allowed and not record.get("own_group"):
+            # Only when no group names our own token: another AI agent's group can add a disallow, never an allow.
+            for token, data in (agents.get("fetch_on_behalf") or {}).items():
+                agent_allowed, agent_rule = match(data.get("rules") or [], target)
+                if not agent_allowed:
+                    form_allowed, form_rule = False, agent_rule
+                    base["ai_agent_token"] = token
+                    break
+        if rule is None or not form_allowed:
+            rule = form_rule
+        if not form_allowed:
+            allowed = False
+            break
+    target = target_of(url)
     base["ai_training_disallow"] = [token for token, rules in (agents.get("training_or_index") or {}).items()
                                     if not match(rules, target)[0]]
     return {**base, "allowed": allowed, "decision": "allowed" if allowed else "disallowed", "rule": rule}

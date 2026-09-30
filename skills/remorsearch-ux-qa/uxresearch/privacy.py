@@ -7,9 +7,19 @@
   around the dashes, and area codes in brackets), resident-registration-like
   numbers (also with the last digits masked, such as '900101-1******'),
   card-like digit runs, bank-account-like numbers (dashed groups of 10 to 16
-  digits, or a digit run after an account word such as '계좌'), @handles
-  (including dots and hyphens), profile URLs and full or partial IP addresses
-  such as '(118.235)'. Profile and post URLs that carry an author's name come
+  digits, or a digit run after an account word or a bank's name such as '계좌'
+  or '신한'), @handles (including dots and hyphens), profile URLs, full IP
+  addresses, masked ones such as '211.36.***.***' or '118.235.*.*', an 'IP'
+  label with a partial address ('IP 118.235'), and a partial IP group attached
+  to a handle, such as 'ㅇㅇ(118.235)' or 'ㅇㅇ(2001:2d8)' (or after only a space
+  or a line break, as table cells render it). A parenthesised decimal in
+  running text, such as a rating '별점 (4.5)', '(1.5)배속' or a version '(3.2)',
+  is kept: a group counts only when it follows a handle and looks like an
+  address, not a small decimal such as 4.8. The
+  patterns match on a folded copy of the text (verdict.fold: full-width forms
+  and dashes such as '–' or 'ㅡ' fold to ASCII, one character for one), and the
+  replacements are made at the same offsets in the text itself, so only the
+  identifiers change. Profile and post URLs that carry an author's name come
   from the data files: hosts whose first path segment or subdomain is the author
   (data/suffixes.json path_hosted and hosting_suffixes, and routes whose
   author_from is path_segment or subdomain), and a route's profile_paths (such
@@ -20,11 +30,15 @@
 - origin_only keeps only a URL's scheme and host, for records kept after a run closes.
 - author_key is an HMAC-SHA256 of the run's salt with the platform and handle,
   truncated to 16 hex characters. The handle itself is never written anywhere.
-  Before keying, the handle is trimmed, NFKC-normalised and case-folded, and a
-  trailing partial-IP group such as '(118.235)' is split off. A handle that
-  carried such a group (a logged-out poster) or that is a default anonymous
-  nickname (data/markers.json anonymous_handles, such as 'ㅇㅇ') is refused: it
-  is not an identity, so such posts are counted by thread key instead.
+  Before keying, the handle is NFKC-normalised, stripped of zero-width
+  characters, trimmed and case-folded, and a trailing partial-IP group such as
+  '(118.235)', '(2001:2d8)', '(118.235.*.*)' or the scrubber's own '([ip])' is
+  split off. A handle that carried such a group (a logged-out poster), that
+  holds an IP-like fragment anywhere or any placeholder the scrubber writes
+  ('[handle]', '[email]' and the rest), or that is a default anonymous nickname
+  (data/markers.json anonymous_handles, such as 'ㅇㅇ', also spaced 'ㅇ ㅇ') is
+  refused: it is not an identity (a scrubbed handle would merge different
+  people into one key), so such posts are counted by thread key instead.
   thread_key is the same over a normalised thread URL.
 - Excerpts are at most 300 characters, and at most 5 per source.
 """
@@ -52,37 +66,60 @@ _SECRET_SUFFIX = re.compile(r"(token|secret|signature|password|passwd|sessionid|
                             r"|(^|[_.-])(key|sig|auth|code|state|session|pass)$")
 _TRACKING = re.compile(r"^(utm_[a-z]+|fbclid|gclid|dclid|msclkid|igshid|mc_eid|_ga)$", re.I)
 
-_SEP = r"(?:\s?[-.]\s?|\s)"  # a dash or dot with optional spaces around it, or one space
+_SEP = r"(?:\s?[-.]\s?|\s)"  # a dash or dot with optional spaces around it, or one space (dashes are folded)
 _URL_TAIL = r"[^\s<>\"')]*"
 ACCOUNT_DIGITS = (10, 16)  # digits in a bank-account-like number
+_MASK = r"[*xX●○]{1,3}"
 
 
-def _account(match: re.Match) -> str | None:
-    """The replacement for an account-like number, or None when its digit count does not fit."""
+def _account(match: re.Match) -> bool:
+    """True when an account-like number has a digit count that fits."""
     number = match.group("number") if "number" in match.re.groupindex else match.group(0)
     digits = sum(ch.isdigit() for ch in number)
-    if not ACCOUNT_DIGITS[0] <= digits <= ACCOUNT_DIGITS[1]:
-        return None
-    return match.group(0).replace(number, "[account]")
+    return ACCOUNT_DIGITS[0] <= digits <= ACCOUNT_DIGITS[1]
 
 
+def _address_like(match: re.Match) -> bool:
+    """A parenthesised pair attached to a handle that looks like the first half of an IPv4 address, not a
+    small decimal such as a rating or a speed ('(4.8)', '(1.5)')."""
+    first, second = int(match.group("a")), int(match.group("b"))
+    if first > 255 or second > 255:
+        return False
+    return not (first <= 10 and len(match.group("b")) == 1)
+
+
+# (category, pattern on the folded text, replacement, the group to replace or None for the match, a check
+# that must pass or None). Run in this order; a later pattern sees the earlier placeholders.
 _PATTERNS = [
-    ("email", re.compile(r"[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,253}\.[A-Za-z]{2,24}"), "[email]"),
-    ("id_number", re.compile(r"(?<!\d)\d{6}(?:\s?-\s?|\s)[1-8]\d{6}(?!\d)"), "[id-number]"),
-    ("id_number", re.compile(r"(?<!\d)\d{6}\s?-\s?[1-8][*＊xX●○]{6}"), "[id-number]"),
-    ("card", re.compile(r"(?<!\d)(?:\d{4}[ -]?){3}\d{1,7}(?!\d)"), "[card]"),
-    ("phone", re.compile(r"(?<![\d+])(?:\+?82[ -]?)?0?1[016789]" + _SEP + r"?\d{3,4}" + _SEP + r"?\d{4}(?!\d)"), "[phone]"),
+    ("email", re.compile(r"[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,253}\.[A-Za-z]{2,24}"), "[email]", None, None),
+    ("id_number", re.compile(r"(?<!\d)\d{6}(?:\s?-\s?|\s)[1-8]\d{6}(?!\d)"), "[id-number]", None, None),
+    ("id_number", re.compile(r"(?<!\d)\d{6}\s?-\s?[1-8][*＊xX●○]{6}"), "[id-number]", None, None),
+    ("card", re.compile(r"(?<!\d)(?:\d{4}[ -]?){3}\d{1,7}(?!\d)"), "[card]", None, None),
+    ("phone", re.compile(r"(?<![\d+])(?:\+?82[ -]?)?\(?0?1[016789](?:\)\s?|" + _SEP + r")?\d{3,4}" + _SEP
+                         + r"?\d{4}(?!\d)"), "[phone]", None, None),
     ("phone", re.compile(r"(?<!\d)\(?0(?:2|[3-6][1-5]|70|50\d?)(?:\)\s?|" + _SEP + r")\d{3,4}" + _SEP + r"\d{4}(?!\d)"),
-     "[phone]"),
-    ("account", re.compile(r"(?:계좌|입금|송금|account)[^\d\n]{0,16}?(?P<number>\d[\d -]{8,22}\d)(?![\d-])", re.I),
-     _account),
-    ("account", re.compile(r"(?<![\d.-])\d{2,6}(?:-\d{2,7}){2,3}(?![\d-]|\.\d)"), _account),
+     "[phone]", None, None),
+    ("account", re.compile(r"(?:계좌|입금|송금|account|은행|뱅크|국민|신한|우리|하나|농협|기업|우체국|새마을|수협|씨티|SC제일)"
+                           r"[^\d\n]{0,16}?(?P<number>\d[\d -]{8,22}\d)(?![\d-])", re.I), "[account]", "number", _account),
+    ("account", re.compile(r"(?<![\d.-])\d{2,6}(?:-\d{2,7}){2,3}(?![\d-]|\.\d)"), "[account]", None, _account),
     ("profile_url", re.compile(r"https?://[^\s<>\"')]+/(?:@[\w.-]+|(?:user|users|u|profile|profiles|member|members|"
-                               r"people|author|authors|mypage)/" + _URL_TAIL + ")", re.I), "[profile-url]"),
-    ("ip", re.compile(r"(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?!\d|\.\d)"), "[ip]"),
-    ("partial_ip", re.compile(r"\(\s*\d{1,3}\.\d{1,3}\s*\)"), "([ip])"),
-    ("handle", re.compile(r"(?<![\w@.])@(?=[\w.-]*[^\W\d_])\w[\w.-]{1,30}"), "[handle]"),
+                               r"people|author|authors|mypage)/" + _URL_TAIL + ")", re.I), "[profile-url]", None, None),
+    ("ip", re.compile(r"(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?!\d|\.\d)"), "[ip]", None, None),
+    # Masked addresses: '211.36.***.***', '118.235.xxx.xxx', '118.235.*.*', '***.***.12.34'.
+    ("partial_ip", re.compile(r"(?<![\w.*])(?=[\d.*xX●○]*\d)(?=[\d.]*[*xX●○])(?:\d{1,3}|" + _MASK + r")(?:\.(?:\d{1,3}|"
+                              + _MASK + r")){3}(?![\w*])"), "[ip]", None, None),
+    # An 'IP' label with a partial address: 'IP 118.235', '(IP: 118.235)', '아이피 118.235'.
+    ("partial_ip", re.compile(r"(?:(?<![A-Za-z])IP|아이피)\s*:?\s*(?P<number>\d{1,3}\.\d{1,3})(?![\d.])"), "[ip]", "number",
+     None),
+    # A group attached to a handle: 'ㅇㅇ(118.235)', 'ㅇㅇ(2001:2d8)', or after only a space or a line break, as table
+    # cells and line layouts render it ('ㅇㅇ (118.235)'). A small decimal such as a rating is never taken.
+    ("partial_ip", re.compile(r"(?<=[^\s(\[{<])[ \t]*\n?[ \t]*(?P<group>\(\s*(?P<a>\d{1,3})\.(?P<b>\d{1,3})\s*\))"),
+     "([ip])", "group", _address_like),
+    ("partial_ip", re.compile(r"(?<=[^\s(\[{<])[ \t]*\n?[ \t]*(?P<group>\(\s*[23][0-9A-Fa-f]{3}(?::[0-9A-Fa-f]{1,4}){1,3}"
+                              r"\s*\))"), "([ip])", "group", None),
+    ("handle", re.compile(r"(?<![\w@.])@(?=[\w.-]*[^\W\d_])\w[\w.-]{1,30}"), "[handle]", None, None),
 ]
+PLACEHOLDERS = ("[email]", "[id-number]", "[card]", "[phone]", "[account]", "[profile-url]", "[ip]", "[handle]")
 
 
 @functools.lru_cache(maxsize=1)
@@ -156,30 +193,40 @@ def origin_only(url: str) -> str:
     return f"{parts.scheme}://{netloc}" if parts.scheme and netloc else "[url]"
 
 
+def _replace(pattern: re.Pattern, text: str, folded: str | None, replacement: str, group: str | None,
+             check) -> tuple[str, str | None, int]:
+    """Find the pattern in the folded copy and replace the same spans in both. `folded` is None when the
+    text needs no folding."""
+    source = text if folded is None else folded
+    pieces, folded_pieces, last, count = [], [], 0, 0
+    for match in pattern.finditer(source):
+        if check is not None and not check(match):
+            continue
+        start, end = match.span(group) if group else match.span()
+        if start < last:
+            continue
+        pieces += [text[last:start], replacement]
+        if folded is not None:
+            folded_pieces += [folded[last:start], replacement]
+        last, count = end, count + 1
+    if not count:
+        return text, folded, 0
+    pieces.append(text[last:])
+    if folded is not None:
+        folded_pieces.append(folded[last:])
+    return "".join(pieces), ("".join(folded_pieces) if folded is not None else None), count
+
+
 def scrub(text: str) -> tuple[str, dict]:
-    """Replace personal identifiers; returns the scrubbed text and a count per category."""
+    """Replace personal identifiers; returns the scrubbed text and a count per category. The patterns match
+    on a folded copy (verdict.fold, which keeps every offset), and only the matched spans change."""
     counts: dict[str, int] = {}
+    folded = verdict.fold(text)
+    folded = None if folded == text else folded
     authors = _author_urls()
-    if authors is not None:
-        text, n = authors.subn("[profile-url]", text)
-        if n:
-            counts["profile_url"] = n
-    for name, pattern, replacement in _PATTERNS:
-        if callable(replacement):  # a check decides whether the match is an identifier at all
-            hits = 0
-
-            def replace(match: re.Match, _check=replacement) -> str:
-                nonlocal hits
-                value = _check(match)
-                if value is None:
-                    return match.group(0)
-                hits += 1
-                return value
-
-            text = pattern.sub(replace, text)
-            n = hits
-        else:
-            text, n = pattern.subn(replacement, text)
+    steps = ([("profile_url", authors, "[profile-url]", None, None)] if authors is not None else []) + _PATTERNS
+    for name, pattern, replacement, group, check in steps:
+        text, folded, n = _replace(pattern, text, folded, replacement, group, check)
         if n:
             counts[name] = counts.get(name, 0) + n
     return text, counts
@@ -190,29 +237,42 @@ def _key(salt: bytes, *parts: str) -> str:
     return hmac.new(salt, message, hashlib.sha256).hexdigest()[:16]
 
 
-_TRAILING_IP = re.compile(r"\s*\(\s*\d{1,3}(?:\s*\.\s*\d{1,3}){1,3}\s*\)\s*$")
+_ZERO_WIDTH = re.compile("[\u00ad\u180e\u200b-\u200f\u2060-\u2064\ufeff]")
+_OCTET = r"(?:\d{1,3}|" + _MASK + r")"
+# A trailing partial-IP group: IPv4 (masked or not), IPv6, or the scrubber's own '([ip])'.
+_TRAILING_IP = re.compile(r"\s*[(\[]{1,2}\s*(?:" + _OCTET + r"(?:\s*\.\s*" + _OCTET + r"){1,3}"
+                          r"|[0-9A-Fa-f]{1,4}(?:\s*:\s*[0-9A-Fa-f]{0,4}){1,7}|ip)\s*[)\]]{1,2}\s*$", re.I)
+# An IP-like fragment anywhere in a handle: '118.235', '118.235.*.*', '2001:2d8'.
+_IP_FRAGMENT = re.compile(r"(?<!\d)\d{1,3}\s*\.\s*" + _OCTET + r"(?!\d)|(?<![0-9A-Fa-f])[0-9A-Fa-f]{2,4}:[0-9A-Fa-f]{1,4}"
+                          r"(?![0-9A-Fa-f])")
 USE_THREAD_KEY = "use --thread-url for a thread key instead"
 
 
 def normalize_handle(handle: str) -> tuple[str, bool]:
-    """(the handle trimmed and NFKC-normalised without a trailing partial-IP group, whether it had one).
-    'ㅇㅇ(118.235)' becomes ('ㅇㅇ', True)."""
-    value = unicodedata.normalize("NFKC", handle or "").strip()
+    """(the handle NFKC-normalised, without zero-width characters, trimmed and without a trailing
+    partial-IP group, whether it had one). 'ㅇㅇ(118.235)' and 'ㅇㅇ([ip])' become ('ㅇㅇ', True)."""
+    value = _ZERO_WIDTH.sub("", unicodedata.normalize("NFKC", handle or "")).strip()
     stripped = _TRAILING_IP.sub("", value)
     return stripped.strip(), stripped != value
 
 
 def check_handle(handle: str) -> str:
     """The normalised handle, or ValueError when it is not an identity: empty, carrying a partial IP
-    address (a logged-out poster, who can type any nickname) or a default anonymous nickname."""
+    address anywhere (a logged-out poster, who can type any nickname), holding a scrubber placeholder
+    (the scrubbed text hides who wrote it, so every such handle would share one key) or a default
+    anonymous nickname."""
     value, had_ip = normalize_handle(handle)
-    if had_ip:
-        raise ValueError("a handle with a partial IP address, such as 'ㅇㅇ(118.235)', is a logged-out poster, "
-                         f"not an identity; {USE_THREAD_KEY}")
+    if had_ip or _IP_FRAGMENT.search(value):
+        raise ValueError("a handle with a partial IP address, such as 'ㅇㅇ(118.235)', 'ㅇㅇ(2001:2d8)' or 'ㅇㅇ([ip])' "
+                         f"as the scrubbed text shows it, is a logged-out poster, not an identity; {USE_THREAD_KEY}")
+    lowered = value.casefold()
+    if any(placeholder in lowered for placeholder in PLACEHOLDERS):
+        raise ValueError("a handle that holds a placeholder of the scrubber (such as '[handle]' or '[email]') is not "
+                         f"an identity: the scrubbed text hides who wrote it; {USE_THREAD_KEY}")
     if not value:
         raise ValueError("handle is empty")
-    if verdict.anonymous_handle(value):  # data/markers.json anonymous_handles
-        raise ValueError(f"a default anonymous nickname is not an identity; {USE_THREAD_KEY}")
+    if verdict.anonymous_handle(value) or verdict.anonymous_handle("".join(value.split())):
+        raise ValueError(f"a default anonymous nickname is not an identity; {USE_THREAD_KEY}")  # anonymous_handles
     return value
 
 

@@ -188,6 +188,7 @@
         "reported.test"
       ],
       "status": "reported",
+      "lift_requires": "terms_check",
       "restricts": [
         "bulk_collection"
       ],
@@ -208,6 +209,7 @@
         "confirmed.test"
       ],
       "status": "confirmed",
+      "lift_requires": "terms_check",
       "restricts": [
         "automated_collection"
       ],
@@ -228,10 +230,11 @@
         "tube.test"
       ],
       "status": "confirmed",
+      "lift_requires": "terms_check",
       "restricts": [
         "automated_collection"
       ],
-      "official_route": "fixture-tube",
+      "official_route": null,
       "terms_url": "http://tube.test/terms",
       "clause": "fixture clause",
       "read_via": "fixture",
@@ -240,7 +243,7 @@
       ],
       "checked_at": "2026-09-29",
       "verified_at": null,
-      "note": "fixture: official-only mode"
+      "note": "fixture: a route table's own entry never names an official route (official-only mode reads the packaged table only)"
     },
     {
       "id": "fixture-apitube-terms",
@@ -248,10 +251,11 @@
         "apitube.test"
       ],
       "status": "confirmed",
+      "lift_requires": "terms_check",
       "restricts": [
         "automated_collection"
       ],
-      "official_route": "fixture-apitube",
+      "official_route": null,
       "terms_url": "http://apitube.test/terms",
       "clause": "fixture clause",
       "read_via": "fixture",
@@ -260,7 +264,73 @@
       ],
       "checked_at": "2026-09-29",
       "verified_at": null,
-      "note": "fixture: an official route kind with no adapter"
+      "note": "fixture: a confirmed restriction on a host whose platform has an API route"
+    },
+    {
+      "id": "fixture-permission",
+      "hosts": [
+        "permission.test"
+      ],
+      "status": "reported",
+      "lift_requires": "written_permission",
+      "restricts": [
+        "automated_collection"
+      ],
+      "official_route": null,
+      "terms_url": "http://permission.test/terms",
+      "terms_urls": [
+        "http://permission.test/terms-mobile"
+      ],
+      "clause": "fixture clause: no automated collection without prior written permission",
+      "read_via": "fixture",
+      "sources": [
+        "fixture"
+      ],
+      "checked_at": "2026-09-30",
+      "verified_at": null,
+      "note": "fixture: a lift needs the written permission recorded in the check"
+    },
+    {
+      "id": "fixture-parent",
+      "hosts": [
+        "overlap.test"
+      ],
+      "status": "reported",
+      "lift_requires": "terms_check",
+      "restricts": [
+        "automated_collection"
+      ],
+      "official_route": null,
+      "terms_url": "http://overlap.test/terms",
+      "clause": null,
+      "read_via": "fixture",
+      "sources": [
+        "fixture"
+      ],
+      "checked_at": "2026-09-30",
+      "verified_at": null,
+      "note": "fixture: a parent-domain restriction"
+    },
+    {
+      "id": "fixture-child",
+      "hosts": [
+        "sub.overlap.test"
+      ],
+      "status": "reported",
+      "lift_requires": "terms_check",
+      "restricts": [
+        "bulk_collection"
+      ],
+      "official_route": null,
+      "terms_url": "http://sub.overlap.test/notice",
+      "clause": null,
+      "read_via": "fixture",
+      "sources": [
+        "fixture"
+      ],
+      "checked_at": "2026-09-30",
+      "verified_at": null,
+      "note": "fixture: a more specific notice on a subdomain; URLs there are covered by both entries"
     }
   ],
   "discovery": [

@@ -75,16 +75,20 @@ Inside `references/<mode>/`, a path such as `references/x.md` means
   YouTube Data API, and YouTube pages are never read. Keep to one request at a
   time per host, at human pace, within the run budget.
 - **Stop at every access control or opt-out.** Stop at logins; paywalls and
-  subscriptions; private or member-only groups; age or identity checks;
-  interactive human checks (CAPTCHA, press-and-hold, any check that does not
-  clear by itself); robots.txt disallow for our token, for `*`, or for an AI
-  agent that fetches pages for users; TDM or noai opt-outs; platform terms or
-  notices that bar automated collection or AI use, as the route table records
-  them (`terms_restricted`); hosts the researcher denies; rate limits (after one
-  polite wait); geo or legal blocks; and removed posts. Record each as a
-  coverage gap with its class. A stop is the answer, never a reason to look for
-  the content another way. Only the user's own terms check in the brief lifts a
-  `reported` terms restriction, for one run; a `confirmed` one is never lifted.
+  subscriptions; private or member-only groups; age or identity checks; human
+  checks (CAPTCHA, press-and-hold); browser checks, even a "checking your
+  browser" page that would clear by itself (never wait one out); bot blocks,
+  where a site refuses the honest request; robots.txt disallow for our token, for
+  `*`, or for an AI agent that fetches pages for users; TDM or noai opt-outs;
+  platform terms or notices that bar automated collection or AI use, as the
+  route table records them (`terms_restricted`); hosts the researcher denies;
+  rate limits (after one polite wait); geo or legal blocks; and removed posts. A
+  check, a block or a rate limit stops the whole site for the run, and no render
+  or other tool follows. Record each as a coverage gap with its class. A stop is
+  the answer, never a reason to look for the content another way. Only the
+  user's own terms check in the brief lifts a `reported` terms restriction, for
+  one run, and where the terms ask for prior written permission the check must
+  record it; a `confirmed` one is never lifted.
   A missing key for an official route is a coverage gap and a question for the
   user. Capture community evidence as an anonymous visitor sees it. The one
   exception is a community the user explicitly authorised in the research brief:
@@ -96,7 +100,7 @@ Inside `references/<mode>/`, a path such as `references/x.md` means
   clients. Never send a fabricated Referer or crawler identity. Use no proxies or
   IP rotation to hide the client. Never send parallel requests to one host. Never
   call undocumented endpoints found in network traffic. Never scrape search-result
-  pages. Never read archive, cache or reader-proxy copies of community posts.
+  pages. Never read archive, cache, proxy or front-end copies of community posts.
   Never collect one person's post history, and decline requests to research or
   identify a particular person. This rule has no exception.
 - **Figma is the design source of truth** when it exists. Record file, version,
@@ -110,7 +114,7 @@ Python 3.10+ standard library only; Node.js 22 only for the live web driver.
 
 | Tool | Used by | Command |
 | --- | --- | --- |
-| Evidence bundle validator | all modes | `python3 scripts/validate_bundle.py BUNDLE.json` |
+| Evidence bundle validator | all modes | `python3 scripts/validate_bundle.py BUNDLE.json` (try it on `examples/bundle/minimal.json`) |
 | Public-page reader and research gate (gate planned) | research, persona-qa, ergonomics Stage 0 | `python3 scripts/ux_research.py --help` |
 | Improvement loop CLI | loop | `python3 scripts/ux_loop.py --help` (offline demo: `python3 scripts/ux_loop.py demo --output .ux-loop/demo`) |
 | Ergonomics CLI | ergonomics | `python3 scripts/ergo_qa.py catalog` |

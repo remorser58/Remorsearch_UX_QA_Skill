@@ -20,6 +20,6 @@ python3 scripts/ux_loop.py demo --output .ux-loop/example \
 ```
 
 Static JSON/SVG/patch files are authored test fixtures, not generated build or
-runtime evidence. `tests/loop_factory.py` builds the equivalent fixture and
-negative variants in temporary directories for reproducible tests. It never
-fetches live content or executes a browser.
+runtime evidence. `uxloop/demo_factory.py` builds the equivalent fixture and
+negative variants in temporary directories for the smoke check and the tests. It
+never fetches live content or executes a browser.

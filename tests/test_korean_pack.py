@@ -27,8 +27,9 @@ KWCAG = SKILL / "references" / "persona-qa" / "kwcag-2.2.md"
 KOREAN_DOCS = sorted(KOREA.glob("*.md")) + [KWCAG]
 PLATFORM_MAP = KOREA / "platform-map.md"
 
-# Facebook has no channel row (its groups are out of scope), so its terms entry has no row to point at.
-ENTRIES_WITHOUT_ROW = {"meta-facebook"}
+# Facebook has no channel row (its groups are out of scope), and X is not in the Korean channel map, so their
+# terms entries have no row to point at.
+ENTRIES_WITHOUT_ROW = {"meta-facebook", "x-terms"}
 # Member-only or closed communities are never named as audience leads (owner decision S2).
 CLOSED_COMMUNITIES = ("여성시대", "subdued20club")
 CAFE_PAGE = re.compile(r"cafe\.(?:naver|daum)\.(?:com|net)/[A-Za-z0-9_-]+")

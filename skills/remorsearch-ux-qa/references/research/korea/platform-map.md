@@ -49,11 +49,11 @@
 | 정당한 경로 | `official_api_user_key` | 사용자 본인 키로 부르는 공식 API. 키는 `REMORSEARCH_*` 환경 변수로만 받음 |
 | 정당한 경로 | `official_feed` | 운영사가 내놓은 공식 피드(RSS 등). reader의 R0 경로 |
 | 정당한 경로 | `team_export` | 팀이 가진 자체 자료(VOC, 고객센터 기록, 스토어·판매자 콘솔 내보내기). 파일로 받으며 `team_provided` 출처가 됨. 개인 식별 정보를 지운 뒤 받음 |
-| 정당한 경로 | `reader_public_page` | reader가 읽는 공개 페이지(`scripts/ux_research.py read`, 필요하면 익명 브라우저 렌더 뒤 `ingest`). 로그인, 사람 확인, 속도 제한 같은 중단은 넘지 않음 |
+| 정당한 경로 | `reader_public_page` | reader가 읽는 공개 페이지(`scripts/ux_research.py read`). reader가 스크립트만 있는 페이지라고 답할 때만 비공개 창 같은 익명 브라우저로 렌더한 뒤 `ingest`. 로그인, 사람 확인, 봇 차단, "브라우저 확인 중" 화면, 속도 제한 같은 중단은 넘지 않고, 확인 화면이 저절로 풀리기를 기다리지도 않음. 확인 화면, 봇 차단, 속도 제한은 그 실행에서 사이트 전체를 멈춤 |
 | 정당한 경로 | `signed_in_authorised` | 사용자가 브리프의 `access_policy.signed_in_communities`에 직접 적은 커뮤니티만 로그인해 읽고 요약만 남김. 에이전트는 이 목록에 더하지 않음 |
 | 정당한 경로 | `none` | 이 스킬이 쓸 경로가 없음. 설문, 인터뷰, 팀 자료로 대신함 |
 | 약관 상태 | `confirmed` | 자동 수집을 막는 조항 문구를 운영사 도메인에서 읽은 항목. 브리프로 풀 수 없음. 이번에는 운영사 도메인 한정 검색으로 읽었으므로 사람이 원문을 다시 읽기 전까지 verified_at은 null임 |
-| 약관 상태 | `reported` | 보도·인용·검색 요약으로 제한이 알려진 항목, 또는 이 스킬이 reported로 두는 항목. 사용자가 약관을 직접 읽고 브리프의 `access_policy.terms_checked`에 result `permits_this_reading`으로 적은 실행에서만 풀림. 풀린 호스트는 실행당 문서 10건까지 |
+| 약관 상태 | `reported` | 보도·인용·검색 요약으로 제한이 알려진 항목, 또는 이 스킬이 reported로 두는 항목. 사용자가 약관을 직접 읽고 브리프의 `access_policy.terms_checked`에 result `permits_this_reading`으로 적은 실행에서만 풀림. 약관이 사전 서면 허락을 요구하는 항목(`lift_requires` `written_permission`)은 그 허락(`permission`)도 함께 적어야 풀림. 풀린 항목은 그 항목의 호스트를 합쳐 실행당 문서 10건까지 |
 | 약관 상태 | `checked_by_user` | 사용자가 직접 확인해 기록한 상태(이 지도에는 아직 없음) |
 | 약관 상태 | `unchecked` | 확인하지 못함. 제한이 없다는 뜻이 아님. reader의 일반 중단 규칙만 적용됨 |
 | robots 예상 | `unknown` | 실행 때 robots 확인 전까지 모름 |
@@ -63,10 +63,10 @@
 
 예상 중단 값은 `references/research/public-page-access.md` 5절의 중단 유형에 약관 중단 `terms_restricted`를 더한
 것입니다(`uxresearch/scope.py`). `terms_restricted`는 요청 전에, 그리고 리디렉션 단계마다 판정하므로 짧은 주소가 제한
-호스트로 넘어가도 멈춥니다. `reported` 항목이 풀린 실행에서도 그 호스트는 실행당 문서 10건까지만 읽습니다. 공식
+호스트로 넘어가도 멈춥니다. 운영사의 짧은 주소(naver.me, me2.do, coupa.ng 등)는 약관 항목에 들어 있어 요청 전에 멈춥니다. `reported` 항목이 풀린 실행에서도 그 항목의 호스트를 합쳐 실행당 문서 10건까지만 읽습니다. 공식
 경로가 있는 제한 호스트(유튜브)는 그 공식 경로만 씁니다. 페이지 요청과 렌더 캡처는 하지 않고, `ingest`도 그 호스트의
 캡처를 받지 않습니다. 검색 결과 페이지는 `read`가 시작할 때 exit 2로 거절하고, 리디렉션 중에 만나면 중단으로
-기록합니다. 브라우저 도구도 멈춘 호스트를 열지 않습니다.
+기록합니다. 브라우저 도구도 멈춘 호스트를 열지 않습니다. 봇 차단이나 "브라우저 확인 중" 화면은 우회할 대상이 아니라 사이트의 답이므로, 그 실행에서 사이트 전체를 멈추고 렌더로 다시 열지 않습니다(`references/research/public-page-access.md` 5절).
 
 ## 2. 한눈에 보기
 

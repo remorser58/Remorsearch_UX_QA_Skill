@@ -4,18 +4,23 @@
 ${XDG_STATE_HOME:-~/.local/state}/remorsearch-ux-qa/runs/<id>, outside any
 project so page text never lands in a repository. It holds:
 
-  run.json             run id, versions, policy, hashes of the brief and routes, the
-                       brief's ethics_review (recorded, never enforced)
+  run.json             run id, versions, policy, hashes of the brief, the routes and
+                       the policy, the brief's ethics_review (recorded, never enforced).
+                       Every command that reads or writes pages checks the hashes and
+                       that the policy's terms checks and authorised communities are
+                       the brief's own, and refuses a run whose files were changed.
   salt                 random key for author and thread keys (0600; deleted at close)
   brief.json           the research brief, when one was given
   routes.json          the route table this run uses (the packaged scope lists
                        always apply on top of it, see scope.py)
   agent-tokens.json    extra AI-agent robots.txt tokens given with --agent-tokens,
                        added to data/agent-tokens.json (tests use fixture tokens)
-  hosts.json           per-host pacing, counters, stop state; robots.txt cache
-                       (records in another robots.RECORD_FORMAT are fetched again)
+  hosts.json           per-host pacing and counters, per-site stops, per-entry counts
+                       of lifted terms entries, the robots.txt cache (records in another
+                       robots.RECORD_FORMAT are fetched again)
   access-ledger.jsonl  append-only, URL-masked record of every request and outcome;
-                       at close every URL in it is cut to its scheme and host
+                       at close every URL in it is cut to its scheme and host, and any
+                       page text in a reason (a greeting line) is replaced
   pages/<fetch_id>.txt page text kept for later verbatim checks (0600; purged
                        after 72 h; deleted at close). Raw HTML is never written.
 
@@ -24,11 +29,15 @@ state.lock: one request at a time per host (a lease), at least min_interval
 seconds apart (default 8, never below 5) or the robots.txt Crawl-delay if
 longer, plus 0-4 s of jitter; a per-host and a per-run budget of document
 requests (30 and 200 by default, raisable with a recorded reason to at most 100
-and 500; robots.txt requests are not charged; a host whose reported terms
-restriction the user's own terms check lifted gets at most 10); after a rate-limit signal one
-wait of at most 5 minutes, and a second signal stops the host; three unreadable
-URLs in a row stop the host as bot_filter_persistent (a URL counts only once no
-allowed rung is left for it; a successful render capture resets the count).
+and 500; robots.txt requests are not charged; a terms entry the user's own terms
+checks lifted gets at most 10 across all the hosts it covers); after a rate-limit
+signal one wait of at most 5 minutes, and a second signal stops the site; three
+unreadable URLs in a row stop the site as bot_filter_persistent (a URL counts only
+once no allowed rung is left for it; a successful render capture resets the count).
+Host-wide stops (human_check, rate_limit, opted_out for a bot filter or a browser
+check, bot_filter_persistent) cover the whole site: the registrable domain of the
+operator (scope.site_of), so the same site's m., www. and apex hosts stop too. A
+stop for a rejected API key (key_rejected) covers its API host only.
 While another reader holds a host, a caller polls until its own max wait runs
 out. When the next slot is further away than the caller's max wait, the reader
 is told to come back later (Deferred) instead of blocking. A hold (hold_host,
@@ -93,6 +102,7 @@ _TOKEN = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 _LANG_TAG = re.compile(r"^[A-Za-z]{1,8}(-[A-Za-z0-9]{1,8}){0,3}$")
 _HOST_NAME = re.compile(r"^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9-]{1,63}$")
 _PATH_PREFIX = re.compile(r"^/[^\s?#]{0,200}$")
+SITE_STOPS = frozenset({"human_check", "rate_limit", "opted_out", "bot_filter_persistent"})  # cover the whole site
 COMMUNITY_FIELDS = ("host", "name", "why", "path_prefix")
 MAX_COMMUNITIES = 20
 
@@ -233,6 +243,10 @@ def validate_brief(brief, today=None) -> None:
     if "deny_hosts" in policy:
         _require(isinstance(policy["deny_hosts"], list) and all(isinstance(h, str) and h for h in policy["deny_hosts"]),
                  "brief.access_policy.deny_hosts must be a list of host names")
+        for host in policy["deny_hosts"]:
+            _require(scope.valid_host(host, wildcard=True) is not None,
+                     f"brief.access_policy.deny_hosts entry {host!r} must be a host name (or *.suffix), without a "
+                     "scheme, a port or a path")
     if "render" in policy:
         _require(policy["render"] in RENDER_MODES, f"brief.access_policy.render must be one of {', '.join(RENDER_MODES)}")
     if "signed_in_communities" in policy:
@@ -286,13 +300,9 @@ def build_policy(brief: dict | None, overrides: dict) -> dict:
         for name in ("deny_hosts", "render", "allow_wayback_for_official"):
             if name in access:
                 policy[name] = access[name]
-        # Only the user's brief authorises signed-in reading; there is no command-line switch for it.
-        policy["signed_in_communities"] = [
-            {"host": item["host"].strip().lower().rstrip("."), "name": item["name"].strip(), "why": item["why"].strip(),
-             **({"path_prefix": item["path_prefix"]} if item.get("path_prefix") else {})}
-            for item in access.get("signed_in_communities", [])]
-        # Only the user's brief records terms checks; there is no command-line switch for them either.
-        policy["terms_checked"] = scope.normalize_checks(access.get("terms_checked", []))
+        # Only the user's brief authorises signed-in reading and records terms checks; there is no command-line
+        # switch for either.
+        policy["terms_checked"], policy["signed_in_communities"] = brief_lists(brief)
         languages = brief.get("languages", {})
         if languages.get("primary"):
             secondary = languages.get("secondary") or []
@@ -301,7 +311,20 @@ def build_policy(brief: dict | None, overrides: dict) -> dict:
     for name, value in overrides.items():
         if value is not None and value != []:
             policy[name] = value
-    policy["deny_hosts"] = sorted({h.strip().lower() for h in policy["deny_hosts"] if h.strip()})
+    deny = set()
+    for host in policy["deny_hosts"]:
+        name = scope.valid_host(host, wildcard=True) if isinstance(host, str) else None
+        _require(name is not None, f"deny host {host!r} must be a host name (or *.suffix), without a scheme, a port or a "
+                                   "path")
+        deny.add(name)
+    policy["deny_hosts"] = sorted(deny)
+    # The product's own site: the one site whose past pages a web archive may show (allow_wayback_for_official).
+    product_url = ((brief or {}).get("product") or {}).get("url")
+    try:
+        product_host = urlsplit(product_url).hostname if isinstance(product_url, str) and "://" in product_url else None
+    except ValueError:
+        product_host = None
+    policy["official_sites"] = [scope.site_of(product_host)] if product_host else []
     for name in ("per_host", "per_run"):
         _require(type(policy[name]) is int and policy[name] >= 1, f"{name} must be a positive integer")
         _require(policy[name] <= CEILINGS[name],
@@ -333,6 +356,20 @@ def agent_token_lists(doc) -> dict:
         if item["token"].lower() not in (t.lower() for t in lists[item["category"]]):
             lists[item["category"]].append(item["token"])
     return lists
+
+
+def policy_digest(policy: dict) -> str:
+    """The hash run.json keeps of the policy, so a later edit of the policy is noticed."""
+    return hashlib.sha256(json.dumps(policy, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def brief_lists(brief: dict | None) -> tuple[list, list]:
+    """(terms checks, signed-in communities) exactly as build_policy derives them from a brief."""
+    access = (brief or {}).get("access_policy") or {}
+    communities = [{"host": item["host"].strip().lower().rstrip("."), "name": item["name"].strip(),
+                    "why": item["why"].strip(), **({"path_prefix": item["path_prefix"]} if item.get("path_prefix") else {})}
+                   for item in access.get("signed_in_communities", [])]
+    return scope.normalize_checks(access.get("terms_checked", [])), communities
 
 
 @functools.lru_cache(maxsize=1)
@@ -369,6 +406,7 @@ def create(path: Path | None, policy: dict, *, brief: dict | None = None, routes
         tokens_meta.update(extra_source=agent_tokens_source, extra_sha256=hashlib.sha256(raw).hexdigest())
     meta = {"schema_version": RUN_SCHEMA, "run_id": run_id, "created_at": iso(clock()), "version": VERSION,
             "rules_version": RULES_VERSION, "user_agent": USER_AGENT, "policy": policy,
+            "policy_sha256": policy_digest(policy),
             "brief_sha256": brief_sha, "routes": {"source": routes_source,
                                                    "sha256": hashlib.sha256(routes_text.encode()).hexdigest()},
             "agent_tokens": tokens_meta,
@@ -417,8 +455,37 @@ class Run:
         return bool(self.meta.get("closed_at"))
 
     def require_open(self) -> None:
+        """Refuse a closed run, and a run whose route table, brief, extra agent tokens or policy changed after
+        `start` (an edit of the run folder can never add a lift, an authorised community or a route)."""
         if self.closed:
             raise RunError("this run is closed; start a new run")
+        self.verify_files()
+
+    def verify_files(self) -> None:
+        def digest(path: Path) -> str | None:
+            return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() and not path.is_symlink() else None
+
+        changed = []
+        if digest(self.path / "routes.json") != (self.meta.get("routes") or {}).get("sha256"):
+            changed.append("routes.json")
+        brief_path = self.path / "brief.json"
+        if digest(brief_path) != self.meta.get("brief_sha256"):
+            changed.append("brief.json")
+        extra = (self.meta.get("agent_tokens") or {}).get("extra_sha256")
+        if digest(self.path / "agent-tokens.json") != extra:
+            changed.append("agent-tokens.json")
+        if self.meta.get("policy_sha256") != policy_digest(self.policy):
+            changed.append("the policy in run.json")
+        elif not changed:
+            brief = _read_json(brief_path) if self.meta.get("brief_sha256") else None
+            checks, communities = brief_lists(brief)
+            if self.policy.get("terms_checked", []) != checks or \
+                    self.policy.get("signed_in_communities", []) != communities:
+                changed.append("the policy's terms checks or authorised communities (they come only from the brief)")
+        if changed:
+            raise RunError(f"this run's files changed after start ({', '.join(changed)}); nothing is read under an "
+                           "edited run: close it (close deletes its page text and salt) and start a new run from the "
+                           "brief and route table you mean to use")
 
     @property
     def routes(self) -> dict:
@@ -447,11 +514,17 @@ class Run:
             self._agent_tokens = lists
         return self._agent_tokens
 
+    def lifted_entries(self, host: str) -> list:
+        """The terms entries the user's checks lift for this host (each has LIFTED_HOST_BUDGET documents)."""
+        if not self.policy.get("terms_checked"):
+            return []
+        return scope.lifted_entries(host, self.policy, self.scope_lists)
+
     def host_limit(self, host: str) -> int:
         """Document budget for one host: the policy's, and at most scope.LIFTED_HOST_BUDGET on a host
-        whose reported terms restriction the user's own terms check lifted."""
+        under a lifted terms entry (whose budget also counts across all the hosts it covers)."""
         limit = int(self.policy["per_host"])
-        if self.policy.get("terms_checked") and scope.lifted_host(host, self.policy, self.scope_lists):
+        if self.lifted_entries(host):
             limit = min(limit, scope.LIFTED_HOST_BUDGET)
         return limit
 
@@ -493,42 +566,59 @@ class Run:
             entry.setdefault(key, value)
         return entry
 
+    @staticmethod
+    def _site(state: dict, host: str) -> tuple[str, dict]:
+        """(the site of a host, its state): host-wide stops, rate-limit signals and unreadable streaks count
+        per site (scope.site_of), so a stop on www. covers m. and the apex too."""
+        name = scope.site_of(host)
+        entry = state.setdefault("sites", {}).setdefault(name, {})
+        for key, value in (("stopped", None), ("rate_limits", 0), ("unreadable_streak", 0), ("wait_until", 0.0)):
+            entry.setdefault(key, value)
+        return name, entry
+
+    @staticmethod
+    def _stopped(state: dict, host: str) -> dict | None:
+        entry = state["hosts"].get(host) or {}
+        if entry.get("stopped"):
+            return dict(entry["stopped"])
+        site = (state.get("sites") or {}).get(scope.site_of(host)) or {}
+        return dict(site["stopped"]) if site.get("stopped") else None
+
     # ------------------------------------------------------------ pacing and budgets
 
     def host_stop(self, host: str) -> dict | None:
+        """The stop that covers this host for the run: its own, or its site's."""
         with self._state() as state:
-            entry = state["hosts"].get(host)
-            return dict(entry["stopped"]) if entry and entry.get("stopped") else None
+            return self._stopped(state, host)
 
     def acquire(self, host: str, kind: str = "doc", max_wait: float = DEFAULT_MAX_WAIT_S) -> Slot:
         """Wait (up to max_wait) for this host's next slot; charge the budget for documents."""
         started = self.clock()
         deadline = started + max(0.0, float(max_wait))
         limit = self.host_limit(host)
+        lifted = self.lifted_entries(host) if kind == "doc" else []
         while True:
             with self._state() as state:
                 entry = self._host(state, host)
-                if entry["stopped"]:
-                    raise HostStopped(host, entry["stopped"])
+                stopped = self._stopped(state, host)
+                if stopped:
+                    raise HostStopped(host, stopped)
+                _, site = self._site(state, host)
                 now = self.clock()
                 if kind == "doc":
-                    if state["run"]["docs"] >= self.policy["per_run"]:
-                        raise BudgetExceeded("run", host, self.policy["per_run"])
-                    if entry["docs"] >= limit:
-                        raise BudgetExceeded("host", host, limit)
+                    self._check_budgets(state, entry, host, limit, lifted)
                 hold = entry.get("hold")
                 if hold and float(hold.get("until") or 0.0) > now:  # never waited out: the caller comes back later
                     raise Deferred(float(hold["until"]) - now, host, str(hold.get("why") or "hold"))
                 lease = entry.get("lease")
                 busy = bool(lease and lease["expires"] > now)
-                ready_at = float(entry["next_allowed_at"] or 0.0)
+                ready_at = max(float(entry["next_allowed_at"] or 0.0), float(site.get("wait_until") or 0.0))
                 if not busy and ready_at <= now:
                     token = secrets.token_hex(8)
                     entry["lease"] = {"token": token, "expires": now + LEASE_S}
                     entry["last_request_at"] = now
                     if kind == "doc":
-                        entry["docs"] += 1
-                        state["run"]["docs"] += 1
+                        self._charge(state, entry, lifted)
                     else:
                         entry["policy_requests"] += 1
                         state["run"]["policy_requests"] += 1
@@ -546,18 +636,32 @@ class Run:
                 raise Deferred(wait, host, "pacing")
             self.sleeper(wait)
 
+    def _check_budgets(self, state: dict, entry: dict, host: str, limit: int, lifted: list) -> None:
+        if state["run"]["docs"] >= self.policy["per_run"]:
+            raise BudgetExceeded("run", host, self.policy["per_run"])
+        if entry["docs"] >= limit:
+            raise BudgetExceeded("host", host, limit)
+        counts = state.get("terms_docs") or {}
+        if any(int(counts.get(name, 0)) >= scope.LIFTED_HOST_BUDGET for name in lifted):
+            raise BudgetExceeded("terms", host, scope.LIFTED_HOST_BUDGET)
+
+    @staticmethod
+    def _charge(state: dict, entry: dict, lifted: list) -> None:
+        entry["docs"] += 1
+        state["run"]["docs"] += 1
+        counts = state.setdefault("terms_docs", {})
+        for name in lifted:  # a lifted entry's budget counts across every host it covers
+            counts[name] = int(counts.get(name, 0)) + 1
+
     def book_render(self, host: str) -> None:
         """A render made outside the reader (R3 via `ingest`) counts against the host like a read
         and pushes the host's next slot back, so reads and renders share one pace."""
         limit = self.host_limit(host)
+        lifted = self.lifted_entries(host)
         with self._state() as state:
             entry = self._host(state, host)
-            if state["run"]["docs"] >= self.policy["per_run"]:
-                raise BudgetExceeded("run", host, self.policy["per_run"])
-            if entry["docs"] >= limit:
-                raise BudgetExceeded("host", host, limit)
-            entry["docs"] += 1
-            state["run"]["docs"] += 1
+            self._check_budgets(state, entry, host, limit, lifted)
+            self._charge(state, entry, lifted)
             now = self.clock()
             entry["last_request_at"] = now
             interval = max(self.policy["min_interval_s"], float(entry.get("crawl_delay") or 0.0)) + self.jitter()
@@ -581,41 +685,55 @@ class Run:
             return dict(entry["hold"])
 
     def note_rate_limit(self, host: str, retry_after: float | None, reasons=()) -> dict:
-        """First signal: one wait (at most 5 minutes). Second signal, or a longer
-        Retry-After: the host stops for the run."""
+        """First signal on a site: one wait (at most 5 minutes) for every host of the site. Second signal,
+        or a longer Retry-After: the site stops for the run."""
         with self._state() as state:
             entry = self._host(state, host)
+            site_name, site = self._site(state, host)
             entry["rate_limits"] += 1
+            site["rate_limits"] += 1
             now = self.clock()
-            if entry["rate_limits"] >= 2 or (retry_after is not None and retry_after > MAX_RATE_LIMIT_WAIT_S):
-                why = "second rate-limit signal" if entry["rate_limits"] >= 2 else "Retry-After longer than 5 minutes"
-                entry["stopped"] = {"class": "rate_limit", "reason": why, "at": iso(now), "signals": list(reasons)[:5]}
-                return {"stopped": True, "stop": dict(entry["stopped"])}
+            if site["rate_limits"] >= 2 or (retry_after is not None and retry_after > MAX_RATE_LIMIT_WAIT_S):
+                why = "second rate-limit signal" if site["rate_limits"] >= 2 else "Retry-After longer than 5 minutes"
+                if not site["stopped"]:
+                    site["stopped"] = {"class": "rate_limit", "reason": why, "at": iso(now),
+                                       "signals": list(reasons)[:5], "site": site_name}
+                return {"stopped": True, "stop": dict(site["stopped"])}
             wait = min(retry_after if retry_after is not None else DEFAULT_RATE_LIMIT_WAIT_S, MAX_RATE_LIMIT_WAIT_S)
             entry["next_allowed_at"] = max(float(entry["next_allowed_at"] or 0.0), now + wait)
+            site["wait_until"] = max(float(site.get("wait_until") or 0.0), now + wait)
             return {"stopped": False, "wait_s": wait}
 
-    def stop_host(self, host: str, stop_class: str, reason: str, signals=()) -> dict:
+    def stop_host(self, host: str, stop_class: str, reason: str, signals=(), *, site_wide: bool | None = None) -> dict:
+        """Stop a host for the run. The classes in SITE_STOPS stop the whole site (scope.site_of); others,
+        such as a rejected API key, stop only this host. An earlier stop is kept."""
         with self._state() as state:
-            entry = self._host(state, host)
-            if not entry["stopped"]:
-                entry["stopped"] = {"class": stop_class, "reason": reason, "at": self.now_iso(),
-                                    "signals": list(signals)[:5]}
-            return dict(entry["stopped"])
+            wide = stop_class in SITE_STOPS if site_wide is None else site_wide
+            record = {"class": stop_class, "reason": reason, "at": self.now_iso(), "signals": list(signals)[:5]}
+            if wide:
+                site_name, target = self._site(state, host)
+                record["site"] = site_name
+            else:
+                target = self._host(state, host)
+            if not target["stopped"]:
+                target["stopped"] = record
+            return dict(target["stopped"])
 
     def note_outcome(self, host: str, bucket: str) -> dict | None:
-        """Track unreadable URLs in a row; the third stops the host (bot_filter_persistent)."""
+        """Track unreadable URLs in a row on a site; the third stops the site (bot_filter_persistent)."""
         with self._state() as state:
             entry = self._host(state, host)
+            site_name, site = self._site(state, host)
             if bucket == "read":
-                entry["unreadable_streak"] = 0
+                entry["unreadable_streak"] = site["unreadable_streak"] = 0
             elif bucket == "unread":
                 entry["unreadable_streak"] += 1
-                if entry["unreadable_streak"] >= UNREADABLE_STREAK and not entry["stopped"]:
-                    entry["stopped"] = {"class": "bot_filter_persistent",
-                                        "reason": f"{UNREADABLE_STREAK} unreadable URLs in a row",
-                                        "at": self.now_iso(), "signals": []}
-                    return dict(entry["stopped"])
+                site["unreadable_streak"] += 1
+                if site["unreadable_streak"] >= UNREADABLE_STREAK and not site["stopped"]:
+                    site["stopped"] = {"class": "bot_filter_persistent",
+                                       "reason": f"{UNREADABLE_STREAK} unreadable URLs in a row",
+                                       "at": self.now_iso(), "signals": [], "site": site_name}
+                    return dict(site["stopped"])
             return None
 
     # ------------------------------------------------------------ robots cache
@@ -698,12 +816,18 @@ class Run:
     # ------------------------------------------------------------ close
 
     def summary(self) -> dict:
-        outcomes: dict[str, dict] = {}
+        outcomes: dict[str, dict] = {}  # the last outcome of each URL that was not a refusal (else its refusal)
+        refusals: dict[str, int] = {}  # refused reads or captures of each URL
         requests: dict[str, dict] = {}
         quota: dict[str, dict] = {}  # official API quota units per route, from the adapters' request entries
         for entry in self.entries():
             if entry.get("kind") == "outcome":
-                outcomes[entry.get("url_key") or entry.get("url")] = entry
+                key = entry.get("url_key") or entry.get("url")
+                if entry.get("bucket") == "refused":
+                    refusals[key] = refusals.get(key, 0) + 1
+                    outcomes.setdefault(key, entry)
+                else:
+                    outcomes[key] = entry
             elif entry.get("kind") == "request":
                 counts = requests.setdefault(entry.get("host", ""), {"documents": 0, "robots": 0})
                 counts["robots" if entry.get("purpose") == "robots" else "documents"] += 1
@@ -720,13 +844,15 @@ class Run:
         # before any request, so they say what the reader may do, not what a site answered.
         totals = {"urls": 0, "read": 0, "deferred": 0, "unread": 0, "stopped": 0, "terms_restricted": 0,
                   "refused": 0, "out_of_scope": 0}
-        lifted: dict[str, int] = {}
+        lifted: dict[str, int] = {}  # URLs whose last outcome ran under each lifted terms entry
+        lifted_by: dict[str, int] = {}  # the same, per host of the check that lifted an entry
 
         def new_row(host: str) -> dict:
-            return {"host": host, "urls": 0, "read": 0, "deferred": 0, "unread": 0, "stopped": {}, "refused": 0,
-                    "out_of_scope": 0, "rungs_used": {}, "untried": {}, "contexts": {}}
+            return {"host": host, "urls": 0, "read": 0, "deferred": 0, "unread": 0, "stopped": {},
+                    "terms_restricted": 0, "refused": 0, "out_of_scope": 0, "rungs_used": {}, "untried": {},
+                    "contexts": {}}
 
-        for outcome in outcomes.values():
+        for key, outcome in outcomes.items():
             host = outcome.get("host") or ""
             row = hosts.setdefault(host, new_row(host))
             bucket = outcome.get("bucket")
@@ -737,11 +863,18 @@ class Run:
                 totals["out_of_scope"] += 1
             elif bucket == "stopped":
                 cls = outcome.get("stop_class") or "unknown"
-                row["stopped"][cls] = row["stopped"].get(cls, 0) + 1
-                totals["terms_restricted" if cls == "terms_restricted" else "stopped"] += 1
+                if cls == "terms_restricted":  # decided from the route table before any request: kept apart
+                    row["terms_restricted"] += 1
+                    totals["terms_restricted"] += 1
+                else:
+                    row["stopped"][cls] = row["stopped"].get(cls, 0) + 1
+                    totals["stopped"] += 1
             elif bucket in ("read", "deferred", "unread", "refused"):
                 row[bucket] += 1
                 totals[bucket] += 1
+            if bucket != "refused" and refusals.get(key):  # a refused capture of a URL that has an outcome: no new URL
+                row["refused"] += 1
+                totals["refused"] += 1
             if bucket == "read" and outcome.get("rung"):
                 row["rungs_used"][outcome["rung"]] = row["rungs_used"].get(outcome["rung"], 0) + 1
             for rung in outcome.get("untried") or []:
@@ -749,30 +882,41 @@ class Run:
             if outcome.get("context"):
                 row["contexts"][outcome["context"]] = row["contexts"].get(outcome["context"], 0) + 1
             terms = outcome.get("terms") or {}
-            if terms.get("lifted") and terms.get("entry"):
-                lifted[terms["entry"]] = lifted.get(terms["entry"], 0) + 1
+            if terms.get("lifted"):
+                for name in terms.get("lifted_entries") or ([terms["entry"]] if terms.get("entry") else []):
+                    lifted[name] = lifted.get(name, 0) + 1
+                for check_host in set(terms.get("lift_checks") or []):
+                    lifted_by[check_host] = lifted_by.get(check_host, 0) + 1
         for host in requests:  # hosts reached only through official routes or site alternates
             hosts.setdefault(host, new_row(host))
         for host, row in hosts.items():
-            state_row = hosts_state["hosts"].get(host, {})
             row["requests"] = requests.get(host, {"documents": 0, "robots": 0})
-            row["host_stop"] = state_row.get("stopped")
+            row["host_stop"] = self._stopped(hosts_state, host)
             row["robots"] = sorted({r["status"] for origin, r in hosts_state["robots"].items()
                                     if (urlsplit(origin).hostname or "") == host})
         checks = scope.describe_checks(self.policy, self.scope_lists)
-        for row in checks:  # URLs whose last outcome ran under the lift this check granted
-            row["urls_under_lift"] = lifted.get(row["entry"], 0) if row["effect"].startswith("lifts") else 0
+        for row in checks:  # URLs whose last outcome ran under a lift this check granted
+            row["urls_under_lift"] = lifted_by.get(row["host"], 0) if row["lifts"] else 0
+        lifts = scope.describe_lifts(self.policy, self.scope_lists)
+        for row in lifts:  # the same per terms entry: every entry covering a URL had to be lifted
+            row["urls_under_lift"] = lifted.get(row["entry"], 0)
+            row["documents"] = int((hosts_state.get("terms_docs") or {}).get(row["entry"], 0))
         return {"run_id": self.meta["run_id"], "test_hooks": self.meta.get("test_hooks", False), "totals": totals,
                 "requests": hosts_state["run"], "hosts": [hosts[h] for h in sorted(hosts)],
+                "site_stops": {name: site["stopped"] for name, site in sorted((hosts_state.get("sites") or {}).items())
+                               if site.get("stopped")},
                 "signed_in_communities": [c.get("name") for c in self.policy.get("signed_in_communities", [])],
-                "terms_checked": checks, "ethics_review": self.meta.get("ethics_review"), "api_quota": quota,
-                "buckets": ["read", "deferred", "unread", "stopped"], "stop_classes": list(verdict.STOP_CLASSES)}
+                "terms_checked": checks, "terms_lifts": lifts, "ethics_review": self.meta.get("ethics_review"),
+                "api_quota": quota, "buckets": ["read", "deferred", "unread", "stopped"],
+                "stop_classes": list(verdict.STOP_CLASSES)}
 
     def _strip_ledger_urls(self) -> int:
         """Cut every URL in the ledger to its scheme and host. Post URLs, which can carry an author's
-        ID, then live only in the bundle's source_ref."""
+        ID, then live only in the bundle's source_ref. A reason that carries a line of page text (a signed-in
+        greeting, which names a member) keeps only its marker."""
         path = self.path / "access-ledger.jsonl"
         stripped = 0
+        known = verdict.compiled().logged_in_lines
 
         def strip(value):
             nonlocal stripped
@@ -782,6 +926,9 @@ class Run:
                     if key in _LEDGER_URL_KEYS and isinstance(item, str):
                         out[key] = origin_only(item)
                         stripped += 1
+                    elif key == "reasons" and isinstance(item, list):
+                        out[key] = [("line:greeting" if isinstance(r, str) and r.startswith("line:")
+                                     and r[5:] not in known else r) for r in item]
                     else:
                         out[key] = strip(item)
                 return out
@@ -797,10 +944,8 @@ class Run:
             _atomic_write(path, "".join(line + "\n" for line in lines))
         return stripped
 
-    def close(self) -> dict:
-        if self.closed:
-            return self.meta.get("summary", {})
-        summary = self.summary()
+    def _delete_private(self) -> int:
+        """Delete the page text and the salt; the number of page files deleted."""
         pages = self.path / "pages"
         removed = len(list(pages.glob("*"))) if pages.is_dir() else 0
         if pages.is_dir():
@@ -808,6 +953,19 @@ class Run:
         salt = self.path / "salt"
         if salt.exists():
             salt.unlink()
+        return removed
+
+    def close(self) -> dict:
+        if self.closed:
+            return self.meta.get("summary", {})
+        try:
+            self.verify_files()
+        except RunError as exc:  # clean up anyway, but make no summary from an edited run
+            self._delete_private()
+            raise RunError(f"{exc}. Its page text and salt are now deleted; no summary is made from an edited run, so "
+                           "delete the run folder") from exc
+        summary = self.summary()
+        removed = self._delete_private()
         urls = self._strip_ledger_urls()
         summary["closed"] = {"page_files_deleted": removed, "salt_deleted": True, "ledger_urls_cut_to_host": urls}
         self.meta["closed_at"] = self.now_iso()

@@ -81,11 +81,13 @@ skill offers to create two small ones in `~/.claude/agents/`.
 
 Research and QA runs can exchange a machine-readable **evidence bundle**
 (`schemas/ux-evidence-bundle.v1.schema.json`). The offline validator checks IDs,
-cross-references, permission records, synthetic-persona misuse and unsupported
-verified findings:
+cross-references, permission records, synthetic-persona misuse, unsupported
+verified findings and retention dates that have passed. The skill ships a small
+valid bundle to try it on:
 
 ```sh
 python3 ~/.claude/skills/remorsearch-ux-qa/scripts/validate_bundle.py bundle.json
+python3 ~/.claude/skills/remorsearch-ux-qa/scripts/validate_bundle.py ~/.claude/skills/remorsearch-ux-qa/examples/bundle/minimal.json
 ```
 
 ## Reading public pages
@@ -103,8 +105,11 @@ Research and persona-qa read what anyone can read without an account.
   needed: an official feed or API, one honestly identified request, the site's
   own mobile or feed version, then a real-browser render.
 - **Stops.** It stops at logins, paywalls, member-only groups, age checks, human
-  checks such as CAPTCHAs, robots.txt and AI or TDM opt-outs, rate limits and
-  removed posts, and reports each as a coverage gap. It also stops where a
+  checks such as CAPTCHAs, bot blocks and "checking your browser" pages (it
+  never waits one out), robots.txt and AI or TDM opt-outs, rate limits and
+  removed posts, and reports each as a coverage gap. A check, a block or a rate
+  limit stops the whole site for the run, and no browser render follows. It also
+  stops where a
   platform's published terms or an official notice restrict automated collection
   or AI use (`terms_restricted`), and it honours robots.txt rules for AI agents
   that fetch pages on a user's behalf. It never reads search results pages. It
@@ -136,24 +141,30 @@ pack is written in Korean and adds:
 - KWCAG 2.2 and WCAG 2.2 accessibility results, reported apart.
 
 **Terms stops.** Where a platform's terms restrict automated collection, the reader
-stops before it sends any request. YouTube pages, Instagram, Threads and Facebook
-are marked `confirmed` (the restricting clause was found) and are never lifted. DC
-Inside, Naver (including Naver Cafe) and Coupang are marked `reported` (press
-reports and quotes) and are lifted only for a run in which you have read the host's
-current terms yourself and recorded the result in the brief
-(`access_policy.terms_checked`). A lifted host is read for at most 10 documents per
-run. An agent never writes that entry.
+stops before it sends any request, also for the platform's short links. YouTube
+pages, Instagram, Threads and Facebook are marked `confirmed` (the restricting
+clause was found) and are never lifted. DC Inside, Naver (including Naver Cafe),
+Coupang and X are marked `reported` (press reports and quotes). Their terms ask for
+prior written permission, so one is lifted only for a run in which you have read
+the host's current terms yourself, hold that permission, and recorded both in the
+brief (`access_policy.terms_checked`, with `permission`). The Naver Cafe notice has
+no recorded address yet, so it cannot be lifted. A lifted entry is read for at most
+10 documents per run across its hosts. An agent never writes that entry.
 
 **YouTube comments** come only through the YouTube Data API, with your own key in
 the environment variable `REMORSEARCH_YOUTUBE_API_KEY` (`YOUTUBE_API_KEY` is
 accepted as an alias). Keys are read from environment variables only, never from a
 file. A missing key is a coverage gap and a question to you, never a reason to read
-the page another way. Items from the API are kept 30 days (`retention_until`).
+the page another way. As the key holder you follow YouTube's API terms and
+developer policies. The reader stamps each API item with `retention_until`, 30 days
+after the fetch, and deletes its own page text when the run closes; you delete or
+re-read items kept in bundles or reports by that date (`validate_bundle.py` reports
+one that is past it).
 
 **Plain limits.** Most Naver content ends as a coverage gap. Press reports and
 quotes say that Naver's terms and a cafe notice of 2026-08-31 restrict automated
 collection, and the pack treats that as a stop until you record your own terms
-check. The Naver and Kakao search APIs are switched off until the owner has read
+check with the written permission the terms ask for. The Naver and Kakao search APIs are switched off until the owner has read
 their current terms. Fill the gaps with your team's own data (VOC, support tickets,
 store-console exports), other channel families, surveys and interviews. Most
 platform facts in the pack come from search summaries and are marked 미확인
@@ -200,11 +211,12 @@ server on 127.0.0.1.
 - Live browser research (Aside or another agentic browser), Figma and browser
   collection for the loop mode are provided by you or your agent host; the loop
   CLI imports their receipts and never launches them.
-- The reader honours robots.txt and AI or TDM opt-outs, so some hosts end up as
-  coverage gaps. Renders never click, so long comment threads and "more reviews"
+- The reader honours robots.txt and AI or TDM opt-outs and stops at bot blocks
+  and browser checks, so some sites end up as coverage gaps. Renders never click, so long comment threads and "more reviews"
   lists are only partly read.
 - Many Korean platforms restrict automated collection, so DC Inside, Naver and
-  Coupang end as coverage gaps unless you record a terms check, and YouTube is read
+  Coupang end as coverage gaps unless you record a terms check with their written
+  permission, and YouTube is read
   only through its API with your key. The Korean pack is not legal advice.
 - The ergonomics mode's thumb-reach model is uncalibrated, and its benchmark suites
   are small and authored by agents. Treat its findings as screening, not

@@ -12,7 +12,7 @@
   "challenge": {"interactive": false, "markers": []},
   "login_form": false,
   "context": "anonymous",
-  "waited_ms": 1200,
+  "waited_ms": 0,
   "scrolls": 3,
   "blocked_types": ["image", "media", "font"],
   "device_id": "fixture-phone",
