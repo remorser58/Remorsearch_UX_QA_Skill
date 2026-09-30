@@ -1,8 +1,7 @@
 # Research engine contract
 
 Contract revision: `research-engine-2026-10-01.1`. This is the normative contract
-for the implementing package. This package changes documentation and schemas,
-not engine code. Agents check command help before use. An absent command means
+for the implementing package. This package implements the engine, documentation and schemas. Agents check command help before use. An absent command means
 a labelled manual assessment with unverified research claims; a manual assessment
 cannot produce a gate pass or composable research audience.
 
@@ -52,7 +51,7 @@ access-ledger.jsonl using the existing reader policy.
 | report-claims.json | Agent/reviewer: statement mapping |
 | report_check.json | Checker: mechanical report results |
 | bundle.min.json, minimize.json | Minimizer: loop projection and removal manifest |
-| engine-state.json, .engine/ | Engine transaction manifests, immutable generations and recovery |
+| engine-state.json, .engine/ | Atomic manifest, committed snapshot and staged snapshot |
 
 axes.json is `{schema_version: ux-research-axes.v1, run_id, axes, segments,
 question_gaps}`. A question gap is `{question, reason, acknowledged_by,
@@ -77,12 +76,7 @@ primary/secondary/edge and comes from an owner/product-brief decision, never
 post volume. No default primary. Unknown segments can be explored, not exported.
 Priority changes need a manifest revision and new gate, not a reader-policy edit.
 
-Acknowledgements are `{schema_version: ux-axis-acknowledgements.v1, run_id,
-entries: [{assignment_id, axis_id, kind, reason, acknowledged_by,
-acknowledged_at}]}`. Kind is missing/partial/excluded/unattributed_request; acknowledged_by is
-agent/owner; timestamp UTC. An excluded entry uses assignment_id null and agrees
-with the pre-dispatch manifest. Acknowledgement cannot call an assignment complete
-or support a claim. Later complete harvest supersedes its gap, preserving history.
+Acknowledgements use the single discriminated definition in section 18.
 Unacknowledged missing/partial assignments exit 1; excluded/unexpected returns,
 changed assignments or incompatible acknowledgements exit 2.
 
@@ -101,7 +95,7 @@ and part. Identical repeated returns count once. Same return_id with changed
 canonical bytes, overlapping different parts or changed part_count exits 2.
 
 Sources require local_id, title, url (null for imports), item_key (null for whole
-page), source_type, source_family, platform_family, org, author_key, thread_key,
+page), source_type, source_family, producer_stake, platform_family, org, author_key, thread_key,
 published_at, observed_at, valid_at, version, access_method, access_basis,
 public_scope, retention_status, retention_until, privacy_class, promo_check,
 flags, provenance and access. Unknown dates/identities are null. published_at and
@@ -109,13 +103,17 @@ valid_at are dates; observed_at/deadlines are UTC timestamps. Family must match
 the source-type mapping in source-grading; none covers llm_output/synthetic.
 platform_family is the route's channel family or the source type outside routes.
 org is a normalized producing institution key, not a person's name.
+producer_stake is official/independent/vendor; survey with vendor stake is estimate,
+otherwise measured. The field does not change other source-type mappings.
 
 Reader provenance is `{kind: reader, fetch_id, content_sha256}`; access copies
 rung, presentation, verdict, stop_class, fetched_at, robots, context and terms.
 Normalize ledger null stop to none. Import provenance is `{kind: import,
 import_id, content_sha256}` with access null. These alternatives are exclusive;
-never invent a fetch_id for a team export. item_key selects an actual captured
-comment/review/table, not a guessed URL identifier.
+never invent a fetch_id for a team export. item_key selects an actual captured comment/review/table only when capture-bound
+item attestations bind its scrubbed excerpt and author key. Without that attestation,
+record item_key and author_key as null, identity unknown, and use the whole page or
+thread as one independence unit. `[author]` and `---` are hints, never identity proof.
 
 Flags explicitly contain booleans secondhand, unclear_context, count_only,
 seller_managed, own_brand, community_modelled_demographics,
@@ -235,15 +233,15 @@ captures remain separately visible with a warning.
 Use SRC-/EV-/CLM- plus eight lowercase hex characters from SHA-256 of canonical
 identity tuples. Source: resource identity. Evidence: `(run_id, source_id,
 capture_ref, capture content_sha256, normalized quote, item_key)`. Claim: `(run_id, claim_kind,
-normalized statement, subject, scope, audience_values)`. Scope/wording/value changes
+normalized statement, subject, scope, audience joins and values)`. Scope/wording/value changes
 create a new claim ID; support additions do not. Sort audience_values by join.
-Receipt stores full digest and a SHA-512 commitment to the identity tuple;
-compare actual tuples in memory, without retaining locating URLs or personal
-item IDs outside their private source record. Unequal identities sharing a short ID refuse
-the whole merge, exit 2 id_collision. No order-dependent suffix, historical
-renaming or truncated-digest equality assumption. An actual collision needs a
-wider-ID contract revision. Equal tuples coalesce only when other metadata agrees;
-union compatible reference sets, preserve histories, refuse conflicting metadata.
+Receipt stores the full SHA-256 digest of the canonical identity tuple.
+Compare actual tuples before coalescing. Proof references and value checks are
+excluded from claim identity and included in the input hash. Unequal tuples with
+the same short ID refuse the whole merge, exit 2 id_collision. No suffix,
+renaming, additional commitment or collision migration is permitted. Equal tuples
+coalesce only when other metadata agrees; union compatible reference sets,
+preserve histories, refuse conflicting metadata.
 
 SHA-256 of normalized quote text defines copypaste_group. Exact normalized copies
 count once even across authors/channels; punctuation/language changes are not
@@ -410,8 +408,10 @@ review cap D is restored only after an independent A/B from another channel
 survives every other cap. Compute external corroboration first; own-brand items
 cannot supply their own corroboration. Normal support thresholds still apply.
 
-Voice identity is author_key, otherwise thread_key. Missing both caps D, zero
-independent units; never assign a person per URL. Default anonymous nicknames/
+Voice identity is an attested author_key, otherwise an attested thread_key.
+Without item/author attestation, use the captured whole page/thread as one unit
+with identity unknown; never infer a person from placeholders or separators.
+Missing provenance for even that page/thread caps D, zero independent units. Default anonymous nicknames/
 partial-IP handles require thread keys, all replies in a thread count once.
 Institutions/measurements use producing org, normalized with pinned aliases and
 registrable-domain rules where identifiable. Statistics portals need the producing
@@ -457,8 +457,9 @@ about_current_version requires brief release_date. Missing date yields stale
 and process exit 1, including observed product claims. Effective date is valid_at/
 explicit version or measurement period, falling back to published_at; observed_at
 is a read date, never version truth. Unknown dates cannot establish currency.
-Old/undated items become context. Potentially counting inputs with none established
-current yield stale. Mixed old/current uses only current items. A product run
+For current-version claims old/undated items become context. The stale predicate
+is about_current_version && (missing_release_date || no_current_potential_support).
+Historical claims are never stale for that reason. Mixed old/current uses only current items. A product run
 needs matching version or recorded execution on/after release, plus matching
 product surface and typed task/context/version scope.
 
@@ -479,7 +480,7 @@ not consumable. Conflict/currency always precede support.
 | Order | Condition | Status |
 | --- | --- | --- |
 | 1 | Unresolved counters, counter_search contradicts, or sticky expired-counter gap | conflicting |
-| 2 | Current claim missing release date, or potential counting support/observations all old/unknown | stale |
+| 2 | about_current_version && (missing_release_date || no_current_potential_support) | stale |
 | 3 | product_behavior without eligible linked observation | needs_product_check |
 | 4 | product_behavior with eligible observed completed runs, no earlier blocker | supported_high |
 | 5 | Non-product nonempty inputs all assessed E | unfit |
@@ -594,11 +595,11 @@ Other verified research claims need nonempty observed eligible evidence. Gate
 owns grades/process/currency/counters/independence/value eligibility. A bundle
 verified flag alone never certifies a gate.
 
-Legacy QA without research markers keeps current checks, including existing
-verified product fixture. Additive legacy observation-only product claims may
-pass with observed completed same-scope runs. Without observations they still
-need existing nonempty source evidence; do not break the old fixture by demanding
-observation_ids. Optional present fields are checked even in legacy records.
+Legacy QA without research markers remains structurally valid, including the
+existing verified product fixture. Observation-only product claims may pass with
+observed completed same-scope runs. A verified legacy product_behavior without
+those observations is a plain-validator warning and is refused by research
+consumers. Optional present fields are checked even in legacy records.
 Research consumers refuse legacy without authoritative receipts; deleting an
 envelope cannot bypass gate because linked markers and external receipt are
 required. Fixtures grade only in explicitly fixture runs and cannot export as
@@ -612,7 +613,7 @@ Canonical C rejects duplicate JSON keys, non-JSON values, invalid UTF-8/unpaired
 surrogates, NaN/infinity, booleans in numeric fields. NFC normalize all strings/
 keys; reject resulting key collisions. Sort object keys by Unicode code point;
 UTF-8, ensure_ascii false, comma/colon separators, no spaces/trailing newline.
-Integers decimal; finite fractional numbers use Python 3.11+ json.dumps shortest
+Integers decimal; finite fractional numbers use Python 3.10+ json.dumps shortest
 round-tripping decimals; integral floats become integers, negative zero 0. Pin
 and test serializer vectors. Existing differently spaced reader policy hashes
 are unchanged. Normalize dates/timestamps to specified ISO forms.
@@ -622,20 +623,13 @@ sort by id; captures by fetched_at/capture_ref; audience_values by join. Search
 queries, steps/results and report lines keep order. Stored quotes use section 4's
 explicit normalization, not undocumented rewriting.
 
-input_sha256 is SHA-256(C(claim dependency object)) containing:
-
-- Complete claim inputs: original support/context sets, counter/observation links,
-  statement, subject/scope/values, counter_search, stakes/currency/scenario uses.
-- All supporting/context/counter evidence and sources, exact capture metadata,
-  flags, content commitments/verbatim receipt, denominator/scope/retention state.
-  Include proposed support even when it does not count now.
-- Observations, runs, completed status, dates/version/surface, scenarios/persona
-  basis/provenance and artifact digests used to establish observations.
-- Full brief including release/version; segment priority and relevant scenarios.
-- Rules version/digests for grading, markers, suffixes/org aliases; independence
-  membership including unlinked copies/identities affecting this claim or cap.
-- Applicable decisions, counter receipts, resolutions, predecessor scope and
-  relevant expiry/privacy/coverage gaps.
+input_sha256 is SHA-256(C({bundle: the entire normalized non-derived input
+bundle, process: harvest/search/budget/policy inputs, rules: pinned rules inputs})).
+Regrade every claim on every gate run. Claim rows share this one input hash;
+proofs, all evidence and reference records, brief, decisions, resolutions, gaps
+and independence metadata participate even when they do not count. Reference
+cycles are irrelevant to hashing. Reject only predecessor-link cycles among
+scope_change resolutions. The data-flow lock compares this one hash.
 
 Exclude derived verification/gate status/reasons/grades and gate-written epistemic
 status. Reconstruct evidence/context outputs from research_support_evidence_ids
@@ -665,8 +659,7 @@ use failure rows. Issues specify code/location/reason/next_step.
 
 Gate also has bundle_input_sha256 (all non-derived input), process_input_sha256
 (harvest/search/budget/caps), brief_sha256, merge_receipt_sha256, rules_sha256.
-Claim-ID set/run_id/bundle_id must match exactly. Unrelated changes may leave
-individual hashes unchanged, but require a new process check/transaction. Gate and draft mode is live/fixture, derived from the reader run test_hooks
+Claim-ID set/run_id/bundle_id must match exactly. Every input change changes all claim input hashes and requires a new process check. Gate and draft mode is live/fixture, derived from the reader run test_hooks
 flag; mode enters the process and every claim hash. Fixture runs are diagnostic
 only: export refuses them with exit 2, and composition never accepts their data
 as real research. gate_input_sha256 in report/minimize outputs means SHA-256(C(the complete pass
@@ -682,21 +675,17 @@ while holding state.lock. Default timeout five seconds, optional --lock-timeout
 0–60 seconds. Contention exits 3. Reject symlinks/traversal/unsafe modes/oversized
 inputs. Snapshot ledger/counters coherently; engine never edits reader policy.
 
-Stage mode-0600 artifacts in .engine/generations/<content digest>/. fsync files
-and directory, validate shapes/links/hashes and recheck retention before publish.
-Journal previous committed generation, raw input hashes and intended output byte
-digests. CAS-check inputs/engine-state digest; external edits exit 3 without loss.
-Publish convenience files with same-filesystem temp+os.replace; fsync directory.
-Atomic engine-state.json replacement is the final commit. Manifest names immutable
-generation, operation, input digests and each output digest. Consumers require
-matching files or use that committed generation. Two renames are not an atomic
-bundle/gate pair; no symlink pointer. No mixed generation may pass.
-
-Interruption before commit leaves prior generation authoritative. Next writer
-restores convenience files only if current bytes equal journaled old/staged bytes;
-external changes exit 3. Post-commit interruption needs cleanup only. Remove
-orphan temps/journal after recovery. Purge expiry from every generation/cache/
-receipt; no expired rollback copy is retained.
+Use one committed snapshot and one staged snapshot under .engine/. Stage
+mode-0600 artifacts, fsync files and directory, validate shapes/links/hashes and
+recheck retention before publish. Atomically replace engine-state.json last;
+it names the snapshot and byte digests. Consumers read only this committed
+snapshot, never convenience copies. Authored input annotations are separate from
+committed engine output. A failure preserves the previous snapshot, invalidates
+its pass for consumers and writes gate_failed.json. Discarded snapshots and
+staging files are purged. No journal, mirror recovery or compare-and-swap.
+Interruption before manifest replacement leaves the previous snapshot authoritative;
+interruption after replacement leaves the new snapshot authoritative. A later
+writer purges abandoned staging. There is no multi-generation rollback history.
 
 Gate failure publishes gate_failed with result fail/issues code/location/reason/
 next_step, removes current gate/pass pointer; hard errors exit 2 before process
@@ -747,7 +736,7 @@ task_id, condition vocabulary name, context_id or pain-point ID within segment.
 Same task may occur in multiple segments; intrinsic goal/data/success agree,
 frequency may vary by segment. No array-index joins or “some supported source”.
 
-For each numerical scalar/map component, value_checks requires `{pointer,
+For shares and weights only, each numerical scalar/map component in value_checks requires `{pointer,
 evidence_id, value_as_printed, conversion, numerator_as_printed,
 denominator_as_printed}`. Pointer is empty for scalar or a JSON Pointer to the
 component. Evidence is eligible observed quantitative/statistic support with
@@ -763,6 +752,10 @@ instead. Unused numerator/denominator literals are null. Missing checks or a
 numeric mismatch is exit 2; boolean values never count as numbers. No arithmetic
 from voice/API counts. Maps need one check per component, no hidden normalization.
 Non-numeric values use an empty value_checks array and remain reviewer-assessed.
+Task concrete_data (amounts, counts, durations) may contain any safe finite scalar;
+its exact value needs a completed product observation or an approved brief value,
+not a proportion, sampling frame or denominator. Such values have empty
+value_checks and are never treated as empirical shares or weights.
 
 | Entity and fields | Claim kind and value |
 | --- | --- |
@@ -915,8 +908,12 @@ subject/scope/scenario bindings. Other arrays retain required authored test/outp
 fields and graph links; unknown optional fields are dropped and recorded.
 
 Recursively drop excerpt/raw/raw_html/raw_content/body/quote/text/page_text and
-equivalents, including inside decisions/import metadata. Authored statement/
-observation result is screened for copied raw/expired/personal content. Strip
+equivalents, including inside decisions/import metadata. Mechanical checks are field allowlists, reader identifier patterns and retained
+quotations (including nested fields). Every authored statement/summary/result
+needs a reviewer attestation {record_id, field, content_sha256, reviewed_by,
+reviewed_at}, bound to its canonical content in research.summary_attestations.
+The mechanical pass never proves authorship; the reviewer attests authorship
+and suitability after checking original evidence. Strip
 research grading envelope; add minimized_from `{bundle_id, bundle_input_sha256,
 gate_input_sha256, rules_version, sanitizer_version, mode}`. Projection provenance is
 not a research gate: it cannot regrade/export. Original support refs may remain
@@ -959,7 +956,7 @@ failure state, no partial content bundle except mandatory expiry purge.
 gate reads policy snapshots/ledger/receipts/manifest/logs/bundle, including agent
 counter/decision/resolution/scenario annotations. Writes gate or gate_failed;
 --write-bundle also writes derived states/partitions to named bundle. External
-bundle path must match run/receipt and participates in lock/CAS. Plain gate can
+bundle path must match run/receipt and participates in lock. Plain gate can
 pass without editing bundle; consumers trust recomputed gate, not verified flags.
 
 report-check reads committed bundle/gate/receipt and report/mapping, writes
@@ -977,12 +974,12 @@ may regrade, edited quotes need new run/capture. Terms freshness still applies.
 
 | Command | 0 | 1 | 2 | 3 |
 | --- | --- | --- | --- | --- |
-| merge | Valid, complete or acknowledged coverage | Harvest/count/budget/privacy/length violation | Schema/provenance/quote/collision/reference/policy/I/O | Lock/CAS conflict |
-| gate, --write-bundle | Process pass, unsupported claims allowed | Counter/cap/privacy/verifier/release-date process failure | Integrity/reference/numeric support; read-only expiry | Lock/CAS conflict |
-| report-check | Mechanical pass | Placement/mapping/fence violation | Phantom/invalid ID, stale/absent gate/integrity/I/O | Lock/CAS conflict |
-| export-audience | Valid incomplete draft, possibly empty | Unsafe/invalid value binding | Stale/absent gate/expiry/integrity/I/O | Lock/CAS conflict |
-| minimize | Safe valid projection | Missing summary/unsafe projection | Stale/absent gate/expiry/reference/I/O | Lock/CAS conflict |
-| audience-check --gate | Valid draft/completed values | Audience required-field/value/provenance mismatch | Stale/absent gate/expiry/bundle integrity/usage/I/O | Lock/CAS conflict |
+| merge | Valid, complete or acknowledged coverage | Harvest/count/budget/privacy/length violation | Schema/provenance/quote/collision/reference/policy/I/O | Lock conflict |
+| gate, --write-bundle | Process pass, unsupported claims allowed | Counter/cap/privacy/verifier/release-date process failure | Integrity/reference/numeric support; read-only expiry | Lock conflict |
+| report-check | Mechanical pass | Placement/mapping/fence violation | Phantom/invalid ID, stale/absent gate/integrity/I/O | Lock conflict |
+| export-audience | Valid incomplete draft, possibly empty | Unsafe/invalid value binding | Stale/absent gate/expiry/integrity/I/O | Lock conflict |
+| minimize | Safe valid projection | Missing summary/unsafe projection | Stale/absent gate/expiry/reference/I/O | Lock conflict |
+| audience-check --gate | Valid draft/completed values | Audience required-field/value/provenance mismatch | Stale/absent gate/expiry/bundle integrity/usage/I/O | Lock conflict |
 
 Standalone bundle validator retains 0 valid/1 contract error/2 usage-I/O.
 Unsupported status alone is not a process failure. --write-bundle does not
@@ -1047,9 +1044,9 @@ All existing tests must still pass.
 | Privacy graph | Genuine aggregate; keyless excerpt linked to keyed/locating source, profile alias/reverse link/minor rejected |
 | Bundle | Observation-only completed product; broken observation/counter/context/original-support/audience links and inferred/incomplete product run rejected |
 | Compatibility | Existing valid/minimal/legacy fixtures pass; removed envelope/receipt cannot bypass; no live fixture export |
-| Hash closure | Mutate counter/context/source/run/version/brief/org alias/component/decision: stale refused; unrelated claim hash stable |
+| Whole input hash | Mutate counter/context/source/run/version/brief/org alias/component/decision: stale refused; unrelated changes invalidate the common hash |
 | Regrade | Gate, write-bundle, gate repeat identical hashes/partitions/bytes; added claim/old pass on failure/self-invalidating writes rejected |
-| Transactions | Competing writers serialize/CAS; kill at every rename; mixed pair/symlink/lost external edit/expired rollback never accepted |
+| Transactions | Competing writers serialize; kill at every rename; mixed pair/symlink/lost external edit/expired rollback never accepted |
 | Expiry | Purge content/derived statements/links with gap; context/counter expiry not ignored; reread proof required; contrary expiry cannot erase conflict |
 | Draft | Honest empty/missing-age-device-task todos; no invented defaults/missing parent/news-only export/guessed frequency |
 | Audience | Exact joins/values; changed share/age/device/frequency or cross-segment condition fails despite supported source somewhere; no composition without gate |
@@ -1068,7 +1065,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_*.py'
 
 Add CLI operations, schema enforcement, pinned grading data, capture/import
 receipts, harvest/search reconciliation, graph privacy/tombstones, counter/scope/
-decision evaluation, closure hashes, transactions/recovery, draft exporter/value
+decision evaluation, whole-input hashes, snapshot transactions, draft exporter/value
 check, Markdown checker and minimizer. Change validate_bundle for observation-only
 claims, optional links, research recognition and strict tombstones. Change audience
 validation/composition for --draft and required research gate/value joins. Preserve
@@ -1086,14 +1083,18 @@ The following JSON interfaces are also fixed. No unknown top-level properties.
 Common issue records are {code, location, reason, next_step}; timestamps are UTC;
 counts are nonnegative integers; maps use the stated keys; set-like arrays sort.
 
-For an unattributed_request acknowledgement, axis_id and assignment_id are null
-and request_gap is required: {host, charged_documents, logged_documents,
-unmatched_count}. The counts must match the current ledger/state snapshot and
-unmatched_count equals their positive difference. Other acknowledgement kinds
-have no request_gap. This acknowledges uncertain request attribution, never
-reduces charged budgets or authorizes evidence for a missing capture. Changed
-counts require a new acknowledgement. Logged requests exceeding charged slots
-are integrity errors, not gaps that can be acknowledged.
+axis-acknowledgements.json is {schema_version: ux-axis-acknowledgements.v1,
+run_id, entries}. Each entry has kind, axis_id, assignment_id, reason,
+acknowledged_by (agent/owner) and acknowledged_at. Discriminate by kind:
+- missing/partial: non-null manifest axis_id and assignment_id; no request_gap.
+- excluded: manifest excluded axis_id, assignment_id null; no request_gap.
+- unattributed_request: both IDs null, request_gap required: {host,
+  charged_documents, logged_documents, unmatched_count}. Positive unmatched_count
+  equals charged minus logged and matches the current state snapshot.
+No extra fields. Acknowledgement never completes an assignment, proves evidence
+or reduces charged budget. Later complete harvest supersedes the gap, retaining
+history. Changed request counts need a new acknowledgement. Logged requests over
+charged slots are integrity errors.
 
 query_log.json is {schema_version: ux-query-log.v1, run_id, receipts,
 duplicate_queries, total_invocations, counts_by_phase, counts_by_assignment,
@@ -1115,16 +1116,16 @@ merge_receipt.json is {schema_version: ux-merge-receipt.v1, contract_version,
 run_id, bundle_id, input_sha256s, manifest_sha256, query_log_sha256,
 expansion_log_sha256, rules_sha256, source_proofs, evidence_proofs, claim_proofs,
 id_rewrites, counter_history}. Input digest map keys are safe run-relative artifact
-names. Source proof is {source_id, full_id_sha256, identity_sha512, captures};
+names. Source proof is {source_id, full_id_sha256, captures};
 capture is {capture_ref, content_sha256, metadata}. Metadata uses source grading
 fields/access/flags from section 3, without locating URLs or raw item IDs.
 Evidence proof is {evidence_id, source_id, capture_ref, full_id_sha256,
-identity_sha512, normalized_excerpt_sha256, item_binding_sha256}. Claim proof is
-{claim_id, full_id_sha256, identity_sha512, original_support_ids,
+normalized_excerpt_sha256, item_binding_sha256}. Claim proof is
+{claim_id, full_id_sha256, original_support_ids,
 original_context_ids, original_counter_ids}. Rewrite is {assignment_id,
 part_index, local_id, record_kind, id}. Counter history is {claim_id,
 counter_evidence_ids, call_ids, outcome, resolution_id}; append proven changes
-only. Full SHA-512 commitments have 128 lowercase hex digits. Receipt has no
+only. Receipt has no
 bundle_input_sha256: that would form a cycle with the bundle's receipt hash.
 Subsequent gate transactions may append counter history in their own immutable
 receipt while preserving the original merge receipt and its digest.
@@ -1133,8 +1134,7 @@ engine-state.json is {schema_version: ux-research-engine-state.v1, operation,
 generation_id, previous_generation_id, inputs, outputs}. Generation ID is SHA-256
 of C({operation, inputs, outputs}), excluding this pointer; previous ID is null
 initially. Inputs map safe artifact paths to byte SHA-256; output entries are
-{file, generation_path, sha256}. Journal additionally records previous-state byte
-hash and expected old/staged convenience-file hashes. No volatile time enters
+{file, generation_path, sha256}. No volatile time enters
 gate bytes. Private transaction metadata is not research evidence.
 
 minimize.json is {schema_version: ux-research-minimize.v1, result, exit_code,
@@ -1185,9 +1185,8 @@ Verifier target hashes use immutable snapshots: a source target hashes its
 resource identity commitment plus the selected capture metadata/content hash,
 not the mutable latest header or other capture histories. An evidence target
 hashes its original fields plus that selected capture. Claim targets hash flat
-non-derived claim inputs without decision objects. Recursively include every
-decision/resolution basis evidence, source, observation and predecessor in claim
-input closure; merely hashing their IDs is insufficient. Reject reference cycles.
+non-derived claim inputs without decision objects. Hash the whole normalized input bundle and process/rules inputs; do not traverse
+a per-claim dependency closure. Reject only predecessor cycles in scope changes.
 
 Scope nulls are unspecified constraints on claims and unknown facts on evidence.
 Unknown evidence never proves disjointness. In this revision only distinct stable
@@ -1216,3 +1215,53 @@ API provenance instead. A team import is not authority to lift a stopped host.
 Minimized origin mode must equal the consuming loop packet mode; fixture
 projections cannot be intake for a live loop. This additive origin check does not
 weaken existing raw-content, execution or population checks.
+
+## Release amendments
+
+Depth levels in RELEASE-CONTRACT.md section 2 are budgets and search targets,
+never minimum-query gate or merge requirements. Coverage is acknowledged per axis.
+Shared reports cite community/review/social evidence by channel, date and source
+ID. report-check rejects body URLs on those hosts in the pinned route table;
+official and statistical URLs remain allowed. Research reports begin with
+## Decision or ## 결론 after the title, with at most three findings and three next
+steps, each priority citation carrying Counter: <outcome> - <summary> matching gate.
+Read the populated reader-return.example.json and the short audience-pipeline
+field guide rather than the machine schema. Schemas remain the validator input.
+
+Exact product task-value proof is recorded in observation.product_values, an array
+of {join, value}. A completed eligible observation must contain the exact join
+and scalar-map value. A reviewed native product_brief excerpt can instead carry
+approved_values with the same shape, checked against its sanitized brief text.
+These references participate in the common input hash, never claim identity.
+
+Gate annotations that introduce valid contrary links are recorded in a private
+gate_receipt.json, including process-failed gates. On that failure the engine
+retains the prior committed bundle content, preserves the authored input mirror,
+and commits only the contrary-history receipt and the nonconsumable failure.
+Hard-invalid annotations are never added to history. Passes and subsequent merges
+retain that receipt. It participates in process inputs and the common input hash.
+
+## Not in this release
+
+- Unconditional mobile/desktop coalescing without a successful capture trail is
+  unavailable. The engine uses proven final URLs and preserves other aliases as
+  distinct resources; exact copied text still supplies one independence component.
+  The packaged route table has no separate authoritative resource-ID equivalence
+  attestation, so the engine does not infer one from mobile URL spelling.
+- No exhaustive process-kill/stress matrix across every filesystem call is
+  shipped. The acceptance tests inject interruption before/after staging, snapshot
+  publication and atomic manifest replacement, and test competing lock holders.
+  The committed manifest remains the authority after interruption.
+- Discovery automation, raw-team-export repair, automatic news audience export,
+  personal protected-attribute research, semantic report approval and authorship
+  proof remain outside the scope fixed in sections 1, 3, 5, 11, 12 and 13. The
+  engine instead requires actual receipts, producer review, gaps, withheld values
+  and content-bound reviewer attestations.
+- Journals, mirror recovery, compare-and-swap and collision migration are absent
+  by the owner's amendments 9 and 10. The engine uses one lock, one committed
+  snapshot, one staged snapshot, an atomic manifest and collision refusal.
+
+The reader's low-level default budgets are preserved. Research agents must put
+the chosen quick/standard/deep ceilings from RELEASE-CONTRACT.md section 2 into
+the brief; the default research depth is standard. Query targets never fail the
+engine. This routing guidance is a documentation delta for the routing package.

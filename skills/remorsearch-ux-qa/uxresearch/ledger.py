@@ -839,6 +839,8 @@ class Run:
                 if entry.get("bucket") == "refused":
                     refusals[key] = refusals.get(key, 0) + 1
                     outcomes.setdefault(key, entry)
+                elif entry.get("source") == "robots":
+                    outcomes.setdefault(key, entry)
                 else:
                     outcomes[key] = entry
             elif entry.get("kind") == "request":
@@ -936,7 +938,9 @@ class Run:
             if isinstance(value, dict):
                 out = {}
                 for key, item in value.items():
-                    if key in _LEDGER_URL_KEYS and isinstance(item, str):
+                    if key == "item_attestations":
+                        out[key] = {}  # temporary item/author locators are gone at close
+                    elif key in _LEDGER_URL_KEYS and isinstance(item, str):
                         out[key] = origin_only(item)
                         stripped += 1
                     elif key == "reasons" and isinstance(item, list):

@@ -3,6 +3,10 @@
 from pathlib import Path
 import sys
 
+if sys.version_info < (3, 10) and sys.argv[1:2] == ["start"]:
+    print("Python 3.10 or newer is required; found " + sys.version.split()[0], file=sys.stderr)
+    raise SystemExit(2)
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from uxresearch.cli import main
 

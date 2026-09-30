@@ -10,6 +10,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 
 CAPABILITIES = {"read_only", "design_write", "test_data_write", "code_write"}
 EPISTEMIC_STATUSES = {"observed", "inferred", "unknown"}
@@ -76,8 +78,9 @@ def _require_ref_list(
     target: dict[str, dict[str, Any]],
     location: str,
     errors: list[str],
+    *, allow_empty: bool = False,
 ) -> None:
-    if not isinstance(value, list) or not value:
+    if not isinstance(value, list) or (not allow_empty and not value):
         errors.append(f"{location} must contain at least one record id")
         return
     for index, item in enumerate(value):
@@ -222,15 +225,29 @@ def _validate_links(
     proposals: dict[str, dict[str, Any]],
     figma: dict[str, dict[str, Any]],
     errors: list[str],
+    *, research: bool = False,
 ) -> None:
     for evidence_id, item in evidence.items():
         _require_ref(item.get("source_id"), sources, f"records.evidence[{evidence_id}].source_id", errors)
     for claim_id, item in claims.items():
-        _require_ref_list(item.get("evidence_ids"), evidence, f"records.claims[{claim_id}].evidence_ids", errors)
+        _require_ref_list(item.get("evidence_ids"), evidence, f"records.claims[{claim_id}].evidence_ids", errors,
+                          allow_empty=bool(research or item.get("claim_kind") == "product_behavior" or "research_support_evidence_ids" in item))
+        for name, target in (("observation_ids", observations), ("counter_evidence_ids", evidence), ("context_evidence_ids", evidence), ("research_support_evidence_ids", evidence), ("research_context_evidence_ids", evidence)):
+            if name in item:
+                _require_ref_list(item[name], target, f"records.claims[{claim_id}].{name}", errors, allow_empty=True)
+        counter = item.get("counter_search")
+        if counter is not None:
+            if not isinstance(counter, dict):
+                errors.append(f"records.claims[{claim_id}].counter_search must be an object")
+            else:
+                for name, target in (("read_source_ids", sources), ("counter_evidence_ids", evidence)):
+                    _require_ref_list(counter.get(name), target, f"records.claims[{claim_id}].counter_search.{name}", errors, allow_empty=True)
         if "persona_ids" in item:
             _require_ref_list(item.get("persona_ids"), personas, f"records.claims[{claim_id}].persona_ids", errors)
     for scenario_id, item in scenarios.items():
         _require_ref(item.get("persona_id"), personas, f"records.scenarios[{scenario_id}].persona_id", errors)
+        if "motivation_claim_ids" in item:
+            _require_ref_list(item["motivation_claim_ids"], claims, f"records.scenarios[{scenario_id}].motivation_claim_ids", errors, allow_empty=True)
     for run_id, item in runs.items():
         _require_ref(item.get("scenario_id"), scenarios, f"records.runs[{run_id}].scenario_id", errors)
     for observation_id, item in observations.items():
@@ -239,7 +256,7 @@ def _validate_links(
         _require_ref(item.get("scenario_id"), scenarios, f"records.findings[{finding_id}].scenario_id", errors)
         _require_ref_list(item.get("observation_ids"), observations, f"records.findings[{finding_id}].observation_ids", errors)
         if "claim_ids" in item:
-            _require_ref_list(item.get("claim_ids"), claims, f"records.findings[{finding_id}].claim_ids", errors)
+            _require_ref_list(item.get("claim_ids"), claims, f"records.findings[{finding_id}].claim_ids", errors, allow_empty=True)
         if "figma_id" in item:
             _require_ref(item.get("figma_id"), figma, f"records.findings[{finding_id}].figma_id", errors)
     for proposal_id, item in proposals.items():
@@ -282,7 +299,7 @@ def _validate_semantics(
         if verification_status == "verified":
             if claim.get("epistemic_status") != "observed":
                 errors.append(f"records.claims[{claim_id}] cannot be verified from non-observed epistemic status")
-            if not supporting or any(item.get("epistemic_status") != "observed" for item in supporting):
+            if claim.get("claim_kind") != "product_behavior" and (not supporting or any(item.get("epistemic_status") != "observed" for item in supporting)):
                 errors.append(f"records.claims[{claim_id}] requires observed evidence for verification")
             if any(sources.get(item.get("source_id"), {}).get("retention_status") in WITHDRAWN_SOURCE_STATES for item in supporting):
                 errors.append(f"records.claims[{claim_id}] uses withdrawn or deleted source material")
@@ -335,7 +352,7 @@ def _input_shapes(bundle: dict[str, Any]) -> list[str]:
                      "epistemic_status", "verification_status", "claim_kind", "support_basis",
                      "basis", "retention_status", "design_status", "defect_class",
                      "baseline_version", "readback_version", "severity", "readback_artifact_ref",
-                     "file_key", "branch_key", "read_at", "status", "retention_until"}
+                     "file_key", "branch_key", "read_at", "status"}
     list_fields = {"evidence_ids", "persona_ids", "observation_ids", "claim_ids", "finding_ids", "node_ids"}
     for name in RECORD_NAMES:
         values = records.get(name, [])
@@ -353,7 +370,7 @@ def _input_shapes(bundle: dict[str, Any]) -> list[str]:
     return errors
 
 
-def validate_bundle(bundle: Any, *, now: datetime | None = None) -> list[str]:
+def _validate_bundle(bundle: Any, *, now: datetime | None = None) -> list[str]:
     """Every contract error in the bundle (empty when it is valid). `now` is the moment retention dates are
     checked against (default: the current time)."""
     errors: list[str] = []
@@ -390,7 +407,7 @@ def validate_bundle(bundle: Any, *, now: datetime | None = None) -> list[str]:
     _validate_sources(indexed["sources"], errors)
     _validate_retention(indexed["sources"], errors, now or datetime.now(timezone.utc))
     _validate_personas(indexed["personas"], errors)
-    _validate_links(*(indexed[name] for name in RECORD_NAMES), errors)
+    _validate_links(*(indexed[name] for name in RECORD_NAMES), errors, research=research_bundle(bundle) or "minimized_from" in bundle)
     _validate_semantics(
         indexed["evidence"],
         indexed["claims"],
@@ -404,23 +421,209 @@ def validate_bundle(bundle: Any, *, now: datetime | None = None) -> list[str]:
     return errors
 
 
+
+def scope_matches(constraints, facts):
+    return isinstance(facts, dict) and all(value is None or facts.get(key) == value for key, value in (constraints or {}).items())
+
+
+def eligible_observations(bundle, claim, *, require_scope=False):
+    records = bundle.get("records", {})
+    maps = {k: {x["id"]: x for x in records.get(k, []) if isinstance(x, dict) and isinstance(x.get("id"), str)} for k in ("observations", "runs", "scenarios")}
+    good = []
+    for oid in claim.get("observation_ids", []):
+        obs = maps["observations"].get(oid, {})
+        run = maps["runs"].get(obs.get("run_id"), {})
+        scenario = maps["scenarios"].get(run.get("scenario_id"), {})
+        if not obs or obs.get("epistemic_status") != "observed" or not obs.get("result") or run.get("status") != "completed" or not scenario:
+            continue
+        if require_scope:
+            if not isinstance(obs.get("scope"), dict) or obs["scope"].get("product_relation") != "product_surface":
+                continue
+            if not scope_matches(claim.get("scope"), obs["scope"]) or not scope_matches(claim.get("scope"), run.get("scope")) or not scope_matches(claim.get("scope"), scenario.get("scope")):
+                continue
+            subject = claim.get("subject", {})
+            if any(subject.get(k) is not None and scenario.get(k) != subject[k] for k in ("segment_id", "task_id", "context_id")):
+                continue
+        good.append(oid)
+    return sorted(good)
+
+
+def research_bundle(bundle):
+    if "research" in bundle:
+        return True
+    for group in ("sources", "claims", "personas", "scenarios"):
+        for record in _records(bundle, group):
+            if any(k in record for k in ("provenance", "access", "research_support_evidence_ids", "research_context_evidence_ids", "audience_ref")) or record.get("access_basis") in {"public_anonymous", "authorised_member", "team_provided"}:
+                return True
+    return False
+
+
+def bundle_warnings(bundle):
+    if not isinstance(bundle, dict):
+        return []
+    return [f"records.claims[{c['id']}] legacy product verification has no completed observed run" for c in _records(bundle, "claims") if c.get("claim_kind") == "product_behavior" and c.get("verification_status") == "verified" and not eligible_observations(bundle, c)]
+
+
+def _extra_checks(bundle, now):
+    from uxresearch.schema import Resolver
+    from uxresearch.canonical import EngineError
+    errors = Resolver().validate(bundle, "ux-evidence-bundle.v1.schema.json")
+    if errors:
+        return errors
+    records = bundle["records"]
+    maps = {k: {x["id"]: x for x in records[k]} for k in RECORD_NAMES}
+    research = research_bundle(bundle)
+    for source in maps["sources"].values():
+        tomb = source.get("research_tombstone")
+        if tomb:
+            allowed = {"id", "channel", "source_ref", "access_basis", "access_method", "public_scope", "retention_status", "research_tombstone"}
+            if set(source) != allowed:
+                errors.append("Source tombstone retains content or unknown fields")
+        elif source.get("retention_status") in {"deleted", "withdrawn"} and any(k in source for k in ("excerpt", "body", "raw", "text", "title", "summary", "captures")):
+            errors.append("Deleted or withdrawn source retains content")
+        for capture in source.get("captures", []):
+            metadata = capture.get("metadata", {})
+            until = metadata.get("retention_until")
+            if until is not None:
+                end = _retention_end(until) if isinstance(until, str) else None
+                if end is None or end <= now:
+                    errors.append("A source capture retains expired content")
+    for claim in maps["claims"].values():
+        if claim.get("verification_status") == "verified" and claim.get("claim_kind") == "product_behavior":
+            if research and not eligible_observations(bundle, claim, require_scope=True):
+                errors.append("Research product_behavior requires completed observed same-scope product observations")
+            elif not research and not eligible_observations(bundle, claim) and not claim.get("evidence_ids"):
+                errors.append("Legacy product_behavior requires observations or legacy source evidence")
+        for field in ("evidence_ids", "observation_ids", "persona_ids", "research_support_evidence_ids", "research_context_evidence_ids", "counter_evidence_ids", "context_evidence_ids"):
+            if field in claim and len(set(claim[field])) != len(claim[field]):
+                errors.append("Claim reference arrays must be unique")
+        for value in claim.get("audience_values", []):
+            _require_ref_list(value["denominator_evidence_ids"], maps["evidence"], "audience_values.denominator_evidence_ids", errors, allow_empty=True)
+            for check in value["value_checks"]:
+                _require_ref(check["evidence_id"], maps["evidence"], "audience_values.value_checks.evidence_id", errors)
+        if claim.get("counter_search") and claim["counter_search"].get("resolution_id"):
+            target={x["id"]:x for x in bundle.get("research", {}).get("scope_resolutions", [])}
+            _require_ref(claim["counter_search"]["resolution_id"], target, "counter_search.resolution_id", errors)
+        support = [maps["evidence"].get(x, {}) for x in claim.get("evidence_ids", [])]
+        if claim.get("verification_status") == "verified":
+            for ev in support:
+                src = maps["sources"].get(ev.get("source_id"), {})
+                if src.get("research_tombstone") or src.get("retention_status") in {"deleted", "withdrawn", "redacted"} or src.get("source_family") == "none" or src.get("source_type") in {"llm_output", "synthetic"} or (src.get("access") or {}).get("stop_class") not in {None, "none"} or ev.get("flags", {}).get("lead_kind", "full_text") != "full_text":
+                    errors.append("Verified claim uses ineligible stopped, lead or synthetic source support")
+        numeric = claim.get("claim_kind") in {"segment_share", "device_mix", "condition_share", "prevalence", "user_preference", "real_user_preference", "discomfort"}
+        if claim.get("verification_status") == "verified" and numeric:
+            for ev in support:
+                den = ev.get("denominator")
+                if ev.get("epistemic_status") != "observed" or ev.get("evidence_type") not in {"quantitative", "statistic"} or not isinstance(den, dict) or not den.get("sampling_frame") or not den.get("period_start") or not den.get("period_end"):
+                    errors.append("Verified preference or prevalence needs observed quantitative/statistic evidence and a neutral frame/period")
+    envelope = bundle.get("research", {})
+    for decision in envelope.get("verifier_decisions", []):
+        target = {"source": "sources", "evidence": "evidence", "claim": "claims"}.get(decision["target_kind"])
+        _require_ref(decision["target_id"], maps.get(target, {}), "research.verifier_decisions.target_id", errors)
+        _require_ref_list(decision["basis_evidence_ids"], maps["evidence"], "research.verifier_decisions.basis_evidence_ids", errors, allow_empty=True)
+        if "resolution_id" in decision:
+            _require_ref(decision["resolution_id"], {x["id"]:x for x in envelope.get("scope_resolutions", [])}, "research.verifier_decisions.resolution_id", errors)
+        if "basis_claim_id" in decision:
+            _require_ref(decision["basis_claim_id"], maps["claims"], "research.verifier_decisions.basis_claim_id", errors)
+    for resolution in envelope.get("scope_resolutions", []):
+        for field in ("prior_claim_id", "claim_id"):
+            _require_ref(resolution[field], maps["claims"], "research.scope_resolutions." + field, errors)
+        for field in ("counter_evidence_ids", "basis_evidence_ids"):
+            _require_ref_list(resolution[field], maps["evidence"], "research.scope_resolutions." + field, errors, allow_empty=True)
+        _require_ref_list(resolution["verifier_decision_ids"], {x["id"]:x for x in envelope.get("verifier_decisions",[])}, "scope_resolutions.verifier_decision_ids", errors, allow_empty=True)
+    segments = {x["segment_id"] for x in envelope.get("manifest", {}).get("segments", [])}
+    for group in ("personas", "scenarios"):
+        for record in maps[group].values():
+            ref = record.get("audience_ref")
+            if ref:
+                if group == "personas" and record.get("basis") != "synthetic":
+                    errors.append("audience_ref requires synthetic persona basis")
+                _require_ref_list(ref.get("claim_ids", []), maps["claims"], "audience_ref.claim_ids", errors, allow_empty=True)
+                if research and ref.get("segment_id") not in segments:
+                    errors.append("audience_ref references unknown research segment")
+    for finding in maps["findings"].values():
+        if research and any(x not in segments for x in finding.get("segments_affected", [])):
+            errors.append("segments_affected references unknown research segment")
+    return errors
+
+
+def validate_receipts(bundle, root):
+    from uxresearch.canonical import byte_digest, timestamp
+    from uxresearch.storage import read_bytes, safe_path
+    errors = []
+    records = bundle["records"]
+    observations = {x["id"]: x for x in records["observations"]}
+    runs = {x["id"]: x for x in records["runs"]}
+    for finding in records["findings"]:
+        if finding.get("severity") not in {"P0", "P1"}:
+            continue
+        second = finding.get("second_pass")
+        if not second or (second.get("severity") == "disagree" and not second.get("resolution")) or second.get("finding_id", finding["id"]) != finding["id"]:
+            errors.append("Priority finding requires a resolved second pass")
+        receipts = 0
+        for oid in finding.get("observation_ids", []):
+            observation = observations.get(oid, {})
+            receipt = observation.get("receipt")
+            if not receipt:
+                continue
+            try:
+                path = Path(receipt["artifact_path"])
+                if path.is_absolute():
+                    raise ValueError()
+                raw = read_bytes(safe_path(Path(root) / path, root))
+                run = runs[observation["run_id"]]
+                if byte_digest(raw) != receipt["sha256"] or timestamp(receipt["captured_at"]) < timestamp(run["started_at"]):
+                    raise ValueError()
+                receipts += 1
+            except (OSError, ValueError, KeyError, TypeError):
+                errors.append("Priority finding capture receipt is absent, unsafe, stale or has a mismatched SHA-256")
+        if not receipts:
+            errors.append("Priority finding requires an artifact receipt from its run")
+    return errors
+
+
+def validate_bundle(bundle: Any, *, now: datetime | None = None, artifacts_root=None, report=None) -> list[str]:
+    """Malformed input returns diagnostics; optional receipt/report checks are additive."""
+    try:
+        errors = _validate_bundle(bundle, now=now)
+        if not errors:
+            errors += _extra_checks(bundle, now or datetime.now(timezone.utc))
+        if not errors and artifacts_root is not None:
+            errors += validate_receipts(bundle, artifacts_root)
+        if report is not None:
+            from uxresearch.reports import decision_section
+            import re
+            section, _ = decision_section(Path(report).read_text(encoding="utf-8"))
+            if not re.search(r"(?im)^\s*(?:[-*]\s*)?(?:verdict|판정|결론)\s*:\s*(?:ship after fixes|ship|hold|inconclusive|출시 가능|수정 후 출시|보류|판단 불가)(?:[.\s:—-]|$)", section):
+                errors.append("Decision requires one of the four verdict labels")
+        return errors
+    except OSError:
+        return ["Required artifact or report cannot be read"]
+    except (ValueError, TypeError, KeyError, AttributeError, IndexError, OverflowError, RecursionError):
+        return ["bundle has malformed fields, references or report decision"]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("bundle", type=Path)
+    parser.add_argument("--artifacts-root", type=Path)
+    parser.add_argument("--report", type=Path)
     args = parser.parse_args()
+    from uxresearch.canonical import loads, EngineError
     try:
-        bundle = json.loads(args.bundle.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError):
-        print(f"ERROR: bundle not found: {args.bundle}", file=sys.stderr)
+        bundle = loads(args.bundle.read_bytes())
+        if args.report is not None:
+            args.report.read_text(encoding="utf-8")
+    except (OSError, UnicodeError, EngineError):
+        print("ERROR: input is missing or invalid UTF-8 JSON", file=sys.stderr)
         return 2
-    except json.JSONDecodeError as error:
-        print(f"ERROR: invalid JSON: {error}", file=sys.stderr)
-        return 2
-    errors = validate_bundle(bundle)
+    errors = validate_bundle(bundle, artifacts_root=args.artifacts_root, report=args.report)
     if errors:
         for error in errors:
-            print(f"ERROR: {error}")
+            print("ERROR: " + error)
         return 1
+    for warning in bundle_warnings(bundle):
+        print("WARNING: " + warning, file=sys.stderr)
     print(f"VALID: {bundle['bundle_id']}")
     return 0
 
