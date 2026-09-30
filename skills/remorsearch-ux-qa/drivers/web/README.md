@@ -13,7 +13,7 @@ Requirements: Node.js 22 and `playwright@1.56.1` with its Chromium. Install once
 cd drivers/web
 npm install                 # playwright 1.56.1 into drivers/web/node_modules
 npx playwright install chromium
-node selftest.mjs           # a few minutes; expects "241 passed", 0 failed
+node selftest.mjs           # a few minutes; expects "243 passed", 0 failed
 ```
 
 The package is resolved by normal module resolution (so `drivers/web/node_modules`
