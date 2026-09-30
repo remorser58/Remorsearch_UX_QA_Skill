@@ -19,7 +19,7 @@ Remorsearch(리모서치, *ree-mor-search*) UX QA는 Claude Code와 Codex에서 
 
 ## 설치
 
-폴더 하나를 스킬 폴더에 복사하면 됩니다.
+폴더 하나를 스킬 폴더에 복사하면 됩니다. Python 도구는 Linux나 macOS에서 돌아갑니다(Windows는 WSL). reader와 loop가 POSIX 파일 잠금을 쓰기 때문입니다.
 
 ```sh
 git clone https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
@@ -37,6 +37,8 @@ cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.codex/skills/
 cd ~/.claude/skills/remorsearch-ux-qa/drivers/web
 npm install && npx playwright install chromium
 ```
+
+Node.js 22를 쓰십시오. 고정된 Playwright 1.56.1에서는 Node.js 24.16 이상과 Node.js 26에서 `npx playwright install`이 다운로드 뒤 멈춥니다([microsoft/playwright#40724](https://github.com/microsoft/playwright/issues/40724), Playwright 1.60에서는 됩니다).
 
 ## 사용법
 
