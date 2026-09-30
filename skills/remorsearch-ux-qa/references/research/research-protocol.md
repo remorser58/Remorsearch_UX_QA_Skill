@@ -99,7 +99,8 @@ Read date (observed_at):
 Valid for (valid_at) and product-version hint:
 Keep until (retention_until; required for an official API source):
 Author key (never the handle) and thread key:
-Segment, context, task, condition and device cues:
+Segment, context, task and device cues:
+Condition and other protected-attribute cues (never in this record; segment-level claims, or excerpts stripped of author and thread keys, only):
 Firsthand / secondhand / unclear:
 Caution label: narrative_unverified (an anonymous first-person story) / none:
 Speech cues: hearsay ending, register shift, sarcasm marker:
@@ -115,7 +116,7 @@ Injection flag:
 Grade and status (from the gate):
 ```
 
-Keep quotes short and contextual: at most 300 characters and at most 5 per source. Never record names, handles, profile links or contact details; get an author key with `ux_research.py author-key` (default anonymous nicknames and handles with a partial IP are counted by thread key). Post URLs stay in the bundle, not in reports shared outside the team. For a source read through an official API, such as YouTube comments, never record age, health, political or other protected-attribute cues against an author key: use such cues in segment-level claims only, and delete the item by its `retention_until`.
+Keep quotes short and contextual: at most 300 characters and at most 5 per source. Never record names, handles, profile links or contact details; get an author key with `ux_research.py author-key` (default anonymous nicknames and handles with a partial IP are counted by thread key). Post URLs stay in the bundle, not in reports shared outside the team. A capture record, an audience source or any other author-keyed record never holds age, health, disability, political or other protected-attribute cues, whatever the source type: attach such cues only to segment-level claims, or to excerpts stripped of author and thread keys. For a source read through an official API, such as YouTube comments, also delete the item by its `retention_until`.
 
 ## Breadth-first pass
 

@@ -127,7 +127,10 @@ No code, text, marker lists, word lists or tables from the projects above are
 included in this folder, and the skill does not depend on, install or call any of
 them.
 
-## Cited or read for facts (nothing reproduced)
+## Cited or read for facts
+
+Nothing is reproduced from the material in this section except the short KWCAG
+clause sentences named below, quoted with attribution.
 
 - Research papers, standards and guidelines cited in the references (for example
   WCAG 2.2, ISO 9241, RFC 9309, the TDM Reservation Protocol and human-factors
@@ -140,8 +143,27 @@ them.
   public legalize-kr mirrors (github.com/legalize-kr). Each is cited with its
   version or date, and marked 미확인 where it was not compared with the primary
   source. None of it is legal advice.
-- Field names, limits and error codes of the KOSIS OpenAPI were read in two
-  third-party documents (github.com/WooilJeong/PublicDataReader and
-  github.com/rubatoyd/kosis-openapi-mcp). No text or code from them is included.
+- Field names, limits and error codes of the KOSIS OpenAPI were read in three
+  third-party documents (github.com/WooilJeong/PublicDataReader,
+  github.com/rubatoyd/kosis-openapi-mcp and github.com/seokhoonj/pykosis). No
+  text or code from them is included.
+- Seven more repositories are cited for facts by the shipped Korean documents,
+  each named where it is used, with no code included:
+  github.com/a11ykr/docs (the unofficial online KWCAG 2.2 edition behind the
+  KWCAG item numbers; `references/persona-qa/kwcag-2.2.md` quotes a few KWCAG
+  clause sentences from it, with attribution),
+  github.com/lak2211-columbia/project-babel (text extractions of two Personal
+  Information Protection Commission guides, cited in
+  `references/research/korea/legal-checklist.md`),
+  github.com/naver/naver-openapi-guide (Naver API terms and migration notes,
+  cited in the platform map and the platform data),
+  github.com/daumPostcode/QnA (the Daum postcode widget's README and patch
+  notes), github.com/Mode1221/CoursePilot and
+  github.com/EST-team-project/Qurious (a pull request and an issue thread used
+  as observed evidence in the platform map), and
+  github.com/Yu-billie/KoCoSa_sarcasm_detection (the KoCoSa paper's
+  repository, read for its title, authors and venue in
+  `references/research/korea/query-craft.md`). No licence for any of these
+  repositories is claimed here: only their public pages were read.
 - Platform, agency and company names in the Korean pack are descriptive. There is
   no affiliation with any of them.

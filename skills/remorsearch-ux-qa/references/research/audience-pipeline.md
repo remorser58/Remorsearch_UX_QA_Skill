@@ -253,8 +253,8 @@ Return one JSON object in the ux-reader-return.v1 shape. End it with expand_lead
 | `audience_questions` | The question numbers served |
 | `queries_run` | `[{q, lang, tool, results_n}]` |
 | `search_count` | Searches spent |
-| `sources` | `[{url, fetch_id, access_method, access_basis, author_key, thread_key, published_at, retention_until}]`: every source needs a ledger `fetch_id`; `retention_until` is required for a source read through an official API |
-| `excerpts` | Verbatim excerpts of at most 300 characters, each with its source and cue fields for segment, context, task, condition and device, plus promotion, incentive, virtual-person and injection flags. Excerpts from an official API source never carry age, health, political or other protected-attribute cues against an author key. |
+| `sources` | `[{url, fetch_id, access_method, access_basis, author_key, thread_key, published_at, retention_until}]`: every source needs a ledger `fetch_id`; `retention_until` is required for a source read through an official API. A source record never carries condition or other protected-attribute cues: those belong to segment-level claims, or to excerpts stripped of author and thread keys |
+| `excerpts` | Verbatim excerpts of at most 300 characters, each with its source and cue fields for segment, context, task, condition and device, plus promotion, incentive, virtual-person and injection flags. An excerpt that still links to its source's author and thread keys never carries age, health, disability, political or other protected-attribute cues, whatever the source type: such cues go to segment-level claims, or to excerpts stripped of author and thread keys. |
 | `audience_signals` | Candidate claims: claim kind, statement, the excerpts behind it, and a segment hint |
 | `expand_leads` or `dead_ends` | `[{lead, why, angle}]`, or the leads that went nowhere |
 | `gaps` | `[{url, stop_class, note}]`, `terms_restricted` and missing keys included |

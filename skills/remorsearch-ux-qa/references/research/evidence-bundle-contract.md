@@ -49,7 +49,8 @@ Every source records `channel`, `source_ref`, `access_basis`, `access_method`, `
 - `access_basis`: research runs use `public_anonymous`, `public_teaser`, `official_api`, `team_provided`, `fixture` or `authorised_member`. Older bundles may say `public`.
 - `access_method`: the tool that read the page, such as `ux_research_read`, `aside`, `claude_in_chrome`, `claude_app_browser`, `playwright_mcp`, `chrome_devtools_mcp`, `drivers_web`, `web_search`, `web_fetch` or `team_export` (`references/research/public-page-access.md`, section 15). A source read through an official API adapter, such as the YouTube Data API, has `access_method: ux_research_read` and `access_basis: official_api`.
 - In shared outputs, a source with `access_basis: authorised_member` carries an authored summary only: no excerpt, no post URL and no member's personal data.
-- A source with `access_basis: official_api` carries `retention_until`. Delete it, or read it again, by then. Never record age, race, religion, political leaning, sexual orientation, health or another protected attribute against its author keys; such cues belong in segment-level claims only. Its video and comment IDs stay in the bundle, never in shared outputs.
+- A source with `access_basis: official_api` carries `retention_until`. Delete it, or read it again, by then. Its video and comment IDs stay in the bundle, never in shared outputs.
+- Never record age, race, religion, political leaning, sexual orientation, health, disability or another protected attribute against an author key, whatever the source type. Such cues belong to segment-level claims, or to excerpts stripped of author and thread keys.
 - Excerpts come from the reader's scrubbed page text. Placeholders such as `[phone]` or `([ip])` stay as they are.
 
 Optional fields for research sources:
@@ -61,7 +62,7 @@ Optional fields for research sources:
 | `published_at`, `observed_at`, `valid_at` | When the author published, when the reader read it, and when the content was true |
 | `retention_until` | For an official API source: the fetch time plus the route's retention days (30 for YouTube), after which the item is deleted or read again. Required when `access_basis` is `official_api`. |
 | `platform_family`, `org` | The channel family and the organisation used to count independence. `platform_family` is `blog`, `community`, `qna`, `video`, `app_store_reviews`, `microblog` or `commerce_reviews`. On a statistics portal, `org` is the agency that produced the table. |
-| `author_key`, `thread_key` | Salted keys from the run. Never a handle or a name. |
+| `author_key`, `thread_key` | Salted keys from the run. Never a handle or a name. A record that carries them never carries a protected-attribute cue. |
 | `terms` | `{entry, status, lifted, mode}` from the reader, when a `terms_restricted` entry covers the host: the entry's id, `reported` or `confirmed`, whether the user's own terms check lifted it for the run, and `official_only` when only the official route ran |
 | `promo_flags`, `injection_flags` | Candidate promotion or affiliate disclosures (a verifier confirms them before the grade cap applies), and injection signals |
 | `incentive_flags`, `virtual_person_flags` | Candidate review-event incentives, each with its `kind` (`seller_event`, `seller_notice`, `platform_points` or `reward_unspecified`) and `position` (`lead`, `body` or `tail`), and candidate virtual-person labels. A verifier confirms them before a cap applies. |

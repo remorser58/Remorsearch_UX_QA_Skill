@@ -12,6 +12,7 @@ Three groups, all offline file checks:
 """
 from __future__ import annotations
 
+import posixpath
 import re
 import unicodedata
 import unittest
@@ -41,6 +42,11 @@ SECTIONS = (
 )
 CREDIT_SECTION = {README: "License", README_KO: "라이선스"}
 SKIPPED_DIRS = {"node_modules", "__pycache__", ".git", ".ux-loop", ".ux-research"}
+# Skill-folder directories owned by other workers (the ergonomics lane, the driver lane and the Korean-pack
+# lane), so the installed-folder path test does not scan them; their remaining repository-only paths are
+# listed in WPB-REPORT.md instead of fixed here.
+UNSCANNED_DIRS = ("references/ergonomics/", "drivers/", "ergoqa/", "references/research/korea/")
+REPO_PATH = re.compile(r"`((?:docs|tests|benchmarks)/[^`\n]*)`")
 CODE_SUFFIXES = {".py", ".mjs", ".js", ".json", ".yaml", ".yml", ".sh"}
 TOOL_NAME = re.compile(r"insane[-_ ]?search", re.IGNORECASE)
 REMOVED_VARIABLE = re.compile(r"INSANE_[A-Z0-9_]+")
@@ -141,6 +147,45 @@ def links(text: str) -> list:
     """The targets of the inline links outside fenced code blocks."""
     body = "\n".join(line for _, line in outside_fences(text))
     return re.findall(r"\]\(([^)\s]+)\)", body)
+
+
+def paragraphs(text: str) -> list:
+    """The paragraphs (blank-line-separated) of a Markdown text, fenced code blocks left out."""
+    grouped, current = [], []
+    for _, line in outside_fences(text):
+        if line.strip():
+            current.append(line)
+        elif current:
+            grouped.append("\n".join(current))
+            current = []
+    if current:
+        grouped.append("\n".join(current))
+    return grouped
+
+
+def leaving_links(relative: str, text: str) -> list:
+    """The Markdown links of a file that resolve outside the skill folder (its path is relative to it)."""
+    problems = []
+    for target in links(text):
+        clean = target.split("#")[0]
+        if not clean or re.match(r"(?:https?:|mailto:)", clean):
+            continue
+        resolved = posixpath.normpath(posixpath.join(posixpath.dirname(relative), clean))
+        if resolved.startswith("../"):
+            problems.append(f"link {target} leaves the skill folder")
+    return problems
+
+
+def bare_repo_paths(text: str) -> list:
+    """Backticked docs/, tests/ or benchmarks/ paths whose paragraph does not say, in the same breath, that
+    they are repository documents that are not installed."""
+    problems = []
+    for paragraph in paragraphs(text):
+        lowered = paragraph.lower()
+        for path in REPO_PATH.findall(paragraph):
+            if "repositor" not in lowered or "not installed" not in lowered:
+                problems.append(f"`{path}` is not marked as a repository document that is not installed")
+    return problems
 
 
 def project_files():
@@ -350,6 +395,32 @@ class CreditOnlyTests(unittest.TestCase):
             relative = path.relative_to(REPO)
             self.assertEqual(REMOVED_VARIABLE.findall(text), [], relative)
             self.assertNotIn(REMOVED_FIELD, text, relative)
+
+
+class InstalledFolderPathTests(unittest.TestCase):
+    """D-09: inside the installed skill folder, a Markdown link must not leave the folder, and a backticked
+    `docs/`, `tests/` or `benchmarks/` path must sit in a paragraph that says it is a repository document
+    that is not installed (SKILL.md: every path is relative to the skill folder unless it says repository)."""
+
+    def test_no_link_or_backticked_path_points_out_of_the_installed_folder(self):
+        for path in sorted(SKILL.rglob("*.md")):
+            relative = path.relative_to(SKILL).as_posix()
+            if relative.startswith(UNSCANNED_DIRS):
+                continue
+            text = read(path)
+            for problem in leaving_links(relative, text) + bare_repo_paths(text):
+                self.fail(f"{relative}: {problem}")
+
+    def test_the_checks_catch_a_leaving_link_and_an_unmarked_repo_path(self):
+        relative = "references/loop/cli.md"
+        bad = "See [architecture](../../../../docs/architecture.md) and run `tests/loop_factory.py` first.\n"
+        self.assertEqual(leaving_links(relative, bad), ["link ../../../../docs/architecture.md leaves the skill folder"])
+        self.assertEqual(bare_repo_paths(bad), ["`tests/loop_factory.py` is not marked as a repository document "
+                                                "that is not installed"])
+        good = ("See the repository document `docs/architecture.md` and `docs/history/DELIVERY.md` "
+                "(not installed with the skill), and [provider contract](provider-contract.md).\n")
+        self.assertEqual(leaving_links(relative, good), [])
+        self.assertEqual(bare_repo_paths(good), [])
 
 
 if __name__ == "__main__":

@@ -163,4 +163,4 @@ against the answer keys.
 | Fable 5.1, high | 11/11 | 12.5 | 5.0 | 2.8 | 2.1 min |
 
 The method, costs, judge agreement and limits are in the repository document
-`docs/validation/subagent-model-benchmark.md`.
+`docs/validation/subagent-model-benchmark.md` (not installed with the skill).
