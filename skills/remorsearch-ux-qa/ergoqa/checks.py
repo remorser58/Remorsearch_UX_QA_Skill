@@ -2095,6 +2095,12 @@ REFLOW_TOLERANCE_PX = 4  # borders and rounding; a few px of overflow hide no co
 REFLOW_GROUP_MAX = 3  # more boxes than this past the edge on one screen: one finding for the screen
 
 
+def _url_path(url: str | None) -> str:
+    """The path of a URL (no host or port: a local test server's port changes per run)."""
+    from urllib.parse import urlsplit
+    return urlsplit(url or "").path or (url or "")
+
+
 def _right_edge(offender: dict[str, Any]) -> float:
     box = offender.get("box") or {}
     return float(box.get("x") or 0) + float(box.get("w") or 0)
@@ -2147,7 +2153,7 @@ def check_reflow(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[s
             # A layout that does not reflow at all (a desktop-only page): one finding for
             # the screen, naming every box that sticks out, not one per box.
             # Keyed by the boxes too: another screen at the same URL is another finding.
-            page_key = f"html|{rec.get('url') or ''}|{','.join(sorted(o.get('selector') or '?' for o in eligible))[:160]}"
+            page_key = f"html|{_url_path(rec.get('url'))}|{','.join(sorted(o.get('selector') or '?' for o in eligible))[:160]}"
             if page_key in seen:
                 continue
             seen.add(page_key)
@@ -2198,7 +2204,7 @@ def check_reflow(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[s
             # makes it scroll.
             seen.add(f"page|{rec.get('url')}")
             out.append(Observation(
-                "RF-01", run["run_id"], profile["profile_id"], rec.get("snapshot_id"), None, [], f"html|{rec.get('url') or ''}",
+                "RF-01", run["run_id"], profile["profile_id"], rec.get("snapshot_id"), None, [], f"html|{_url_path(rec.get('url'))}",
                 {"name": "page_scroll_width_css_px", "value": rec.get("scroll_width"), "unit": "css_px", "threshold": width, "comparator": "<=",
                  "viewport_css_px": rec.get("width"), "scan_capped": bool(rec.get("scan_capped"))},
                 False, "P2",
