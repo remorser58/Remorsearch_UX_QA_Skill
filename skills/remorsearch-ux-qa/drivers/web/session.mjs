@@ -55,8 +55,8 @@ const FOCUS_ANIM_GAP_MS = 40;
 // Flash sampling: page scroll that reverses more often than this per second is treated
 // as flicker, not motion (smooth scrolling in one direction is exempt).
 const SCROLL_REVERSALS_PER_S = 3;
-// Visual feedback: a per-channel change this small between the two frames before an
-// input marks a pixel as already moving (left out of the feedback comparison).
+// Visual feedback: a per-channel change this small in either adjacent pair of three
+// pre-input frames marks a pixel as already moving (left out of the comparison).
 const AMBIENT_MOVE_LEVEL = 4;
 const SCROLL_REVERSAL_MIN_CSS = 4;
 const FOCUS_MASK_LEVEL = 4;
@@ -2243,6 +2243,11 @@ export class WebSession {
         return { x: r.left - (one ? v.offsetLeft : 0), y: r.top - (one ? v.offsetTop : 0), w: r.width, h: r.height };
       }).catch(() => null);
       try {
+        // A reversing animation can have the same color in the last two frames
+        // (opposite sides of its turning point). An earlier sample identifies its
+        // moving pixels without raising thresholds or masking static responses.
+        const history = await this.captureFrame();
+        await sleep(40);
         const a = await this.captureFrame();
         await sleep(40);
         pre = await this.captureFrame();
@@ -2253,9 +2258,11 @@ export class WebSession {
         }
         const d = visualDiffFraction(a, pre, VISUAL_LEVEL, mask);
         visualAmbient = d !== null && d >= this.visualThreshold(pre);
-        // Slow animations change little in 40 ms but add up after the input: pixels that
-        // moved at all before the input are left out of the comparison.
+        // Slow or reversing animations: union both pre-input motion masks. Keep
+        // the ambient flag based on the last pair, as before.
         moving = changeMask(a, pre, AMBIENT_MOVE_LEVEL);
+        const earlier = changeMask(history, a, AMBIENT_MOVE_LEVEL);
+        if (earlier) moving = moving ? moving.map((v, i) => v || earlier[i]) : earlier;
       } catch {
         pre = null;
       }

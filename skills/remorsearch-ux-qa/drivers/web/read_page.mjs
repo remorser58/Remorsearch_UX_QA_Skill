@@ -25,11 +25,12 @@ import { fileURLToPath } from 'node:url';
 import { CATALOG, hasTouch, isMobile } from './devices.mjs';
 import { openBrowser } from './browser_transport.mjs';
 import { loadPlaywright } from './playwright_loader.mjs';
+import { capturePage } from './read_capture.mjs';
 import { isoNow, sleep, writeJsonAtomic } from './util.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const MARKERS = path.join(HERE, '..', '..', 'uxresearch', 'data', 'markers.json');
-const DRIVER_VERSION = 'read_page/1';
+const DRIVER_VERSION = 'read_page/2';
 const TEXT_MAX = 409600;
 const JSON_LD_MAX_BLOCKS = 10;
 const JSON_LD_MAX_CHARS = 1_000_000;
@@ -117,7 +118,52 @@ function loadMarkers() {
       if (!set.src.length || !set.idents.length || !words.length) throw new Error(`empty ${k} marker data`);
       return { src: set.src, idents: set.idents, inputs: set.inputs || [], words };
     };
-    return { human: pick('human_check'), js: pick('js_check') };
+    const human = pick('human_check'), js = pick('js_check');
+    if (typeof m.version !== 'string' || !m.version.trim()) throw new Error('missing markers version');
+    const tokens = (k) => {
+      const section = m[k];
+      const list = Array.isArray(section) ? section : section?.tokens;
+      if (!strings(list) || !list.length) throw new Error(`invalid or empty ${k} marker data`);
+      return list.map((s) => s.toLowerCase());
+    };
+    const structure = { chrome: tokens('chrome_idents'), author: tokens('author_idents'),
+      item: tokens('item_idents'), keep: tokens('keep_in_author_idents') };
+    // privacy.profile_href also uses these packaged host/path shapes; route
+    // overrides extend the same chrome/author tokens as extract._platform_tokens.
+    const data = path.dirname(MARKERS);
+    const suffixes = JSON.parse(fs.readFileSync(path.join(data, 'suffixes.json'), 'utf8'));
+    const routes = JSON.parse(fs.readFileSync(path.join(data, 'routes.json'), 'utf8'));
+    if (!Array.isArray(suffixes.path_hosted) || !strings(suffixes.profile_hosts) || !strings(suffixes.hosting_suffixes)
+      || !Array.isArray(routes.platforms)) throw new Error('invalid profile URL data');
+    const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pathHosts = new Set([...suffixes.path_hosted.map((p) => p.host), ...suffixes.profile_hosts]);
+    const subHosts = new Set(suffixes.hosting_suffixes);
+    const parts = [];
+    structure.overrides = [];
+    for (const p of routes.platforms) {
+      if (!strings(p.hosts)) throw new Error('invalid platform hosts');
+      for (const h of p.hosts) {
+        if (p.author_from === 'subdomain' && h.startsWith('*.')) subHosts.add(h.slice(2));
+        else if (p.author_from === 'path_segment' && !h.startsWith('*.')) pathHosts.add(h);
+      }
+      const paths = (p.profile_paths || []).filter((s) => typeof s === 'string' && /^[\w.-]+$/.test(s));
+      if (paths.length) for (const h of p.hosts.filter((s) => !s.startsWith('*.'))) {
+        parts.push(`${esc(h)}/(?:${paths.map(esc).join('|')})/[^\\s<>\"'/)]+[^\\s<>\"')]*`);
+      }
+      if (p.drop !== undefined || p.author !== undefined) {
+        if (!strings(p.drop || []) || !strings(p.author || [])) throw new Error('invalid platform structure tokens');
+        structure.overrides.push({ hosts: p.hosts.map((h) => h.toLowerCase()),
+          drop: (p.drop || []).map((s) => s.toLowerCase()), author: (p.author || []).map((s) => s.toLowerCase()) });
+      }
+    }
+    for (const h of pathHosts) {
+      if (typeof h !== 'string' || !h) throw new Error('invalid profile host');
+      parts.push(`(?:www\\.|m\\.)?${esc(h)}/[^\\s<>\"'/)]+[^\\s<>\"')]*`);
+    }
+    for (const h of subHosts) parts.push(`[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.${esc(h)}(?![a-z0-9.-])(?:/[^\\s<>\"')]*)?`);
+    structure.profilePatterns = [String.raw`^https?://[^\s<>"')]+/(?:@[\p{L}\p{N}_.-]+|(?:user|users|u|profile|profiles|member|members|people|author|authors|mypage)/[^\s<>"')]*)`,
+      `^https?://(?:${parts.join('|')})`];
+    return { human, js, version: m.version, structure };
   } catch (err) {
     throw new Error(`cannot read or parse challenge markers at ${MARKERS}: ${err.message}`);
   }
@@ -162,48 +208,6 @@ function findMarkers(markers) {
     return out;
   };
   return { human: hits(markers.human), js: hits(markers.js) };
-}
-
-/** In-page: the capture fields (no form values are read). */
-function capture(limits) {
-  const pick = (sel) => {
-    const n = document.querySelector(sel);
-    return n ? (n.getAttribute('content') || '').trim() : null;
-  };
-  const og = {};
-  for (const n of document.querySelectorAll('meta[property^="og:"]')) {
-    const k = n.getAttribute('property');
-    if (Object.keys(og).length < 20 && !(k in og)) og[k] = (n.getAttribute('content') || '').slice(0, 2000);
-  }
-  const blocks = [];
-  let total = 0;
-  for (const s of document.querySelectorAll('script[type="application/ld+json"]')) {
-    if (blocks.length >= limits.blocks) break;
-    const raw = s.textContent || '';
-    if (total + raw.length > limits.chars) break;
-    total += raw.length;
-    try {
-      blocks.push(JSON.parse(raw));
-    } catch {
-      blocks.push(raw);
-    }
-  }
-  const visible = (n) => {
-    const r = n.getBoundingClientRect();
-    const cs = getComputedStyle(n);
-    return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none';
-  };
-  return {
-    title: (document.title || '').slice(0, 2000),
-    lang: (document.documentElement.getAttribute('lang') || '').slice(0, 35),
-    text: document.body ? document.body.innerText : '',
-    json_ld: blocks,
-    description: pick('meta[name="description" i]'),
-    og,
-    robots: pick('meta[name="robots" i]'),
-    tdm: pick('meta[name="tdm-reservation" i]'),
-    login_form: [...document.querySelectorAll('input[type="password" i]')].some(visible),
-  };
 }
 
 async function main() {
@@ -323,7 +327,7 @@ async function main() {
     // A stopped page contributes only navigation and challenge metadata.
     const emptyCapture = { title: '', lang: '', text: '', json_ld: [], og: {}, login_form: false };
     let cap = hasCheck(found) ? emptyCapture
-      : await page.evaluate(capture, { blocks: JSON_LD_MAX_BLOCKS, chars: JSON_LD_MAX_CHARS });
+      : await page.evaluate(capturePage, { blocks: JSON_LD_MAX_BLOCKS, chars: JSON_LD_MAX_CHARS, structure: markers.structure });
     let headers = hasCheck(found) ? {} : await response.allHeaders().catch(() => ({}));
     if (!hasCheck(found)) found = await inspect();
     const stopped = hasCheck(found);
@@ -351,7 +355,7 @@ async function main() {
       scrolls,
       blocked_types: BLOCKED,
       device_id: args.device,
-      driver_version: DRIVER_VERSION,
+      driver_version: `${DRIVER_VERSION}; markers/${markers.version}`,
       browser_connected: transport.connected,
       browser_version: transport.browserVersion,
       playwright_client_version: transport.playwrightVersion,
