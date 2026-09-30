@@ -374,6 +374,31 @@ class FeedbackNoticing(unittest.TestCase):
         self.assertIn("#err", gz(700))  # a small scroll: the tap point still anchors the gaze
         self.assertIn("#err", gz(51, action="swipe"))  # the user scrolled: not an app jump
 
+    def test_empty_live_region_slot_is_not_a_prior_message(self) -> None:
+        # An error written into a pre-rendered empty role=alert slot, off-screen, is new (P1).
+        buttons = [el(f"e{i}", "button", (10, 10 + i * 50, 100, 44)) for i in range(8)]
+        slot = el("err", "alert", (20, -600, 320, 24), text="", roles=("error_message",), in_viewport=False)
+        err = el("err", "alert", (20, -600, 320, 24), text="이메일 형식이 올바르지 않습니다", roles=("error_message",), in_viewport=False)
+        c = ctx(buttons + [err], previous={"surface": {"url": "http://x/a"}, "elements": buttons + [slot]}, focus={"x": 60, "y": 200})
+        c.snapshot["surface"] = {"url": "http://x/a"}
+        got = [(o.severity, o.measurement.get("new")) for o in checks.check_gaze(c) if o.check_id == "GZ-02"]
+        self.assertEqual(got, [("P1", True)])
+        # A new but still empty slot is not a message.
+        c = ctx(buttons + [slot], previous={"surface": {"url": "http://x/a"}, "elements": buttons}, focus={"x": 60, "y": 200})
+        c.snapshot["surface"] = {"url": "http://x/a"}
+        self.assertEqual([o for o in checks.check_gaze(c) if o.check_id == "GZ-02"], [])
+
+    def test_app_scroll_keeps_declared_transients(self) -> None:
+        buttons = [el(f"e{i}", "button", (10, 10 + i * 50, 100, 44)) for i in range(8)]
+        toast = el("toast", "status", (20, 700, 320, 60), text="저장했어요", roles=("status",), fg="#ffffff", bg="#333333", container="#ffffff")
+        before = {"surface": {"url": "http://x/a", "scroll": {"x": 0, "y": 742}}, "elements": buttons}
+        c = ctx(buttons + [toast], previous=before, focus={"x": 180, "y": 60}, step={"action": {"action": "click"}})
+        c.snapshot["surface"] = {"url": "http://x/a", "scroll": {"x": 0, "y": 51}}
+        c.scenario = {"timing_windows": [{"id": "t", "selector": "#toast", "kind": "transient_text"}]}
+        self.assertTrue([o for o in checks.check_gaze(c) if o.check_id == "GZ-02"])
+        c.scenario = {"timing_windows": []}
+        self.assertFalse([o for o in checks.check_gaze(c) if o.check_id == "GZ-02"])
+
     def test_screen_replacement_skips_feedback_noticing(self) -> None:
         before = {"surface": {"url": "http://x/a"}, "elements": [el(f"e{i}", "button", (10, 10 + i * 50, 100, 44)) for i in range(10)]}
         after_same = {"surface": {"url": "http://x/a"}, "elements": before["elements"][:9]}
@@ -394,7 +419,7 @@ class CoveragePlan(unittest.TestCase):
 
     def test_pointer_plan_skips_touch_only_strata_and_covers_low_vision(self) -> None:
         got = self.strata("laptop-1440", 7)
-        self.assertEqual(got, ["mouse_right", "mouse_left", "keyboard_only", "cvd_deutan", "presbyopia_60s", "tremor", "low_vision"])
+        self.assertEqual(got, ["mouse_right", "mouse_left", "keyboard_only", "cvd_deutan", "presbyopia_60s", "low_vision", "70s_plus"])
 
     def test_touch_plan_keeps_every_condition(self) -> None:
         got = self.strata("galaxy-s24", 14)
@@ -406,5 +431,5 @@ class CoveragePlan(unittest.TestCase):
     def test_mixed_devices_put_touch_only_strata_on_the_phone(self) -> None:
         plan = sample_profiles(24, 11, ["galaxy-s24", "laptop-1440"])
         for p in plan:
-            if p.get("coverage_stratum") in ("walking", "small_hand"):
+            if p.get("coverage_stratum") in ("walking", "small_hand", "tremor"):
                 self.assertEqual(p["attributes"]["device_id"], "galaxy-s24")

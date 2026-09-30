@@ -126,8 +126,8 @@ python3 scripts/ergo_qa.py profiles --count 16 --seed 7 \
 Stratified coverage fills, per device, right one-hand, left one-hand, two-thumb
 and cradled grips (mouse right/left and keyboard-only on desktop), then
 condition strata (deutan CVD, presbyopia 60s, mild tremor, walking, low vision,
-70s+, small hand) alternating hands; pointer devices skip walking and small hand,
-which only the touch model reads. Audience composition adds other conditions
+70s+, small hand) alternating hands; pointer devices skip walking, small hand and
+tremor, which only the touch model reads. Audience composition adds other conditions
 (protan, bright sun, first use, large hand) when the audience needs them. Base rates (Korean
 age bands, age-dependent left-handedness, Hoober grip mix) only fill remaining
 slots. Link Nemotron-Personas-Korea rows with `--personas` when a narrative

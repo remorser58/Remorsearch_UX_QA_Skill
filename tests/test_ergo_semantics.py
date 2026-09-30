@@ -64,12 +64,12 @@ class ClickedWithoutRole(unittest.TestCase):
         self.assertEqual([(o.element_key.split("|")[0], o.severity) for o in obs], [("#chip", "P1")])
 
     def test_from_the_driver_step_record(self) -> None:
-        steps = [{"step_index": 3, "before": "S-2", "result": "ok", "action": {"action": "tap", "target": "#qform-mc1-o3"},
+        steps = [{"step_index": 3, "before": "S-2", "result": "ok", "action": {"action": "tap", "target": "#qform-mc1-o3"}, "feedback_source": "dom_mutation",
                   "target_control": {"tag": "div", "role": None, "dom_id": "qform-mc1-o3", "control": False, "contains_control": False,
                                      "ancestor_ids": ["qform-mc1", "qform-mc"], "text": "① 12"}},
-                 {"step_index": 4, "before": "S-3", "result": "ok", "action": {"action": "tap", "target": "#ok"},
+                 {"step_index": 4, "before": "S-3", "result": "ok", "action": {"action": "tap", "target": "#ok"}, "feedback_source": "dom_mutation",
                   "target_control": {"tag": "span", "role": None, "dom_id": None, "control": True, "contains_control": False, "ancestor_ids": []}},
-                 {"step_index": 5, "before": "S-4", "result": "ok", "action": {"action": "tap", "target": "#qform-mc1-o3"},
+                 {"step_index": 5, "before": "S-4", "result": "ok", "action": {"action": "tap", "target": "#qform-mc1-o3"}, "feedback_source": "dom_mutation",
                   "target_control": {"tag": "div", "role": None, "dom_id": "qform-mc1-o3", "control": False, "contains_control": False,
                                      "ancestor_ids": ["qform-mc1", "qform-mc"], "text": "① 12"}}]
         obs = checks.check_clicked_controls({"run_id": "R", "steps": steps}, {"profile_id": "P"}, {})
@@ -80,6 +80,23 @@ class ClickedWithoutRole(unittest.TestCase):
         c = ctx([chip], run={"run_id": "R", "steps": steps})
         c.clicked_element_ids = {"chip"}
         self.assertEqual([o for o in checks.check_semantics(c) if o.check_id == "SM-08"], [])
+
+    def test_step_record_exemptions(self) -> None:
+        # No response, a scrim hidden from assistive technology, a hotspot, a game screen.
+        def step(i, **kw):
+            base = {"step_index": i, "before": "S-1", "result": "ok", "action": {"action": "tap", "target": f"#t{i}"}, "feedback_source": "dom_mutation",
+                    "target_control": {"tag": "div", "role": None, "dom_id": f"t{i}", "control": False, "contains_control": False, "ancestor_ids": [], "text": "x"}}
+            base.update(kw)
+            return base
+        silent = step(1, feedback_source=None)
+        scrim = step(2)
+        scrim["target_control"]["hidden"] = True
+        hotspot = step(3, action={"action": "tap", "target": "hotspot:pad-1"})
+        live = step(4)
+        obs = checks.check_clicked_controls({"run_id": "R", "steps": [silent, scrim, hotspot, live]}, {"profile_id": "P"}, {})
+        self.assertEqual([o.element_key.split("|")[0] for o in obs], ["#t4"])
+        game = checks.check_clicked_controls({"run_id": "R", "surface": {"kind": "game"}, "steps": [live]}, {"profile_id": "P"}, {})
+        self.assertEqual(game, [])
 
     def test_focusable_native_label_or_card_with_a_link_pass(self) -> None:
         focusable = el("f", "generic", (10, 300, 90, 36), text="순한맛", tag="div", a11y=a11y("content", focusable=True))
@@ -112,6 +129,15 @@ class Reflow(unittest.TestCase):
         clipped = checks.check_reflow(self.run_doc(320, root_clips=True), {"profile_id": "P"}, {})
         self.assertIn("잘려", clipped[0].message_ko)
 
+    def test_page_level_finding_when_no_element_is_located(self) -> None:
+        doc = {"run_id": "R", "reflow": [{"snapshot_id": "S-3", "url": "http://x/a", "width": 320, "client_width": 320, "scroll_width": 520,
+                                          "root_clips": False, "offenders": [], "lost": [], "scan_capped": True}]}
+        obs = checks.check_reflow(doc, {"profile_id": "P"}, {})
+        self.assertEqual([(o.check_id, o.element_key.split("|")[0], o.severity) for o in obs], [("RF-01", "html", "P2")])
+        self.assertTrue(obs[0].measurement["scan_capped"])
+        # A located offender makes the page-level finding unnecessary.
+        self.assertEqual([o.element_key.split("|")[0] for o in checks.check_reflow(self.run_doc(416), {"profile_id": "P"}, {})], ["#fee-summary"])
+
     def test_text_lost_at_320_without_page_scroll(self) -> None:
         # A one-line bar with overflow:hidden: the timer fits at the device width and is
         # cut away at 320 px, with no sideways scroll to reach it (F102).
@@ -138,9 +164,43 @@ class FocusManagement(unittest.TestCase):
         return c
 
     def test_new_layer_without_focus_is_reported(self) -> None:
-        sheet = {"selector": "#addr-modal", "dom_id": "addr-modal", "kind": "sheet", "contains_focus": False}
-        obs = checks.check_focus_management(self.ctx_for([], [sheet], {"on_body": False, "tag": "button", "dom_id": "btn-addr"}))
+        box = {"x": 0, "y": 200, "w": 360, "h": 500}
+        sheet = {"selector": "#addr-modal", "dom_id": "addr-modal", "kind": "sheet", "contains_focus": False, "box": box}
+        field = el("addr-q", "textbox", (16, 260, 328, 48), interactive=True, tag="input", dom_id="addr-q", a11y=a11y("label"))
+        focus = {"on_body": False, "tag": "button", "dom_id": "btn-addr"}
+        obs = checks.check_focus_management(self.ctx_for([], [sheet], focus, [field]))
         self.assertEqual([(o.check_id, o.element_key.split("|")[0], o.severity) for o in obs], [("FM-02", "#addr-modal", "P2")])
+        # Focus that arrives within a second of the click (after an entrance transition).
+        late = dict(sheet, contains_focus_late=True)
+        self.assertEqual(checks.check_focus_management(self.ctx_for([], [late], focus, [field])), [])
+
+    def test_layers_that_need_no_focus(self) -> None:
+        box = {"x": 0, "y": 0, "w": 360, "h": 780}
+        focus = {"on_body": False, "tag": "button", "dom_id": "send", "expanded": True, "controls": ["mm"]}
+        busy = {"selector": "#sending", "dom_id": "sending", "kind": "sheet", "contains_focus": False, "box": box}
+        self.assertEqual(checks.check_focus_management(self.ctx_for([], [busy], focus)), [])  # nothing to operate
+        # A scrim around a newly opened dialog: the dialog carries the finding.
+        ok = el("ok", "button", (100, 400, 160, 48), interactive=True, tag="button", dom_id="ok", a11y=a11y("content"))
+        scrim = {"selector": "#sheet > div:nth-of-type(1)", "dom_id": None, "kind": "sheet", "contains_focus": False, "box": box}
+        dialog = {"selector": "#sheet > div:nth-of-type(2)", "dom_id": None, "kind": "modal", "contains_focus": False, "box": {"x": 20, "y": 300, "w": 320, "h": 300}}
+        obs = checks.check_focus_management(self.ctx_for([], [scrim, dialog], focus, [ok]))
+        self.assertEqual([o.element_key.split("|")[0] for o in obs], ["#sheet > div:nth-of-type(2)"])
+        # A disclosure the focused trigger controls, and one the next Tab reaches.
+        mm = {"selector": "#mm", "dom_id": "mm", "kind": "sheet", "contains_focus": False, "box": box}
+        nxt = {"selector": "#nx", "dom_id": "nx", "kind": "dialog", "contains_focus": False, "box": box, "follows_focus": True}
+        self.assertEqual(checks.check_focus_management(self.ctx_for([], [mm, nxt], focus, [ok])), [])
+
+    def test_step_sm06_needs_a_focus_the_step_moved(self) -> None:
+        # A user scroll carries the focused switch under a sticky stepper: not the step's doing.
+        sw = el("opt", "switch", (16, 54, 328, 48), interactive=True, tag="button", dom_id="opt", occluded_fraction=1.0, occluded_by="#stepper",
+                a11y=a11y("content"))
+        c = ctx([sw], previous={"snapshot_id": "S-0", "layers": [], "elements": [], "focus": {"on_body": False, "dom_id": "opt"}},
+                step={"action": {"action": "scroll"}})
+        c.snapshot["focus"] = {"on_body": False, "dom_id": "opt"}
+        c.snapshot["layers"] = []
+        self.assertEqual(checks.check_focus_management(c), [])
+        c.step = {"action": {"action": "tap"}}
+        self.assertEqual(checks.check_focus_management(c), [])  # focus was already there
 
     def test_focus_inside_old_layers_scrolls_and_old_recordings_pass(self) -> None:
         dlg = {"selector": "#dlg", "dom_id": "dlg", "kind": "modal", "contains_focus": True}
@@ -303,6 +363,14 @@ class FocusWalk(unittest.TestCase):
         obs = checks.check_focus_walks(run, {"profile_id": "P"}, {"S-0": snap, "S-1": snap})
         self.assertEqual([(o.check_id, o.severity, o.element_ids, o.element_key) for o in obs],
                          [("SM-06", "P2", ["el-7"], 'button[aria-label="메뉴"]|메뉴')])
+
+    def test_a_probe_never_overrides_a_walk_that_saw_an_indicator(self) -> None:
+        walk = {"phase": "end", "snapshot_id": "S-9", "stops": [{"selector": "#save", "name": "", "indicator_px": 120, "obscured_fraction": 0,
+                                                                 "in_viewport": True, "box": {"x": 0, "y": 0, "w": 90, "h": 48}}]}
+        probe = {"snapshot_id": "S-7", "selector": "#save", "dom_id": "save", "name": "", "focus_visible": True, "moved": False, "indicator_px": 0,
+                 "indicator_any_px": 0, "in_viewport": True, "box": {"x": 0, "y": 0, "w": 90, "h": 48}}
+        run = {"run_id": "R", "steps": [{"step_index": 3, "focus_probe": probe}], "focus_walks": [walk]}
+        self.assertEqual(checks.check_focus_walks(run, {"profile_id": "P"}), [])
 
     def test_runs_without_walks(self) -> None:
         self.assertEqual(checks.check_focus_walks({"run_id": "R"}, {"profile_id": "P"}), [])

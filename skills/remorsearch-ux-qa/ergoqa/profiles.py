@@ -64,10 +64,12 @@ CORE_POINTER_STRATA: tuple[tuple[str, dict[str, Any]], ...] = (
 # (docs/validation/experiments/decisions.md): bright sun (0 unique, +31 findings, PC-05
 # is a hypothesis), first use (no deterministic check reads familiarity), protan and
 # large hand (0 unique). Audience composition adds them when the audience needs them.
-# Low vision was added in round 12: on dev-2, RF-01 found a timer cut away at 320 px
-# (400 % zoom) but no swarm profile had the condition, and nothing else changed on the
-# development suites. It sits before 70s_plus so that a 7-slot pointer plan includes it
-# (desktop magnifier users are the main audience of reflow and resize checks).
+# Low vision was added in round 12 so that a profile with low acuity exists: on dev-2,
+# RF-01 found a timer cut away at 320 px (400 % zoom) but no swarm profile had the
+# condition, and nothing else changed on the development suites. Its model reuses the
+# presbyopic text thresholds and the older-adult noticing scale; magnification itself
+# is covered by the profile-independent reflow and clipping checks (RF-01, LY-01), not
+# simulated per profile.
 CONDITION_STRATA: tuple[tuple[str, dict[str, Any]], ...] = (
     ("cvd_deutan", {"vision.cvd": "deutan"}),
     ("presbyopia_60s", {"age_band": "60s", "vision.presbyopia": True}),
@@ -77,10 +79,12 @@ CONDITION_STRATA: tuple[tuple[str, dict[str, Any]], ...] = (
     ("70s_plus", {"age_band": "70s+", "vision.presbyopia": True}),
     ("small_hand", {"hand_percentile": 5}),
 )
-# Strata that change nothing on a pointer device: mobility and hand size feed only the
-# touch model (touch_sigma_multiplier, thumb reach). A pointer device skips them, so
-# its slots go to conditions its checks read (round 12: no change on the dev suites).
-TOUCH_ONLY_STRATA = frozenset({"walking", "small_hand"})
+# Strata that change nothing on a pointer device: mobility, hand size and tremor feed
+# only the touch model (touch_sigma_multiplier, thumb reach); on four desktop
+# recordings the tremor profile's observations equalled the base persona's. A pointer
+# device skips them, so its 7 slots cover every condition its checks read (round 12:
+# no change on the dev suites).
+TOUCH_ONLY_STRATA = frozenset({"walking", "small_hand", "tremor"})
 COVERAGE_STRATA = CORE_TOUCH_STRATA + CORE_POINTER_STRATA + CONDITION_STRATA
 
 

@@ -972,7 +972,7 @@ def check_gaze(ctx: Context) -> list[Observation]:
         transient = {w.get("selector") for w in (ctx.scenario or {}).get("timing_windows", []) if w.get("kind") in (None, "transient_text")}
         # Messages already rendered before the step, in view or not: a message scrolled
         # out of view (by the page or by the driver's pre-action scroll) is not new.
-        before = {e.get("selector") or e.get("id"): e for e in ctx.previous.get("elements", []) if _present(e)}
+        before = {e.get("selector") or e.get("id"): e for e in ctx.previous.get("elements", []) if _present(e) and (e.get("text") or "").strip()}
         scale = _notice_scale(ctx)
         grip = ctx.attrs.get("grip", "")
         geom = reach.geometry_for_device(ctx.device) if ctx.is_touch else None
@@ -981,8 +981,8 @@ def check_gaze(ctx: Context) -> list[Observation]:
         for element in ctx.elements:
             roles = _roles(element)
             is_feedback = roles & {"error_message", "critical_message", "status"} or element.get("role") in ("alert", "status")
-            if not is_feedback:
-                continue
+            if not is_feedback or not (element.get("text") or "").strip():
+                continue  # an empty live-region slot is not a message yet
             if replaced and element.get("selector") not in transient:
                 continue
             key = element.get("selector") or element.get("id")
@@ -1007,7 +1007,7 @@ def check_gaze(ctx: Context) -> list[Observation]:
                     gaze.MODEL_ID,
                 ))
                 continue
-            if not _visible(element) or reoriented:
+            if not _visible(element) or (reoriented and element.get("selector") not in transient):
                 continue
             centre_css = pointing.centre(element["box"])
             # Eccentricity to the nearest point of the message, not its centroid: a wide
@@ -1717,16 +1717,28 @@ def _sm08(run_id: str, profile_id: str, snapshot_id: str | None, step_index: int
 def check_clicked_controls(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[str, dict[str, Any]] | None = None) -> list[Observation]:
     """SM-08 from the steps: a tap or click landed on an element that is not a control, is
     not inside one within five levels, and holds none (the driver's ``target_control``).
-    The click evidences the handler; nothing is guessed from styles."""
+    The click evidences the handler only when it did something: a click with no
+    feedback at all (no mutation, input event, navigation or visual change) is not
+    evidence (persona agents tap static text). Game surfaces, scenario hotspots, game
+    controls and content hidden from assistive technology (a dialog's scrim) are
+    exempt, as in the snapshot rule."""
     out: list[Observation] = []
     seen: set[str] = set()
+    if (run.get("surface") or {}).get("kind") == "game":
+        return out
     for st in run.get("steps") or []:
         c = st.get("target_control")
         if not isinstance(c, dict) or st.get("result") != "ok" or c.get("control") or c.get("contains_control") or c.get("tag") in ("html", "body"):
             continue
+        if c.get("hidden") or (st.get("feedback_source") is None and st.get("feedback_latency_ms") is None):
+            continue
+        target = (st.get("action") or {}).get("target")
+        if isinstance(target, str) and target.startswith("hotspot:"):
+            continue
         snap = (snapshots or {}).get(st.get("before") or "")
         element = next((e for e in (snap or {}).get("elements", []) if c.get("dom_id") and e.get("dom_id") == c["dom_id"]), None)
-        target = (st.get("action") or {}).get("target")
+        if element is not None and ("game_control" in _roles(element) or (element.get("a11y") or {}).get("hidden")):
+            continue
         selector = f"#{c['dom_id']}" if c.get("dom_id") else (target if isinstance(target, str) else f"{c.get('tag')}@{st.get('point')}")
         key = element_key(element) if element else f"{selector}|{c.get('text') or ''}"
         if key in seen:
@@ -1974,12 +1986,29 @@ def check_focus_management(ctx: Context) -> list[Observation]:
     opened = False
     if ctx.previous is not None and action in ("tap", "click", "double_tap", "long_press", "press"):
         before = {layer.get("selector") for layer in ctx.previous.get("layers") or [] if isinstance(layer, dict)}
-        for layer in ctx.snapshot.get("layers") or []:
-            if not isinstance(layer, dict) or layer.get("selector") in before:
-                continue
+        new_layers = [layer for layer in ctx.snapshot.get("layers") or [] if isinstance(layer, dict) and layer.get("selector") not in before]
+        interactive = [e for e in ctx.elements if e.get("interactive") and _visible(e)]
+        for layer in new_layers:
             opened = True
-            if layer.get("contains_focus"):
+            # Focus inside, at the snapshot or within a second of the click (dialogs that
+            # take focus after their entrance transition).
+            if layer.get("contains_focus") or layer.get("contains_focus_late"):
                 continue
+            kind = layer.get("kind")
+            box = layer.get("box") or {"x": 0, "y": 0, "w": 0, "h": 0}
+            if kind != "modal":
+                # A disclosure the focused trigger controls, or a layer the next Tab
+                # reaches (APG disclosure, mega menu): focus need not move.
+                if layer.get("follows_focus") or (focus.get("expanded") and layer.get("dom_id") and layer["dom_id"] in (focus.get("controls") or [])):
+                    continue
+            if kind == "sheet":
+                # An undeclared painted box: only a layer with something to operate needs
+                # focus (a busy overlay or a status sheet announces itself), and a scrim
+                # around a newly opened dialog is that dialog's layer.
+                if not any(_inside(e["box"], box) for e in interactive):
+                    continue
+                if any(other is not layer and other.get("kind") in ("modal", "dialog") and _inside(other.get("box") or {}, box) for other in new_layers):
+                    continue
             element = next((e for e in ctx.elements if layer.get("dom_id") and e.get("dom_id") == layer["dom_id"]), None)
             key = element_key(element) if element else f"{layer.get('selector') or '?'}|{layer.get('kind')}"
             where = "문서 본문(body)으로 떨어져" if focus.get("on_body") else "층 바깥에 남아"
@@ -1991,7 +2020,12 @@ def check_focus_management(ctx: Context) -> list[Observation]:
                 f"'{layer.get('selector')}' 층이 열렸지만 키보드 초점이 {where} 있습니다. 스크린리더·키보드 사용자는 새로 열린 내용을 모른 채 뒤쪽 화면을 계속 탐색합니다(WCAG 2.4.3).",
                 extra={"anchor_selectors": [layer["selector"]] if layer.get("selector") else []},
             ))
-    if not opened and not focus.get("on_body") and focus.get("dom_id"):
+    # SM-06 at a step: only a focus the step put there (an app moving focus after a
+    # validation error), not one a later scroll or wait carried under a sticky bar.
+    prev_focus = (ctx.previous or {}).get("focus") if ctx.previous is not None else None
+    moved_here = (action in ("tap", "click", "double_tap", "long_press", "press", "type")
+                  and (not isinstance(prev_focus, dict) or prev_focus.get("dom_id") != focus.get("dom_id")))
+    if not opened and moved_here and not focus.get("on_body") and focus.get("dom_id"):
         target = next((e for e in ctx.elements if e.get("dom_id") == focus["dom_id"]), None)
         covered = (target or {}).get("occluded_fraction")
         under_layer = target is not None and any(
@@ -2051,10 +2085,12 @@ def check_reflow(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[s
             ))
         if not scrolls and not rec.get("root_clips"):
             continue
+        listed = False
         for off in rec.get("offenders") or []:
             box = off.get("box") or {}
             if (box.get("x") or 0) + (box.get("w") or 0) <= width + REFLOW_TOLERANCE_PX:
                 continue
+            listed = True
             element = None
             if off.get("dom_id") and snap:
                 element = next((e for e in snap.get("elements", []) if e.get("dom_id") == off["dom_id"]), None)
@@ -2074,6 +2110,18 @@ def check_reflow(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[s
                 f"320 CSS px 폭(400 % 확대)에서 '{(off.get('text') or off.get('selector') or '')[:30]}'의 오른쪽 끝이 {right:.0f}px라 {how}(WCAG 1.4.10).",
                 extra={"anchor_selectors": [off["selector"]] if off.get("selector") else [],
                        "context_selectors": [f"#{a}" for a in off.get("ancestor_ids") or [] if a]},
+            ))
+        if scrolls and not listed and f"page|{rec.get('url')}" not in seen:
+            # The page scrolls sideways but no outermost element was located (the scan
+            # is capped, or the cause is a pseudo-element): report the page itself.
+            seen.add(f"page|{rec.get('url')}")
+            out.append(Observation(
+                "RF-01", run["run_id"], profile["profile_id"], rec.get("snapshot_id"), None, [], f"html|{rec.get('url') or ''}",
+                {"name": "page_scroll_width_css_px", "value": rec.get("scroll_width"), "unit": "css_px", "threshold": width, "comparator": "<=",
+                 "viewport_css_px": rec.get("width"), "scan_capped": bool(rec.get("scan_capped"))},
+                False, "P2",
+                f"320 CSS px 폭(400 % 확대)에서 페이지 폭이 {rec.get('scroll_width')}px라 가로 스크롤이 생깁니다(WCAG 1.4.10). 넘치는 요소는 특정하지 못했습니다.",
+                extra={"anchor_selectors": ["html"]},
             ))
     return out
 
@@ -2125,9 +2173,21 @@ def check_focus_walks(run: dict[str, Any], profile: dict[str, Any], snapshots: d
     for SM-06 (a covered control could not have been clicked).
     """
     walks = list(run.get("focus_walks") or [])
+    # A Tab walk is the reference: a probe (script focus after a Shift press, which
+    # some focus-visible scripts do not treat as keyboard use) never overrides an
+    # element a walk saw with an indicator.
+    walk_ok = set()
+    for walk in walks:
+        for stop in walk.get("stops") or []:
+            px = stop.get("indicator_px")
+            anywhere = stop.get("indicator_any_px")
+            best = max(v for v in (px, anywhere, -1) if isinstance(v, int))
+            if best >= FOCUS_INDICATOR_MIN_PX and stop.get("selector"):
+                walk_ok.add(stop["selector"])
     for step in run.get("steps") or []:
         probe = step.get("focus_probe")
-        if isinstance(probe, dict) and probe.get("focus_visible") is True and not probe.get("moved") and isinstance(probe.get("indicator_px"), int):
+        if (isinstance(probe, dict) and probe.get("focus_visible") is True and not probe.get("moved") and isinstance(probe.get("indicator_px"), int)
+                and probe.get("selector") not in walk_ok):
             walks.append({"phase": "step", "snapshot_id": probe.get("snapshot_id"), "step_index": step.get("step_index"),
                           "stops": [{**probe, "obscured_fraction": None, "obscured_user_opened": None}]})
     worst: dict[str, dict[str, Any]] = {}
