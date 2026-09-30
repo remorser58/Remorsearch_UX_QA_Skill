@@ -12,6 +12,12 @@ reports per rule:
 - detection: Failed examples where the mapped check fired (reported only).
 
     python3 skills/remorsearch-ux-qa/scripts/ergo_act.py --out .ergo-bench/act
+    python3 skills/remorsearch-ux-qa/scripts/ergo_act.py --out .ergo-bench/act-640 --viewport 640x512
+
+59br37 is defined at a 640 x 512 viewport (1280 x 1024 zoomed 200 %); --viewport
+runs the examples on a mouse desktop of that size instead of a catalog device. LY-01
+findings the page marks as cut cleanly (act_59br37 "passed": 59br37's own
+exceptions, reported at P3 as truncation notes) are listed as notes, not false alarms.
 
 The rule files and their test assets are downloaded from
 https://github.com/act-rules/act-rules.github.io at a pinned commit (ACT_REF) into
@@ -137,7 +143,7 @@ def page_for(html: str) -> str:
     return f'<!doctype html>\n<html lang="en">\n<head><meta charset="utf-8"><title>ACT example</title></head>\n<body>\n{html}\n</body>\n</html>\n'
 
 
-def run_example(work: Path, base: str, device: str, name: str) -> dict[str, Any]:
+def run_example(work: Path, base: str, device: str, name: str, device_json: Path | None = None) -> dict[str, Any]:
     scenario = {"schema_version": "ergo-scenario.v1", "scenario_id": f"SC-act-{name}", "surface": {"kind": "web", "url": f"{{BASE}}/site/{name}.html"},
                 "task_goal_ko": "ACT 예제를 연다", "device_ids": [device], "targets": {}, "steps": [{"action": "wait", "ms": 150}],
                 "success": {"url_contains": name}}
@@ -150,6 +156,8 @@ def run_example(work: Path, base: str, device: str, name: str) -> dict[str, Any]
         p_path.write_text(json.dumps(profile, ensure_ascii=False), encoding="utf-8")
     cmd = ["node", str(ROOT / "drivers/web/ergo_drive.mjs"), "run", "--scenario", str(sc_path), "--profile", str(p_path),
            "--out", str(work / "runs"), "--run-id", f"R-{name}", "--base", base, "--focus-walk", "--timeout-s", "120"]
+    if device_json is not None:
+        cmd += ["--device-json", str(device_json)]
     proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
     run_dir = work / "runs" / f"R-{name}"
     if not (run_dir / "run.json").is_file():
@@ -158,8 +166,11 @@ def run_example(work: Path, base: str, device: str, name: str) -> dict[str, Any]
         result = analyze.analyze_run(run_dir, [profile], scenario, cross_profile=False)
     except Exception as err:  # noqa: BLE001
         return {"name": name, "error": f"analysis: {err}"}
-    fired = sorted({(o["check_id"], o["element_key"], o["severity"]) for o in result["observations"] if not o["passed"]})
-    return {"name": name, "fired": fired}
+    failing = [o for o in result["observations"] if not o["passed"]]
+    clean = [o for o in failing if o["check_id"] == "LY-01" and (o.get("measurement") or {}).get("act_59br37") == "passed"]
+    fired = sorted({(o["check_id"], o["element_key"], o["severity"]) for o in failing if o not in clean})
+    notes = sorted({(o["check_id"], o["element_key"], o["severity"]) for o in clean})
+    return {"name": name, "fired": fired, "notes": notes}
 
 
 def main() -> int:
@@ -167,6 +178,7 @@ def main() -> int:
     ap.add_argument("--rules-dir", type=Path, default=None, help="local folder with ACT rule .md files (default: download at ACT_REF)")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--device", default="desktop-1920")
+    ap.add_argument("--viewport", default=None, help="WxH: a mouse desktop of this CSS size instead of --device (59br37: 640x512)")
     ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--rules", default=",".join(RULES), help="comma-separated ACT rule ids")
     args = ap.parse_args()
@@ -194,14 +206,23 @@ def main() -> int:
                 (work / "site" / f"{name}.html").write_text(page_for(ex["html"]), encoding="utf-8")
                 fetch_assets(ex["html"], work, args.out / "assets-cache")
                 jobs.append((rule, ex, name))
+        device_json = None
+        if args.viewport:
+            m = re.fullmatch(r"(\d+)x(\d+)", args.viewport)
+            if not m:
+                print("--viewport must look like 640x512", file=sys.stderr)
+                return 2
+            device_json = work / "profiles" / "viewport-device.json"
+            device_json.write_text(json.dumps({"id": f"act-{args.viewport}", "form_factor": "desktop", "viewport_css": [int(m.group(1)), int(m.group(2))],
+                                               "dpr": 1.0, "input": "mouse", "playwright_device": None}), encoding="utf-8")
         with static_server(work) as base, ThreadPoolExecutor(max_workers=args.workers) as pool:
-            results = list(pool.map(lambda j: run_example(work, base, args.device, j[2]), jobs))
+            results = list(pool.map(lambda j: run_example(work, base, args.device, j[2], device_json), jobs))
     by_name = {r["name"]: r for r in results}
-    report: dict[str, Any] = {"device": args.device, "act_ref": ACT_REF if args.rules_dir is None else None, "rules": {}, "gate_failures": 0, "errors": []}
+    report: dict[str, Any] = {"device": args.device, "viewport": args.viewport, "act_ref": ACT_REF if args.rules_dir is None else None, "rules": {}, "gate_failures": 0, "errors": []}
     for rule in rules:
         checks_, gate = RULES[rule["id"]]
         row = {"file": rule["file"], "sha256": rule["sha256"], "checks": list(checks_), "gate": gate,
-               "passed": 0, "inapplicable": 0, "failed": 0, "false_alarms": [], "detected": [], "missed": []}
+               "passed": 0, "inapplicable": 0, "failed": 0, "false_alarms": [], "detected": [], "missed": [], "notes": []}
         for ex in rule["examples"]:
             name = f"{rule['id']}-{ex['kind']}-{ex['n']}"
             res = by_name[name]
@@ -210,6 +231,8 @@ def main() -> int:
                 report["errors"].append(res)
                 continue
             hits = [f for f in res["fired"] if f[0] in checks_]
+            if res.get("notes"):
+                row["notes"].append({"example": name, "notes": res["notes"]})
             if ex["kind"] in ("passed", "inapplicable") and hits:
                 row["false_alarms"].append({"example": name, "fired": hits})
             elif ex["kind"] == "failed":
@@ -220,7 +243,8 @@ def main() -> int:
     (args.out / "act-report.json").write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
     for rid, row in report["rules"].items():
         print(f"{rid} {','.join(row['checks'])}: false alarms {len(row['false_alarms'])}/{row['passed'] + row['inapplicable']}, "
-              f"detected {len(row['detected'])}/{row['failed']}" + ("" if row["gate"] else " (informational)"))
+              f"detected {len(row['detected'])}/{row['failed']}" + (f", truncation notes {len(row['notes'])}" if row["notes"] else "")
+              + ("" if row["gate"] else " (informational)"))
         for fa in row["false_alarms"]:
             print(f"   FALSE ALARM {fa['example']}: {fa['fired']}")
     if report["errors"]:

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Iterable
 
 from . import checks
-from .profiles import CONDITION_STRATA
+from .profiles import CONDITION_STRATA, TOUCH_ONLY_STRATA
 from .swarm import severity_counts
 
 BASIS_KO = {
@@ -97,7 +97,8 @@ def render(
         wanted = []
         for device_id, orientation in sorted(groups):
             wanted += [name for name, _ in core_strata(get_device(device_id), orientation) if name not in wanted]
-        wanted += [name for name, _ in CONDITION_STRATA]
+        touch = any(get_device(device_id).input == "touch" for device_id, _ in groups)
+        wanted += [name for name, _ in CONDITION_STRATA if touch or name not in TOUCH_ONLY_STRATA]
         missing = [name for name in wanted if name not in covered]
         lines.append(f"- 이번 실행에서 다루지 않은 커버리지 층: {', '.join(missing) if missing else '없음'}")
     lines.append("- 페르소나 데이터셋에 없는 인간공학 속성(손잡이·파지·손 크기·시력·운동·기기)은 모두 시나리오 가정입니다.")

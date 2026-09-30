@@ -2,7 +2,7 @@
 // ergoqa live web driver (docs/ergonomic-swarm-spec.md section 10).
 //
 //   node drivers/web/ergo_drive.mjs run   --scenario sc.json --profile p.json --out runs/ [--run-id R-x]
-//   node drivers/web/ergo_drive.mjs serve --scenario sc.json --profile p.json --out runs/ --port 9477
+//   node drivers/web/ergo_drive.mjs serve --scenario sc.json --profile p.json --agent-json agent.json --out runs/ --port 9477
 //
 // Exit codes: 0 completed and success; 3 run written but not successful
 // (success false/unknown, or a scripted step failed); 2 usage/input error;
@@ -21,7 +21,7 @@ import { DriverFailure, EXIT, UsageError, readJsonFile } from './util.mjs';
 
 const USAGE = `usage:
   node drivers/web/ergo_drive.mjs run   --scenario SC.json (--profile P.json | --device ID) --out RUNS_DIR [options]
-  node drivers/web/ergo_drive.mjs serve --scenario SC.json (--profile P.json | --device ID) --out RUNS_DIR [--port 9477] [options]
+  node drivers/web/ergo_drive.mjs serve --scenario SC.json (--profile P.json | --device ID) --agent-json AGENT.json --out RUNS_DIR [--port 9477] [options]
 
 options:
   --run-id ID              run directory name (default R-<scenario>-<profile>-<utc>-<rand>)
@@ -42,7 +42,8 @@ options:
   --timeout-s N            scripted run time limit (default 900)
   --idle-timeout-s N       serve: finish as blocked after N s without requests (default 900)
   --agent TEXT             who operates the run (free text), stored in run.json agent
-  --agent-json FILE        operator record {model_family, input_channel, model, persona_arm, seed, ...}
+  --agent-json FILE        operator record {model_family, input_channel, model, persona_arm, seed, ...};
+                           required by serve (input_channel "screenshot" keeps DOM data out of the replies)
   --locale L / --timezone Z  browser locale and timezone (default ko-KR, Asia/Seoul)
   --headed                 show the browser window (needs a display)
 
@@ -136,6 +137,11 @@ async function main(argv) {
   if (!f.scenario) throw new UsageError('--scenario is required');
   if (!f.out) throw new UsageError('--out is required');
   if (!f.profile && !f.device && !f['device-json']) throw new UsageError('--profile or --device is required');
+  // Every interactive session names its operator: the channel decides what the replies
+  // may carry, and corroboration counts operators by model family and channel.
+  if (args.command === 'serve' && !f['agent-json']) {
+    throw new UsageError('serve needs --agent-json FILE (operator record with model_family and input_channel; "screenshot" keeps DOM data out of the replies)');
+  }
   let base = null;
   if (f.base) {
     let u;

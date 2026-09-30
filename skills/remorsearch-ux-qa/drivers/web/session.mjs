@@ -12,7 +12,7 @@ import { resolveDevice } from './devices.mjs';
 import { STATE_KEY, TW_BINDING, controlOf, extractSnapshot, hitTest, idAtPoint, idForElement, pageInit } from './page_scripts.mjs';
 import {
   BLOCK_MIN_H_CSS, BLOCK_MIN_W_CSS, MOTION_MATCH, RED_EXCESS, RED_RATIO,
-  blockStats, cssScaleCopy, decodePng, frameFromImage, frameStats, indicatorPixels, makeBlockGrid, visualDiffFraction,
+  blockStats, cssScaleCopy, decodePng, frameFromImage, frameStats, indicatorPixels, indicatorPixelsMulti, makeBlockGrid, resampleImage, visualDiffFraction,
 } from './png.mjs';
 import { KNOWN_ROLES } from './validate.mjs';
 import {
@@ -50,17 +50,23 @@ const FOCUS_VIEWPORT_WIDTH = 480; // viewport-wide captures are downscaled to ab
 // Gap between the two unfocused captures whose difference masks animation, and the
 // per-channel change between them that marks a pixel as animated.
 const FOCUS_ANIM_GAP_MS = 40;
+// Flash sampling: page scroll that reverses more often than this per second is treated
+// as flicker, not motion (smooth scrolling in one direction is exempt).
+const SCROLL_REVERSALS_PER_S = 3;
 const FOCUS_MASK_LEVEL = 4;
+const STEP_PROBE_MAX = 16; // focus probes before clicks, per run
 
 // Reflow (WCAG 1.4.10, AUT-06): each distinct screen's DOM is copied as the run goes
 // and re-rendered after the run at 320 CSS px wide with scripts off (a static copy,
 // so the run itself is never resized). At most REFLOW_MAX_SCREENS per run.
 const REFLOW_WIDTH = 320;
 const REFLOW_MAX_SCREENS = 12;
-const REFLOW_BUDGET_MS = 20000;
+const REFLOW_BUDGET_MS = 40000;
 
 const MEASURED = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'type', 'press', 'scroll', 'gamepad']);
 const POINTER = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'scroll']);
+// Actions that move content with the pointer (scroll gestures) or hold it down.
+const GESTURES = new Set(['long_press', 'swipe', 'drag', 'scroll']);
 
 function firstLine(msg) {
   return truncate(String(msg || '').split('\n')[0], 500);
@@ -80,35 +86,275 @@ function stripQuery(url) {
 }
 
 /**
- * In-page: the deepest focused element (through open shadow roots and same-origin
- * iframes), its identity, box in top-viewport CSS px, and how much of it a painting
- * fixed or sticky layer that does not contain it covers (9 sample points). Null when
- * focus is on the document itself. The name never reads a field's value.
+ * In-page, on the live screen: a static copy for the reflow pass and a fingerprint of
+ * the screen. The copy is the DOM as the browser holds it, not the source text: style
+ * elements carry their CSSOM rules (CSS-in-JS libraries insert rules that the element's
+ * text never shows), constructed (adopted) sheets become style elements, open shadow
+ * roots become declarative ones, and scripts, noscript and meta refresh are dropped
+ * (the copy renders with scripts off). `rules` counts the accessible CSS rules, so the
+ * pass can tell when the copy lost its styling. The key is the path, fragment, the
+ * visible headings, dialogs and landmarks, and the ids of large visible regions, with
+ * digits removed: a ticking timer or a counter does not make a new screen.
  */
-/** In-page, on a static copy at 320 px: does the page scroll sideways, and which outermost
- * elements stick out past the right edge (1.4.10; two-dimensional content exempt)? */
-function reflowInfo(limit) {
+function reflowCopy() {
+  const VOID = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
+  const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/ /g, '&nbsp;');
+  const escAttr = (t) => t.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/ /g, '&nbsp;');
+  let rules = 0;
+  const sheetText = (sheet) => {
+    try {
+      const list = sheet.cssRules;
+      rules += list.length;
+      let t = '';
+      for (const r of list) t += `${r.cssText}\n`;
+      return t;
+    } catch (e) {
+      return null; // a cross-origin sheet: its link reloads in the copy
+    }
+  };
+  const styleTag = (t) => `<style>${t.replace(/<\/style/gi, '<\\/style')}</style>`;
+  const out = [];
+  const adopted = (root) => {
+    for (const sheet of root.adoptedStyleSheets || []) {
+      const t = sheetText(sheet);
+      if (t) out.push(styleTag(t));
+    }
+  };
+  const walk = (node) => {
+    for (const c of node.childNodes) {
+      if (c.nodeType === 3) {
+        out.push(esc(c.nodeValue));
+        continue;
+      }
+      if (c.nodeType !== 1) continue;
+      const tag = c.localName;
+      if (tag === 'script' || tag === 'noscript') continue;
+      if (tag === 'meta' && /refresh/i.test(c.getAttribute('http-equiv') || '')) continue;
+      out.push(`<${tag}`);
+      for (const a of c.attributes) out.push(` ${a.name}="${escAttr(a.value)}"`);
+      out.push('>');
+      if (VOID.has(tag)) continue;
+      if (tag === 'style') {
+        const t = c.sheet ? sheetText(c.sheet) : null;
+        out.push((t === null ? c.textContent : t).replace(/<\/style/gi, '<\\/style'), '</style>');
+        continue;
+      }
+      if (c.shadowRoot) {
+        out.push('<template shadowrootmode="open">');
+        adopted(c.shadowRoot);
+        walk(c.shadowRoot);
+        out.push('</template>');
+      }
+      if (tag === 'template') {
+        walk(c.content);
+      } else if (tag === 'textarea' || tag === 'title') {
+        out.push(esc(c.textContent));
+      } else {
+        // The parser drops one newline right after <pre>, <listing> and <textarea>.
+        if ((tag === 'pre' || tag === 'listing') && c.firstChild && c.firstChild.nodeType === 3 && c.firstChild.nodeValue[0] === '\n') out.push('\n');
+        walk(c);
+      }
+      if (tag === 'head') adopted(document);
+      out.push(`</${tag}>`);
+    }
+  };
+  const dt = document.doctype;
+  if (dt) {
+    const ids = dt.publicId ? ` PUBLIC "${dt.publicId}"${dt.systemId ? ` "${dt.systemId}"` : ''}` : dt.systemId ? ` SYSTEM "${dt.systemId}"` : '';
+    out.push(`<!DOCTYPE ${dt.name}${ids}>`);
+  }
+  walk(document);
+  // Rules of sheets whose text is served (links): counted here and in the copy alike.
+  for (const sheet of document.styleSheets) if (sheet.ownerNode && sheet.ownerNode.localName !== 'style') sheetText(sheet);
+  const strip = (t) => (t || '').replace(/\s+/g, ' ').replace(/[0-9]+/g, '#').trim().slice(0, 60);
+  const shown = (n) => n.getClientRects().length > 0 && getComputedStyle(n).visibility === 'visible';
+  const parts = [location.pathname.replace(/[0-9]+/g, '#'), strip(location.hash)];
+  const marks = 'h1, h2, h3, [role="heading"], legend, dialog[open], [role="dialog"], [role="alertdialog"], [aria-modal="true"], [role="tabpanel"], main[id], form[id], section[id]';
+  for (const n of document.querySelectorAll(marks)) {
+    if (!shown(n)) continue;
+    const titled = /^(h[1-3]|legend)$/.test(n.localName) || n.getAttribute('role') === 'heading';
+    parts.push(`${n.localName}${n.id ? `#${strip(n.id)}` : ''}${titled ? `:${strip(n.textContent)}` : ''}`);
+    if (parts.length >= 80) break;
+  }
+  // Major regions with an id (half the width, a good part of the height): a step of a
+  // form shown in place, a panel that opened. Small messages do not count.
+  const major = new Set();
+  for (const n of document.body ? document.body.querySelectorAll('[id]') : []) {
+    const r = n.getBoundingClientRect();
+    if (r.width < 0.5 * innerWidth || r.height < Math.min(120, 0.15 * innerHeight) || !shown(n)) continue;
+    major.add(strip(n.id));
+    if (major.size >= 30) break;
+  }
+  parts.push(...[...major].sort().map((id) => `@${id}`));
+  return { html: out.join(''), rules, key: parts.join('|') };
+}
+
+/** In-page, on a reflow copy: the accessible CSS rules (document and open shadow roots, nested too). */
+function reflowRuleCount() {
+  let rules = 0;
+  const count = (sheets) => {
+    for (const sheet of sheets || []) {
+      try {
+        rules += sheet.cssRules.length;
+      } catch (e) { /* cross-origin */ }
+    }
+  };
+  count(document.styleSheets);
+  count(document.adoptedStyleSheets);
+  const visit = (root) => {
+    for (const n of root.querySelectorAll('*')) {
+      if (!n.shadowRoot) continue;
+      count(n.shadowRoot.styleSheets);
+      count(n.shadowRoot.adoptedStyleSheets);
+      visit(n.shadowRoot);
+    }
+  };
+  visit(document);
+  return rules;
+}
+
+/**
+ * In-page, on a static copy (1.4.10). Elements are indexed in one order across the
+ * renders of a copy (document order, open shadow roots after their host), so a render
+ * at the device width can be compared with the renders at 320 px.
+ *
+ * mode 'scan' (device width): for each element that owns text, the share of its box
+ * left visible (null when it is not visible at all), and whether each element lies
+ * entirely off screen sideways (off-canvas by design).
+ * Otherwise (320 px): whether the page scrolls sideways, the outermost elements past
+ * the right edge (two-dimensional content, inert and aria-hidden content exempt; inside
+ * a fixed bar they count even when the page does not scroll, since a fixed box cannot be
+ * scrolled to), and text visible at the device width but cut away here ("lost").
+ */
+function reflowInfo(arg) {
+  const CAP = 20000;
+  const up = (m) => m.assignedSlot || m.parentElement || (m.parentNode && m.parentNode.host) || null;
+  const all = [];
+  let capped = false;
+  const visit = (root) => {
+    for (const n of root.querySelectorAll('*')) {
+      if (all.length >= CAP) {
+        capped = true;
+        return;
+      }
+      all.push(n);
+      if (n.shadowRoot) visit(n.shadowRoot);
+    }
+  };
+  if (document.body) visit(document.body);
+  const top = (m) => !m || m === document.body || m === document.documentElement;
+  const vw = window.innerWidth;
+  const shown = (n) => (n.checkVisibility
+    ? n.checkVisibility({ opacityProperty: true, visibilityProperty: true, checkOpacity: true, checkVisibilityCSS: true })
+    : getComputedStyle(n).visibility === 'visible');
+  // Regions a collapsed toggle controls (aria-expanded=false): hidden by design.
+  const collapsedIds = new Set();
+  for (const t of document.querySelectorAll('[aria-expanded="false"][aria-controls]')) for (const id of t.getAttribute('aria-controls').split(/\s+/)) if (id) collapsedIds.add(id);
+  // For an element that owns text, the share of its box left visible by clipping
+  // ancestors up to the first scroll container (content there is reachable), and by the
+  // viewport sideways when a fixed ancestor holds it. Null when it owns no text, is not
+  // visible, or sits in a collapsed disclosure.
+  const share = (n) => {
+    let own = false;
+    for (const c of n.childNodes) {
+      if (c.nodeType === 3 && c.nodeValue.trim()) {
+        own = true;
+        break;
+      }
+    }
+    if (!own) return null;
+    const r = n.getBoundingClientRect();
+    if (r.width <= 1 || r.height <= 1 || !shown(n)) return null;
+    let x0 = r.left;
+    let y0 = r.top;
+    let x1 = r.right;
+    let y1 = r.bottom;
+    let fixed = getComputedStyle(n).position === 'fixed';
+    for (let m = up(n); !top(m); m = up(m)) {
+      if (m.id && collapsedIds.has(m.id)) return null;
+      const cs = getComputedStyle(m);
+      if (['auto', 'scroll'].includes(cs.overflowX) || ['auto', 'scroll'].includes(cs.overflowY)) break;
+      if (cs.position === 'fixed') fixed = true;
+      const clipX = ['hidden', 'clip'].includes(cs.overflowX);
+      const clipY = ['hidden', 'clip'].includes(cs.overflowY);
+      if (!clipX && !clipY) continue;
+      const a = m.getBoundingClientRect();
+      if ((clipX && a.width <= 1) || (clipY && (a.height <= 1 || cs.maxHeight === '0px'))) return null; // collapsed
+      if (clipX) {
+        x0 = Math.max(x0, a.left);
+        x1 = Math.min(x1, a.right);
+      }
+      if (clipY) {
+        y0 = Math.max(y0, a.top);
+        y1 = Math.min(y1, a.bottom);
+      }
+    }
+    if (fixed) {
+      x0 = Math.max(x0, 0);
+      x1 = Math.min(x1, vw);
+    }
+    return Math.round(100 * Math.max(0, x1 - x0) * Math.max(0, y1 - y0) / (r.width * r.height)) / 100;
+  };
+  if (arg.mode === 'scan') {
+    const vis = [];
+    const off = [];
+    for (const n of all) {
+      vis.push(share(n));
+      const r = n.getBoundingClientRect();
+      off.push(r.width > 1 && r.height > 1 && (r.right <= 0 || r.left >= vw) ? 1 : 0);
+    }
+    return { vis, off, count: all.length, capped };
+  }
+  const limit = arg.limit;
+  const full = arg.full || { vis: [], off: [] };
   const se = document.scrollingElement || document.documentElement;
   const cw = se.clientWidth;
   const sw = se.scrollWidth;
   const clipX = (n) => ['hidden', 'clip'].includes(getComputedStyle(n).overflowX);
   const rootClips = clipX(document.documentElement) || (document.body ? clipX(document.body) : false);
-  const out = { client_width: cw, scroll_width: sw, root_clips: rootClips, offenders: [] };
-  if (sw <= cw + 4 && !rootClips) return out;
+  const out = { client_width: cw, scroll_width: sw, root_clips: rootClips, offenders: [], lost: [], scan_capped: capped || !!full.capped };
+  const ids = (n) => {
+    const list = [];
+    for (let m = up(n); m && list.length < 6; m = up(m)) if (m.id) list.push(m.id);
+    return list;
+  };
+  const hidden = (n) => {
+    for (let m = n; m && m.nodeType === 1 && m !== document.body; m = up(m)) if (m.getAttribute('aria-hidden') === 'true' || m.inert) return true;
+    return false;
+  };
   const TWO_D = new Set(['table', 'canvas', 'video', 'iframe', 'svg', 'pre', 'code', 'map', 'object', 'embed', 'math']);
-  const exempt = (n) => {
-    for (let m = n; m && m.nodeType === 1 && m !== document.body; m = m.parentElement) {
-      const tag = m.tagName.toLowerCase();
+  const twoD = (n) => {
+    for (let m = n; m && m.nodeType === 1 && m !== document.body; m = up(m)) {
       const role = m.getAttribute('role') || '';
-      if (TWO_D.has(tag) || ['img', 'application', 'grid', 'treegrid', 'table', 'toolbar'].includes(role)) return true;
-      if (m !== n) {
-        const ox = getComputedStyle(m).overflowX;
-        if (ox === 'auto' || ox === 'scroll') return true; // scrolls inside its own box
-        if ((ox === 'hidden' || ox === 'clip') && m.getBoundingClientRect().right <= cw + 1) return true; // clipped by a container that fits
-      }
-      if (m.getAttribute('aria-hidden') === 'true') return true;
+      if (TWO_D.has(m.localName) || ['img', 'application', 'grid', 'treegrid', 'table', 'toolbar'].includes(role)) return true;
     }
     return false;
+  };
+  const box = (r) => ({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) });
+  // Text visible at the device width but cut away by clipping containers here.
+  if (full.vis.length) {
+    for (let i = 0; i < all.length && out.lost.length < limit; i++) {
+      if (full.vis[i] == null || full.vis[i] < 0.9) continue;
+      const now = share(all[i]);
+      if (now == null || now >= 0.5) continue;
+      const n = all[i];
+      if (twoD(n) || hidden(n)) continue;
+      out.lost.push({ dom_id: n.id || null, ancestor_ids: ids(n), tag: n.localName, visible_full: full.vis[i], visible_320: now,
+        box: box(n.getBoundingClientRect()), text: (n.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 60) });
+    }
+  }
+  const pageOverflow = sw > cw + 4 || rootClips;
+  // How an element past the edge stays out of reach: 'page' (the page scrolls or the
+  // root clips), 'fixed' (a fixed box holds it), or null (its own scroll or clipping box).
+  const reach = (n) => {
+    let fixed = getComputedStyle(n).position === 'fixed';
+    for (let m = up(n); !top(m); m = up(m)) {
+      const cs = getComputedStyle(m);
+      if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') return null; // scrolls inside its own box
+      if ((cs.overflowX === 'hidden' || cs.overflowX === 'clip') && m.getBoundingClientRect().right <= cw + 1) return null; // clipped by a box that fits
+      if (cs.position === 'fixed') fixed = true;
+    }
+    return fixed ? 'fixed' : pageOverflow ? 'page' : null;
   };
   const sel = (n) => {
     if (n.id) return `#${CSS.escape(n.id)}`;
@@ -119,36 +365,96 @@ function reflowInfo(limit) {
         break;
       }
       const sib = m.parentElement ? [...m.parentElement.children].filter((c) => c.tagName === m.tagName) : [];
-      parts.unshift(sib.length > 1 ? `${m.tagName.toLowerCase()}:nth-of-type(${sib.indexOf(m) + 1})` : m.tagName.toLowerCase());
+      parts.unshift(sib.length > 1 ? `${m.localName}:nth-of-type(${sib.indexOf(m) + 1})` : m.localName);
     }
     return parts.join(' > ');
   };
-  const hits = [];
-  const all = document.body ? document.body.getElementsByTagName('*') : [];
-  for (let i = 0; i < all.length && i < 6000; i++) {
+  const hits = new Map();
+  for (let i = 0; i < all.length; i++) {
     const n = all[i];
     const r = n.getBoundingClientRect();
     if (r.width <= 1 || r.height <= 1 || r.right <= cw + 4) continue; // 4 px tolerance (borders, rounding)
+    if (full.off[i]) continue; // off screen at the device width too: off-canvas by design
     const cs = getComputedStyle(n);
     if (cs.display === 'none' || cs.visibility !== 'visible' || parseFloat(cs.opacity) === 0) continue;
-    if (!(n.innerText || '').trim() && !['img', 'input', 'button', 'select', 'textarea'].includes(n.tagName.toLowerCase())) continue;
-    if (exempt(n)) continue;
-    hits.push(n);
+    if (!(n.innerText || '').trim() && !['img', 'input', 'button', 'select', 'textarea'].includes(n.localName)) continue;
+    if (twoD(n) || hidden(n)) continue;
+    const how = reach(n);
+    if (how) hits.set(n, how);
   }
-  const set = new Set(hits);
-  for (const n of hits) {
+  for (const [n, how] of hits) {
     let outer = true;
-    for (let m = n.parentElement; m; m = m.parentElement) if (set.has(m)) { outer = false; break; }
+    for (let m = up(n); m; m = up(m)) {
+      if (hits.has(m)) {
+        outer = false;
+        break;
+      }
+    }
     if (!outer) continue;
-    const r = n.getBoundingClientRect();
-    const ids = [];
-    for (let m = n.parentElement; m && ids.length < 6; m = m.parentElement) if (m.id) ids.push(m.id);
-    out.offenders.push({ selector: sel(n), dom_id: n.id || null, ancestor_ids: ids, tag: n.tagName.toLowerCase(),
-      box: { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) },
-      text: (n.innerText || n.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim().slice(0, 60) });
+    out.offenders.push({ selector: sel(n), dom_id: n.id || null, ancestor_ids: ids(n), tag: n.localName, fixed: how === 'fixed',
+      box: box(n.getBoundingClientRect()), text: (n.innerText || n.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim().slice(0, 60) });
     if (out.offenders.length >= limit) break;
   }
   return out;
+}
+
+/**
+ * In-page, on the element a click will land on: the focusable control it belongs to,
+ * marked for focusProbe, with its box and small wrappers. Skipped (with a reason) when
+ * there is none, when it is a text-entry field (the caret shows focus there), when it
+ * already has focus, or when a text-entry field or editor has focus: taking focus from
+ * it would fire its blur (validation that moves the layout) before the click, and
+ * Chromium re-rasterises page text when an editable element loses focus, so the
+ * captures would differ without any indicator.
+ */
+function probeTarget(start) {
+  const FOCUSABLE = 'a[href], area[href], button, input, select, textarea, summary, [tabindex], [contenteditable=""], [contenteditable="true"]';
+  const node = start && start.nodeType === 1 ? start : start && start.parentElement;
+  // Roving-focus popups manage focus themselves (menus, listboxes).
+  if (node && node.closest('[role="menu"], [role="menubar"], [role="listbox"], [role="tree"], [role="grid"]')) return { skip: 'managed_focus' };
+  const el = node ? node.closest(FOCUSABLE) : null;
+  if (!el || el.disabled || el.tabIndex < 0 || el.closest('[inert]')) return { skip: 'not_focusable' };
+  const pressable = ['button', 'submit', 'reset', 'checkbox', 'radio', 'image', 'file', 'color', 'range'];
+  const textEntry = (n) => !!n && n.nodeType === 1 && (n.tagName === 'TEXTAREA' || n.isContentEditable
+    || (n.tagName === 'INPUT' && !pressable.includes((n.getAttribute('type') || 'text').toLowerCase())));
+  if (textEntry(el)) return { skip: 'text_entry' };
+  let active = document.activeElement;
+  while (active && active.shadowRoot && active.shadowRoot.activeElement) active = active.shadowRoot.activeElement;
+  if (active === el || (active && el.contains(active))) return { skip: 'already_focused' };
+  const prev = active && active !== document.body && active !== document.documentElement ? active : null;
+  // A focused text field or editor: the driver takes its focus away first (its blur
+  // would run at the click anyway) and measures again.
+  const field = textEntry(prev);
+  // Boxes relative to the screen (the visual viewport, panned inside a wider layout
+  // viewport when content is wider than the screen), like screenshot clips.
+  const vvp = window.visualViewport;
+  const one = !!vvp && Math.abs(vvp.scale - 1) < 0.01;
+  const dx = one ? vvp.offsetLeft : 0;
+  const dy = one ? vvp.offsetTop : 0;
+  const r = el.getBoundingClientRect();
+  const boxes = [{ x: r.left - dx, y: r.top - dy, w: r.width, h: r.height }];
+  for (let n = el.parentElement, i = 0; n && n.nodeType === 1 && i < 3; n = n.parentElement, i++) {
+    const a = n.getBoundingClientRect();
+    if (a.width * a.height > 4 * Math.max(1, r.width * r.height)) break;
+    boxes.push({ x: a.left - dx, y: a.top - dy, w: a.width, h: a.height });
+  }
+  // The previously focused control and its small wrappers: its own focus style goes
+  // away when the target takes focus, so those pixels are not the target's indicator.
+  // A wrapper that also holds the target keeps any :focus-within style and is not
+  // masked (it would hide the target's own ring: two buttons in one small group).
+  const prevBoxes = [];
+  if (prev && !field) {
+    const p = prev.getBoundingClientRect();
+    prevBoxes.push({ x: p.left - dx, y: p.top - dy, w: p.width, h: p.height });
+    for (let n = prev.parentElement, i = 0; n && n.nodeType === 1 && i < 3; n = n.parentElement, i++) {
+      const a = n.getBoundingClientRect();
+      if (n.contains(el) || a.width * a.height > 4 * Math.max(1, p.width * p.height)) break;
+      prevBoxes.push({ x: a.left - dx, y: a.top - dy, w: a.width, h: a.height });
+    }
+  }
+  window.__ergoProbeEl = el;
+  window.__ergoProbePrev = prev;
+  return { boxes, prevBoxes, field, vw: one ? vvp.width : window.innerWidth, vh: one ? vvp.height : window.innerHeight, scroll: [window.scrollX, window.scrollY] };
 }
 
 function focusInfo() {
@@ -187,8 +493,16 @@ function focusInfo() {
   const r = { left: r0.left + ox, top: r0.top + oy, width: r0.width, height: r0.height };
   r.right = r.left + r.width;
   r.bottom = r.top + r.height;
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
+  // The screen is the visual viewport; at scale 1 it can be panned inside a wider
+  // layout viewport (content wider than the screen). Sampling uses layout coordinates;
+  // boxes are reported relative to the screen, like snapshot boxes and screenshot clips.
+  const vvp = window.visualViewport;
+  const panned = !!vvp && Math.abs(vvp.scale - 1) < 0.01
+    && (vvp.offsetLeft > 0.5 || vvp.offsetTop > 0.5 || vvp.width < window.innerWidth - 1 || vvp.height < window.innerHeight - 1);
+  const VX0 = panned ? vvp.offsetLeft : 0;
+  const VY0 = panned ? vvp.offsetTop : 0;
+  const vw = panned ? vvp.width : window.innerWidth;
+  const vh = panned ? vvp.height : window.innerHeight;
   const esc = (v) => (window.CSS && CSS.escape ? CSS.escape(v) : v);
   let sel = el.id ? `#${esc(el.id)}` : null;
   if (!sel) {
@@ -210,7 +524,7 @@ function focusInfo() {
     return out.join('.');
   };
   const path = chain.map(pathOf).join('/');
-  const inVp = r.width > 0 && r.height > 0 && r.right > 0 && r.bottom > 0 && r.left < vw && r.top < vh;
+  const inVp = r.width > 0 && r.height > 0 && r.right > VX0 && r.bottom > VY0 && r.left < VX0 + vw && r.top < VY0 + vh;
   const paints = (n) => {
     const cs = view.getComputedStyle(n);
     const bg = cs.backgroundColor || '';
@@ -247,8 +561,8 @@ function focusInfo() {
   if (inVp && doc === document) {
     for (const fx of [0.15, 0.5, 0.85]) {
       for (const fy of [0.2, 0.5, 0.8]) {
-        const px = Math.min(vw - 1, Math.max(0, r.left + r.width * fx));
-        const py = Math.min(vh - 1, Math.max(0, r.top + r.height * fy));
+        const px = Math.min(VX0 + vw - 1, Math.max(VX0, r.left + r.width * fx));
+        const py = Math.min(VY0 + vh - 1, Math.max(VY0, r.top + r.height * fy));
         let hit = document.elementFromPoint(px, py);
         while (hit && hit.shadowRoot) {
           const inner = hit.shadowRoot.elementFromPoint(px, py);
@@ -290,12 +604,12 @@ function focusInfo() {
   for (let n = el.parentElement, i = 0; n && n.nodeType === 1 && i < 3; n = n.parentElement, i++) {
     const a = n.getBoundingClientRect();
     if (a.width * a.height > 4 * Math.max(1, r0.width * r0.height)) break;
-    wraps.push({ x: a.left + ox, y: a.top + oy, w: a.width, h: a.height });
+    wraps.push({ x: a.left + ox - VX0, y: a.top + oy - VY0, w: a.width, h: a.height });
   }
   return {
     selector: sel, dom_id: el.id || null, tag, role: el.getAttribute('role') || tag, name, path,
     frame: doc === document ? null : 'iframe',
-    box: { x: Math.round(r.left * 100) / 100, y: Math.round(r.top * 100) / 100, w: Math.round(r.width * 100) / 100, h: Math.round(r.height * 100) / 100 },
+    box: { x: Math.round((r.left - VX0) * 100) / 100, y: Math.round((r.top - VY0) * 100) / 100, w: Math.round(r.width * 100) / 100, h: Math.round(r.height * 100) / 100 },
     wrap_boxes: wraps,
     in_viewport: inVp, obscured_fraction: inVp && doc === document ? Math.round((covered / 9) * 1000) / 1000 : null, obscured_by: coveredBy,
     obscured_user_opened: covered > 0 ? coveredUserOpened : null, vw, vh,
@@ -330,7 +644,7 @@ export class WebSession {
     this.flashPrev = null; // last flash frame (across bursts) for block motion
     this.focusWalks = [];
     this.reflowScreens = [];
-    this.reflowSeen = new Set();
+    this.reflowDropped = new Set();
     this.reflow = [];
     this.frameIndex = 0;
     this.blocked = [];
@@ -466,20 +780,76 @@ export class WebSession {
     return this.scenario.surface_kind !== 'game' && !['tv', 'handheld_console'].includes(this.dev.snapshotDevice.form_factor);
   }
 
-  /** Keep a static copy of a screen for the reflow pass (distinct DOMs only). */
+  /**
+   * Keep a static copy of a screen for the reflow pass: one per screen fingerprint
+   * (reflowCopy's key), the newest copy replacing an older one, at most
+   * REFLOW_MAX_SCREENS screens; later new screens are counted as dropped.
+   */
   async keepForReflow(snapshotId) {
-    if (!this.reflowEnabled() || this.reflowScreens.length >= REFLOW_MAX_SCREENS) return;
+    if (!this.reflowEnabled()) return;
     try {
-      const html = await this.page.content();
-      const key = sha256(Buffer.from(html));
-      if (this.reflowSeen.has(key)) return;
-      this.reflowSeen.add(key);
-      this.reflowScreens.push({ snapshot_id: snapshotId, url: this.page.url(), html });
+      const copy = await this.page.evaluate(reflowCopy);
+      const url = this.page.url();
+      const key = `${stripQuery(url)}|${copy.key}`;
+      const kept = this.reflowScreens.find((s) => s.key === key);
+      if (kept) {
+        Object.assign(kept, { snapshot_id: snapshotId, url, html: copy.html, rules: copy.rules });
+      } else if (this.reflowScreens.length < REFLOW_MAX_SCREENS) {
+        this.reflowScreens.push({ key, snapshot_id: snapshotId, url, html: copy.html, rules: copy.rules });
+      } else if (!this.reflowDropped.has(key)) {
+        this.reflowDropped.add(key);
+      }
     } catch { /* navigating: the next snapshot keeps the screen */ }
   }
 
-  /** Re-render the kept screens at 320 CSS px, scripts off, and record what sticks out. */
+  /**
+   * Load a kept copy in the reflow page under its own URL (fulfilled from memory, so
+   * the site's CSS and fonts load same-origin as in the run), scripts off.
+   */
+  async loadReflowCopy(page, screen) {
+    let target = null;
+    try {
+      const u = new URL(screen.url);
+      if (u.protocol === 'http:' || u.protocol === 'https:') {
+        u.hash = '';
+        target = u.href;
+      }
+    } catch { /* not a URL */ }
+    await page.goto('about:blank').catch(() => {});
+    if (!target) {
+      const base = `<base href="${screen.url.replace(/"/g, '&quot;')}">`;
+      const html = /<base\s/i.test(screen.html) ? screen.html
+        : /<head[^>]*>/i.test(screen.html) ? screen.html.replace(/<head[^>]*>/i, (m) => `${m}${base}`) : `${base}${screen.html}`;
+      await page.setContent(html, { waitUntil: 'load', timeout: 8000 });
+      return;
+    }
+    const match = (u) => u.href === target;
+    const handler = (route) => {
+      const req = route.request();
+      if (req.isNavigationRequest() && req.frame() === page.mainFrame()) {
+        return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: screen.html });
+      }
+      return route.fallback();
+    };
+    await page.route(match, handler);
+    try {
+      await page.goto(screen.url, { waitUntil: 'load', timeout: 8000 });
+    } finally {
+      await page.unroute(match, handler).catch(() => {});
+    }
+    // Web fonts load on first use; wait briefly so text is measured in its own font.
+    await page.evaluate(() => Promise.race([document.fonts.ready.then(() => true), new Promise((r) => setTimeout(() => r(false), 1500))])).catch(() => {});
+  }
+
+  /**
+   * Re-render the kept screens at 320 CSS px, scripts off, and record what sticks out
+   * or is cut away. A copy that lost most of its CSS rules (a sheet failed to load) is
+   * recorded as styles_lost and not measured.
+   */
   async reflowPass() {
+    if (this.reflowDropped.size) {
+      this.warnings.push(`reflow: ${this.reflowDropped.size} screen(s) after the first ${REFLOW_MAX_SCREENS} were not re-rendered at 320 px`);
+    }
     if (!this.reflowScreens.length) return;
     let context = null;
     const deadline = epochNow() + REFLOW_BUDGET_MS;
@@ -496,15 +866,30 @@ export class WebSession {
           this.warnings.push(`reflow pass stopped at its ${REFLOW_BUDGET_MS} ms budget`);
           break;
         }
-        const base = `<base href="${screen.url.replace(/"/g, '&quot;')}">`;
-        const html = /<base\s/i.test(screen.html) ? screen.html
-          : /<head[^>]*>/i.test(screen.html) ? screen.html.replace(/<head[^>]*>/i, (m) => `${m}${base}`) : `${base}${screen.html}`;
+        const rec = { snapshot_id: screen.snapshot_id, url: screen.url, width: REFLOW_WIDTH };
         try {
-          await page.setContent(html, { waitUntil: 'load', timeout: 8000 });
-          const info = await page.evaluate(reflowInfo, 20);
-          this.reflow.push({ snapshot_id: screen.snapshot_id, url: screen.url, width: REFLOW_WIDTH, ...info });
+          // The copy at the device width first, then at 320 px with the same height, so
+          // only the narrower width can cut text away (a 100vh app shell with
+          // overflow:hidden would otherwise lose content to the shorter viewport alone).
+          // Sideways overflow is then measured at 320 px by the short zoomed height.
+          await page.setViewportSize({ width: this.vw, height: this.vh });
+          await this.loadReflowCopy(page, screen);
+          const rules = await page.evaluate(reflowRuleCount).catch(() => null);
+          if (screen.rules >= 20 && rules !== null && rules < 0.9 * screen.rules) {
+            this.reflow.push({ ...rec, styles_lost: { live_rules: screen.rules, copy_rules: rules } });
+            this.warnings.push(`reflow copy of ${screen.snapshot_id} kept ${rules} of ${screen.rules} CSS rules; not measured`);
+            continue;
+          }
+          const full = await page.evaluate(reflowInfo, { mode: 'scan' });
+          await page.setViewportSize({ width: REFLOW_WIDTH, height: this.vh });
+          await sleep(50);
+          const narrow = await page.evaluate(reflowInfo, { limit: 20, full: { vis: full.vis, off: [], capped: full.capped } });
+          await page.setViewportSize({ width: REFLOW_WIDTH, height: touch ? 568 : 256 });
+          await sleep(50);
+          const info = await page.evaluate(reflowInfo, { limit: 20, full: { vis: [], off: full.off, capped: full.capped } });
+          this.reflow.push({ ...rec, ...info, lost: narrow.lost, lost_height: this.vh, scan_capped: info.scan_capped || narrow.scan_capped });
         } catch (err) {
-          this.reflow.push({ snapshot_id: screen.snapshot_id, url: screen.url, width: REFLOW_WIDTH, error: firstLine(err.message) });
+          this.reflow.push({ ...rec, error: firstLine(err.message) });
         }
       }
     } catch (err) {
@@ -513,6 +898,50 @@ export class WebSession {
       if (context) await context.close().catch(() => {});
       this.reflowScreens = [];
     }
+  }
+
+  /**
+   * A layer the step opened without focus inside at the after-snapshot: dialogs often
+   * move focus after their entrance transition. Poll focus until one second after the
+   * input; layers focus reached are listed on the step (focus_late_layers).
+   */
+  async lateLayerFocus(step, layersBefore) {
+    const pending = (this.lastLayers || []).filter((l) => !layersBefore.has(l.selector) && !l.contains_focus)
+      .map((l) => ({ sel: l.selector, root: l.overlay_root || null }));
+    if (!pending.length) return;
+    const deadline = this.runStartEpoch + step.t_start_ms + 1000;
+    const reached = new Set();
+    while (epochNow() < deadline && reached.size < pending.length) {
+      await sleep(50);
+      const inside = await this.page.evaluate((layers) => {
+        let deep = document.activeElement;
+        while (deep && deep.shadowRoot && deep.shadowRoot.activeElement) deep = deep.shadowRoot.activeElement;
+        if (!deep || deep === document.body) return [];
+        const inFlat = (root, n) => {
+          for (let x = n; x; x = x.assignedSlot || x.parentNode || x.host) if (x === root) return true;
+          return false;
+        };
+        const find = (sel) => {
+          try {
+            return sel ? document.querySelector(sel) : null;
+          } catch (e) {
+            return null;
+          }
+        };
+        // The layer or its overlay root (the extract's rule), as selected at the snapshot.
+        return layers.filter(({ sel, root }) => [find(sel), find(root)].some((node) => node && inFlat(node, deep))).map(({ sel }) => sel);
+      }, pending).catch(() => []);
+      for (const sel of inside) reached.add(sel);
+    }
+    if (reached.size) step.focus_late_layers = [...reached];
+  }
+
+  /** A step target the scenario declares timed (a timing window or a timed/game target). */
+  timedTarget(target) {
+    if (typeof target !== 'string') return false;
+    if ((this.scenario.timing_windows || []).some((w) => w.selector === target)) return true;
+    const t = this.scenario.targets || {};
+    return ['timed', 'game_control'].some((role) => (t[role] || []).includes(target));
   }
 
   focusWalkEnabled() {
@@ -555,19 +984,53 @@ export class WebSession {
   }
 
   /** Clip of the page (or the whole viewport) at CSS scale, decoded (focus indicator comparison). */
-  async clipFrame(page, clip) {
-    const opts = { scale: 'css', animations: 'disabled', caret: 'hide', timeout: 5000 };
+  async clipFrame(page, clip, animations = 'disabled') {
+    const opts = { scale: 'css', animations, caret: 'hide', timeout: 5000 };
     const buf = await page.screenshot(clip ? { ...opts, clip } : opts);
     return frameFromImage(decodePng(buf));
   }
 
-  /** The whole viewport downscaled to about FOCUS_VIEWPORT_WIDTH px wide (CDP; fast). */
-  async viewportFrame(cdp, vw, vh) {
-    const scale = Math.min(1, FOCUS_VIEWPORT_WIDTH / vw);
-    const r = await cdp.send('Page.captureScreenshot', {
-      format: 'png', clip: { x: 0, y: 0, width: vw, height: vh, scale }, captureBeyondViewport: false, optimizeForSpeed: true,
-    });
-    return frameFromImage(decodePng(Buffer.from(r.data, 'base64')));
+  /** The whole screen downscaled to about FOCUS_VIEWPORT_WIDTH px wide (CDP; fast). */
+  async viewportFrame(cdp) {
+    return this.visualFrame(cdp, FOCUS_VIEWPORT_WIDTH);
+  }
+
+  /**
+   * What the screen shows (the visual viewport), downscaled to `targetW` px wide, always
+   * the same size for a session. CDP clips are in document coordinates, so the clip
+   * starts at the visual viewport's page position (a clip at 0,0 would capture the top
+   * of a scrolled document). A clip also snaps a visual viewport that is panned inside
+   * a wider layout viewport (content wider than the screen) back to the layout
+   * viewport, which moves the page under the next tap; a panned viewport is therefore
+   * captured whole, without a clip, and downscaled here. A downscaling clip also stops
+   * a scroll gesture in progress on an inner scroll container (touch or wheel: the
+   * content does not move at all), so during gesture steps (wholeFrames) frames are
+   * captured whole too.
+   */
+  async visualFrame(cdp, targetW) {
+    const w = Math.max(1, Math.round(Math.min(this.vw, targetW)));
+    const h = Math.max(1, Math.round((this.vh * w) / this.vw));
+    const m = await cdp.send('Page.getLayoutMetrics').catch(() => null);
+    const v = m && (m.cssVisualViewport || m.visualViewport);
+    let r;
+    if (this.wholeFrames || (v && (Math.abs(v.offsetX) > 0.5 || Math.abs(v.offsetY) > 0.5))) {
+      r = await cdp.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false, optimizeForSpeed: true });
+    } else {
+      const cw = v ? v.clientWidth : this.vw;
+      const chh = v ? v.clientHeight : this.vh;
+      r = await cdp.send('Page.captureScreenshot', {
+        format: 'png', clip: { x: v ? v.pageX : 0, y: v ? v.pageY : 0, width: cw, height: chh, scale: Math.min(1, w / cw) },
+        captureBeyondViewport: false, optimizeForSpeed: true,
+      });
+    }
+    let img = decodePng(Buffer.from(r.data, 'base64'));
+    if (img.width !== w || img.height !== h) img = resampleImage(img, w, h);
+    const frame = frameFromImage(img);
+    // Where the screen is on the page, and CSS px per frame px: the page's own scroll
+    // between two frames is then a known motion (flash sampling).
+    frame.page = v ? [v.pageX, v.pageY] : null;
+    frame.cssPerPx = [(v ? v.clientWidth : this.vw) / w, (v ? v.clientHeight : this.vh) / h];
+    return frame;
   }
 
   /** Blur the deepest focused element (kept for refocus); false when nothing is focused. */
@@ -684,7 +1147,7 @@ export class WebSession {
           // The focused capture is bracketed by two unfocused ones, so an animation
           // changes the pair and is masked.
           const before = await scroll();
-          const allOff = await this.viewportFrame(cdp, info.vw, info.vh);
+          const allOff = await this.viewportFrame(cdp);
           await page.keyboard.press('Shift+Tab');
           await page.keyboard.press('Tab');
           await this.settleScroll(page);
@@ -692,9 +1155,9 @@ export class WebSession {
           const after = await scroll();
           if (back && back.path === info.path && before[0] === after[0] && before[1] === after[1]
               && Math.abs(back.box.x - info.box.x) < 1 && Math.abs(back.box.y - info.box.y) < 1) {
-            const allOn = await this.viewportFrame(cdp, info.vw, info.vh);
+            const allOn = await this.viewportFrame(cdp);
             const reblurred = await this.blurFocused(page);
-            const allOff2 = reblurred ? await this.viewportFrame(cdp, info.vw, info.vh) : null;
+            const allOff2 = reblurred ? await this.viewportFrame(cdp) : null;
             if (reblurred) await this.refocus(page);
             stop.indicator_any_px = allOff2 ? indicatorPixels(allOn, allOff, allOff2, FOCUS_DIFF_LEVEL, FOCUS_MASK_LEVEL) : null;
             stop.indicator_any_scale = Math.round(Math.min(1, FOCUS_VIEWPORT_WIDTH / info.vw) * 1000) / 1000;
@@ -720,6 +1183,146 @@ export class WebSession {
     }
     if (cdp) await cdp.detach().catch(() => {});
     this.focusWalks.push({ phase, snapshot_id: snapshotId, url: page.url(), ended, stops });
+  }
+
+  /**
+   * Before a click on a control (mouse and keyboard devices): its focus indicator as a
+   * keyboard user sees it on this screen, which the walks (initial and end screens)
+   * do not reach. The control and its small wrappers, and the viewport, are captured
+   * twice unfocused; an F24 key press gives keyboard modality (:focus-visible and
+   * modality scripts; Tab-only scripts are not triggered), the
+   * control is focused and captured, focus goes back to the element that had it (so a
+   * menu trigger keeps its menu open; the click then moves focus as it would), and a
+   * third unfocused capture follows. A pixel counts when the focused frame differs from
+   * all three unfocused frames and they agree; the previous control's box is masked
+   * (its own focus style goes away). A focused text field is blurred first and the
+   * control measured again. Skipped for text-entry targets, controls inside roving
+   * focus popups, game screens and timed targets. At most STEP_PROBE_MAX per run.
+   */
+  async focusProbe(resolved, step) {
+    if ((this.stepProbes || 0) >= STEP_PROBE_MAX) return;
+    const page = this.page;
+    let handle = resolved.handle || null;
+    let own = false;
+    if (!handle) {
+      handle = await page.evaluateHandle((pt) => {
+        const v = window.visualViewport;
+        const one = !!v && Math.abs(v.scale - 1) < 0.01;
+        return document.elementFromPoint(pt.x + (one ? v.offsetLeft : 0), pt.y + (one ? v.offsetTop : 0));
+      }, resolved.point).catch(() => null);
+      own = true;
+    }
+    let cdp = null;
+    try {
+      let target = handle ? await handle.evaluate(probeTarget).catch(() => null) : null;
+      if (!target || target.skip) {
+        step.focus_probe = { skipped: target ? target.skip : 'no_element' };
+        return;
+      }
+      let afterField = false;
+      if (target.field) {
+        // Take focus from the text field first (its blur runs at the click anyway; a
+        // validation message may move the layout), let the page settle, measure again.
+        await page.evaluate(() => {
+          const p = window.__ergoProbePrev;
+          window.__ergoProbePrev = null;
+          if (p) p.blur();
+        }).catch(() => {});
+        await sleep(FOCUS_SETTLE_MS * 2);
+        target = await handle.evaluate(probeTarget).catch(() => null);
+        if (!target || target.skip || target.field) {
+          step.focus_probe = { skipped: target ? (target.skip || 'field_focused') : 'no_element' };
+          return;
+        }
+        afterField = true;
+      }
+      const boxes = target.boxes;
+      const x0 = Math.max(0, Math.floor(Math.min(...boxes.map((b) => b.x)) - 4));
+      const y0 = Math.max(0, Math.floor(Math.min(...boxes.map((b) => b.y)) - 4));
+      const x1 = Math.min(target.vw, Math.ceil(Math.max(...boxes.map((b) => b.x + b.w)) + 4));
+      const y1 = Math.min(target.vh, Math.ceil(Math.max(...boxes.map((b) => b.y + b.h)) + 4));
+      if (x1 - x0 < 2 || y1 - y0 < 2) {
+        step.focus_probe = { skipped: 'outside_viewport' };
+        return;
+      }
+      this.stepProbes = (this.stepProbes || 0) + 1;
+      const clip = { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+      cdp = await page.context().newCDPSession(page);
+      // Page animations run on (a fast-forward would end timers driven by CSS
+      // animations on the live page); the unfocused frames mask them.
+      const grab = () => this.clipFrame(page, clip, 'allow');
+      const off = await grab();
+      const allOff = await this.viewportFrame(cdp);
+      await sleep(FOCUS_ANIM_GAP_MS);
+      const off2 = await grab();
+      const allOff2 = await this.viewportFrame(cdp);
+      // Keyboard modality: F24 (CDP; no browser action, on no physical keyboard). Shift
+      // gives Chromium's :focus-visible but modality scripts ignore modifier keys
+      // (what-input's ignore list, Angular CDK), so pages that hide rings in "mouse"
+      // mode would read as having none.
+      for (const type of ['rawKeyDown', 'keyUp']) {
+        await cdp.send('Input.dispatchKeyEvent', { type, key: 'F24', code: 'F24', windowsVirtualKeyCode: 135, nativeVirtualKeyCode: 135 });
+      }
+      const got = await page.evaluate(() => {
+        const el = window.__ergoProbeEl;
+        if (!el || !el.isConnected) return null;
+        el.focus({ preventScroll: true });
+        let a = document.activeElement;
+        while (a && a.shadowRoot && a.shadowRoot.activeElement) a = a.shadowRoot.activeElement;
+        return { focused: a === el, visible: el.matches(':focus-visible'), scroll: [window.scrollX, window.scrollY] };
+      });
+      const restore = () => page.evaluate(() => {
+        // Give focus back to what had it (a menu trigger keeps its menu open, and focus
+        // moves from it to the target at the click as it would); else leave none.
+        const el = window.__ergoProbeEl;
+        const p = window.__ergoProbePrev;
+        window.__ergoProbeEl = null;
+        window.__ergoProbePrev = null;
+        if (p && p.isConnected && p !== el) p.focus({ preventScroll: true });
+        else if (el) el.blur();
+      }).catch(() => {});
+      if (!got || !got.focused) {
+        await restore();
+        step.focus_probe = { skipped: 'focus_refused' };
+        return;
+      }
+      await sleep(FOCUS_SETTLE_MS);
+      const info = await page.evaluate(focusInfo);
+      const on = await grab();
+      const allOn = await this.viewportFrame(cdp);
+      await restore();
+      await sleep(FOCUS_ANIM_GAP_MS);
+      // An unfocused frame after the focused one too: anything that changed during the
+      // probe (a ticking clock) differs between the before and after frames and is masked.
+      const off3 = await grab();
+      const allOff3 = await this.viewportFrame(cdp);
+      const moved = got.scroll[0] !== target.scroll[0] || got.scroll[1] !== target.scroll[1];
+      if (moved) {
+        // A focus handler scrolled the page: put it back so the click lands where the
+        // step resolved it; the captures no longer line up and are not used.
+        await page.evaluate((xy) => window.scrollTo(xy[0], xy[1]), target.scroll).catch(() => {});
+      }
+      // The previously focused control's own focus style: not the target's indicator.
+      const sx = allOn.width / this.vw;
+      const sy = allOn.height / this.vh;
+      const prevLocal = (target.prevBoxes || []).map((b) => ({ x0: Math.floor(b.x - 8 - clip.x), y0: Math.floor(b.y - 8 - clip.y),
+        x1: Math.ceil(b.x + b.w + 8 - clip.x), y1: Math.ceil(b.y + b.h + 8 - clip.y) }));
+      const prevAll = (target.prevBoxes || []).map((b) => ({ x0: Math.floor((b.x - 8) * sx), y0: Math.floor((b.y - 8) * sy),
+        x1: Math.ceil((b.x + b.w + 8) * sx), y1: Math.ceil((b.y + b.h + 8) * sy) }));
+      step.focus_probe = {
+        snapshot_id: step.before, selector: info ? info.selector : null, dom_id: info ? info.dom_id : null, tag: info ? info.tag : null,
+        role: info ? info.role : null, name: info ? info.name : null, box: info ? info.box : null, in_viewport: info ? info.in_viewport : null,
+        focus_visible: got.visible, moved, after_field: afterField, clip_px: [clip.width, clip.height], masked_prev: prevLocal.length > 0,
+        indicator_px: moved ? null : indicatorPixelsMulti(on, [off, off2, off3], FOCUS_DIFF_LEVEL, FOCUS_MASK_LEVEL, prevLocal),
+        indicator_any_px: moved ? null : indicatorPixelsMulti(allOn, [allOff, allOff2, allOff3], FOCUS_DIFF_LEVEL, FOCUS_MASK_LEVEL, prevAll),
+        indicator_any_scale: Math.round(Math.min(1, FOCUS_VIEWPORT_WIDTH / target.vw) * 1000) / 1000,
+      };
+    } catch (err) {
+      step.focus_probe = { skipped: 'error', error: firstLine(err.message) };
+    } finally {
+      if (cdp) await cdp.detach().catch(() => {});
+      if (own && handle) await handle.dispose().catch(() => {});
+    }
   }
 
   /** Wait until the page stops scrolling after a focus move (max ~600 ms). */
@@ -948,14 +1551,7 @@ export class WebSession {
   }
 
   async captureFrame() {
-    const scale = Math.min(1, FRAME_WIDTH / this.vw);
-    const r = await this.cdp.send('Page.captureScreenshot', {
-      format: 'png',
-      clip: { x: 0, y: 0, width: this.vw, height: this.vh, scale },
-      captureBeyondViewport: false,
-      optimizeForSpeed: true,
-    });
-    return frameFromImage(decodePng(Buffer.from(r.data, 'base64')));
+    return this.visualFrame(this.cdp, FRAME_WIDTH);
   }
 
   visualThreshold(frame) {
@@ -985,7 +1581,7 @@ export class WebSession {
       if (wantVisual && visual.pre) {
         // The frame reflects the page when the capture was requested (t0): the
         // change happened before t0 and after the previous capture started.
-        const d = visualDiffFraction(frame, visual.pre, VISUAL_LEVEL);
+        const d = visualDiffFraction(frame, visual.pre, VISUAL_LEVEL, visual.mask);
         if (d !== null && d >= this.visualThreshold(frame)) fb.visual = t0;
       }
       if (wantFlash && this.flashSamples.length < MAX_FLASH_SAMPLES && this.flashBytes < MAX_FLASH_BYTES) {
@@ -1015,7 +1611,25 @@ export class WebSession {
   /** Block grid statistics of a flash frame (png.mjs blockStats), base64 encoded into the sample. */
   addBlockStats(sample, frame) {
     if (!this.flashGrid) this.flashGrid = makeBlockGrid(frame.width, frame.height, this.vw, this.vh);
-    const bs = blockStats(frame, this.flashGrid, this.flashPrev);
+    // Page scroll measured between the frames: content moved by -delta (frame px).
+    const prev = this.flashPrev;
+    let known = null;
+    if (prev && prev.page && frame.page && frame.cssPerPx) {
+      const dx = frame.page[0] - prev.page[0];
+      const dy = frame.page[1] - prev.page[1];
+      if (Math.abs(dx) >= 0.5 || Math.abs(dy) >= 0.5) {
+        sample.page_scroll_css = [round1(dx), round1(dy)];
+        if (this.scrollOscillates(sample.t_ms, dx, dy)) {
+          // Scrolling back and forth is not smooth motion in one direction (ITC/Ofcom,
+          // ISO 9241-391): count what it does to each region, without motion matching.
+          known = false;
+          sample.page_scroll_oscillating = true;
+        } else {
+          known = [Math.round(-dx / frame.cssPerPx[0]), Math.round(-dy / frame.cssPerPx[1])];
+        }
+      }
+    }
+    const bs = blockStats(frame, this.flashGrid, prev, known);
     if (!bs) return; // frame size changed: no grid for this sample
     sample.block_lum = Buffer.from(bs.lum).toString('base64');
     sample.block_red = Buffer.from(bs.red).toString('base64');
@@ -1023,6 +1637,22 @@ export class WebSession {
       sample.block_moved = Buffer.from(bs.moved).toString('base64');
       sample.motion_css = [round1((bs.shift[0] * this.vw) / frame.width), round1((bs.shift[1] * this.vh) / frame.height)];
     }
+  }
+
+  /**
+   * Page scroll between flash frames that reverses direction more than
+   * SCROLL_REVERSALS_PER_S times within one second (a shaking or bouncing page).
+   */
+  scrollOscillates(t, dx, dy) {
+    const h = this.scrollSigns || (this.scrollSigns = { x: 0, y: 0, times: [] });
+    for (const [axis, d] of [['x', dx], ['y', dy]]) {
+      if (Math.abs(d) < 0.5) continue;
+      const sign = Math.sign(d);
+      if (h[axis] && sign !== h[axis]) h.times.push(t);
+      h[axis] = sign;
+    }
+    while (h.times.length && h.times[0] < t - 1000) h.times.shift();
+    return h.times.length > SCROLL_REVERSALS_PER_S;
   }
 
   /** Sampling coverage: bursts are runs of samples of one step (one sampling window). */
@@ -1146,6 +1776,7 @@ export class WebSession {
       allNotes.push(`page reports viewport ${ex.viewport.w}x${ex.viewport.h} (layout zoom or meta viewport); boxes are in page CSS px`);
     }
     this.lastActive = ex.active;
+    this.lastLayers = ex.layers || [];
     let title = null;
     try {
       title = await this.page.title();
@@ -1163,7 +1794,7 @@ export class WebSession {
       run_id: this.runId,
       step_index: stepIndex,
       captured_at: capturedAt,
-      surface: { kind: this.scenario.surface_kind === 'game' ? 'game' : 'web', url: this.page.url(), title, app_id: null, scroll: ex.scroll },
+      surface: { kind: this.scenario.surface_kind === 'game' ? 'game' : 'web', url: this.page.url(), title, app_id: null, scroll: ex.scroll, visual: ex.visual || null },
       device: this.dev.snapshotDevice,
       screenshot: {
         path: `${id}.png`, sha256: sha256(png), width_px: width, height_px: height,
@@ -1470,14 +2101,36 @@ export class WebSession {
     const kind = action.action;
     const fbTimeout = action.feedback_timeout_ms ?? (kind === 'scroll' ? 0 : this.opts.feedbackTimeoutMs);
     const visualOn = this.opts.visualFeedback && fbTimeout > 0 && MEASURED.has(kind);
+    // Frames taken while a gesture scrolls something must not use a downscaling clip.
+    this.wholeFrames = GESTURES.has(kind);
     let pre = null;
     let visualAmbient = false;
+    let mask = null;
     if (visualOn) {
+      // A focused text field's caret blinks: changes inside that field are not
+      // feedback (typed characters are, through input events). Screen coordinates.
+      mask = await this.page.evaluate(() => {
+        let a = document.activeElement;
+        while (a && a.shadowRoot && a.shadowRoot.activeElement) a = a.shadowRoot.activeElement;
+        if (!a || a === document.body || a === document.documentElement) return null;
+        const t = (a.getAttribute('type') || 'text').toLowerCase();
+        const pressable = ['button', 'submit', 'reset', 'checkbox', 'radio', 'image', 'file', 'color', 'range'];
+        if (!(a.tagName === 'TEXTAREA' || a.isContentEditable || (a.tagName === 'INPUT' && !pressable.includes(t)))) return null;
+        const r = a.getBoundingClientRect();
+        const v = window.visualViewport;
+        const one = !!v && Math.abs(v.scale - 1) < 0.01;
+        return { x: r.left - (one ? v.offsetLeft : 0), y: r.top - (one ? v.offsetTop : 0), w: r.width, h: r.height };
+      }).catch(() => null);
       try {
         const a = await this.captureFrame();
         await sleep(40);
         pre = await this.captureFrame();
-        const d = visualDiffFraction(a, pre, VISUAL_LEVEL);
+        if (mask) {
+          const sx = pre.width / this.vw;
+          const sy = pre.height / this.vh;
+          mask = { x0: Math.floor((mask.x - 2) * sx), y0: Math.floor((mask.y - 2) * sy), x1: Math.ceil((mask.x + mask.w + 2) * sx), y1: Math.ceil((mask.y + mask.h + 2) * sy) };
+        }
+        const d = visualDiffFraction(a, pre, VISUAL_LEVEL, mask);
         visualAmbient = d !== null && d >= this.visualThreshold(pre);
       } catch {
         pre = null;
@@ -1491,7 +2144,7 @@ export class WebSession {
       dispatch,
       stepIndex: step.step_index,
       flashMs: this.opts.flashSampleMs,
-      visual: visualOn && pre && !visualAmbient ? { pre, deadline: dispatch + fbTimeout } : null,
+      visual: visualOn && pre && !visualAmbient ? { pre, mask, deadline: dispatch + fbTimeout } : null,
       fb,
     });
     let inputErr = null;
@@ -1511,6 +2164,7 @@ export class WebSession {
     if (fbTimeout > 0 && !inputErr) await this.waitForFeedback(dispatch, dispatch + fbTimeout);
     fb.done = true;
     await probe;
+    this.wholeFrames = false;
     if (this.navEvents.some((t) => t >= dispatch)) {
       await this.page.waitForLoadState('load', { timeout: 10000 }).catch(() => {});
     }
@@ -1644,6 +2298,29 @@ export class WebSession {
             else step.target_hit = resolved.elementId ? hit.id === resolved.elementId : null;
           }
         }
+        if (step.result === 'ok' && ['tap', 'click'].includes(kind) && this.focusWalkEnabled() && this.pointerMode() !== 'touch') {
+          if (this.scenario.surface_kind === 'game' || this.timedTarget(action.target)) {
+            step.focus_probe = { skipped: this.scenario.surface_kind === 'game' ? 'game' : 'timed' };
+          } else {
+            await this.focusProbe(resolved, step);
+            if (step.focus_probe && !step.focus_probe.skipped && resolved.handle) {
+              // The probe must not change where the click lands: if the control moved or
+              // something now covers it, resolve it again (and say so).
+              const still = await resolved.handle.evaluate(hitTest, resolved.point).catch(() => null);
+              if (still === false) {
+                step.focus_probe.disturbed = true;
+                const again = await this.resolveTarget(action.target, action.offset, 1000);
+                if (again.kind !== 'missing' && this.inViewport(again.point)) {
+                  await resolved.handle.dispose().catch(() => {});
+                  resolved = again;
+                  step.point = again.point;
+                } else if (again.handle) {
+                  await again.handle.dispose().catch(() => {});
+                }
+              }
+            }
+          }
+        }
         if (step.result === 'ok') await this.performInput(action, resolved, step);
       }
     } catch (err) {
@@ -1660,9 +2337,13 @@ export class WebSession {
       this.focusPoint = { ...this.lastActive };
     }
     let snap = null;
+    const layersBefore = new Set((this.lastLayers || []).map((l) => l.selector));
     try {
       snap = await this.snapshot(stepIndex, []);
       step.after = snap.id;
+      if (['tap', 'click', 'double_tap', 'long_press', 'press'].includes(action.action) && step.result === 'ok' && step.t_start_ms !== null) {
+        await this.lateLayerFocus(step, layersBefore);
+      }
       if (!step.point && ['press', 'gamepad', 'type'].includes(action.action) && this.lastActive && step.result === 'ok') {
         // Keyboard focus moved during the step: update for the next snapshot.
         this.focusPoint = { ...this.lastActive };
@@ -1872,13 +2553,14 @@ export class WebSession {
         flash_samples: this.flashSamples,
         focus_walks: this.focusWalks,
         reflow: this.reflow,
+        ...(this.reflowDropped.size ? { reflow_screens_dropped: this.reflowDropped.size } : {}),
         flash_sampling: this.opts.flashSampleMs > 0 ? {
           enabled: true,
           per_step_ms: this.opts.flashSampleMs,
           // After page load, after each input and during snapshot steps for per_step_ms;
           // during wait steps for the whole wait.
           during: ['load', 'input', 'snapshot', 'wait'],
-          method: `CDP Page.captureScreenshot, viewport downscaled to ~${FRAME_WIDTH} CSS px wide, optimizeForSpeed, random 0-${FLASH_JITTER_MS} ms pause between captures`,
+          method: `CDP Page.captureScreenshot of the visual viewport (clip at its page position; whole capture when panned), downscaled to ~${FRAME_WIDTH} CSS px wide, optimizeForSpeed, random 0-${FLASH_JITTER_MS} ms pause between captures`,
           jitter_ms: [0, FLASH_JITTER_MS],
           frames: this.flashSamples.length,
           bursts: flashCov.bursts,

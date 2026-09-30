@@ -266,7 +266,7 @@ SM06 = _register(CheckSpec(
 ))
 LY01 = _register(CheckSpec(
     "LY-01", "layout", "measured", "상자에 잘린 텍스트",
-    "Text clipped by its own box",
+    "Text clipped by its own box or a clipping container",
     ("REF-xctest-textclipped", "REF-wcag22-144", "REF-wcag22-1412"), ("web", "desktop"), "visual",
     "고정 높이·너비와 overflow:hidden을 풀어 글자가 늘어나도 다 보이게 하세요.",
 ))
@@ -894,6 +894,20 @@ def _screen_changed(previous: dict[str, Any] | None, current: dict[str, Any]) ->
     return len(before - after) / len(before) >= params.SCREEN_CHANGE_FRACTION
 
 
+def _app_scrolled(ctx: Context) -> bool:
+    """The app scrolled the window by at least APP_SCROLL_REORIENT_FRACTION of the screen
+    during the step (not a scroll, swipe or drag the user made)."""
+    if ctx.previous is None:
+        return False
+    if ((ctx.step or {}).get("action") or {}).get("action") in ("scroll", "swipe", "drag"):
+        return False
+    a = ((ctx.previous.get("surface") or {}).get("scroll") or {}).get("y")
+    b = ((ctx.snapshot.get("surface") or {}).get("scroll") or {}).get("y")
+    if not isinstance(a, (int, float)) or not isinstance(b, (int, float)):
+        return False
+    return abs(b - a) >= params.APP_SCROLL_REORIENT_FRACTION * ctx.viewport[1]
+
+
 def check_gaze(ctx: Context) -> list[Observation]:
     from .devices import mm_per_css_px
 
@@ -954,8 +968,11 @@ def check_gaze(ctx: Context) -> list[Observation]:
         # re-orients (not peripheral), but transient messages (toasts, declared timing
         # windows) shown with it can still be missed.
         replaced = _screen_changed(ctx.previous, ctx.snapshot)
+        reoriented = _app_scrolled(ctx)
         transient = {w.get("selector") for w in (ctx.scenario or {}).get("timing_windows", []) if w.get("kind") in (None, "transient_text")}
-        before = {e.get("selector") or e.get("id"): e for e in ctx.previous.get("elements", []) if _visible(e)}
+        # Messages already rendered before the step, in view or not: a message scrolled
+        # out of view (by the page or by the driver's pre-action scroll) is not new.
+        before = {e.get("selector") or e.get("id"): e for e in ctx.previous.get("elements", []) if _present(e) and (e.get("text") or "").strip()}
         scale = _notice_scale(ctx)
         grip = ctx.attrs.get("grip", "")
         geom = reach.geometry_for_device(ctx.device) if ctx.is_touch else None
@@ -964,8 +981,8 @@ def check_gaze(ctx: Context) -> list[Observation]:
         for element in ctx.elements:
             roles = _roles(element)
             is_feedback = roles & {"error_message", "critical_message", "status"} or element.get("role") in ("alert", "status")
-            if not is_feedback:
-                continue
+            if not is_feedback or not (element.get("text") or "").strip():
+                continue  # an empty live-region slot is not a message yet
             if replaced and element.get("selector") not in transient:
                 continue
             key = element.get("selector") or element.get("id")
@@ -990,7 +1007,7 @@ def check_gaze(ctx: Context) -> list[Observation]:
                     gaze.MODEL_ID,
                 ))
                 continue
-            if not _visible(element):
+            if not _visible(element) or (reoriented and element.get("selector") not in transient):
                 continue
             centre_css = pointing.centre(element["box"])
             # Eccentricity to the nearest point of the message, not its centroid: a wide
@@ -1700,16 +1717,28 @@ def _sm08(run_id: str, profile_id: str, snapshot_id: str | None, step_index: int
 def check_clicked_controls(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[str, dict[str, Any]] | None = None) -> list[Observation]:
     """SM-08 from the steps: a tap or click landed on an element that is not a control, is
     not inside one within five levels, and holds none (the driver's ``target_control``).
-    The click evidences the handler; nothing is guessed from styles."""
+    The click evidences the handler only when it did something: a click with no
+    feedback at all (no mutation, input event, navigation or visual change) is not
+    evidence (persona agents tap static text). Game surfaces, scenario hotspots, game
+    controls and content hidden from assistive technology (a dialog's scrim) are
+    exempt, as in the snapshot rule."""
     out: list[Observation] = []
     seen: set[str] = set()
+    if (run.get("surface") or {}).get("kind") == "game":
+        return out
     for st in run.get("steps") or []:
         c = st.get("target_control")
         if not isinstance(c, dict) or st.get("result") != "ok" or c.get("control") or c.get("contains_control") or c.get("tag") in ("html", "body"):
             continue
+        if c.get("hidden") or (st.get("feedback_source") is None and st.get("feedback_latency_ms") is None):
+            continue
+        target = (st.get("action") or {}).get("target")
+        if isinstance(target, str) and target.startswith("hotspot:"):
+            continue
         snap = (snapshots or {}).get(st.get("before") or "")
         element = next((e for e in (snap or {}).get("elements", []) if c.get("dom_id") and e.get("dom_id") == c["dom_id"]), None)
-        target = (st.get("action") or {}).get("target")
+        if element is not None and ("game_control" in _roles(element) or (element.get("a11y") or {}).get("hidden")):
+            continue
         selector = f"#{c['dom_id']}" if c.get("dom_id") else (target if isinstance(target, str) else f"{c.get('tag')}@{st.get('point')}")
         key = element_key(element) if element else f"{selector}|{c.get('text') or ''}"
         if key in seen:
@@ -1925,14 +1954,58 @@ def check_semantics(ctx: Context) -> list[Observation]:
             continue
         if clip.get("animated"):
             continue  # tickers and marquees clip by design
+        by = clip.get("by")  # a clipping ancestor (a fixed-width chip or label), when not its own box
+        # Cut cleanly (ACT 59br37's exceptions: one nowrap line ending in a marker, or a
+        # one-line-high box): a truncation note (P3), not a 1.4.4 failure.
+        clean = clip.get("act") == "passed"
+        if clip.get("ellipsis"):
+            how = " (여러 줄 말줄임으로 줄임)." if clip.get("line_clamp") else " (말줄임표로 줄임)."
+        elif clean:
+            how = " (한 줄 높이 상자로 줄임)."
+        else:
+            how = ". 글자를 키우거나 번역되면 더 많이 잘립니다."
         out.append(Observation(
             "LY-01", *base, [e["id"]], element_key(e),
-            {"name": "text_clipped", "value": True, "unit": "flag", "threshold": False, "comparator": "==", "axis": "x" if clip.get("x") else "y", "ellipsis": bool(clip.get("ellipsis"))},
-            False, "P3" if clip.get("ellipsis") else "P2",
-            f"'{(e.get('text') or '')[:30]}' 글자가 상자에 잘립니다" + ((" (여러 줄 말줄임으로 줄임)." if clip.get("line_clamp") else " (말줄임표로 줄임).")
-                                                                    if clip.get("ellipsis") else ". 글자를 키우거나 번역되면 더 많이 잘립니다."),
+            {"name": "text_clipped", "value": True, "unit": "flag", "threshold": False, "comparator": "==", "axis": "x" if clip.get("x") else "y", "ellipsis": bool(clip.get("ellipsis")),
+             "clipped_by": by, "act_59br37": clip.get("act")},
+            False, "P3" if clip.get("ellipsis") or clean else "P2",
+            f"'{(e.get('text') or '')[:30]}' 글자가 {'바깥 상자(' + by + ')' if by else '상자'}에 잘립니다" + how,
+            extra={"context_selectors": [by]} if by and by.startswith("#") else {},
         ))
     return out
+
+
+CLICK_ACTIONS = ("tap", "click", "double_tap", "long_press", "press")
+LATE_LAYER_WINDOW_MS = 5000  # a layer first seen at a wait counts for the click before it within this time
+
+
+def _late_layer_trigger(ctx: Context) -> dict[str, Any] | None:
+    """The click step a layer first seen at a wait or snapshot step belongs to.
+
+    Apps often show a spinner first and open the dialog or sheet after a request or a
+    timer, after the click step's own after-snapshot. With only waits since that click
+    (no other input) and the snapshot within LATE_LAYER_WINDOW_MS of the click, the new
+    layer is the click's.
+    """
+    step = ctx.step
+    if step is None or ctx.previous is None or ((step.get("action") or {}).get("action")) not in ("wait", "snapshot"):
+        return None
+    steps = ctx.run.get("steps") or []
+    idx = next((i for i, s in enumerate(steps) if s is step), None)
+    if idx is None:
+        return None
+    j = idx - 1
+    while j >= 0 and ((steps[j].get("action") or {}).get("action")) in ("wait", "snapshot"):
+        j -= 1
+    if j < 0:
+        return None
+    click = steps[j]
+    if (click.get("action") or {}).get("action") not in CLICK_ACTIONS or click.get("result") != "ok":
+        return None
+    start, end = click.get("t_start_ms"), step.get("t_end_ms")
+    if not isinstance(start, (int, float)) or not isinstance(end, (int, float)) or end - start > LATE_LAYER_WINDOW_MS:
+        return None
+    return click
 
 
 def check_focus_management(ctx: Context) -> list[Observation]:
@@ -1940,7 +2013,8 @@ def check_focus_management(ctx: Context) -> list[Observation]:
 
     FM-02 (WCAG 2.4.3): a click opened a layer (a declared dialog, or a fixed or
     absolute painted box over at least 40 % of the viewport) that was not there
-    before, and keyboard focus is not inside it. SM-06 at the step (2.4.11): the step
+    before, and keyboard focus is not inside it. A layer first seen at a wait right
+    after the click (it opened after a request or timer) counts for that click. SM-06 at the step (2.4.11): the step
     left focus on an element that something else fully covers (an input moved under a
     fixed header after a validation error). Skipped when a layer just opened: the
     trigger behind it is covered by design, and FM-02 reports that case.
@@ -1952,26 +2026,52 @@ def check_focus_management(ctx: Context) -> list[Observation]:
     base = (ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"))
     action = ((ctx.step or {}).get("action") or {}).get("action")
     opened = False
-    if ctx.previous is not None and action in ("tap", "click", "double_tap", "long_press", "press"):
+    late_click = _late_layer_trigger(ctx)
+    if ctx.previous is not None and (action in CLICK_ACTIONS or late_click is not None):
         before = {layer.get("selector") for layer in ctx.previous.get("layers") or [] if isinstance(layer, dict)}
-        for layer in ctx.snapshot.get("layers") or []:
-            if not isinstance(layer, dict) or layer.get("selector") in before:
-                continue
+        new_layers = [layer for layer in ctx.snapshot.get("layers") or [] if isinstance(layer, dict) and layer.get("selector") not in before]
+        interactive = [e for e in ctx.elements if e.get("interactive") and _visible(e)]
+        late = set((ctx.step or {}).get("focus_late_layers") or [])
+        for layer in new_layers:
             opened = True
-            if layer.get("contains_focus"):
+            # Focus inside, at the snapshot or within a second of the click (dialogs that
+            # take focus after their entrance transition; the driver lists those on the step).
+            if layer.get("contains_focus") or layer.get("selector") in late:
                 continue
+            kind = layer.get("kind")
+            box = layer.get("box") or {"x": 0, "y": 0, "w": 0, "h": 0}
+            if kind != "modal":
+                # A disclosure the focused trigger controls, or a layer the next Tab
+                # reaches (APG disclosure, mega menu): focus need not move.
+                if layer.get("follows_focus") or (focus.get("expanded") and layer.get("dom_id") and layer["dom_id"] in (focus.get("controls") or [])):
+                    continue
+            if kind == "sheet":
+                # An undeclared painted box: only a layer with something to operate needs
+                # focus (a busy overlay or a status sheet announces itself), and a scrim
+                # around a newly opened dialog is that dialog's layer.
+                if not any(_inside(e["box"], box) for e in interactive):
+                    continue
+                if any(other is not layer and other.get("kind") in ("modal", "dialog") and _inside(other.get("box") or {}, box) for other in new_layers):
+                    continue
             element = next((e for e in ctx.elements if layer.get("dom_id") and e.get("dom_id") == layer["dom_id"]), None)
             key = element_key(element) if element else f"{layer.get('selector') or '?'}|{layer.get('kind')}"
             where = "문서 본문(body)으로 떨어져" if focus.get("on_body") else "층 바깥에 남아"
+            when = "앞선 클릭 뒤 늦게 " if late_click is not None else ""
             out.append(Observation(
                 "FM-02", *base, [element["id"]] if element else [], key,
                 {"name": "focus_in_layer", "value": False, "unit": "flag", "threshold": True, "comparator": "==",
-                 "layer_kind": layer.get("kind"), "focus_on_body": bool(focus.get("on_body"))},
+                 "layer_kind": layer.get("kind"), "focus_on_body": bool(focus.get("on_body")),
+                 **({"opened_after_click_step": late_click.get("step_index")} if late_click is not None else {})},
                 False, "P2",
-                f"'{layer.get('selector')}' 층이 열렸지만 키보드 초점이 {where} 있습니다. 스크린리더·키보드 사용자는 새로 열린 내용을 모른 채 뒤쪽 화면을 계속 탐색합니다(WCAG 2.4.3).",
+                f"'{layer.get('selector')}' 층이 {when}열렸지만 키보드 초점이 {where} 있습니다. 스크린리더·키보드 사용자는 새로 열린 내용을 모른 채 뒤쪽 화면을 계속 탐색합니다(WCAG 2.4.3).",
                 extra={"anchor_selectors": [layer["selector"]] if layer.get("selector") else []},
             ))
-    if not opened and not focus.get("on_body") and focus.get("dom_id"):
+    # SM-06 at a step: only a focus the step put there (an app moving focus after a
+    # validation error), not one a later scroll or wait carried under a sticky bar.
+    prev_focus = (ctx.previous or {}).get("focus") if ctx.previous is not None else None
+    moved_here = (action in ("tap", "click", "double_tap", "long_press", "press", "type")
+                  and (not isinstance(prev_focus, dict) or prev_focus.get("dom_id") != focus.get("dom_id")))
+    if not opened and moved_here and not focus.get("on_body") and focus.get("dom_id"):
         target = next((e for e in ctx.elements if e.get("dom_id") == focus["dom_id"]), None)
         covered = (target or {}).get("occluded_fraction")
         under_layer = target is not None and any(
@@ -1991,6 +2091,12 @@ def check_focus_management(ctx: Context) -> list[Observation]:
 
 
 REFLOW_TOLERANCE_PX = 4  # borders and rounding; a few px of overflow hide no content
+REFLOW_GROUP_MAX = 3  # more boxes than this past the edge on one screen: one finding for the screen
+
+
+def _right_edge(offender: dict[str, Any]) -> float:
+    box = offender.get("box") or {}
+    return float(box.get("x") or 0) + float(box.get("w") or 0)
 
 
 def check_reflow(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[str, dict[str, Any]] | None = None) -> list[Observation]:
@@ -1998,24 +2104,67 @@ def check_reflow(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[s
 
     The driver re-renders a static copy of each distinct screen at 320 px with scripts
     off and lists the outermost elements past the right edge, leaving out
-    two-dimensional content (tables, maps, video, code) and anything inside its own
-    scroll or clipping box. It counts only when the page scrolls sideways or the root
-    clips (then the content is lost, not just shifted).
+    two-dimensional content (tables, maps, video, code), inert or aria-hidden content,
+    anything inside its own scroll or clipping box, and anything off screen at the
+    device width too (off-canvas drawers). It counts when the page scrolls sideways or
+    the root clips, or when a fixed bar holds the element (a fixed box cannot be
+    scrolled to). Text visible at the device width and cut away at 320 px counts too
+    ("lost"). A copy that lost its CSS (styles_lost) is not measured.
     """
     out: list[Observation] = []
     seen: set[str] = set()
     for rec in run.get("reflow") or []:
-        if not isinstance(rec, dict) or rec.get("error"):
+        if not isinstance(rec, dict) or rec.get("error") or rec.get("styles_lost"):
             continue
         width = rec.get("client_width") or 0
         scrolls = (rec.get("scroll_width") or 0) > width + REFLOW_TOLERANCE_PX
-        if not scrolls and not rec.get("root_clips"):
-            continue
         snap = (snapshots or {}).get(rec.get("snapshot_id"))
-        for off in rec.get("offenders") or []:
-            box = off.get("box") or {}
-            if (box.get("x") or 0) + (box.get("w") or 0) <= width + REFLOW_TOLERANCE_PX:
+        for lost in rec.get("lost") or []:
+            # Visible at the device width, cut away by a clipping container at 320 px.
+            element = None
+            if lost.get("dom_id") and snap:
+                element = next((e for e in snap.get("elements", []) if e.get("dom_id") == lost["dom_id"]), None)
+            anchor = f"#{lost['dom_id']}" if lost.get("dom_id") else (f"#{lost['ancestor_ids'][0]} {lost.get('tag')}" if lost.get("ancestor_ids") else lost.get("tag") or "?")
+            key = element_key(element) if element else f"{anchor}|{(lost.get('text') or '')[:40]}"
+            if key in seen:
                 continue
+            seen.add(key)
+            out.append(Observation(
+                "RF-01", run["run_id"], profile["profile_id"], rec.get("snapshot_id"), None,
+                [element["id"]] if element else [], key,
+                {"name": "visible_share_at_320", "value": lost.get("visible_320"), "unit": "fraction", "threshold": 0.5, "comparator": ">=",
+                 "visible_share_full": lost.get("visible_full"), "viewport_css_px": rec.get("width")},
+                False, "P2",
+                f"'{(lost.get('text') or anchor)[:30]}'이(가) 원래 폭에서는 보이지만 320 CSS px 폭(400 % 확대)에서는 상자에 잘려 {100 * (lost.get('visible_320') or 0):.0f}%만 보입니다(WCAG 1.4.10).",
+                extra={"anchor_selectors": [anchor], "context_selectors": [f"#{a}" for a in lost.get("ancestor_ids") or [] if a]},
+            ))
+        page_overflow = scrolls or bool(rec.get("root_clips"))
+        eligible = [off for off in rec.get("offenders") or [] if isinstance(off, dict)
+                    and _right_edge(off) > width + REFLOW_TOLERANCE_PX and (page_overflow or off.get("fixed"))]
+        listed = bool(eligible)
+        if len(eligible) > REFLOW_GROUP_MAX:
+            # A layout that does not reflow at all (a desktop-only page): one finding for
+            # the screen, naming every box that sticks out, not one per box.
+            page_key = f"html|{rec.get('url') or ''}"
+            if page_key in seen:
+                continue
+            seen.add(page_key)
+            rights = [_right_edge(o) for o in eligible]
+            names = [f"'{(o.get('text') or o.get('selector') or '')[:16]}'" for o in eligible[:3]]
+            how = "가로 스크롤이 생기거나 화면 밖으로 잘립니다" if scrolls else "화면 밖으로 잘려 볼 수 없습니다"
+            out.append(Observation(
+                "RF-01", run["run_id"], profile["profile_id"], rec.get("snapshot_id"), None, [], page_key,
+                {"name": "right_edge_css_px", "value": max(rights), "unit": "css_px", "threshold": width, "comparator": "<=",
+                 "viewport_css_px": rec.get("width"), "page_scroll_width": rec.get("scroll_width"), "root_clips": bool(rec.get("root_clips")),
+                 "offender_count": len(eligible), "in_fixed_bar": any(o.get("fixed") for o in eligible)},
+                False, "P2",
+                f"320 CSS px 폭(400 % 확대)에서 이 화면이 재배치되지 않습니다: 요소 {len(eligible)}개({', '.join(names)} 등)가 오른쪽으로 넘쳐 "
+                f"가장 먼 끝이 {max(rights):.0f}px이고 {how}(WCAG 1.4.10).",
+                extra={"anchor_selectors": [o["selector"] for o in eligible if o.get("selector")],
+                       "context_selectors": sorted({f"#{a}" for o in eligible for a in o.get("ancestor_ids") or [] if a})},
+            ))
+            continue
+        for off in eligible:
             element = None
             if off.get("dom_id") and snap:
                 element = next((e for e in snap.get("elements", []) if e.get("dom_id") == off["dom_id"]), None)
@@ -2025,16 +2174,30 @@ def check_reflow(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[s
             seen.add(key)
             box = off.get("box") or {}
             right = (box.get("x") or 0) + (box.get("w") or 0)
-            how = "가로 스크롤이 생깁니다" if scrolls else "화면 밖으로 잘려 볼 수 없습니다"
+            how = ("고정 막대 안에서 화면 밖으로 밀려 스크롤로도 볼 수 없습니다" if off.get("fixed")
+                   else "가로 스크롤이 생깁니다" if scrolls else "화면 밖으로 잘려 볼 수 없습니다")
             out.append(Observation(
                 "RF-01", run["run_id"], profile["profile_id"], rec.get("snapshot_id"), None,
                 [element["id"]] if element else [], key,
                 {"name": "right_edge_css_px", "value": right, "unit": "css_px", "threshold": rec.get("client_width"), "comparator": "<=",
-                 "viewport_css_px": rec.get("width"), "page_scroll_width": rec.get("scroll_width"), "root_clips": bool(rec.get("root_clips"))},
+                 "viewport_css_px": rec.get("width"), "page_scroll_width": rec.get("scroll_width"), "root_clips": bool(rec.get("root_clips")),
+                 "in_fixed_bar": bool(off.get("fixed"))},
                 False, "P2",
                 f"320 CSS px 폭(400 % 확대)에서 '{(off.get('text') or off.get('selector') or '')[:30]}'의 오른쪽 끝이 {right:.0f}px라 {how}(WCAG 1.4.10).",
                 extra={"anchor_selectors": [off["selector"]] if off.get("selector") else [],
                        "context_selectors": [f"#{a}" for a in off.get("ancestor_ids") or [] if a]},
+            ))
+        if scrolls and not listed and f"page|{rec.get('url')}" not in seen:
+            # The page scrolls sideways but no outermost element was located (the scan
+            # is capped, or the cause is a pseudo-element): report the page itself.
+            seen.add(f"page|{rec.get('url')}")
+            out.append(Observation(
+                "RF-01", run["run_id"], profile["profile_id"], rec.get("snapshot_id"), None, [], f"html|{rec.get('url') or ''}",
+                {"name": "page_scroll_width_css_px", "value": rec.get("scroll_width"), "unit": "css_px", "threshold": width, "comparator": "<=",
+                 "viewport_css_px": rec.get("width"), "scan_capped": bool(rec.get("scan_capped"))},
+                False, "P2",
+                f"320 CSS px 폭(400 % 확대)에서 페이지 폭이 {rec.get('scroll_width')}px라 가로 스크롤이 생깁니다(WCAG 1.4.10). 넘치는 요소는 특정하지 못했습니다.",
+                extra={"anchor_selectors": ["html"]},
             ))
     return out
 
@@ -2078,9 +2241,33 @@ def check_focus_walks(run: dict[str, Any], profile: dict[str, Any], snapshots: d
     reported as SM-05. Each element is reported once with its worst result over the
     walks, tied to the snapshot element when the stop can be matched (DOM id or box
     overlap).
+
+    The walks see the initial and end screens only. Focus probes the driver took
+    before clicks (``step.focus_probe``: the clicked control focused with keyboard
+    modality) add SM-05 evidence from the screens in between; a probe counts only
+    when the control matched ``:focus-visible`` and did not scroll, and is never used
+    for SM-06 (a covered control could not have been clicked).
     """
+    walks = list(run.get("focus_walks") or [])
+    # A Tab walk is the reference: a probe (script focus after a Shift press, which
+    # some focus-visible scripts do not treat as keyboard use) never overrides an
+    # element a walk saw with an indicator.
+    walk_ok = set()
+    for walk in walks:
+        for stop in walk.get("stops") or []:
+            px = stop.get("indicator_px")
+            anywhere = stop.get("indicator_any_px")
+            best = max(v for v in (px, anywhere, -1) if isinstance(v, int))
+            if best >= FOCUS_INDICATOR_MIN_PX and stop.get("selector"):
+                walk_ok.add(stop["selector"])
+    for step in run.get("steps") or []:
+        probe = step.get("focus_probe")
+        if (isinstance(probe, dict) and probe.get("focus_visible") is True and not probe.get("moved") and isinstance(probe.get("indicator_px"), int)
+                and probe.get("selector") not in walk_ok):
+            walks.append({"phase": "step", "snapshot_id": probe.get("snapshot_id"), "step_index": step.get("step_index"),
+                          "stops": [{**probe, "obscured_fraction": None, "obscured_user_opened": None}]})
     worst: dict[str, dict[str, Any]] = {}
-    for walk in run.get("focus_walks") or []:
+    for walk in walks:
         for stop in walk.get("stops") or []:
             sel = stop.get("selector") or "?"
             w = worst.setdefault(sel, {"stop": stop, "walk": walk, "covered": 0.0, "covered_walk": walk, "covered_by": None, "min_px": None,
@@ -2131,9 +2318,11 @@ def check_focus_walks(run: dict[str, Any], profile: dict[str, Any], snapshots: d
                 [element["id"]] if element else [], element_key(element) if element else f"{sel}|{name}",
                 {"name": "focus_indicator_px", "value": w["min_px"], "unit": "px", "threshold": FOCUS_INDICATOR_MIN_PX, "comparator": ">=",
                  "phase": w["walk"].get("phase"), "local_px": stop.get("indicator_px"), "viewport_px": stop.get("indicator_any_px"),
-                 "viewport_scale": stop.get("indicator_any_scale")},
+                 "viewport_scale": stop.get("indicator_any_scale"), "step_index": w["walk"].get("step_index")},
                 False, "P2",
-                f"Tab으로 '{name or sel}'에 포커스가 가도 화면에 표시가 생기지 않습니다(WCAG 2.4.7). 키보드 사용자는 현재 위치를 모릅니다.",
+                (f"키보드로 '{name or sel}'에 포커스를 주어도 화면에 표시가 생기지 않습니다(WCAG 2.4.7, 과업 {w['walk'].get('step_index')}단계 화면). "
+                 "키보드 사용자는 지금 무엇을 누르게 되는지 모릅니다." if w["walk"].get("phase") == "step" else
+                 f"Tab으로 '{name or sel}'에 포커스가 가도 화면에 표시가 생기지 않습니다(WCAG 2.4.7). 키보드 사용자는 현재 위치를 모릅니다."),
             ))
     return out
 

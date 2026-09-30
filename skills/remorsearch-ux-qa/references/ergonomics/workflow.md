@@ -125,8 +125,10 @@ python3 scripts/ergo_qa.py profiles --count 16 --seed 7 \
 
 Stratified coverage fills, per device, right one-hand, left one-hand, two-thumb
 and cradled grips (mouse right/left and keyboard-only on desktop), then
-condition strata (deutan/protan CVD, presbyopia 60s/70s+, mild tremor, walking,
-bright sun, first use, small/large hand) alternating hands. Base rates (Korean
+condition strata (deutan CVD, presbyopia 60s, mild tremor, walking, low vision,
+70s+, small hand) alternating hands; pointer devices skip walking, small hand and
+tremor, which only the touch model reads. Audience composition adds other conditions
+(protan, bright sun, first use, large hand) when the audience needs them. Base rates (Korean
 age bands, age-dependent left-handedness, Hoober grip mix) only fill remaining
 slots. Link Nemotron-Personas-Korea rows with `--personas` when a narrative
 persona is useful; record the dataset revision (HF vs NGC variants differ).
@@ -215,6 +217,12 @@ tested. After a fix, replay the same scenario, device and profiles and compare.
   reading time at the profile's Korean reading rate, response latency bands.
 - **Game (GM):** HUD/subtitle size at viewing distance, QTE window vs
   reaction-time quantile + input latency, WCAG 2.3.1 general-flash screening.
+- **Semantics and layout (SM, FM, LY, RF; web DOM, profile-independent):**
+  accessible names and label-in-name, unlabelled fields, errors far from their
+  field, keyboard focus indicators (walks and probes before clicks), focus hidden
+  under sticky bars, clicked elements that are not controls (SM-08), focus left
+  outside a newly opened layer (FM-02), clipped text (LY-01) and reflow at 320 CSS
+  px (RF-01). ACT rule examples gate the ones an ACT rule covers.
 - **Judgment (PJ):** persona-agent expectation mismatches.
 
 Numbers, sources and validity limits live in `ergoqa/params.py` and

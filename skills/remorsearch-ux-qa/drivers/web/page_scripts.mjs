@@ -10,7 +10,7 @@ export const TW_BINDING = '__ergoqaDriverTimingWindow';
 /**
  * Installed with addInitScript before any page script runs (main frame only):
  * - MutationObserver ring buffer of callback timestamps (epoch ms) for
- *   feedback-latency measurement;
+ *   feedback-latency measurement (input events count too: a field's value change);
  * - optional timing-window poller (every cfg.pollMs, default 16 ms) that reports
  *   visibility transitions of CSS selectors through an exposed binding.
  */
@@ -56,11 +56,33 @@ export function pageInit(cfg) {
     if (count < N) count++;
     state.mutations++;
   };
+  // Only real changes count: a script that writes an attribute or text node with the
+  // value it already has (a modality script on every mousedown, a style re-set) changes
+  // nothing on screen.
+  const changed = (m) => {
+    if (m.type === 'childList') return m.addedNodes.length > 0 || m.removedNodes.length > 0;
+    if (m.type === 'attributes') return m.oldValue !== m.target.getAttribute(m.attributeName);
+    return m.oldValue !== m.target.data;
+  };
   try {
-    new MutationObserver(record).observe(document, {
-      subtree: true, childList: true, attributes: true, characterData: true,
+    new MutationObserver((list) => {
+      if (list.some(changed)) record();
+    }).observe(document, {
+      subtree: true, childList: true, attributes: true, characterData: true, attributeOldValue: true, characterDataOldValue: true,
     });
   } catch (e) { /* no document yet: nothing to observe */ }
+  // A field's value changing (typed or deleted characters) is feedback too, and it is
+  // not a DOM mutation. The driver masks the focused field in visual comparisons (the
+  // caret blinks), so this is how typing echo is seen.
+  // Checkbox, radio, range, colour, file and select changes show nothing by themselves.
+  const NO_ECHO = ['checkbox', 'radio', 'range', 'color', 'file'];
+  try {
+    window.addEventListener('input', (e) => {
+      const t = e.target;
+      if (t && (t.tagName === 'SELECT' || (t.tagName === 'INPUT' && NO_ECHO.includes((t.type || '').toLowerCase())))) return;
+      record();
+    }, true);
+  } catch (e) { /* ignore */ }
 
   const windows = Array.isArray(cfg.windows) ? cfg.windows : [];
   if (!windows.length || !cfg.binding) return;
@@ -131,8 +153,20 @@ export function extractSnapshot(args) {
       Object.defineProperty(window, KEY, { value: state, enumerable: false });
     } catch (e) { /* ignore */ }
   }
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
+  // The screen shows the visual viewport. At scale 1 it can be smaller than the layout
+  // viewport (content wider than the screen widens the layout viewport) and panned
+  // inside it. Geometry is computed in layout coordinates (elementFromPoint) against
+  // the screen's bounds [VX0, VX1) x [VY0, VY1), and reported relative to the screen, so
+  // boxes line up with the screenshot and with input coordinates.
+  const vvp = window.visualViewport;
+  const panned = !!vvp && Math.abs(vvp.scale - 1) < 0.01
+    && (vvp.offsetLeft > 0.5 || vvp.offsetTop > 0.5 || vvp.width < window.innerWidth - 1 || vvp.height < window.innerHeight - 1);
+  const VX0 = panned ? vvp.offsetLeft : 0;
+  const VY0 = panned ? vvp.offsetTop : 0;
+  const vw = panned ? vvp.width : window.innerWidth;
+  const vh = panned ? vvp.height : window.innerHeight;
+  const VX1 = VX0 + vw;
+  const VY1 = VY0 + vh;
   const known = new Set(args.knownRoles || []);
   const unknownRoles = new Set();
   const round2 = (n) => Math.round(n * 100) / 100;
@@ -214,10 +248,10 @@ export function extractSnapshot(args) {
   const layersBelow = (el, rect) => {
     const ancestors = [];
     for (let n = el; n; n = parentOf(n)) ancestors.push(n);
-    const ix0 = Math.max(0, rect.left);
-    const ix1 = Math.min(vw, rect.right);
-    const iy0 = Math.max(0, rect.top);
-    const iy1 = Math.min(vh, rect.bottom);
+    const ix0 = Math.max(VX0, rect.left);
+    const ix1 = Math.min(VX1, rect.right);
+    const iy0 = Math.max(VY0, rect.top);
+    const iy1 = Math.min(VY1, rect.bottom);
     if (ix1 - ix0 >= 1 && iy1 - iy0 >= 1) {
       let stack = [];
       try {
@@ -544,10 +578,48 @@ export function extractSnapshot(args) {
   // Text cut off by its own box (XCTest textClipped; WCAG 1.4.4/1.4.12 symptoms).
   const clippedOf = (el, cs) => {
     const hide = (v) => v === 'hidden' || v === 'clip';
-    const x = hide(cs.overflowX) && el.scrollWidth > el.clientWidth + 1;
-    const y = hide(cs.overflowY) && el.scrollHeight > el.clientHeight + 1;
-    if (!x && !y) return null;
+    let x = hide(cs.overflowX) && el.scrollWidth > el.clientWidth + 1;
+    let y = hide(cs.overflowY) && el.scrollHeight > el.clientHeight + 1;
+    let by = null;
+    let ellipsis = cs.textOverflow === 'ellipsis';
+    if (!x && !y) {
+      // ACT 59br37: text cut by an ancestor that clips (a fixed-width chip or label),
+      // within three levels. The text must be partly visible: a slide that is wholly
+      // outside its carousel is not cut text. A scroll container is reachable.
+      const r = el.getBoundingClientRect();
+      for (let n = el.parentElement, i = 0; n && n.nodeType === 1 && i < 3 && n !== document.body; n = n.parentElement, i++) {
+        const ncs = style(n);
+        const ax = ncs.overflowX;
+        const ay = ncs.overflowY;
+        if (ax === 'auto' || ax === 'scroll' || ay === 'auto' || ay === 'scroll') break;
+        if (!hide(ax) && !hide(ay)) continue;
+        const a = n.getBoundingClientRect();
+        const cutX = hide(ax) && (r.right > a.right + 1 || r.left < a.left - 1) && r.left < a.right && r.right > a.left;
+        const cutY = hide(ay) && (r.bottom > a.bottom + 1 || r.top < a.top - 1) && r.top < a.bottom && r.bottom > a.top;
+        if (cutX || cutY) {
+          x = cutX;
+          y = cutY;
+          by = n;
+          ellipsis = ellipsis || ncs.textOverflow === 'ellipsis';
+          break;
+        }
+      }
+      if (!x && !y) return null;
+    }
     const clamp = cs.webkitLineClamp && cs.webkitLineClamp !== 'none';
+    // ACT 59br37's exceptions, on the clipping box: sideways, one line that does not
+    // wrap and ends in a marker (white-space nowrap, text-overflow other than clip);
+    // vertically, a box one line high (used line-height >= its height, content box for
+    // overflow-y clip) whose glyphs fit in it. Clipped this way the text is cut cleanly.
+    const cb = by || el;
+    const bcs = by ? style(by) : cs;
+    const exemptX = !x || (/^nowrap/.test(bcs.whiteSpace) && bcs.textOverflow !== 'clip');
+    const fontPx = parseFloat(bcs.fontSize) || 16;
+    const lineH = bcs.lineHeight === 'normal' ? 1.2 * fontPx : parseFloat(bcs.lineHeight) || 1.2 * fontPx;
+    const boxH = bcs.overflowY === 'clip'
+      ? cb.clientHeight - (parseFloat(bcs.paddingTop) || 0) - (parseFloat(bcs.paddingBottom) || 0)
+      : cb.getBoundingClientRect().height;
+    const exemptY = !y || (lineH >= boxH - 0.5 && fontPx <= boxH + 0.5);
     // Tickers and marquees clip by design: text that moves (CSS animation on the element
     // or a close ancestor, or <marquee>) is recorded as animated.
     let animated = false;
@@ -559,7 +631,8 @@ export function extractSnapshot(args) {
         break;
       }
     }
-    return { x, y, ellipsis: cs.textOverflow === 'ellipsis' || !!clamp, line_clamp: !!clamp, animated };
+    return { x, y, ellipsis: ellipsis || !!clamp, line_clamp: !!clamp, animated, by: by ? (by.id ? `#${by.id}` : by.tagName.toLowerCase()) : null,
+      act: exemptX && exemptY ? 'passed' : 'failed' };
   };
   const visibleText = (el) => {
     const tag = el.tagName.toLowerCase();
@@ -688,7 +761,7 @@ export function extractSnapshot(args) {
         vis = cs.display !== 'none' && cs.visibility === 'visible' && parseFloat(cs.opacity) > 0;
       }
     }
-    const inVp = r.width > 0 && r.height > 0 && r.right > 0 && r.bottom > 0 && r.left < vw && r.top < vh;
+    const inVp = r.width > 0 && r.height > 0 && r.right > VX0 && r.bottom > VY0 && r.left < VX1 && r.top < VY1;
     g = { r, vis, inVp };
     geometry.set(el, g);
     return g;
@@ -710,7 +783,7 @@ export function extractSnapshot(args) {
     // Hit testing cannot see elements that ignore pointer events (HUD and subtitle
     // overlays): elementFromPoint returns what lies BELOW them, so their occlusion is unknown.
     if (style(el).pointerEvents === 'none') return { fraction: null, by: null };
-    const x0 = Math.max(0, r.left), x1 = Math.min(vw, r.right), y0 = Math.max(0, r.top), y1 = Math.min(vh, r.bottom);
+    const x0 = Math.max(VX0, r.left), x1 = Math.min(VX1, r.right), y0 = Math.max(VY0, r.top), y1 = Math.min(VY1, r.bottom);
     if (x1 - x0 < 1 || y1 - y0 < 1) return { fraction: null, by: null };
     const pts = [[0.5, 0.5], [0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]];
     let covered = 0;
@@ -976,8 +1049,8 @@ export function extractSnapshot(args) {
     else {
       // Area first (cheap, from the cached box), then the computed style.
       const r = g.r;
-      const w = Math.max(0, Math.min(r.right, vw) - Math.max(r.left, 0));
-      const h = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0));
+      const w = Math.max(0, Math.min(r.right, VX1) - Math.max(r.left, VX0));
+      const h = Math.max(0, Math.min(r.bottom, VY1) - Math.max(r.top, VY0));
       if ((w * h) / vpArea < 0.4) continue;
       const pos = style(n).position;
       if ((pos === 'fixed' || pos === 'absolute') && painted(n)) {
@@ -991,7 +1064,7 @@ export function extractSnapshot(args) {
           if (!cg.vis) continue;
           const cx = cg.r.left + cg.r.width / 2;
           const cy = cg.r.top + cg.r.height / 2;
-          if (cx < r.left || cx > r.right || cy < r.top || cy > r.bottom || cx < 0 || cy < 0 || cx >= vw || cy >= vh) continue;
+          if (cx < r.left || cx > r.right || cy < r.top || cy > r.bottom || cx < VX0 || cy < VY0 || cx >= VX1 || cy >= VY1) continue;
           const top = document.elementFromPoint(cx, cy);
           if (top && n.contains(top)) over += 1;
         }
@@ -1003,11 +1076,51 @@ export function extractSnapshot(args) {
     for (let i = layers.length - 1; i >= 0; i--) if (n.contains(layers[i].node)) layers.splice(i, 1);
     layers.push({ node: n, kind });
   }
-  const layerOut = layers.map(({ node, kind }) => ({
-    selector: uniqueSelector(node), dom_id: node.id || null, kind,
-    box: { x: round2(geo(node).r.left), y: round2(geo(node).r.top), w: round2(geo(node).r.width), h: round2(geo(node).r.height) },
-    contains_focus: !focusOnBody && (node === deep || node.contains(deep)),
-  }));
+  // Containment in the flat tree (slotted content, dialogs inside shadow roots).
+  const inFlat = (root, n) => {
+    for (let x = n; x; x = x.assignedSlot || x.parentNode || x.host) if (x === root) return true;
+    return false;
+  };
+  // A layer's overlay root: its outermost fixed ancestor below <body> that is not the
+  // app shell (most content lies outside it), e.g. a portal holding a dialog container
+  // that keeps focus on itself and the role=dialog paper inside it (MUI).
+  const overlayRoot = (node) => {
+    let root = node;
+    for (let n = node.parentElement; n && n !== document.body && n !== document.documentElement; n = n.parentElement) {
+      if (style(n).position === 'fixed') root = n;
+    }
+    if (root === node) return node;
+    const inside = candidates.filter((c) => root.contains(c.el)).length;
+    return inside <= candidates.length / 2 ? root : node;
+  };
+  // The next element Tab reaches from the focused one (document order, tabindex >= 0).
+  let nextTab = null;
+  if (!focusOnBody) {
+    const tabbable = [...document.querySelectorAll('a[href], button, input, select, textarea, summary, [tabindex], [contenteditable=""], [contenteditable="true"]')]
+      .filter((t) => t.tabIndex >= 0 && !t.disabled && t.getClientRects().length > 0 && !(t.closest && t.closest('[inert]')));
+    nextTab = tabbable.find((t) => deep.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING && !deep.contains(t)) || null;
+  }
+  const layerOut = layers.map(({ node, kind }) => {
+    const root = overlayRoot(node);
+    return {
+      selector: uniqueSelector(node), dom_id: node.id || null, kind,
+      box: { x: round2(geo(node).r.left), y: round2(geo(node).r.top), w: round2(geo(node).r.width), h: round2(geo(node).r.height) },
+      contains_focus: !focusOnBody && (inFlat(node, deep) || (root !== node && inFlat(root, deep))),
+      follows_focus: !!nextTab && inFlat(node, nextTab),
+      overlay_root: root !== node ? uniqueSelector(root) : null,
+    };
+  });
+  if (panned && (VX0 || VY0)) {
+    // Report DOM geometry relative to the screen (hotspots keep their own coordinates).
+    const shift = (b) => { if (b) { b.x = round2(b.x - VX0); b.y = round2(b.y - VY0); } };
+    for (const e of elements) {
+      if (e.source !== 'dom') continue;
+      shift(e.box);
+      for (const hb of e.hit_boxes || []) shift(hb);
+    }
+    if (active) { active.x = round2(active.x - VX0); active.y = round2(active.y - VY0); }
+    for (const l of layerOut) shift(l.box);
+  }
   const se = document.scrollingElement || document.documentElement;
   return {
     elements,
@@ -1015,8 +1128,13 @@ export function extractSnapshot(args) {
     truncated: candidates.length > cap,
     viewport: { w: vw, h: vh },
     scroll: { x: round2(window.scrollX), y: round2(window.scrollY), width: se ? se.scrollWidth : null, height: se ? se.scrollHeight : null },
+    visual: vvp ? { offset_x: round2(vvp.offsetLeft), offset_y: round2(vvp.offsetTop), width: round2(vvp.width), height: round2(vvp.height), scale: round2(vvp.scale) } : null,
     active,
-    focus: { on_body: focusOnBody, tag: focusOnBody ? null : deep.tagName.toLowerCase(), dom_id: focusOnBody ? null : (deep.id || null) },
+    focus: {
+      on_body: focusOnBody, tag: focusOnBody ? null : deep.tagName.toLowerCase(), dom_id: focusOnBody ? null : (deep.id || null),
+      expanded: !focusOnBody && deep.getAttribute('aria-expanded') === 'true',
+      controls: focusOnBody ? [] : (deep.getAttribute('aria-controls') || '').split(/\s+/).filter(Boolean).slice(0, 8),
+    },
     layers: layerOut,
     pageHotspotError,
     unknownRoles: [...unknownRoles],
@@ -1050,9 +1168,13 @@ export function idAtPoint(args) {
     const b = spots[i].box;
     if (args.x >= b.x && args.x <= b.x + b.w && args.y >= b.y && args.y <= b.y + b.h) return { id: spots[i].elementId, hotspot: true };
   }
-  let n = document.elementFromPoint(args.x, args.y);
+  // Points are screen (visual viewport) coordinates; hit testing takes layout ones.
+  const vvp = window.visualViewport;
+  const lx = args.x + (vvp && Math.abs(vvp.scale - 1) < 0.01 ? vvp.offsetLeft : 0);
+  const ly = args.y + (vvp && Math.abs(vvp.scale - 1) < 0.01 ? vvp.offsetTop : 0);
+  let n = document.elementFromPoint(lx, ly);
   while (n && n.shadowRoot) {
-    const inner = n.shadowRoot.elementFromPoint(args.x, args.y);
+    const inner = n.shadowRoot.elementFromPoint(lx, ly);
     if (!inner || inner === n) break;
     n = inner;
   }
@@ -1071,9 +1193,13 @@ export function idAtPoint(args) {
  * Never reads values.
  */
 export function controlOf(arg) {
-  let el = arg && arg.nodeType === 1 ? arg : (arg ? document.elementFromPoint(arg.x, arg.y) : null);
+  // Points are screen (visual viewport) coordinates; hit testing takes layout ones.
+  const vvp = window.visualViewport;
+  const lx = arg && arg.nodeType !== 1 ? arg.x + (vvp && Math.abs(vvp.scale - 1) < 0.01 ? vvp.offsetLeft : 0) : 0;
+  const ly = arg && arg.nodeType !== 1 ? arg.y + (vvp && Math.abs(vvp.scale - 1) < 0.01 ? vvp.offsetTop : 0) : 0;
+  let el = arg && arg.nodeType === 1 ? arg : (arg ? document.elementFromPoint(lx, ly) : null);
   while (el && el.shadowRoot && arg && arg.nodeType !== 1) {
-    const inner = el.shadowRoot.elementFromPoint(arg.x, arg.y);
+    const inner = el.shadowRoot.elementFromPoint(lx, ly);
     if (!inner || inner === el) break;
     el = inner;
   }
@@ -1081,35 +1207,99 @@ export function controlOf(arg) {
   const NATIVE = ['button', 'input', 'select', 'textarea', 'summary', 'option', 'details', 'video', 'audio', 'iframe', 'canvas'];
   const WIDGET = ['button', 'link', 'checkbox', 'radio', 'switch', 'tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'option',
     'slider', 'spinbutton', 'textbox', 'searchbox', 'combobox', 'listbox', 'treeitem', 'gridcell', 'scrollbar'];
-  const isControl = (n) => {
+  const LANDMARK = ['body', 'main', 'nav', 'header', 'footer', 'aside', 'form'];
+  // Flat-tree parent: through slots and out of shadow roots (web components).
+  const up = (n) => n.assignedSlot || n.parentElement || (n.getRootNode && n.getRootNode() instanceof ShadowRoot ? n.getRootNode().host : null);
+  // A native control the keyboard can reach: not type=hidden, rendered, not
+  // visibility:hidden, not inert (opacity:0 or clipped inputs still take focus).
+  const usable = (c) => !!c && !(c.tagName === 'INPUT' && (c.type || '').toLowerCase() === 'hidden') && c.getClientRects().length > 0
+    && (typeof c.checkVisibility !== 'function' || c.checkVisibility({ visibilityProperty: true })) && !(c.closest && c.closest('[inert]'));
+  const plain = (n) => {
     const tag = n.tagName.toLowerCase();
-    if (NATIVE.includes(tag) || (tag === 'a' && n.hasAttribute('href')) || (tag === 'label' && n.control)) return true;
+    if (NATIVE.includes(tag)) return usable(n);
+    if (tag === 'a' && n.hasAttribute('href')) return true;
+    if (tag === 'label') return !!n.control && usable(n.control);
     const role = (n.getAttribute('role') || '').trim().split(/\s+/)[0];
     if (WIDGET.includes(role)) return true;
     const t = n.getAttribute('tabindex');
     return (t !== null && parseInt(t, 10) >= 0) || n.isContentEditable;
   };
+  // A web component is a control when it delegates focus or holds one in its open shadow tree.
+  const isControl = (n) => plain(n) || (!!n.shadowRoot && (n.shadowRoot.delegatesFocus || [...n.shadowRoot.querySelectorAll('*')].slice(0, 200).some(plain)));
+  const holds = (root) => [...root.querySelectorAll('*')].slice(0, 300).some(isControl);
   let control = false;
-  for (let n = el, i = 0; n && n.nodeType === 1 && i < 5; n = n.parentElement, i++) {
+  for (let n = el, i = 0; n && n.nodeType === 1 && i < 5; n = up(n), i++) {
     if (isControl(n)) {
       control = true;
       break;
     }
   }
-  const contains = [...el.querySelectorAll('*')].slice(0, 300).some(isControl);
+  // Links and buttons at any depth (a heading inside a large link card).
+  for (let n = el; !control && n && n.nodeType === 1; n = up(n)) {
+    const tag = n.tagName.toLowerCase();
+    const role = (n.getAttribute('role') || '').trim().split(/\s+/)[0];
+    if ((tag === 'a' && n.hasAttribute('href')) || tag === 'button' || tag === 'summary' || role === 'button' || role === 'link') control = true;
+  }
+  let contains = holds(el);
+  // The child of `root` on the way up from `node`.
+  const branch = (root, node) => {
+    let b = node;
+    while (b && up(b) !== root) b = up(b);
+    return b;
+  };
+  const peers = (root) => {
+    const cb = branch(root, el);
+    if (!cb) return false;
+    const rb = cb.getBoundingClientRect();
+    const ac = rb.width * rb.height;
+    return [...root.querySelectorAll('*')].slice(0, 300).filter(isControl).some((c) => {
+      const b = branch(root, c);
+      if (!b || b === cb || !isControl(b)) return false;
+      const r = b.getBoundingClientRect();
+      const ab = r.width * r.height;
+      return ab > 0 && ac > 0 && ab < 3 * ac && ac < 3 * ab && Math.abs(r.height - rb.height) <= 0.5 * Math.max(r.height, rb.height);
+    });
+  };
+  // A card whose own link or button the keyboard reaches: the click on its image or
+  // price has a keyboard equivalent right there.
+  let card = null;
+  if (!control && !contains) {
+    const r0 = el.getBoundingClientRect();
+    const area0 = Math.max(48 * 48, r0.width * r0.height);
+    for (let n = up(el), i = 0; n && n.nodeType === 1 && i < 8; n = up(n), i++) {
+      const tag = n.tagName.toLowerCase();
+      if (LANDMARK.includes(tag) || ['main', 'navigation', 'banner', 'contentinfo', 'complementary', 'form'].includes(n.getAttribute('role') || '')) break;
+      const r = n.getBoundingClientRect();
+      if (r.width * r.height > 4 * area0) break;
+      if (holds(n)) {
+        // Not a card when what was clicked looks operable on its own (a pointer cursor
+        // the candidate card does not have), or when a control there is a peer item of
+        // it (a chip row where one chip is a role-less div): another option, not the
+        // card's own link.
+        const own = getComputedStyle(el).cursor === 'pointer' && getComputedStyle(n).cursor !== 'pointer';
+        if (!own && !peers(n)) card = n;
+        break;
+      }
+    }
+  }
   const ids = [];
   for (let n = el.parentElement; n && ids.length < 6; n = n.parentElement) if (n.id) ids.push(n.id);
   return {
     tag: el.tagName.toLowerCase(), role: (el.getAttribute('role') || '').trim() || null, dom_id: el.id || null, control,
-    contains_control: contains, ancestor_ids: ids, text: (el.innerText || el.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim().slice(0, 40),
+    contains_control: contains || !!card, card_control: !!card, hidden: !!(el.closest && el.closest('[aria-hidden="true"],[inert]')),
+    ancestor_ids: ids, text: (el.innerText || el.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim().slice(0, 40),
   };
 }
 
 /** Is the top-most element at (x, y) the target element or inside it? */
 export function hitTest(el, pt) {
-  let n = document.elementFromPoint(pt.x, pt.y);
+  // Points are screen (visual viewport) coordinates; hit testing takes layout ones.
+  const vvp = window.visualViewport;
+  const lx = pt.x + (vvp && Math.abs(vvp.scale - 1) < 0.01 ? vvp.offsetLeft : 0);
+  const ly = pt.y + (vvp && Math.abs(vvp.scale - 1) < 0.01 ? vvp.offsetTop : 0);
+  let n = document.elementFromPoint(lx, ly);
   while (n && n.shadowRoot) {
-    const inner = n.shadowRoot.elementFromPoint(pt.x, pt.y);
+    const inner = n.shadowRoot.elementFromPoint(lx, ly);
     if (!inner || inner === n) break;
     n = inner;
   }

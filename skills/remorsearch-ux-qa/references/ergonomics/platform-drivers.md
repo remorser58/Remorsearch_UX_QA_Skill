@@ -19,7 +19,7 @@ node drivers/web/ergo_drive.mjs run --scenario sc.json --profile ep.json --out r
   --base http://127.0.0.1:8765 [--flash-sample-ms 1500]
 
 # Interactive session for a persona agent (127.0.0.1 only)
-node drivers/web/ergo_drive.mjs serve --scenario sc.json --profile ep.json --out runs/ --port 9477
+node drivers/web/ergo_drive.mjs serve --scenario sc.json --profile ep.json --agent-json agent.json --out runs/ --port 9477
 curl -s localhost:9477/snapshot
 curl -s -X POST localhost:9477/act  -d '{"action":"tap","target":"#pay"}'
 curl -s -X POST localhost:9477/note -d '{"step_index":1,"intent":"…","expected":"…","observed":"…","confusion":false,"failure_class":"ux_issue"}'

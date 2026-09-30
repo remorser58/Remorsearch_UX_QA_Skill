@@ -56,26 +56,41 @@ export function decodePng(buf) {
   const raw = zlib.inflateSync(Buffer.concat(idat));
   if (raw.length < (stride + 1) * height) throw new Error('PNG image data too short');
   const out = new Uint8Array(stride * height);
+  // One loop per row filter (flash frames are decoded many times a second).
   for (let y = 0; y < height; y++) {
     const filter = raw[y * (stride + 1)];
     const src = y * (stride + 1) + 1;
     const dst = y * stride;
     const prev = dst - stride;
-    for (let x = 0; x < stride; x++) {
-      const v = raw[src + x];
-      const a = x >= channels ? out[dst + x - channels] : 0;
-      const b = y > 0 ? out[prev + x] : 0;
-      const c = x >= channels && y > 0 ? out[prev + x - channels] : 0;
-      let r;
-      switch (filter) {
-        case 0: r = v; break;
-        case 1: r = v + a; break;
-        case 2: r = v + b; break;
-        case 3: r = v + ((a + b) >> 1); break;
-        case 4: r = v + paeth(a, b, c); break;
-        default: throw new Error(`bad PNG filter ${filter}`);
-      }
-      out[dst + x] = r & 0xff;
+    const first = y === 0;
+    switch (filter) {
+      case 0:
+        out.set(raw.subarray(src, src + stride), dst);
+        break;
+      case 1:
+        for (let x = 0; x < stride; x++) out[dst + x] = raw[src + x] + (x >= channels ? out[dst + x - channels] : 0);
+        break;
+      case 2:
+        if (first) out.set(raw.subarray(src, src + stride), dst);
+        else for (let x = 0; x < stride; x++) out[dst + x] = raw[src + x] + out[prev + x];
+        break;
+      case 3:
+        for (let x = 0; x < stride; x++) {
+          const a = x >= channels ? out[dst + x - channels] : 0;
+          const b = first ? 0 : out[prev + x];
+          out[dst + x] = raw[src + x] + ((a + b) >> 1);
+        }
+        break;
+      case 4:
+        for (let x = 0; x < stride; x++) {
+          const a = x >= channels ? out[dst + x - channels] : 0;
+          const b = first ? 0 : out[prev + x];
+          const c = x >= channels && !first ? out[prev + x - channels] : 0;
+          out[dst + x] = raw[src + x] + paeth(a, b, c);
+        }
+        break;
+      default:
+        throw new Error(`bad PNG filter ${filter}`);
     }
   }
   return { width, height, channels, data: out };
@@ -335,8 +350,12 @@ export function globalShift(cur, prev) {
  *           is explained by the global shift (or whose content entered the
  *           viewport with it); null when no shift was detected
  *  - shift: [dx, dy] frame px of that global shift ([0, 0] if none)
+ * `known` is a shift the caller measured (the page's own scroll between the two
+ * frames); it replaces the estimate, which periodic content (a feed of equal cards
+ * scrolled by about half a card per frame) makes ambiguous. `known === false` turns
+ * motion matching off (the page scrolls back and forth: flicker, not motion).
  */
-export function blockStats(frame, grid, prev) {
+export function blockStats(frame, grid, prev, known = null) {
   const { cols, rows, colOf, rowOf, xEdges, yEdges } = grid;
   const w = frame.width;
   const h = frame.height;
@@ -368,7 +387,8 @@ export function blockStats(frame, grid, prev) {
     redU8[b] = Math.round(255 * redShare[b]);
   }
   const out = { lum: lumU8, red: redU8, moved: null, shift: [0, 0] };
-  const shift = globalShift(frame, prev);
+  if (known === false) return out; // no motion matching (oscillating scroll)
+  const shift = known && prev && prev.width === frame.width && prev.height === frame.height ? known : globalShift(frame, prev);
   if (!shift) return out;
   const [dx, dy] = shift;
   const ip = integrals(prev);
@@ -430,11 +450,44 @@ export function indicatorPixels(on, off1, off2, level = 16, maskLevel = 4, regio
   return changed;
 }
 
-export function visualDiffFraction(a, b, level = 16) {
+/**
+ * Indicator pixels against several unfocused frames: a pixel counts when ``on`` differs
+ * (max channel change >= level) from every frame in ``offs`` while the ``offs`` agree
+ * with each other (max change < maskLevel; animation and anything that changed during
+ * the capture sequence are masked). Pixels inside ``exclude`` rectangles ({x0, y0, x1,
+ * y1}, frame px) are not counted.
+ */
+export function indicatorPixelsMulti(on, offs, level = 16, maskLevel = 4, exclude = []) {
+  if (!on || !offs.length || offs.some((f) => !f || f.rgb.length !== on.rgb.length)) return null;
+  const w = on.width;
+  const d = (f, g, o) => Math.max(Math.abs(f.rgb[o] - g.rgb[o]), Math.abs(f.rgb[o + 1] - g.rgb[o + 1]), Math.abs(f.rgb[o + 2] - g.rgb[o + 2]));
+  let changed = 0;
+  for (let y = 0; y < on.height; y++) {
+    for (let x = 0; x < w; x++) {
+      if (exclude.some((r) => x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1)) continue;
+      const o = (y * w + x) * 3;
+      let ok = true;
+      for (let i = 0; i < offs.length && ok; i++) {
+        if (d(on, offs[i], o) < level) ok = false;
+        else if (i > 0 && d(offs[0], offs[i], o) >= maskLevel) ok = false;
+      }
+      if (ok) changed++;
+    }
+  }
+  return changed;
+}
+
+export function visualDiffFraction(a, b, level = 16, mask = null) {
   if (!a || !b || a.rgb.length !== b.rgb.length) return null;
   const n = a.rgb.length / 3;
+  const w = a.width;
   let changed = 0;
   for (let i = 0; i < n; i++) {
+    if (mask) {
+      const x = i % w;
+      const y = (i - x) / w;
+      if (x >= mask.x0 && x < mask.x1 && y >= mask.y0 && y < mask.y1) continue;
+    }
     const o = i * 3;
     const d = Math.max(
       Math.abs(a.rgb[o] - b.rgb[o]),
@@ -493,6 +546,71 @@ export function encodeRgbPng(width, height, rgb) {
     chunk('IDAT', zlib.deflateSync(raw, { level: 6 })),
     chunk('IEND', Buffer.alloc(0)),
   ]);
+}
+
+/**
+ * Box-average an image (from decodePng) to exactly `w` x `h` pixels, 3 channels (alpha
+ * over white, as frameFromImage does). Used to give every capture of a session the same
+ * frame size whatever path produced it.
+ */
+export function resampleImage(img, w, h) {
+  const { width: sw, height: sh, channels: ch, data } = img;
+  const out = Buffer.alloc(w * h * 3);
+  if (sw % w === 0 && sh % h === 0 && ch >= 3) {
+    // Integer factor (the usual case: CSS-px capture to the frame width): plain sums.
+    const fx = sw / w;
+    const fy = sh / h;
+    const n = fx * fy;
+    const acc = new Float64Array(w * 3);
+    for (let oy = 0; oy < h; oy++) {
+      acc.fill(0);
+      for (let y = oy * fy; y < (oy + 1) * fy; y++) {
+        let i = y * sw * ch;
+        for (let ox = 0; ox < w; ox++) {
+          let r = 0, g = 0, b = 0;
+          for (let k = 0; k < fx; k++, i += ch) {
+            let pr = data[i], pg = data[i + 1], pb = data[i + 2];
+            if (ch === 4 && data[i + 3] < 255) {
+              const f = data[i + 3] / 255;
+              pr = pr * f + 255 * (1 - f); pg = pg * f + 255 * (1 - f); pb = pb * f + 255 * (1 - f);
+            }
+            r += pr; g += pg; b += pb;
+          }
+          acc[ox * 3] += r; acc[ox * 3 + 1] += g; acc[ox * 3 + 2] += b;
+        }
+      }
+      for (let ox = 0; ox < w; ox++) {
+        const o = (oy * w + ox) * 3;
+        out[o] = Math.round(acc[ox * 3] / n); out[o + 1] = Math.round(acc[ox * 3 + 1] / n); out[o + 2] = Math.round(acc[ox * 3 + 2] / n);
+      }
+    }
+    return { width: w, height: h, channels: 3, data: out };
+  }
+  for (let oy = 0; oy < h; oy++) {
+    const y0 = Math.floor((oy * sh) / h);
+    const y1 = Math.max(y0 + 1, Math.floor(((oy + 1) * sh) / h));
+    for (let ox = 0; ox < w; ox++) {
+      const x0 = Math.floor((ox * sw) / w);
+      const x1 = Math.max(x0 + 1, Math.floor(((ox + 1) * sw) / w));
+      let r = 0, g = 0, b = 0, n = 0;
+      for (let y = y0; y < y1 && y < sh; y++) {
+        for (let x = x0; x < x1 && x < sw; x++) {
+          const i = (y * sw + x) * ch;
+          let pr, pg, pb;
+          if (ch >= 3) { pr = data[i]; pg = data[i + 1]; pb = data[i + 2]; } else { pr = pg = pb = data[i]; }
+          const a = ch === 4 ? data[i + 3] : ch === 2 ? data[i + 1] : 255;
+          if (a < 255) {
+            const f = a / 255;
+            pr = pr * f + 255 * (1 - f); pg = pg * f + 255 * (1 - f); pb = pb * f + 255 * (1 - f);
+          }
+          r += pr; g += pg; b += pb; n++;
+        }
+      }
+      const o = (oy * w + ox) * 3;
+      out[o] = Math.round(r / n); out[o + 1] = Math.round(g / n); out[o + 2] = Math.round(b / n);
+    }
+  }
+  return { width: w, height: h, channels: 3, data: out };
 }
 
 export function cssScaleCopy(pngBuf, dpr) {

@@ -904,7 +904,9 @@ def agents_plan(data: dict[str, Any], agent_dir: Path, budget: int, sessions_per
             # are one family: corroboration still needs another input channel.
             channel = "screenshot" if i % 2 == 0 else "screenshot+a11y"
             model = "opus" if (i // 2) % 2 == 0 else "sonnet"
-            agent = {"model_family": "claude", "model": model, "input_channel": channel, "persona_arm": "full", "seed": i + 1,
+            # The operator workflow runs every session at effort max; the record says so,
+            # so reports name the model and effort actually used.
+            agent = {"model_family": "claude", "model": model, "effort": "max", "input_channel": channel, "persona_arm": "full", "seed": i + 1,
                      "description": f"C6 operator {slug} {i + 1} ({origin})"}
             (agent_dir / "profiles" / f"{prof['profile_id']}.json").write_text(json.dumps(prof, ensure_ascii=False), encoding="utf-8")
             (agent_dir / "agents" / f"{prof['profile_id']}.json").write_text(json.dumps(agent, ensure_ascii=False), encoding="utf-8")

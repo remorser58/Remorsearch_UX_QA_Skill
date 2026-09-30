@@ -333,7 +333,7 @@ Exit codes: 0 ok, 1 findings at/above `--fail-on` severity, 2 usage/input error.
 
 ```
 node skills/remorsearch-ux-qa/drivers/web/ergo_drive.mjs run --scenario sc.json --profile p.json --out runs/ [--run-id R-x]
-node skills/remorsearch-ux-qa/drivers/web/ergo_drive.mjs serve --scenario sc.json --profile p.json --out runs/ --port 9477
+node skills/remorsearch-ux-qa/drivers/web/ergo_drive.mjs serve --scenario sc.json --profile p.json --agent-json agent.json --out runs/ --port 9477
    POST /act   {"action":"tap","target":"#pay"}  -> {"snapshot": ".../S-..json", "png": ".../S-..png", "result": "ok"}
    GET  /snapshot                               -> same, without acting
    POST /note  {"intent":..,"expected":..,"observed":..,"confusion":bool}
