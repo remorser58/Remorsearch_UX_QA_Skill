@@ -257,6 +257,27 @@ class PlatformDataTests(unittest.TestCase):
         for name in CLOSED_COMMUNITIES:
             self.assertNotIn(name, text)
         self.assertEqual(CAFE_PAGE.findall(text), [])  # no single cafe is named as a lead
+        whole_channel_stops = [entry["host"] for entry in self.routes["out_of_scope"]
+                               if not entry.get("path_prefix")]
+        coverage = section(read(PLATFORM_MAP), "## 5.", "## 6.")
+        for row in self.rows:
+            closed = (row["public_scope"] in {"private", "member_only", "member-only", "out_of_scope"}
+                      or "out_of_scope" in row["routes"]
+                      or any(verdict.host_matches(self.probe(host), whole_channel_stops)
+                             for host in row["hosts"]))
+            if not closed:
+                continue
+            with self.subTest(channel=row["id"]):
+                lead = row["audience"]
+                self.assertRegex(lead["text"],
+                                 r"\A싣지 않음\. (?:회원 전용 채널|멤버 전용 서비스|참여해야 보이는 채팅방)[은는] "
+                                 r"사용자 단서로 삼지 않음\(1절\)\."
+                                 r"(?: (?:학생 사용자|이 채널의 사용자)는 설문·인터뷰로 조사함\.)?\Z")
+                self.assertEqual(lead["confidence"], "low")
+                self.assertEqual(lead["read_via"], "skill_rule")
+                self.assertEqual(lead["sources"], [])
+                for name in [row["name_ko"], row["name_ko"].split()[-1], row["id"], *row["hosts"]]:
+                    self.assertNotIn(name, coverage)
 
 
 class PlatformMapTests(unittest.TestCase):
@@ -281,6 +302,16 @@ class PlatformMapTests(unittest.TestCase):
             self.assertEqual(re.findall(r"`([a-z_]+)`", cell[column["예상 중단"]]), row["expected_stops"], row["id"])
             self.assertEqual(cell[column["약관"]].strip("`"), row["terms"]["status"], row["id"])
             self.assertEqual(cell[column["단서 신뢰도"]], row["audience"]["confidence"], row["id"])
+
+    def test_route_and_audience_text_matches_the_data(self):
+        channels = dict(re.findall(r"^### `([a-z0-9-]+)`[^\n]*\n(.*?)(?=^### |^## 4\.)",
+                                   self.text, flags=re.M | re.S))
+        for row in self.rows:
+            channel = channels[row["id"]]
+            for note in row["route_notes"]:
+                self.assertIn(note["text"], channel, row["id"])
+            self.assertIn(f"- 사용자 단서(신뢰도 `{row['audience']['confidence']}`): "
+                          f"{row['audience']['text']}", channel, row["id"])
 
     def test_source_list_is_the_urls_of_the_data(self):
         in_data = {s for s in strings(self.data) if re.match(r"https?://", s)}

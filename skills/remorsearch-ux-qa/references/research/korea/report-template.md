@@ -61,7 +61,7 @@
 | 코드 | 풀이 |
 | --- | --- |
 | `terms_restricted` | 약관 제한. 약관이 자동 수집을 제한한 호스트라 요청하지 않음 |
-| `opted_out` | 거부 신호. robots.txt(다른 AI 에이전트 토큰 그룹 포함), noai, TDM 예약, 브리프의 제외 호스트 |
+| `opted_out` | 거부 신호. robots.txt(다른 AI 에이전트 토큰 그룹 포함), noai, TDM 예약, 제외 호스트, 봇 차단(`bot_filter:*`), 브라우저 확인(`js_check:*`). 등록 도메인 전체 중단 |
 | `auth_gate` | 로그인, 회원, 본인인증이 필요함 |
 | `paywall` | 유료 |
 | `human_check` | 사람 확인(캡차 등) |
@@ -70,7 +70,12 @@
 | `legal_block` | 법적 차단(임시조치, 게시 중단 등) |
 | `gone` | 삭제되었거나 없음 |
 | `budget` | 예산 소진 |
-| `host_stopped` | 호스트 중단(앞선 중단으로 이번 실행에서 닫힘) |
+| `host_stopped` | 앞선 중단으로 이번 실행에서 닫힘. 사이트 전체 중단은 등록 도메인 단위로 적용됨 |
+
+봇 차단과 브라우저 확인 화면에서는 기다리거나 렌더하지 않습니다. robots.txt 자리에 확인 화면이 와도 멈춥니다.
+확인 화면 표지가 있거나 `waited_ms`가 0보다 큰 캡처는 `ingest`가 받지 않습니다. 제3자 사본(아카이브, 번역·리더
+프록시, AMP 캐시, 대체 프런트엔드)은 `third_party_copy`로 거절합니다. 브리프가 허용한 제품 공식 페이지의 과거
+웨이백 사본만 예외입니다.
 
 범위 밖은 수집 공백과 따로 셉니다. 비공개 채널(오픈채팅, 밴드, 페이스북 그룹 등)은 요청 전에 멈추고
 `out_of_scope`로 셉니다. 검색 결과 페이지와 꺼 둔 발견 경로는 직접 넘기면 거절(exit 2, 버킷 `refused`)하고,
@@ -87,7 +92,8 @@
 - 기간은 "YYYY-MM-DD ~ YYYY-MM-DD"로 씀.
 - 근거마다 게시일(`published_at`), 읽은 날(`observed_at`), 유효 시점(`valid_at`)을 따로 적음
   (`references/research/source-grading.md` 10절). 게시일을 모르면 "모름"이라고 씀.
-- 유튜브 Data API로 받은 항목은 보관 기한(`retention_until`)을 적고, 그날이 지나면 지움.
+- 유튜브 Data API로 받은 항목은 보관 기한(`retention_until`)을 적고, 사용자가 그 기한까지 지우거나 다시 받음.
+  번들 항목을 자동으로 지우는 기능은 아직 없음.
 
 ### 1.6 용어집(한 개념에 한 단어)
 
@@ -135,7 +141,9 @@
 - 건강, 장애, 나이 정보는 세그먼트 수준 주장에만 씀. 그런 주제의 커뮤니티 글은 풀어 쓰기만 씀
   (`references/research/workflow.md`의 Non-negotiable operating rules).
 - 사용자가 승인한 커뮤니티의 회원 전용 글은 작성한 요약으로만 넣고, 발췌와 URL을 넣지 않음.
-- 유튜브 Data API로 받은 댓글은 풀어 써서 넣음. 작성자 키에 보호 속성 단서를 붙이지 않음
+- 유튜브 Data API 항목은 정성 근거(풀어 쓰기, 짧은 인용의 존재 근거)로만 씀. 감정·분류·개수 지표를 계산하지 않음.
+  승인 없이 API Data로 새 데이터·파생 데이터·지표를 만드는 제한과 감정 분석·콘텐츠 분류 예시는 미확인(요약)이며
+  적용은 법률가 판단임. 키 보유자는 YouTube API 약관과 개발자 정책을 따름. 작성자 키에 보호 속성 단서를 붙이지 않음
   (`references/research/korea/legal-checklist.md` L17).
 
 ### 1.8 수치
@@ -143,7 +151,7 @@
 - 수치마다 n, 모집단, 기준 시점, 출처를 붙임. 통계는 출처 카드와 함께 씀
   (`references/research/korea/statistics.md`).
 - 게시글, 리뷰, 좋아요 수는 비율이 아님. "읽은 글 n건 가운데 m건"처럼 적고 비율로 바꾸지 않음
-  (`references/research/source-grading.md` 6절).
+  (`references/research/source-grading.md` 6절). 유튜브 API 항목으로는 이런 개수 지표도 계산하지 않음(1.7절).
 - 측정 출처가 없으면 "많은 사용자", "대부분", "흔히", "다수"를 쓰지 않음.
 - 나이 틀이 다른 수치를 더하거나 비교하지 않음(`references/research/korea/statistics.md` 3절).
 - 별점 평균은 만족도 근거가 아님(`references/research/korea/promotion.md` 4d).
@@ -167,6 +175,15 @@
 
 ### 1.10 법령과 약관 표현
 
+- 약관 확인은 사용자만 기록함. `reported`는 그 항목의 약관 문서를 읽고 `access_policy.terms_checked`에
+  `result: permits_this_reading`으로 적은 실행에서만 풀림. `lift_requires: written_permission`이면 사전 서면
+  허락을 `permission {granted_by, granted_on, reference}`에 함께 적어야 함. 확인의 `host`는 항목의 호스트이거나 더
+  좁고 읽을 URL을 포함해야 함. `checked_on`은 `effective_from`이 있으면 그날 이후이고 오늘 기준 365일 이내여야 하며
+  미래 날짜는 무효임. 한 URL에 걸린 항목은 각각 모두 풀어야 함. `confirmed`는 풀리지 않음. 에이전트는 확인 항목을
+  쓰지 않음. 풀린 항목은 모든 호스트를 합쳐 실행당 문서 10건까지임(`references/research/public-page-access.md` 17절).
+- X 페이지와 oEmbed는 `x-terms`에 걸리며 공식 경로만 쓰는 방식도 없음(`official_route: null`). naver.me, me2.do,
+  coupa.ng, t.co 같은 짧은 주소도 요청 전에 멈춤. 네이버 카페 공지는 `terms_url`이 null이라 사람이 공지 원문 주소를
+  기록하기 전에는 풀리지 않음.
 - "합법", "적법", "법적으로 문제없음"이라고 쓰지 않음.
 - 법령은 조항과 판(법령 번호, 공포일이나 시행일)을 함께 적고, law.go.kr에서 대조하지 못한 것은 미확인으로 적음
   (`references/research/korea/legal-checklist.md`).
@@ -194,7 +211,7 @@
 - 시간 구간:
 - 세그먼트:
 - 브리프에서 승인한 로그인 커뮤니티: 없음 / [목록]
-- 사용자의 약관 확인 기록: 없음 / [호스트, 약관 URL, 확인일, 결과]
+- 사용자의 약관 확인 기록(사용자만 씀): 없음 / [항목 id, host, terms_url, checked_on, result, permission {granted_by, granted_on, reference}]
 - 윤리 심의: none / exempt / approved / pending
 - 공식 API 사용(경로, 호출 수, 쿼터, 가장 이른 보관 기한): 없음 / [목록]
 - 모델 제공자와 처리 지역, 저장·학습 제외 약관 여부: [모르면 "모름"]
@@ -212,17 +229,17 @@
 
 | 중단 유형 | 풀이 | 호스트 또는 채널 | URL 수 | 이유 코드 | 다음 방법 |
 | --- | --- | --- | --- | --- | --- |
-| terms_restricted | 약관 제한 | | | | 없음. `confirmed`는 풀리지 않음. `reported`는 사용자가 약관을 직접 읽고 브리프에 기록한 실행에서만 풀림 |
-| opted_out | 거부 신호 | | | | 없음 |
+| terms_restricted | 약관 제한 | | | | 없음. `confirmed`는 풀리지 않음. `reported`는 항목별 약관 확인과 사전 서면 허락(`permission {granted_by, granted_on, reference}`) 기록이 있는 실행에서만 풀림. `checked_on`은 `effective_from` 이후, 오늘 기준 365일 이내이며 미래 날짜는 무효임. 에이전트는 확인 항목을 쓰지 않음 |
+| opted_out | 거부 신호 | | | robots, noai, TDM, deny_hosts, bot_filter:*, js_check:* | 없음. 등록 도메인 전체가 이번 실행에서 닫힘. 거절 뒤 렌더하지 않음 |
 | auth_gate | 로그인·회원·본인인증 | | | | 없음. 사용자가 브리프에서 승인한 커뮤니티만 요약으로 다룸 |
 | paywall | 유료 | | | | 없음 |
-| human_check | 사람 확인 | | | | 없음 |
-| rate_limit | 속도 제한 | | | | 없음. 이번 실행에서 그 호스트는 멈춤 |
+| human_check | 사람 확인 | | | | 없음. 등록 도메인 전체가 이번 실행에서 닫힘 |
+| rate_limit | 속도 제한 | | | | 없음. 등록 도메인 전체가 이번 실행에서 닫힘 |
 | geo_block | 지역 제한 | | | | 없음 |
 | legal_block | 법적 차단 | | | | 없음 |
 | gone | 삭제·없음 | | | | 없음. 보관소나 캐시로 되살리지 않음 |
-| budget | 예산 소진 | | | | 상한 안에서만 이유를 기록하고 조정. 약관 제한이 풀린 호스트는 10건 |
-| host_stopped | 호스트 중단 | | | | 없음. 이번 실행에서 그 호스트는 닫힘 |
+| budget | 예산 소진 | | | | 상한 안에서만 이유를 기록하고 조정. 약관 제한이 풀린 항목은 모든 호스트를 합쳐 문서 10건 |
+| host_stopped | 앞선 중단 | | | | 없음. 사이트 전체 중단이면 등록 도메인 전체가 이번 실행에서 닫힘 |
 | 키 없음 | 공식 경로 키 없음 | | | official_route_needs_key | 사용자에게 물음. 다른 경로로 바꾸지 않음 |
 
 수집 공백은 다른 채널 계열, 팀 자료, 설문과 인터뷰로 보완합니다. 멈춘 페이지의 내용을 다른 길로 가져오지 않습니다.
@@ -234,6 +251,7 @@
 | 비공개 채널(`out_of_scope`) | | |
 | 검색 결과 페이지(거절 또는 리디렉션 중 중단) | | |
 | 꺼 둔 발견 경로(거절) | | |
+| 제3자 사본(`third_party_copy`, 거절) | | |
 
 ## 핵심 결과
 

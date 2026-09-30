@@ -40,11 +40,14 @@ ergonomics Stage 0(`references/ergonomics/audience-research.md`)도 웹 근거�
 - 팀 자체 VOC, 고객센터 기록, 스토어·판매자 콘솔 내보내기가 있는지 먼저 물음. 측정 자료이므로 가장 먼저 씀.
 - 팀 자료는 전화번호, 이메일 주소, 주민등록번호, 카드·계좌 번호 같은 식별 정보를 지운 뒤 받음. 이런 자료를 정리하는
   명령은 아직 없음(계획).
-- `access_policy.terms_checked`에는 사용자가 호스트의 현행 약관을 직접 읽은 뒤에만 항목을 적음. 항목마다 `host`,
-  조항 앵커나 번호를 붙인 `terms_url`, `checked_on`, `result`가 필요하고 `note`는 선택임. `result`는
-  `permits_this_reading`, `restricts_this_reading`, `unclear` 가운데 하나임. `permits_this_reading`인 항목만 그
-  실행에서 `reported` 제한을 풀고, 풀린 호스트는 실행당 문서 10건까지 읽음. `confirmed` 제한은 풀리지 않음. 에이전트는
-  이 항목을 쓰지 않고, 명령줄 스위치도 없음.
+- `access_policy.terms_checked`에는 사용자가 그 항목의 약관 문서를 직접 읽고 기록함. `host`, `terms_url`(조항
+  앵커나 번호 포함), `checked_on`, `result`가 필요하고 `note`는 선택임. `result`는 `permits_this_reading`,
+  `restricts_this_reading`, `unclear` 가운데 하나임. `lift_requires: written_permission`이면 운영사의 사전 서면
+  허락을 `permission {granted_by, granted_on, reference}`에 함께 적어야 함. `terms_url`은 항목의 약관 문서여야
+  하고 `host`는 항목의 호스트이거나 더 좁으며 읽을 URL을 포함해야 함. `checked_on`은 `effective_from`이 있으면
+  그날 이후이고, 오늘 기준 365일 이내여야 하며 미래 날짜는 무효임. `permits_this_reading`인 확인만 그 실행에서
+  `reported` 제한을 풀며 한 URL에 걸린 항목을 각각 모두 풀어야 함. 풀린 항목은 모든 호스트를 합쳐 실행당 문서
+  10건까지 읽음. `confirmed`는 풀리지 않음. 에이전트는 확인 항목을 쓰지 않고, 명령줄 스위치도 없음.
 - 윤리 심의는 `ethics_review`에 적음(`status`는 `none`, `exempt`, `approved`, `pending` 가운데 하나, `body`와
   `reference`는 선택). 기록만 하고 강제하지 않음.
 - 유튜브 댓글이 필요하면 사용자 본인의 키를 환경 변수 `REMORSEARCH_YOUTUBE_API_KEY`로 받음(예전 이름
@@ -57,8 +60,9 @@ ergonomics Stage 0(`references/ergonomics/audience-research.md`)도 웹 근거�
 ### A1 계획
 
 - 채널마다 정당한 경로, 예상 중단, 약관 상태를 계획에 적음(`references/research/korea/platform-map.md`).
-- 약관 제한 호스트는 계획 단계에서 수집 공백으로 미리 적음. `reported` 호스트는 사용자의 약관 확인이 있어야 읽고,
-  `confirmed` 호스트(유튜브 페이지, 인스타그램, 스레드, 페이스북)는 풀리지 않음.
+- 약관 제한은 계획 단계에서 수집 공백으로 적음. 디시인사이드, 네이버, 쿠팡, X의 `reported` 항목은 위 약관 확인과
+  서면 허락 기록이 있어야 읽음. 네이버 카페 공지는 `terms_url`이 null이라 사람이 공지 원문 주소를 기록하기 전에는
+  풀리지 않음. `confirmed` 항목(유튜브 페이지, 인스타그램, 스레드, 페이스북)은 풀리지 않음.
 - 한국 제품이면 `kr-communities` 축을 `global-communities` 축보다 먼저 돌림(`references/research/audience-pipeline.md`의
   기본 축).
 - 통계는 승인번호, 모집단, 기준 시점, 표본 수를 담은 출처 카드와 함께 고름(`references/research/korea/statistics.md`).
@@ -73,8 +77,14 @@ ergonomics Stage 0(`references/ergonomics/audience-research.md`)도 웹 근거�
 - 검색 결과 페이지는 `read`, `robots`, `ingest`가 exit 2로 거절함. 리디렉션 중에 만나면 범위 밖 중단으로 기록함. 발견은
   에이전트 자신의 검색 도구로 하고, 결과로 나온 페이지를 하나씩 읽음.
 - `terms_restricted` 호스트는 요청 전에, 그리고 리디렉션 단계와 공식 경로·대체 주소마다 멈춤. 제한 호스트로 넘어가는
-  짧은 주소도 멈춤. `robots`는 이런 호스트에서 exit 3을 내고, 브라우저 도구도 그 호스트를 열지 않음. `ingest`는 풀리지
-  않은 제한 호스트의 캡처를 받지 않음.
+  짧은 주소(naver.me, me2.do, coupa.ng, t.co 등)도 요청 전에 멈춤. X의 oEmbed도 `x-terms`에 걸리며,
+  `official_route`가 null이라 공식 경로만 쓰는 방식으로 열 수 없음. `robots`는 제한 호스트에서 exit 3을 내고,
+  브라우저 도구도 열지 않음. `ingest`는 풀리지 않은 제한 호스트와 공식 경로만 쓰는 방식의 캡처를 받지 않음.
+- 봇 차단(`bot_filter`)과 브라우저 확인 화면(`js_check`)은 `opted_out`이며 등록 도메인 전체를 이번 실행에서 멈춤.
+  거절 뒤에는 모바일 대체 주소나 렌더로 다시 열지 않고 확인 화면이 풀리기를 기다리지 않음. robots.txt 자리에
+  확인 화면이 와도 같음. 확인 화면 표지가 있거나 `waited_ms`가 0보다 큰 캡처는 `ingest`가 받지 않음.
+- 아카이브, 번역·리더 프록시, AMP 캐시, 대체 프런트엔드 같은 제3자 사본은 `third_party_copy`로 거절함.
+  브리프가 허용한 제품 공식 페이지의 과거 웨이백 사본만 예외임.
 - robots.txt는 `RemorsearchUXQA` 그룹이 있으면 그 그룹만으로 판정함. `*` 그룹으로 판정된 경우에만, 사용자 요청으로
   페이지를 여는 AI 에이전트 토큰 그룹의 금지도 우리 토큰의 금지로 따름(중단 `opted_out`, 이유
   `robots:ai_agent:<token>`). 학습·검색 크롤러 그룹의 금지는 신호(`ai_training_disallow`)로만 기록함. 토큰 목록은
@@ -84,6 +94,10 @@ ergonomics Stage 0(`references/ergonomics/audience-research.md`)도 웹 근거�
   공백이 되고, 키 거절이나 그 밖의 실패로 공식 경로가 끝나면 그 주소는 `terms_restricted`로 끝나며 페이지로 바꾸지
   않음. 작성자 이름은 솔트 키로 바꾸고 채널 ID는 저장하지 않음. API로 받은 항목마다 `retention_until`(받은 시각 +
   30일)을 둠. 채널·재생목록·검색 페이지는 경로가 없어 수집 공백임.
+- 유튜브 API 키 보유자는 YouTube API 약관과 개발자 정책을 따름. 승인 없이 API Data로 새 데이터·파생 데이터·지표를
+  만드는 제한과 감정 분석·콘텐츠 분류 예시는 미확인(요약)이며 적용은 법률가 판단임. 그동안 API 항목은 정성 근거
+  (풀어 쓰기, 짧은 인용의 존재 근거)로만 쓰고 감정·분류·개수 지표를 계산하지 않음
+  (`references/research/korea/legal-checklist.md` L17).
 - `read`와 `ingest`가 에이전트에게 보여 주거나 파일로 남기는 글에서는 전화번호, 이메일 주소, 주민등록번호, 카드·계좌
   번호, IP 주소(일부만 보이는 IP 포함), @핸들, 작성자 프로필 URL을 먼저 지움. 계획된 `merge`의 원문 대조는 지운 뒤의
   글과 비교함. 지우는 규칙은 완전하지 않으므로 인용은 짧게 두고 검증자가 표본을 확인함.
@@ -114,7 +128,7 @@ ergonomics Stage 0(`references/ergonomics/audience-research.md`)도 웹 근거�
 - 지원되지 않은 주장은 "미확정 / 확인 필요 (부록)"에만 둠.
 - 접근 표에 `terms_restricted` 중단을 다른 중단과 나눠 적고, 범위 밖 채널은 따로 셈. 공개 웹에서 덜 잡힌 집단도
   수집 공백으로 적음.
-- 유튜브 API 항목은 `retention_until`이 지나면 지움.
+- 유튜브 API 항목은 사용자가 `retention_until`까지 지우거나 다시 받음. 번들 항목을 자동으로 지우는 기능은 아직 없음.
 - 작성자 이름 지우기는 출처 명시 규정(저작권법 제37조②)과 부딪칠 수 있음(검증되지 않은 분석, 법률가 판단). 회사
   안의 리서치가 영리 목적(저작권법 제94조②1호 단서)에 드는지도 법률가 판단임. 조문은 법률 제21336호(2026-08-11
   시행판)를 공개 저장소 사본으로 읽음 — 미확인(미러). 기본값은 풀어 쓰기와 짧은 인용임
@@ -177,7 +191,7 @@ ergonomics Stage 0(`references/ergonomics/audience-research.md`)도 웹 근거�
 - 모든 출처가 협찬·리뷰 보상 표지 확인을 거침.
 - 런 폴더에 이번 실행의 용어집 `lexicon.json`이 있음(형식은 `references/research/korea/query-craft.md` 4절).
 - 한국어 보고서 틀에서 `report-check`(계획)가 통과함. 나오기 전에는 같은 규칙을 손으로 적용하고 그렇게 적음.
-- 유튜브 API 항목에 `retention_until`이 있고, 30일이 지난 항목은 지움.
+- 유튜브 API 항목에 `retention_until`이 있고, 사용자가 그 기한까지 삭제하거나 다시 받음.
 - 접근 표에 `terms_restricted` 중단과 공개 웹에서 덜 잡힌 집단을 적음.
 
 ## 7. 실패 유형(Failure modes)
