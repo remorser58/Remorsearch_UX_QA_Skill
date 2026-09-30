@@ -440,13 +440,15 @@ function probeTarget(start) {
   }
   // The previously focused control and its small wrappers: its own focus style goes
   // away when the target takes focus, so those pixels are not the target's indicator.
+  // A wrapper that also holds the target keeps any :focus-within style and is not
+  // masked (it would hide the target's own ring: two buttons in one small group).
   const prevBoxes = [];
   if (prev && !field) {
     const p = prev.getBoundingClientRect();
     prevBoxes.push({ x: p.left - dx, y: p.top - dy, w: p.width, h: p.height });
     for (let n = prev.parentElement, i = 0; n && n.nodeType === 1 && i < 3; n = n.parentElement, i++) {
       const a = n.getBoundingClientRect();
-      if (a.width * a.height > 4 * Math.max(1, p.width * p.height)) break;
+      if (n.contains(el) || a.width * a.height > 4 * Math.max(1, p.width * p.height)) break;
       prevBoxes.push({ x: a.left - dx, y: a.top - dy, w: a.width, h: a.height });
     }
   }
@@ -1187,7 +1189,8 @@ export class WebSession {
    * Before a click on a control (mouse and keyboard devices): its focus indicator as a
    * keyboard user sees it on this screen, which the walks (initial and end screens)
    * do not reach. The control and its small wrappers, and the viewport, are captured
-   * twice unfocused; a Shift press gives keyboard modality (:focus-visible), the
+   * twice unfocused; an F24 key press gives keyboard modality (:focus-visible and
+   * modality scripts; Tab-only scripts are not triggered), the
    * control is focused and captured, focus goes back to the element that had it (so a
    * menu trigger keeps its menu open; the click then moves focus as it would), and a
    * third unfocused capture follows. A pixel counts when the focused frame differs from
@@ -1253,7 +1256,13 @@ export class WebSession {
       await sleep(FOCUS_ANIM_GAP_MS);
       const off2 = await grab();
       const allOff2 = await this.viewportFrame(cdp);
-      await page.keyboard.press('Shift');
+      // Keyboard modality: F24 (CDP; no browser action, on no physical keyboard). Shift
+      // gives Chromium's :focus-visible but modality scripts ignore modifier keys
+      // (what-input's ignore list, Angular CDK), so pages that hide rings in "mouse"
+      // mode would read as having none.
+      for (const type of ['rawKeyDown', 'keyUp']) {
+        await cdp.send('Input.dispatchKeyEvent', { type, key: 'F24', code: 'F24', windowsVirtualKeyCode: 135, nativeVirtualKeyCode: 135 });
+      }
       const got = await page.evaluate(() => {
         const el = window.__ergoProbeEl;
         if (!el || !el.isConnected) return null;

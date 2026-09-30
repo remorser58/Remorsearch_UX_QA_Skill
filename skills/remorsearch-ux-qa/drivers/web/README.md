@@ -221,8 +221,10 @@ they belong to (0 = initial load), so a step can own two snapshots.
 - **Focus probe before clicks** (same devices and switch as the walk): the walks see
   only the initial and end screens, so before a `tap`/`click` on a focusable
   control the driver captures the control, its small wrappers and the viewport
-  twice unfocused (animations running), presses Shift (keyboard modality, so
-  `:focus-visible` and script focus-visible rules apply), focuses the control
+  twice unfocused (animations running), presses F24 through CDP (keyboard
+  modality: `:focus-visible` applies, and so do modality scripts such as what-input
+  or Angular CDK, which ignore Shift; scripts that react only to Tab are not
+  triggered), focuses the control
   without scrolling, captures again, gives focus back to the element that had it
   (or blurs the control), and captures a third unfocused frame. A pixel counts only
   when the focused capture differs from all three unfocused ones (a clock that

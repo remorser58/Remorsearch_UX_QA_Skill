@@ -785,7 +785,7 @@ async function focusProbeTest(base, tmp) {
     schema_version: 'ergo-scenario.v1', scenario_id: 'SC-driver-focus-02', surface: { kind: 'web', url: '{BASE}/focus2.html' },
     task_goal_ko: '메뉴와 대화상자를 쓴다', device_ids: ['desktop-1920'], targets: {},
     steps: [click('#tick-btn'), click('#menu2-btn'), click('#mi-2'), click('#fb'), click('#card-img'), click('#fake-radio'), click('#cb-l'),
-      click('#disc-btn'), click('#disc-btn'), click('#mui-btn'), click('#mui-close'), click('#late-btn'), click('#late-close')],
+      click('#disc-btn'), click('#disc-btn'), click('#mui-btn'), click('#mui-close'), click('#late-btn'), click('#late-close'), click('#wi-btn'), click('#pair-a'), click('#pair-b')],
     success: { url_contains: 'focus2' },
   };
   writeJson(path.join(tmp, 'focus2.json'), sc);
@@ -819,6 +819,10 @@ async function focusProbeTest(base, tmp) {
     { layer: late, late: step('#late-btn')?.focus_late_layers });
   check('focus probe: a click while a text field has focus is probed after the field is blurred',
     step('#late-close')?.focus_probe?.after_field === true && step('#late-close')?.target_hit === true, step('#late-close')?.focus_probe);
+  check('focus probe: a ring hidden in "mouse" modality by a script that ignores modifier keys is seen (non-modifier key)',
+    step('#wi-btn')?.focus_probe?.indicator_px > 50, step('#wi-btn')?.focus_probe);
+  check("focus probe: the previous control's ring is masked without masking the target in the same small group",
+    step('#pair-b')?.focus_probe?.masked_prev === true && step('#pair-b')?.focus_probe?.indicator_px > 50, step('#pair-b')?.focus_probe);
   check('focus2: every step ok', run.steps.every((s) => s.result === 'ok'), run.steps.map((s) => [s.action.target, s.result, s.error]));
 }
 
