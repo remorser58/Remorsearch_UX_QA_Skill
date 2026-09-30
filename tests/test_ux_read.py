@@ -3163,6 +3163,24 @@ class ReviewUnitTests(unittest.TestCase):
         for text in ("ㅇㅇ(118.235)", "ㅇㅇ (118.235)", "ㅇㅇ\n(211.36)", "ㅇㅇ(39.7)"):  # attached, or in a table cell
             self.assertEqual(privacy.scrub(text)[1], {"partial_ip": 1}, text)
 
+    def test_glued_version_pairs_are_kept_and_partial_ips_still_scrubbed(self):
+        # A version-shaped pair (first number below 30, second 30 or less) glued with no space to a word that
+        # names an OS, an app or a version is not a partial IP. Every other pair after a handle is: Korean
+        # address blocks start with 1, 14 and 27 too, and a floating nickname can be a device name.
+        for kept in ("iOS(17.2) 업데이트 후 배터리", "Android(14.1)에서 터치 안 됨", "v(2.3) 릴리스 노트",
+                     "버전(12.5) 변경", "ｖ(2.3) 테스트", "macOS(15.3) 사파리", "Windows(11.4) 앱", "Node(24.16) 필요"):
+            self.assertEqual(privacy.scrub(kept), (kept, {}), kept)
+        for text, left in (("ㅇㅇ(118.235) 님 글", "ㅇㅇ([ip]) 님 글"), ("ㅇㅇ(39.7)", "ㅇㅇ([ip])"),
+                           ("닉네임(211.36)", "닉네임([ip])"), ("ㅇㅇ (118.235)", "ㅇㅇ ([ip])"),
+                           ("ㅇㅇ(118.235.*.*)", "ㅇㅇ([ip])"), ("abc(45.6)", "abc([ip])"),
+                           ("ㅇㅇ(14.52)", "ㅇㅇ([ip])"), ("ㅇㅇ(1.238)", "ㅇㅇ([ip])"), ("ㅇㅇ(27.35)", "ㅇㅇ([ip])"),
+                           ("아이폰(14.39)", "아이폰([ip])"), ("갤럭시유저(27.1)", "갤럭시유저([ip])"),
+                           ("Chrome(141.0)", "Chrome([ip])"), ("iOS(27.35)", "iOS([ip])"),
+                           ("iOS (17.2)", "iOS ([ip])")):  # the carve-out covers version-shaped pairs glued with no space
+            scrubbed, counts = privacy.scrub(text)
+            self.assertEqual(scrubbed, left, text)
+            self.assertEqual(counts, {"partial_ip": 1}, text)
+
     def test_masked_and_labelled_partial_ips_are_scrubbed(self):
         # L-17
         for text, leaked in (("작성자 IP: 211.36.***.***", "211.36"), ("ㅇㅇ(118.235.xxx.xxx)", "118.235"),

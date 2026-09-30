@@ -15,7 +15,15 @@
   or a line break, as table cells render it). A parenthesised decimal in
   running text, such as a rating '별점 (4.5)', '(1.5)배속' or a version '(3.2)',
   is kept: a group counts only when it follows a handle and looks like an
-  address, not a small decimal such as 4.8. The
+  address, not a small decimal such as 4.8, and not a version glued with no
+  space to a word that names an OS, an app or a version ('iOS(17.2)',
+  'Android(14.1)', 'v(2.3)', '버전(12.5)'): such a pair stays only when it also
+  looks like a version, a first number below 30 and a second of 30 or less.
+  Every other pair after a handle goes, so a nickname such as 'ㅇㅇ(14.52)',
+  'ㅇㅇ(118.235)' or '아이폰(17.2)' loses it (Korean address blocks start with
+  1, 14 and 27 too, and a nickname can be a device name), and so does a
+  version pair with a large number such as 'Chrome(141.0)': losing a version
+  is the safer mistake. The
   patterns match on a folded copy of the text (verdict.fold: full-width forms
   and dashes such as '–' or 'ㅡ' fold to ASCII, one character for one), and the
   replacements are made at the same offsets in the text itself, so only the
@@ -79,12 +87,44 @@ def _account(match: re.Match) -> bool:
     return ACCOUNT_DIGITS[0] <= digits <= ACCOUNT_DIGITS[1]
 
 
+_VERSION_CARRIERS = frozenset({"v", "ver", "vers", "version", "버전"})
+# Latin OS and app names that may carry a glued version pair. Korean device names are left out on purpose:
+# a floating nickname can be '아이폰' or '갤럭시', and its partial IP must still go.
+_VERSION_NAMES = frozenset({"android", "windows", "chrome", "chromium", "edge", "firefox", "opera", "brave",
+                            "vivaldi", "whale", "node", "nodejs", "npm", "yarn", "pnpm", "python", "java", "jdk",
+                            "kotlin", "swift", "flutter", "dart", "xcode", "ubuntu", "debian", "fedora", "centos",
+                            "rhel", "slack", "kakaotalk"})
+
+
+def _glued_word(folded: str, end: int) -> str:
+    """The word, case-folded, that ends right before `end` in the folded text."""
+    start = end
+    while start > 0 and folded[start - 1].isalnum():
+        start -= 1
+    return folded[start:end].casefold()
+
+
+def _names_version(word: str) -> bool:
+    """True when a word glued to a parenthesised pair names an OS or app version: a version carrier ('v',
+    'ver', 'version'), a word ending in 'os' (iOS, iPadOS, macOS, HarmonyOS) or a known OS or app name."""
+    stem = word.rstrip("0123456789")  # 'chrome141' names Chrome
+    return stem in _VERSION_CARRIERS or (stem.endswith("os") and len(stem) >= 3) or stem in _VERSION_NAMES
+
+
 def _address_like(match: re.Match) -> bool:
     """A parenthesised pair attached to a handle that looks like the first half of an IPv4 address, not a
-    small decimal such as a rating or a speed ('(4.8)', '(1.5)')."""
+    small decimal such as a rating or a speed ('(4.8)', '(1.5)') and not a version glued with no space to a
+    word that names an OS, an app or a version ('iOS(17.2)', 'v(2.3)', '버전(12.5)') when the pair also looks
+    like a version (a first number below 30 and a second of 30 or less). Any other pair after a handle, such
+    as 'ㅇㅇ(14.52)', 'ㅇㅇ(118.235)', '아이폰(17.2)' or 'Chrome(141.0)', counts as an address."""
     first, second = int(match.group("a")), int(match.group("b"))
     if first > 255 or second > 255:
         return False
+    if not match.group("gap"):
+        attached = match.string[match.start() - 1]
+        if attached.isalpha() and first < 30 and second <= 30 \
+                and _names_version(_glued_word(match.string, match.start())):
+            return False
     return not (first <= 10 and len(match.group("b")) == 1)
 
 
@@ -112,9 +152,11 @@ _PATTERNS = [
     ("partial_ip", re.compile(r"(?:(?<![A-Za-z])IP|아이피)\s*:?\s*(?P<number>\d{1,3}\.\d{1,3})(?![\d.])"), "[ip]", "number",
      None),
     # A group attached to a handle: 'ㅇㅇ(118.235)', 'ㅇㅇ(2001:2d8)', or after only a space or a line break, as table
-    # cells and line layouts render it ('ㅇㅇ (118.235)'). A small decimal such as a rating is never taken.
-    ("partial_ip", re.compile(r"(?<=[^\s(\[{<])[ \t]*\n?[ \t]*(?P<group>\(\s*(?P<a>\d{1,3})\.(?P<b>\d{1,3})\s*\))"),
-     "([ip])", "group", _address_like),
+    # cells and line layouts render it ('ㅇㅇ (118.235)'). A small decimal such as a rating is never taken, and a
+    # version-shaped pair glued to a word that names an OS, an app or a version ('iOS(17.2)') is kept; see
+    # _address_like.
+    ("partial_ip", re.compile(r"(?<=[^\s(\[{<])(?P<gap>[ \t]*\n?[ \t]*)(?P<group>\(\s*(?P<a>\d{1,3})\.(?P<b>\d{1,3})"
+                              r"\s*\))"), "([ip])", "group", _address_like),
     ("partial_ip", re.compile(r"(?<=[^\s(\[{<])[ \t]*\n?[ \t]*(?P<group>\(\s*[23][0-9A-Fa-f]{3}(?::[0-9A-Fa-f]{1,4}){1,3}"
                               r"\s*\))"), "([ip])", "group", None),
     ("handle", re.compile(r"(?<![\w@.])@(?=[\w.-]*[^\W\d_])\w[\w.-]{1,30}"), "[handle]", None, None),

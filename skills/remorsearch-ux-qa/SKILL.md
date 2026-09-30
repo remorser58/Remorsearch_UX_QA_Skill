@@ -110,7 +110,8 @@ Inside `references/<mode>/`, a path such as `references/x.md` means
 
 ## Tools in this folder
 
-Python 3.10+ standard library only; Node.js 22 only for the live web driver.
+Python 3.10+ standard library only, on Linux or macOS (WSL on Windows); the
+reader and the loop use POSIX file locks. Node.js 22 only for the live web driver.
 
 | Tool | Used by | Command |
 | --- | --- | --- |
@@ -118,7 +119,7 @@ Python 3.10+ standard library only; Node.js 22 only for the live web driver.
 | Public-page reader and research gate (gate planned) | research, persona-qa, ergonomics Stage 0 | `python3 scripts/ux_research.py --help` |
 | Improvement loop CLI | loop | `python3 scripts/ux_loop.py --help` (offline demo: `python3 scripts/ux_loop.py demo --output .ux-loop/demo`) |
 | Ergonomics CLI | ergonomics | `python3 scripts/ergo_qa.py catalog` |
-| Live web driver | persona-qa, ergonomics | `cd drivers/web && npm install && npx playwright install chromium`, then `node drivers/web/ergo_drive.mjs --help` |
+| Live web driver | persona-qa, ergonomics | `(cd drivers/web && npm install && npx playwright install chromium)`, then `node drivers/web/ergo_drive.mjs --help` |
 
 Run the commands with this folder as the working directory, or prefix the paths
 with the folder's location.

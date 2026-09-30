@@ -23,7 +23,8 @@ One skill, four modes. The skill picks the mode from your request.
 
 ## Install
 
-Copy one folder into your skills directory.
+Copy one folder into your skills directory. The Python tools need Linux or
+macOS (WSL on Windows); the reader and the loop use POSIX file locks.
 
 ```sh
 git clone https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
@@ -43,6 +44,10 @@ The live web driver (persona-qa and ergonomics on real web pages) also needs Nod
 cd ~/.claude/skills/remorsearch-ux-qa/drivers/web
 npm install && npx playwright install chromium
 ```
+
+Use Node.js 22. With the pinned Playwright 1.56.1, `npx playwright install` hangs after the
+download on Node.js 24.16 or later and on Node.js 26 (microsoft/playwright#40724;
+Playwright 1.60 works).
 
 ## Use
 
