@@ -209,7 +209,7 @@
         "confirmed.test"
       ],
       "status": "confirmed",
-      "lift_requires": "terms_check",
+      "lift_requires": "never",
       "restricts": [
         "automated_collection"
       ],
@@ -230,7 +230,7 @@
         "tube.test"
       ],
       "status": "confirmed",
-      "lift_requires": "terms_check",
+      "lift_requires": "never",
       "restricts": [
         "automated_collection"
       ],
@@ -251,7 +251,7 @@
         "apitube.test"
       ],
       "status": "confirmed",
-      "lift_requires": "terms_check",
+      "lift_requires": "never",
       "restricts": [
         "automated_collection"
       ],

@@ -95,11 +95,13 @@ research와 persona-qa는 계정 없이 누구나 읽을 수 있는 것만 읽�
 - 법령 점검표(법률 자문 아님)와 한국어 보고서 틀
 - KWCAG 2.2와 WCAG 2.2를 따로 적는 접근성 결과
 
-**약관 중단.** 플랫폼 약관이 자동 수집을 제한한 호스트에서는 요청 전에 멈춥니다. naver.me, me2.do, coupa.ng, t.co 같은 짧은 링크와 리디렉션 단계마다 같은 규칙을 적용합니다. 유튜브 페이지, 인스타그램, 스레드, 페이스북의 `confirmed` 항목은 풀리지 않습니다. 디시인사이드, 네이버(카페 포함), 쿠팡, X의 `reported` 항목은 사용자가 그 항목의 약관 문서를 직접 읽고 `access_policy.terms_checked`에 `result: permits_this_reading`으로 적은 실행에서만 풀립니다. 모두 `lift_requires: written_permission`이므로 운영사의 사전 서면 허락도 `permission {granted_by, granted_on, reference}`에 적어야 합니다. 각각 허락한 사람, 날짜, 허락 문서나 합의의 참조 번호입니다.
+**약관 중단.** 자동 수집 제한이 있는 호스트와 짧은 주소는 요청 전에 멈춥니다. `reported`와 `confirmed`는 근거의 확인 수준을 나타냅니다. 해제 여부는 `lift_requires`로 정합니다. `never`는 풀 수 없고, `written_permission`은 사용자의 현행 약관 확인과 해당 읽기에 적용되는 사전 서면 허락이 필요합니다. `terms_check`는 사용자의 현행 약관 확인이 필요합니다. 에이전트는 사용자의 확인 기록을 쓰지 않습니다.
 
-확인의 `host`는 항목의 호스트이거나 더 좁고 읽을 URL을 포함해야 합니다. `checked_on`은 `effective_from`이 있으면 그날 이후이고, 오늘 기준 365일 이내여야 하며 미래 날짜는 무효입니다. URL에 걸린 항목은 각각 별도 확인으로 모두 풀어야 합니다. 네이버 카페 공지는 `terms_url`이 null이라 사람이 공지 원문 주소를 기록하기 전에는 풀 수 없습니다. 풀린 항목도 모든 호스트를 합쳐 실행당 문서 10건까지만 읽습니다. 에이전트는 확인 항목을 쓰지 않습니다.
+유튜브 페이지, Meta, TikTok, 클리앙, App Store 페이지·피드는 `never`입니다. 디시인사이드, 네이버, 쿠팡, X, 당근, Reddit은 서면 허락을 기록해야 풀립니다. 네이버 카페 공지는 `terms_url`이 null이라 사람이 공지 원문 주소를 기록하기 전까지 풀 수 없습니다. URL에 걸린 제한은 각각 별도 확인으로 모두 풀어야 하며, 풀린 항목도 모든 호스트를 합쳐 실행당 문서 10건까지 읽습니다.
 
-X의 oEmbed도 `x-terms`에 걸리며 공식 경로만 쓰는 방식이 없습니다(`official_route: null`). 유튜브는 패키지의 공식 API 경로만 쓰며, 실패해도 페이지나 대체 주소를 요청하거나 렌더하지 않고 `ingest`도 캡처를 받지 않습니다.
+확인의 `host`는 항목의 호스트이거나 더 좁고 읽을 URL을 포함해야 합니다. `terms_url`은 항목에 등록된 약관 문서여야 합니다. `checked_on`은 `effective_from`이 있으면 그날부터 허용되며 오늘 기준 365일 이내여야 합니다. 미래 날짜는 허용하지 않습니다. 열린 실행의 명령마다 두 날짜 조건을 다시 확인하고, 만료되면 새 실행을 요구합니다. 이전 정책으로 만든 실행은 재개를 거부하며 저장된 파일을 고쳐 옮기지 않습니다.
+
+유튜브는 공식 API만 씁니다. Hacker News 페이지는 멈추며 공식 API도 어댑터가 생기기 전까지 `official_route_unavailable`로 남습니다. X oEmbed 경로는 2026-09-30 무인증 요청에 HTML을 반환한 뒤 제거했습니다. 공식 폐지 공지는 확인하지 못했습니다. 팀 자기 앱의 리뷰는 App Store Connect에서 내보낸 자료를 `team_provided`로 받습니다. [항목과 확인 조건](skills/remorsearch-ux-qa/references/research/public-page-access.md#171-entries)을 따릅니다.
 
 **유튜브 댓글**은 YouTube Data API로만 받습니다. 본인의 키를 환경 변수 `REMORSEARCH_YOUTUBE_API_KEY`에 두면 됩니다(`YOUTUBE_API_KEY`도 받습니다). 키는 환경 변수로만 읽고 파일에 두지 않습니다. 키가 없으면 수집 공백으로 적고 사용자에게 묻습니다. 페이지를 대신 읽지 않습니다. 키 보유자로서 사용자가 YouTube API Services Terms of Service와 Developer Policies를 따릅니다. 승인 없이 API Data로 새 데이터·파생 데이터·지표를 만드는 제한과 시청자 감정 분석·콘텐츠 분류 예시는 `미확인(요약)`이며 적용은 법률가 판단입니다. 그동안 API 항목은 정성 근거(풀어 쓰기, 짧은 인용의 존재 근거)로만 쓰고 감정·분류·개수 지표를 계산하지 않습니다.
 

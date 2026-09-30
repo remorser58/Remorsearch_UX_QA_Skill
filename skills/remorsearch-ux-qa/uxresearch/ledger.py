@@ -266,7 +266,7 @@ def validate_brief(brief, today=None) -> None:
                          "a signed-in community's path_prefix must start with / and hold no spaces, ? or #")
     if "terms_checked" in policy:
         # The user's own reading of a host's current terms. Only the user adds entries (never an agent, never a
-        # command-line switch); a check lifts only a reported terms_restricted entry, and only for this run.
+        # command-line switch); lift_requires decides whether a check can lift an entry for this run.
         try:
             scope.validate_checks(policy["terms_checked"], today or utc_today())
         except ValueError as exc:
@@ -405,7 +405,8 @@ def create(path: Path | None, policy: dict, *, brief: dict | None = None, routes
         _write_new(path / "agent-tokens.json", raw)
         tokens_meta.update(extra_source=agent_tokens_source, extra_sha256=hashlib.sha256(raw).hexdigest())
     meta = {"schema_version": RUN_SCHEMA, "run_id": run_id, "created_at": iso(clock()), "version": VERSION,
-            "rules_version": RULES_VERSION, "user_agent": USER_AGENT, "policy": policy,
+            "rules_version": RULES_VERSION, "terms_policy_version": scope.TERMS_POLICY_VERSION,
+            "user_agent": USER_AGENT, "policy": policy,
             "policy_sha256": policy_digest(policy),
             "brief_sha256": brief_sha, "routes": {"source": routes_source,
                                                    "sha256": hashlib.sha256(routes_text.encode()).hexdigest()},
@@ -460,6 +461,12 @@ class Run:
         if self.closed:
             raise RunError("this run is closed; start a new run")
         self.verify_files()
+        try:
+            scope.validate_checks(self.policy.get("terms_checked", []), utc_today(self.clock))
+            scope.validate_lifts(self.policy, self.scope_lists)
+        except ValueError as exc:
+            raise RunError(f"this run's terms checks no longer permit continued use: {exc}; start a new run "
+                           "with the user's current checks") from exc
 
     def verify_files(self) -> None:
         def digest(path: Path) -> str | None:
@@ -486,6 +493,12 @@ class Run:
             raise RunError(f"this run's files changed after start ({', '.join(changed)}); nothing is read under an "
                            "edited run: close it (close deletes its page text and salt) and start a new run from the "
                            "brief and route table you mean to use")
+        problems = scope.check_run_table(self.routes)
+        if self.meta.get("terms_policy_version") != scope.TERMS_POLICY_VERSION or problems:
+            detail = " | ".join(problems) or "the saved terms policy predates independent lift_requires"
+            raise RunError(f"this run uses an incompatible saved route table or terms policy ({detail}); "
+                           "start a new run with explicit lift_requires on every entry; saved run files are "
+                           "never migrated in place")
 
     @property
     def routes(self) -> dict:
@@ -959,10 +972,10 @@ class Run:
         if self.closed:
             return self.meta.get("summary", {})
         try:
-            self.verify_files()
-        except RunError as exc:  # clean up anyway, but make no summary from an edited run
+            self.require_open()
+        except RunError as exc:  # clean up anyway, but make no summary under invalid policy
             self._delete_private()
-            raise RunError(f"{exc}. Its page text and salt are now deleted; no summary is made from an edited run, so "
+            raise RunError(f"{exc}. Its page text and salt are now deleted; no summary is made under invalid policy, so "
                            "delete the run folder") from exc
         summary = self.summary()
         removed = self._delete_private()

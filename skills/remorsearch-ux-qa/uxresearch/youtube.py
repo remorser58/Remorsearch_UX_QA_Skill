@@ -318,7 +318,7 @@ class _Session:
 
     # ------------------------------------------------------------ calls
 
-    def call(self, url: str, method: str, page: int | None) -> _Answer:
+    def call(self, url: str, method: str, page: int | None, *, control_retry: bool = False) -> _Answer:
         """One API call through the reader's request path (ladder._request): the scope checks, the API
         host's robots.txt, a paced slot charged to the budgets, no redirect followed."""
         try:
@@ -347,6 +347,25 @@ class _Session:
         self.units += self.s.units
         self.fetch_ids.append(attempt.fetch_id)
         text = response.text()[0]
+        control_page, control = ladder._route_control(self.st, attempt, text)
+        if control_page is not None and control.stop_class:
+            ladder._log_attempt(self.run, attempt, control, control_page,
+                                extra={"route": self.route_id, "api_method": method, "api_page": page,
+                                       "quota_units": self.s.units, "api_answer": "access_control"})
+            ladder._trail(self.st, "R0", "stopped", url=url, attempt=attempt, v=control, note=label)
+            if ladder._host_signal(control):
+                noted = self.note_rate(attempt, control.reasons)
+                if not noted["stopped"] and not control_retry:
+                    retried = self.call(url, method, page, control_retry=True)
+                    if retried.kind in ("ok", "response_stop"):
+                        return retried
+                    if retried.kind == "rate":
+                        self.note_rate(retried.attempt, retried.codes())
+            elif control.stop_class in verdict.HOST_STOPPING and control.host_wide:
+                self.run.stop_host(net.host_of(response.final_url), control.stop_class,
+                                   ladder.site_stop_reason(control), control.reasons)
+            attempt.stop, attempt.reasons = control.stop_class, list(control.reasons)
+            return _Answer("response_stop", attempt, at=now)
         reasons = set() if 200 <= response.status < 300 else api_reasons(text)
         kind = answer_kind(response.status, response.headers, reasons)
         data, note = None, None
@@ -403,11 +422,14 @@ class _Session:
             return self.done("stopped", stop="budget", reasons=[f"budget:{exc.scope}:{exc.limit}"])
         if kind == "neterror":
             return self.fail("official_route_failed", f"api_error:{answer.exc.kind}")
-        if kind == "stop":  # a scope stop, the API host's robots.txt, a login redirect, an opt-out header
-            if not self.official_only:
+        if kind in ("stop", "response_stop"):  # scope, robots.txt, a login redirect, or response controls
+            if not self.official_only and not attempt.contacted and kind != "response_stop":
                 return self.fail("official_route_failed", *attempt.reasons[:2])
             return self.done("stopped", stop=attempt.stop, reasons=list(attempt.reasons), attempt=attempt,
-                             out_of_scope=attempt.out_of_scope)
+                             out_of_scope=attempt.out_of_scope,
+                             host_stop=self.run.host_stop(net.host_of(attempt.response.final_url)) if
+                             attempt.response else None,
+                             terms=attempt.scope_stop.terms if attempt.scope_stop else None)
         if kind == "error":
             if attempt.error == "robots_unreachable":
                 return self.done("deferred", error=attempt.error, attempt=attempt, retry_after_s=attempt.retry_after_s,
@@ -587,7 +609,8 @@ class _Session:
             url = comments_url if token is None else f"{comments_url}&pageToken={quote(token, safe='')}"
             answer = self.call(url, "commentThreads.list", self.pages + 1)
             if answer.kind != "ok":
-                if self.pages == 0:
+                if self.pages == 0 or answer.kind == "response_stop" or \
+                        (answer.kind == "stop" and answer.attempt.contacted):
                     return self.settle(answer)
                 self.partial, self.more = self.partial_reason(answer), True
                 break

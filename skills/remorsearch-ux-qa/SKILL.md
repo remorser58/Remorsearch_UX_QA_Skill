@@ -86,9 +86,11 @@ Inside `references/<mode>/`, a path such as `references/x.md` means
   check, a block or a rate limit stops the whole site for the run, and no render
   or other tool follows. Record each as a coverage gap with its class. A stop is
   the answer, never a reason to look for the content another way. Only the
-  user's own terms check in the brief lifts a `reported` terms restriction, for
-  one run, and where the terms ask for prior written permission the check must
-  record it; a `confirmed` one is never lifted.
+  user's own current terms check in the brief can lift an entry for one run,
+  according to `lift_requires`: `never` stays closed, `written_permission` also
+  needs applicable prior written permission, and `terms_check` needs the check.
+  Evidence status does not decide liftability. Open-run commands revalidate
+  check dates; older runs must restart without rewriting their saved files.
   A missing key for an official route is a coverage gap and a question for the
   user. Capture community evidence as an anonymous visitor sees it. The one
   exception is a community the user explicitly authorised in the research brief:
