@@ -42,10 +42,8 @@ SECTIONS = (
 )
 CREDIT_SECTION = {README: "License", README_KO: "라이선스"}
 SKIPPED_DIRS = {"node_modules", "__pycache__", ".git", ".ux-loop", ".ux-research"}
-# Skill-folder directories owned by other workers (the ergonomics lane, the driver lane and the Korean-pack
-# lane), so the installed-folder path test does not scan them; their remaining repository-only paths are
-# listed in WPB-REPORT.md instead of fixed here.
-UNSCANNED_DIRS = ("references/ergonomics/", "drivers/", "ergoqa/", "references/research/korea/")
+# Runtime files belong to other packages; every routing-owned reference is scanned.
+UNSCANNED_DIRS = ("drivers/", "ergoqa/")
 REPO_PATH = re.compile(r"`((?:docs|tests|benchmarks)/[^`\n]*)`")
 CODE_SUFFIXES = {".py", ".mjs", ".js", ".json", ".yaml", ".yml", ".sh"}
 TOOL_NAME = re.compile(r"insane[-_ ]?search", re.IGNORECASE)
@@ -183,7 +181,8 @@ def bare_repo_paths(text: str) -> list:
     for paragraph in paragraphs(text):
         lowered = paragraph.lower()
         for path in REPO_PATH.findall(paragraph):
-            if "repositor" not in lowered or "not installed" not in lowered:
+            if not (("repositor" in lowered and "not installed" in lowered) or
+                    ("저장소" in paragraph and "설치되지" in paragraph)):
                 problems.append(f"`{path}` is not marked as a repository document that is not installed")
     return problems
 
@@ -330,6 +329,28 @@ class SkillFolderTests(unittest.TestCase):
         persona_qa = SKILL / "references" / "persona-qa" / "evidence-bundle-contract.md"
         self.assertEqual(research.read_bytes(), persona_qa.read_bytes())
 
+    def test_causal_cards_are_merged_and_callers_use_the_shared_path(self):
+        shared = SKILL / "references/shared/causal-chain.md"
+        self.assertTrue(shared.is_file())
+        for mode in ("research", "persona-qa"):
+            self.assertFalse((SKILL / f"references/{mode}/causal-ux-analysis.md").exists())
+            self.assertIn("references/shared/causal-chain.md", read(SKILL / f"references/{mode}/workflow.md"))
+        for path in [SKILL_MD, *sorted((SKILL / "references").rglob("*.md"))]:
+            self.assertNotIn("causal-ux-analysis.md", read(path), path.relative_to(SKILL))
+
+    def test_new_cards_lookup_and_manifest_ship_in_the_skill(self):
+        for file in ("references/shared/access-card.md", "references/shared/evidence-card.md",
+                     "references/shared/causal-chain.md", "references/persona-qa/kwcag-card.md",
+                     "references/reading.json", "scripts/ref.py"):
+            self.assertTrue((SKILL / file).is_file(), file)
+
+    def test_router_has_no_mode_relative_path_or_old_name_mapping(self):
+        text = read(SKILL_MD)
+        self.assertNotIn("references/<mode>", text)
+        for name in ("aside-community-ux-research", "persona-driven-ux-qa",
+                     "ergonomic-persona-swarm-qa", "ux-improvement-loop"):
+            self.assertNotIn(name, text)
+
     def test_no_file_names_the_old_repository(self):
         for path in project_files():
             text = text_of(path)
@@ -400,7 +421,7 @@ class CreditOnlyTests(unittest.TestCase):
 class InstalledFolderPathTests(unittest.TestCase):
     """D-09: inside the installed skill folder, a Markdown link must not leave the folder, and a backticked
     `docs/`, `tests/` or `benchmarks/` path must sit in a paragraph that says it is a repository document
-    that is not installed (SKILL.md: every path is relative to the skill folder unless it says repository)."""
+    that is not installed. Paths in operational references are written from the skill root."""
 
     def test_no_link_or_backticked_path_points_out_of_the_installed_folder(self):
         for path in sorted(SKILL.rglob("*.md")):

@@ -1,12 +1,14 @@
 # 한국 통계 출처 카드와 모집단 틀
 
+항목 조회용 문서입니다. 전체 읽기는 기본 경로에 포함하지 않습니다. 스킬 폴더에서 `python3 scripts/ref.py references/research/korea/statistics.md 2`로 필요한 ID만 조회합니다.
+
 세그먼트 크기, 기기, 조건, 사용 맥락을 통계로 뒷받침할 때 쓰는 규칙과 출처 목록입니다. 통계는 모집단이 어떤 모양인지 한계를 정해 줍니다. 제품 사용자를 재지는 않습니다. 이 문서는 `references/research/source-grading.md`의 3절(적합도 표)과 6절(중립 분모)을 한국 통계에 적용하고, 두 문서가 다르면 더 엄격한 쪽을 따릅니다. 한국 리서치 팩의 흐름은 `references/research/korea/overview.md`에서 시작합니다. 출처 목록의 데이터 원본은 `uxresearch/data/korea-statistics.json`이고, 이 문서는 사람이 읽는 판입니다.
 
 이 문서는 법률 자문이 아닙니다. 법령은 조항과 판(공포일, 시행일)을 함께 적고, law.go.kr 원문과 대조하지 못한 것은 미확인으로 적습니다.
 
 ## 확인일과 확인 표시
 
-NIA·과기정통부·한국소비자원의 아래 확인 항목은 2026-09-30 원문에서 읽었습니다. 공정위 모니터링 확인일은 2026-10-01이며, 나머지는 기존 2026-09-29 표시를 유지합니다. 표의 "확인" 칸에는 아래 표시를 씁니다.
+NIA·과기정통부·한국소비자원의 아래 확인 항목은 2026-09-30 원문에서 읽었습니다. 공정위 모니터링 확인일은 2026-10-01이며, 그 밖의 확인일은 2026-09-29입니다. 표의 "확인" 칸에는 아래 표시를 씁니다.
 
 | 표시 | 뜻 |
 | --- | --- |
@@ -165,7 +167,7 @@ KOSIS(국가통계포털)는 여러 기관의 승인통계를 싣는 포털이�
   3. 작은 조각 받기: 한 시점, 한 지역, 한 연령대처럼 작게 받아 값이 표 설명과 맞는지 봄. 통계자료는 시점을 정하지 않으면 최근 시점 하나만 준다고 제3자 문서에 적혀 있음.
   4. 넓히기: 필요한 만큼만 범위를 넓힘.
 - 한도에 걸리면 호출을 멈추고 한도가 풀릴 때까지 기다림. 한도를 피하는 방법을 쓰지 않음. 못 받은 값은 수집 공백과 사용자 질문으로 적음.
-- 카드의 `table_id`에는 orgId와 tblId를 적고, `publisher`와 org에는 kosis.kr가 아니라 표의 작성기관을 적음(6절). orgId가 가리키는 기관이 통계표설명의 작성기관과 다르면 둘 다 적고 org는 작성기관으로 함. 둘의 대응은 확인하지 못했고, KOSIS 작성기관 코드표([공공데이터포털 15136553](https://www.data.go.kr/data/15136553/fileData.do))로 대조할 수 있다고 안내됨(미확인(요약) 2026-09-29).
+- 카드의 `table_id`에는 orgId와 tblId를 적고, `publisher`와 org에는 표의 작성기관을 적음(6절). orgId가 가리키는 기관이 통계표설명의 작성기관과 다르면 둘 다 적고 org는 작성기관으로 함. 둘의 대응은 확인하지 못했고, KOSIS 작성기관 코드표([공공데이터포털 15136553](https://www.data.go.kr/data/15136553/fileData.do))로 대조할 수 있다고 안내됨(미확인(요약) 2026-09-29).
 - 키가 없으면 사용자가 KOSIS 화면에서 통계표를 내려받아 파일로 넣음(5.4). 그 경로도 없으면 수집 공백으로 적음. JSON의 경로 id는 `kosis-openapi`와 `kosis-portal-download`임.
 - 카드 필드를 채우는 자리는 아래 표와 같음. 제3자 라이브러리 문서([PublicDataReader](https://github.com/WooilJeong/PublicDataReader/blob/main/assets/docs/kosis/Kosis.md))가 적은 서비스 이름과 결과 변수 기준이며 공식 안내와 대조하지 못했음. 미확인(제3자 문서) 2026-09-29.
 
@@ -196,7 +198,7 @@ KOSIS(국가통계포털)는 여러 기관의 승인통계를 싣는 포털이�
 
 ### 5.4 PDF와 스프레드시트
 
-- reader는 PDF와 엑셀을 읽지 못함. 사용자가 내려받은 파일이나 팀이 준 파일에서 글자와 표를 뽑아 텍스트로 저장한 뒤, 런에 넣고 출처 카드를 붙임. 주소가 있는 파일을 넣는 방법은 `references/research/audience-pipeline.md`의 기본 축 설명(`stats`)을 따름. 주소 없이 팀이 준 파일은 읽기가 아니라 `team_provided` 출처로 적음(`references/research/public-page-access.md` 4절).
+- reader는 PDF와 엑셀을 읽지 못함. 사용자가 내려받은 파일이나 팀이 준 파일에서 글자와 표를 뽑아 텍스트로 저장한 뒤, 런에 넣고 출처 카드를 붙임. 주소가 있는 파일을 넣는 방법은 `references/research/audience-pipeline.md`의 기본 축 설명(`stats`)을 따름. 주소 없이 팀이 준 파일은 `team_provided` 출처로 적음(`references/research/public-page-access.md` 4절).
 - 표의 각주(단위, 모집단, 기준 시점)를 값과 함께 저장함.
 
 ### 5.5 보도자료와 벤더 자료
@@ -288,6 +290,6 @@ JSON의 `verify_before_use`에 같은 목록이 있습니다.
 
 - 2026-09-30 NIA 보고서·과기정통부 보도자료에서 디지털정보격차의 계층별 값·승인번호·표본, 인터넷이용실태의 승인번호·표본·생성형 AI 경험률을 읽음. 같은 날 한국소비자원 보도자료에서 키오스크 46.6%의 분모·조사 설계, 배달 플랫폼 설문의 모집 대상·기간·방법을 읽음.
 - 공정위 2024년 위반 의심 게시물 22,011건과 유형별 26.5%·39.4%·17.3%를 2026-10-01 원문에서 읽음. 유형은 중복될 수 있음(`references/research/korea/promotion.md`). 건수를 모집단 비율의 분모로 쓰지 않는 규칙은 유지함.
-- 다른 수치, 공공누리 유형, KOSIS 한도·기관 대응과 아직 닿지 못한 조사 설명은 기존 미확인 표시를 유지함. 통계법·정부조직법은 공개 저장소 사본 기준임.
+- 다른 수치·공공누리 유형·KOSIS 한도·기관 대응·읽지 못한 조사 설명은 미확인임. 통계법·정부조직법은 공개 저장소 사본 기준임.
 - 다음 확인에서는 필요한 통계표·설명자료의 회차·정의·오차·이용허락을 대조하고 사실별 확인일을 고침. `verified_at`은 사람이 원문을 읽은 뒤에만 채움.
 - 연결 문서: `references/research/korea/overview.md`(팩의 흐름), `references/research/korea/promotion.md`(협찬·리뷰 보상·별점), `references/research/korea/platform-map.md`(채널별 규범과 사용자 단서), `references/research/korea/query-craft.md`(검색어와 말투), `references/research/korea/report-template.md`(보고서 틀), `references/research/audience-pipeline.md`(여덟 가지 질문), `references/research/korea/legal-checklist.md`(법령 근거 대조표), `references/research/source-grading.md`(등급 규칙).

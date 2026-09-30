@@ -49,7 +49,7 @@ Take strata from the audience file first: its segments, their conditions, contex
 | Risk | low, financial, safety, privacy | trust and confirmation |
 | Data state | normal, empty, partial, stale | state handling |
 
-Use the audience file, or without one the dataset, to select plausible contexts. Create the actual task, with concrete data, from the product surface and the audience file's key tasks.
+Use a supplied completed audience, brief-derived conditions, or an optional bounded dataset to select contexts. Missing audience or dataset never blocks QA. Create the actual task, with concrete data, from the product surface and the audience file's key tasks.
 
 ## Scenario format
 
@@ -100,7 +100,7 @@ The example is a test condition. It is not evidence that every member of the seg
 
 ## Korean products
 
-Use this section when the product's users speak Korean, the channels are Korean, or the report is in Korean. It adds test conditions. None of it is evidence about real users. A cue from the Korean context becomes part of a claim only when a gate-supported claim, or a statistic with a source card (`references/research/korea/statistics.md`), backs it. Until then it is an assumption and is labelled as one. Accessibility for these flows is in `references/persona-qa/kwcag-2.2.md`. The channels behind the claims are in `references/research/korea/platform-map.md`.
+Use this section for Korean product QA conditions. Report language alone changes headings and wording. Community research runs only when requested. It adds test conditions. None of it is evidence about real users. A cue from the Korean context becomes part of a claim only when a gate-supported claim, or a statistic with a source card (`references/research/korea/statistics.md`), backs it. Until then it is an assumption and is labelled as one. Read `references/persona-qa/kwcag-card.md` for safeguards; lookup `references/persona-qa/kwcag-2.2.md` by item. Only requested Korean research uses the channel router `references/research/korea/overview.md`; lookup channels by ID.
 
 - **Identity and payment gates.** 본인인증, 간편인증, SMS 인증번호, CAPTCHA, 보안 키패드 and payment-module popups are stops on production. The agent does not pass them. Run the scenario on staging with mock verification, test numbers or a test payment mode, or mark the step untested (미검사) and say why. Use the team's test identities only. Never enter a real 주민등록번호, phone number, card or account number, and never take one from a dataset persona.
 - **Entry through an in-app browser** (a link opened inside KakaoTalk, Naver or another app) is a context facet. Add it when the brief or a supported claim says users arrive that way. Mark the step untested when the driver cannot reproduce that entry.

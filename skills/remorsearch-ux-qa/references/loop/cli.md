@@ -32,7 +32,7 @@ The initial sample copy is local demo setup; no accounts or product data are
 created. Existing sample source is never reset on resume.
 
 Without `--grant code_write`, the same command stops with exit 3 at the permission
-gate and leaves the original sample label unchanged. Provider-supplied v1
+gate and keeps the fixture label at its starting value. Provider-supplied v1
 `permissions.granted` fields are historical evidence, not permission to operate.
 Only the supervisor's explicit CLI grants authorize new actions for this goal.
 
@@ -62,7 +62,7 @@ concurrent cooperating writers are blocked.
 ### Product evidence intake
 
 First prepare a `ux-loop.v1` JSON packet following
-[`provider-contract.md`](provider-contract.md). A live packet must
+[`references/loop/provider-contract.md`](provider-contract.md). A live packet must
 contain actual, versioned provider receipts; do not relabel the demo as live.
 The complete annotated example is [`examples/loop/packet.json`](../../examples/loop/packet.json).
 
@@ -115,8 +115,7 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 python3 skills/remorsearch-ux-qa/scripts/smoke_loop.py
 ```
 
-The original v1 schema is retained. The v1 validator
-now also rejects malformed categorical/reference field types, duplicate IDs
+The ux-evidence-bundle.v1 validator rejects malformed categorical/reference field types, duplicate IDs
 across record groups, and purported verified findings from uncompleted runs. The
 new strict envelope is additive, not a v1 migration requirement. Standalone v1
 supports bounded excerpts under its original rules; composition intake is
@@ -135,10 +134,9 @@ Content hashes bind the declared `code_paths`, not every file in the product or 
 remote deployed build. Include every relevant source/configuration path and
 use an external provider that binds its running build to that exact scope. There
 is no broad shell-command runner, automatic deployment, UX aggregate score, raw
-community archive, or implicit claim of WCAG conformance. Figma-first and the ban
-on side accent bars/side-tab cards remain hard gates. Community signals and
+community archive, or implicit claim of WCAG conformance. Editable Figma governs design; skill-authored proposals use no side accent bars/side-tab cards. Existing product QA needs task-trace harm to flag a bar. Community signals and
 synthetic personas cannot establish population prevalence or user preference.
 
-See [provider contract](provider-contract.md) for exact boundaries, and the repository
+See [references/loop/provider-contract.md](provider-contract.md) for exact boundaries, and the repository
 documents `docs/architecture.md`, `docs/omo-reference-review.md` and
 `docs/history/IMPLEMENTATION_REPORT.md` (not installed with the skill) for the rest.

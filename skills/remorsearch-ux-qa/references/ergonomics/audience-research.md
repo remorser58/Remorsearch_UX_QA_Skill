@@ -5,6 +5,7 @@ output is one `ergo-audience.v1` file (contract: repository `docs/ergonomic-swar
 section 13). Personas are then composed from it with `ergo_qa.py personas
 --audience`, so every persona can be traced to a segment and to the evidence
 behind it. Nothing is sampled at random.
+These are repository documents, not installed with the skill.
 
 ## Why not random personas
 
@@ -14,6 +15,7 @@ noise. At 8 profiles the numbers were 0.87 (stratified) against 0.79
 (random). Source: `docs/validation/experiments/ablation-dev-8707b70.json`.
 Composition decides what the swarm can find. Audience research decides which
 compositions matter for this product.
+These are repository documents, not installed with the skill.
 
 ## Questions Stage 0 must answer
 

@@ -1,8 +1,12 @@
 # Persona Agent Protocol
 
+Every persona/operator/verifier prompt carries the applicable access/evidence/KWCAG cards. Before an outside-product page, even mid-run, read `references/shared/access-card.md`. Use `references/shared/evidence-card.md` for community motivation, and `references/persona-qa/kwcag-card.md` for Korean product QA.
+
+
 How an LLM persona agent looks at a real screen, acts, and records what it saw.
 The design rules come from the validity review in
 `docs/human-factors/llm-persona-simulation-validity.md`.
+These are repository documents, not installed with the skill.
 
 ## 1. Division of labour
 
@@ -35,6 +39,7 @@ Any ergonomic number that appears in LLM text is discarded.
   the run cannot be counted as a screenshot-only rater. In the model benchmark an
   unregistered agent read that JSON 22 times
   (`docs/validation/subagent-model-benchmark.md`).
+These are repository documents, not installed with the skill.
 
 Do not give the agent demographics as a voice ("as a 67-year-old woman I…"),
 MBTI types or traits inferred from demographics. Demographics choose scenarios;
@@ -90,6 +95,7 @@ are ignored.
 
 The expected/observed pair is how Norman's gulfs of execution and evaluation are
 recorded (UXD checks in `docs/human-factors/ux-design-discipline.md`).
+These are repository documents, not installed with the skill.
 
 ## 4. Guardrails
 

@@ -1,6 +1,6 @@
 # Research Protocol
 
-Use this reference for a deep run. The parent skill controls permissions, evidence boundaries, and completion criteria. Reading pages follows `references/public-page-access.md`; grading follows `references/source-grading.md`.
+Use this reference for a deep run. The parent skill controls permissions, evidence boundaries, and completion criteria. Reading pages follows `references/research/public-page-access.md`; grading follows `references/research/source-grading.md`.
 
 ## Product framing worksheet
 
@@ -24,7 +24,7 @@ Primary UX question:
 
 ## Audience questions worksheet
 
-Fill this when the run should say who the users are (`references/audience-pipeline.md`). Each question lists the source families that can answer it. Posts can show that something exists; sizes need measured or statistical sources.
+Fill this when the run should say who the users are (`references/research/audience-pipeline.md`). Each question lists the source families that can answer it. Posts can show that something exists; sizes need measured or statistical sources.
 
 ```text
 1. Segments (segment_exists):            measured / voice / statistical
@@ -40,11 +40,11 @@ Fill this when the run should say who the users are (`references/audience-pipeli
 
 ## Channel selection
 
-Choose channels that reveal different parts of the experience. The reader route is where the reader usually starts (`references/public-page-access.md`, channel notes); verify it live. Korean channels, with their routes, expected stops and terms status, are in `references/research/korea/platform-map.md`. A host whose terms restrict automated collection (`terms_restricted`) is a gap to plan for, never a route to find.
+Choose channels that reveal different parts of the experience. The reader route is where the reader usually starts (`references/research/public-page-access.md`, channel notes); verify it live. Korean channels, with their routes, expected stops and terms status, are in `references/research/korea/platform-map.md`. A host whose terms restrict automated collection (`terms_restricted`) is a gap to plan for, never a route to find.
 
 | Need | Useful sources | What they reveal | Reader route |
 | --- | --- | --- | --- |
-| First-use friction | app reviews, YouTube comments, beginner communities | confusion, onboarding, terminology | R0 review feed; YouTube comments only through the Data API (R0) with the user's key; R3 render for other public pages |
+| First-use friction | app reviews, YouTube comments, beginner communities | confusion, onboarding, terminology | Authorized own-app console exports; Apple pages/feeds stop (lift_requires: never); YouTube Data API with user key; allowed Google Play/public R3 initial reviews |
 | Repeated workflow friction | expert communities, Reddit, product forums | shortcuts, state loss, missing controls | R0 feed; R2 mobile twin |
 | Trust and failure | complaints, consumer forums, support threads | refunds, safety, policy, recovery | R1; R2 mobile twin |
 | Content and recommendation | comments, creator communities, review posts | relevance, fatigue, control | R0 official API with the user's key (YouTube: the Data API only); R3 render for other public pages |
@@ -69,12 +69,12 @@ Start with the product and task. Expand through the vocabulary users actually us
 
 Rules:
 
-- Run at least 8 distinct queries per axis. Vary the operators where the search tool supports them: `site:`, `"exact phrase"`, `-term`, `OR`, `after:` and `before:`.
+- Use the selected depth: standard at least 4 distinct queries/axis; deep at least 8; quick 1-2 axes. Vary the operators where the search tool supports them: `site:`, `"exact phrase"`, `-term`, `OR`, `after:` and `before:`.
 - Make queries date-aware: add the year, the version, or "업데이트 후" when the product changed, and search each time window.
 - Language: for a Korean product, search in Korean first, then in English using terms real users write, not literal translations. For a global product, the reverse.
 - Add segment-cue queries that reveal who is speaking: `[product] 부모님`, `[product] 출퇴근`, `[product] 노안`, `[product] 한 손`, `[product] 처음`.
 - Add counter-search queries that look for the opposite experience: `[product] 편해요`, `[product] 만족`, `[product] 문제없음`.
-- Count every search against the run's budget (default 120).
+- Count calls and query strings under `references/research/workflow.md` definitions and selected-depth budgets (standard 40 calls).
 
 After the first pass, add terms found in user language. Preserve spelling variants, slang, abbreviations, and product-specific names.
 
@@ -90,7 +90,8 @@ Channel and channel family:
 Store and storefront, and review window (store reviews):
 Tool used (access_method):
 Access basis: public_anonymous / public_teaser / official_api / team_provided / authorised_member
-Terms status of the host: none / reported (lifted by the user's check?) / confirmed
+Terms evidence status: none / reported / confirmed
+Lift policy and result: lift_requires / lifted / official-only / stopped
 Rung trail, verdict or stop class, fetch_id:
 Browser context: anonymous / unknown / signed_in (authorised community only)
 Title or thread context:
@@ -100,7 +101,7 @@ Valid for (valid_at) and product-version hint:
 Keep until (retention_until; required for an official API source):
 Author key (never the handle) and thread key:
 Segment, context, task and device cues:
-Condition and other protected-attribute cues (never in this record; segment-level claims, or excerpts stripped of author and thread keys, only):
+Protected-attribute cues: unlinked segment-level claims only; never in keyed records or connected author-bearing source graphs:
 Firsthand / secondhand / unclear:
 Caution label: narrative_unverified (an anonymous first-person story) / none:
 Speech cues: hearsay ending, register shift, sarcasm marker:
@@ -116,7 +117,7 @@ Injection flag:
 Grade and status (from the gate):
 ```
 
-Keep quotes short and contextual: at most 300 characters and at most 5 per source. Never record names, handles, profile links or contact details; get an author key with `ux_research.py author-key` (default anonymous nicknames and handles with a partial IP are counted by thread key). Post URLs stay in the bundle, not in reports shared outside the team. A capture record, an audience source or any other author-keyed record never holds age, health, disability, political or other protected-attribute cues, whatever the source type: attach such cues only to segment-level claims, or to excerpts stripped of author and thread keys. For a source read through an official API, such as YouTube comments, also delete the item by its `retention_until`.
+Keep quotes short and contextual: at most 300 characters and at most 5 per source. Never record names, handles, profile links or contact details; get an author key with `ux_research.py author-key` (default anonymous nicknames and handles with a partial IP are counted by thread key). Post URLs stay in the bundle, not in reports shared outside the team. A capture record, an audience source or any other author-keyed record never holds age, health, disability, political or other protected-attribute cues, whatever the source type: keep them only in unlinked segment-level claims, with no author-bearing source/locator or reverse link. For a source read through an official API, such as YouTube comments, also delete the item by its `retention_until`.
 
 ## Breadth-first pass
 
@@ -126,7 +127,7 @@ Keep quotes short and contextual: at most 300 characters and at most 5 per sourc
 4. Separate new-user, active-user, expert-user, and former-user signals when visible.
 5. Cluster by task and friction.
 6. Deepen only the clusters with repeated or high-impact evidence.
-7. Record a counter-search before writing a strong recommendation: `{query, lang, tool, read_source_ids, summary, outcome}` (`references/source-grading.md`). It is required for primary segments, high-stakes claims, any share value, and claims that motivate P0/P1 scenarios.
+7. Record a counter-search before writing a strong recommendation: `{query, lang, tool, read_source_ids, summary, outcome}` (`references/research/source-grading.md`). It is required for primary segments, high-stakes claims, any share value, and claims that motivate P0/P1 scenarios.
 
 ## What not to infer
 
