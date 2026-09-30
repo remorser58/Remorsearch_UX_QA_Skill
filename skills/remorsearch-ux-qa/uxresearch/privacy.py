@@ -42,8 +42,8 @@
   characters, trimmed and case-folded, and a trailing partial-IP group such as
   '(118.235)', '(2001:2d8)', '(118.235.*.*)' or the scrubber's own '([ip])' is
   split off. A handle that carried such a group (a logged-out poster), that
-  holds an IP-like fragment anywhere or any placeholder the scrubber writes
-  ('[handle]', '[email]' and the rest), or that is a default anonymous nickname
+  holds an IP-like fragment anywhere or any placeholder the scrubber or the reader's label pass writes
+  ('[handle]', '[email]', '[author]' and the rest), or that is a default anonymous nickname
   (data/markers.json anonymous_handles, such as 'ㅇㅇ', also spaced 'ㅇ ㅇ') is
   refused: it is not an identity (a scrubbed handle would merge different
   people into one key), so such posts are counted by thread key instead.
@@ -78,6 +78,11 @@ _SEP = r"(?:\s?[-.]\s?|\s)"  # a dash or dot with optional spaces around it, or 
 _URL_TAIL = r"[^\s<>\"')]*"
 ACCOUNT_DIGITS = (10, 16)  # digits in a bank-account-like number
 _MASK = r"[*xX●○]{1,3}"
+_MEMBER_WORDS = r"(?:user|users|u|profile|profiles|member|members|people|author|authors|mypage)"
+# A profile or member URL on any host: any path that holds a member segment or an '@name'.
+_PROFILE_URL = re.compile(r"https?://[^\s<>\"')]+/(?:@[\w.-]+|" + _MEMBER_WORDS + r"/" + _URL_TAIL + ")", re.I)
+# The same shape for a bare link path with no scheme: '/member/123', '/u/9', '/@nick', '/blog/@nick'.
+_PROFILE_PATH = re.compile(r"(?:^|/)(?:@[\w.-]+|" + _MEMBER_WORDS + r"/)")
 
 
 def _account(match: re.Match) -> bool:
@@ -142,8 +147,7 @@ _PATTERNS = [
     ("account", re.compile(r"(?:계좌|입금|송금|account|은행|뱅크|국민|신한|우리|하나|농협|기업|우체국|새마을|수협|씨티|SC제일)"
                            r"[^\d\n]{0,16}?(?P<number>\d[\d -]{8,22}\d)(?![\d-])", re.I), "[account]", "number", _account),
     ("account", re.compile(r"(?<![\d.-])\d{2,6}(?:-\d{2,7}){2,3}(?![\d-]|\.\d)"), "[account]", None, _account),
-    ("profile_url", re.compile(r"https?://[^\s<>\"')]+/(?:@[\w.-]+|(?:user|users|u|profile|profiles|member|members|"
-                               r"people|author|authors|mypage)/" + _URL_TAIL + ")", re.I), "[profile-url]", None, None),
+    ("profile_url", _PROFILE_URL, "[profile-url]", None, None),
     ("ip", re.compile(r"(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?!\d|\.\d)"), "[ip]", None, None),
     # Masked addresses: '211.36.***.***', '118.235.xxx.xxx', '118.235.*.*', '***.***.12.34'.
     ("partial_ip", re.compile(r"(?<![\w.*])(?=[\d.*xX●○]*\d)(?=[\d.]*[*xX●○])(?:\d{1,3}|" + _MASK + r")(?:\.(?:\d{1,3}|"
@@ -161,7 +165,8 @@ _PATTERNS = [
                               r"\s*\))"), "([ip])", "group", None),
     ("handle", re.compile(r"(?<![\w@.])@(?=[\w.-]*[^\W\d_])\w[\w.-]{1,30}"), "[handle]", None, None),
 ]
-PLACEHOLDERS = ("[email]", "[id-number]", "[card]", "[phone]", "[account]", "[profile-url]", "[ip]", "[handle]")
+PLACEHOLDERS = ("[email]", "[id-number]", "[card]", "[phone]", "[account]", "[profile-url]", "[ip]", "[handle]",
+                "[author]")
 
 
 @functools.lru_cache(maxsize=1)
@@ -257,6 +262,33 @@ def _replace(pattern: re.Pattern, text: str, folded: str | None, replacement: st
     if folded is not None:
         folded_pieces.append(folded[last:])
     return "".join(pieces), ("".join(folded_pieces) if folded is not None else None), count
+
+
+def profile_href(url: str) -> bool:
+    """True when this URL points at a person's profile or member page. The reader's author-label pass uses
+    it for a link inside a label (extract.py): the same profile-URL patterns the scrubber applies — the
+    generic member/profile path on any host, plus the author URLs the data files list — matched against the
+    whole URL; a bare link path ('/member/123', '/u/9', '/@nick') is judged by its path shape alone."""
+    if not isinstance(url, str) or not url.strip():
+        return False
+    value = url.strip()
+    try:
+        parts = urlsplit(value)
+    except ValueError:
+        parts = None
+    candidates = [value]
+    if parts is not None and not parts.scheme:
+        if parts.netloc:  # protocol-relative '//site/member/123'
+            candidates.append("https:" + value)
+        elif parts.path:
+            rest = parts.path + (f"?{parts.query}" if parts.query else "")
+            if _PROFILE_PATH.search(rest):
+                return True
+    authors = _author_urls()
+    for candidate in candidates:
+        if _PROFILE_URL.match(candidate) or (authors is not None and bool(authors.match(candidate))):
+            return True
+    return False
 
 
 def scrub(text: str) -> tuple[str, dict]:
