@@ -394,3 +394,38 @@ R0 공식 공개 경로(피드, oEmbed, 공개 API) → R1 식별 가능한 GET 
    - SM-05: 과업 중간 화면의 포커스 표시를 클릭 직전에 검사합니다.
 
 README나 SKILL.md가 "스와이프·스크롤 과업", "섬광 검사"의 검증 수준을 말한다면 위 내용을 반영해 주세요. 수치는 재녹화가 끝나면 decisions.md에 올리겠습니다.
+
+## 배포 세션 업데이트 (한국형 팩 K1·K2, 봇 차단 정책, 그쪽 파일 요청, 2026-09-30)
+
+그쪽 `abb2a55`까지 병합했습니다(`bc84af0`). 충돌은 없었고, 병합 뒤 Python 601개, smoke, 드라이버 selftest 234개가 모두 통과합니다.
+
+### 이쪽 변경 (`b0b04bf`, 검토 수정은 곧 푸시)
+
+- **멈춤 종류 추가**: `terms_restricted`. `verdict.STOP_CLASSES` 순서는 auth_gate, paywall, human_check, opted_out, terms_restricted, rate_limit, geo_block, legal_block, gone, budget, host_stopped입니다.
+  - 약관 제한 호스트는 요청 전에 멈추고, 리디렉션의 매 단계에서도 멈춥니다.
+  - 디시인사이드·네이버·쿠팡은 `reported`입니다. 사용자가 브리프의 `access_policy.terms_checked`에 약관 확인을 기록해야 풀립니다.
+  - 유튜브 페이지와 메타 플랫폼은 `confirmed`로, 풀리지 않습니다.
+- **유튜브 댓글**: 공식 Data API(`REMORSEARCH_YOUTUBE_API_KEY`)로만 읽습니다. 항목마다 `retention_until`(30일)이 붙습니다.
+- **그 밖의 규칙**
+  - 사용자 대신 페이지를 여는 AI 에이전트용 robots.txt 그룹을 따릅니다.
+  - 검색 결과 페이지는 읽지 않습니다.
+  - 모델이 글을 보기 전에 개인정보를 지웁니다.
+  - 익명 닉네임(`ㅇㅇ(118.235)`)은 작성자 키로 만들지 않습니다.
+- **새로 정한 것: 봇 차단과 자동 확인 화면은 멈춤입니다.**
+  - `bot_filter`(정직한 요청을 4xx나 차단 문구로 거절)와 `js_check`("브라우저 확인 중" 화면)는 더 이상 R2·R3로 올라가지 않습니다.
+  - 둘 다 호스트 전체 멈춤으로 기록합니다(`opted_out`, 이유 `bot_filter:*` / `js_check:*`).
+  - 확인 화면을 거친 캡처는 `ingest`가 거부합니다.
+  - 이유: 사용자 요구("디시·맘카페·당근·유튜브 등에서 고소당할 일 없게")와 S1(봇 방어 우회 금지). 거절 뒤에 브라우저로 다시 읽으면 보호 조치를 우회한 것으로 보일 수 있습니다.
+
+### 그쪽에 부탁 (그쪽 소유 파일)
+
+1. **`drivers/web/read_page.mjs`**: 확인 화면(스스로 풀리는 것 포함)을 만나면 기다리지 말고 바로 멈춰 주세요(종료 코드 3, 문서는 씀). 지금의 "최대 15초 대기"는 새 정책과 맞지 않습니다. 이쪽 `ingest`도 확인 화면을 거친 캡처(`challenge.markers`가 있거나 확인 때문에 `waited_ms` > 0)를 거부하도록 바꿉니다.
+2. **`drivers/web/README.md` 6행**: 링크 `../../docs/ergonomic-swarm-spec.md`가 풀리지 않습니다. 설치된 스킬 폴더에는 `docs/`가 없으니, "레포지토리 문서 `docs/ergonomic-swarm-spec.md`"처럼 경로 설명으로 바꾸는 편이 안전합니다.
+3. **`references/ergonomics/audience-research.md`** (89행 근처): 리더의 멈춤 목록에 `terms_restricted`와 AI 에이전트 robots.txt 그룹을 넣어 주세요.
+4. **`references/ergonomics/human-factors-checks.md`**
+   - PC-01의 "(KWCAG 2.2 same)"은 정확하지 않습니다. KWCAG 5.4.3은 확대할 수 있는 텍스트에 3:1을 허용하므로, PC-01은 WCAG 1.4.3 기준으로 두고 문구만 고쳐 주세요.
+   - `ergoqa/checks.py`에만 있는 SM-08, FM-02, RF-01의 행도 표에 넣어 주세요.
+5. **`docs/human-factors/ux-design-discipline.md` 5.6절**
+   - KWCAG 명도 대비를 1.4.3으로 번호 매긴 부분과 검증되지 않은 KS X 3253·9211 번호, "24→33 항목" 주장을 고쳐 주세요.
+   - 정확한 내용은 `references/persona-qa/kwcag-2.2.md`에 있습니다. 33개 = 기존 24개 + 신규 9개입니다.
+6. **`docs/human-factors/korean-population-context.md` 19행**: 고령층(55세 이상) 디지털정보화 수준은 NIA 2025 기준 71.8%입니다. 77.9%는 취약계층 4개 집단 전체 값입니다. 둘 다 검색 요약 기준이라 [S]로 표시하고, 표본 설계에 쓰기 전에 공식 표로 확인해 주세요.
