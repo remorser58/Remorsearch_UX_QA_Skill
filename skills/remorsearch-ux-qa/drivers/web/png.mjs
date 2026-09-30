@@ -352,7 +352,8 @@ export function globalShift(cur, prev) {
  *  - shift: [dx, dy] frame px of that global shift ([0, 0] if none)
  * `known` is a shift the caller measured (the page's own scroll between the two
  * frames); it replaces the estimate, which periodic content (a feed of equal cards
- * scrolled by about half a card per frame) makes ambiguous.
+ * scrolled by about half a card per frame) makes ambiguous. `known === false` turns
+ * motion matching off (the page scrolls back and forth: flicker, not motion).
  */
 export function blockStats(frame, grid, prev, known = null) {
   const { cols, rows, colOf, rowOf, xEdges, yEdges } = grid;
@@ -386,6 +387,7 @@ export function blockStats(frame, grid, prev, known = null) {
     redU8[b] = Math.round(255 * redShare[b]);
   }
   const out = { lum: lumU8, red: redU8, moved: null, shift: [0, 0] };
+  if (known === false) return out; // no motion matching (oscillating scroll)
   const shift = known && prev && prev.width === frame.width && prev.height === frame.height ? known : globalShift(frame, prev);
   if (!shift) return out;
   const [dx, dy] = shift;
@@ -443,6 +445,33 @@ export function indicatorPixels(on, off1, off2, level = 16, maskLevel = 4, regio
     for (let x = x0; x < x1; x++) {
       const o = (y * w + x) * 3;
       if (d(on, off1, o) >= level && d(on, off2, o) >= level && d(off1, off2, o) < maskLevel) changed++;
+    }
+  }
+  return changed;
+}
+
+/**
+ * Indicator pixels against several unfocused frames: a pixel counts when ``on`` differs
+ * (max channel change >= level) from every frame in ``offs`` while the ``offs`` agree
+ * with each other (max change < maskLevel; animation and anything that changed during
+ * the capture sequence are masked). Pixels inside ``exclude`` rectangles ({x0, y0, x1,
+ * y1}, frame px) are not counted.
+ */
+export function indicatorPixelsMulti(on, offs, level = 16, maskLevel = 4, exclude = []) {
+  if (!on || !offs.length || offs.some((f) => !f || f.rgb.length !== on.rgb.length)) return null;
+  const w = on.width;
+  const d = (f, g, o) => Math.max(Math.abs(f.rgb[o] - g.rgb[o]), Math.abs(f.rgb[o + 1] - g.rgb[o + 1]), Math.abs(f.rgb[o + 2] - g.rgb[o + 2]));
+  let changed = 0;
+  for (let y = 0; y < on.height; y++) {
+    for (let x = 0; x < w; x++) {
+      if (exclude.some((r) => x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1)) continue;
+      const o = (y * w + x) * 3;
+      let ok = true;
+      for (let i = 0; i < offs.length && ok; i++) {
+        if (d(on, offs[i], o) < level) ok = false;
+        else if (i > 0 && d(offs[0], offs[i], o) >= maskLevel) ok = false;
+      }
+      if (ok) changed++;
     }
   }
   return changed;

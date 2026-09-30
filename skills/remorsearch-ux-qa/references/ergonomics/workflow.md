@@ -217,6 +217,12 @@ tested. After a fix, replay the same scenario, device and profiles and compare.
   reading time at the profile's Korean reading rate, response latency bands.
 - **Game (GM):** HUD/subtitle size at viewing distance, QTE window vs
   reaction-time quantile + input latency, WCAG 2.3.1 general-flash screening.
+- **Semantics and layout (SM, FM, LY, RF; web DOM, profile-independent):**
+  accessible names and label-in-name, unlabelled fields, errors far from their
+  field, keyboard focus indicators (walks and probes before clicks), focus hidden
+  under sticky bars, clicked elements that are not controls (SM-08), focus left
+  outside a newly opened layer (FM-02), clipped text (LY-01) and reflow at 320 CSS
+  px (RF-01). ACT rule examples gate the ones an ACT rule covers.
 - **Judgment (PJ):** persona-agent expectation mismatches.
 
 Numbers, sources and validity limits live in `ergoqa/params.py` and

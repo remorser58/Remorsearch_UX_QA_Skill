@@ -64,8 +64,14 @@ export function pageInit(cfg) {
   // A field's value changing (typed or deleted characters) is feedback too, and it is
   // not a DOM mutation. The driver masks the focused field in visual comparisons (the
   // caret blinks), so this is how typing echo is seen.
+  // Checkbox, radio, range, colour, file and select changes show nothing by themselves.
+  const NO_ECHO = ['checkbox', 'radio', 'range', 'color', 'file'];
   try {
-    window.addEventListener('input', record, true);
+    window.addEventListener('input', (e) => {
+      const t = e.target;
+      if (t && (t.tagName === 'SELECT' || (t.tagName === 'INPUT' && NO_ECHO.includes((t.type || '').toLowerCase())))) return;
+      record();
+    }, true);
   } catch (e) { /* ignore */ }
 
   const windows = Array.isArray(cfg.windows) ? cfg.windows : [];
@@ -591,6 +597,19 @@ export function extractSnapshot(args) {
       if (!x && !y) return null;
     }
     const clamp = cs.webkitLineClamp && cs.webkitLineClamp !== 'none';
+    // ACT 59br37's exceptions, on the clipping box: sideways, one line that does not
+    // wrap and ends in a marker (white-space nowrap, text-overflow other than clip);
+    // vertically, a box one line high (used line-height >= its height, content box for
+    // overflow-y clip) whose glyphs fit in it. Clipped this way the text is cut cleanly.
+    const cb = by || el;
+    const bcs = by ? style(by) : cs;
+    const exemptX = !x || (/^nowrap/.test(bcs.whiteSpace) && bcs.textOverflow !== 'clip');
+    const fontPx = parseFloat(bcs.fontSize) || 16;
+    const lineH = bcs.lineHeight === 'normal' ? 1.2 * fontPx : parseFloat(bcs.lineHeight) || 1.2 * fontPx;
+    const boxH = bcs.overflowY === 'clip'
+      ? cb.clientHeight - (parseFloat(bcs.paddingTop) || 0) - (parseFloat(bcs.paddingBottom) || 0)
+      : cb.getBoundingClientRect().height;
+    const exemptY = !y || (lineH >= boxH - 0.5 && fontPx <= boxH + 0.5);
     // Tickers and marquees clip by design: text that moves (CSS animation on the element
     // or a close ancestor, or <marquee>) is recorded as animated.
     let animated = false;
@@ -602,7 +621,8 @@ export function extractSnapshot(args) {
         break;
       }
     }
-    return { x, y, ellipsis: ellipsis || !!clamp, line_clamp: !!clamp, animated, by: by ? (by.id ? `#${by.id}` : by.tagName.toLowerCase()) : null };
+    return { x, y, ellipsis: ellipsis || !!clamp, line_clamp: !!clamp, animated, by: by ? (by.id ? `#${by.id}` : by.tagName.toLowerCase()) : null,
+      act: exemptX && exemptY ? 'passed' : 'failed' };
   };
   const visibleText = (el) => {
     const tag = el.tagName.toLowerCase();
@@ -1046,11 +1066,40 @@ export function extractSnapshot(args) {
     for (let i = layers.length - 1; i >= 0; i--) if (n.contains(layers[i].node)) layers.splice(i, 1);
     layers.push({ node: n, kind });
   }
-  const layerOut = layers.map(({ node, kind }) => ({
-    selector: uniqueSelector(node), dom_id: node.id || null, kind,
-    box: { x: round2(geo(node).r.left), y: round2(geo(node).r.top), w: round2(geo(node).r.width), h: round2(geo(node).r.height) },
-    contains_focus: !focusOnBody && (node === deep || node.contains(deep)),
-  }));
+  // Containment in the flat tree (slotted content, dialogs inside shadow roots).
+  const inFlat = (root, n) => {
+    for (let x = n; x; x = x.assignedSlot || x.parentNode || x.host) if (x === root) return true;
+    return false;
+  };
+  // A layer's overlay root: its outermost fixed ancestor below <body> that is not the
+  // app shell (most content lies outside it), e.g. a portal holding a dialog container
+  // that keeps focus on itself and the role=dialog paper inside it (MUI).
+  const overlayRoot = (node) => {
+    let root = node;
+    for (let n = node.parentElement; n && n !== document.body && n !== document.documentElement; n = n.parentElement) {
+      if (style(n).position === 'fixed') root = n;
+    }
+    if (root === node) return node;
+    const inside = candidates.filter((c) => root.contains(c.el)).length;
+    return inside <= candidates.length / 2 ? root : node;
+  };
+  // The next element Tab reaches from the focused one (document order, tabindex >= 0).
+  let nextTab = null;
+  if (!focusOnBody) {
+    const tabbable = [...document.querySelectorAll('a[href], button, input, select, textarea, summary, [tabindex], [contenteditable=""], [contenteditable="true"]')]
+      .filter((t) => t.tabIndex >= 0 && !t.disabled && t.getClientRects().length > 0 && !(t.closest && t.closest('[inert]')));
+    nextTab = tabbable.find((t) => deep.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING && !deep.contains(t)) || null;
+  }
+  const layerOut = layers.map(({ node, kind }) => {
+    const root = overlayRoot(node);
+    return {
+      selector: uniqueSelector(node), dom_id: node.id || null, kind,
+      box: { x: round2(geo(node).r.left), y: round2(geo(node).r.top), w: round2(geo(node).r.width), h: round2(geo(node).r.height) },
+      contains_focus: !focusOnBody && (inFlat(node, deep) || (root !== node && inFlat(root, deep))),
+      follows_focus: !!nextTab && inFlat(node, nextTab),
+      overlay_root: root !== node ? uniqueSelector(root) : null,
+    };
+  });
   if (panned && (VX0 || VY0)) {
     // Report DOM geometry relative to the screen (hotspots keep their own coordinates).
     const shift = (b) => { if (b) { b.x = round2(b.x - VX0); b.y = round2(b.y - VY0); } };
@@ -1071,7 +1120,11 @@ export function extractSnapshot(args) {
     scroll: { x: round2(window.scrollX), y: round2(window.scrollY), width: se ? se.scrollWidth : null, height: se ? se.scrollHeight : null },
     visual: vvp ? { offset_x: round2(vvp.offsetLeft), offset_y: round2(vvp.offsetTop), width: round2(vvp.width), height: round2(vvp.height), scale: round2(vvp.scale) } : null,
     active,
-    focus: { on_body: focusOnBody, tag: focusOnBody ? null : deep.tagName.toLowerCase(), dom_id: focusOnBody ? null : (deep.id || null) },
+    focus: {
+      on_body: focusOnBody, tag: focusOnBody ? null : deep.tagName.toLowerCase(), dom_id: focusOnBody ? null : (deep.id || null),
+      expanded: !focusOnBody && deep.getAttribute('aria-expanded') === 'true',
+      controls: focusOnBody ? [] : (deep.getAttribute('aria-controls') || '').split(/\s+/).filter(Boolean).slice(0, 8),
+    },
     layers: layerOut,
     pageHotspotError,
     unknownRoles: [...unknownRoles],
@@ -1144,27 +1197,87 @@ export function controlOf(arg) {
   const NATIVE = ['button', 'input', 'select', 'textarea', 'summary', 'option', 'details', 'video', 'audio', 'iframe', 'canvas'];
   const WIDGET = ['button', 'link', 'checkbox', 'radio', 'switch', 'tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'option',
     'slider', 'spinbutton', 'textbox', 'searchbox', 'combobox', 'listbox', 'treeitem', 'gridcell', 'scrollbar'];
-  const isControl = (n) => {
+  const LANDMARK = ['body', 'main', 'nav', 'header', 'footer', 'aside', 'form'];
+  // Flat-tree parent: through slots and out of shadow roots (web components).
+  const up = (n) => n.assignedSlot || n.parentElement || (n.getRootNode && n.getRootNode() instanceof ShadowRoot ? n.getRootNode().host : null);
+  // A native control the keyboard can reach: not type=hidden, rendered, not
+  // visibility:hidden, not inert (opacity:0 or clipped inputs still take focus).
+  const usable = (c) => !!c && !(c.tagName === 'INPUT' && (c.type || '').toLowerCase() === 'hidden') && c.getClientRects().length > 0
+    && (typeof c.checkVisibility !== 'function' || c.checkVisibility({ visibilityProperty: true })) && !(c.closest && c.closest('[inert]'));
+  const plain = (n) => {
     const tag = n.tagName.toLowerCase();
-    if (NATIVE.includes(tag) || (tag === 'a' && n.hasAttribute('href')) || (tag === 'label' && n.control)) return true;
+    if (NATIVE.includes(tag)) return usable(n);
+    if (tag === 'a' && n.hasAttribute('href')) return true;
+    if (tag === 'label') return !!n.control && usable(n.control);
     const role = (n.getAttribute('role') || '').trim().split(/\s+/)[0];
     if (WIDGET.includes(role)) return true;
     const t = n.getAttribute('tabindex');
     return (t !== null && parseInt(t, 10) >= 0) || n.isContentEditable;
   };
+  // A web component is a control when it delegates focus or holds one in its open shadow tree.
+  const isControl = (n) => plain(n) || (!!n.shadowRoot && (n.shadowRoot.delegatesFocus || [...n.shadowRoot.querySelectorAll('*')].slice(0, 200).some(plain)));
+  const holds = (root) => [...root.querySelectorAll('*')].slice(0, 300).some(isControl);
   let control = false;
-  for (let n = el, i = 0; n && n.nodeType === 1 && i < 5; n = n.parentElement, i++) {
+  for (let n = el, i = 0; n && n.nodeType === 1 && i < 5; n = up(n), i++) {
     if (isControl(n)) {
       control = true;
       break;
     }
   }
-  const contains = [...el.querySelectorAll('*')].slice(0, 300).some(isControl);
+  // Links and buttons at any depth (a heading inside a large link card).
+  for (let n = el; !control && n && n.nodeType === 1; n = up(n)) {
+    const tag = n.tagName.toLowerCase();
+    const role = (n.getAttribute('role') || '').trim().split(/\s+/)[0];
+    if ((tag === 'a' && n.hasAttribute('href')) || tag === 'button' || tag === 'summary' || role === 'button' || role === 'link') control = true;
+  }
+  let contains = holds(el);
+  // The child of `root` on the way up from `node`.
+  const branch = (root, node) => {
+    let b = node;
+    while (b && up(b) !== root) b = up(b);
+    return b;
+  };
+  const peers = (root) => {
+    const cb = branch(root, el);
+    if (!cb) return false;
+    const rb = cb.getBoundingClientRect();
+    const ac = rb.width * rb.height;
+    return [...root.querySelectorAll('*')].slice(0, 300).filter(isControl).some((c) => {
+      const b = branch(root, c);
+      if (!b || b === cb || !isControl(b)) return false;
+      const r = b.getBoundingClientRect();
+      const ab = r.width * r.height;
+      return ab > 0 && ac > 0 && ab < 3 * ac && ac < 3 * ab && Math.abs(r.height - rb.height) <= 0.5 * Math.max(r.height, rb.height);
+    });
+  };
+  // A card whose own link or button the keyboard reaches: the click on its image or
+  // price has a keyboard equivalent right there.
+  let card = null;
+  if (!control && !contains) {
+    const r0 = el.getBoundingClientRect();
+    const area0 = Math.max(48 * 48, r0.width * r0.height);
+    for (let n = up(el), i = 0; n && n.nodeType === 1 && i < 8; n = up(n), i++) {
+      const tag = n.tagName.toLowerCase();
+      if (LANDMARK.includes(tag) || ['main', 'navigation', 'banner', 'contentinfo', 'complementary', 'form'].includes(n.getAttribute('role') || '')) break;
+      const r = n.getBoundingClientRect();
+      if (r.width * r.height > 4 * area0) break;
+      if (holds(n)) {
+        // Not a card when what was clicked looks operable on its own (a pointer cursor
+        // the candidate card does not have), or when a control there is a peer item of
+        // it (a chip row where one chip is a role-less div): another option, not the
+        // card's own link.
+        const own = getComputedStyle(el).cursor === 'pointer' && getComputedStyle(n).cursor !== 'pointer';
+        if (!own && !peers(n)) card = n;
+        break;
+      }
+    }
+  }
   const ids = [];
   for (let n = el.parentElement; n && ids.length < 6; n = n.parentElement) if (n.id) ids.push(n.id);
   return {
     tag: el.tagName.toLowerCase(), role: (el.getAttribute('role') || '').trim() || null, dom_id: el.id || null, control,
-    contains_control: contains, ancestor_ids: ids, text: (el.innerText || el.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim().slice(0, 40),
+    contains_control: contains || !!card, card_control: !!card, hidden: !!(el.closest && el.closest('[aria-hidden="true"],[inert]')),
+    ancestor_ids: ids, text: (el.innerText || el.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim().slice(0, 40),
   };
 }
 

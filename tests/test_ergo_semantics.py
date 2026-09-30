@@ -138,6 +138,21 @@ class Reflow(unittest.TestCase):
         # A located offender makes the page-level finding unnecessary.
         self.assertEqual([o.element_key.split("|")[0] for o in checks.check_reflow(self.run_doc(416), {"profile_id": "P"}, {})], ["#fee-summary"])
 
+    def test_fixed_bar_offender_without_page_scroll_and_lost_styles(self) -> None:
+        # A fixed bottom bar whose second button runs past the edge: nothing scrolls, so
+        # it cannot be reached. An ordinary offender without page overflow is shifted only.
+        buy = {"selector": "#buy-now", "dom_id": "buy-now", "ancestor_ids": ["buybar"], "tag": "button", "fixed": True,
+               "box": {"x": 176, "y": 740, "w": 160, "h": 40}, "text": "바로 구매"}
+        note = {"selector": "#note", "dom_id": "note", "ancestor_ids": [], "tag": "p", "box": {"x": 8, "y": 100, "w": 400, "h": 20}, "text": "안내"}
+        rec = {"snapshot_id": "S-3", "url": "http://x", "width": 320, "client_width": 320, "scroll_width": 320, "root_clips": False,
+               "offenders": [buy, note], "lost": []}
+        obs = checks.check_reflow({"run_id": "R", "reflow": [rec]}, {"profile_id": "P"}, {})
+        self.assertEqual([(o.element_key.split("|")[0], o.measurement["in_fixed_bar"]) for o in obs], [("#buy-now", True)])
+        self.assertIn("고정 막대", obs[0].message_ko)
+        # A copy that lost its CSS is not measured.
+        lost = dict(rec, styles_lost={"live_rules": 400, "copy_rules": 12})
+        self.assertEqual(checks.check_reflow({"run_id": "R", "reflow": [lost]}, {"profile_id": "P"}, {}), [])
+
     def test_text_lost_at_320_without_page_scroll(self) -> None:
         # A one-line bar with overflow:hidden: the timer fits at the device width and is
         # cut away at 320 px, with no sideways scroll to reach it (F102).
@@ -170,9 +185,38 @@ class FocusManagement(unittest.TestCase):
         focus = {"on_body": False, "tag": "button", "dom_id": "btn-addr"}
         obs = checks.check_focus_management(self.ctx_for([], [sheet], focus, [field]))
         self.assertEqual([(o.check_id, o.element_key.split("|")[0], o.severity) for o in obs], [("FM-02", "#addr-modal", "P2")])
-        # Focus that arrives within a second of the click (after an entrance transition).
-        late = dict(sheet, contains_focus_late=True)
-        self.assertEqual(checks.check_focus_management(self.ctx_for([], [late], focus, [field])), [])
+        # Focus that arrives within a second of the click (after an entrance transition):
+        # the driver lists the layer on the step.
+        late = self.ctx_for([], [sheet], focus, [field])
+        late.step["focus_late_layers"] = ["#addr-modal"]
+        self.assertEqual(checks.check_focus_management(late), [])
+
+    def late_ctx(self, steps, layers_after, focus, elements=()):
+        run = {"run_id": "R-1", "steps": steps}
+        c = ctx(list(elements), previous={"snapshot_id": "S-0", "layers": [], "elements": []}, step=steps[-1], run=run)
+        c.snapshot["focus"] = focus
+        c.snapshot["layers"] = layers_after
+        return c
+
+    def test_layer_that_opens_after_the_click_counts_at_the_wait(self) -> None:
+        # A spinner first; the done sheet opens 1.2 s later and is first seen at the wait.
+        box = {"x": 0, "y": 0, "w": 360, "h": 780}
+        done = {"selector": "#transfer-done", "dom_id": "transfer-done", "kind": "sheet", "contains_focus": False, "box": box}
+        ok = el("done-ok", "button", (16, 700, 328, 48), interactive=True, tag="button", dom_id="done-ok", a11y=a11y("content"))
+        tap = {"step_index": 4, "action": {"action": "tap", "target": "#send"}, "result": "ok", "t_start_ms": 1000, "t_end_ms": 1400, "after": "S-0"}
+        wait = {"step_index": 5, "action": {"action": "wait", "ms": 1500}, "result": "ok", "t_start_ms": 1400, "t_end_ms": 2900, "after": "S-1"}
+        obs = checks.check_focus_management(self.late_ctx([tap, wait], [done], {"on_body": True}, [ok]))
+        self.assertEqual([(o.check_id, o.element_key.split("|")[0], o.measurement.get("opened_after_click_step")) for o in obs],
+                         [("FM-02", "#transfer-done", 4)])
+        self.assertIn("늦게", obs[0].message_ko)
+        # Not when another input came in between, or long after the click (a timer's result).
+        scroll = {"step_index": 5, "action": {"action": "scroll"}, "result": "ok", "t_start_ms": 1400, "t_end_ms": 1800}
+        wait2 = dict(wait, step_index=6)
+        self.assertEqual(checks.check_focus_management(self.late_ctx([tap, scroll, wait2], [done], {"on_body": True}, [ok])), [])
+        slow = dict(wait, t_end_ms=1000 + checks.LATE_LAYER_WINDOW_MS + 1)
+        self.assertEqual(checks.check_focus_management(self.late_ctx([tap, slow], [done], {"on_body": True}, [ok])), [])
+        # Focus inside by then passes.
+        self.assertEqual(checks.check_focus_management(self.late_ctx([tap, wait], [dict(done, contains_focus=True)], {"on_body": False}, [ok])), [])
 
     def test_layers_that_need_no_focus(self) -> None:
         box = {"x": 0, "y": 0, "w": 360, "h": 780}
@@ -290,6 +334,17 @@ class Clipping(unittest.TestCase):
         sr_only = el("sr", "paragraph", (0, 0, 1, 1), text="스크린리더 전용", clipped={"x": True, "y": True, "ellipsis": False})
         obs = [o for o in checks.check_semantics(ctx([cut, dots, sr_only])) if o.check_id == "LY-01"]
         self.assertEqual({o.element_key.split("|")[0]: o.severity for o in obs}, {"#title": "P2", "#sub": "P3"})
+
+    def test_act_59br37_clean_cuts_are_truncation_notes(self) -> None:
+        # One nowrap line ending in an ellipsis, or a box one line high: ACT 59br37 passes
+        # them (P3 note); a box that cuts wrapped lines fails (P2).
+        one_line = el("name", "paragraph", (10, 100, 120, 24), text="무선 블루투스 이어폰 노이즈 캔슬링",
+                      clipped={"x": False, "y": True, "ellipsis": False, "by": "div", "act": "passed"})
+        cut = el("q", "paragraph", (10, 140, 300, 56), text="다음 중 민감정보에 해당하지 않는 것은?",
+                 clipped={"x": False, "y": True, "ellipsis": False, "act": "failed"})
+        obs = {o.element_key.split("|")[0]: o for o in checks.check_semantics(ctx([one_line, cut])) if o.check_id == "LY-01"}
+        self.assertEqual({k: (o.severity, o.measurement["act_59br37"]) for k, o in obs.items()}, {"#name": ("P3", "passed"), "#q": ("P2", "failed")})
+        self.assertIn("한 줄 높이", obs["#name"].message_ko)
 
     def test_text_cut_by_a_clipping_ancestor(self) -> None:
         price = el("sauce-2-price", "text", (200, 300, 60, 20), text="+500원",

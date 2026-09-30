@@ -85,6 +85,10 @@ function readFixture(pathname, res, req) {
   res.end(body || 'not found');
 }
 
+// Fixture files served at /<name> (same origin as the pages, no CORS headers).
+const FIXTURE_FILES = Object.fromEntries(['layers.html', 'dialog.html', 'reflow.html', 'reflow2.html', 'reflow2.css', 'viewport.html', 'focus.html', 'focus2.html']
+  .map((f) => [`/${f}`, f]));
+
 function startFixtureServer() {
   const html = fs.readFileSync(FIXTURE);
   const server = http.createServer((req, res) => {
@@ -94,33 +98,14 @@ function startFixtureServer() {
       res.end(html);
       return;
     }
-    if (req.method === 'GET' && pathname === '/layers.html') {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
-      res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), 'layers.html')));
-      return;
-    }
     if (req.method === 'GET' && pathname.startsWith('/read/')) {
       readFixture(pathname, res, req);
       return;
     }
-    if (req.method === 'GET' && pathname === '/dialog.html') {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
-      res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), 'dialog.html')));
-      return;
-    }
-    if (req.method === 'GET' && pathname === '/reflow.html') {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
-      res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), 'reflow.html')));
-      return;
-    }
-    if (req.method === 'GET' && pathname === '/viewport.html') {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
-      res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), 'viewport.html')));
-      return;
-    }
-    if (req.method === 'GET' && pathname === '/focus.html') {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
-      res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), 'focus.html')));
+    const file = FIXTURE_FILES[pathname];
+    if (req.method === 'GET' && file) {
+      res.writeHead(200, { 'Content-Type': file.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(fs.readFileSync(path.join(path.dirname(FIXTURE), file)));
       return;
     }
     res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -781,8 +766,9 @@ async function focusTest(base, tmp) {
   check('focus probe: :focus-visible rings and rings a script draws after a key press show after mouse clicks',
     probe('#fv')?.indicator_px > 50 && probe('#js-ring')?.indicator_px > 20 && probe('#menu-btn')?.indicator_px > 50,
     ['#fv', '#js-ring', '#menu-btn'].map((k) => [k, probe(k)?.focus_visible, probe(k)?.indicator_px]));
-  check('focus probe: text fields are skipped, and so is any click while a text field has focus; every probe names its screen',
-    probe('#note')?.skipped === 'text_entry' && probe('#submit')?.skipped === 'field_focused' && probe('#open-step2')?.skipped === 'field_focused'
+  check('focus probe: text fields are skipped; a click while a text field has focus is probed after blurring it; every probe names its screen',
+    probe('#note')?.skipped === 'text_entry' && probe('#submit')?.after_field === true && probe('#submit')?.indicator_px > 50
+    && probe('#open-step2')?.after_field === true && probe('#open-step2')?.indicator_px > 50
     && ['#fv', '#save', '#menu-btn'].every((k) => probe(k)?.snapshot_id && probe(k)?.selector === k), [probe('#note'), probe('#submit'), probe('#save')?.snapshot_id]);
   const names = walks.flatMap((w) => w.stops.map((s) => s.name)).join('|');
   check('focus: stop names never contain a typed value', !names.includes('hunter2') && stop('#pw')?.name === '비밀번호', names);
@@ -791,6 +777,49 @@ async function focusTest(base, tmp) {
   const touch = loadRun(path.join(outDir, 'R-layers')).run;
   check('focus: no walk and no focus probe on touch devices by default', Array.isArray(touch.focus_walks) && touch.focus_walks.length === 0
     && touch.steps.every((s) => !s.focus_probe), touch.focus_walks);
+}
+
+async function focusProbeTest(base, tmp) {
+  const click = (target) => ({ action: 'click', target });
+  const sc = {
+    schema_version: 'ergo-scenario.v1', scenario_id: 'SC-driver-focus-02', surface: { kind: 'web', url: '{BASE}/focus2.html' },
+    task_goal_ko: '메뉴와 대화상자를 쓴다', device_ids: ['desktop-1920'], targets: {},
+    steps: [click('#tick-btn'), click('#menu2-btn'), click('#mi-2'), click('#fb'), click('#card-img'), click('#fake-radio'), click('#cb-l'),
+      click('#disc-btn'), click('#disc-btn'), click('#mui-btn'), click('#mui-close'), click('#late-btn'), click('#late-close')],
+    success: { url_contains: 'focus2' },
+  };
+  writeJson(path.join(tmp, 'focus2.json'), sc);
+  const outDir = path.join(tmp, 'runs');
+  const r = await runDriver(['run', '--scenario', path.join(tmp, 'focus2.json'), '--device', 'desktop-1920', '--out', outDir, '--run-id', 'R-focus2',
+    '--base', base, '--no-reflow', '--feedback-timeout-ms', '1000']);
+  if (!check('focus2 desktop-1920: exit 0', r.code === 0, `${r.code} ${r.err}`)) return;
+  const { run, snaps } = loadRun(path.join(outDir, 'R-focus2'));
+  const step = (sel, nth = 0) => run.steps.filter((s) => s.action.target === sel)[nth];
+  check('focus probe: a ticking counter inside a control without an indicator is not an indicator',
+    step('#tick-btn')?.focus_probe?.indicator_px < 4, step('#tick-btn')?.focus_probe);
+  check('focus probe: skipped inside a menu that manages its own focus; the click still lands',
+    step('#mi-2')?.focus_probe?.skipped === 'managed_focus' && step('#mi-2')?.target_hit === true && run.steps.every((s) => !s.focus_probe?.disturbed),
+    [step('#mi-2')?.focus_probe, step('#mi-2')?.target_hit]);
+  const ctl = (sel) => step(sel)?.target_control;
+  check('click targets: a button in a shadow root is a control; a card image is covered by its link; a hidden input is no control',
+    ctl('#fb')?.control === true && ctl('#card-img')?.control === false && ctl('#card-img')?.card_control === true
+      && ctl('#fake-radio')?.control === false && ctl('#fake-radio')?.contains_control === false,
+    { fb: ctl('#fb'), card: ctl('#card-img'), fake: ctl('#fake-radio') });
+  check('feedback: toggling a custom checkbox whose look never changes is not feedback (input events of checkboxes are not counted)',
+    step('#cb-l')?.feedback_source === null, [step('#cb-l')?.feedback_source, step('#cb-l')?.feedback_latency_ms]);
+  const after = (sel, nth = 0) => snaps.get(step(sel, nth)?.after) || {};
+  const disc = (after('#disc-btn').layers || []).find((l) => l.dom_id === 'disc');
+  check('layers: a panel the next Tab reaches follows focus', !!disc && disc.follows_focus === true && disc.contains_focus === false, after('#disc-btn').layers);
+  const paper = (after('#mui-btn').layers || []).find((l) => l.dom_id === 'mui-paper');
+  check('layers: focus on the fixed overlay root around a dialog counts as inside it',
+    !!paper && paper.contains_focus === true && paper.overlay_root === '#mui-root', after('#mui-btn').layers);
+  const late = (after('#late-btn').layers || []).find((l) => l.dom_id === 'late-dlg');
+  check('layers: a dialog that takes focus after its entrance transition is listed on the step (focus_late_layers)',
+    !!late && late.contains_focus === false && (step('#late-btn')?.focus_late_layers || []).includes(late.selector),
+    { layer: late, late: step('#late-btn')?.focus_late_layers });
+  check('focus probe: a click while a text field has focus is probed after the field is blurred',
+    step('#late-close')?.focus_probe?.after_field === true && step('#late-close')?.target_hit === true, step('#late-close')?.focus_probe);
+  check('focus2: every step ok', run.steps.every((s) => s.result === 'ok'), run.steps.map((s) => [s.action.target, s.result, s.error]));
 }
 
 async function viewportTest(base, tmp) {
@@ -884,6 +913,34 @@ async function reflowTest(base, tmp) {
   const chip = first.elements.find((e) => e.dom_id === 'chip-t');
   check('LY-01 data: text cut by a clipping ancestor records the ancestor', !!chip && chip.clipped && chip.clipped.x === true && chip.clipped.by === '#chip-l',
     chip && chip.clipped);
+}
+
+async function reflowCopyTest(base, tmp) {
+  const sc = {
+    schema_version: 'ergo-scenario.v1', scenario_id: 'SC-driver-reflow-02', surface: { kind: 'web', url: '{BASE}/reflow2.html' },
+    task_goal_ko: '패널을 연다', device_ids: ['galaxy-s24'], targets: {},
+    steps: [{ action: 'wait', ms: 250 }, { action: 'wait', ms: 250 }, { action: 'tap', target: '#open-panel' }, { action: 'wait', ms: 100 }],
+    success: { selector_visible: '#panel' },
+  };
+  writeJson(path.join(tmp, 'reflow2.json'), sc);
+  const outDir = path.join(tmp, 'runs');
+  const r = await runDriver(['run', '--scenario', path.join(tmp, 'reflow2.json'), '--device', 'galaxy-s24', '--out', outDir, '--run-id', 'R-reflow2', '--base', base]);
+  if (!check('reflow copy galaxy-s24: exit 0', r.code === 0, `${r.code} ${r.err}`)) return;
+  const { run } = loadRun(path.join(outDir, 'R-reflow2'));
+  const recs = run.reflow || [];
+  check('reflow copy: a ticking counter does not make new screens; the newest copy of a screen is kept',
+    recs.length === 2 && recs.every((x) => !x.error && !x.styles_lost) && recs[0].snapshot_id !== run.snapshots[0].snapshot_id,
+    recs.map((x) => [x.snapshot_id, x.error, x.styles_lost]));
+  const offenders = recs.flatMap((x) => (x.offenders || []).map((o) => o.dom_id));
+  check('reflow copy: CSSOM-inserted, adopted, shadow-root and crossorigin same-origin styles reach the copy',
+    ['cssom-box', 'adopted-box', 'shadow-wide', 'link-box'].every((id) => offenders.includes(id)) && !offenders.includes('hero'), offenders);
+  check('reflow copy: off-canvas, inert and noscript content does not stick out',
+    !offenders.includes('cart') && !offenders.includes('inert-wide') && !offenders.includes('ns-wide'), offenders);
+  const buy = recs.flatMap((x) => x.offenders || []).find((o) => o.dom_id === 'buy-now');
+  check('reflow copy: a button pushed past the edge inside a fixed bar is an offender (fixed)', !!buy && buy.fixed === true, buy);
+  const lost = recs.flatMap((x) => (x.lost || []).map((o) => o.dom_id));
+  check('reflow copy: links in a list collapsed below a breakpoint (with or without a toggle) are not lost',
+    !lost.includes('gnb-a1') && !lost.includes('foot-a1'), recs.map((x) => x.lost));
 }
 
 async function dialogTest(base, tmp) {
@@ -1001,6 +1058,11 @@ async function readPageTest(base, tmp) {
 
 async function main() {
   const keep = process.argv.includes('--keep');
+  // --only a,b: run just these groups (scripted, actions, layers, focus, focus2, read,
+  // reflow, reflow-copy, viewport, dialog, serve, exit) while iterating on one part.
+  const oi = process.argv.indexOf('--only');
+  const only = oi > 0 && process.argv[oi + 1] ? new Set(process.argv[oi + 1].split(',')) : null;
+  const want = (g) => !only || only.has(g);
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ergo-web-selftest-'));
   const server = await startFixtureServer();
   const base = `http://127.0.0.1:${server.address().port}`;
@@ -1012,7 +1074,9 @@ async function main() {
     deviceTableTest();
 
     const outDir = path.join(tmp, 'runs');
-    let r = await runDriver(['run', '--scenario', path.join(tmp, 'scenario.json'), '--profile', path.join(tmp, 'p-s24.json'),
+    let r = null;
+    if (want('scripted')) {
+    r = await runDriver(['run', '--scenario', path.join(tmp, 'scenario.json'), '--profile', path.join(tmp, 'p-s24.json'),
       '--out', outDir, '--run-id', 'R-s24', '--base', base]);
     const fin = r.lines.find((l) => l.event === 'finished');
     if (check('run galaxy-s24: exit 0 with a finished line', r.code === 0 && fin && fin.status === 'completed' && fin.success === true, `${r.code} ${r.err}`)) {
@@ -1029,12 +1093,14 @@ async function main() {
         id: 'desktop-1920', vw: 1920, vh: 1080, dpr: 1, orientation: 'landscape', input: 'mouse',
       }, { flash: true });
     }
+    }
 
     writeJson(path.join(tmp, 'actions.json'), actionsScenario());
     for (const [devArgs, dev] of [
       [['--device', 'iphone-15', '--orientation', 'landscape'], { id: 'iphone-15', vw: 852, vh: 393, dpr: 3, orientation: 'landscape', input: 'touch' }],
       [['--device', 'tv-55-1080'], { id: 'tv-55-1080', vw: 1920, vh: 1080, dpr: 1, orientation: 'landscape', input: 'mouse(fallback)' }],
     ]) {
+      if (!want('actions')) break;
       const runId = `R-actions-${dev.id}`;
       r = await runDriver(['run', '--scenario', path.join(tmp, 'actions.json'), ...devArgs, '--out', outDir, '--run-id', runId,
         '--base', base, '--feedback-timeout-ms', '1000']);
@@ -1043,14 +1109,16 @@ async function main() {
       }
     }
 
-    await layersTest(base, tmp);
-    await focusTest(base, tmp);
-    await readPageTest(base, tmp);
-    await reflowTest(base, tmp);
-    await viewportTest(base, tmp);
-    await dialogTest(base, tmp);
-    await serveTest(base, tmp);
-    await exitCodeTests(base, tmp);
+    if (want('layers') || want('focus')) await layersTest(base, tmp); // focus reads the layers run (touch: no probe)
+    if (want('focus')) await focusTest(base, tmp);
+    if (want('focus2')) await focusProbeTest(base, tmp);
+    if (want('read')) await readPageTest(base, tmp);
+    if (want('reflow')) await reflowTest(base, tmp);
+    if (want('reflow-copy')) await reflowCopyTest(base, tmp);
+    if (want('viewport')) await viewportTest(base, tmp);
+    if (want('dialog')) await dialogTest(base, tmp);
+    if (want('serve')) await serveTest(base, tmp);
+    if (want('exit')) await exitCodeTests(base, tmp);
   } finally {
     server.close();
   }
