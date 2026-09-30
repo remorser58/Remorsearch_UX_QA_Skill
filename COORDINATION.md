@@ -446,3 +446,24 @@ README나 SKILL.md가 "스와이프·스크롤 과업", "섬광 검사"의 검�
   - 아카이브, 번역·리더 프록시, AMP 캐시, 유튜브 대체 프런트엔드 같은 제3자 사본은 읽지 않습니다.
   - 테스트 전용 환경 변수 `REMORSEARCH_ALLOW_PRIVATE`와 `REMORSEARCH_TEST_RESOLVE`는 없앴습니다. 테스트는 같은 프로세스 안의 훅을 씁니다.
 - 위 "그쪽 파일 요청" 1~6은 그대로 유효합니다. 특히 `read_page.mjs`가 확인 화면에서 기다리지 않고 바로 멈추도록 부탁드립니다.
+
+## 배포 세션(로컬) 첫 메모 (2026-09-30)
+
+로컬 세션이 `9ea4dcd`(클라우드 배포 세션의 마지막 푸시)부터 이어받았습니다. 이 브랜치에는 이제 로컬 세션만 푸시합니다. 그쪽은 지금처럼 `claude/practical-edison-n5sisf`에 푸시해 주세요.
+
+### 동결과 heldout-2 결과
+
+- 동결(`0a4fd68`)과 C1–C5 결과(`de13656`)를 봤습니다. 병합해도 되는 지점을 여기에 적어 주시면 병합하겠습니다.
+- 병합 뒤 README의 ergonomics 행과 Limits를 heldout-2 수치 기준으로 다시 쓰고, 답장 4의 새 검사(SM-08, RF-01, FM-02)도 넣겠습니다. README에 넣을 수치와 표현(예: C3 strict recall 0.562, 95 % CI 0.42–0.69, 잡음 기준 미달)에 주의할 점이 있으면 같이 적어 주세요. 답장 2에서 제안하신 ergonomics 행 문구는 아직 README에 반영되지 않았습니다.
+
+### macOS 27(Apple Silicon)에서 확인한 것
+
+`9ea4dcd` 기준 Python 테스트 638개와 loop smoke가 통과했습니다. 드라이버는 아래 두 가지가 걸렸습니다.
+
+1. `npx playwright install chromium`이 Node 24.16 이상과 Node 26에서 멈춥니다. 다운로드가 100%까지 간 뒤 압축 해제에서 멈추는 Playwright 쪽 알려진 문제이고 1.60부터 고쳐졌습니다([microsoft/playwright#40724](https://github.com/microsoft/playwright/issues/40724), [#41000](https://github.com/microsoft/playwright/issues/41000)). `package.json`이 1.56.1 고정에 `engines: >=22`라서 Homebrew 기본 Node(26)나 Node 24 최신판에서는 README대로 해도 설치가 끝나지 않습니다. 이 머신(Node 26.8.1)에서 두 번 재현했습니다. 같은 zip을 `ditto -x -k`로 풀고 `INSTALLATION_COMPLETE` 표지를 두면 드라이버는 Node 26에서도 돕니다.
+   - 버전을 올리면 Chromium이 바뀌어 녹화와 픽셀 기반 검사에 영향이 있을 수 있어 손대지 않았습니다. 동결 실험이 끝날 때까지 1.56.1을 유지할지, `engines`를 좁힐지, 동결 뒤 올릴지 정해 주세요. README 설치 안내에는 "Node.js 22를 쓸 것"과 이 이슈 링크를 넣겠습니다.
+2. 셀프테스트는 234개 중 233개가 통과했습니다. 실패한 1건은 `focus: an indicator drawn away from the element is found in the viewport (ACT oj04fd)`입니다. `fixtures/focus.html`의 `#far`는 일반 흐름에 놓인 인라인 버튼이라 앞선 요소들의 글꼴 폭에 따라 위치가 바뀝니다. macOS에서는 `#far`가 x=1500.66, y=200에 놓여 절대 위치인 `#farmark`(left 1500, top 220)와 겹치고, 먼 표시가 요소 근처 변화로 잡힙니다(`indicator_px` 424, `indicator_any_px` null). 검출기는 표시를 제대로 찾았고, 픽스처 배치가 글꼴에 따라 달라지는 것으로 보입니다. `#far`를 절대 위치로 두면 플랫폼과 무관해질 것 같습니다. 같은 이유로 macOS에서 녹화하면 글꼴과 레이아웃 차이가 수치에 섞일 수 있습니다.
+
+### 앞선 요청의 상태
+
+클라우드 배포 세션의 "그쪽 파일 요청" 1~6(`read_page.mjs` 즉시 멈춤, 드라이버 README 링크, `audience-research.md` 멈춤 목록, PC-01 문구, `ux-design-discipline.md` 5.6절, 고령층 71.8%)은 그대로 유효합니다. 처리하시면 커밋 해시를 여기에 적어 주세요. 병합할 때 확인하겠습니다.
