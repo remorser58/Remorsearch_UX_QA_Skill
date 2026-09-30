@@ -17,6 +17,9 @@
     neither sticks out. #ns-wide is <noscript> content: dropped from the copy.
   - #buy-now sits in a fixed bottom bar that fits at 360 px and runs past the right edge
     at 320 px: an offender although only the bar overflows.
+  - #side-nav becomes a fixed off-canvas menu (right: -100%) below 340 px: its links
+    are neither lost nor offenders. #promo is a carousel track: its second banner, cut
+    at 320 px, is reachable through the carousel's own controls (not lost).
   - #tick counts up: the screen keeps one copy (the newest) until #open-panel opens a
     dialog panel, a new screen.
 -->
@@ -31,6 +34,9 @@
   #buybar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 8px; padding: 8px; white-space: nowrap; background: #eee; }
   #buybar button { min-width: 160px; flex: none; }
   #main-region { min-height: 300px; }
+  @media (max-width: 340px) { #side-nav { position: fixed; top: 0; right: -100%; width: 80%; height: 100%; background: #fff; } }
+  #promo { overflow: hidden; white-space: nowrap; }
+  #promo span { display: inline-block; }
   #panel { min-height: 200px; border: 1px solid #999; }
   [hidden] { display: none !important; }
 </style>
@@ -39,6 +45,9 @@
 <body>
 <nav id="gnb"><button type="button" aria-expanded="false" aria-controls="gnb-list">메뉴</button>
   <ul id="gnb-list"><li><a id="gnb-a1" href="#a">공지사항 전체 보기</a></li><li><a id="gnb-a2" href="#b">자주 묻는 질문</a></li></ul></nav>
+<nav id="side-nav"><a id="side-a1" href="#s1">마이페이지</a> <a id="side-a2" href="#s2">고객센터</a></nav>
+<div id="promo" class="promo-carousel" aria-roledescription="carousel"><span id="promo-1" style="width: 300px">가을 할인 배너</span><span id="promo-2" style="width: 55px">두번째</span></div>
+<button type="button" aria-controls="promo">다음 배너</button>
 <div id="main-region">
   <p>남은 시간 <span id="tick">0</span>초</p>
   <div id="cssom-box">CSSOM으로 넣은 고정 폭 상자</div>

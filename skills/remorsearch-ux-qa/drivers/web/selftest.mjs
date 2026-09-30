@@ -785,7 +785,8 @@ async function focusProbeTest(base, tmp) {
     schema_version: 'ergo-scenario.v1', scenario_id: 'SC-driver-focus-02', surface: { kind: 'web', url: '{BASE}/focus2.html' },
     task_goal_ko: '메뉴와 대화상자를 쓴다', device_ids: ['desktop-1920'], targets: {},
     steps: [click('#tick-btn'), click('#menu2-btn'), click('#mi-2'), click('#fb'), click('#card-img'), click('#fake-radio'), click('#cb-l'),
-      click('#disc-btn'), click('#disc-btn'), click('#mui-btn'), click('#mui-close'), click('#late-btn'), click('#late-close'), click('#wi-btn'), click('#pair-a'), click('#pair-b')],
+      click('#disc-btn'), click('#disc-btn'), click('#mui-btn'), click('#mui-close'), click('#late-btn'), click('#late-close'), click('#wi-btn'), click('#pair-a'), click('#pair-b'),
+      click('#card2-img'), click('#dock-btn'), click('#dock-close'), click('#pulse-btn'), { action: 'type', target: '#ac', text: '충전' }, click('#ac-go')],
     success: { url_contains: 'focus2' },
   };
   writeJson(path.join(tmp, 'focus2.json'), sc);
@@ -823,6 +824,19 @@ async function focusProbeTest(base, tmp) {
     step('#wi-btn')?.focus_probe?.indicator_px > 50, step('#wi-btn')?.focus_probe);
   check("focus probe: the previous control's ring is masked without masking the target in the same small group",
     step('#pair-b')?.focus_probe?.masked_prev === true && step('#pair-b')?.focus_probe?.indicator_px > 50, step('#pair-b')?.focus_probe);
+  check('click targets: a card whose only controls are side actions is not covered by them',
+    ctl('#card2-img')?.control === false && ctl('#card2-img')?.card_control === false && ctl('#card2-img')?.contains_control === false, ctl('#card2-img'));
+  const drawer = (after('#dock-btn').layers || []).find((l) => l.dom_id === 'dock-drawer');
+  check('layers: focus left on the menu button in the same fixed bar is not inside the drawer it opened',
+    !!drawer && drawer.contains_focus === false && !(step('#dock-btn')?.focus_late_layers || []).length, { drawer, late: step('#dock-btn')?.focus_late_layers });
+  check('focus probe: a container that held focus (the dialog root) is not masked over the target inside it',
+    step('#mui-close')?.focus_probe?.masked_prev === false && step('#mui-close')?.focus_probe?.indicator_px > 50, step('#mui-close')?.focus_probe);
+  check('focus probe: a control whose background keeps pulsing is inconclusive, not a missing indicator',
+    step('#pulse-btn')?.focus_probe?.indicator_px === null && step('#pulse-btn')?.focus_probe?.inconclusive === 'animated', step('#pulse-btn')?.focus_probe);
+  check('focus probe: after typing in a field with suggestions, the next click is not probed',
+    step('#ac-go')?.focus_probe?.skipped === 'field_focused', step('#ac-go')?.focus_probe);
+  check('focus probe: focus is not given back to an ordinary previous control (blurred instead)',
+    step('#pair-b')?.focus_probe?.restored === 'blur', step('#pair-b')?.focus_probe);
   check('focus2: every step ok', run.steps.every((s) => s.result === 'ok'), run.steps.map((s) => [s.action.target, s.result, s.error]));
 }
 
@@ -943,6 +957,8 @@ async function reflowCopyTest(base, tmp) {
   const buy = recs.flatMap((x) => x.offenders || []).find((o) => o.dom_id === 'buy-now');
   check('reflow copy: a button pushed past the edge inside a fixed bar is an offender (fixed)', !!buy && buy.fixed === true, buy);
   const lost = recs.flatMap((x) => (x.lost || []).map((o) => o.dom_id));
+  check('reflow copy: an off-canvas fixed menu below a breakpoint is neither lost nor an offender; a carousel slide is not lost',
+    !lost.includes('side-a1') && !offenders.includes('side-nav') && !offenders.includes('side-a1') && !lost.includes('promo-2'), { lost, offenders });
   check('reflow copy: links in a list collapsed below a breakpoint (with or without a toggle) are not lost',
     !lost.includes('gnb-a1') && !lost.includes('foot-a1'), recs.map((x) => x.lost));
 }

@@ -455,25 +455,40 @@ export function indicatorPixels(on, off1, off2, level = 16, maskLevel = 4, regio
  * (max channel change >= level) from every frame in ``offs`` while the ``offs`` agree
  * with each other (max change < maskLevel; animation and anything that changed during
  * the capture sequence are masked). Pixels inside ``exclude`` rectangles ({x0, y0, x1,
- * y1}, frame px) are not counted.
+ * y1}, frame px) are not counted. ``stats``, when given, receives the pixel total and
+ * how many were excluded or masked as moving, within ``stats.roi`` when it is set.
  */
-export function indicatorPixelsMulti(on, offs, level = 16, maskLevel = 4, exclude = []) {
+export function indicatorPixelsMulti(on, offs, level = 16, maskLevel = 4, exclude = [], stats = null) {
   if (!on || !offs.length || offs.some((f) => !f || f.rgb.length !== on.rgb.length)) return null;
   const w = on.width;
   const d = (f, g, o) => Math.max(Math.abs(f.rgb[o] - g.rgb[o]), Math.abs(f.rgb[o + 1] - g.rgb[o + 1]), Math.abs(f.rgb[o + 2] - g.rgb[o + 2]));
+  const roi = stats && stats.roi;
+  const inRoi = (x, y) => !roi || (x >= roi.x0 && x < roi.x1 && y >= roi.y0 && y < roi.y1);
   let changed = 0;
+  let total = 0;
+  let excluded = 0;
+  let animated = 0;
   for (let y = 0; y < on.height; y++) {
     for (let x = 0; x < w; x++) {
-      if (exclude.some((r) => x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1)) continue;
-      const o = (y * w + x) * 3;
-      let ok = true;
-      for (let i = 0; i < offs.length && ok; i++) {
-        if (d(on, offs[i], o) < level) ok = false;
-        else if (i > 0 && d(offs[0], offs[i], o) >= maskLevel) ok = false;
+      const counted = inRoi(x, y);
+      if (counted) total++;
+      if (exclude.some((r) => x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1)) {
+        if (counted) excluded++;
+        continue;
       }
+      const o = (y * w + x) * 3;
+      let moving = false;
+      for (let i = 1; i < offs.length && !moving; i++) if (d(offs[0], offs[i], o) >= maskLevel) moving = true;
+      if (moving) {
+        if (counted) animated++;
+        continue;
+      }
+      let ok = true;
+      for (let i = 0; i < offs.length && ok; i++) if (d(on, offs[i], o) < level) ok = false;
       if (ok) changed++;
     }
   }
+  if (stats) Object.assign(stats, { total, excluded, animated });
   return changed;
 }
 

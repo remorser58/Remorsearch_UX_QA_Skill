@@ -53,6 +53,7 @@ const FOCUS_ANIM_GAP_MS = 40;
 // Flash sampling: page scroll that reverses more often than this per second is treated
 // as flicker, not motion (smooth scrolling in one direction is exempt).
 const SCROLL_REVERSALS_PER_S = 3;
+const SCROLL_REVERSAL_MIN_CSS = 4;
 const FOCUS_MASK_LEVEL = 4;
 const STEP_PROBE_MAX = 16; // focus probes before clicks, per run
 
@@ -166,14 +167,16 @@ function reflowCopy() {
   walk(document);
   // Rules of sheets whose text is served (links): counted here and in the copy alike.
   for (const sheet of document.styleSheets) if (sheet.ownerNode && sheet.ownerNode.localName !== 'style') sheetText(sheet);
-  const strip = (t) => (t || '').replace(/\s+/g, ' ').replace(/[0-9]+/g, '#').trim().slice(0, 60);
+  const strip = (t) => (typeof t === 'string' ? t : '').replace(/\s+/g, ' ').replace(/[0-9]+/g, '#').trim().slice(0, 60);
+  // The id attribute, not the property: a form's `id` property returns a control named "id".
+  const idOf = (n) => n.getAttribute('id') || '';
   const shown = (n) => n.getClientRects().length > 0 && getComputedStyle(n).visibility === 'visible';
   const parts = [location.pathname.replace(/[0-9]+/g, '#'), strip(location.hash)];
   const marks = 'h1, h2, h3, [role="heading"], legend, dialog[open], [role="dialog"], [role="alertdialog"], [aria-modal="true"], [role="tabpanel"], main[id], form[id], section[id]';
   for (const n of document.querySelectorAll(marks)) {
     if (!shown(n)) continue;
     const titled = /^(h[1-3]|legend)$/.test(n.localName) || n.getAttribute('role') === 'heading';
-    parts.push(`${n.localName}${n.id ? `#${strip(n.id)}` : ''}${titled ? `:${strip(n.textContent)}` : ''}`);
+    parts.push(`${n.localName}${idOf(n) ? `#${strip(idOf(n))}` : ''}${titled ? `:${strip(n.textContent)}` : ''}`);
     if (parts.length >= 80) break;
   }
   // Major regions with an id (half the width, a good part of the height): a step of a
@@ -182,10 +185,18 @@ function reflowCopy() {
   for (const n of document.body ? document.body.querySelectorAll('[id]') : []) {
     const r = n.getBoundingClientRect();
     if (r.width < 0.5 * innerWidth || r.height < Math.min(120, 0.15 * innerHeight) || !shown(n)) continue;
-    major.add(strip(n.id));
+    major.add(strip(idOf(n)));
     if (major.size >= 30) break;
   }
   parts.push(...[...major].sort().map((id) => `@${id}`));
+  // Messages on screen (alerts, status, live regions with text): a toast or an error
+  // is a state of its own, which a later copy without it must not replace.
+  let alerts = 0;
+  for (const n of document.querySelectorAll('[role="alert"], [role="status"], [aria-live="assertive"], [aria-live="polite"]')) {
+    if (alerts >= 10 || !shown(n) || !(n.textContent || '').trim()) continue;
+    parts.push(`!${n.localName}${idOf(n) ? `#${strip(idOf(n))}` : ''}`);
+    alerts += 1;
+  }
   return { html: out.join(''), rules, key: parts.join('|') };
 }
 
@@ -224,11 +235,16 @@ function reflowRuleCount() {
  * Otherwise (320 px): whether the page scrolls sideways, the outermost elements past
  * the right edge (two-dimensional content, inert and aria-hidden content exempt; inside
  * a fixed bar they count even when the page does not scroll, since a fixed box cannot be
- * scrolled to), and text visible at the device width but cut away here ("lost").
+ * scrolled to, unless the fixed box is wholly off screen: an off-canvas menu), and text
+ * visible at the device width but cut away here ("lost"). `exempt_right` is the right
+ * edge of the widest exempt element, so a page that scrolls only because of a table is
+ * not reported as a page that does not reflow.
  */
 function reflowInfo(arg) {
   const CAP = 20000;
   const up = (m) => m.assignedSlot || m.parentElement || (m.parentNode && m.parentNode.host) || null;
+  // The id attribute, not the property: a form's `id` property returns a control named "id".
+  const idOf = (n) => (n.getAttribute && n.getAttribute('id')) || '';
   const all = [];
   let capped = false;
   const visit = (root) => {
@@ -247,13 +263,17 @@ function reflowInfo(arg) {
   const shown = (n) => (n.checkVisibility
     ? n.checkVisibility({ opacityProperty: true, visibilityProperty: true, checkOpacity: true, checkVisibilityCSS: true })
     : getComputedStyle(n).visibility === 'visible');
-  // Regions a collapsed toggle controls (aria-expanded=false): hidden by design.
-  const collapsedIds = new Set();
-  for (const t of document.querySelectorAll('[aria-expanded="false"][aria-controls]')) for (const id of t.getAttribute('aria-controls').split(/\s+/)) if (id) collapsedIds.add(id);
+  // Regions a control points to (aria-controls: a collapsed disclosure, a carousel's
+  // previous/next buttons, tabs): their clipped content is reachable through it.
+  const controlledIds = new Set();
+  for (const t of document.querySelectorAll('[aria-controls]')) for (const id of t.getAttribute('aria-controls').split(/\s+/)) if (id) controlledIds.add(id);
+  const CAROUSEL = /(^|[\s_-])(carousel|swiper|slick|splide|glide|flickity|slider)([\s_-]|$)/i;
+  const carousel = (m) => /carousel|slide/i.test(m.getAttribute('aria-roledescription') || '') || CAROUSEL.test(typeof m.className === 'string' ? m.className : '');
   // For an element that owns text, the share of its box left visible by clipping
   // ancestors up to the first scroll container (content there is reachable), and by the
-  // viewport sideways when a fixed ancestor holds it. Null when it owns no text, is not
-  // visible, or sits in a collapsed disclosure.
+  // viewport sideways when a fixed box holds it. Null when it owns no text, is not
+  // visible, sits in a collapsed disclosure or a carousel track (reachable through its
+  // controls), or in a fixed box wholly off screen (an off-canvas menu).
   const share = (n) => {
     let own = false;
     for (const c of n.childNodes) {
@@ -270,26 +290,33 @@ function reflowInfo(arg) {
     let x1 = r.right;
     let y1 = r.bottom;
     let fixed = getComputedStyle(n).position === 'fixed';
-    for (let m = up(n); !top(m); m = up(m)) {
-      if (m.id && collapsedIds.has(m.id)) return null;
+    let fixedBox = fixed ? r : null;
+    for (let m = up(n); !fixed && !top(m); m = up(m)) {
       const cs = getComputedStyle(m);
       if (['auto', 'scroll'].includes(cs.overflowX) || ['auto', 'scroll'].includes(cs.overflowY)) break;
-      if (cs.position === 'fixed') fixed = true;
       const clipX = ['hidden', 'clip'].includes(cs.overflowX);
       const clipY = ['hidden', 'clip'].includes(cs.overflowY);
-      if (!clipX && !clipY) continue;
-      const a = m.getBoundingClientRect();
-      if ((clipX && a.width <= 1) || (clipY && (a.height <= 1 || cs.maxHeight === '0px'))) return null; // collapsed
-      if (clipX) {
-        x0 = Math.max(x0, a.left);
-        x1 = Math.min(x1, a.right);
+      if (clipX || clipY) {
+        if (controlledIds.has(idOf(m)) || carousel(m)) return null;
+        const a = m.getBoundingClientRect();
+        if ((clipX && a.width <= 1) || (clipY && (a.height <= 1 || cs.maxHeight === '0px'))) return null; // collapsed
+        if (clipX) {
+          x0 = Math.max(x0, a.left);
+          x1 = Math.min(x1, a.right);
+        }
+        if (clipY) {
+          y0 = Math.max(y0, a.top);
+          y1 = Math.min(y1, a.bottom);
+        }
       }
-      if (clipY) {
-        y0 = Math.max(y0, a.top);
-        y1 = Math.min(y1, a.bottom);
+      // Boxes above a fixed one do not clip it (it is placed against the viewport).
+      if (cs.position === 'fixed') {
+        fixed = true;
+        fixedBox = m.getBoundingClientRect();
       }
     }
     if (fixed) {
+      if (fixedBox.right <= 0 || fixedBox.left >= vw) return null; // off-canvas
       x0 = Math.max(x0, 0);
       x1 = Math.min(x1, vw);
     }
@@ -312,10 +339,10 @@ function reflowInfo(arg) {
   const sw = se.scrollWidth;
   const clipX = (n) => ['hidden', 'clip'].includes(getComputedStyle(n).overflowX);
   const rootClips = clipX(document.documentElement) || (document.body ? clipX(document.body) : false);
-  const out = { client_width: cw, scroll_width: sw, root_clips: rootClips, offenders: [], lost: [], scan_capped: capped || !!full.capped };
+  const out = { client_width: cw, scroll_width: sw, root_clips: rootClips, offenders: [], lost: [], exempt_right: null, scan_capped: capped || !!full.capped };
   const ids = (n) => {
     const list = [];
-    for (let m = up(n); m && list.length < 6; m = up(m)) if (m.id) list.push(m.id);
+    for (let m = up(n); m && list.length < 6; m = up(m)) if (idOf(m)) list.push(idOf(m));
     return list;
   };
   const hidden = (n) => {
@@ -339,29 +366,30 @@ function reflowInfo(arg) {
       if (now == null || now >= 0.5) continue;
       const n = all[i];
       if (twoD(n) || hidden(n)) continue;
-      out.lost.push({ dom_id: n.id || null, ancestor_ids: ids(n), tag: n.localName, visible_full: full.vis[i], visible_320: now,
+      out.lost.push({ dom_id: idOf(n) || null, ancestor_ids: ids(n), tag: n.localName, visible_full: full.vis[i], visible_320: now,
         box: box(n.getBoundingClientRect()), text: (n.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 60) });
     }
   }
   const pageOverflow = sw > cw + 4 || rootClips;
   // How an element past the edge stays out of reach: 'page' (the page scrolls or the
-  // root clips), 'fixed' (a fixed box holds it), or null (its own scroll or clipping box).
+  // root clips), 'fixed' (a fixed box holds it), or null (its own scroll or clipping
+  // box). Boxes above a fixed one do not clip it.
   const reach = (n) => {
-    let fixed = getComputedStyle(n).position === 'fixed';
+    if (getComputedStyle(n).position === 'fixed') return n.getBoundingClientRect().left >= cw - 1 ? null : 'fixed'; // null: off-canvas
     for (let m = up(n); !top(m); m = up(m)) {
       const cs = getComputedStyle(m);
       if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') return null; // scrolls inside its own box
       if ((cs.overflowX === 'hidden' || cs.overflowX === 'clip') && m.getBoundingClientRect().right <= cw + 1) return null; // clipped by a box that fits
-      if (cs.position === 'fixed') fixed = true;
+      if (cs.position === 'fixed') return m.getBoundingClientRect().left >= cw - 1 ? null : 'fixed'; // null: an off-canvas menu
     }
-    return fixed ? 'fixed' : pageOverflow ? 'page' : null;
+    return pageOverflow ? 'page' : null;
   };
   const sel = (n) => {
-    if (n.id) return `#${CSS.escape(n.id)}`;
+    if (idOf(n)) return `#${CSS.escape(idOf(n))}`;
     const parts = [];
     for (let m = n; m && m.nodeType === 1 && m !== document.body && parts.length < 5; m = m.parentElement) {
-      if (m.id) {
-        parts.unshift(`#${CSS.escape(m.id)}`);
+      if (idOf(m)) {
+        parts.unshift(`#${CSS.escape(idOf(m))}`);
         break;
       }
       const sib = m.parentElement ? [...m.parentElement.children].filter((c) => c.tagName === m.tagName) : [];
@@ -374,11 +402,14 @@ function reflowInfo(arg) {
     const n = all[i];
     const r = n.getBoundingClientRect();
     if (r.width <= 1 || r.height <= 1 || r.right <= cw + 4) continue; // 4 px tolerance (borders, rounding)
-    if (full.off[i]) continue; // off screen at the device width too: off-canvas by design
     const cs = getComputedStyle(n);
     if (cs.display === 'none' || cs.visibility !== 'visible' || parseFloat(cs.opacity) === 0) continue;
+    // Off screen at the device width too (off-canvas by design), two-dimensional or hidden.
+    if (full.off[i] || twoD(n) || hidden(n)) {
+      out.exempt_right = Math.max(out.exempt_right || 0, Math.round(r.right));
+      continue;
+    }
     if (!(n.innerText || '').trim() && !['img', 'input', 'button', 'select', 'textarea'].includes(n.localName)) continue;
-    if (twoD(n) || hidden(n)) continue;
     const how = reach(n);
     if (how) hits.set(n, how);
   }
@@ -391,7 +422,7 @@ function reflowInfo(arg) {
       }
     }
     if (!outer) continue;
-    out.offenders.push({ selector: sel(n), dom_id: n.id || null, ancestor_ids: ids(n), tag: n.localName, fixed: how === 'fixed',
+    out.offenders.push({ selector: sel(n), dom_id: idOf(n) || null, ancestor_ids: ids(n), tag: n.localName, fixed: how === 'fixed',
       box: box(n.getBoundingClientRect()), text: (n.innerText || n.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim().slice(0, 60) });
     if (out.offenders.length >= limit) break;
   }
@@ -422,9 +453,26 @@ function probeTarget(start) {
   while (active && active.shadowRoot && active.shadowRoot.activeElement) active = active.shadowRoot.activeElement;
   if (active === el || (active && el.contains(active))) return { skip: 'already_focused' };
   const prev = active && active !== document.body && active !== document.documentElement ? active : null;
-  // A focused text field or editor: the driver takes its focus away first (its blur
-  // would run at the click anyway) and measures again.
+  // A focused text field or editor: before a button, the driver takes its focus away
+  // first (its blur would run at the click anyway) and measures again. Not before other
+  // targets, and not from a field with suggestions: a suggestion list that hides on
+  // blur would be gone before the click.
   const field = textEntry(prev);
+  const buttonLike = el.localName === 'button' || el.getAttribute('role') === 'button'
+    || (el.localName === 'input' && ['submit', 'button', 'image', 'reset'].includes((el.getAttribute('type') || '').toLowerCase()));
+  const suggests = !!prev && (prev.getAttribute('role') === 'combobox' || prev.hasAttribute('aria-autocomplete') || prev.hasAttribute('list')
+    || prev.hasAttribute('aria-controls') || prev.hasAttribute('aria-owns'));
+  if (field && (!buttonLike || suggests)) return { skip: 'field_focused' };
+  const inFlat = (root, n) => {
+    for (let x = n; x; x = x.assignedSlot || x.parentNode || x.host) if (x === root) return true;
+    return false;
+  };
+  // Focus goes back to the previous element after the probe only where losing it would
+  // change the page (an open menu or disclosure trigger, a dialog or popup that traps
+  // focus); elsewhere the target is blurred, so a ring the restored focus would draw in
+  // keyboard modality is not on screen when the click's feedback is measured.
+  const keepPrev = !!prev && !field && (prev.getAttribute('aria-expanded') === 'true'
+    || !!prev.closest('[role="dialog"], [role="alertdialog"], dialog[open], [aria-modal="true"], [role="menu"], [role="listbox"], [popover]'));
   // Boxes relative to the screen (the visual viewport, panned inside a wider layout
   // viewport when content is wider than the screen), like screenshot clips.
   const vvp = window.visualViewport;
@@ -440,21 +488,25 @@ function probeTarget(start) {
   }
   // The previously focused control and its small wrappers: its own focus style goes
   // away when the target takes focus, so those pixels are not the target's indicator.
-  // A wrapper that also holds the target keeps any :focus-within style and is not
-  // masked (it would hide the target's own ring: two buttons in one small group).
+  // Not when it holds the target (a dialog or page container that took focus: its ring,
+  // if any, stays with focus inside), and a wrapper that also holds the target keeps any
+  // :focus-within style and is not masked (two buttons in one small group). A large
+  // previous element is masked along its edges only (where a ring is drawn).
   const prevBoxes = [];
-  if (prev && !field) {
+  if (prev && !field && !inFlat(prev, el)) {
     const p = prev.getBoundingClientRect();
-    prevBoxes.push({ x: p.left - dx, y: p.top - dy, w: p.width, h: p.height });
-    for (let n = prev.parentElement, i = 0; n && n.nodeType === 1 && i < 3; n = n.parentElement, i++) {
+    const large = p.width * p.height > 4 * Math.max(1, r.width * r.height);
+    prevBoxes.push({ x: p.left - dx, y: p.top - dy, w: p.width, h: p.height, band: large });
+    for (let n = prev.parentElement, i = 0; !large && n && n.nodeType === 1 && i < 3; n = n.parentElement, i++) {
       const a = n.getBoundingClientRect();
-      if (n.contains(el) || a.width * a.height > 4 * Math.max(1, p.width * p.height)) break;
+      if (inFlat(n, el) || a.width * a.height > 4 * Math.max(1, p.width * p.height)) break;
       prevBoxes.push({ x: a.left - dx, y: a.top - dy, w: a.width, h: a.height });
     }
   }
   window.__ergoProbeEl = el;
   window.__ergoProbePrev = prev;
-  return { boxes, prevBoxes, field, vw: one ? vvp.width : window.innerWidth, vh: one ? vvp.height : window.innerHeight, scroll: [window.scrollX, window.scrollY] };
+  window.__ergoProbeKeep = keepPrev;
+  return { boxes, prevBoxes, field, keepPrev, vw: one ? vvp.width : window.innerWidth, vh: one ? vvp.height : window.innerHeight, scroll: [window.scrollX, window.scrollY] };
 }
 
 function focusInfo() {
@@ -799,7 +851,12 @@ export class WebSession {
       } else if (!this.reflowDropped.has(key)) {
         this.reflowDropped.add(key);
       }
-    } catch { /* navigating: the next snapshot keeps the screen */ }
+    } catch (err) {
+      // Navigating: the next snapshot keeps the screen. Anything else is worth a note.
+      if (!/navigat|context was destroyed|Target closed/i.test(String(err && err.message))) {
+        this.warnOnce('reflow-copy', `reflow copy failed: ${firstLine(err && err.message)}`);
+      }
+    }
   }
 
   /**
@@ -807,6 +864,10 @@ export class WebSession {
    * the site's CSS and fonts load same-origin as in the run), scripts off.
    */
   async loadReflowCopy(page, screen) {
+    // Transitions would animate the resize to 320 px; the copy carries a rule that turns
+    // them off (written into the HTML: with scripts off, an injected tag never reports load).
+    const noTransitions = '<style>*, *::before, *::after { transition: none !important; }</style>';
+    const html = /<\/head>/i.test(screen.html) ? screen.html.replace(/<\/head>/i, (m) => `${noTransitions}${m}`) : `${noTransitions}${screen.html}`;
     let target = null;
     try {
       const u = new URL(screen.url);
@@ -818,16 +879,16 @@ export class WebSession {
     await page.goto('about:blank').catch(() => {});
     if (!target) {
       const base = `<base href="${screen.url.replace(/"/g, '&quot;')}">`;
-      const html = /<base\s/i.test(screen.html) ? screen.html
-        : /<head[^>]*>/i.test(screen.html) ? screen.html.replace(/<head[^>]*>/i, (m) => `${m}${base}`) : `${base}${screen.html}`;
-      await page.setContent(html, { waitUntil: 'load', timeout: 8000 });
+      const withBase = /<base\s/i.test(html) ? html
+        : /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (m) => `${m}${base}`) : `${base}${html}`;
+      await page.setContent(withBase, { waitUntil: 'load', timeout: 8000 });
       return;
     }
     const match = (u) => u.href === target;
     const handler = (route) => {
       const req = route.request();
       if (req.isNavigationRequest() && req.frame() === page.mainFrame()) {
-        return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: screen.html });
+        return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
       }
       return route.fallback();
     };
@@ -837,8 +898,9 @@ export class WebSession {
     } finally {
       await page.unroute(match, handler).catch(() => {});
     }
-    // Web fonts load on first use; wait briefly so text is measured in its own font.
-    await page.evaluate(() => Promise.race([document.fonts.ready.then(() => true), new Promise((r) => setTimeout(() => r(false), 1500))])).catch(() => {});
+    // Web fonts load on first use; wait briefly so text is measured in its own font (the
+    // time limit is kept here: page timers may not run with scripts off).
+    await Promise.race([page.evaluate(() => document.fonts.ready.then(() => true)).catch(() => false), sleep(1500)]);
   }
 
   /**
@@ -901,17 +963,21 @@ export class WebSession {
   }
 
   /**
-   * A layer the step opened without focus inside at the after-snapshot: dialogs often
-   * move focus after their entrance transition. Poll focus until one second after the
-   * input; layers focus reached are listed on the step (focus_late_layers).
+   * A layer that opened without focus inside at the after-snapshot: dialogs often move
+   * focus after their entrance transition. Poll focus until one second after the input
+   * (after a wait or snapshot step: 0.7 s from now, since a dialog seen at its end may
+   * be mid-transition), at least once; layers focus reached are listed on the step
+   * (focus_late_layers). Focus on the layer's overlay root counts only when the root is
+   * an ancestor of the layer (a portal that focuses itself), as in the extract.
    */
-  async lateLayerFocus(step, layersBefore) {
+  async lateLayerFocus(step, layersBefore, waitStep = false) {
+    if (this.scenario.surface_kind === 'game') return;
     const pending = (this.lastLayers || []).filter((l) => !layersBefore.has(l.selector) && !l.contains_focus)
       .map((l) => ({ sel: l.selector, root: l.overlay_root || null }));
     if (!pending.length) return;
-    const deadline = this.runStartEpoch + step.t_start_ms + 1000;
+    const deadline = waitStep ? epochNow() + 700 : Math.max(this.runStartEpoch + step.t_start_ms + 1000, epochNow() + 100);
     const reached = new Set();
-    while (epochNow() < deadline && reached.size < pending.length) {
+    do {
       await sleep(50);
       const inside = await this.page.evaluate((layers) => {
         let deep = document.activeElement;
@@ -928,11 +994,15 @@ export class WebSession {
             return null;
           }
         };
-        // The layer or its overlay root (the extract's rule), as selected at the snapshot.
-        return layers.filter(({ sel, root }) => [find(sel), find(root)].some((node) => node && inFlat(node, deep))).map(({ sel }) => sel);
+        return layers.filter(({ sel, root }) => {
+          const node = find(sel);
+          if (!node) return false;
+          const r = find(root);
+          return inFlat(node, deep) || (!!r && inFlat(r, deep) && inFlat(deep, node));
+        }).map(({ sel }) => sel);
       }, pending).catch(() => []);
       for (const sel of inside) reached.add(sel);
-    }
+    } while (epochNow() < deadline && reached.size < pending.length);
     if (reached.size) step.focus_late_layers = [...reached];
   }
 
@@ -1231,7 +1301,8 @@ export class WebSession {
         await sleep(FOCUS_SETTLE_MS * 2);
         target = await handle.evaluate(probeTarget).catch(() => null);
         if (!target || target.skip || target.field) {
-          step.focus_probe = { skipped: target ? (target.skip || 'field_focused') : 'no_element' };
+          // after_field: the page may have changed; the click's target is checked again.
+          step.focus_probe = { skipped: target ? (target.skip || 'field_focused') : 'no_element', after_field: true };
           return;
         }
         afterField = true;
@@ -1272,13 +1343,15 @@ export class WebSession {
         return { focused: a === el, visible: el.matches(':focus-visible'), scroll: [window.scrollX, window.scrollY] };
       });
       const restore = () => page.evaluate(() => {
-        // Give focus back to what had it (a menu trigger keeps its menu open, and focus
-        // moves from it to the target at the click as it would); else leave none.
+        // Give focus back to what had it where losing it would change the page (see
+        // probeTarget); else leave none.
         const el = window.__ergoProbeEl;
         const p = window.__ergoProbePrev;
+        const keep = window.__ergoProbeKeep;
         window.__ergoProbeEl = null;
         window.__ergoProbePrev = null;
-        if (p && p.isConnected && p !== el) p.focus({ preventScroll: true });
+        window.__ergoProbeKeep = null;
+        if (keep && p && p.isConnected && p !== el) p.focus({ preventScroll: true });
         else if (el) el.blur();
       }).catch(() => {});
       if (!got || !got.focused) {
@@ -1303,18 +1376,35 @@ export class WebSession {
         await page.evaluate((xy) => window.scrollTo(xy[0], xy[1]), target.scroll).catch(() => {});
       }
       // The previously focused control's own focus style: not the target's indicator.
+      // Rectangles in CSS px, 8 px beyond the box; a large element only along its edges.
+      const rects = [];
+      for (const b of target.prevBoxes || []) {
+        const [bx0, by0, bx1, by1] = [b.x - 8, b.y - 8, b.x + b.w + 8, b.y + b.h + 8];
+        if (!b.band) rects.push([bx0, by0, bx1, by1]);
+        else rects.push([bx0, by0, bx1, b.y + 8], [bx0, b.y + b.h - 8, bx1, by1], [bx0, by0, b.x + 8, by1], [b.x + b.w - 8, by0, bx1, by1]);
+      }
       const sx = allOn.width / this.vw;
       const sy = allOn.height / this.vh;
-      const prevLocal = (target.prevBoxes || []).map((b) => ({ x0: Math.floor(b.x - 8 - clip.x), y0: Math.floor(b.y - 8 - clip.y),
-        x1: Math.ceil(b.x + b.w + 8 - clip.x), y1: Math.ceil(b.y + b.h + 8 - clip.y) }));
-      const prevAll = (target.prevBoxes || []).map((b) => ({ x0: Math.floor((b.x - 8) * sx), y0: Math.floor((b.y - 8) * sy),
-        x1: Math.ceil((b.x + b.w + 8) * sx), y1: Math.ceil((b.y + b.h + 8) * sy) }));
+      const prevLocal = rects.map(([a, b, c, d]) => ({ x0: Math.floor(a - clip.x), y0: Math.floor(b - clip.y), x1: Math.ceil(c - clip.x), y1: Math.ceil(d - clip.y) }));
+      const prevAll = rects.map(([a, b, c, d]) => ({ x0: Math.floor(a * sx), y0: Math.floor(b * sy), x1: Math.ceil(c * sx), y1: Math.ceil(d * sy) }));
+      // Share of the target's own box (+4 px, where its ring is drawn) that is masked.
+      const own = target.boxes[0];
+      const near = { roi: { x0: Math.floor(own.x - 4 - clip.x), y0: Math.floor(own.y - 4 - clip.y), x1: Math.ceil(own.x + own.w + 4 - clip.x), y1: Math.ceil(own.y + own.h + 4 - clip.y) } };
+      let px = moved ? null : indicatorPixelsMulti(on, [off, off2, off3], FOCUS_DIFF_LEVEL, FOCUS_MASK_LEVEL, prevLocal, near);
+      const anyPx = moved ? null : indicatorPixelsMulti(allOn, [allOff, allOff2, allOff3], FOCUS_DIFF_LEVEL, FOCUS_MASK_LEVEL, prevAll);
+      // Most of the area masked (the previous control's box, or content that kept
+      // moving: a pulsing button): a missing indicator cannot be told from a hidden one.
+      let inconclusive = null;
+      if (typeof px === 'number' && px < 4 && near.total && (near.excluded + near.animated) > 0.5 * near.total) {
+        inconclusive = near.animated > near.excluded ? 'animated' : 'masked';
+        px = null;
+      }
       step.focus_probe = {
         snapshot_id: step.before, selector: info ? info.selector : null, dom_id: info ? info.dom_id : null, tag: info ? info.tag : null,
         role: info ? info.role : null, name: info ? info.name : null, box: info ? info.box : null, in_viewport: info ? info.in_viewport : null,
-        focus_visible: got.visible, moved, after_field: afterField, clip_px: [clip.width, clip.height], masked_prev: prevLocal.length > 0,
-        indicator_px: moved ? null : indicatorPixelsMulti(on, [off, off2, off3], FOCUS_DIFF_LEVEL, FOCUS_MASK_LEVEL, prevLocal),
-        indicator_any_px: moved ? null : indicatorPixelsMulti(allOn, [allOff, allOff2, allOff3], FOCUS_DIFF_LEVEL, FOCUS_MASK_LEVEL, prevAll),
+        focus_visible: got.visible, moved, after_field: afterField, restored: target.keepPrev ? 'previous' : 'blur',
+        clip_px: [clip.width, clip.height], masked_prev: prevLocal.length > 0,
+        indicator_px: px, indicator_any_px: inconclusive ? null : anyPx, ...(inconclusive ? { inconclusive } : {}),
         indicator_any_scale: Math.round(Math.min(1, FOCUS_VIEWPORT_WIDTH / target.vw) * 1000) / 1000,
       };
     } catch (err) {
@@ -1644,12 +1734,19 @@ export class WebSession {
    * SCROLL_REVERSALS_PER_S times within one second (a shaking or bouncing page).
    */
   scrollOscillates(t, dx, dy) {
-    const h = this.scrollSigns || (this.scrollSigns = { x: 0, y: 0, times: [] });
+    // A reversal counts after at least SCROLL_REVERSAL_MIN_CSS of travel the other way,
+    // so sub-pixel corrections (virtual lists, sticky headers settling) are not shaking.
+    const h = this.scrollSigns || (this.scrollSigns = { x: 0, y: 0, runX: 0, runY: 0, times: [] });
     for (const [axis, d] of [['x', dx], ['y', dy]]) {
       if (Math.abs(d) < 0.5) continue;
       const sign = Math.sign(d);
-      if (h[axis] && sign !== h[axis]) h.times.push(t);
+      const run = axis === 'x' ? 'runX' : 'runY';
+      if (h[axis] && sign !== h[axis]) {
+        if (h[run] >= SCROLL_REVERSAL_MIN_CSS) h.times.push(t);
+        h[run] = 0;
+      }
       h[axis] = sign;
+      h[run] += Math.abs(d);
     }
     while (h.times.length && h.times[0] < t - 1000) h.times.shift();
     return h.times.length > SCROLL_REVERSALS_PER_S;
@@ -2303,7 +2400,7 @@ export class WebSession {
             step.focus_probe = { skipped: this.scenario.surface_kind === 'game' ? 'game' : 'timed' };
           } else {
             await this.focusProbe(resolved, step);
-            if (step.focus_probe && !step.focus_probe.skipped && resolved.handle) {
+            if (step.focus_probe && (!step.focus_probe.skipped || step.focus_probe.after_field) && resolved.handle) {
               // The probe must not change where the click lands: if the control moved or
               // something now covers it, resolve it again (and say so).
               const still = await resolved.handle.evaluate(hitTest, resolved.point).catch(() => null);
@@ -2341,8 +2438,8 @@ export class WebSession {
     try {
       snap = await this.snapshot(stepIndex, []);
       step.after = snap.id;
-      if (['tap', 'click', 'double_tap', 'long_press', 'press'].includes(action.action) && step.result === 'ok' && step.t_start_ms !== null) {
-        await this.lateLayerFocus(step, layersBefore);
+      if (['tap', 'click', 'double_tap', 'long_press', 'press', 'wait', 'snapshot'].includes(action.action) && step.result === 'ok' && step.t_start_ms !== null) {
+        await this.lateLayerFocus(step, layersBefore, ['wait', 'snapshot'].includes(action.action));
       }
       if (!step.point && ['press', 'gamepad', 'type'].includes(action.action) && this.lastActive && step.result === 'ok') {
         // Keyboard focus moved during the step: update for the next snapshot.
