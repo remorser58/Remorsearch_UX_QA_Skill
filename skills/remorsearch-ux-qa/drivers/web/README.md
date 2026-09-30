@@ -13,7 +13,7 @@ Requirements: Node.js 22 and `playwright@1.56.1` with its Chromium. Install once
 cd drivers/web
 npm install                 # playwright 1.56.1 into drivers/web/node_modules
 npx playwright install chromium
-node selftest.mjs           # a few minutes; expects "234 passed", 0 failed
+node selftest.mjs           # a few minutes; expects "243 passed", 0 failed
 ```
 
 The package is resolved by normal module resolution (so `drivers/web/node_modules`
@@ -159,7 +159,9 @@ they belong to (0 = initial load), so a step can own two snapshots.
   background-image/gradient is underneath (unknown, not guessed).
 - **Feedback latency**: an init-script `MutationObserver` timestamps DOM changes
   (only real ones: an attribute or text node written with the value it already had
-  changes nothing on screen), and `input` events of text-like fields count too (a typed character shows in the
+  changes nothing on screen, and attributes of `<html>`/`<body>` are page-state
+  markers such as input modality; a script that changes a field's `value` counts),
+  and `input` events of text-like fields count too (a typed character shows in the
   field without any DOM mutation; checkbox, radio, range, color, file and select
   inputs are left out, since their own look is what the user sees, and are judged by
   mutations and pixels); both are reported as `dom_mutation`.
@@ -168,7 +170,9 @@ they belong to (0 = initial load), so a step can own two snapshots.
   observed). Only when neither occurs does a visual change of the viewport count
   (`feedback_source: "visual_change"`, ~30 ms resolution; covers canvas and
   CSS-only feedback; the focused field's box is masked, so a blinking caret is not
-  feedback). `feedback_ambient_mutations` / `feedback_visual_ambient` flag
+  feedback, and so are pixels that changed at all in the two frames before the input,
+  so a pulsing button or a slow gradient does not pass for a response;
+  `feedback_visual_moving_px` counts them). `feedback_ambient_mutations` / `feedback_visual_ambient` flag
   pages that were already changing before the input (latency then is ambiguous).
 - **Timing windows**: each selector is polled in the page every 16 ms; a window
   reports `visible_ms` (shortest completed visible interval, the tightest window a
@@ -227,15 +231,21 @@ they belong to (0 = initial load), so a step can own two snapshots.
   or Angular CDK, which ignore Shift; scripts that react only to Tab are not
   triggered), focuses the control
   without scrolling, captures again, gives focus back to the element that had it
-  (or blurs the control), and captures a third unfocused frame. A pixel counts only
-  when the focused capture differs from all three unfocused ones (a clock that
-  ticked between captures is not an indicator), and the previously focused
-  control's own ring is masked. When a text field or editor had focus, it is
-  blurred first and the screen settles and is measured again (`after_field`), since
-  its blur would run at the click anyway. `step.focus_probe` records the control
-  like a walk stop plus `focus_visible`, `indicator_px`, `indicator_any_px`,
-  `moved` (a focus handler scrolled; the page is scrolled back and the captures are
-  not used), `masked_prev` and `snapshot_id` (the screen). If the control moved or
+  where losing it would change the page (an expanded trigger, focus inside a dialog,
+  menu, listbox or popover) and otherwise blurs the control (`restored`), and
+  captures a third unfocused frame. A pixel counts only when the focused capture
+  differs from all three unfocused ones (a clock that ticked between captures is not
+  an indicator), and the previously focused control's own ring is masked (not when
+  it holds the target; a large element along its edges only). When more than half of
+  the target's box is masked, the probe is `inconclusive` (`indicator_px: null`).
+  Before a button, a focused text field is blurred first and the screen settles and
+  is measured again (`after_field`), since its blur would run at the click anyway;
+  after typing in a field with suggestions, or before anything but a button, the
+  click is not probed (`field_focused`: a list that hides on blur would be gone).
+  `step.focus_probe` records the control like a walk stop plus `focus_visible`,
+  `indicator_px`, `indicator_any_px`, `moved` (a focus handler scrolled; the page is
+  scrolled back and the captures are not used), `masked_prev` and `snapshot_id` (the
+  screen). If the control moved or
   something covers it after the probe, the target is resolved again and
   `disturbed: true` is set. Skipped, with `skipped`, for text-entry targets (the
   caret shows focus), controls inside menus, menubars, listboxes, trees and grids
@@ -244,29 +254,32 @@ they belong to (0 = initial load), so a step can own two snapshots.
 - **Click targets**: each tap or click records `step.target_control` for what it
   landed on (through open shadow roots): `tag`, `role`, `dom_id`, `control` (a
   control, or inside one within five levels; links and buttons at any depth),
-  `contains_control`, `card_control` (the image or text of a card whose own link or
-  button the keyboard reaches), `hidden` (inside `aria-hidden`/`inert`),
+  `contains_control`, `card_control` (the image or text of a card whose own link, or
+  its one control, the keyboard reaches), `hidden` (inside `aria-hidden`/`inert`),
   `ancestor_ids` and `text`. SM-08 reads it.
 - **Focus and layers**: each snapshot records `focus` (the deepest focused element's
   `tag`, `role`, `dom_id`, `on_body`, `expanded`, `controls`; never a value) and
   `layers[]` (declared dialogs and fixed or absolute painted boxes over ≥ 40 % of the
   viewport that cover rendered content): `selector`, `dom_id`, `kind`
-  (`modal`/`dialog`/`sheet`), `box`, `contains_focus` (focus inside it or its
-  `overlay_root`, the outermost fixed ancestor that is not the app shell),
+  (`modal`/`dialog`/`sheet`), `box`, `contains_focus` (focus inside it, or on its
+  `overlay_root` when that root wraps the layer: the outermost fixed ancestor that is
+  not the app shell),
   `follows_focus` (the next Tab reaches it). After a tap, click or key press, layers
-  that opened without focus are polled until 1 s after the input; those that focus
-  reached are listed in `step.focus_late_layers`. FM-02 reads these.
+  that opened without focus are polled until 1 s after the input (0.7 s more after a
+  wait or snapshot step), at least once; those that focus reached are listed in
+  `step.focus_late_layers`. FM-02 reads these.
 - **Reflow copies** (`--no-reflow` to skip; not on games, TVs and handheld
   consoles): at each snapshot the driver serialises the DOM as the browser holds it
   (CSSOM-inserted rules, adopted sheets, open shadow roots as declarative ones;
   scripts, `noscript` and meta refresh dropped) and keeps the newest copy per screen
-  fingerprint (path, fragment, headings, dialogs, landmarks and large regions with
-  an id, digits removed), for up to 12 screens (`reflow_screens_dropped` counts the
+  fingerprint (path, fragment, headings, dialogs, `main`/`form`/`section` with an id,
+  large regions with an id and messages on screen, digits removed), for up to 12 screens (`reflow_screens_dropped` counts the
   rest). After the run each copy is loaded under its own URL (fulfilled from memory,
   scripts off) at the device width and at 320 CSS px. `run.reflow[]` has
   `snapshot_id`, `url`, `width`, `client_width`, `scroll_width`, `root_clips`,
   `offenders[]` (outermost elements past the right edge, `fixed` when a fixed box
-  holds them), `lost[]` (text ≥ 90 % visible at the device width, < 50 % at 320 px),
+  holds them), `exempt_right` (how far exempt content reaches), `lost[]` (text ≥ 90 %
+  visible at the device width, < 50 % at 320 px),
   `lost_height`, `scan_capped` (more than 20,000 elements), or `styles_lost` (the
   copy kept < 90 % of the live CSS rules; not measured) or `error`.
 - **Console**: `console.error` and uncaught page errors, per snapshot (since the

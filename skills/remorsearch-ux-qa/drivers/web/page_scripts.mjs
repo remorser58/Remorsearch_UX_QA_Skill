@@ -57,11 +57,15 @@ export function pageInit(cfg) {
     state.mutations++;
   };
   // Only real changes count: a script that writes an attribute or text node with the
-  // value it already has (a modality script on every mousedown, a style re-set) changes
-  // nothing on screen.
+  // value it already has (a style re-set) changes nothing on screen. Attributes of <html>
+  // and <body> are page-state markers (input modality, scroll lock, theme): what they
+  // change on screen, if anything, is seen by the visual comparison.
   const changed = (m) => {
     if (m.type === 'childList') return m.addedNodes.length > 0 || m.removedNodes.length > 0;
-    if (m.type === 'attributes') return m.oldValue !== m.target.getAttribute(m.attributeName);
+    if (m.type === 'attributes') {
+      if (m.target === document.documentElement || m.target === document.body) return false;
+      return m.oldValue !== m.target.getAttribute(m.attributeName);
+    }
     return m.oldValue !== m.target.data;
   };
   try {
@@ -83,6 +87,25 @@ export function pageInit(cfg) {
       record();
     }, true);
   } catch (e) { /* ignore */ }
+
+  // A script that changes a field's value (an amount chip filling the amount field)
+  // changes what is on screen without a DOM mutation or an input event.
+  for (const C of [window.HTMLInputElement, window.HTMLTextAreaElement]) {
+    try {
+      const d = C && Object.getOwnPropertyDescriptor(C.prototype, 'value');
+      if (!d || !d.get || !d.set || !d.configurable) continue;
+      Object.defineProperty(C.prototype, 'value', {
+        configurable: true,
+        enumerable: d.enumerable,
+        get() { return d.get.call(this); },
+        set(v) {
+          const before = d.get.call(this);
+          d.set.call(this, v);
+          if (this.isConnected && d.get.call(this) !== before && !NO_ECHO.includes((this.type || '').toLowerCase())) record();
+        },
+      });
+    } catch (e) { /* leave the property as it is */ }
+  }
 
   const windows = Array.isArray(cfg.windows) ? cfg.windows : [];
   if (!windows.length || !cfg.binding) return;
@@ -613,13 +636,27 @@ export function extractSnapshot(args) {
     // overflow-y clip) whose glyphs fit in it. Clipped this way the text is cut cleanly.
     const cb = by || el;
     const bcs = by ? style(by) : cs;
-    const exemptX = !x || (/^nowrap/.test(bcs.whiteSpace) && bcs.textOverflow !== 'clip');
-    const fontPx = parseFloat(bcs.fontSize) || 16;
-    const lineH = bcs.lineHeight === 'normal' ? 1.2 * fontPx : parseFloat(bcs.lineHeight) || 1.2 * fontPx;
+    // text-overflow draws its marker only in a block container (not a flex or grid box).
+    const markerShown = bcs.textOverflow !== 'clip' && ['block', 'inline-block', 'list-item', 'flow-root', 'table-cell', 'table-caption'].includes(bcs.display);
+    const exemptX = !x || (/^nowrap/.test(bcs.whiteSpace) && markerShown);
+    const fontPx = parseFloat(cs.fontSize) || 16;
+    // A "normal" line height depends on the font (about 1.45 em for Korean fonts): take
+    // the height of the text's first line box instead of assuming 1.2 em.
+    let lineH = parseFloat(bcs.lineHeight);
+    if (!(lineH > 0)) {
+      lineH = 1.2 * fontPx;
+      try {
+        const rg = document.createRange();
+        rg.selectNodeContents(el);
+        const first = rg.getClientRects()[0];
+        if (first && first.height > 0) lineH = first.height;
+      } catch (e) { /* keep the estimate */ }
+    }
     const boxH = bcs.overflowY === 'clip'
       ? cb.clientHeight - (parseFloat(bcs.paddingTop) || 0) - (parseFloat(bcs.paddingBottom) || 0)
       : cb.getBoundingClientRect().height;
     const exemptY = !y || (lineH >= boxH - 0.5 && fontPx <= boxH + 0.5);
+    if (by && !markerShown) ellipsis = false; // declared but not drawn
     // Tickers and marquees clip by design: text that moves (CSS animation on the element
     // or a close ancestor, or <marquee>) is recorded as animated.
     let animated = false;
@@ -631,7 +668,7 @@ export function extractSnapshot(args) {
         break;
       }
     }
-    return { x, y, ellipsis: ellipsis || !!clamp, line_clamp: !!clamp, animated, by: by ? (by.id ? `#${by.id}` : by.tagName.toLowerCase()) : null,
+    return { x, y, ellipsis: ellipsis || !!clamp, line_clamp: !!clamp, animated, by: by ? (by.getAttribute('id') ? `#${by.getAttribute('id')}` : by.tagName.toLowerCase()) : null,
       act: exemptX && exemptY ? 'passed' : 'failed' };
   };
   const visibleText = (el) => {
@@ -1105,7 +1142,9 @@ export function extractSnapshot(args) {
     return {
       selector: uniqueSelector(node), dom_id: node.id || null, kind,
       box: { x: round2(geo(node).r.left), y: round2(geo(node).r.top), w: round2(geo(node).r.width), h: round2(geo(node).r.height) },
-      contains_focus: !focusOnBody && (inFlat(node, deep) || (root !== node && inFlat(root, deep))),
+      // Focus on the overlay root counts only when the root wraps the layer (a portal or
+      // dialog container that focuses itself), not when it merely holds the trigger too.
+      contains_focus: !focusOnBody && (inFlat(node, deep) || (root !== node && inFlat(root, deep) && inFlat(deep, node))),
       follows_focus: !!nextTab && inFlat(node, nextTab),
       overlay_root: root !== node ? uniqueSelector(root) : null,
     };
@@ -1277,7 +1316,11 @@ export function controlOf(arg) {
         // it (a chip row where one chip is a role-less div): another option, not the
         // card's own link.
         const own = getComputedStyle(el).cursor === 'pointer' && getComputedStyle(n).cursor !== 'pointer';
-        if (!own && !peers(n)) card = n;
+        // The card's own way in: a link, or its one control. A card whose only controls are
+        // side actions (wishlist, add to cart) leaves its main click without a keyboard way.
+        const ctrls = [...n.querySelectorAll('*')].slice(0, 300).filter(isControl);
+        const link = ctrls.some((c) => (c.localName === 'a' && c.hasAttribute('href')) || (c.getAttribute('role') || '').split(/\s+/)[0] === 'link');
+        if (!own && (link || ctrls.length === 1) && !peers(n)) card = n;
         break;
       }
     }

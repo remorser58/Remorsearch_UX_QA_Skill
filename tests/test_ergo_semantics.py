@@ -133,8 +133,11 @@ class Reflow(unittest.TestCase):
         doc = {"run_id": "R", "reflow": [{"snapshot_id": "S-3", "url": "http://x/a", "width": 320, "client_width": 320, "scroll_width": 520,
                                           "root_clips": False, "offenders": [], "lost": [], "scan_capped": True}]}
         obs = checks.check_reflow(doc, {"profile_id": "P"}, {})
-        self.assertEqual([(o.check_id, o.element_key.split("|")[0], o.severity) for o in obs], [("RF-01", "html", "P2")])
+        self.assertEqual([(o.check_id, o.element_key, o.severity) for o in obs], [("RF-01", "html|/a", "P2")])
         self.assertTrue(obs[0].measurement["scan_capped"])
+        # A page that scrolls only because of exempt content (a data table) is not reported.
+        table = dict(doc["reflow"][0], exempt_right=522)
+        self.assertEqual(checks.check_reflow({"run_id": "R", "reflow": [table]}, {"profile_id": "P"}, {}), [])
         # A located offender makes the page-level finding unnecessary.
         self.assertEqual([o.element_key.split("|")[0] for o in checks.check_reflow(self.run_doc(416), {"profile_id": "P"}, {})], ["#fee-summary"])
 
@@ -160,7 +163,7 @@ class Reflow(unittest.TestCase):
         rec = {"snapshot_id": "S-1", "url": "http://x/admin", "width": 320, "client_width": 320, "scroll_width": 813,
                "root_clips": False, "offenders": offs, "lost": []}
         obs = checks.check_reflow({"run_id": "R", "reflow": [rec, dict(rec, snapshot_id="S-2")]}, {"profile_id": "P"}, {})
-        self.assertEqual([(o.element_key, o.measurement["offender_count"], o.measurement["value"]) for o in obs], [("html|http://x/admin", 5, 468.0)])
+        self.assertEqual([(o.element_key.split("|")[1], o.measurement["offender_count"], o.measurement["value"]) for o in obs], [("/admin", 5, 468.0)])
         self.assertEqual(obs[0].extra["anchor_selectors"], [f"#b{i}" for i in range(5)])
         self.assertIn("재배치되지 않습니다", obs[0].message_ko)
         # Up to three boxes stay separate findings.
@@ -243,6 +246,10 @@ class FocusManagement(unittest.TestCase):
         dialog = {"selector": "#sheet > div:nth-of-type(2)", "dom_id": None, "kind": "modal", "contains_focus": False, "box": {"x": 20, "y": 300, "w": 320, "h": 300}}
         obs = checks.check_focus_management(self.ctx_for([], [scrim, dialog], focus, [ok]))
         self.assertEqual([o.element_key.split("|")[0] for o in obs], ["#sheet > div:nth-of-type(2)"])
+        # A backdrop seen anew while its dialog was already open (a busy overlay had covered it).
+        old_dialog = dict(dialog, contains_focus=True)
+        c = self.ctx_for([old_dialog], [scrim, old_dialog], focus, [ok])
+        self.assertEqual(checks.check_focus_management(c), [])
         # A disclosure the focused trigger controls, and one the next Tab reaches.
         mm = {"selector": "#mm", "dom_id": "mm", "kind": "sheet", "contains_focus": False, "box": box}
         nxt = {"selector": "#nx", "dom_id": "nx", "kind": "dialog", "contains_focus": False, "box": box, "follows_focus": True}

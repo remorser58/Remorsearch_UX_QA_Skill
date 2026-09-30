@@ -309,3 +309,35 @@ typical member, so it is neither composed nor listed as untested. Recomputed on 
 four committed audience files: the C4 profiles at budgets 6, 10 and 14 are identical
 before and after the fix; only rhythm's untested list loses that entry. No defect
 content was involved.
+
+### Amendment 7 (2026-09-30, before the freeze and before any heldout-2 recording)
+
+Nothing here was informed by heldout-2 content. All changes were judged on the dev
+suites (`benchmarks/dev-2` and the three older ones), the driver self-test, the flash
+validation pages and the W3C ACT examples; `decisions.md` rounds 9–12 give the
+evidence.
+
+1. **Checks added or changed since amendment 1** (all tuned only on dev suites):
+   - new: SM-08 (clicked element that is not a control), FM-02 (focus not moved
+     into an opened layer), RF-01 (reflow at 320 CSS px), SM-06 at a step, SM-05
+     probes before clicks on mid-task screens;
+   - changed: SM-01/SM-03 apply to zero-size controls and author-only roles; LY-01
+     includes clipping by an ancestor and marks ACT 59br37's clean cuts as P3 notes;
+     GZ-02 gives P1/P2 only to new messages and skips the old tap point after an app
+     scroll; GM-04 IRIS extended rule and oscillating-scroll guard; GM-06 press rule
+     cut.
+   H1's reinterpretation (amendment 1) applies to all of them: the authoring prompt
+   named the rule sets these checks implement, so their heldout-2 recall is not
+   blind discovery.
+2. **C3 strata.** `CONDITION_STRATA` gains `low_vision` (placed before `70s_plus`),
+   and pointer devices skip the touch-only strata (walking, small_hand, tremor). C3
+   keeps 14 profiles per touch device and 7 per pointer device.
+3. **Driver changes that affect every check:** frames are taken of the screen (not
+   the document top); visual feedback masks the caret and pixels already moving
+   before the input; `input` events and script value changes of text-like fields
+   count as feedback; no-op writes and `<html>`/`<body>` attributes do not.
+4. **ACT gate:** 59br37 is also run at 640 × 512 (`ergo_act.py --viewport`); LY-01
+   findings marked `act_59br37: passed` are truncation notes, not gate failures.
+5. **Freeze.** The detector and scorer are frozen at the commit that adds this
+   amendment; the scoring summary records it (`provenance.commit`, `dirty: false`).
+

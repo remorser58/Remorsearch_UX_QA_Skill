@@ -1976,7 +1976,7 @@ def check_semantics(ctx: Context) -> list[Observation]:
 
 
 CLICK_ACTIONS = ("tap", "click", "double_tap", "long_press", "press")
-LATE_LAYER_WINDOW_MS = 5000  # a layer first seen at a wait counts for the click before it within this time
+LATE_LAYER_WINDOW_MS = 3000  # a layer first seen at a wait counts for the click before it within this time
 
 
 def _late_layer_trigger(ctx: Context) -> dict[str, Any] | None:
@@ -2048,11 +2048,12 @@ def check_focus_management(ctx: Context) -> list[Observation]:
             if kind == "sheet":
                 # An undeclared painted box: only a layer with something to operate needs
                 # focus (a busy overlay or a status sheet announces itself), and a scrim
-                # around a newly opened dialog is that dialog's layer.
+                # around a dialog is that dialog's layer.
                 if not any(_inside(e["box"], box) for e in interactive):
                     continue
-                if any(other is not layer and other.get("kind") in ("modal", "dialog") and _inside(other.get("box") or {}, box) for other in new_layers):
-                    continue
+                if any(other is not layer and isinstance(other, dict) and other.get("kind") in ("modal", "dialog") and _inside(other.get("box") or {}, box)
+                       for other in ctx.snapshot.get("layers") or []):
+                    continue  # the backdrop of a dialog (new or already open): the dialog carries focus
             element = next((e for e in ctx.elements if layer.get("dom_id") and e.get("dom_id") == layer["dom_id"]), None)
             key = element_key(element) if element else f"{layer.get('selector') or '?'}|{layer.get('kind')}"
             where = "문서 본문(body)으로 떨어져" if focus.get("on_body") else "층 바깥에 남아"
@@ -2092,6 +2093,12 @@ def check_focus_management(ctx: Context) -> list[Observation]:
 
 REFLOW_TOLERANCE_PX = 4  # borders and rounding; a few px of overflow hide no content
 REFLOW_GROUP_MAX = 3  # more boxes than this past the edge on one screen: one finding for the screen
+
+
+def _url_path(url: str | None) -> str:
+    """The path of a URL (no host or port: a local test server's port changes per run)."""
+    from urllib.parse import urlsplit
+    return urlsplit(url or "").path or (url or "")
 
 
 def _right_edge(offender: dict[str, Any]) -> float:
@@ -2145,7 +2152,8 @@ def check_reflow(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[s
         if len(eligible) > REFLOW_GROUP_MAX:
             # A layout that does not reflow at all (a desktop-only page): one finding for
             # the screen, naming every box that sticks out, not one per box.
-            page_key = f"html|{rec.get('url') or ''}"
+            # Keyed by the boxes too: another screen at the same URL is another finding.
+            page_key = f"html|{_url_path(rec.get('url'))}|{','.join(sorted(o.get('selector') or '?' for o in eligible))[:160]}"
             if page_key in seen:
                 continue
             seen.add(page_key)
@@ -2187,12 +2195,16 @@ def check_reflow(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[s
                 extra={"anchor_selectors": [off["selector"]] if off.get("selector") else [],
                        "context_selectors": [f"#{a}" for a in off.get("ancestor_ids") or [] if a]},
             ))
-        if scrolls and not listed and f"page|{rec.get('url')}" not in seen:
+        exempt_right = rec.get("exempt_right")
+        explained = isinstance(exempt_right, (int, float)) and (rec.get("scroll_width") or 0) <= exempt_right + REFLOW_TOLERANCE_PX
+        if scrolls and not listed and not explained and f"page|{rec.get('url')}" not in seen:
             # The page scrolls sideways but no outermost element was located (the scan
-            # is capped, or the cause is a pseudo-element): report the page itself.
+            # is capped, or the cause is a pseudo-element or a box without text): report
+            # the page itself, unless exempt content (a table, code, off-canvas) is what
+            # makes it scroll.
             seen.add(f"page|{rec.get('url')}")
             out.append(Observation(
-                "RF-01", run["run_id"], profile["profile_id"], rec.get("snapshot_id"), None, [], f"html|{rec.get('url') or ''}",
+                "RF-01", run["run_id"], profile["profile_id"], rec.get("snapshot_id"), None, [], f"html|{_url_path(rec.get('url'))}",
                 {"name": "page_scroll_width_css_px", "value": rec.get("scroll_width"), "unit": "css_px", "threshold": width, "comparator": "<=",
                  "viewport_css_px": rec.get("width"), "scan_capped": bool(rec.get("scan_capped"))},
                 False, "P2",
@@ -2249,7 +2261,7 @@ def check_focus_walks(run: dict[str, Any], profile: dict[str, Any], snapshots: d
     for SM-06 (a covered control could not have been clicked).
     """
     walks = list(run.get("focus_walks") or [])
-    # A Tab walk is the reference: a probe (script focus after a Shift press, which
+    # A Tab walk is the reference: a probe (script focus after an F24 key press, which
     # some focus-visible scripts do not treat as keyboard use) never overrides an
     # element a walk saw with an indicator.
     walk_ok = set()

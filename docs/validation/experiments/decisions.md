@@ -83,8 +83,8 @@ them. The out-of-sample test is `heldout-2`, pre-registered in
 
 ## Pending additions (evaluated on heldout-2 per category, not tuned on it)
 
-- Semantics and layout checks (accessible name, clipped text, focus, reflow):
-  waiting for `automated-ui-accessibility-testing.md`.
+- Semantics and layout checks (accessible name, clipped text, focus, reflow): added
+  in rounds 6, 10, 11 and 12 and pre-registered in amendments 1 and 7.
 - Deterministic twins for agent notes (dead end, unclear error):
   `llm-agents-as-test-users.md` LAT-09.
 - GM-03 acceptance-window measurement and a GM-06 press-rate sweep (game review).
@@ -101,6 +101,7 @@ them. The out-of-sample test is `heldout-2`, pre-registered in
 | exp4 (rounds 3-4, flash rework) | `a11ef18` | 0.906 (95 % CI 0.80-0.96) | 193 | 53 | 97 | 26 |
 | exp5 (semantics checks, RH-01 secondary controls) | `5b6e8fb` | 0.906 | 200 | 54 | 101 | 27 |
 | exp6 (rounds 8-10: touch cap, IRIS rule, focus walk with viewport fallback, GM-06 cut) | `38cc073` | 0.906 (95 % CI 0.80-0.96) | 213 | 61 | 108 | 30 (P2 3, P3 27) |
+| exp13 (rounds 11-12: new semantics/layout checks, screen-capture and feedback fixes, two pre-freeze reviews; `ergo_bench.py` swarm) | `cf7310d` | 0.906 (48/53) | 254 | 63 | 114 | 33 (P2 6, P3 27) |
 
 exp6 detail (`ablation-dev-38cc073.json`, new recordings with the current driver): single default persona
 0.642, measured checks only 0.302. At P0-P2 the swarm detects 39 of 53 defects; 40 are detected with the
@@ -217,3 +218,58 @@ brief predicted.
 | Name from content for author-only roles | ACT e086e5 failed example 7 (`<div role="textbox">first name</div>`) was missed: the driver named the textbox from its text. ARIA 1.2 gives textbox, combobox, listbox, slider, spinbutton, grid, tree, dialog, img, group and similar roles their name from the author only; their text is a value or content, not a name. | The driver no longer takes a name from content for those roles. |
 | AUT-20 zero-size controls | The other misses were empty controls with no box: `<span role="button"></span>`, `<a href="…"></a>`, an empty `div role=textbox` under a label that cannot label it. They are in the accessibility tree, and the link takes focus. | The driver records `a11y.rendered` (not `display:none` or `visibility:hidden`; opacity ignored). SM-01 and SM-03 now apply to rendered, non-hidden controls with no box. The finding carries `visible_to_sighted: false` and is P2 at most (P3 when the control cannot take focus). Other rules still need a box. `<a>` without `href` is excluded (it has no link role; ACT c487ae inapplicable example 6 caught the first version). Recordings made before the field existed produce no such finding. |
 | ACT gate after both | 97a4e1 5/5 (was 4/5), e086e5 9/9 (was 6/9), c487ae 10/11 (was 7/11; the image-map area is not collected), 0 false alarms on all seven rules; driver self-test 188/188. | Adopted. The brief's second condition (dev-2 clean-control units at most +0.2 per scenario) is checked on the dev-2 recordings, which have the new field. |
+
+## Round 12: candidate checks from dev-2, driver capture fixes, two pre-freeze reviews
+
+`benchmarks/dev-2` (36 defects, 12 decoys, 3 clean scenarios; civil, delivery, lms)
+was written for the semantics, layout and task-flow checks. dev-2 numbers are the
+stratified swarm (C3: 14 profiles per touch device, 7 per pointer device), strict
+recall; clean-control units are counted on the 3 clean scenarios.
+
+| dev-2 recording | Detector | Strict (36) | P0–P2 | Clean-control units (P1 / P2 / P3) |
+| --- | --- | --- | --- | --- |
+| first recording | `5b3d379` | 0.472 | – | – |
+| candidate checks + SM-05 probe | `3a01137` | 0.583 | 0.528 | 23 (3 / 5 / 15) |
+| + low-vision stratum (same recordings, analysis only) | `c097f30` plan | 0.611 | 0.556 | 23 (3 / 5 / 15) |
+| new recordings after the screen-capture fixes | `c097f30` | 0.611 | 0.556 | 25 (0 / 10 / 15) |
+| after review 2 (driver and checks) | `0e7f7fd` | 0.611 | 0.556 | 21 (0 / 8 / 13) |
+| freeze candidate after review 3 | `cf7310d` | 0.611 | 0.556 | 21 (0 / 7 / 14) |
+
+The 14 dev-2 defects still missed are the same at every point from `c097f30`: nine
+heuristic (task-flow) defects, which the measured checks do not target (C6 persona
+agents do), plus a tab order that differs from the visual order (D-delivery-07, no
+check), an error text not linked to its field although it names it (D-delivery-09),
+a caption hidden under a control bar (D-lms-02), 28 px option rows for tremor
+(D-civil-09) and colour-only step dots (D-delivery-12). None was tuned for.
+
+The three older dev suites (53 defects) stayed at 0.906 strict recall through every
+recording of this round (exp10–exp13); their clean-control units went 35 → 33 and
+all clean units are P2 or P3.
+
+| Item | Evidence | Decision |
+| --- | --- | --- |
+| SM-08 clicked element that is not a control (WCAG 2.1.1, 4.1.2) | dev-2 keys two role-less clickable elements on the task path; a snapshot cannot tell a clicked div from decoration, the step can. Review: no-feedback taps, game surfaces, hotspots, `aria-hidden` scrims and card parts were false alarms. | **Kept (P1).** The driver records what each click landed on (`target_control`, through shadow roots). Exempt: clicks with no feedback at all, game surfaces, hotspots, `game_control`, hidden content, and the image or text of a card whose own link (or its one control) the keyboard reaches, unless the clicked element looks operable on its own or is a peer of a control (a chip row). |
+| FM-02 focus not moved into an opened layer (2.4.3) | dev-2 keys an address sheet that opens without moving focus. Reviews: busy overlays, scrims, APG disclosures and MUI overlay roots were false alarms; dialogs that take focus after their transition and dialogs that open after a request were misses; a trigger inside the same fixed bar hid a real miss. | **Kept (P2).** Only layers with something to operate; a backdrop around a dialog (new or already open) is the dialog's; disclosures the trigger controls or the next Tab reaches are fine; focus reached within 1 s (0.7 s more after a wait) counts; a layer first seen at a wait within 3 s of a click, with no input between, counts for that click; the overlay root counts only when it wraps the layer. Clean FM-02 on mobile-commerce: 3 → 0. |
+| RF-01 reflow at 320 CSS px (1.4.10) | dev-2 keys a fixed-width fee box, a summary table with fixed columns and a quiz bar whose timer is cut. Reviews: a ticking timer used up the 12 screen slots before the confirmation screens; copies lost CSS-in-JS rules, shadow DOM and crossorigin CSS; collapsed menus, off-canvas drawers, carousels and table-only overflow were false alarms; fixed bars were a miss. | **Kept (P2).** Screens keyed by a fingerprint (newest copy kept); copies serialised from the live DOM and loaded under their own URL; exemptions as listed in `human-factors-checks.md`; more than three boxes on one screen give one finding for the screen (game-desktop admin page, a desktop-only layout 813 px wide at 320: 9 findings → 1). |
+| SM-06 at a step (2.4.11) | A validation error that scrolls a field under a sticky header. Review: it fired on user scrolls and pre-action snapshots. | **Kept (P2)** only for a focus the step moved. |
+| SM-05 on mid-task screens (2.4.7) | The walks see only the first and last screens; dev-2 keys a mid-task control without a ring. Reviews and dev re-records found probe artefacts: a restored focus ring passing for click feedback, a mask over a whole focused container or a sibling group, Shift ignored by modality scripts, suggestion lists hidden by the pre-probe blur, pulsing buttons. | **Kept.** Probe before each click (≤ 16 per run): F24 key for modality, root attributes put back, three unfocused captures, previous ring masked only where it cannot cover the target, focus restored only where losing it changes the page, text fields blurred first only before a button and not from a field with suggestions, inconclusive when most of the target is masked, never overriding a walk that measured a ring. dev-2 clean SM-05 P2 ('답안 제출' next to '임시 저장'): 1 → 0. |
+| LY-01 clipping by an ancestor, ACT 59br37 | dev-2 keys chips whose price is cut by a fixed-width label. 59br37 is defined at 640 × 512. | **Kept.** Clean cuts (59br37's exceptions: a nowrap line whose marker is drawn, a one-line-high box with the measured line height) are P3 truncation notes. ACT gate at 1920 and at 640 × 512: 0 false alarms on all seven rules; 59br37 detects 5/5 failed examples at 640 × 512 (2/5 at 1920); 2 notes on Passed examples 2 and 3. |
+| GZ-02 new versus changed messages | dev-2 clean runs had P1 GZ-02 for messages that were already on screen and were scrolled away or re-texted. | Only messages with text, absent before, are new (P1/P2 off-screen); changed ones are P3; after an app scroll of ≥ half a screen the old tap point is not used. Clean P1 units 3 → 0. |
+| low_vision stratum | dev-2 keys one defect conditioned on low vision (a quiz bar cut at magnification). Same recordings: no stratum 0.583, with it 0.611 (+1 defect, +1 clean P3 unit); placed before 70s+ and with touch-only strata skipped on pointer devices, one clean unit fewer. | **Adopted.** Reported as coverage of the condition, not prevalence. |
+| Driver: screen capture | CDP clips are document coordinates: frames of scrolled pages showed the document top; downscaling clips moved the pan of wide pages and stopped inner-scroll gestures. | Fixed; flash validation re-run (33/33, then 36/36 with an oscillating-scroll page). |
+| Driver: visual and DOM feedback | A blinking caret counted as feedback and typed characters did not; slow animations and no-op or root-attribute writes (a modality script after typing) passed for a response; a script filling the focused field did not count. | Caret masked; input events of text-like fields count; pixels moving before the input are left out; no-op writes and `<html>`/`<body>` attributes are not a response; a script's change of a field's `value` is. mobile-commerce clean CG-03 on an amount chip: gone. |
+| GM-04 oscillating scroll | Review: page scroll that reverses direction was motion-matched away (ITC/Ofcom and ISO 9241-391 exempt smooth motion in one direction only). | More than 3 reversals within 1 s (after ≥ 4 CSS px of travel) are not motion. New validation page `scroll-shake.html`: fail 3/3 with the guard; 3.5 and 2.0 flashes/s (fail, pass) without it. |
+
+Reviews: a pre-freeze review workflow (40 findings, 38 confirmed; all fixed or
+documented as limits) and two further independent reviews of the fix range (one Opus, one Sonnet;
+their high and medium findings fixed). Every fix has a driver self-test case that
+fails on the code before it (243 cases). Final checks at `cf7310d`: Python tests
+484, driver self-test 243/243, flash validation 36/36, ACT gate 0 false alarms at
+1920 and 640 × 512.
+
+Known limits kept (documented, not fixed before the freeze): modality scripts that
+react only to Tab are not triggered by the probe (the walks use Tab); a layer that
+takes focus and gives it back between two reads is not seen; layouts switched by
+scripts (`matchMedia`) are not re-evaluated at 320 px; a toggled checkbox whose own
+look never changes is judged by mutations and pixels only.
+
