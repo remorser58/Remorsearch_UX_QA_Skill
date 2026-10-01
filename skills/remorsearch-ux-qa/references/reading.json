@@ -5,15 +5,19 @@
     "skill_target_min": 6000,
     "skill_target_max": 8192,
     "skill_ceiling": 12000,
-    "base": 30000,
-    "korean": 40000,
+    "base": 42000,
+    "korean": 52000,
     "lookup_output": 8192
   },
   "card_limits": {
-    "references/shared/access-card.md": 6144,
-    "references/shared/evidence-card.md": 4096,
-    "references/persona-qa/kwcag-card.md": 4096,
-    "references/research/korea/overview.md": 10240
+    "references/shared/access-card.md": 9216,
+    "references/shared/evidence-card.md": 6144,
+    "references/persona-qa/kwcag-card.md": 5120,
+    "references/research/korea/overview.md": 10240,
+    "references/research/workflow.md": 12288,
+    "references/persona-qa/workflow.md": 14336,
+    "references/ergonomics/workflow.md": 12288,
+    "references/loop/workflow.md": 6144
   },
   "research_commands": [
     "start",
