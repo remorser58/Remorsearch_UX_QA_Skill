@@ -1,5 +1,8 @@
 # Perception & cognition: research brief (`perception-cognition`)
 
+최신 출처 검토는 [2026-10-02 갱신 기록](2026-10-02-research-update.md)에 있습니다.
+이 문서에는 당시의 접근 제한과 잠정 주장을 보존합니다.
+
 Prepared 2026-09-28 for the ergonomic persona-swarm QA (`ergoqa`).
 
 **Scope.** This brief covers:

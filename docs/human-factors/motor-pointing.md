@@ -1,5 +1,8 @@
 # Motor control & pointing ergonomics — research brief (`motor-pointing`)
 
+최신 출처 검토는 [2026-10-02 갱신 기록](2026-10-02-research-update.md)에 있습니다.
+이 문서에는 당시의 접근 제한과 잠정 주장을 보존합니다.
+
 Prepared 2026-09-28 for the ergonomic persona-swarm QA (`ergoqa`). Scope: Fitts's law and FFitts/dual-Gaussian touch models, target size and spacing, touch offset bias, edge/corner effects, thumb reach as it affects pointing, the steering law, KLM-GOMS, gesture ergonomics, tremor/motor impairment, situational impairment, and accidental activation between adjacent actions.
 
 ## How to read this brief

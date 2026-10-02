@@ -1,5 +1,8 @@
 # Gaze and visual attention: research brief for the persona-swarm ergonomic QA
 
+최신 출처 검토는 [2026-10-02 갱신 기록](2026-10-02-research-update.md)에 있습니다.
+이 문서에는 당시의 접근 제한과 잠정 주장을 보존합니다.
+
 Domain: where people look first, what they miss, and whether they notice feedback on a live screen (web, mobile, desktop apps, games, TV).
 Date: 2026-09-28. Written for engineers turning findings into (a) automated checks on a live screen and (b) persona ergonomic profile dimensions. Target code: `ergoqa/hf/gaze.py`, `ergoqa/checks.py` (GZ-01..GZ-04) and the gaze block in `ergoqa/params.py`.
 

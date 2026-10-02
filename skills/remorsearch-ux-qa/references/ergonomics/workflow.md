@@ -80,6 +80,11 @@ Lookup fired check IDs in `references/ergonomics/human-factors-checks.md`: reach
 
 ## 5. Report, fix and replay
 
+시선·글자 지표·화면 크기 대응은 `references/ergonomics/visual-science.md`의 해당 절을
+조회합니다. 과제에 따른 주의, 물리적 기하, 글리프 지표와 실제 내용 손실을 모델의 가정과
+구분합니다. RF-02 간격 검사와 RF-03 짧은 창 검사는 기록한 조건에만 적용합니다.
+정적 복제 화면은 JavaScript의 실제 크기 변경 동작을 검증하지 못합니다.
+
 Use `references/ergonomics/report-template.md` by section. Decision first, findings ordered by severity/confidence, measured/model/judgment separated, differential conditions and k/n coverage, assumptions and untested platform/device/grip/condition list. Cite source/model limits; benefit claims require measurement. Propose the smallest fix at the deepest confirmed cause (`references/shared/causal-chain.md`). Figma is the design source of truth when present; record version/readback. Skill-authored proposals use no side accent bars, attached side tabs or decorative rails; existing product QA requires task harm.
 
 Writes need design/test-data/code grants separately. Replay identical scenario/device/profiles after a fix; compare baseline/change/replay and adjacent states. For P0/P1 use persona-qa's fresh capture receipt and second-pass rules. Generated report wording can be English or Korean without changing measured outputs.
