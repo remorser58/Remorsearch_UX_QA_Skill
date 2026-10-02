@@ -968,6 +968,65 @@ def _app_scrolled(ctx: Context) -> bool:
     return abs(b - a) >= params.APP_SCROLL_REORIENT_FRACTION * ctx.viewport[1]
 
 
+def _feedback_focus_anchor(ctx: Context, feedback: dict[str, Any]) -> tuple[tuple[float, float], dict[str, Any]] | None:
+    """Observed pointer-triggered focus transfer to this message's unique field.
+
+    DOM focus supplies a bounded attention-anchor assumption, never measured
+    gaze. Missing/ambiguous evidence and direct pointer focus keep the input
+    anchor. The original input remains the physical thumb-occlusion anchor.
+    """
+    step = ctx.step or {}
+    action = step.get("action") or {}
+    if step.get("result") != "ok" or action.get("action") not in ("tap", "click", "double_tap", "long_press"):
+        return None
+    previous = ctx.previous or {}
+    if step.get("before") not in (None, previous.get("snapshot_id")) or step.get("after") not in (None, ctx.snapshot.get("snapshot_id")):
+        return None
+    before_focus, after_focus = previous.get("focus") or {}, ctx.snapshot.get("focus") or {}
+    if not isinstance(before_focus, dict) or not isinstance(after_focus, dict):
+        return None
+    before_id, after_id = before_focus.get("dom_id"), after_focus.get("dom_id")
+    observed_body = before_focus.get("on_body") is True
+    observed_field = before_focus.get("on_body") is False and isinstance(before_id, str) and bool(before_id)
+    if not (observed_body or observed_field) or not isinstance(after_id, str) or not after_id or before_id == after_id or after_focus.get("on_body") is not False:
+        return None
+    fields = [e for e in ctx.elements if e.get("dom_id") == after_id]
+    if len(fields) != 1:
+        return None
+    field = fields[0]
+    a11y = field.get("a11y") or {}
+    if not isinstance(a11y, dict):
+        return None
+    if (field.get("role") not in FIELD_ROLES and field.get("tag") not in ("input", "select", "textarea")):
+        return None
+    if not _visible(field) or not field.get("enabled", True) or a11y.get("hidden") or a11y.get("focusable") is False or a11y.get("rendered") is False:
+        return None
+    box = gaze.clipped_visible_box(field, ctx.viewport)
+    if box is None:
+        return None
+    target_id = step.get("target_element_id")
+    targets = [e for e in previous.get("elements", []) if
+               (e.get("id") == target_id if target_id else isinstance(action.get("target"), str) and e.get("selector") == action["target"])]
+    if len(targets) != 1 or not targets[0].get("interactive") or targets[0].get("dom_id") == after_id or targets[0].get("tag") == "label":
+        return None
+    message_id = feedback.get("dom_id")
+    if not isinstance(message_id, str) or not message_id or sum(e.get("dom_id") == message_id for e in ctx.elements) != 1:
+        return None
+    described_by = a11y.get("described_by") or []
+    relation = "aria-describedby" if isinstance(described_by, list) and message_id in described_by else None
+    if a11y.get("invalid") is True and a11y.get("error_message") == message_id:
+        relation = "aria-errormessage"
+    if relation is None:
+        return None
+    x, y, w, h = box
+    return (x + w / 2, y + h / 2), {
+        "anchor_basis": "observed_programmatic_focus_relocation",
+        "anchor_assumption": "attention_near_focused_field_unmeasured",
+        "focus_before_dom_id": before_id, "focus_before_on_body": observed_body, "focus_after_dom_id": after_id,
+        "anchor_field_id": field["id"], "feedback_focus_relation": relation,
+    }
+
+
 def check_gaze(ctx: Context) -> list[Observation]:
     from .devices import mm_per_css_px
 
@@ -1113,10 +1172,14 @@ def check_gaze(ctx: Context) -> list[Observation]:
                 continue
             x, y, w, h = visible_box
             centre_css = (x + w / 2, y + h / 2)
+            anchor = _feedback_focus_anchor(ctx, element)
+            attention_point, anchor_evidence = anchor if anchor is not None else (start, {})
+            feedback_geometry = {**geometry, "input_anchor_css": list(start), "input_anchor_basis": start_basis,
+                                 **anchor_evidence, "anchor_css": list(attention_point)}
             # Eccentricity to the nearest point of the message, not its centroid: a wide
             # error box beside the button starts right next to the click (gaze brief rule).
-            near_css = (min(max(focus["x"], x), x + w), min(max(focus["y"], y), y + h))
-            theta = gaze.angular_separation_css(start, near_css, sx, sy, viewing, eye)
+            near_css = (min(max(attention_point[0], x), x + w), min(max(attention_point[1], y), y + h))
+            theta = gaze.angular_separation_css(attention_point, near_css, sx, sy, viewing, eye)
             if theta is None:
                 continue
             salient, sal = _salient_change(ctx, element, new=prior is None)
@@ -1124,11 +1187,14 @@ def check_gaze(ctx: Context) -> list[Observation]:
             occluded = False
             if geom is not None and grip.startswith("one_hand"):
                 occluded = reach.occluded_by_thumb(_point_mm(ctx, focus["x"], focus["y"]), _point_mm(ctx, *centre_css), geom, grip, thumb, params.OCCLUSION_WEDGE_DEG)
-            feedback.append((element, roles, prior, theta, salient, sal, band, occluded, near_css))
+            feedback.append((element, roles, prior, theta, salient, sal, band, occluded, near_css, feedback_geometry))
         # Redundant feedback: when another new, salient message appears where the user is
         # looking (likely noticed, not occluded), a far secondary label is not missed feedback.
-        noticed = [f for f in feedback if f[6] == "likely" and f[4] and not f[7]]
-        for element, roles, prior, theta, salient, sal, band, occluded, near_css in feedback:
+        # A field-focused message cannot suppress unrelated messages that still
+        # use the original input anchor; they represent different assumptions.
+        noticed = [f for f in feedback if f[6] == "likely" and f[4] and not f[7]
+                   and f[9]["anchor_basis"] == start_basis]
+        for element, roles, prior, theta, salient, sal, band, occluded, near_css, feedback_geometry in feedback:
             critical = bool(roles & {"error_message", "critical_message"}) or element.get("role") == "alert"
             redundant = any(n[0] is not element for n in noticed)
             severity = None
@@ -1143,11 +1209,13 @@ def check_gaze(ctx: Context) -> list[Observation]:
                 "GZ-02", *base, [element["id"]], element_key(element),
                 {"name": "feedback_eccentricity_deg", "value": round(theta, 1), "unit": "deg",
                  "threshold": [round(v * scale, 1) for v in params.NOTICE_BANDS_DEG["salient" if salient else "non_salient"]],
-                 "comparator": "band", "band": band, "salient": salient, "occluded_by_thumb": occluded, "persona_scale": scale, "nearest_feedback_css": list(near_css), **geometry, **sal},
+                 "comparator": "band", "band": band, "salient": salient, "occluded_by_thumb": occluded, "persona_scale": scale, "nearest_feedback_css": list(near_css), **feedback_geometry, **sal},
                 severity is None, severity,
-                f"조작 지점에서 {theta:.0f}° 떨어진 곳에 {'새' if prior is None else '바뀐'} 메시지 '{(element.get('text') or element.get('name') or '')[:30]}'"
+                f"{'초점이 이동한 입력 칸' if feedback_geometry['anchor_basis'] == 'observed_programmatic_focus_relocation' else '조작 지점'}에서 {theta:.0f}° 떨어진 곳에 {'새' if prior is None else '바뀐'} 메시지 '{(element.get('text') or element.get('name') or '')[:30]}'"
                 + f" ({'돌출' if salient else '비돌출'} 변화, 인지 가능성: {band})" + (", 한 손 파지 엄지에 가려질 위치" if occluded else "")
-                + ". 마지막 입력 위치에서 계산했으며, 눈의 화면 투영점은 화면 중심으로 가정했습니다.",
+                + (". 입력 칸 근처로 주의가 이동한다고 가정했으며 실제 시선은 측정하지 않았습니다." if feedback_geometry['anchor_basis'] == 'observed_programmatic_focus_relocation'
+                   else ". 마지막 입력 위치에서 계산했습니다.")
+                + " 눈의 화면 투영점은 화면 중심으로 가정했습니다.",
                 gaze.MODEL_ID,
             ))
     # GZ-03: banner-blindness proxy on desktop/web.

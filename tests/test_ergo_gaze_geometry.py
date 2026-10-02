@@ -213,5 +213,113 @@ class EvidenceLimits(unittest.TestCase):
             self.assertFalse(any(o.get('check_id') == 'GZ-02' for o in output['records']['observations']))
 
 
+class FeedbackFocusRelocation(unittest.TestCase):
+    def context(self):
+        phone = el('phone', 'textbox', (16, 430, 352, 48), interactive=True, dom_id='phone', tag='input')
+        field = el('name', 'textbox', (16, 136, 352, 48), interactive=True, dom_id='name', tag='input',
+                   a11y={'invalid': True, 'described_by': ['name-error'], 'focusable': True})
+        button = el('next', 'button', (16, 760, 352, 52), text='다음', interactive=True,
+                    dom_id='next', tag='button', roles=('primary',))
+        error = el('name-error', 'alert', (16, 190, 352, 22.5), text='성명을 입력해 주세요.',
+                   dom_id='name-error', roles=('error_message',), fg='#d32f2f', weight=600)
+        previous = {'snapshot_id': 'B', 'surface': {'url': 'http://x/a'}, 'focus': {'on_body': False, 'dom_id': 'phone'},
+                    'elements': [phone, field, button]}
+        step = {'action': {'action': 'tap', 'target': '#next'}, 'result': 'ok', 'target_element_id': 'next',
+                'before': 'B', 'after': 'S-1', 'point': {'x': 192, 'y': 786}}
+        c = ctx([phone, field, button, error], device_id='galaxy-s24-ultra', previous=previous, step=step,
+                focus={'x': 192, 'y': 786})
+        c.snapshot['focus'] = {'on_body': False, 'dom_id': 'name'}
+        return c
+
+    def feedback(self, c, selector='#name-error'):
+        return next(o for o in checks.check_gaze(c) if o.check_id == 'GZ-02' and o.element_key.startswith(selector + '|'))
+
+    def test_observed_field_transfer_reanchors_only_feedback_and_preserves_input(self) -> None:
+        c = self.context()
+        original = copy.deepcopy(c.step)
+        record = self.feedback(c)
+        self.assertEqual(record.measurement['value'], 1.1)
+        self.assertIsNone(record.severity)
+        self.assertEqual(record.measurement['anchor_basis'], 'observed_programmatic_focus_relocation')
+        self.assertEqual(record.measurement['anchor_css'], [192, 160])
+        self.assertEqual(record.measurement['input_anchor_css'], [192, 786])
+        self.assertEqual(record.measurement['feedback_focus_relation'], 'aria-describedby')
+        self.assertFalse(record.measurement['measured_gaze'])
+        primary = next(o for o in checks.check_gaze(c) if o.check_id == 'GZ-01')
+        self.assertEqual(primary.measurement['anchor_css'], [192, 786])
+        self.assertEqual(primary.measurement['start_basis'], gaze.START_LAST_ACTION)
+        self.assertEqual(c.step, original)
+
+    def test_observed_body_to_field_is_supported_but_missing_focus_is_not(self) -> None:
+        c = self.context()
+        c.previous['focus'] = {'on_body': True, 'dom_id': None}
+        self.assertEqual(self.feedback(c).measurement['anchor_basis'], 'observed_programmatic_focus_relocation')
+        c.previous.pop('focus')
+        self.assertEqual(self.feedback(c).measurement['anchor_basis'], gaze.START_LAST_ACTION)
+
+    def test_unchanged_unrelated_ambiguous_hidden_and_wrong_frame_focus_keep_input(self) -> None:
+        for variant in ('unchanged', 'unrelated', 'duplicate', 'hidden', 'clipped', 'missing_after', 'wrong_frame', 'failed_action'):
+            with self.subTest(variant=variant):
+                c = self.context()
+                field = next(e for e in c.elements if e['id'] == 'name')
+                if variant == 'unchanged': c.previous['focus']['dom_id'] = 'name'
+                if variant == 'unrelated': field['a11y']['described_by'] = ['other-error']
+                if variant == 'duplicate': c.snapshot['elements'].append(dict(field, id='duplicate'))
+                if variant == 'hidden': field['visible'] = False
+                if variant == 'clipped': field.update(visible_geometry='ancestor_clipped', visible_box={**field['box'], 'h': 2})
+                if variant == 'missing_after': c.snapshot.pop('focus')
+                if variant == 'wrong_frame': c.step['after'] = 'another-frame'
+                if variant == 'failed_action': c.step['result'] = 'error'
+                record = self.feedback(c)
+                self.assertEqual(record.measurement['anchor_basis'], gaze.START_LAST_ACTION)
+                self.assertEqual(record.measurement['value'], 20.4)
+                self.assertEqual(record.severity, 'P2')
+
+    def test_native_error_message_association_must_be_applicable(self) -> None:
+        c = self.context()
+        field = next(e for e in c.elements if e['id'] == 'name')
+        field['a11y'] = {'invalid': True, 'error_message': 'name-error'}
+        self.assertEqual(self.feedback(c).measurement['feedback_focus_relation'], 'aria-errormessage')
+        field['a11y']['invalid'] = False
+        self.assertEqual(self.feedback(c).measurement['anchor_basis'], gaze.START_LAST_ACTION)
+
+    def test_unrelated_feedback_does_not_inherit_or_get_suppressed_by_field_anchor(self) -> None:
+        c = self.context()
+        c.snapshot['elements'].append(el('independent', 'alert', (16, 20, 352, 22), text='별도 오류입니다.',
+                             dom_id='independent', roles=('error_message',), fg='#d32f2f', weight=600))
+        record = self.feedback(c, '#independent')
+        self.assertEqual(record.measurement['anchor_basis'], gaze.START_LAST_ACTION)
+        self.assertEqual(record.severity, 'P2')
+        self.assertFalse(record.measurement['redundant_with_noticed_feedback'])
+
+    def test_offscreen_error_remains_directly_flagged(self) -> None:
+        c = self.context()
+        error = next(e for e in c.elements if e['id'] == 'name-error')
+        error.update(box={**error['box'], 'y': 950}, in_viewport=False)
+        record = self.feedback(c)
+        self.assertEqual(record.severity, 'P1')
+        self.assertEqual(record.measurement['band'], 'offscreen')
+
+    def test_keyboard_and_direct_field_pointer_keep_original_semantics(self) -> None:
+        for kind in ('keyboard', 'field', 'label'):
+            with self.subTest(kind=kind):
+                c = self.context()
+                if kind == 'keyboard': c.step['action']['action'] = 'press'
+                if kind == 'field':
+                    c.step['target_element_id'] = 'name'
+                    c.step['action']['target'] = '#name'
+                if kind == 'label':
+                    label = el('label', 'label', (16, 110, 352, 22), interactive=True, dom_id='label', tag='label')
+                    c.previous['elements'].append(label)
+                    c.step['target_element_id'] = 'label'
+                self.assertEqual(self.feedback(c).measurement['anchor_basis'], gaze.START_LAST_ACTION)
+
+    def test_thumb_occlusion_retains_physical_input_anchor(self) -> None:
+        c = self.context()
+        with patch.object(checks.reach, 'occluded_by_thumb', return_value=False) as occlusion:
+            self.feedback(c)
+        self.assertEqual(occlusion.call_args.args[0], checks._point_mm(c, 192, 786))
+
+
 if __name__ == '__main__':
     unittest.main()
