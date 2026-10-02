@@ -1,9 +1,15 @@
-# 통합 스킬 배포 후보 검증 — 2026-10-02
+# 초기 통합 후보의 검증 기록 — 2026-10-02
 
-`insane-search` 안에서 Remorsearch의 research, persona-qa, ergonomics, loop 모드를 호출하는 로컬 배포 후보를 완성했습니다. 실제 배포, 설치된 스킬 변경, 커밋 푸시, PR 병합은 하지 않았습니다.
+이 문서는 같은 날 진행한 초기 패키지 실험의 보관 기록입니다. 아래 구성·파일·검사 수와
+`ready: true`는 그때의 후보에만 해당합니다. 현재 후보의 완료 판정에 사용하지 않습니다.
+현재는 `remorsearch-ux-qa`를 설치하고, 그 안의 `references/insane-search`에서 검색 자료를
+사용합니다. 현재 빌드·검사 방법은 [release.md](../release.md)에 있습니다. 이 저장소에는
+아래의 이전 ZIP과 로컬 검사 결과 파일이 포함되어 있지 않습니다.
 
-- 배포물: [insane-search-remorsearch.zip](../../dist/release-candidate/bundle/insane-search-remorsearch.zip)
-- 기계 판독 결과: [validation.json](../../dist/release-candidate/validation.json) — `ready: true`, `published: false`
+초기 실험에서는 `insane-search` 안에서 Remorsearch의 research, persona-qa, ergonomics, loop 모드를 호출하는 로컬 후보를 검사했습니다. 당시 실제 배포, 설치된 스킬 변경, 커밋 푸시, PR 병합은 하지 않았습니다.
+
+- 당시 배포물: `dist/release-candidate/bundle/insane-search-remorsearch.zip`
+- 당시 기계 판독 결과: `dist/release-candidate/validation.json` — `ready: true`, `published: false`
 - 재현 방법: [release.md](../release.md)
 - 크기: 3,479,066바이트. 내용 명세에 217개 파일과 별도 명세 파일을 포함합니다.
 - ZIP SHA-256: `8f0396f2e7782dd7ebde9a85070e6889bcb2b814cc5344111e48f464bebf9fa7`
@@ -17,3 +23,5 @@
 모델 분담은 GPT-6.1 Sol max의 구현·실행 평가, GLM 5.3 max의 런타임 검토, Grok 4.7 xhigh의 문서·배포 검토, GLM 5.3 Flash max의 통합 패키지 검토였습니다. GLM·Grok의 하위 에이전트 암호화 전달 오류는 같은 모델을 로컬 CLI로 호출해 해결했습니다. Flash는 설정된 Z.AI Coding Plan 경로를 사용했습니다. 별도 Fast 서비스 옵션과 사용자가 말한 Start plan 쿼터의 강제 지정·적용 여부는 제공된 실행 도구로 확인할 수 없었습니다.
 
 원본 검색 스킬의 MIT 라이선스는 [공식 원문](https://github.com/fivetaku/insane-search/blob/main/LICENSE)을 그대로 보존해 `LICENSE.insane-search`로 포함했습니다. 원본 스킬은 읽기 전용 입력으로 사용했습니다. Remorsearch의 라이선스·제3자 고지도 포함했고 내부 인수인계 자료와 로컬 실행 데이터는 배포물에서 제외했습니다.
+
+현재 후보에서 검색 자료의 라이선스는 `references/insane-search/upstream-LICENSE`에 보존합니다.

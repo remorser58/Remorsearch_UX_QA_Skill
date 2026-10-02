@@ -77,6 +77,8 @@ EXPAND dedupes leads; stops at depth caps/no leads/two empty rounds. No cap rais
 
 ## 3. Merge, verify and gate
 
+For recovery, see audience-pipeline.md: Repair a recorded run.
+
 Use sanitized producer imports only. These contract commands require shipped support:
 
 ```sh

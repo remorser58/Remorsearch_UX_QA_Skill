@@ -130,6 +130,29 @@ Gate writes gate.json or gate_failed.json, exits 0 process pass, 1 process,
 2 integrity, 3 contention. --write-bundle alone writes research verification and
 partitions support/context without losing original inputs. See source-grading.md.
 
+## Repair a recorded run
+
+For `plan_conflict` or `search_assignment`, preserve the original manifest,
+ledger and returns with their hashes before making a correction. Add the actual
+counter assignment and round to the manifest, and repair assignment joins in
+the ledger and returns. Keep call IDs, phase, queries, times, results and budget
+counts unchanged. Record that a missing assignment was added after the search;
+never present it as a pre-dispatch plan. Use the corrected canonical
+`RUN/axes.json` and `RUN/search-ledger.jsonl` with all relevant returns in the
+merge command above, then rerun gate. Gate checks that canonical ledger even
+when a different ledger path was supplied to merge. Never invent a search to
+satisfy a missing counter requirement.
+
+If a claim overstates its source, retain its historical statement, ID and
+counter history. Remove the unsupported support/context links from that old
+candidate, retain the original return for audit, and add a narrower claim with
+its verified capture links. Record the correction/replacement relationship;
+do not delete contrary evidence. Remerge, regate and regenerate the starter.
+Confirm the unsupported old card is not exportable, and use only an eligible
+new claim ID in the authored persona input. Regenerate derived exports and the
+report after the gate changes. This preserves the mistake's history without
+reusing it as a persona's evidence.
+
 ## Export, check, minimize and close
 
 ```sh
