@@ -51,7 +51,7 @@ Assignment rounds index the search stage: discovery only at round 0, expansion
 only at rounds 1-2, counter_search at rounds 0-2 (required counters arise from
 initial or expanded findings and run inside the same budgets).
 
-Use quick/standard/deep budgets and query targets from RELEASE-CONTRACT.md section 2.
+Use quick/standard/deep budgets and query targets from `references/research/workflow.md` Phase 0 recap.
 Targets never fail merge or gate; acknowledge coverage per axis. Specify channels,
 languages, windows, counter queries, budget and completion rule. Set the chosen depth ceilings explicitly in brief.budgets. Standard research
 uses 40 searches/40 page reads/10 per host. Reader defaults remain 120/200/30; documented raises max 500/100; request gap 8 seconds, never below 5.
@@ -141,6 +141,7 @@ python3 scripts/ux_research.py report-check --run RUN --bundle RUN/bundle.json -
 python3 scripts/ux_research.py minimize --run RUN --bundle RUN/bundle.json --gate RUN/gate.json
 python3 scripts/ergo_qa.py audience-check RUN/audience.draft.json --draft --gate RUN/gate.json --bundle RUN/bundle.json --run RUN
 python3 scripts/ergo_qa.py audience-check audience.json --gate RUN/gate.json --bundle RUN/bundle.json --run RUN
+python3 scripts/ergo_qa.py personas --audience audience.json --budget 12 --out work/profiles.json --gate RUN/gate.json --bundle RUN/bundle.json --run RUN
 python3 scripts/ux_research.py close --run RUN
 ```
 
@@ -151,7 +152,9 @@ stay separate from shares. Source bundle_ref is a source-ID string; every value
 has typed segment/entity/field joins and claim-level provenance. Complete with
 new graded data or explicitly permitted owner test choices; --gate compares exact
 values/joins/hashes, not a supported source somewhere. Research composition needs
-completed validation and fresh gate. No-gate checks remain for standalone audiences.
+completed validation and fresh gate: `ergo_qa.py personas` takes the same supported
+refs (`--gate RUN/gate.json --bundle RUN/bundle.json --run RUN`) and rejects a
+missing, stale or mismatched gate. No-gate checks remain for standalone audiences.
 
 report-check writes report_check.json. Unsupported IDs are annex-only; phantom
 IDs fail everywhere. Annex headings: 미확정, 확인 필요, 부록, Unresolved,

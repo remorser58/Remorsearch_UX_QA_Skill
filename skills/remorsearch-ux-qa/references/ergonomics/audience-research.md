@@ -109,12 +109,13 @@ Rules:
    Ask the team for analytics before estimating.
 3. Write `audience.json`. Validate it:
    `python3 scripts/ergo_qa.py audience-check audience.json`.
-   A cross-check against the audience run's gate
-   (`audience-check --gate gate.json --bundle bundle.json`) is planned; until it
-   ships, keep community sources limited to the claims the run exported as
-   supported.
+   Audiences exported from a research run are checked against that run's gate:
+   `python3 scripts/ergo_qa.py audience-check audience.json --gate RUN/gate.json --bundle RUN/bundle.json --run RUN`.
 4. Compose personas under a budget, and read the plan:
-   `python3 scripts/ergo_qa.py personas --audience audience.json --budget 12 --plan work/persona-plan.md --out work/profiles.json`
+   `python3 scripts/ergo_qa.py personas --audience audience.json --budget 12 --plan work/persona-plan.md --out work/profiles.json`.
+   Research-origin audiences (research-run sources or value provenance) compose only
+   with the same supported refs: `--gate RUN/gate.json --bundle RUN/bundle.json --run RUN`;
+   a missing, stale or mismatched gate is rejected. Standalone audiences need no refs.
 5. Write scenarios from the key tasks:
    `python3 scripts/ergo_qa.py scenario-stubs --audience audience.json --out scenarios/`.
    Fill in the URL, roles, steps and timing windows.

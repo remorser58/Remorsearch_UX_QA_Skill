@@ -105,8 +105,11 @@ def cmd_audience_check(args: argparse.Namespace) -> int:
 
 def cmd_personas(args: argparse.Namespace) -> int:
     doc = load_json(args.audience)
+    if any((args.run, args.bundle, args.gate)) and not all((args.run, args.bundle, args.gate)):
+        print("ERROR: --run, --bundle and --gate are required together.", file=sys.stderr)
+        return EXIT_USAGE
     floors = None if args.floors is None else [f for f in args.floors.split(",") if f]
-    plan = audience.compose(doc, args.budget, floors)
+    plan = audience.compose(doc, args.budget, floors, research_run=args.run, bundle_path=args.bundle, gate_path=args.gate)
     _write_json(Path(args.out), {"strategy": "audience_composed", "audience_id": doc["audience_id"], "plan": {k: v for k, v in plan.items() if k != "profiles"}, "profiles": plan["profiles"]})
     if args.plan:
         Path(args.plan).parent.mkdir(parents=True, exist_ok=True)
@@ -366,6 +369,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--budget", type=int, required=True, help="number of profiles to compose")
     p.add_argument("--floors", help=f"comma-separated inclusive floors (default: {','.join(audience.FLOOR_DEFAULTS)}; empty string for none)")
     p.add_argument("--plan", help="write a Korean Markdown table explaining why each persona exists")
+    p.add_argument("--run", help="research run directory; with --bundle and --gate, required together for research-origin audiences")
+    p.add_argument("--bundle", help="the run's bundle.json (same refs audience-check uses)")
+    p.add_argument("--gate", help="the run's committed gate.json (must be RUN/gate.json)")
     p.add_argument("--out", required=True)
     p.set_defaults(func=cmd_personas)
 
