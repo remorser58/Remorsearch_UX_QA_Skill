@@ -34,8 +34,10 @@ until the skill is merged into `main`.
 ```sh
 git clone --branch codex/release-candidate-20261002 https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
 # Claude Code (personal); use .claude/skills/ inside a project to share it with a team
+mkdir -p ~/.claude/skills
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
 # Codex
+mkdir -p ~/.codex/skills
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.codex/skills/
 ```
 

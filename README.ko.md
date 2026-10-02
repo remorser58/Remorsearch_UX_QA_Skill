@@ -30,8 +30,10 @@ macOS, Linux, Windows의 WSL에서 실행할 수 있습니다.
 ```sh
 git clone --branch codex/release-candidate-20261002 https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
 # Claude Code(개인용). 팀과 나누려면 프로젝트 안의 .claude/skills/에 복사합니다
+mkdir -p ~/.claude/skills
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
 # Codex
+mkdir -p ~/.codex/skills
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.codex/skills/
 ```
 
