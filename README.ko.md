@@ -24,23 +24,19 @@ Remorsearch(리모서치, *ree-mor-search*) UX QA는 Claude Code와 Codex에서 
 Python 도구는 Python 3.10 이상에서 표준 라이브러리와 POSIX 파일 잠금을 사용합니다.
 macOS, Linux, Windows의 WSL에서 실행할 수 있습니다.
 
+현재 후보는 `codex/release-candidate-20261002` 브랜치에 있습니다.
+`main`에 병합되기 전까지 아래 브랜치로 설치합니다.
+
 ```sh
-git clone https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
+git clone --branch codex/release-candidate-20261002 https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
 # Claude Code(개인용). 팀과 나누려면 프로젝트 안의 .claude/skills/에 복사합니다
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
 # Codex
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.codex/skills/
 ```
 
-CLI와 무결성 검사 정보를 갖춘 배포 ZIP은 저장소에서 빌드합니다.
-빌더는 저장소에 포함된 검색 자료를 기본으로 쓰며 네트워크에 접속하지 않습니다.
-[빌드와 배포 전 검사](docs/release.md)를 참고하세요.
-
-```sh
-python3 scripts/build_insane_search_bundle.py --output dist/remorsearch-rc
-python3 scripts/build_insane_search_bundle.py --verify dist/remorsearch-rc
-python3 dist/remorsearch-rc/remorsearch-ux-qa/scripts/remorsearch.py smoke
-```
+폴더를 복사하면 스킬 설치가 끝납니다. 유지보수용 패키징과 무결성 검사는
+[빌드와 배포 전 검사](docs/release.md)에 정리했습니다.
 
 폴더에는 Python 도구, JSON 스키마, 시연용 예제, 실시간 웹 드라이버와 검색 원문,
 참조 자료, 출처 기록이 들어 있습니다.

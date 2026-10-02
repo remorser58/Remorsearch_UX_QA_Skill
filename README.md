@@ -28,23 +28,19 @@ insane-search toolkit as reference material for Remorsearch's research stage;
 users do not install a separate search skill. The Python tools need Python 3.10+
 on macOS, Linux or WSL and use the standard library and POSIX file locks.
 
+The current candidate is on `codex/release-candidate-20261002`; use that branch
+until the skill is merged into `main`.
+
 ```sh
-git clone https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
+git clone --branch codex/release-candidate-20261002 https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
 # Claude Code (personal); use .claude/skills/ inside a project to share it with a team
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
 # Codex
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.codex/skills/
 ```
 
-For a release ZIP with a portable launcher and integrity manifest, build from
-the repository. The builder uses the checked-in toolkit by default, works
-offline and leaves installed skills untouched. See [build and release checks](docs/release.md).
-
-```sh
-python3 scripts/build_insane_search_bundle.py --output dist/remorsearch-rc
-python3 scripts/build_insane_search_bundle.py --verify dist/remorsearch-rc
-python3 dist/remorsearch-rc/remorsearch-ux-qa/scripts/remorsearch.py smoke
-```
+Copying the folder completes the skill installation. Maintainer-only packaging
+and integrity checks are documented in [build and release checks](docs/release.md).
 
 The folder contains the Python tools, JSON schemas, demo fixtures, live web
 driver, and original search instructions with their references and provenance.
