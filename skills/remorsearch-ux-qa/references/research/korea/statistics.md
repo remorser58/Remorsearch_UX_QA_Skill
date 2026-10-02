@@ -2,7 +2,7 @@
 
 항목 조회용 문서입니다. 전체 읽기는 기본 경로에 포함하지 않습니다. 스킬 폴더에서 `python3 scripts/ref.py references/research/korea/statistics.md 2`로 필요한 ID만 조회합니다.
 
-세그먼트 크기, 기기, 조건, 사용 맥락을 통계로 뒷받침할 때 쓰는 규칙과 출처 목록입니다. 통계는 모집단이 어떤 모양인지 한계를 정해 줍니다. 제품 사용자를 재지는 않습니다. 이 문서는 `references/research/source-grading.md`의 3절(적합도 표)과 6절(중립 분모)을 한국 통계에 적용하고, 두 문서가 다르면 더 엄격한 쪽을 따릅니다. 한국 리서치 팩의 흐름은 `references/research/korea/overview.md`에서 시작합니다. 출처 목록의 데이터 원본은 `uxresearch/data/korea-statistics.json`이고, 이 문서는 사람이 읽는 판입니다.
+세그먼트 크기, 기기, 조건, 사용 맥락을 통계로 뒷받침할 때 쓰는 규칙과 출처 목록입니다. 통계는 모집단이 어떤 모양인지 한계를 정해 줍니다. 제품 사용자를 재지는 않습니다. 이 문서는 `references/research/source-grading.md`의 1절(적합도 표)과 4절(중립 분모)을 한국 통계에 적용하고, 두 문서가 다르면 더 엄격한 쪽을 따릅니다. 한국 리서치 팩의 흐름은 `references/research/korea/overview.md`에서 시작합니다. 출처 목록의 데이터 원본은 `uxresearch/data/korea-statistics.json`이고, 이 문서는 사람이 읽는 판입니다.
 
 이 문서는 법률 자문이 아닙니다. 법령은 조항과 판(공포일, 시행일)을 함께 적고, law.go.kr 원문과 대조하지 못한 것은 미확인으로 적습니다.
 
@@ -18,11 +18,11 @@ NIA·과기정통부·한국소비자원의 아래 확인 항목은 2026-09-30 �
 | 추론 | 위 사실에서 이 스킬이 끌어낸 판단이나 계산 |
 | 규칙 | 이 스킬의 규칙 |
 
-직접 읽은 항목은 값·분모·조사 대상·표본과 출처를 함께 적었습니다. 같은 자료 안에서도 이번 검증에서 닿지 못한 값과 조사 방법·오차·이용허락은 미확인으로 남깁니다. 검색 요약으로만 본 값은 D까지만 인정합니다(`references/research/source-grading.md` 4절). 값을 주장에 쓸 때는 해당 표와 통계설명자료로 출처 카드를 새로 채웁니다.
+직접 읽은 항목은 값·분모·조사 대상·표본과 출처를 함께 적었습니다. 같은 자료 안에서도 이번 검증에서 닿지 못한 값과 조사 방법·오차·이용허락은 미확인으로 남깁니다. 검색 요약으로만 본 값은 D까지만 인정합니다(`references/research/source-grading.md` 3절). 값을 주장에 쓸 때는 해당 표와 통계설명자료로 출처 카드를 새로 채웁니다.
 
 ## 1. 범위
 
-- 통계는 모집단의 한계를 정함. 제품 사용자 수를 재지 않음. 통계 출처는 크기 주장에서 B까지이고, 그것도 한계(bound)로서만 셈(`references/research/source-grading.md` 3절).
+- 통계는 모집단의 한계를 정함. 제품 사용자 수를 재지 않음. 통계 출처는 크기 주장에서 B까지이고, 그것도 한계(bound)로서만 셈(`references/research/source-grading.md` 1절, 4절).
 - 게시글, 리뷰, 좋아요 수는 분모가 아님. 스스로 전화하거나 신고한 사람의 건수(1372 상담, 공정위 모니터링)도 분모가 아님(3절).
 - 통계가 답하는 질문은 `references/research/audience-pipeline.md`의 여덟 가지 질문 가운데 세그먼트, 비중, 기기, 조건, 맥락, 불편임. 우선순위와 핵심 과제는 통계로 답하지 않음(팀 결정과 제품 화면).
 - 원문에서 읽은 값은 관찰됨, 요약으로만 본 값은 미확인으로 구분함. 값을 주장에 쓰기 전에 필요한 표·정의·모집단을 다시 확인하고 2절의 카드를 새로 채움.
@@ -128,7 +128,7 @@ NIA·과기정통부·한국소비자원의 아래 확인 항목은 2026-09-30 �
 
 ## 4. 오디언스 질문별 출처
 
-질문 번호는 `references/research/audience-pipeline.md`의 "여덟 가지 질문"을 따릅니다. 모든 행은 단서이며, 등급은 `references/research/source-grading.md` 3절의 통계(`statistical`) 열을 따릅니다: 세그먼트 존재·비중·기기·조건은 B까지, 사용 맥락과 불편은 C까지(대처 방법은 E), 과제는 D까지.
+질문 번호는 `references/research/audience-pipeline.md`의 "여덟 가지 질문"을 따릅니다. 모든 행은 단서이며, 등급은 `references/research/source-grading.md` 1절의 통계(`statistical`) 열을 따릅니다: 세그먼트 존재·비중·기기·조건은 B까지, 사용 맥락과 불편은 C까지(대처 방법은 E), 과제는 D까지.
 
 | 질문 | 출처(JSON id) | 말해 주는 것(회차와 함께 인쇄된 값) | 조심할 점 | 근거 | 확인 |
 | --- | --- | --- | --- | --- | --- |
@@ -136,7 +136,7 @@ NIA·과기정통부·한국소비자원의 아래 확인 항목은 2026-09-30 �
 | 4 기기와 잡는 방법 | `gallup-smartphone-2025`, `kmcc-broadcast-media-use`, `kocca-game-users-2025`, `kisdi-media-panel` | 스마트폰 브랜드(스마트폰 사용자 986명): 삼성 72%, 애플 24%. 18~29세는 갤럭시 40%, 아이폰 60%. 50대 89%, 60대 이상 92%가 삼성. 남성 76%, 여성 67%가 삼성. OTT 이용률 81.8%, 유료 OTT 65.5%(만 13세 이상). 게임 이용률 50.2%, 게임 사용자 중 모바일 89.1%, PC 58.1%, 콘솔 28.6% | 브랜드 점유율은 스마트폰 사용자 기준이며 리뷰 작성자 구성이 아님. 게임 플랫폼 비율은 게임 사용자 기준. 한국갤럽 스마트폰 조사는 만 18세 이상임 | [데이터뉴스](https://www.datanews.co.kr/news/article.html?no=139581), [세계일보](https://www.segye.com/newsView/20250708503898), [korea.kr 156737465](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156737465), [한국콘텐츠진흥원](https://welcon.kocca.kr/ko/info/business/1956858) | 미확인(요약) 2026-09-29 |
 | 5 능력과 조건 | `nia-digital-divide`, `nia-smartphone-overdependence` | 디지털 정보화 수준(일반 국민=100 대비 지수): 취약계층 종합 77.9%, 고령층(만 55세 이상) 71.8%, 농어민 80.6%, 장애인 84.1%. 부문별로는 접근 96.6%, 활용 80.5%, 역량 65.9%. 스마트폰 과의존 위험군 22.7%(스마트폰 사용자), 청소년 43.0%, 유아동 26.0% | 지수는 사람의 비율이 아님. 77.9%는 네 취약계층 종합이며 고령층 값이 아님. 과의존은 자기 보고 척도이지 UX 조건의 유병률이 아님. 고령층 71.4%는 2024년 값이며 2025년 값은 71.8%임. 부문별 값과 과의존 값은 이번 검증에서 대조하지 못함 | [korea.kr 156751063](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751063), [이투데이](https://www.etoday.co.kr/news/view/2569509), [네이트 뉴스](https://m.news.nate.com/view/20260326n41384), [asiaa.co.kr](https://www.asiaa.co.kr/news/articleView.html?idxno=207514) | 종합·계층별 정보화 수준 관찰됨 2026-09-30. 부문별 지수·과의존 값은 미확인(요약) 2026-09-29 |
 | 6 사용 맥락 | `kca-kiosk-2022`, `kca-kiosk-65plus-2020`, `kmcc-broadcast-media-use` | 키오스크 불편·피해 경험 46.6%(500명 중, 연령대별 쿼터). 불편 이유(중복응답)는 뒷사람 눈치 52.8%, 조작 어려움 46.8%, 기기 오류 39.1%. 60대 밴드는 뒷사람 눈치 71.2%, 조작 어려움 53.6%(분모 미확인). 만 65세 이상 키오스크 사용자 245명 중 다음 단계 버튼 찾기 어려움 51.0%, 뒷사람 눈치 49.0% | 46.6%는 전국 비율이 아니라 쿼터 표본의 값. 불편 이유의 분모는 불편 경험자로 보이나 확인하지 못함. 눈치는 한국 맥락의 요인으로 쓰되 원문을 읽지 못함 | [소비자24](https://www.consumer.go.kr/user/ftc/consumer/cnsmrBBS/740/selectInfoCDMGCSLCDetail.do?infoId=A1079491&cntntsId=00000347), [경향신문](https://www.khan.co.kr/article/202211241559001), [이투데이](https://www.etoday.co.kr/news/view/1944783) | 미확인(요약) 2026-09-29 |
-| 7 핵심 과제 | 통계로 답하지 않음 | 팀 데이터와 제품 화면에서 구체적인 값을 얻음 | 통계는 과제 주장에서 D까지 | `references/research/source-grading.md` 3절 | 규칙 |
+| 7 핵심 과제 | 통계로 답하지 않음 | 팀 데이터와 제품 화면에서 구체적인 값을 얻음 | 통계는 과제 주장에서 D까지 | `references/research/source-grading.md` 1절 | 규칙 |
 | 8 알려진 불편 | `kca-1372`(건수만), `kca-kiosk-2022` | 1372소비자상담센터 상담 2026-08: 51,443건(전월 대비 -6.6%, 전년 같은 달 대비 -6.0%) | 상담 건수는 전화한 사람의 수이지 불편 발생률이 아님(`count_only`) | [연합뉴스 한민족센터](https://www.koreancenter.or.kr/news/articleView.html?idxno=1416729), [공공데이터포털 15120072](https://www.data.go.kr/data/15120072/fileData.do) | 미확인(요약) 2026-09-29 |
 | 채널 도달(계획용) | `kpf-social-media-2024`, `gallup-market70-2025`, `reuters-dnr-2025-kr`, `wiseapp`, `nasmedia-npr-2026`, `opensurvey-social-2025`, `univ20lab`, `similarweb` | 카카오톡 98.9%, 유튜브 84.9%(한국언론진흥재단, 만 19세 이상). 유튜브 연간 이용률 95%, 인스타그램 45%(한국갤럽 마켓70, 만 13세 이상). 뉴스 목적 주간 유튜브 이용 약 50%(로이터 저널리즘연구소 2025, 온라인 표본 2,038명) | 채널 이용 정도이며 글을 쓰는 사람의 구성이 아님. 조사마다 정의가 다름. 벤더 자료는 C | [한국언론진흥재단](https://www.kpf.or.kr/front/board/boardContentsView.do?board_id=246&contents_id=940a3bc4be914ac2a065b8922021728e), [한국갤럽](https://www.gallup.co.kr/gallupdb/reportContent.asp?seqNo=1586), [로이터 저널리즘연구소](https://reutersinstitute.politics.ox.ac.uk/digital-news-report/2025/south-korea) | 미확인(요약) 2026-09-29 |
 | 웹 접근성 기준선(persona-qa) | `msit-web-accessibility` | 조사 대상 웹사이트의 평균 점수 70.4점(2025, 전년 대비 +3.7점), 66.7점(2024, +0.9점) | 사이트 점수이지 사용자 비율이 아님. 점수 체계(100점 만점 여부)와 지침 판은 미확인. KWCAG와 WCAG는 따로 봄(`references/persona-qa/kwcag-2.2.md`) | [korea.kr 156751063](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156751063), [korea.kr 156681128](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156681128) | 미확인(요약) 2026-09-29 |
@@ -269,7 +269,7 @@ JSON의 `verify_before_use`에 같은 목록이 있습니다.
 
 ### 8.2 실패 유형(Failure modes)
 
-- 게시글이나 리뷰 수를 분모로 씀(`references/research/source-grading.md` 6절).
+- 게시글이나 리뷰 수를 분모로 씀(`references/research/source-grading.md` 4절).
 - 벤더의 커뮤니티 성비·연령을 세그먼트 비율로 씀, 또는 게시자·주장·페르소나에 붙임.
 - 다른 나이 틀의 비율을 더하거나 견줌(3세 이상 대 13세 이상 대 10~69세).
 - 고령층을 65세 이상으로 가정하고 디지털정보격차의 55세 이상 값을 옮김.

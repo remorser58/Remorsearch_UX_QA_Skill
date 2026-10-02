@@ -4,6 +4,8 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
+import re
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -116,6 +118,61 @@ class ReferenceLookupTests(unittest.TestCase):
                 output = ref.reference_output(_paths.SKILL / file, identifier)
                 self.assertLessEqual(len(output.encode()), ref.MAX_BYTES)
                 self.assertIn(f"ID: {identifier}", output)
+
+    def test_every_numbered_grading_reference_resolves_within_the_lookup_cap(self):
+        grading = _paths.SKILL / "references/research/source-grading.md"
+        citation = re.compile(r"`references/research/source-grading\.md`([^`\n]*)")
+        checked = 0
+        documents = [_paths.SKILL / "SKILL.md", *(_paths.SKILL / "references").rglob("*.md")]
+        for path in documents:
+            for match in citation.finditer(path.read_text(encoding="utf-8")):
+                tail = match.group(1)
+                first = re.match(r"(?:의)?\s*(\d+(?:-\d+)?)", tail)
+                if first is None:
+                    continue
+                identifiers = set(re.findall(r"(\d+)절", tail))
+                if "-" in first.group(1):
+                    start, end = (int(value) for value in first.group(1).split("-"))
+                    identifiers.update(str(value) for value in range(start, end + 1))
+                else:
+                    identifiers.add(first.group(1))
+                for identifier in identifiers:
+                    with self.subTest(document=path.relative_to(_paths.SKILL), section=identifier):
+                        output = ref.reference_output(grading, identifier)
+                        self.assertIn(f"ID: {identifier}\n", output)
+                        self.assertLessEqual(len(output.encode()), ref.MAX_BYTES)
+                        checked += 1
+        self.assertGreater(checked, 20, "Numbered research routing must actually be exercised")
+
+    def test_korean_grading_topic_links_return_the_rules_they_name(self):
+        grading = _paths.SKILL / "references/research/source-grading.md"
+        # Section existence alone does not catch a real but semantically wrong
+        # destination such as downgrades being cited as the fit table.
+        topics = (("statistics.md", "적합도 표", "| segment_share |"),
+                  ("statistics.md", "중립 분모", "never denominators"),
+                  ("promotion.md", "하향 조건", "Confirmed promotion/affiliate/seller tie"),
+                  ("promotion.md", "독립 단위", "attested thread key"))
+        for filename, label, required_rule in topics:
+            text = (_paths.SKILL / "references/research/korea" / filename).read_text(encoding="utf-8")
+            target = re.search(r"(\d+)절\(" + re.escape(label) + r"\)", text)
+            self.assertIsNotNone(target, label)
+            output = ref.reference_output(grading, target.group(1))
+            self.assertIn(required_rule, output, f"{filename}: {label} routes to the wrong rule")
+
+    def test_promotion_gate_examples_are_executable_cli_contracts(self):
+        from uxresearch.cli import build_parser
+
+        text = (_paths.SKILL / "references/research/korea/promotion.md").read_text(encoding="utf-8")
+        commands = [shlex.split(line) for line in text.splitlines()
+                    if line.startswith("python3 scripts/ux_research.py ")]
+        self.assertTrue(commands, "Promotion review must use the implemented gate")
+        parser = build_parser()
+        for command in commands:
+            arguments = parser.parse_args(command[2:])
+            self.assertEqual(arguments.command, "gate")
+            self.assertEqual(arguments.run, "RUN")
+            self.assertEqual(arguments.bundle, Path("RUN/bundle.json"))
+        self.assertTrue(any("--write-bundle" in command for command in commands))
 
     def test_platform_record_joins_every_overlapping_terms_entry(self):
         result = json.loads(ref.platform_output("naver-cafe"))

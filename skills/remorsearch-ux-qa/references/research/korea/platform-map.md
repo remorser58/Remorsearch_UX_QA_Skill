@@ -14,7 +14,7 @@
 - 계획용 지식입니다. 실제로 무엇을 읽고 어디서 멈출지는 reader 정책인 `uxresearch/data/routes.json`이 정합니다. 두
   파일이 어긋나면 routes.json을 따르고 이 지도를 고칩니다.
 - 사용자 단서는 플랫폼 전체 사용자에 관한 조사·패널 값입니다. 채널을 고르는 단서일 뿐 세그먼트 비율이 아니고, 글쓴이
-  구성도 아닙니다(`references/research/source-grading.md` 6절). 단서 신뢰도(high, medium, low)는 채널 선택 단서로서
+  구성도 아닙니다(`references/research/source-grading.md` 4절). 단서 신뢰도(high, medium, low)는 채널 선택 단서로서
   그 값을 얼마나 믿을 만한지를 뜻합니다.
 - 커뮤니티의 성별·연령·정치 성향 추정치는 싣지 않습니다. 그런 추정치는 게시자, 주장, 페르소나 어디에도 붙이지
   않습니다(4절).

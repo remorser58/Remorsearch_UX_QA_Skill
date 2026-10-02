@@ -95,12 +95,12 @@
 | 반대 근거 검색 | 편해요, 만족, 문제없음, 잘 돼요, 괜찮아요, 추천해요 | 반대 경험 찾기 |
 
 - 사용 맥락 씨앗은 누가 말하는지 보여 줄 수 있는 단서일 뿐, 세그먼트 비율을 재지 않음
-  (`references/research/source-grading.md` 6절). — 규칙
+  (`references/research/source-grading.md` 4절). — 규칙
 - 돌봄에 관한 검색은 엄마, 아빠, 보호자, 육아, 아이 키우는을 함께 넣음. 돌보는 사람을 한쪽 성별로 가정하지 않음.
   — 규칙
 - 노안, 색약처럼 건강·장애에 닿는 말은 세그먼트 수준 주장에만 쓰고, 작성자 키에 붙이지 않음
   (`references/research/workflow.md`의 Non-negotiable operating rules). 스스로 밝힌 상태는 상태의 비율이 아님. — 규칙
-- 반대 근거 검색어는 같은 제품, 기능, 기간으로 좁혀 씀(`references/research/source-grading.md` 8절). — 규칙
+- 반대 근거 검색어는 같은 제품, 기능, 기간으로 좁혀 씀(`references/research/source-grading.md` 6절). — 규칙
 - 조합 예: "[제품] 본인인증 안 됨", "[제품] 업데이트 후 튕김 2026", "[제품] 부모님 큰 글씨", "[제품] 육아 중 한 손",
   "[제품] 편해요". — 규칙
 
@@ -186,7 +186,7 @@
 - `scripts/ux_research.py author-key`는 닉네임의 앞뒤 공백을 지우고 NFKC로 맞춘 뒤, 끝에 붙은 IP 일부(예:
   `ㅇㅇ(203.0)`)를 떼어 냄. 기본 익명 닉네임(`uxresearch/data/markers.json`의 `anonymous_handles`)과 IP 일부가
   붙어 있던 닉네임은 거절함(exit 2). 이런 글은 `author-key --thread-url`로 만든 스레드 키로 셈. — 규칙
-- 익명 게시판은 스레드 단위로 셈(`references/research/source-grading.md` 5절). — 규칙
+- 익명 게시판은 스레드 단위로 셈(`references/research/source-grading.md` 4절). — 규칙
 - IP 일부는 reader가 지움. 발췌에 남기거나 되살리지 않음. — 규칙
 - 익명 1인칭 사연은 어느 게시판에서든 사실 확인이 안 된 진술로 다루고 `narrative_unverified` 주의 표시를 붙임.
   존재 근거로만 씀(`references/research/korea/platform-map.md` 4절). — 규칙
@@ -213,7 +213,7 @@
 - 상대 높임법은 격식체(하십시오체, 하오체, 하게체, 해라체)와 비격식체(해요체, 해체)로 나뉨. — 미확인(요약) [Q10]
 - 말투는 글이 놓인 자리와 쓴 사람의 태도를 보여 줄 뿐, 나이나 성별을 보여 주지 않음. — 규칙
 - 말투, 호칭(형, 언니, 님 등), 반말, 은어로 나이, 성별, 정치 성향을 짐작하지 않음. 나이·성별 비율에는 측정
-  출처가 필요함(`references/research/source-grading.md` 3절, 6절). — 규칙
+  출처가 필요함(`references/research/source-grading.md` 1절, 4절). — 규칙
 - 커뮤니티의 성별·연령·정치 성향 추정치는 작성자, 주장, 페르소나에 붙이지 않음. 커뮤니티 사이의 차이는 코퍼스
   수준의 콘텐츠 규범으로만 적음(`references/research/korea/platform-map.md` 4절,
   `references/research/korea/legal-checklist.md` L10). — 규칙
@@ -225,7 +225,7 @@
 
 - "~대", "~래", "~라더라", "들었는데", "지인이 그러는데", "카더라"는 전해 들은 말의 단서임. 이런 글은 검증자에게
   넘기고, 단서만으로 등급을 낮추지는 않음. 검증자가 직접 경험이 아니라고 보면 등급 규칙에 따라 한 단계 낮춤
-  (`references/research/source-grading.md` 4절). — 규칙
+  (`references/research/source-grading.md` 3절). — 규칙
 - "~더라"는 말하는 이가 겪거나 본 일을 떠올리는 어미로 연구되지만, 일상 글에서는 느슨하게 쓰이므로 직접 사용의
   증거로 보지 않음. — 미확인(요약) [Q11], 판단은 추론
 

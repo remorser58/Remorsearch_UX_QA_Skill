@@ -1,6 +1,6 @@
 # Evidence decisions
 
-Research: before first search; carry in reader/judge prompts and community-derived QA. Detail: `references/research/source-grading.md` 1-10 (lookup). `python3 scripts/ux_research.py gate` computes statuses; agents never write them. Missing gate: manual unverified assessment, no pass/composable audience.
+Research: before first search; carry in reader/judge prompts and community-derived QA. Detail: `references/research/source-grading.md` 1-6 (lookup). `python3 scripts/ux_research.py gate` computes statuses; agents never write them. Missing gate: manual unverified assessment, no pass/composable audience.
 
 ## 1. Fit and caps
 
