@@ -1414,6 +1414,8 @@ def check_run_timing(run: dict[str, Any], profile: dict[str, Any], device: Any, 
         native = _native_state_ack(step)
         native_evidence = step.get("feedback_native_state")
         native_control = native_evidence is not None and not validate_native_state(native_evidence, step)
+        if band == "no_feedback" and native_control and native_evidence["type"] == "radio" and native_evidence["before"] is True and native_evidence["changed"] is False and native_evidence.get("stable") is not False:
+            continue  # reselecting the same native radio leaves selection unchanged: no acknowledgment is expected
         if band == "no_feedback" and before_target is not None and not native_control and before_target.get("role") not in ("checkbox", "radio") and (before_target.get("role") in ("textbox", "searchbox", "combobox", "spinbutton")
                                                                    or before_target.get("tag") in ("input", "textarea", "select")):
             continue  # a field's feedback is its caret and focus ring, which may already be showing

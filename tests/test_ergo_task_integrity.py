@@ -302,6 +302,24 @@ class NativeStateAckTests(unittest.TestCase):
                                                          after=False, changed=False)
         self.assertFalse(self._cg03(run, snapshots)[0].passed)
 
+    def test_valid_selected_native_radio_noop_is_inapplicable_without_exempting_failed_changes(self):
+        selected = self._ack(type="radio", before=True, after=True, changed=False, event=None, latency_ms=None)
+        for via in ("direct", "label_for", "nested_label"):
+            with self.subTest(via=via):
+                self.assertEqual(self._cg03(self._run({**selected, "via": via})), [])
+        for native in ({**selected, "stable": False}, {**selected, "type": "checkbox"},
+                       {**selected, "before": False, "after": False}, {**selected, "extra": "invalid"}, None):
+            with self.subTest(native=native):
+                observation = self._cg03(self._run(native))[0]
+                self.assertFalse(observation.passed)
+                self.assertEqual(observation.severity, "P2")
+        slow_selection = self._cg03(self._run(self._ack(type="radio", latency_ms=1200)))[0]
+        self.assertFalse(slow_selection.passed)
+        self.assertEqual(slow_selection.severity, "P2")
+        measured_delay = self._run(selected)
+        measured_delay["steps"][0]["feedback_latency_ms"] = 1200
+        self.assertEqual(self._cg03(measured_delay)[0].severity, "P2")
+
     def test_cg03_ack_only_covers_the_no_feedback_band(self):
         for latency in (1500, 12000):
             with self.subTest(latency=latency):
