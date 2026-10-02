@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import re
 from urllib.parse import urlsplit,urlunsplit
 
 from scripts.validate_bundle import validate_bundle
@@ -9,7 +10,7 @@ from . import privacy,scope
 from .canonical import EngineError,canonical,digest,quote_text
 from .merge import privacy_scan,problem
 
-VERSION="minimize-2026-10-01.1"
+VERSION="minimize-2026-10-01.2"
 ALLOW={
 "sources":"id channel source_ref access_basis access_method public_scope retention_status source_type source_family platform_family org retention_until privacy_class summary research_tombstone",
 "evidence":"id source_id evidence_type epistemic_status summary denominator scope",
@@ -27,8 +28,21 @@ LOCATORS={"author_key","thread_key","item_key","aliases","profile","profile_url"
 AUTHORED={"summary","statement","result","actual","expected","task","title"}
 
 
+def _bound_import_ref(record,run_id):
+    """Recognize only the source locator generated from this run's import proof."""
+    provenance=record.get("provenance") or {}
+    import_id=provenance.get("import_id")
+    if provenance.get("kind")!="import" or not isinstance(run_id,str) or not isinstance(import_id,str):
+        return None
+    if not re.fullmatch(r"run-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{6}",run_id) or not re.fullmatch(r"IMP-[0-9a-f]{64}",import_id):
+        return None
+    expected="team-import://"+run_id+"/"+import_id
+    return expected if record.get("source_ref")==expected else None
+
+
 def minimize(bundle,gate):
     dropped=[];issues=[];summaries=0;urls=0
+    import_refs={record["id"]:_bound_import_ref(record,bundle["research"]["run_id"]) for record in bundle["records"]["sources"]}
     attestations={}
     for x in bundle["research"].get("summary_attestations",[]):
         key=x["record_id"],x["field"]
@@ -46,7 +60,10 @@ def minimize(bundle,gate):
             return out
         if isinstance(value,list):return [scrub(v,rid,path+"/"+str(i)) for i,v in enumerate(value)]
         if isinstance(value,str):
-            if privacy_scan(value) or privacy.profile_href(value):issues.append(problem("projection_identifiers",rid,"Projected content contains identifier patterns or personal locators."))
+            # Digest digit runs can look like phones/cards inside a locator. Authored text
+            # and every unbound or extended locator still get the normal identifier scan.
+            internal_ref=path=="/records/sources/source_ref" and value==import_refs.get(rid)
+            if not internal_ref and (privacy_scan(value) or privacy.profile_href(value)):issues.append(problem("projection_identifiers",rid,"Projected content contains identifier patterns or personal locators."))
             if any(q and q in quote_text(value) for q in quotations):issues.append(problem("retained_quotation",rid,"Authored projection still contains a retained quotation."))
         return value
     out={k:copy.deepcopy(bundle[k]) for k in ("schema_version","bundle_id","permissions")};out["records"]={}
