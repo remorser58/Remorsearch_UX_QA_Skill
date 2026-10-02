@@ -1190,13 +1190,12 @@ def check_gaze(ctx: Context) -> list[Observation]:
             feedback.append((element, roles, prior, theta, salient, sal, band, occluded, near_css, feedback_geometry))
         # Redundant feedback: when another new, salient message appears where the user is
         # looking (likely noticed, not occluded), a far secondary label is not missed feedback.
-        # A field-focused message cannot suppress unrelated messages that still
-        # use the original input anchor; they represent different assumptions.
-        noticed = [f for f in feedback if f[6] == "likely" and f[4] and not f[7]
-                   and f[9]["anchor_basis"] == start_basis]
+        # Redundancy requires the same attention-anchor assumption and point.
+        noticed = [f for f in feedback if f[6] == "likely" and f[4] and not f[7]]
         for element, roles, prior, theta, salient, sal, band, occluded, near_css, feedback_geometry in feedback:
             critical = bool(roles & {"error_message", "critical_message"}) or element.get("role") == "alert"
-            redundant = any(n[0] is not element for n in noticed)
+            redundant = any(n[0] is not element and n[9]["anchor_basis"] == feedback_geometry["anchor_basis"]
+                            and n[9]["anchor_css"] == feedback_geometry["anchor_css"] for n in noticed)
             severity = None
             if redundant:
                 severity = None

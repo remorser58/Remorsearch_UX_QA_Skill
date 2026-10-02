@@ -300,6 +300,45 @@ class FeedbackFocusRelocation(unittest.TestCase):
         self.assertEqual(record.severity, 'P1')
         self.assertEqual(record.measurement['band'], 'offscreen')
 
+    def test_redundancy_requires_same_anchor_basis_and_point_in_both_directions(self) -> None:
+        # The linked error is far from its field; a status beside the old input
+        # cannot substitute for it. A status beside that same field can.
+        for mode, y, linked, redundant in (('input', 760, False, False), ('field', 190, True, True)):
+            with self.subTest(mode=mode):
+                c = self.context()
+                error = next(e for e in c.elements if e['id'] == 'name-error')
+                error['box']['y'] = 650
+                status = el('notice', 'status', (16, y, 352, 22), text='완료 상태', dom_id='notice',
+                            roles=('status',), fg='#d32f2f', weight=600)
+                c.snapshot['elements'].append(status)
+                if linked:
+                    next(e for e in c.elements if e['id'] == 'name')['a11y']['described_by'].append('notice')
+                record = self.feedback(c)
+                self.assertEqual(record.measurement['redundant_with_noticed_feedback'], redundant)
+                self.assertEqual(record.severity, None if redundant else 'P3')
+                self.assertEqual(record.measurement['anchor_css'], [192, 160])
+        # Preserve redundancy when both messages use the original input anchor.
+        c = self.context()
+        c.previous['focus']['dom_id'] = 'name'
+        c.snapshot['elements'].append(el('notice', 'status', (16, 760, 352, 22), text='완료 상태',
+                                       dom_id='notice', roles=('status',), fg='#d32f2f', weight=600))
+        self.assertTrue(self.feedback(c).measurement['redundant_with_noticed_feedback'])
+
+    def test_same_anchor_basis_with_different_points_is_not_redundant(self) -> None:
+        c = self.context()
+        next(e for e in c.elements if e['id'] == 'name-error')['box']['y'] = 650
+        c.snapshot['elements'].append(el('notice', 'status', (16, 190, 352, 22), text='완료 상태',
+                                       dom_id='notice', roles=('status',), fg='#d32f2f', weight=600))
+        field_anchor = checks._feedback_focus_anchor
+        def distinct_point(context, feedback):
+            if feedback['id'] == 'notice':
+                return (192, 180), {'anchor_basis': 'observed_programmatic_focus_relocation'}
+            return field_anchor(context, feedback)
+        with patch.object(checks, '_feedback_focus_anchor', side_effect=distinct_point):
+            record = self.feedback(c)
+        self.assertFalse(record.measurement['redundant_with_noticed_feedback'])
+        self.assertEqual(record.severity, 'P3')
+
     def test_keyboard_and_direct_field_pointer_keep_original_semantics(self) -> None:
         for kind in ('keyboard', 'field', 'label'):
             with self.subTest(kind=kind):

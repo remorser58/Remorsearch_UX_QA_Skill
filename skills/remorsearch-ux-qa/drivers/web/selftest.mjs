@@ -1538,6 +1538,7 @@ async function adaptationTest(base, tmp) {
     deviceRequest: { id: 'galaxy-s24' }, mode: 'scripted', warnings: [],
     options: { headed: false, settleMs: 0, feedbackTimeoutMs: 0, focusWalk: false, visualFeedback: false,
       locale: 'ko-KR', timezoneId: 'Asia/Seoul', buildId: 'owned-adaptation-v1', buildIdSource: 'fixture' } });
+  session.redactSelectors.add('#spacing-safe');
   try {
     await session.start();
     const first = JSON.parse(fs.readFileSync(path.join(dir, `${session.lastSnapshotId}.json`), 'utf8'));
@@ -1576,6 +1577,13 @@ async function adaptationTest(base, tmp) {
     const result = spawnSync(python, ['-c', 'from ergoqa.snapshot import load_run_dir; import sys; load_run_dir(sys.argv[1])', dir],
       { encoding: 'utf8', env: { ...process.env, PYTHONPATH: REPO } });
     check('adaptation: loader verifies auxiliary PNG hashes and conditions', result.status === 0, result.stderr);
+    const changedCopies = run.adaptation.flatMap((r) => [r.baseline_snapshot_id, r.snapshot_id]).filter(Boolean)
+      .map((id) => JSON.parse(fs.readFileSync(path.join(dir, `${id}.json`), 'utf8')));
+    check('adaptation typography privacy: protected fields have no derived body metrics in copied captures',
+      changedCopies.length > 0 && changedCopies.every((s) => ['#private-note', '#spacing-safe'].every((selector) => {
+        const metric = s.elements.find((e) => e.selector === selector)?.font_metrics;
+        return metric?.status === 'unavailable' && metric.body_height_px === null && Object.keys(metric.probes || {}).length === 0;
+      })));
   } finally {
     if (session.browserTransport) await session.browserTransport.close([session.context]);
   }
