@@ -307,6 +307,59 @@ def validate_snapshot(doc: Any) -> list[str]:
 
 # --------------------------------------------------------------------------- run
 
+NATIVE_STATE_KEYS = ("source", "via", "type", "dom_id", "before", "after", "changed",
+                     "event", "latency_ms", "stable")
+
+
+def validate_native_state(native: Any, step: dict, path: str = "$.feedback_native_state") -> list[str]:
+    """``feedback_native_state``: bounded, value-free native checkbox/radio evidence.
+
+    Wrong shapes (non-object, unknown keys, wrong enums, non-boolean states,
+    non-finite or negative latencies, event/latency disagreement, ``changed``
+    contradicting the states, a latency outside the step's observed feedback
+    window) are rejected here instead of silently passing CG-03 later.
+    """
+    errors = _Errors()
+    if not isinstance(native, dict):
+        errors.add(path, "must be an object")
+        return errors.items
+    errors.require(set(native) <= set(NATIVE_STATE_KEYS), path,
+                   "may store only bounded native activation metadata")
+    errors.enum(native, "source", ("native_state_change",), path)
+    errors.enum(native, "via", ("direct", "nested_label", "label_for"), path)
+    errors.enum(native, "type", ("checkbox", "radio"), path)
+    errors.string(native, "dom_id", path, required=False, nullable=True, nonempty=False)
+    if isinstance(native.get("dom_id"), str):
+        errors.require(len(native["dom_id"]) <= 200, f"{path}.dom_id", "must be at most 200 characters")
+    errors.boolean(native, "before", path)
+    errors.boolean(native, "after", path)
+    errors.boolean(native, "changed", path)
+    errors.boolean(native, "stable", path, required=False)
+    errors.enum(native, "event", ("input", "change"), path, required=False, nullable=True)
+    errors.number(native, "latency_ms", path, required=False, nullable=True, minimum=0)
+    if all(isinstance(native.get(k), bool) for k in ("before", "after", "changed")):
+        errors.require(native["changed"] == (native["after"] != native["before"]),
+                       f"{path}.changed", "must agree with before/after")
+    errors.require((native.get("event") is None) == (native.get("latency_ms") is None),
+                   f"{path}.latency_ms", "event and latency_ms must agree (both present or both null)")
+    if native.get("event") is not None:
+        errors.require(native.get("changed") is True, f"{path}.event", "requires a changed boolean state")
+    action = step.get("action")
+    errors.require(isinstance(action, dict) and action.get("action") in TARGETED_ACTIONS,
+                   path, "requires a native pointer activation action")
+    window, start, end = (step.get(k) for k in ("feedback_window_ms", "t_start_ms", "t_end_ms"))
+    errors.require(is_number(window) and window >= 0, path, "requires a finite observed feedback window >= 0")
+    valid_times = is_number(start) and is_number(end) and 0 <= start <= end
+    errors.require(valid_times, path, "requires ordered non-negative action timestamps")
+    if valid_times and is_number(window):
+        errors.require(window <= end - start + 0.5, path, "feedback window must lie inside the action interval")
+    latency = native.get("latency_ms")
+    if is_number(latency) and is_number(window):
+        errors.require(latency <= window + 0.5, f"{path}.latency_ms",
+                       "must lie inside the step's observed feedback window")
+    return errors.items
+
+
 def validate_run(doc: Any) -> list[str]:
     errors = _Errors()
     if not _schema(doc, RUN_SCHEMA, errors):
@@ -349,6 +402,8 @@ def validate_run(doc: Any) -> list[str]:
             errors.require(step["t_end_ms"] >= step["t_start_ms"], f"{path}.t_end_ms", "must be >= t_start_ms")
         errors.enum(step, "result", STEP_RESULTS, path)
         errors.string(step, "error", path, required=False, nullable=True, nonempty=False)
+        if step.get("feedback_native_state") is not None:
+            errors.items.extend(validate_native_state(step["feedback_native_state"], step, f"{path}.feedback_native_state"))
     for i, window in enumerate(errors.array(doc, "timing_windows", "$", required=False) or []):
         path = f"$.timing_windows[{i}]"
         if not isinstance(window, dict):

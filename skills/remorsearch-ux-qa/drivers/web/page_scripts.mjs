@@ -1334,6 +1334,157 @@ export function controlOf(arg) {
   };
 }
 
+// Native boolean evidence reuses the protected-target rule the task-state
+// sampler applies (inlined in armBinaryControl: evaluate() ships only the
+// function body): a credential-like or explicitly protected control's state
+// must not be recorded even when its label looks harmless.
+
+/**
+ * Arm native binary-control activation evidence for one action: resolve the
+ * checkbox/radio input the action activates — the element itself, or the control
+ * of an associated <label> (explicit `for` or nested; `label.control`, the same
+ * label rule controlOf uses) within five flat-tree levels — snapshot its boolean
+ * `checked` state, and timestamp the control's own trusted `input`/`change`
+ * events together with the boolean observed at event time. Reads only
+ * tag/type/id and the boolean: never text or field values. opts.redactSelectors
+ * are the run's opted-out regions; a control or label inside one is not armed.
+ * Returns a bounded descriptor, `{protected: true}` for a protected control,
+ * or null when the target is no binary control. Self-contained: no module
+ * references (evaluate() ships only this function's source).
+ */
+export function armBinaryControl(arg, keyArg) {
+  const opts = keyArg && typeof keyArg === 'object' ? keyArg : { key: keyArg };
+  const key = arg && arg.nodeType === 1 ? opts.key : arg && arg.key;
+  const state = key ? window[Symbol.for(key)] : null;
+  if (!state) return null;
+  // Every new arm replaces the previous action's watch, including no-op and
+  // protected targets. The helper stays inside this page-evaluated function.
+  const disposeWatch = (w) => {
+    w.closed = true;
+    for (const timer of w.timers || []) clearTimeout(timer);
+    try { w.el.removeEventListener('input', w.onInput, true); } catch (e) { /* element gone */ }
+    try { w.el.removeEventListener('change', w.onChange, true); } catch (e) { /* element gone */ }
+  };
+  if (state.binaryWatch) disposeWatch(state.binaryWatch);
+  state.binaryWatch = null;
+  const now = () => performance.timeOrigin + performance.now();
+  const vvp = window.visualViewport;
+  let el = arg && arg.nodeType === 1 ? arg : null;
+  if (!el && arg) {
+    // Points are screen (visual viewport) coordinates; hit testing takes layout ones.
+    const lx = arg.x + (vvp && Math.abs(vvp.scale - 1) < 0.01 ? vvp.offsetLeft : 0);
+    const ly = arg.y + (vvp && Math.abs(vvp.scale - 1) < 0.01 ? vvp.offsetTop : 0);
+    el = document.elementFromPoint(lx, ly);
+    while (el && el.shadowRoot) {
+      const inner = el.shadowRoot.elementFromPoint(lx, ly);
+      if (!inner || inner === el) break;
+      el = inner;
+    }
+  }
+  if (!el) return null;
+  const binary = (n) => !!n && n.tagName === 'INPUT' && ['checkbox', 'radio'].includes((n.type || '').toLowerCase());
+  const up = (n) => n.assignedSlot || n.parentElement || (n.getRootNode && n.getRootNode() instanceof ShadowRoot ? n.getRootNode().host : null);
+  let ctl = null;
+  let via = null;
+  let label = null;
+  for (let n = el, i = 0; n && n.nodeType === 1 && i < 5 && !ctl; n = up(n), i++) {
+    if (binary(n)) {
+      ctl = n;
+      via = 'direct';
+    } else if (n.tagName === 'LABEL' && binary(n.control)) {
+      ctl = n.control;
+      label = n;
+      via = n.contains(n.control) ? 'nested_label' : 'label_for';
+    }
+  }
+  if (!ctl) return null;
+  // Privacy boundary (fail closed), the protected-target rule the task-state
+  // sampler already applies: a credential-like or opted-out control's boolean
+  // state is never recorded, whatever harmless element the action targeted —
+  // the baseline exposing a raw id does not authorize a new state leak.
+  const credential = 'input[type="password"], input[type="hidden"], input[type="url"], [data-sensitive], [data-private], [autocomplete="username"], [autocomplete*="password"], [autocomplete="one-time-code"]';
+  const sensitiveId = /(?:password|passwd|secret|token|credential|api.?key|authorization)/i;
+  try {
+    const inside = (node, selector) => {
+      for (let n = node; n && n.nodeType === 1; n = up(n)) if (n.matches(selector)) return true;
+      return false;
+    };
+    if (ctl.matches(credential) || inside(ctl, '[data-sensitive], [data-private]')
+      || (label && inside(label, '[data-sensitive], [data-private]'))
+      || sensitiveId.test(`${ctl.getAttribute('name') || ''} ${ctl.id}`)
+      || (label && sensitiveId.test(`${label.getAttribute('name') || ''} ${label.id}`))) return { protected: true };
+    for (const selector of opts.redactSelectors || (arg && arg.redactSelectors) || []) {
+      if (inside(ctl, selector) || (label && inside(label, selector))) return { protected: true };
+    }
+  } catch (e) { return { protected: true }; }
+  const watch = {
+    el: ctl, via, type: (ctl.type || '').toLowerCase(), dom_id: ctl.id && ctl.id.length <= 200 ? ctl.id : null,
+    before: !!ctl.checked, events: [], timers: new Set(), closed: false,
+  };
+  // Only browser-trusted events on the resolved control count, and each records
+  // the boolean observed at event time: a handler that immediately restores the
+  // old state must not lend its timestamp to a later untrusted change.
+  const rec = (kind) => (e) => {
+    if (!e || !e.isTrusted || e.target !== ctl || watch.closed || watch.events.length + watch.timers.size >= 64) return;
+    const event = { kind, t: now(), checked: !!ctl.checked };
+    // A native event's capture listener runs before page handlers. Confirm the
+    // exact event-time state after dispatch completes; a synchronous restoration
+    // (including a microtask) cannot lend its timestamp to a later property flip.
+    const timer = setTimeout(() => {
+      watch.timers.delete(timer);
+      if (!watch.closed && ctl.checked === event.checked) watch.events.push(event);
+    }, 0);
+    watch.timers.add(timer);
+  };
+  watch.onInput = rec('input');
+  watch.onChange = rec('change');
+  try {
+    ctl.addEventListener('input', watch.onInput, true);
+    ctl.addEventListener('change', watch.onChange, true);
+  } catch (e) { disposeWatch(watch); return null; }
+  watch.dispose = () => disposeWatch(watch);
+  state.binaryWatch = watch;
+  return { via: watch.via, type: watch.type, dom_id: watch.dom_id, before: watch.before };
+}
+
+/**
+ * Read and clear the watch armed by armBinaryControl: the boolean state after
+ * the action, whether it truly changed and stayed changed (`stable`), and the
+ * first trusted input/change event for the same control not earlier than
+ * args.t0 (page-clock epoch ms) whose state-at-event both differs from the
+ * armed state and matches the observed end state — the event that evidences
+ * the reported transition. Other trusted events are not reported: their
+ * timestamps must not be inherited by a later programmatic change.
+ */
+export async function readBinaryControl(args) {
+  const state = window[Symbol.for(args.key)];
+  const w = state && state.binaryWatch;
+  if (!w) return null;
+  if (w.timers.size) await new Promise((resolve) => setTimeout(resolve, 0));
+  if (state.binaryWatch === w) state.binaryWatch = null;
+  try { w.dispose(); } catch (e) { /* element gone */ }
+  const after = !!w.el.checked;
+  if (args.stable_ms > 0) await new Promise((resolve) => setTimeout(resolve, args.stable_ms));
+  const settled = !!w.el.checked;
+  const ev = w.events.find((e) => (args.t0 == null || e.t >= args.t0) && (args.t1 == null || e.t <= args.t1)
+    && e.checked !== w.before && e.checked === after) || null;
+  return {
+    via: w.via, type: w.type, dom_id: w.dom_id,
+    before: w.before, after, changed: after !== w.before, stable: settled === after,
+    event: ev ? ev.kind : null, event_ms: ev ? ev.t : null,
+  };
+}
+
+/** Drop a watch that a failed action left armed: listeners off, state cleared. */
+export function disposeBinaryControl(args) {
+  const state = window[Symbol.for(args.key)];
+  const w = state && state.binaryWatch;
+  if (!w) return false;
+  state.binaryWatch = null;
+  try { w.dispose(); } catch (e) { /* element gone */ }
+  return true;
+}
+
 /** Is the top-most element at (x, y) the target element or inside it? */
 export function hitTest(el, pt) {
   // Points are screen (visual viewport) coordinates; hit testing takes layout ones.

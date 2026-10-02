@@ -8,6 +8,7 @@ from pathlib import Path
 
 import _paths  # noqa: F401
 from ergoqa import analyze, checks, report, swarm
+from ergoqa.devices import get_device
 from ergoqa.profiles import sample_profiles
 from ergoqa.qa_attach import AttachError, attach_run
 from ergoqa.snapshot import SnapshotError, load_run_dir, validate_run, validate_scenario
@@ -167,6 +168,147 @@ class TaskEvidenceTests(unittest.TestCase):
         self.save_run()
         with self.assertRaisesRegex(SnapshotError, "after-capture"):
             load_run_dir(self.run_dir)
+
+
+class NativeStateAckTests(unittest.TestCase):
+    """feedback_native_state is validated and only a well-formed, timely ack suppresses CG-03."""
+
+    @staticmethod
+    def _run(native, *, window=1500.0, action="click"):
+        step = {"step_index": 1, "action": {"action": action, "target": "#cb"}, "target_element_id": None,
+                "point": {"x": 10, "y": 10}, "before": None, "after": None, "t_start_ms": 100, "t_end_ms": window + 100,
+                "feedback_latency_ms": None, "feedback_window_ms": window, "result": "ok", "error": None}
+        if native is not None:
+            step["feedback_native_state"] = native
+        return {"schema_version": "ergo-run.v1", "run_id": "R-native", "scenario_id": "SC-native", "profile_id": "EP-01",
+                "driver": {"name": "t", "version": "0", "browser": None},
+                "device": {"id": "desktop-1920", "viewport_css": [1920, 1080], "dpr": 1.0, "orientation": "landscape"},
+                "mode": "scripted", "started_at": "2026-10-02T12:00:00Z", "ended_at": "2026-10-02T12:00:05Z",
+                "status": "completed", "success": True, "steps": [step]}
+
+    @staticmethod
+    def _ack(**updates):
+        native = {"source": "native_state_change", "via": "label_for", "type": "checkbox", "dom_id": "cb",
+                  "before": False, "after": True, "changed": True, "event": "input", "latency_ms": 10}
+        return {**native, **updates}
+
+    def _cg03(self, run, snapshots=None):
+        profile = {"profile_id": "EP-01", "attributes": {}}
+        return [o for o in checks.check_run_timing(run, profile, get_device("desktop-1920"), snapshots or {}, None) if o.check_id == "CG-03"]
+
+    def test_loader_rejects_malformed_native_state(self):
+        cases = {
+            "non_object": "native_state_change",
+            "unknown_key": self._ack(extra="x"),
+            "contradictory": self._ack(before=True, after=True),
+            "no_event": self._ack(event=None),
+            "latency_without_event": self._ack(event=None, latency_ms=10),
+            "negative_latency": self._ack(latency_ms=-3),
+            "string_latency": self._ack(latency_ms="any"),
+            "wrong_type": self._ack(type="togglebox"),
+            "wrong_via": self._ack(via="wrapper"),
+            "wrong_source": self._ack(source="visual_change"),
+            "wrong_event": self._ack(event="click"),
+            "non_boolean_state": self._ack(before="false"),
+            "outside_window": self._ack(latency_ms=1600),
+            "non_boolean_changed": self._ack(changed="yes"),
+            "boolean_latency": self._ack(latency_ms=True),
+            "infinite_latency": self._ack(latency_ms=float("inf")),
+            "non_boolean_stable": self._ack(stable="true"),
+            "unchanged_with_event": self._ack(before=True, after=True, changed=False),
+        }
+        for name, native in cases.items():
+            with self.subTest(case=name):
+                self.assertTrue(validate_run(self._run(native)), name)
+        self.assertEqual(validate_run(self._run(self._ack())), [])
+        self.assertEqual(validate_run(self._run(None)), [])
+        self.assertEqual(validate_run(self._run(self._ack(event=None, latency_ms=None))), [])
+        for field, value in (("feedback_window_ms", None), ("feedback_window_ms", "1500"),
+                             ("feedback_window_ms", float("inf")), ("feedback_window_ms", -1),
+                             ("t_start_ms", None), ("t_end_ms", 105)):
+            with self.subTest(field=field, value=value):
+                run = self._run(self._ack())
+                run["steps"][0][field] = value
+                self.assertTrue(validate_run(run))
+                self.assertFalse(self._cg03(run)[0].passed)
+        run = self._run(self._ack(), action="press")
+        self.assertTrue(validate_run(run))
+
+    def test_cg03_timely_wellformed_ack_passes_and_slowness_is_banded(self):
+        obs = self._cg03(self._run(self._ack(latency_ms=10)))[0]
+        self.assertTrue(obs.passed)
+        self.assertIsNone(obs.severity)
+        self.assertEqual(obs.measurement["acknowledgment"], "native_state_change")
+        self.assertEqual(obs.measurement["acknowledgment_ms"], 10)
+        self.assertEqual(obs.measurement["native_state"], [False, True])
+        self.assertFalse(obs.measurement["visible_paint_calibrated"])
+        for latency, severity in ((500, "P3"), (1200, "P2"), (12000, "P1")):
+            with self.subTest(latency=latency):
+                slow = self._cg03(self._run(self._ack(latency_ms=latency), window=latency + 500))[0]
+                self.assertFalse(slow.passed, latency)
+                self.assertEqual(slow.severity, severity, latency)
+                self.assertEqual(slow.measurement["acknowledgment_ms"], latency)
+
+    def test_cg03_malformed_or_unchanged_native_state_stays_a_finding(self):
+        cases = {
+            "contradictory": self._ack(before=True, after=True),
+            "no_event": self._ack(event=None),
+            "negative_latency": self._ack(latency_ms=-3),
+            "string_latency": self._ack(latency_ms="any"),
+            "wrong_type": self._ack(type="togglebox"),
+            "unstable": self._ack(stable=False),
+            "outside_window": self._ack(latency_ms=1600),
+            "unchanged": self._ack(before=False, after=False, changed=False, event=None, latency_ms=None),
+            "unknown_key": self._ack(extra="x"),
+            "non_boolean_stable": self._ack(stable="true"),
+        }
+        for name, native in cases.items():
+            with self.subTest(case=name):
+                obs = self._cg03(self._run(native))[0]
+                self.assertFalse(obs.passed, name)
+                self.assertEqual(obs.severity, "P2", name)
+                self.assertNotEqual(obs.measurement.get("acknowledgment"), "native_state_change", name)
+        # a non-object must not crash the checker
+        obs = self._cg03(self._run("native_state_change"))[0]
+        self.assertFalse(obs.passed)
+        self.assertEqual(obs.severity, "P2")
+
+    def test_direct_native_inputs_reach_the_ack_check_and_text_fields_keep_their_exemption(self):
+        for role in ("checkbox", "radio"):
+            with self.subTest(role=role):
+                run = self._run(self._ack(type=role, via="direct", latency_ms=1200))
+                step = run["steps"][0]
+                step.update(before="S-before", target_element_id="el-1")
+                snapshots = {"S-before": {"elements": [{"id": "el-1", "tag": "input", "role": role}]}}
+                observation = self._cg03(run, snapshots)[0]
+                self.assertFalse(observation.passed)
+                self.assertEqual(observation.severity, "P2")
+                self.assertEqual(observation.measurement["acknowledgment_ms"], 1200)
+                del step["feedback_native_state"]
+                self.assertFalse(self._cg03(run, snapshots)[0].passed)
+        run = self._run(None)
+        run["steps"][0].update(before="S-before", target_element_id="el-1")
+        self.assertEqual(self._cg03(run, {"S-before": {"elements": [{"id": "el-1", "tag": "input", "role": "textbox"}]}}), [])
+
+    def test_direct_native_checkbox_with_an_explicit_role_override_uses_native_latency(self):
+        run = self._run(self._ack(via="direct", latency_ms=1200))
+        run["steps"][0].update(before="S-before", target_element_id="el-1")
+        snapshots = {"S-before": {"elements": [{"id": "el-1", "tag": "input", "role": "switch"}]}}
+        observation = self._cg03(run, snapshots)[0]
+        self.assertFalse(observation.passed)
+        self.assertEqual(observation.severity, "P2")
+        self.assertEqual(observation.measurement["acknowledgment_ms"], 1200)
+        run["steps"][0]["feedback_native_state"] = self._ack(via="direct", event=None, latency_ms=None,
+                                                         after=False, changed=False)
+        self.assertFalse(self._cg03(run, snapshots)[0].passed)
+
+    def test_cg03_ack_only_covers_the_no_feedback_band(self):
+        for latency in (1500, 12000):
+            with self.subTest(latency=latency):
+                run = self._run(self._ack(latency_ms=10))
+                run["steps"][0]["feedback_latency_ms"] = latency
+                obs = self._cg03(run)[0]
+                self.assertNotEqual(obs.measurement.get("acknowledgment"), "native_state_change")
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ import path from 'node:path';
 import { openBrowser } from './browser_transport.mjs';
 import { resolveDevice } from './devices.mjs';
 import { inspectPage } from './inspect.mjs';
-import { STATE_KEY, TW_BINDING, controlOf, extractSnapshot, hitTest, idAtPoint, idForElement, pageInit } from './page_scripts.mjs';
+import { STATE_KEY, TW_BINDING, armBinaryControl, controlOf, disposeBinaryControl, extractSnapshot, hitTest, idAtPoint, idForElement, pageInit, readBinaryControl } from './page_scripts.mjs';
 import {
   BLOCK_MIN_H_CSS, BLOCK_MIN_W_CSS, MOTION_MATCH, RED_EXCESS, RED_RATIO,
   blockStats, changeMask, cssScaleCopy, decodePng, frameFromImage, frameStats, indicatorPixels, indicatorPixelsMulti, makeBlockGrid, resampleImage, visualDiffFraction,
@@ -2326,6 +2326,44 @@ export class WebSession {
     }
   }
 
+  /**
+   * Arm native checkbox/radio activation evidence for an action target (see
+   * armBinaryControl). Same resolution for handle and point targets, so the
+   * scripted and /act flows share one implementation. A control the protected-
+   * target rule or an opted-out region covers is never armed (no state, no id).
+   */
+  async armNativeBinary(resolved) {
+    try {
+      const redactSelectors = [...this.redactSelectors];
+      const armed = resolved.handle
+        ? await resolved.handle.evaluate(armBinaryControl, { key: STATE_KEY, redactSelectors })
+        : await this.page.evaluate(armBinaryControl, { x: resolved.point.x, y: resolved.point.y, key: STATE_KEY, redactSelectors });
+      return armed && armed.protected ? null : armed;
+    } catch {
+      return null;
+    }
+  }
+
+  async readNativeBinary(dispatch, windowEnd) {
+    try {
+      // t0 and the returned event time live in the page's clock; this.clockOffset
+      // (from calibrate()) is the only page↔Node conversion, as for DOM mutations.
+      return await this.page.evaluate(readBinaryControl, {
+        key: STATE_KEY, t0: dispatch + this.clockOffset, t1: windowEnd + this.clockOffset, stable_ms: 60,
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  async disposeNativeBinary() {
+    try {
+      await this.page.evaluate(disposeBinaryControl, { key: STATE_KEY });
+    } catch {
+      /* page gone: nothing armed survives it */
+    }
+  }
+
   async performInput(action, resolved, step) {
     const kind = action.action;
     const fbTimeout = action.feedback_timeout_ms ?? (kind === 'scroll' ? 0 : this.opts.feedbackTimeoutMs);
@@ -2377,6 +2415,16 @@ export class WebSession {
       }
     }
     const scrollBefore = ['scroll', 'swipe', 'drag'].includes(kind) ? await this.scrollPos() : null;
+    // Native binary-control activation evidence: a small checkbox/radio whose
+    // state changes without a DOM mutation can paint too little for the
+    // downsampled visual diff; its boolean change plus a trusted input/change
+    // event is recorded separately from the DOM/visual feedback below.
+    const nativeArmed = ['tap', 'click', 'double_tap', 'long_press'].includes(kind) && resolved && (resolved.handle || resolved.point)
+      ? await this.armNativeBinary(resolved) : null;
+    // The watch is consumed exactly once: readNativeBinary clears it on every
+    // return, and any failure between arming and the read (probe, navigation
+    // wait, dispatch) disposes it here instead of leaving listeners behind.
+    try {
     const dispatch = epochNow();
     step.t_start_ms = this.rel(dispatch);
     const fb = { visual: null, done: false };
@@ -2439,11 +2487,34 @@ export class WebSession {
     step.feedback_ambient_mutations = await this.countMutations(dispatch - 500, dispatch);
     step.feedback_visual_ambient = visualOn ? visualAmbient : null;
     if (moving) step.feedback_visual_moving_px = moving.reduce((a, v) => a + v, 0);
+    // State/semantic acknowledgment of a native checkbox/radio activation: the
+    // boolean before/after and the trusted input/change event time for the same
+    // control. Never a claim of visible paint, perceptibility or an announced
+    // response: those stay with the DOM/visual evidence above.
+    if (nativeArmed) {
+      const native = await this.readNativeBinary(dispatch, windowEnd);
+      if (native) {
+        step.feedback_native_state = {
+          source: 'native_state_change',
+          via: native.via, type: native.type, dom_id: native.dom_id,
+          before: native.before, after: native.after, changed: native.changed,
+          event: native.event,
+          // Event time arrives in the page clock; bring it to the Node clock
+          // (the same single calibration offset the DOM path uses) before
+          // subtracting the Node dispatch time.
+          latency_ms: native.event_ms != null ? round1(Math.max(0, native.event_ms - this.clockOffset - dispatch)) : null,
+        };
+        if (native.stable === false) step.feedback_native_state.stable = false;
+      }
+    }
     if (scrollBefore) {
       const after = await this.scrollPos();
       if (after) step.scroll_delta = { x: round1(after.x - scrollBefore.x), y: round1(after.y - scrollBefore.y) };
     }
     if (inputErr) throw inputErr;
+    } finally {
+      if (nativeArmed) await this.disposeNativeBinary();
+    }
   }
 
   /** Execute one validated action; always ends with an after-snapshot. */
@@ -2853,6 +2924,7 @@ export class WebSession {
             window_ms: FEEDBACK_WINDOW_MS,
             wait_ms: this.opts.feedbackTimeoutMs,
             sources: ['dom_mutation', 'navigation', ...(this.opts.visualFeedback ? ['visual_change'] : [])],
+            state_acknowledgment: 'native_state_change: feedback_native_state on tap/click steps records a checkbox/radio boolean change with the trusted input/change event time of the same control, taken at event time and converted through the calibrated page clock (state/semantic acknowledgment; not calibrated visible paint or an announced response). Protected controls and opted-out regions are never recorded; an unstable end state is marked stable: false.',
             visual_frame_width_css: FRAME_WIDTH,
             visual_pixel_level: VISUAL_LEVEL,
           },

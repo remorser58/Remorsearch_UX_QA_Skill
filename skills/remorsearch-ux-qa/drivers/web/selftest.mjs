@@ -22,7 +22,7 @@ import { CATALOG } from './devices.mjs';
 import { openBrowser, validateBrowserWs } from './browser_transport.mjs';
 import { loadPlaywright } from './playwright_loader.mjs';
 import { capturePage } from './read_capture.mjs';
-import { STATE_KEY, pageInit } from './page_scripts.mjs';
+import { STATE_KEY, armBinaryControl, pageInit } from './page_scripts.mjs';
 import { WebSession } from './session.mjs';
 import { decodePng } from './png.mjs';
 import { snapshotReply } from './serve.mjs';
@@ -168,7 +168,7 @@ function readFixture(pathname, res, req) {
 }
 
 // Fixture files served at /<name> (same origin as the pages, no CORS headers).
-const FIXTURE_FILES = Object.fromEntries(['layers.html', 'dialog.html', 'reflow.html', 'reflow2.html', 'reflow2.css', 'viewport.html', 'focus.html', 'focus2.html', 'feedback_ambient.html', 'inspect.html']
+const FIXTURE_FILES = Object.fromEntries(['layers.html', 'dialog.html', 'reflow.html', 'reflow2.html', 'reflow2.css', 'viewport.html', 'focus.html', 'focus2.html', 'feedback_ambient.html', 'native_feedback.html', 'inspect.html']
   .map((f) => [`/${f}`, f]));
 
 function startFixtureServer() {
@@ -1171,6 +1171,238 @@ async function feedbackReversalTest(base, tmp) {
   } finally { await transport.close([context]); }
 }
 
+// Native binary-control activation evidence (feedback_native_state): a small
+// checkbox/radio whose state change paints too little for the downsampled
+// visual diff is acknowledged by its boolean change plus the trusted
+// input/change event of the same control — recorded separately from the
+// DOM/visual feedback sources, never as a claim of visible paint.
+async function nativeFeedbackTest(base, tmp) {
+  const outDir = path.join(tmp, 'native-runs');
+  const click = (target) => ({ action: 'click', target });
+  const sc = {
+    schema_version: 'ergo-scenario.v1', scenario_id: 'SC-driver-native-feedback',
+    surface: { kind: 'web', url: '{BASE}/native_feedback.html' }, task_goal_ko: '체크박스와 라디오를 켠다',
+    device_ids: ['desktop-1920'], targets: {},
+    steps: [click('#small'), click('#for-label'), click('#nest-label'), click('#big'), click('#r1-label'),
+      click('#r2-label'), click('#dis-label'), click('#noop'), click('#aria-cb'), click('#aria-dead'),
+      click('#focus-btn'), click('#delayed-label'), click('#slow-label'), click('#restore-label'),
+      click('#sensitive-label'), click('#private-label')],
+    success: { url_contains: 'native_feedback' },
+  };
+  writeJson(path.join(tmp, 'native.json'), sc);
+  const r = await runDriver(['run', '--scenario', path.join(tmp, 'native.json'), '--device', 'desktop-1920',
+    '--out', outDir, '--run-id', 'R-native', '--base', base, '--no-reflow', '--no-focus-walk', '--feedback-timeout-ms', '1500']);
+  if (!check('native feedback desktop-1920: exit 0', r.code === 0, `${r.code} ${r.err}`)) return;
+  const { run } = loadRun(path.join(outDir, 'R-native'));
+  const step = (sel) => run.steps.find((s) => s.action.target === sel);
+  const ack = (sel) => step(sel)?.feedback_native_state;
+  check('native feedback: every step ok', run.steps.every((s) => s.result === 'ok'),
+    run.steps.map((s) => [s.action.target, s.result, s.error]));
+  const changedAck = (sel, via, type, domId) => {
+    const a = ack(sel);
+    return !!a && a.source === 'native_state_change' && a.changed === true && a.before === false && a.after === true
+      && a.via === via && a.type === type && a.dom_id === domId && ['input', 'change'].includes(a.event)
+      && typeof a.latency_ms === 'number' && a.latency_ms >= 0 && a.latency_ms < 400;
+  };
+  check('native feedback: 13x13 checkbox toggled by direct input records the same control with a trusted event time',
+    changedAck('#small', 'direct', 'checkbox', 'small'), ack('#small'));
+  check('native feedback: a 20x20 explicit for= label toggles the same control it names',
+    changedAck('#for-label', 'label_for', 'checkbox', 'for-cb'), ack('#for-label'));
+  check('native feedback: a 20x20 nested label toggles the control it wraps',
+    changedAck('#nest-label', 'nested_label', 'checkbox', 'nest-cb'), ack('#nest-label'));
+  check('native feedback: the 48x48 checkbox keeps its downsampled visual feedback path',
+    changedAck('#big', 'direct', 'checkbox', 'big') && step('#big').feedback_source === 'visual_change',
+    { ack: ack('#big'), src: step('#big')?.feedback_source, ms: step('#big')?.feedback_latency_ms });
+  check('native feedback: clicking the selected radio again leaves the boolean unchanged (no native change)',
+    ack('#r1-label') && ack('#r1-label').changed === false && ack('#r1-label').after === true
+      && ack('#r1-label').event === null && ack('#r1-label').latency_ms === null, ack('#r1-label'));
+  check('native feedback: switching radio through its label is a state change of the radio',
+    changedAck('#r2-label', 'label_for', 'radio', 'r2'), ack('#r2-label'));
+  check('native feedback: a disabled checkbox in its label changes nothing',
+    ack('#dis-label') && ack('#dis-label').changed === false && ack('#dis-label').event === null, ack('#dis-label'));
+  check('native feedback: no-op, custom ARIA (with or without handler) and focus-only clicks create no native state evidence',
+    ack('#noop') === undefined && ack('#aria-cb') === undefined && ack('#aria-dead') === undefined
+      && ack('#focus-btn') === undefined, [ack('#noop'), ack('#aria-cb'), ack('#aria-dead'), ack('#focus-btn')]);
+  check('native feedback: the custom ARIA toggle stays DOM (semantic) evidence and the focus-only click stays visual',
+    step('#aria-cb').feedback_source === 'dom_mutation' && step('#aria-dead').feedback_source === null
+      && step('#focus-btn').feedback_source === 'visual_change',
+    [step('#aria-cb')?.feedback_source, step('#aria-dead')?.feedback_source, step('#focus-btn')?.feedback_source]);
+  const delayed = step('#delayed-label');
+  check('native feedback: instant state acknowledgment and the ~650 ms indicator commit keep separate honest times',
+    delayed.feedback_native_state.changed === true && delayed.feedback_native_state.latency_ms < 400
+      && delayed.feedback_source === 'dom_mutation' && delayed.feedback_latency_ms >= 600,
+    { ack: delayed.feedback_native_state, src: delayed.feedback_source, ms: delayed.feedback_latency_ms });
+  const slow = step('#slow-label');
+  check('native feedback: a ~1200 ms deferred activation is recorded as a slow acknowledgment, never a timely one',
+    slow.feedback_native_state && slow.feedback_native_state.changed === true
+      && slow.feedback_native_state.latency_ms >= 1000 && slow.feedback_native_state.latency_ms <= 1500
+      && slow.feedback_source === null,
+    { ack: slow.feedback_native_state, src: slow.feedback_source });
+  const restore = step('#restore-label');
+  check('native feedback: a restored state does not lend its trusted event timestamp to a later programmatic change',
+    restore.feedback_native_state && restore.feedback_native_state.changed === true
+      && restore.feedback_native_state.event === null && restore.feedback_native_state.latency_ms === null,
+    restore.feedback_native_state);
+  check('native feedback: a protected (data-sensitive) control behind a harmless label records no native evidence at all',
+    step('#sensitive-label').feedback_native_state === undefined,
+    step('#sensitive-label').feedback_native_state);
+  check('native feedback: an explicitly private control/label records no native evidence',
+    ack('#private-label') === undefined, ack('#private-label'));
+  check('native feedback: small-control state changes never masquerade as DOM/visual feedback sources',
+    ['#small', '#for-label', '#nest-label'].every((sel) => ['visual_change', null].includes(step(sel).feedback_source)),
+    ['#small', '#for-label', '#nest-label'].map((sel) => step(sel).feedback_source));
+  check('native feedback: run telemetry documents the state acknowledgment source and its limits',
+    typeof run.driver.feedback.state_acknowledgment === 'string'
+      && run.driver.feedback.state_acknowledgment.startsWith('native_state_change:'), run.driver.feedback);
+  const keys = new Set(run.steps.flatMap((s) => (s.feedback_native_state ? Object.keys(s.feedback_native_state) : [])));
+  check('native feedback: the acknowledgment carries only bounded, value-free metadata',
+    [...keys].every((k) => ['source', 'via', 'type', 'dom_id', 'before', 'after', 'changed', 'event', 'latency_ms', 'stable'].includes(k)),
+    [...keys]);
+  const python = process.env.ERGOQA_PYTHON || 'python3';
+  const loaded = spawnSync(python, ['-c', 'from ergoqa.snapshot import load_run_dir; import sys; load_run_dir(sys.argv[1])', path.join(outDir, 'R-native')],
+    { encoding: 'utf8', env: { ...process.env, PYTHONPATH: REPO } });
+  check('native feedback: a run with the new field passes the native capture loader', loaded.status === 0, loaded.stderr);
+  await nativeCorrectionTest(base, tmp);
+}
+
+// Correction cases that need the live session object: the page-clock offset
+// conversion, the armed-watch cleanup on a failed action, and the opted-out
+// region skip. Only the failure and the clock are injected; the arm, read,
+// dispatch and privacy paths are the real driver code.
+async function nativeCorrectionTest(base, tmp) {
+  const { pw, info } = loadPlaywright();
+  const transport = await openBrowser(pw, info);
+  let context;
+  try {
+    context = await transport.browser.newContext({ viewport: { width: 1920, height: 1080 } });
+    await context.addInitScript(pageInit, { key: STATE_KEY });
+    const { scenario } = normalizeScenario({ schema_version: 'ergo-scenario.v1', scenario_id: 'SC-native-correction',
+      surface: { kind: 'web', url: `${base}/native_feedback.html` }, task_goal_ko: '수정 사항을 확인한다',
+      device_ids: ['desktop-1920'], targets: {}, steps: [], success: { url_contains: 'native_feedback' } }, { requireSteps: false });
+    const mkSession = async (page) => {
+      const session = new WebSession({ pw, pwInfo: info, scenario, runDir: tmp, runId: 'R-native-fix',
+        options: { visualFeedback: false, feedbackTimeoutMs: 500, settleMs: 0, flashSampleMs: 0 } });
+      session.page = page;
+      session.cdp = await context.newCDPSession(page);
+      session.dev = { contextOptions: { hasTouch: false }, base: { input: 'mouse' } };
+      session.vw = 1920;
+      session.vh = 1080;
+      return session;
+    };
+    const pointOf = (page, selector) => page.locator(selector).evaluate((n) => {
+      const r = n.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    });
+    const watchLeft = (page) => page.evaluate((key) => !!window[Symbol.for(key)].binaryWatch, STATE_KEY);
+
+    // Page clock 500 ms ahead of Node: after recalibration the same immediate
+    // activation must measure small, not ~500 ms (offset sign and reuse).
+    for (const offset of [500, -500]) {
+      const page = await context.newPage();
+      await page.goto(`${base}/native_feedback.html`);
+      const session = await mkSession(page);
+      await session.calibrate();
+      await page.evaluate((offset) => {
+        const orig = performance.now.bind(performance);
+        performance.now = () => orig() + offset;
+      }, offset);
+      await session.calibrate();
+      const step = { step_index: 0 };
+      await session.performInput({ action: 'click' }, { point: await pointOf(page, '#small') }, step);
+      check(`native correction: a ${offset} ms page-clock offset is absorbed by the existing calibration (immediate activation stays immediate)`,
+        step.feedback_native_state && step.feedback_native_state.changed === true
+          && step.feedback_native_state.latency_ms < 100,
+        step.feedback_native_state);
+      check(`native correction: the ${offset} ms offset case leaves no watch behind`, await watchLeft(page) === false);
+      await session.cdp.detach();
+      await page.close();
+    }
+    // A probe that fails after arming must not leave the watch and listeners armed.
+    {
+      const page = await context.newPage();
+      await page.goto(`${base}/native_feedback.html`);
+      const session = await mkSession(page);
+      await session.calibrate();
+      session.probeFrames = () => { throw new Error('owned injected probe failure'); };
+      const step = { step_index: 0 };
+      let threw = null;
+      try {
+        await session.performInput({ action: 'click' }, { point: await pointOf(page, '#small') }, step);
+      } catch (err) {
+        threw = err;
+      }
+      check('native correction: a failing probe after arming fails the step', threw && /owned injected probe failure/.test(threw.message), threw && threw.message);
+      check('native correction: the failed step disposes the armed watch and its listeners', await watchLeft(page) === false);
+      await session.cdp.detach();
+      await page.close();
+    }
+    // readNativeBinary contains transport errors: finally still clears a watch
+    // when the read itself fails before its page-side disposal runs.
+    {
+      const page = await context.newPage();
+      await page.goto(`${base}/native_feedback.html`);
+      const session = await mkSession(page);
+      await session.calibrate();
+      const evaluate = page.evaluate.bind(page);
+      page.evaluate = (fn, args) => fn.name === 'readBinaryControl'
+        ? Promise.reject(new Error('owned injected read failure')) : evaluate(fn, args);
+      const step = { step_index: 0 };
+      await session.performInput({ action: 'click' }, { point: await pointOf(page, '#small') }, step);
+      check('native correction: a failed native read records no acknowledgment', step.feedback_native_state === undefined);
+      check('native correction: a failed native read leaves no watch behind', await watchLeft(page) === false);
+      await session.cdp.detach();
+      await page.close();
+    }
+    // An opted-out region covers the control: no native evidence is recorded.
+    {
+      const page = await context.newPage();
+      await page.goto(`${base}/native_feedback.html`);
+      const session = await mkSession(page);
+      await session.calibrate();
+      session.rememberPrivateAction({ action: 'type', target: '#opted-region', redact: true });
+      const step = { step_index: 0 };
+      await session.performInput({ action: 'click' }, { point: await pointOf(page, '#region-label') }, step);
+      check('native correction: a control inside an opted-out region records no native evidence (no id, no boolean)',
+        step.feedback_native_state === undefined, step.feedback_native_state);
+      check('native correction: the skipped control leaves no watch behind', await watchLeft(page) === false);
+      await session.cdp.detach();
+      await page.close();
+    }
+    // Replacing a watch with a non-control/protected target disposes it even
+    // though the next arm returns no descriptor. Flat-tree privacy also covers
+    // opted-out and explicit private ancestors of controls in open shadow DOM.
+    {
+      const page = await context.newPage();
+      await page.goto(`${base}/native_feedback.html`);
+      for (const selector of ['#noop', '#sensitive-label']) {
+        await page.locator('#small').evaluate(armBinaryControl, { key: STATE_KEY });
+        const previous = await page.evaluateHandle((key) => window[Symbol.for(key)].binaryWatch, STATE_KEY);
+        await page.locator(selector).evaluate(armBinaryControl, { key: STATE_KEY });
+        check(`native correction: replacing a watch with ${selector} clears state and listeners`,
+          await watchLeft(page) === false && await previous.evaluate((w) => w.closed && w.timers.size === 0));
+        await previous.dispose();
+      }
+      await page.evaluate(() => {
+        const host = document.createElement('div');
+        host.id = 'owned-shadow-region';
+        host.attachShadow({ mode: 'open' }).innerHTML = '<label id="owned-shadow-label"><input type="checkbox" id="owned-shadow-cb">Owned</label>';
+        document.body.append(host);
+      });
+      for (const attribute of ['data-private', 'data-sensitive']) {
+        await page.locator('#owned-shadow-region').evaluate((n, attribute) => n.setAttribute(attribute, ''), attribute);
+        const armed = await page.locator('#owned-shadow-label').evaluate(armBinaryControl, { key: STATE_KEY });
+        check(`native correction: a ${attribute} shadow ancestor protects the control state`, armed?.protected === true && await watchLeft(page) === false);
+        await page.locator('#owned-shadow-region').evaluate((n, attribute) => n.removeAttribute(attribute), attribute);
+      }
+      const opted = await page.locator('#owned-shadow-label').evaluate(armBinaryControl, {
+        key: STATE_KEY, redactSelectors: ['#owned-shadow-region'],
+      });
+      check('native correction: an opted-out shadow ancestor protects the control state', opted?.protected === true && await watchLeft(page) === false);
+      await page.close();
+    }
+  } finally { await transport.close([context]); }
+}
+
 async function viewportTest(base, tmp) {
   const outDir = path.join(tmp, 'runs');
   const scenario = (id, query, device, success) => ({
@@ -1794,8 +2026,8 @@ async function taskIntegrityTest(base, tmp) {
 
 async function main() {
   const keep = process.argv.includes('--keep');
-  // --only a,b: run just these groups (scripted, actions, layers, focus, focus2, feedback, read,
-  // reflow, reflow-copy, viewport, dialog, serve, tooling, exit, connect) while iterating on one part.
+  // --only a,b: run just these groups (scripted, actions, layers, focus, focus2, feedback, native-feedback,
+  // read, reflow, reflow-copy, viewport, dialog, serve, tooling, exit, connect) while iterating on one part.
   const oi = process.argv.indexOf('--only');
   const only = oi > 0 && process.argv[oi + 1] ? new Set(process.argv[oi + 1].split(',')) : null;
   const want = (g) => !only || only.has(g);
@@ -1858,6 +2090,7 @@ async function main() {
     if (want('focus')) await focusTest(base, tmp);
     if (want('focus2')) await focusProbeTest(base, tmp);
     if (want('feedback') && !want('focus2')) await feedbackReversalTest(base, tmp);
+    if (want('native-feedback')) await nativeFeedbackTest(base, tmp);
     if (want('read')) await readPageTest(base, tmp);
     if (want('reflow')) await reflowTest(base, tmp);
     if (want('reflow-copy')) await reflowCopyTest(base, tmp);

@@ -23,6 +23,7 @@ from typing import Any, Callable, Iterable
 
 from . import params
 from .hf import cognition, game, gaze, perception, pointing, reach
+from .snapshot import validate_native_state
 
 SEVERITY_ORDER = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
 
@@ -1376,6 +1377,24 @@ def check_choice_overload(ctx: Context) -> list[Observation]:
     return out
 
 
+def _native_state_ack(step: dict[str, Any]) -> dict[str, Any] | None:
+    """Bounded re-validation of a step's ``feedback_native_state`` before CG-03 trusts it.
+
+    The driver records it, the run validator rejects malformed shapes at import, and
+    this predicate re-checks defensively (analyze may run on in-memory runs): source,
+    via/type/event enums, real booleans, changed == (after != before), a finite
+    latency >= 0 that agrees with the event's presence, a stable end state, and a
+    latency inside the step's observed feedback window. Anything else is not a
+    native acknowledgment — it falls through to the ordinary CG-03 finding.
+    """
+    native = step.get("feedback_native_state")
+    if native is None or validate_native_state(native, step):
+        return None
+    if native.get("event") is None or native.get("stable") is False:
+        return None
+    return native
+
+
 def check_run_timing(run: dict[str, Any], profile: dict[str, Any], device: Any, snapshots: dict[str, dict[str, Any]], scenario: dict[str, Any] | None) -> list[Observation]:
     """Checks that need the whole run: feedback latency, transient text, QTE windows, flashes."""
     out: list[Observation] = []
@@ -1392,7 +1411,10 @@ def check_run_timing(run: dict[str, Any], profile: dict[str, Any], device: Any, 
         before_target = next((e for e in before_snap.get("elements", []) if e.get("id") == target_id), None)
         if before_target is not None and (before_target.get("enabled") is False or before_target.get("visible") is False or not _usable(before_target)):
             continue  # the target was not actionable (closed timed prompt, disabled, covered): no feedback is expected
-        if band == "no_feedback" and before_target is not None and (before_target.get("role") in ("textbox", "searchbox", "combobox", "spinbutton")
+        native = _native_state_ack(step)
+        native_evidence = step.get("feedback_native_state")
+        native_control = native_evidence is not None and not validate_native_state(native_evidence, step)
+        if band == "no_feedback" and before_target is not None and not native_control and before_target.get("role") not in ("checkbox", "radio") and (before_target.get("role") in ("textbox", "searchbox", "combobox", "spinbutton")
                                                                    or before_target.get("tag") in ("input", "textarea", "select")):
             continue  # a field's feedback is its caret and focus ring, which may already be showing
         target_roles = set((before_target or {}).get("roles") or [])
@@ -1410,6 +1432,39 @@ def check_run_timing(run: dict[str, Any], profile: dict[str, Any], device: Any, 
             severity = "P2"
         elif band == "noticeable" and latency is not None and latency > params.LATENCY_DOHERTY_MS:
             severity = "P3"
+        if band == "no_feedback" and severity == "P2" and native and native.get("changed") is True:
+            # The action activated a native checkbox/radio: its boolean truly changed and a
+            # trusted input/change event for that same control, taken at event time, was
+            # timed inside the observed window. That is a state (semantic) acknowledgment
+            # of the activation, classified with the same response-time bands as any other
+            # acknowledgment — never a generic exemption for native controls, and not a
+            # calibrated claim of visible paint, perceptibility or a screen-reader
+            # announcement (those stay with the DOM/visual evidence, unmeasured here).
+            ack_ms = native["latency_ms"]
+            ack_band = cognition.latency_band(ack_ms)
+            if ack_ms <= params.LATENCY_DOHERTY_MS:
+                ack_severity = None
+            elif ack_ms <= params.LATENCY_FLOW_MS:
+                ack_severity = "P3"
+            elif ack_ms <= params.LATENCY_ATTENTION_MS:
+                ack_severity = "P2"
+            else:
+                ack_severity = "P1"
+            out.append(Observation(
+                "CG-03", run_id, pid, step.get("after"), step.get("step_index"),
+                [target_id] if target_id else [], key,
+                {"name": "feedback_latency_ms", "value": None, "unit": "ms", "threshold": params.LATENCY_FLOW_MS, "comparator": "<=", "band": band,
+                 "acknowledgment": "native_state_change", "acknowledgment_ms": ack_ms, "acknowledgment_band": ack_band,
+                 "native_state": [native.get("before"), native.get("after")],
+                 "visible_paint_calibrated": False},
+                ack_severity is None, ack_severity,
+                (f"{step.get('step_index')}단계 조작에서 체크박스/라디오 상태가 {native.get('before')}→{native.get('after')}로 "
+                 f"바뀌었고 {ack_ms}ms에 신뢰 입력 이벤트가 확인되었음. "
+                 "상태 응답만 측정했으며 화면의 선택 표시·인지 가능성·스크린리더 안내는 별도 미측정.") if ack_severity is None else
+                (f"{step.get('step_index')}단계 조작에서 체크박스/라디오 상태가 {native.get('before')}→{native.get('after')}로 "
+                 f"바뀌었고 상태 응답이 {ack_ms}ms에 확인됨({ack_band})."),
+            ))
+            continue
         out.append(Observation(
             "CG-03", run_id, pid, step.get("after"), step.get("step_index"),
             [target_id] if target_id else [], key,

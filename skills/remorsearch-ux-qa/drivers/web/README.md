@@ -468,6 +468,38 @@ they belong to (0 = initial load), so a step can own two snapshots.
   between the last two samples and happens to look identical in both;
   `feedback_visual_moving_px` counts them). `feedback_ambient_mutations` / `feedback_visual_ambient` flag
   pages that were already changing before the input (latency then is ambiguous).
+- **Native state acknowledgment** (`feedback_native_state`, tap/click/double-tap/
+  long-press steps): when the action activates a native checkbox/radio — the input
+  itself, or the control of an associated `<label>` (explicit `for` or nested, the
+  same `label.control` rule `controlOf` applies) — the driver snapshots the boolean
+  `checked` state before the input and timestamps the control's own trusted
+  `input`/`change` events, recording the boolean observed at event time and checking
+  that it survives the event handlers before retaining that timestamp. The event
+  time is converted through the calibrated page clock (`driver.clock.page_offset_ms`,
+  the same single offset the DOM path uses), and the recorded `latency_ms` is the
+  first trusted event whose state-at-event both differs from the armed state and
+  matches the observed end state — an event whose state the page immediately
+  restored never lends its timestamp to a later programmatic change (that change
+  records `changed: true, event: null`), and an end state that does not settle
+  records `stable: false`. When the boolean truly changes, the step records
+  `{source: "native_state_change", via: direct|nested_label|label_for, type,
+  dom_id, before, after, changed, event, latency_ms[, stable]}`. This exists
+  because a 13×13 checkbox that toggles can paint fewer pixels than the
+  downsampled visual comparison resolves, leaving `feedback_source` null although
+  the control answered. It is a state/semantic acknowledgment of the activation
+  only: it is not calibrated visible paint, perceptibility or a screen-reader
+  announcement (those stay with the DOM/visual evidence), CG-03 classifies the
+  acknowledgment with the same response-time bands as any other acknowledgment
+  (≤400 ms suppresses the missing-response finding; >400 ms P3, >1000 ms P2,
+  >10000 ms P1), a repeated click that changes nothing records `changed: false`
+  and never acknowledges, and custom ARIA widgets (no native input) stay
+  DOM/semantic evidence. A control the protected-target rule covers or that lies
+  in an opted-out (`redact`) region is never armed: no id, no boolean, nothing
+  recorded. `snapshot.validate_run` rejects malformed `feedback_native_state`
+  (wrong shapes, unknown keys, non-boolean states, `changed` contradicting the
+  states, non-finite/negative latencies, event/latency disagreement, latencies
+  outside the step's observed feedback window/action interval) instead of letting it pass CG-03.
+  Reads only tag/type/id and the boolean — never text or field values.
 - **Timing windows**: each selector is polled in the page every 16 ms; a window
   reports `visible_ms` (shortest completed visible interval, the tightest window a
   user got; null if none completed), `intervals_ms`, `min/max_visible_ms`,
