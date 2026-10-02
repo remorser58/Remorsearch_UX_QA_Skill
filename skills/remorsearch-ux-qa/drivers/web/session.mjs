@@ -82,6 +82,35 @@ function r4(n) {
   return Math.round(n * 10000) / 10000;
 }
 
+function sampleTaskState({ selector, property, expected, key }) {
+  const elements = document.querySelectorAll(selector);
+  if (elements.length !== 1) return { reason: elements.length ? 'ambiguous_target' : 'missing_target' };
+  const el = elements[0];
+  const credential = 'input[type="password"], input[type="hidden"], input[type="url"], [data-sensitive], [autocomplete="username"], [autocomplete*="password"], [autocomplete="one-time-code"]';
+  if (el.matches(credential) || el.closest('[data-sensitive]') || el.querySelector(credential)
+    || /(?:password|passwd|secret|token|credential|api.?key|authorization)/i.test(`${el.getAttribute('name') || ''} ${el.id}`)) return { reason: 'protected_target' };
+  if (el.closest('[hidden]') || !el.getClientRects().length || !el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return { reason: 'hidden_target' };
+  for (let ancestor = el; ancestor; ancestor = ancestor.parentElement) {
+    const style = getComputedStyle(ancestor);
+    if (style.display === 'none' || style.visibility !== 'visible' || Number(style.opacity) === 0) return { reason: 'hidden_target' };
+  }
+  let actual;
+  if (property === 'checked') {
+    if (!(el instanceof HTMLInputElement) || !['checkbox', 'radio'].includes(el.type)) return { reason: 'unsupported_property' };
+    actual = el.checked;
+  } else if (property === 'value') {
+    if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement)) return { reason: 'unsupported_property' };
+    actual = el.value;
+  } else {
+    if (/^(input|textarea|select|script|style|html|body|iframe)$/.test(el.localName)) return { reason: 'unsupported_property' };
+    actual = el.innerText;
+  }
+  const passed = actual === expected;
+  return { passed, result: passed ? 'pass' : 'fail', reason: null,
+    element_id: window[Symbol.for(key)]?.ids?.get(el) ?? null,
+    private_actual: actual, private_node: el };
+}
+
 function stripQuery(url) {
   try {
     const u = new URL(url);
@@ -102,7 +131,7 @@ function stripQuery(url) {
  * visible headings, dialogs and landmarks, and the ids of large visible regions, with
  * digits removed: a ticking timer or a counter does not make a new screen.
  */
-function reflowCopy() {
+function reflowCopy({ redactSelectors = [] } = {}) {
   const VOID = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
   const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/ /g, '&nbsp;');
   const escAttr = (t) => t.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/ /g, '&nbsp;');
@@ -120,6 +149,14 @@ function reflowCopy() {
   };
   const styleTag = (t) => `<style>${t.replace(/<\/style/gi, '<\\/style')}</style>`;
   const out = [];
+  const redacted = [];
+  for (const selector of redactSelectors) {
+    try { redacted.push(...document.querySelectorAll(selector)); } catch { /* invalid CSS stays unevaluable */ }
+  }
+  const privateNode = (node) => {
+    for (let current = node; current; current = current.parentNode || current.host || null) if (redacted.includes(current)) return true;
+    return false;
+  };
   const adopted = (root) => {
     for (const sheet of root.adoptedStyleSheets || []) {
       const t = sheetText(sheet);
@@ -129,7 +166,7 @@ function reflowCopy() {
   const walk = (node) => {
     for (const c of node.childNodes) {
       if (c.nodeType === 3) {
-        out.push(esc(c.nodeValue));
+        out.push(privateNode(c) ? '[redacted]' : esc(c.nodeValue));
         continue;
       }
       if (c.nodeType !== 1) continue;
@@ -137,7 +174,10 @@ function reflowCopy() {
       if (tag === 'script' || tag === 'noscript') continue;
       if (tag === 'meta' && /refresh/i.test(c.getAttribute('http-equiv') || '')) continue;
       out.push(`<${tag}`);
-      for (const a of c.attributes) out.push(` ${a.name}="${escAttr(a.value)}"`);
+      for (const a of c.attributes) {
+        if (privateNode(c) && ['value', 'title', 'aria-label'].includes(a.name)) continue;
+        out.push(` ${a.name}="${escAttr(a.value)}"`);
+      }
       out.push('>');
       if (VOID.has(tag)) continue;
       if (tag === 'style') {
@@ -154,7 +194,7 @@ function reflowCopy() {
       if (tag === 'template') {
         walk(c.content);
       } else if (tag === 'textarea' || tag === 'title') {
-        out.push(esc(c.textContent));
+        out.push(privateNode(c) ? '[redacted]' : esc(c.textContent));
       } else {
         // The parser drops one newline right after <pre>, <listing> and <textarea>.
         if ((tag === 'pre' || tag === 'listing') && c.firstChild && c.firstChild.nodeType === 3 && c.firstChild.nodeValue[0] === '\n') out.push('\n');
@@ -687,6 +727,18 @@ export class WebSession {
     this.warnings = [...(warnings || [])];
     this.warned = new Set();
     this.steps = [];
+    this.taskCheckResults = new Map();
+    this.authoredInputs = new Set();
+    this.mismatchedInputs = new Set();
+    this.privateValues = new Set();
+    this.redactSelectors = new Set();
+    for (const action of scenario.steps) this.rememberPrivateAction(action);
+    for (const check of scenario.success?.task_checks || []) {
+      if (check.redact) {
+        this.redactSelectors.add(check.selector);
+        if (typeof check.expected === 'string' && check.expected) this.privateValues.add(check.expected);
+      }
+    }
     this.snapshots = [];
     this.snapElements = new Map();
     this.personaNotes = [];
@@ -742,6 +794,25 @@ export class WebSession {
 
   rel(epoch) {
     return Math.max(0, round1(epoch - this.runStartEpoch));
+  }
+
+  rememberPrivateAction(action) {
+    if (action.redact) {
+      if (action.text) this.privateValues.add(action.text);
+      if (typeof action.target === 'string') this.redactSelectors.add(action.target);
+    }
+  }
+
+  redactRecord(record, key = '') {
+    if (typeof record === 'string') {
+      if (key === 'notes' && record === 'task_check_final') return record;
+      if (key && !['text', 'value', 'selected', 'described_by_text', 'name', 'title', 'error', 'message', 'stack', 'intent', 'expected', 'observed', 'consequence', 'description', 'note', 'notes', 'warnings', 'blocked_reasons', 'console_errors'].includes(key)) return record;
+      for (const value of this.privateValues) record = record.split('[redacted]').map((part) => part.split(value).join('[redacted]')).join('[redacted]');
+      return record;
+    }
+    if (Array.isArray(record)) return record.map((value) => this.redactRecord(value, key));
+    if (record && typeof record === 'object') return Object.fromEntries(Object.entries(record).map(([field, value]) => [field, key === 'driver' && field === 'name' ? value : this.redactRecord(value, field)]));
+    return record;
   }
 
   // ------------------------------------------------------------------ lifecycle
@@ -843,7 +914,7 @@ export class WebSession {
   async keepForReflow(snapshotId) {
     if (!this.reflowEnabled()) return;
     try {
-      const copy = await this.page.evaluate(reflowCopy);
+      const copy = await this.page.evaluate(reflowCopy, { redactSelectors: [...this.redactSelectors] });
       const url = this.page.url();
       const key = `${stripQuery(url)}|${copy.key}`;
       const kept = this.reflowScreens.find((s) => s.key === key);
@@ -1814,11 +1885,11 @@ export class WebSession {
 
   async inspect() {
     if (this.crashed || !this.page || this.page.isClosed()) throw new DriverFailure('cannot inspect a closed or crashed page');
-    const state = await this.page.evaluate(inspectPage);
+    const state = await this.page.evaluate(inspectPage, { redactSelectors: [...this.redactSelectors] });
     const inspection = path.join(this.runDir, `I-${this.runId}-${String(this.inspectSeq++).padStart(3, '0')}.json`);
     const record = { run_id: this.runId, step_index: this.steps.length, last_snapshot_id: this.lastSnapshotId, observed_at: isoNow(), ...state };
-    writeJsonAtomic(inspection, record, 0o600);
-    return { result: 'ok', inspection, ...record };
+    writeJsonAtomic(inspection, this.redactRecord(record), 0o600);
+    return { result: 'ok', inspection, ...this.redactRecord(record) };
   }
 
   async targetGroups() {
@@ -1849,7 +1920,7 @@ export class WebSession {
   async extract() {
     const { groups, hotspotRoles, handlesToDispose } = await this.targetGroups();
     try {
-      return await this.page.evaluate(extractSnapshot, {
+      const snapshot = await this.page.evaluate(extractSnapshot, {
         key: STATE_KEY,
         cap: ELEMENT_CAP,
         groups,
@@ -1857,12 +1928,39 @@ export class WebSession {
         hotspotRoles,
         knownRoles: KNOWN_ROLES,
       });
+      if (this.redactSelectors.size) {
+        const ids = await this.page.evaluate(({ selectors, key }) => {
+          const ids = new Set();
+          const state = window[Symbol.for(key)];
+          const descendants = (el) => {
+            if (state?.ids?.get(el)) ids.add(state.ids.get(el));
+            for (const child of el.children || []) descendants(child);
+            if (el.shadowRoot) for (const child of el.shadowRoot.children) descendants(child);
+          };
+          for (const selector of selectors) {
+            let elements;
+            try { elements = document.querySelectorAll(selector); } catch { continue; }
+            for (const el of elements) {
+              descendants(el);
+              for (let parent = el.parentElement; parent; parent = parent.parentElement) ids.add(state?.ids?.get(parent));
+            }
+          }
+          return [...ids].filter(Boolean);
+        }, { selectors: [...this.redactSelectors], key: STATE_KEY });
+        for (const element of snapshot.elements) {
+          if (ids.includes(element.id)) {
+            element.text = '[redacted]';
+            element.name = '[redacted]';
+          }
+        }
+      }
+      return snapshot;
     } finally {
       await Promise.all(handlesToDispose.map((h) => h.dispose().catch(() => {})));
     }
   }
 
-  async snapshot(stepIndex, notes) {
+  async snapshot(stepIndex, notes, taskCheckpoint, taskStepResult = 'ok') {
     if (this.needCalibrate) {
       this.needCalibrate = false;
       await this.calibrate().catch(() => {});
@@ -1871,14 +1969,22 @@ export class WebSession {
     const id = `S-${this.runId}-${String(seq).padStart(3, '0')}`;
     let png;
     let ex;
+    let taskSamples = new Map();
     for (let attempt = 0; ; attempt++) {
       try {
-        png = await this.page.screenshot({ type: 'png', scale: 'device', animations: 'allow', caret: 'initial', timeout: 15000 });
+        if (taskCheckpoint !== undefined) taskSamples = await this.sampleTaskChecks(taskCheckpoint, taskStepResult);
+        const selectors = this.redactSelectors.size ? await this.page.evaluate((selectors) => selectors.filter((selector) => {
+          try { document.querySelectorAll(selector); return true; } catch { return false; }
+        }), [...this.redactSelectors]) : [];
+        png = await this.page.screenshot({ type: 'png', scale: 'device', animations: 'allow', caret: 'initial', timeout: 15000,
+          mask: selectors.map((selector) => this.page.locator(`css=${selector}`)) });
         ex = await this.extract();
         break;
       } catch (err) {
+        for (const handle of taskSamples.values()) await handle?.dispose().catch(() => {});
+        taskSamples.clear();
         if (attempt >= 2 || this.crashed || this.page.isClosed()) {
-          throw new DriverFailure(`snapshot ${id} failed: ${firstLine(err.message)}`);
+          throw new DriverFailure(this.privateValues.size ? `snapshot ${id} failed during redacted capture` : `snapshot ${id} failed: ${firstLine(err.message)}`);
         }
         await this.page.waitForLoadState('load', { timeout: 10000 }).catch(() => {});
       }
@@ -1932,14 +2038,16 @@ export class WebSession {
     const jsonPath = path.join(this.runDir, `${id}.json`);
     writeFileAtomic(pngPath, png);
     if (cssCopy) writeFileAtomic(path.join(this.runDir, `${id}.css.png`), cssCopy.png);
-    writeJsonAtomic(jsonPath, snap);
+    const safeSnap = this.redactRecord(snap);
+    writeJsonAtomic(jsonPath, safeSnap);
     this.snapshots.push({ snapshot_id: id, step_index: stepIndex, path: `${id}.json`, png: `${id}.png` });
     this.lastSnapshotId = id;
+    if (taskCheckpoint !== undefined) await this.evaluateTaskChecks(taskCheckpoint, { id, snap: safeSnap }, taskStepResult, taskSamples);
     await this.keepForReflow(id);
     // Keep recent element lists to anchor persona notes (note -> element -> selector).
-    this.snapElements.set(id, { elements: ex.elements, url: snap.surface.url });
+    this.snapElements.set(id, { elements: safeSnap.elements, url: safeSnap.surface.url });
     if (this.snapElements.size > 64) this.snapElements.delete(this.snapElements.keys().next().value);
-    return { id, jsonPath, pngPath, snap };
+    return { id, jsonPath, pngPath, snap: safeSnap };
   }
 
   // ------------------------------------------------------------------ targets
@@ -2341,10 +2449,19 @@ export class WebSession {
   /** Execute one validated action; always ends with an after-snapshot. */
   async act(action) {
     if (this.crashed) throw new DriverFailure('page crashed');
+    if (action.action === 'type' && this.scenario.steps[this.steps.length]?.redact) action = { ...action, redact: true };
+    this.rememberPrivateAction(action);
+    if (action.redact && !(await this.page.evaluate((selector) => {
+      try { document.querySelectorAll(selector); return true; } catch { return false; }
+    }, action.target))) throw new DriverFailure('redacted typing requires valid plain CSS');
     const stepIndex = this.steps.length + 1;
+    if (action.action === 'type') {
+      this.authoredInputs.add(stepIndex);
+      if (this.scenario.steps[stepIndex - 1]?.action === 'type' && this.scenario.steps[stepIndex - 1].text !== action.text) this.mismatchedInputs.add(stepIndex);
+    }
     const step = {
       step_index: stepIndex,
-      action,
+      action: action.redact ? { ...this.redactRecord(action), text: '[redacted]' } : action,
       target_element_id: null,
       point: null,
       before: this.lastSnapshotId,
@@ -2457,9 +2574,9 @@ export class WebSession {
         if (step.result === 'ok') await this.performInput(action, resolved, step);
       }
     } catch (err) {
-      if (err instanceof DriverFailure) throw err;
+      if (err instanceof DriverFailure) throw new DriverFailure(this.redactRecord(err.message));
       step.result = 'error';
-      step.error = firstLine(err.message);
+      step.error = action.redact ? 'redacted input action failed' : firstLine(err.message);
     } finally {
       if (resolved && resolved.handle) await resolved.handle.dispose().catch(() => {});
     }
@@ -2472,7 +2589,7 @@ export class WebSession {
     let snap = null;
     const layersBefore = new Set((this.lastLayers || []).map((l) => l.selector));
     try {
-      snap = await this.snapshot(stepIndex, []);
+      snap = await this.snapshot(stepIndex, [], stepIndex, step.result);
       step.after = snap.id;
       if (['tap', 'click', 'double_tap', 'long_press', 'press', 'wait', 'snapshot'].includes(action.action) && step.result === 'ok' && step.t_start_ms !== null) {
         await this.lateLayerFocus(step, layersBefore, ['wait', 'snapshot'].includes(action.action));
@@ -2489,7 +2606,7 @@ export class WebSession {
     }
     step.url_after = this.page.url();
     this.steps.push(step);
-    return { step, snap };
+    return { step: this.redactRecord(step), snap };
   }
 
   // ------------------------------------------------------------------ notes / finish
@@ -2574,9 +2691,63 @@ export class WebSession {
     return out;
   }
 
+  async sampleTaskChecks(checkpoint, stepResult) {
+    const samples = new Map();
+    if (stepResult !== 'ok') return samples;
+    for (const c of this.scenario.success?.task_checks || []) {
+      if ((c.after_step ?? 'final') !== checkpoint || this.taskCheckResults.has(c.id)) continue;
+      if ('from_step' in c && (!this.authoredInputs.has(c.from_step) || this.mismatchedInputs.has(c.from_step)
+        || (c.from_step !== checkpoint && this.steps[c.from_step - 1]?.result !== 'ok'))) continue;
+      try {
+        samples.set(c.id, await this.page.evaluateHandle(sampleTaskState, { selector: c.selector, property: c.property,
+          expected: 'from_step' in c ? this.scenario.steps[c.from_step - 1].text : c.expected, key: STATE_KEY }));
+      } catch { samples.set(c.id, null); }
+    }
+    return samples;
+  }
+
+  async evaluateTaskChecks(checkpoint, snapshot, stepResult = 'ok', beforeSamples = new Map()) {
+    for (const criterion of this.scenario.success?.task_checks || []) {
+      if ((criterion.after_step ?? 'final') !== checkpoint || this.taskCheckResults.has(criterion.id)) continue;
+      const result = {
+        kind: 'task_check', id: criterion.id, selector: criterion.selector, property: criterion.property,
+        checkpoint, step_index: snapshot?.snap.step_index ?? this.steps.length,
+        snapshot_id: snapshot?.id ?? null, element_id: null, passed: null, result: 'unevaluable', reason: null,
+        severity: criterion.severity, consequence: criterion.consequence,
+      };
+      const expected = 'from_step' in criterion ? this.scenario.steps[criterion.from_step - 1].text : criterion.expected;
+      if (stepResult !== 'ok') result.reason = 'action_failed';
+      else if ('from_step' in criterion && !this.authoredInputs.has(criterion.from_step)) result.reason = 'source_step_unvisited';
+      else if ('from_step' in criterion && criterion.from_step !== checkpoint && this.steps[criterion.from_step - 1]?.result !== 'ok') result.reason = 'source_step_failed';
+      else if ('from_step' in criterion && this.mismatchedInputs.has(criterion.from_step)) result.reason = 'source_input_mismatch';
+      else if (!snapshot || !this.page || this.crashed || this.page.isClosed()) result.reason = 'capture_unavailable';
+      else {
+        try {
+          // Only explicitly selected CSS targets are read, and only the comparison leaves the DOM.
+          const before = beforeSamples.get(criterion.id);
+          if (!before) result.reason = 'capture_unavailable';
+          else {
+            const after = await this.page.evaluateHandle(sampleTaskState, { selector: criterion.selector, property: criterion.property, expected, key: STATE_KEY });
+            try {
+              Object.assign(result, await after.evaluate((last, first) => {
+                if (last.reason !== first.reason || !Object.is(last.private_actual, first.private_actual) || last.private_node !== first.private_node) return { reason: 'capture_state_changed' };
+                // Private browser handles are disposed below; values/nodes never enter the result.
+                return last.reason ? { reason: last.reason } : { passed: last.passed, result: last.result, reason: null, element_id: last.element_id };
+              }, before));
+            } finally { await after.dispose().catch(() => {}); }
+          }
+        } catch {
+          result.reason = 'evaluation_error'; // Exception text can carry a field value.
+        }
+      }
+      this.taskCheckResults.set(criterion.id, this.redactRecord(result));
+      await beforeSamples.get(criterion.id)?.dispose().catch(() => {});
+    }
+  }
+
   async evaluateSuccess() {
     const sc = this.scenario.success;
-    const unevaluable = this.scenario.success_unevaluable;
+    const unevaluable = [...this.scenario.success_unevaluable];
     if (!sc && !unevaluable.length) return { success: null, detail: null };
     const results = [];
     const check = async (kind, value, fn) => {
@@ -2596,8 +2767,18 @@ export class WebSession {
         for (const s of sc.text_present) await check('text_present', s, async () => body.includes(s));
       }
     }
+    for (const criterion of sc?.task_checks || []) {
+      const result = this.taskCheckResults.get(criterion.id) || {
+        kind: 'task_check', id: criterion.id, selector: criterion.selector, property: criterion.property,
+        checkpoint: criterion.after_step ?? 'final', step_index: criterion.after_step ?? this.steps.length,
+        snapshot_id: null, element_id: null, passed: null, result: 'unevaluable', reason: 'checkpoint_unvisited',
+        severity: criterion.severity, consequence: criterion.consequence,
+      };
+      results.push(this.redactRecord(result));
+      if (result.passed === null) unevaluable.push(criterion.id);
+    }
     const allPassed = results.length > 0 && results.every((r) => r.passed);
-    const anyFailed = results.some((r) => !r.passed) || (this.crashed && results.length === 0);
+    const anyFailed = results.some((r) => r.passed === false) || (this.crashed && results.length === 0);
     let success;
     if (anyFailed) success = false;
     else if (unevaluable.length || !results.length) success = null;
@@ -2615,6 +2796,11 @@ export class WebSession {
       let detail = null;
       let basis = null;
       try {
+        if (this.scenario.success?.task_checks?.some((c) => c.after_step === undefined)) {
+          const complete = !this.crashed && !this.blockReasons.length && (this.mode !== 'scripted' || this.steps.every((s) => s.result === 'ok'));
+          try { await this.snapshot(this.steps.length, ['task_check_final'], 'final', complete ? 'ok' : 'incomplete'); }
+          catch { this.block('final task check capture unavailable'); }
+        }
         ({ success, detail } = await this.evaluateSuccess());
         if (detail) basis = 'measured';
       } catch (err) {
@@ -2640,6 +2826,7 @@ export class WebSession {
       let status = 'completed';
       if (this.blockReasons.length) status = 'blocked';
       else if (this.mode === 'scripted' && this.steps.some((s) => s.result !== 'ok')) status = 'failed';
+      if (status !== 'completed') success = false;
       const flashCov = this.flashCoverage();
       const run = {
         schema_version: 'ergo-run.v1',
@@ -2720,7 +2907,7 @@ export class WebSession {
       };
       try {
         if (!run.device) run.device = this.deviceRequest.fallbackDevice;
-        writeJsonAtomic(path.join(this.runDir, 'run.json'), run);
+        writeJsonAtomic(path.join(this.runDir, 'run.json'), this.redactRecord(run));
       } finally {
         if (this.browserTransport) await this.browserTransport.close([this.context]);
       }

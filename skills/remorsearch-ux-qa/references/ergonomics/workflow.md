@@ -19,7 +19,7 @@ node drivers/web/ergo_drive.mjs init --url URL --device DEVICE --task TASK --out
 python3 scripts/ergo_qa.py catalog
 ```
 
-Set safe recorded steps and success criteria that compare all entered values with the final state. Read-only defaults and separate write grants apply. Stop on production verification/payment, human checks or unavailable evidence; no real accounts/data are changed without scope-specific authority. Emulation is Chromium viewport/DPR/input, not a real device, grip, keyboard occlusion, safe area or screen reader; disclose before scenarios and in the report.
+Use safe steps and authored `success.task_checks` for material values/choices after recovery transitions and at completion; exact payloads, 1-based steps, intentional reset/normalization and `type.redact:true` are in `drivers/web/README.md`. Read-only defaults and separate write grants apply. Production verification/payment, human checks or missing access stop the path. Emulation covers Chromium viewport/DPR/input; real device, grip, keyboard occlusion, safe area and screen reader remain untested.
 
 ## 2. Compose profiles
 
@@ -72,7 +72,7 @@ python3 scripts/ergo_qa.py attach --bundle qa/bundle.json --runs runs/R-persona-
 python3 scripts/validate_bundle.py qa/bundle.ergo.json --artifacts-root receipts/
 ```
 
-P0/P1이 있으면 연결 명령이 필요한 `finding_id`를 출력하고 저장 전에 중단합니다. 각 캡처와 텍스트를 다시 검토하고 정확한 ID가 있는 JSON 배열을 작성한 뒤 `--second-pass second-passes.json`을 추가합니다. 익명 기록 하나를 여러 발견사항에 복제하지 않습니다. 완료된 정상 실행도 검사 범위와 캡처가 남습니다. 모든 실행·캡처의 기기와 방향, 시작부터 종료까지의 시각을 확인하며, reflow와 focus 측정의 원래 뷰포트·DPR·문맥은 보존합니다. `--out`은 기존 입력과 실행 폴더 밖의 새 파일이어야 합니다.
+P0/P1은 정확한 `finding_id`의 캡처·텍스트 재검토 기록을 `--second-pass`로 제출합니다. 완료된 값 불일치는 `TI-01` 증거로 연결되며 과업 실패 상태를 유지합니다. 정상 실행도 검사 범위·캡처가 남습니다. 기기·방향·실행 중 캡처 시각과 reflow/focus의 뷰포트·DPR·문맥을 보존합니다. `--out`은 입력·실행 폴더 밖의 새 파일입니다.
 
 Add `--audience audience.json` only for a completed audience. Use the emitted bundle path if this version names it differently. Outputs: findings.json, analyses.json, report.md and an evidence bundle. Segment groups/segments_affected describe triggered profiles, never user shares. Record model IDs and differential conditions (shared by triggered profiles and no untriggered profile). Use `python3 scripts/ergo_qa.py heatmap --help` for reach/gaze review options.
 

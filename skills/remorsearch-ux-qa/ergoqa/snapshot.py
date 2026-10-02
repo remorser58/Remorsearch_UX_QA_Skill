@@ -372,6 +372,32 @@ def validate_run(doc: Any) -> list[str]:
         for key in ("intent", "expected", "observed"):
             errors.string(note, key, path, nonempty=False)
         errors.boolean(note, "confusion", path)
+    detail = errors.obj(doc, "success_detail", "$", required=False, nullable=True)
+    seen_checks: set[str] = set()
+    criteria = errors.array(detail, "criteria", "$.success_detail", required=False) if detail is not None else []
+    for i, check in enumerate(criteria or []):
+        path = f"$.success_detail.criteria[{i}]"
+        if not isinstance(check, dict):
+            errors.add(path, "must be a criterion object")
+            continue
+        if check.get("kind") != "task_check":
+            continue
+        allowed = {"kind", "id", "selector", "property", "checkpoint", "step_index", "snapshot_id", "element_id", "passed", "result", "reason", "severity", "consequence"}
+        errors.require(set(check) <= allowed, path, "task checks may store only bounded outcome and capture metadata")
+        _task_identity(errors, check, path, seen_checks)
+        errors.number(check, "step_index", path, integer=True, minimum=0, maximum=10000)
+        checkpoint = check.get("checkpoint")
+        errors.require(checkpoint == "final" or (_is_int(checkpoint) and 1 <= checkpoint <= 10000), f"{path}.checkpoint", "must be final or a 1-based action index")
+        errors.enum(check, "result", ("pass", "fail", "unevaluable"), path)
+        errors.boolean(check, "passed", path, nullable=True)
+        errors.require((check.get("result"), check.get("passed")) in (("pass", True), ("fail", False), ("unevaluable", None)), path, "result and passed must agree")
+        errors.string(check, "snapshot_id", path, nullable=check.get("result") == "unevaluable")
+        errors.string(check, "element_id", path, nullable=True)
+        errors.enum(check, "reason", ("action_failed", "source_step_unvisited", "source_step_failed", "source_input_mismatch", "capture_unavailable", "capture_state_changed", "protected_target", "hidden_target", "missing_target", "ambiguous_target", "unsupported_property", "evaluation_error", "checkpoint_unvisited"), path, nullable=check.get("result") != "unevaluable")
+        if doc.get("success") is True:
+            errors.require(check.get("result") == "pass" and check.get("passed") is True, path, "task success true requires every task check to pass")
+        if check.get("result") == "fail":
+            errors.require(doc.get("success") is False, "$.success", "a failed task check requires task success false")
     return errors.items
 
 
@@ -387,6 +413,25 @@ def _target(errors: _Errors, target: Any, path: str, hotspot_ids: set[str]) -> N
         _point(errors, target, path)
     else:
         errors.add(path, "must be a selector string, 'hotspot:<id>' or {x, y}")
+
+
+def _task_identity(errors: _Errors, check: dict, path: str, seen: set[str]) -> None:
+    identifier = check.get("id")
+    valid = isinstance(identifier, str) and bool(re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", identifier))
+    errors.require(valid and identifier not in seen, f"{path}.id", "must be a unique identifier")
+    if valid:
+        seen.add(identifier)
+    selector = check.get("selector")
+    errors.require(_task_selector(selector), f"{path}.selector", "must be plain CSS without literals, escapes or credentials")
+    errors.enum(check, "property", ("value", "text", "checked"), path)
+    errors.enum(check, "severity", ("P0", "P1", "P2", "P3"), path)
+    consequence = check.get("consequence")
+    errors.require(isinstance(consequence, str) and bool(consequence.strip()) and len(consequence) <= 1000, f"{path}.consequence", "must describe the task impact without field values (1..1000 characters)")
+
+
+def _task_selector(value: Any) -> bool:
+    return (isinstance(value, str) and bool(value.strip()) and len(value) <= 1000
+            and not re.search(r"[\x00-\x1f]|[\\\"'=]|\[\s*(?:value|href|src)\b|(?:https?://|password|passwd|secret|token|credential|api.?key|authorization)", value, re.I))
 
 
 def validate_scenario(doc: Any) -> list[str]:
@@ -445,6 +490,9 @@ def validate_scenario(doc: Any) -> list[str]:
                 _target(errors, step["target"], f"{path}.target", hotspot_ids)
         errors.number(step, "ms", path, required=action == "wait", minimum=0)
         errors.string(step, "text", path, required=action == "type", nonempty=False)
+        if "redact" in step:
+            errors.boolean(step, "redact", path)
+            errors.require(action == "type" and _task_selector(step.get("target")) and not step["target"].startswith("hotspot:"), f"{path}.redact", "requires type with plain CSS")
         errors.string(step, "key", path, required=action == "press")
         if "to" in step:
             _target(errors, step["to"], f"{path}.to", hotspot_ids)
@@ -459,6 +507,39 @@ def validate_scenario(doc: Any) -> list[str]:
     success = errors.obj(doc, "success", "$", required=False, nullable=True)
     if success is not None:
         errors.require(len(success) > 0, "$.success", "must declare at least one success condition")
+        task_checks = errors.array(success, "task_checks", "$.success", required=False)
+        if task_checks is not None:
+            errors.require(1 <= len(task_checks) <= 64, "$.success.task_checks", "must contain 1..64 checks")
+        seen_checks: set[str] = set()
+        checkpoints: set[tuple] = set()
+        for i, check in enumerate(task_checks or []):
+            path = f"$.success.task_checks[{i}]"
+            if not isinstance(check, dict):
+                errors.add(path, "must be a task check object")
+                continue
+            allowed = {"id", "selector", "property", "after_step", "expected", "from_step", "severity", "consequence", "redact"}
+            errors.require(set(check) <= allowed, path, "has an invalid shape")
+            _task_identity(errors, check, path, seen_checks)
+            identity = (check.get("selector"), check.get("property"), check.get("after_step", "final"))
+            if all(isinstance(value, (str, int)) for value in identity):
+                errors.require(identity not in checkpoints, path, "duplicates a selector/property/checkpoint")
+                checkpoints.add(identity)
+            if "after_step" in check:
+                errors.number(check, "after_step", path, integer=True, minimum=1, maximum=10000)
+                errors.require(_is_int(check["after_step"]) and (not steps or check["after_step"] <= len(steps)), f"{path}.after_step", "must name a reachable 1-based action index")
+            errors.require(("expected" in check) != ("from_step" in check), path, "needs exactly one of expected or from_step")
+            if "expected" in check:
+                value = check["expected"]
+                errors.require(isinstance(value, bool) if check.get("property") == "checked" else isinstance(value, str) and len(value) <= 5000, f"{path}.expected", "has the wrong type or exceeds 5000 characters")
+            if "from_step" in check:
+                source = check["from_step"]
+                errors.require(check.get("property") != "checked" and _is_int(source) and 1 <= source <= len(steps or [])
+                               and isinstance(steps[source - 1], dict) and steps[source - 1].get("action") == "type"
+                               and ("after_step" not in check or (_is_int(check["after_step"]) and source <= check["after_step"])), f"{path}.from_step", "must reference an authored type action at or before the checkpoint")
+                if check.get("redact") is True and _is_int(source) and 1 <= source <= len(steps or []) and isinstance(steps[source - 1], dict):
+                    target = steps[source - 1].get("target")
+                    errors.require(_task_selector(target) and not target.startswith("hotspot:"), f"{path}.from_step", "redaction requires plain CSS on the authored type action")
+            errors.boolean(check, "redact", path, required=False)
     return errors.items
 
 
@@ -672,6 +753,23 @@ def load_run_dir(path: str | Path, *, verify_screenshots: bool = True) -> tuple[
             ref = step.get(key)
             if ref is not None and ref not in seen:
                 raise SnapshotError(f"run step {step.get('step_index')} references missing snapshot {ref!r} ({key})")
+    by_id = {snap["snapshot_id"]: snap for snap in snapshots}
+    steps_by_index = {step["step_index"]: step for step in run["steps"]}
+    for check in (run.get("success_detail") or {}).get("criteria", []):
+        if check.get("kind") != "task_check" or check.get("snapshot_id") is None:
+            continue
+        snap = by_id.get(check["snapshot_id"])
+        if snap is None or snap["step_index"] != check["step_index"]:
+            raise SnapshotError("task check capture is missing or its step index differs")
+        if check["checkpoint"] != "final" and check["checkpoint"] != check["step_index"]:
+            raise SnapshotError("task checkpoint does not match its capture step")
+        if check["checkpoint"] == "final":
+            if check["step_index"] != (max(steps_by_index) if steps_by_index else 0) or "task_check_final" not in snap.get("notes", []):
+                raise SnapshotError("final task check must reference its designated final capture after the executed steps")
+        elif steps_by_index.get(check["checkpoint"], {}).get("after") != check["snapshot_id"]:
+            raise SnapshotError("task checkpoint must reference its executed action after-capture")
+        if check.get("element_id") and not any(el["id"] == check["element_id"] for el in snap["elements"]):
+            raise SnapshotError("task check element is absent from its capture")
     snapshots.sort(key=lambda s: (s["step_index"], s["snapshot_id"]))
     return run, snapshots
 

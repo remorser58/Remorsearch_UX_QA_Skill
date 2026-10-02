@@ -26,7 +26,7 @@ import { STATE_KEY, pageInit } from './page_scripts.mjs';
 import { WebSession } from './session.mjs';
 import { decodePng } from './png.mjs';
 import { snapshotReply } from './serve.mjs';
-import { normalizeBuildId, normalizeScenario } from './validate.mjs';
+import { normalizeAction, normalizeBuildId, normalizeScenario } from './validate.mjs';
 import { writeJsonAtomic } from './util.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -100,6 +100,34 @@ setTimeout(()=>{fetch('/read/cleared');document.getElementById('browser-check').
   '/read/login.html': `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>로그인</title></head>
 <body><form><input name="id" aria-label="아이디"><input type="password" aria-label="비밀번호"><button>로그인</button></form></body></html>`,
   '/read/storage.html': '<!doctype html><html><body>Connection isolation fixture</body></html>',
+  '/task-integrity.html': `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>과업 값 검사</title></head><body>
+<label for="memo">요청사항</label><input id="memo" aria-describedby="memo-help"><p id="memo-help">입력 안내</p><p id="summary">없음</p>
+<label><input id="option" type="checkbox">선택</label><input id="masked" type="password"><input id="hidden" type="hidden">
+<p class="ambiguous">첫째</p><p class="ambiguous">둘째</p>
+<button id="copy" onclick="document.getElementById('summary').innerText=document.getElementById('memo').value">저장</button>
+<button id="lose" onclick="document.getElementById('memo').value=''">손실</button>
+<button id="reset" onclick="document.getElementById('memo').value=''">초기화</button>
+<button id="normalize" onclick="document.getElementById('memo').value=document.getElementById('memo').value.trim().toUpperCase()">정규화</button>
+<button id="done" onclick="document.getElementById('summary').innerText=document.getElementById('memo').value;document.getElementById('memo').value=''">완료</button>
+<button id="echo" onclick="document.getElementById('memo-help').innerText=document.getElementById('memo').value">설명</button>
+<input id="unrelated" value="unrelated-owned-fixture" aria-label="다른 입력">
+<label for="choice">선택 유형</label><select id="choice"><option value="CHOICE-PRIVATE-51983">비공개 선택</option></select>
+<div style="opacity:0"><input id="transparent" value="stable fixture"></div>
+<div id="private-region"></div><input id="secret-field" type="password" value="PASSWORD-PRIVATE-31984">
+<button id="echo-PASSWORD-PRIVATE-31984">보호된 식별자</button>
+<script>document.getElementById('private-region').attachShadow({mode:'open'}).innerHTML='<label>보호된 입력<input value="SHADOW-PRIVATE-48152"></label><p>SHADOW-PRIVATE-DISPLAY-51984</p>';</script>
+</body></html>`,
+  '/task-integrity-timing.html': `<!doctype html><html><head><title>Owned capture timing fixture</title></head><body>
+<p id="display">retained</p><button id="switch">Trigger owned transition</button>
+<div role="dialog" aria-modal="true" id="dialog" hidden><button>Dialog control</button></div>
+<script>
+const display=document.getElementById('display'); let armed=false;
+const unstable=new URLSearchParams(location.search).has('unstable');
+Object.defineProperty(display,'innerText',{get(){const value=display.textContent;
+  if(unstable&&armed){armed=false;setTimeout(()=>display.textContent='changed',0);}return value;}});
+document.getElementById('switch').onclick=()=>{document.getElementById('dialog').hidden=false;
+  if(unstable)armed=true;else setTimeout(()=>display.textContent='changed',400);};
+</script></body></html>`,
 };
 
 function readFixture(pathname, res, req) {
@@ -152,7 +180,7 @@ function startFixtureServer() {
       res.end(html);
       return;
     }
-    if (req.method === 'GET' && pathname.startsWith('/read/')) {
+    if (req.method === 'GET' && (pathname.startsWith('/read/') || pathname === '/task-integrity.html' || pathname === '/task-integrity-timing.html')) {
       readFixture(pathname, res, req);
       return;
     }
@@ -1608,6 +1636,162 @@ async function connectTest(base, tmp) {
   }
 }
 
+async function taskIntegrityTest(base, tmp) {
+  const outDir = path.join(tmp, 'integrity-runs');
+  const sentinel = 'RQ-PRIVATE-SENTINEL-67291';
+  const input = { action: 'type', target: '#memo', text: sentinel, redact: true, delay_ms: 0 };
+  const tap = (target) => ({ action: 'tap', target });
+  const criterion = (id, selector, property, expected, after_step) => ({ id, selector, property, expected,
+    ...(after_step === undefined ? {} : { after_step }), severity: 'P2', consequence: '명시한 요청사항이 해당 단계에 유지되어야 합니다.' });
+  const ref = (id, selector, property, from_step, after_step) => {
+    const result = criterion(id, selector, property, '', after_step);
+    delete result.expected;
+    return { ...result, from_step };
+  };
+  const scenarioFor = (id, steps, checks) => ({ schema_version: 'ergo-scenario.v1', scenario_id: id,
+    surface: { kind: 'web', url: `${base}/task-integrity.html` }, task_goal_ko: '요청사항과 선택을 확인합니다', device_ids: ['galaxy-s24'],
+    targets: {}, steps, success: { selector_visible: '#summary', task_checks: checks } });
+  const runCase = async (id, sc, exit) => {
+    const file = path.join(tmp, `${id}.json`);
+    writeJson(file, sc);
+    const r = await runDriver(['run', '--scenario', file, '--device', 'galaxy-s24', '--out', outDir, '--run-id', id,
+      '--no-focus-walk', '--no-reflow', '--no-visual-feedback', '--feedback-timeout-ms', '0', '--settle-ms', '0']);
+    check(`task integrity ${id}: real process exit ${exit}`, r.code === exit, { code: r.code, err: r.err });
+    const run = loadRun(path.join(outDir, id)).run;
+    const criteria = run.success_detail.criteria.filter((c) => c.kind === 'task_check');
+    check(`task integrity ${id}: no expected or actual values in results`, criteria.every((c) => !('value' in c) && !('actual' in c) && !('expected' in c)));
+    return { run, criteria, out: r.out + r.err, dir: path.join(outDir, id) };
+  };
+  const privateCheck = ref('retained', '#memo', 'value', 1, 1);
+  for (const [name, mutate] of [
+    ['duplicate id', (s) => s.success.task_checks.push({ ...privateCheck })],
+    ['duplicate checkpoint', (s) => s.success.task_checks.push({ ...privateCheck, id: 'another' })],
+    ['unreachable checkpoint', (s) => s.success.task_checks[0].after_step = 9],
+    ['future input reference', (s) => s.success.task_checks[0].from_step = 2],
+    ['wrong property type', (s) => s.success.task_checks[0] = criterion('bad', '#option', 'checked', 'true')],
+    ['credential predicate', (s) => s.success.task_checks[0].selector = 'input[value="private"]'],
+    ['whitespace value predicate', (s) => s.success.task_checks[0].selector = 'input[ value="private"]'],
+    ['escaped attribute predicate', (s) => s.success.task_checks[0].selector = 'input[v\\61lue="private"]'],
+    ['unknown criterion key', (s) => s.success.task_checks[0].guess = true],
+    ['promotion without source selector', (s) => { delete s.steps[0].target; delete s.steps[0].redact; s.success.task_checks[0].redact = true; }],
+  ]) {
+    const sc = scenarioFor('invalid', [{ ...input }], [{ ...privateCheck }]);
+    mutate(sc);
+    let rejected = false;
+    try { normalizeScenario(sc, { requireSteps: true }); } catch { rejected = true; }
+    check(`task integrity validation: ${name} rejected`, rejected);
+  }
+  let invalidRedact = false;
+  try { normalizeAction({ action: 'type', text: sentinel, redact: true }, { strict: true }); } catch { invalidRedact = true; }
+  check('task integrity validation: redacted typing requires explicit selector', invalidRedact);
+  for (const target of ['css=#memo', 'role=textbox[name="Request"]', '#memo:not(']) {
+    if (target === '#memo:not(') continue; // Browser syntax validation is exercised before dispatch below.
+    let rejected = false;
+    try { normalizeAction({ action: 'type', text: sentinel, target, redact: true }, { strict: true }); } catch { rejected = true; }
+    check('task integrity validation: redaction rejects non-CSS selector engines', rejected);
+  }
+  const promoted = normalizeScenario(scenarioFor('promoted', [{ ...input, redact: false }], [
+    ref('early-copy', '#summary', 'text', 1, 1), { ...ref('late-copy', '#memo', 'value', 1), redact: true }]), { requireSteps: true }).scenario;
+  check('task integrity validation: source redaction propagates to every reference regardless of order', promoted.steps[0].redact
+    && promoted.success.task_checks.every((c) => c.redact));
+  const hiddenRegion = await runCase('R-integrity-private-region', scenarioFor('private-region', [{ action: 'snapshot' }],
+    [{ ...criterion('region-check', '#private-region', 'text', ''), redact: true }]), 0);
+  const regionRecords = fs.readdirSync(hiddenRegion.dir).filter((name) => name.endsWith('.json'))
+    .map((name) => fs.readFileSync(path.join(hiddenRegion.dir, name), 'utf8')).join('');
+  check('task integrity capture: opted host omits private shadow text from saved snapshots', !regionRecords.includes('SHADOW-PRIVATE-DISPLAY-51984')
+    && !regionRecords.includes('SHADOW-PRIVATE-48152'));
+  const timingScenario = scenarioFor('capture-timing', [tap('#switch')], [criterion('timed-retention', '#display', 'text', 'retained', 1)]);
+  delete timingScenario.success.selector_visible;
+  timingScenario.surface.url = `${base}/task-integrity-timing.html`;
+  const timed = await runCase('R-integrity-delayed-focus', timingScenario, 0);
+  const timedSnapshot = JSON.parse(fs.readFileSync(path.join(timed.dir, `${timed.criteria[0].snapshot_id}.json`), 'utf8'));
+  check('task integrity capture: delayed modal state check matches the captured state before focus wait', timed.criteria[0].result === 'pass'
+    && timedSnapshot.elements.some((el) => el.selector === '#display' && el.text === 'retained'));
+  timingScenario.surface.url += '?unstable=1';
+  const unstable = await runCase('R-integrity-unstable-capture', timingScenario, 3);
+  check('task integrity capture: state changed across PNG is unevaluable', unstable.run.status === 'completed' && unstable.run.success === null
+    && unstable.criteria[0].result === 'unevaluable' && unstable.criteria[0].reason === 'capture_state_changed');
+  const retained = await runCase('R-integrity-retained', scenarioFor('retained', [input, tap('#option'), tap('#copy')],
+    [privateCheck, criterion('selected', '#option', 'checked', true, 2), { ...ref('final', '#summary', 'text', 1), redact: true }]), 0);
+  check('task integrity: value/checkbox/final all measured with capture anchors', retained.run.status === 'completed'
+    && retained.run.success === true && retained.criteria.every((c) => c.result === 'pass' && c.snapshot_id && c.element_id), retained.criteria);
+  const lost = await runCase('R-integrity-lost', scenarioFor('lost', [input, tap('#lose'), input, tap('#copy')],
+    [ref('early-loss', '#memo', 'value', 1, 2), ref('restored', '#memo', 'value', 1, 3), { ...ref('final', '#summary', 'text', 1), redact: true }]), 3);
+  check('task integrity: restored value cannot erase earlier failure', lost.run.status === 'completed' && lost.run.success === false
+    && lost.criteria.map((c) => c.result).join() === 'fail,pass,pass', lost.criteria);
+  const reset = await runCase('R-integrity-reset', scenarioFor('reset', [input, tap('#reset')], [criterion('intentional-reset', '#memo', 'value', '')]), 0);
+  check('task integrity: explicitly expected empty reset passes', reset.run.success === true);
+  const shortPrivate = await runCase('R-integrity-short-private', scenarioFor('short-private', [
+    { action: 'type', target: '#memo', text: 'a', redact: true, delay_ms: 0 }], [ref('short-private', '#memo', 'value', 1)]), 0);
+  check('task integrity privacy: short private input preserves schema and collector identity', shortPrivate.run.schema_version === 'ergo-run.v1'
+    && shortPrivate.run.driver.name === 'playwright-web' && shortPrivate.run.steps[0].action.text === '[redacted]');
+  const python = process.env.ERGOQA_PYTHON || 'python3';
+  const loaded = spawnSync(python, ['-c', 'from ergoqa.snapshot import load_run_dir; import sys; load_run_dir(sys.argv[1])', shortPrivate.dir],
+    { encoding: 'utf8', env: { ...process.env, PYTHONPATH: REPO } });
+  check('task integrity privacy: a single-character private source roundtrips the native capture loader', loaded.status === 0, loaded.stderr);
+  const normalized = await runCase('R-integrity-normalized', scenarioFor('normalized', [
+    { action: 'type', target: '#memo', text: '  safe memo  ', delay_ms: 0 }, tap('#normalize'), tap('#done')],
+    [criterion('normalized', '#memo', 'value', 'SAFE MEMO', 2), criterion('cleanup', '#memo', 'value', ''), criterion('submitted', '#summary', 'text', 'SAFE MEMO')]), 0);
+  check('task integrity: normalization and successful cleanup are authored explicitly', normalized.criteria.every((c) => c.result === 'pass'));
+  check('task integrity: unrelated synthetic input remains recorded', normalized.run.steps[0].action.text === '  safe memo  ');
+  const unknown = await runCase('R-integrity-unknown', scenarioFor('unknown', [input], [
+    criterion('missing', '#absent', 'value', ''), criterion('ambiguous', '.ambiguous', 'text', ''),
+    criterion('password', '#masked', 'value', ''), criterion('hidden', '#hidden', 'value', ''), criterion('transparent', '#transparent', 'value', 'stable fixture')]), 3);
+  check('task integrity: missing/ambiguous/credential/hidden targets do not pass', unknown.run.status === 'completed' && unknown.run.success === null
+    && unknown.criteria.every((c) => c.result === 'unevaluable' && c.passed === null), unknown.criteria);
+  const failed = await runCase('R-integrity-technical-failure', scenarioFor('technical-failure', [
+    { action: 'tap', target: '#absent', timeout_ms: 50 }, input], [ref('unvisited', '#memo', 'value', 2, 2)]), 3);
+  check('task integrity: true action failure has failed execution and unvisited check', failed.run.status === 'failed' && failed.run.success === false
+    && failed.criteria[0].reason === 'checkpoint_unvisited', failed.criteria);
+  for (const test of [retained, lost, reset, unknown, failed]) {
+    const records = fs.readdirSync(test.dir).filter((name) => name.endsWith('.json')).map((name) => fs.readFileSync(path.join(test.dir, name), 'utf8')).join('');
+    check('task integrity privacy: sentinel absent from results, snapshots and errors', !records.includes(sentinel) && !test.out.includes(sentinel));
+  }
+  const interactiveFile = path.join(tmp, 'integrity-interactive.json');
+  writeJson(interactiveFile, scenarioFor('interactive', [input, tap('#lose'), tap('#copy'), input],
+    [ref('preserve', '#memo', 'value', 1, 2), ref('authored-input', '#memo', 'value', 4, 4), ref('unvisited', '#memo', 'value', 1, 7),
+      { ...criterion('private-choice', '#choice', 'value', 'CHOICE-PRIVATE-51983', 1), redact: true },
+      { ...criterion('private-shadow', '#private-region', 'text', '', 1), redact: true }]));
+  const agent = path.join(tmp, 'integrity-agent.json');
+  writeJson(agent, { model_family: 'selftest', input_channel: 'screenshot+a11y' });
+  let readyResolve;
+  const readyPromise = new Promise((resolve) => { readyResolve = resolve; });
+  const proc = runDriver(['serve', '--scenario', interactiveFile, '--device', 'galaxy-s24', '--agent-json', agent,
+    '--out', outDir, '--run-id', 'R-integrity-interactive', '--port', '0', '--no-focus-walk', '--no-reflow',
+    '--no-visual-feedback', '--feedback-timeout-ms', '0', '--settle-ms', '0'], { onLine: (line) => { if (line.event === 'ready') readyResolve(line); } });
+  const ready = await readyPromise;
+  await request(ready.port, 'POST', '/act', { body: input });
+  const inspectedPrivate = await request(ready.port, 'GET', '/inspect');
+  check('task integrity inspection: opted field value is masked before reply and saved I artifact',
+    inspectedPrivate.json.fields.find((field) => field.selector === '#memo')?.value === null
+    && inspectedPrivate.json.fields.find((field) => field.selector === '#choice')?.selected.every((option) => option.value === null && option.text === null)
+    && !inspectedPrivate.text.includes(sentinel) && !fs.readFileSync(inspectedPrivate.json.inspection, 'utf8').includes(sentinel));
+  check('task integrity inspection: sensitive identifier echoes and opted shadow descendants stay private',
+    !inspectedPrivate.text.includes('PASSWORD-PRIVATE-31984') && !inspectedPrivate.text.includes('SHADOW-PRIVATE-48152')
+    && !fs.readFileSync(inspectedPrivate.json.inspection, 'utf8').includes('SHADOW-PRIVATE-48152'));
+  await request(ready.port, 'POST', '/act', { body: tap('#lose') });
+  await request(ready.port, 'POST', '/act', { body: tap('#copy') });
+  await request(ready.port, 'POST', '/act', { body: { action: 'type', target: '#memo', text: 'another owned synthetic input', delay_ms: 0 } });
+  await request(ready.port, 'POST', '/act', { body: tap('#normalize') });
+  await request(ready.port, 'POST', '/act', { body: tap('#echo') });
+  const normalizedInspection = await request(ready.port, 'GET', '/inspect');
+  check('task integrity inspection: normalized value and ARIA echo masked, unrelated field preserved',
+    !normalizedInspection.text.includes('ANOTHER OWNED SYNTHETIC INPUT')
+    && !fs.readFileSync(normalizedInspection.json.inspection, 'utf8').includes('ANOTHER OWNED SYNTHETIC INPUT')
+    && normalizedInspection.json.fields.find((field) => field.selector === '#memo')?.value === null
+    && normalizedInspection.json.fields.find((field) => field.selector === '#unrelated')?.value === 'unrelated-owned-fixture');
+  const finish = await request(ready.port, 'POST', '/finish', { body: { success: true } });
+  const done = await proc;
+  const interactive = loadRun(path.join(outDir, 'R-integrity-interactive')).run;
+  check('task integrity interactive: shared checks override persona success, record loss and unvisited step', finish.json.exit_code === 3
+    && done.code === 3 && interactive.status === 'completed' && interactive.success === false && interactive.persona_claimed_success === true
+    && interactive.success_detail.criteria.some((c) => c.id === 'unvisited' && c.result === 'unevaluable'));
+  check('task integrity interactive: changed authored source is an unevaluable execution mismatch',
+    interactive.success_detail.criteria.some((c) => c.id === 'authored-input' && c.result === 'unevaluable' && c.reason === 'source_input_mismatch'));
+  check('task integrity interactive: an authored private source protects changed input without a repeated flag',
+    interactive.steps[3].action.text === '[redacted]' && !JSON.stringify(interactive).includes('another owned synthetic input'));
+}
+
 async function main() {
   const keep = process.argv.includes('--keep');
   // --only a,b: run just these groups (scripted, actions, layers, focus, focus2, feedback, read,
@@ -1625,6 +1809,7 @@ async function main() {
     writeJson(path.join(tmp, 'p-desk.json'), profile('EP-DESK', 'desktop-1920'));
     deviceTableTest();
     if (want('connect')) await connectTest(base, tmp);
+    if (want('integrity')) await taskIntegrityTest(base, tmp);
 
     const outDir = path.join(tmp, 'runs');
     let r = null;

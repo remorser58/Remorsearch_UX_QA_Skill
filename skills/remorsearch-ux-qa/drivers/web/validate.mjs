@@ -19,7 +19,7 @@ const SPEC = {
   long_press: { req: ['target'], opt: ['offset', 'ms', 'duration_ms'] },
   swipe: { req: [], opt: ['target', 'offset', 'to', 'dx', 'dy', 'direction', 'distance', 'duration_ms'] },
   drag: { req: ['target'], opt: ['offset', 'to', 'dx', 'dy', 'direction', 'distance', 'duration_ms', 'hold_ms'] },
-  type: { req: ['text'], opt: ['target', 'offset', 'delay_ms', 'clear'] },
+  type: { req: ['text'], opt: ['target', 'offset', 'delay_ms', 'clear', 'redact'] },
   press: { req: ['key'], opt: ['hold_ms', 'repeat'] },
   scroll: { req: [], opt: ['target', 'offset', 'dx', 'dy', 'direction', 'distance', 'duration_ms'] },
   wait: { req: ['ms'], opt: [] },
@@ -60,6 +60,12 @@ export function checkTarget(v, where) {
 function checkKey(v, where) {
   if (typeof v !== 'string' || v.length < 1 || v.length > 64 || /[\u0000-\u001f]/.test(v)) fail(`${where} must be a key name (1-64 chars)`);
   return v;
+}
+
+export function isTaskSelector(value) {
+  return typeof value === 'string' && value.trim().length > 0 && value.length <= 1000
+    && !/[\u0000-\u001f]|\\|["'=]/.test(value)
+    && !/\[\s*(?:value|href|src)\b|(?:https?:\/\/|password|passwd|secret|token|credential|api.?key|authorization)/i.test(value);
 }
 
 /**
@@ -115,7 +121,7 @@ export function normalizeAction(raw, { strict, where = 'action' } = {}) {
     } else if (key === 'repeat') {
       if (!Number.isInteger(v) || v < 1 || v > 50) fail(`${at} must be an integer within 1..50`);
       out[key] = v;
-    } else if (key === 'clear' || key === 'auto_scroll') {
+    } else if (key === 'clear' || key === 'auto_scroll' || key === 'redact') {
       if (typeof v !== 'boolean') fail(`${at} must be a boolean`);
       out[key] = v;
     }
@@ -125,6 +131,7 @@ export function normalizeAction(raw, { strict, where = 'action' } = {}) {
     fail(`${where}: ${kind} needs "to", "dx"/"dy" or "direction"`);
   }
   if (kind === 'scroll' && !('dx' in out) && !('dy' in out) && !out.direction) fail(`${where}: scroll needs "dx"/"dy" or "direction"`);
+  if (out.redact && (!isTaskSelector(out.target) || out.target.startsWith('hotspot:'))) fail(`${where}: redacted typing requires plain CSS without literals, escapes or selector engines`);
   return { action: out, warnings };
 }
 
@@ -145,7 +152,40 @@ function checkBox(b, where) {
   return { x: b.x, y: b.y, w: b.w, h: b.h };
 }
 
-export const SUCCESS_KEYS = ['selector_visible', 'url_contains', 'text_present'];
+export const SUCCESS_KEYS = ['selector_visible', 'url_contains', 'text_present', 'task_checks'];
+
+const TASK_CHECK_KEYS = new Set(['id', 'selector', 'property', 'after_step', 'expected', 'from_step', 'severity', 'consequence', 'redact']);
+
+function taskChecks(value, steps, requireSteps) {
+  if (!Array.isArray(value) || value.length < 1 || value.length > 64) usage('scenario.success.task_checks must contain 1..64 checks');
+  const ids = new Set();
+  const checkpoints = new Set();
+  const checks = value.map((c, i) => {
+    const at = `scenario.success.task_checks[${i}]`;
+    if (!isPlainObject(c) || Object.keys(c).some((key) => !TASK_CHECK_KEYS.has(key))) usage(`${at} has an invalid shape`);
+    if (typeof c.id !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(c.id) || ids.has(c.id)) usage(`${at}.id must be a unique identifier`);
+    ids.add(c.id);
+    if (!isTaskSelector(c.selector)) usage(`${at}.selector must be plain CSS without literals, escapes or credentials`);
+    if (!['value', 'text', 'checked'].includes(c.property)) usage(`${at}.property must be value, text or checked`);
+    if (c.after_step !== undefined && (!Number.isInteger(c.after_step) || c.after_step < 1 || c.after_step > 10000 || (requireSteps && c.after_step > steps.length))) usage(`${at}.after_step must name a reachable 1-based action index`);
+    const checkpoint = JSON.stringify([c.selector, c.property, c.after_step ?? 'final']);
+    if (checkpoints.has(checkpoint)) usage(`${at} duplicates a selector/property/checkpoint`);
+    checkpoints.add(checkpoint);
+    if (('expected' in c) === ('from_step' in c)) usage(`${at} needs exactly one of expected or from_step`);
+    if ('expected' in c && (c.property === 'checked' ? typeof c.expected !== 'boolean' : typeof c.expected !== 'string' || c.expected.length > 5000)) usage(`${at}.expected has the wrong type or exceeds 5000 characters`);
+    if ('from_step' in c && (c.property === 'checked' || !Number.isInteger(c.from_step) || c.from_step < 1 || c.from_step > steps.length || steps[c.from_step - 1]?.action !== 'type' || (c.after_step !== undefined && c.from_step > c.after_step))) usage(`${at}.from_step must reference an authored type action at or before the checkpoint`);
+    if (!['P0', 'P1', 'P2', 'P3'].includes(c.severity)) usage(`${at}.severity must be an authored P0..P3 task impact`);
+    if (typeof c.consequence !== 'string' || !c.consequence.trim() || c.consequence.length > 1000) usage(`${at}.consequence must describe the task impact in 1..1000 characters without field values`);
+    if (c.redact !== undefined && typeof c.redact !== 'boolean') usage(`${at}.redact must be a boolean`);
+    if (c.redact === true && 'from_step' in c) {
+      const source = steps[c.from_step - 1];
+      if (!isTaskSelector(source.target) || source.target.startsWith('hotspot:')) usage(`${at}.from_step redaction requires plain CSS on the authored type action`);
+      steps[c.from_step - 1] = normalizeAction({ ...source, redact: true }, { strict: true, where: `${at}.from_step` }).action;
+    }
+    return { ...c };
+  });
+  return checks.map((c) => ({ ...c, redact: c.redact === true || ('from_step' in c && steps[c.from_step - 1].redact === true) }));
+}
 
 export function normalizeBuildId(value, where = 'build_id') {
   if (typeof value !== 'string' || !value.trim() || value.length > 256 || /[\u0000-\u001f]/.test(value)
@@ -258,7 +298,7 @@ export function normalizeScenario(doc, { base, requireSteps }) {
     success = {};
     for (const [k, v] of Object.entries(doc.success)) {
       if (SUCCESS_KEYS.includes(k)) {
-        success[k] = strOrList(k === 'url_contains' ? (Array.isArray(v) ? v.map((x) => (typeof x === 'string' ? subst(x) : x)) : (typeof v === 'string' ? subst(v) : v)) : v, `scenario.success.${k}`);
+        success[k] = k === 'task_checks' ? taskChecks(v, steps, requireSteps) : strOrList(k === 'url_contains' ? (Array.isArray(v) ? v.map((x) => (typeof x === 'string' ? subst(x) : x)) : (typeof v === 'string' ? subst(v) : v)) : v, `scenario.success.${k}`);
       } else {
         unevaluable.push(k);
         warnings.push(`scenario.success.${k} is not supported by this driver (supported: ${SUCCESS_KEYS.join(', ')}); success cannot be established`);

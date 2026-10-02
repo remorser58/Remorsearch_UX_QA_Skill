@@ -48,6 +48,14 @@ def _register(spec: CheckSpec) -> CheckSpec:
     return spec
 
 
+TI01 = _register(CheckSpec(
+    "TI-01", "task", "measured", "명시한 과업 값과 화면 상태 불일치",
+    "Authored task expectation differs from the observed state",
+    (), ("web", "game"), "persistence",
+    "오류 복구와 화면 전환에서 지정한 값·선택 상태를 유지하고 같은 조건으로 재검사하세요.",
+))
+
+
 RH01 = _register(CheckSpec(
     "RH-01", "reach", "model", "한 손 엄지 도달이 어려운 위치의 조작 대상",
     "Action target outside the comfortable thumb zone for this grip",
@@ -2369,7 +2377,7 @@ HYPOTHESIS_CHECKS = frozenset({"GZ-01", "GZ-04", "PC-05", "PT-05", "GM-06"})
 
 # Checks that read no profile attribute: one verdict per snapshot, reported as
 # "profile-independent" instead of a k/n coverage (STF-08).
-PROFILE_INVARIANT_CHECKS = frozenset({"PT-01", "PT-05", "PT-06", "PC-01", "PC-02", "CG-01", "CG-03", "GZ-03", "GM-05", "GM-06",
+PROFILE_INVARIANT_CHECKS = frozenset({"TI-01", "PT-01", "PT-05", "PT-06", "PC-01", "PC-02", "CG-01", "CG-03", "GZ-03", "GM-05", "GM-06",
                                       "SM-01", "SM-02", "SM-03", "SM-04", "SM-05", "SM-06", "SM-07", "SM-08", "LY-01", "RF-01",
                                       "FM-02"})
 
@@ -2393,6 +2401,8 @@ def applicable(check_id: str, profile: dict[str, Any], device: Any) -> bool:
     finding's differential condition is then computed against the tested profiles that
     did not trigger it (usability-evaluation-methods.md UEM-01).
     """
+    if check_id == "TI-01":
+        return False  # Its denominator comes only from recorded owner observations.
     attrs = profile.get("attributes", {})
     touch = getattr(device, "input", "touch") == "touch"
     grip = attrs.get("grip", "")
@@ -2415,6 +2425,31 @@ def run_snapshot_checks(ctx: Context) -> list[Observation]:
     out: list[Observation] = []
     for check in SNAPSHOT_CHECKS:
         out.extend(check(ctx))
+    return out
+
+
+def check_task_integrity(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[str, dict[str, Any]]) -> list[Observation]:
+    """Authored comparisons on this execution, with no inference from labels or profile traits."""
+    if profile["profile_id"] != run.get("profile_id") or run.get("status") != "completed":
+        return []
+    out = []
+    for criterion in (run.get("success_detail") or {}).get("criteria", []):
+        if criterion.get("kind") != "task_check" or criterion.get("passed") is None:
+            continue
+        snapshot = snapshots.get(criterion.get("snapshot_id"))
+        if snapshot is None:
+            continue
+        passed = criterion["passed"]
+        measurement = {key: criterion[key] for key in ("id", "selector", "property", "checkpoint", "result", "step_index", "snapshot_id", "severity", "consequence")}
+        message = ("명시한 과업 값 검사를 통과했습니다." if passed else
+                   f"명시한 과업 값이 {criterion['checkpoint']} 시점의 화면 상태와 일치하지 않습니다. {criterion['consequence']}")
+        out.append(Observation(
+            "TI-01", run["run_id"], profile["profile_id"], snapshot["snapshot_id"], criterion["step_index"],
+            [criterion["element_id"]] if criterion.get("element_id") else [],
+            f"{criterion['selector']}|{criterion['id']}", measurement, passed,
+            None if passed else criterion["severity"], message,
+            extra={"anchor_selectors": [criterion["selector"]], "scope": "authored criteria on the recorded owner execution; field values omitted", "impact_basis": "authored; comparison does not establish downstream harm"},
+        ))
     return out
 
 

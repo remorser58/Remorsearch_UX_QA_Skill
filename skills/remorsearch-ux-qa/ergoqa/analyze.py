@@ -126,11 +126,18 @@ def run_health(run: dict[str, Any], snapshots: list[dict[str, Any]], scenario: d
     rid = run.get("run_id")
     notes: list[str] = []
     health = "ok"
-    if run.get("status") not in (None, "completed") or run.get("success") is False:
+    if run.get("status") not in (None, "completed"):
         health = "failed"
         bad = [s for s in run.get("steps", []) if s.get("result") not in (None, "ok")]
         where = f" (step {bad[0].get('step_index')}: {bad[0].get('result')})" if bad else ""
         notes.append(f"{rid}: 실행 상태 {run.get('status')}, 성공 {run.get('success')}{where} — 이후 화면은 검사되지 않았습니다.")
+    elif run.get("success") is False:
+        notes.append(f"{rid}: 실행은 완료됐지만 과업 성공 조건을 충족하지 못했습니다. 기록된 화면의 검사 범위는 유지됩니다.")
+    task_results = [c for c in (run.get("success_detail") or {}).get("criteria", []) if c.get("kind") == "task_check"]
+    missing = [c["id"] for c in task_results if c.get("result") == "unevaluable"]
+    if missing:
+        health = "degraded" if health == "ok" else health
+        notes.append(f"{rid}: 과업 값 검사 미확인: {', '.join(missing)}. 대상 또는 도달한 단계를 확인하세요.")
     driver = run.get("driver") or {}
     blocked = ((driver.get("network_policy") or {}).get("blocked_requests") or 0) if isinstance(driver, dict) else 0
     if blocked:
@@ -162,6 +169,8 @@ def analyze_run(
     gaze_enabled: bool = True,
 ) -> dict[str, Any]:
     run, snapshots = load_run_dir(run_dir, verify_screenshots=verify_screenshots)
+    if scenario is not None and (scenario.get("schema_version") != "ergo-scenario.v1" or scenario.get("scenario_id") != run.get("scenario_id")):
+        raise ValueError("supplied scenario schema or ID does not match the recorded run")
     profile_list = list(profiles)
     by_id = profile_index(profile_list)
     own = by_id.get(run.get("profile_id"))
@@ -229,7 +238,8 @@ def analyze_run(
             previous = snap
         device = _device_for(snapshots[-1], profile)
         run_obs = (checks.check_run_timing(run, profile, device, snapshots_by_id, scenario) + checks.check_focus_walks(run, profile, snapshots_by_id)
-                   + checks.check_reflow(run, profile, snapshots_by_id) + checks.check_clicked_controls(run, profile, snapshots_by_id))
+                   + checks.check_reflow(run, profile, snapshots_by_id) + checks.check_clicked_controls(run, profile, snapshots_by_id)
+                   + checks.check_task_integrity(run, profile, snapshots_by_id))
         if profile is not own:
             run_obs = [o for o in run_obs if o.check_id != "PJ-01"]
         observations.extend(run_obs)

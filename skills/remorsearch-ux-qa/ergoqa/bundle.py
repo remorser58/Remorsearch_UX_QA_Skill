@@ -83,6 +83,7 @@ def to_evidence_bundle(
                 "id": run_record_id,
                 "scenario_id": pair_id,
                 "status": str(analysis.get("run_status") or "unknown"),
+                "task_success": analysis.get("run_success"),
                 "recorded_run_id": analysis["run_id"],
                 "cross_profile_evaluation": pid != owner_profile_id,
                 "coverage": [key for key, pids in analysis.get("coverage", {}).items() if pid in pids],

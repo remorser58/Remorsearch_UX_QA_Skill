@@ -16,6 +16,9 @@ BASIS_KO = {
 
 
 def _fmt_measure(measurement: dict[str, Any]) -> str:
+    if measurement.get("id") and measurement.get("checkpoint") is not None:
+        return (f"검사 {measurement['id']} · {measurement['property']} · 시점 {measurement['checkpoint']} · "
+                f"결과 {measurement['result']} · step {measurement['step_index']} · 캡처 {measurement['snapshot_id']} (값 비공개)")
     value = measurement.get("value")
     unit = measurement.get("unit", "")
     threshold = measurement.get("threshold")
@@ -66,7 +69,7 @@ def render(
         lines.append(f"- {item}")
     if limitations or unhealthy or any(a.get("limitations") for a in analyses):
         lines.append("")
-    lines += ["## 2. 실행 목록", "", "| run | 시나리오 | 기기 | 상태 | 성공 | 평가 프로필 |", "|---|---|---|---|---|---|"]
+    lines += ["## 2. 실행 목록", "", "| run | 시나리오 | 기기 | 실행 상태 | 과업 성공 | 평가 프로필 |", "|---|---|---|---|---|---|"]
     for a in analyses:
         lines.append(f"| {a['run_id']} | {a.get('scenario_id')} | {a.get('device_id')} ({a.get('orientation')}) | {a.get('run_status')} | {a.get('run_success')} | {', '.join(a['profiles_evaluated'])} |")
     lines += ["", "## 3. 시뮬레이션 프로필 (시나리오 가정)", "", "| ID | 설명 | 기기 | 표본 방식 |", "|---|---|---|---|"]

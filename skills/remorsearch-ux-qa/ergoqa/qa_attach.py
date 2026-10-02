@@ -234,9 +234,11 @@ def attach_run(
     run_id = run.get("run_id")
     if not isinstance(run_id, str) or not _RUN_ID.match(run_id):
         raise AttachError(f"run_id {run_id!r} is not a safe path segment; refusing to build receipt paths from it")
-    if run.get("status") != "completed" or run.get("success") is False:
+    observed_task_failure = any(c.get("kind") == "task_check" and c.get("result") == "fail" and c.get("passed") is False
+                                and c.get("snapshot_id") for c in (run.get("success_detail") or {}).get("criteria", []))
+    if run.get("status") != "completed" or (run.get("success") is False and not observed_task_failure):
         raise AttachError(f"run {run_id}: status {run.get('status')!r}, success {run.get('success')!r}; "
-                          "only completed runs can be attached as persona evidence")
+                          "only completed runs with success or captured task mismatch can be attached as persona evidence")
     owner_id = run.get("profile_id")
     if not owner_id or owner_id == "no-profile":
         raise AttachError(f"run {run_id} was recorded with --device and no profile: no persona executed it, so it "
@@ -303,6 +305,7 @@ def attach_run(
             "id": pair_run_id,
             "scenario_id": profile_to_scenario[pid],
             "status": run["status"],
+            "task_success": run.get("success"),
             "started_at": run["started_at"],
             "ended_at": run["ended_at"],
             "recorded_run_id": run_id,

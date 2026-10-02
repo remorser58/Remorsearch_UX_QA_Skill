@@ -122,6 +122,68 @@ selectors your page actually exposes. A completion message alone does not show
 that options, quantity, price and entered requests survived the flow; use state
 checks and the confirmation details as well.
 
+For material fields, opt into `success.task_checks`. Indices are **1-based action
+indices** (`steps[0]` is step 1); `after_step` checks the captured state after that
+action. Omit it for a fresh final capture. All declared checks must pass; a later
+restoration cannot erase an earlier mismatch. `from_step` references an authored
+`type` action's text, requires that action to have executed successfully, and
+avoids copying the expected text. Interactive `/act` uses the same step indices
+and checks; declared but unvisited checkpoints remain unevaluable.
+An interactive source action must match the authored text; changed input is
+unevaluable. Authored source redaction also applies to that interactive action.
+
+```json
+"steps": [
+  {"action":"type","target":"#request","text":"No peanuts please","redact":true},
+  {"action":"tap","target":"#submit"}
+],
+"success": {
+  "selector_visible":"#confirmed",
+  "task_checks":[
+    {"id":"request-after-error","selector":"#request","property":"value","from_step":1,"after_step":2,
+     "severity":"P1","consequence":"A required dietary request may be lost during recovery."},
+    {"id":"request-final","selector":"#confirmed-request","property":"text","from_step":1,
+     "severity":"P1","consequence":"The final request must match the entered request."},
+    {"id":"option-final","selector":"#option","property":"checked","expected":true,
+     "severity":"P2","consequence":"The selected option must survive submission."}
+  ]
+}
+```
+
+Each check has a unique 1–128 character ID, CSS selector (≤1000 characters),
+`property: value|text|checked`, exactly one of `expected` or `from_step`, and
+authored `severity: P0|P1|P2|P3` plus `consequence` (≤1000 characters; no field
+values). At most 64 checks. `expected` is a string (≤5000 characters, including
+empty) or a boolean for `checked`. Comparisons are exact: author `expected:""`
+for intentional reset/cleanup, or the expected normalized string for deliberate
+normalization. Missing, multiple, hidden or credential targets are unevaluable;
+no label or demographic inference is used. Password/hidden/credential fields,
+URL fields and value/URL attribute predicates are excluded.
+Use plain CSS IDs/classes/structure. Literal attribute predicates, CSS escapes
+and Playwright selector engines are rejected for task checks and redacted input.
+
+`type.redact:true` hides that source text in saved actions/errors and masks its
+selected region in captures. A referencing check inherits masking; a literal
+expectation can use `redact:true` itself. These are explicit regions, not a
+general privacy scrub: use owned synthetic input and declare every sensitive
+display copy. Regular snapshots still omit input values. Results keep only
+ID/selector/property/checkpoint/pass/fail/unevaluable and step/capture anchors;
+they never contain actual/expected values or value hashes. P0/P1 still need
+capture review. `TI-01` reports comparison failure only for the recorded owner;
+authored consequence/severity do not prove downstream harm.
+
+With a visible completion page and a measured mismatch, `run.json` retains
+`status:"completed"`, `success:false`, `success_basis:"measured"`, and the
+driver exits **3**. Passing checks exit **0**; unevaluable checks yield
+`success:null` unless another criterion failed. Captured completed mismatches
+can be attached as defect evidence; the bundle keeps `task_success:false`.
+Blocked/failed executions and missing captures retain their existing limits.
+The opted property and visibility are sampled around each designated capture;
+changed state is `unevaluable` with `capture_state_changed`. Only browser handles
+hold transient values, and they are disposed immediately. Checks precede later
+focus/reflow probes. Matching endpoints do not exclude a transition that returns
+to the same state during capture; rapidly changing targets need another capture.
+
 ## Analysing a run recorded without a profile
 
 Runs recorded with `--device` alone have `profile_id: "no-profile"`. Analyze the

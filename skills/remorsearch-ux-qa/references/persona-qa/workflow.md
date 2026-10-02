@@ -22,7 +22,7 @@ For every priority task, require all these rows on each device in scope:
 | Keyboard only | Whole primary task, including intermediate choices and recovery |
 | Reading order | Each intermediate screen's meaningful sequence and focus order |
 
-After **every step**, verify all prior values/choices persist correctly. Failed submit: focus at first invalid field, field marked invalid, error associated. Success means task integrity: every option/quantity/amount/note reaches final state, not a success string alone. Each row: pass/partial/fail/untested with reason; inaccessible/gated rows are gaps.
+After every step, verify prior values/choices. Author `success.task_checks` for material fields after error/coupon/address/recovery transitions and at completion (`drivers/web/README.md`). Use explicit expected reset/normalized values; `from_step` reuses an authored input, `type.redact:true` protects its recorded text. Failed submit: first-invalid focus, invalid state and error association. Success requires final options/quantities/amounts/notes to match. Each row: pass/partial/fail/untested with reason.
 
 Scenario: ID/task/goal/safe data, basis/brief condition, context/constraints/device/input/start, expected decision/integrity/risk, claim IDs and omissions. Audience rows cite audience_id/segment_id/task_id/facet and gate-supported motivations. Without an audience, choose task-changing strata: new/returning, touch/keyboard, interruption, delay, empty/stale/edge data. Do not add demographic decoration or stereotype behavior.
 
@@ -123,7 +123,7 @@ python3 scripts/ergo_qa.py attach --bundle bundle.json --runs runs/R-persona-01 
 python3 scripts/validate_bundle.py bundle.ergo.json --artifacts-root receipts/
 ```
 
-P0/P1이면 연결 명령이 필요한 `finding_id`를 출력하고 저장 전에 중단합니다. 각 캡처와 텍스트를 재검토해 정확한 ID가 있는 JSON 배열을 작성하고 `--second-pass second-passes.json`을 추가합니다. 익명 기록을 복제할 수 없으며 기존 증거는 보존합니다.
+P0/P1은 정확한 `finding_id`의 캡처·텍스트 재검토 기록을 `--second-pass`로 제출합니다. 완료된 값 불일치는 `TI-01`과 캡처로 연결하며 `task_success:false`를 보존합니다. 누락·미도달 검사는 미확인입니다. 기존 증거를 보존하고 익명 검토 기록을 복제하지 않습니다.
 
 `--device galaxy-s24` 기록은 `analyze`/`swarm --cross-profile`에서 분석용으로 평가합니다. QA 페르소나의 실행으로 연결하지 않습니다.
 

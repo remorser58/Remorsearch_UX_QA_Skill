@@ -1,6 +1,6 @@
 // Read-only DOM state for the interactive client. Serialized by Playwright;
 // this function must be self-contained and must never return sensitive values.
-export function inspectPage() {
+export function inspectPage({ redactSelectors = [] } = {}) {
   const all = [];
   const visit = (root) => {
     for (const el of root.children || []) {
@@ -14,7 +14,16 @@ export function inspectPage() {
   const interactiveRoles = new Set([...fieldRoles, 'button', 'link', 'tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'treeitem']);
   const fields = all.filter((el) => ['input', 'select', 'textarea'].includes(el.localName)
     || el.isContentEditable || fieldRoles.has(el.getAttribute('role')) || el.hasAttribute('aria-invalid') || el.hasAttribute('aria-errormessage'));
+  const opted = [];
+  const roots = [document, ...all.map((el) => el.shadowRoot).filter(Boolean)];
+  for (const root of roots) for (const selector of redactSelectors) {
+    try { opted.push(...root.querySelectorAll(selector)); } catch { /* invalid selectors never reveal values */ }
+  }
   const parent = (el) => el.parentElement || el.getRootNode().host || null;
+  const privateNode = (el) => {
+    for (let node = el; node; node = parent(node)) if (opted.includes(node)) return true;
+    return false;
+  };
   const byId = (el, id) => el.getRootNode().getElementById?.(id) || null;
   const refs = (el, attr) => (el.getAttribute(attr) || '').split(/\s+/).filter(Boolean)
     .map((id) => ({ id, node: byId(el, id) }));
@@ -85,9 +94,14 @@ export function inspectPage() {
     const hint = ['id', 'name', 'autocomplete', 'aria-label', 'placeholder', 'title'].map((attr) => el.getAttribute(attr) || '').concat(nameOf(el)).join(' ')
       .replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[._-]+/g, ' ');
     const value = rawValue(el);
-    const redacted = ['password', 'hidden', 'file'].includes(el.type) || el.hasAttribute('data-sensitive') || el.hasAttribute('data-private')
+    const redacted = privateNode(el) || ['password', 'hidden', 'file'].includes(el.type) || el.hasAttribute('data-sensitive') || el.hasAttribute('data-private')
       || sensitiveHint.test(hint) || (typeof value === 'string' && /^(?:\d[ -]?){13,19}$/.test(value.trim()));
     sensitive.set(el, redacted);
+  }
+
+  for (const el of opted) {
+    if (text(el)) secrets.add(text(el));
+    for (const attr of ('title aria-label aria-valuetext'.split(' '))) if (el.getAttribute(attr)) secrets.add(el.getAttribute(attr));
   }
   for (const el of fields) {
     for (let n = parent(el); n; n = parent(n)) {
@@ -99,7 +113,10 @@ export function inspectPage() {
     if (sensitive.get(el)) {
       const value = rawValue(el);
       if (typeof value === 'string' && value) secrets.add(value);
-      for (const option of el.selectedOptions || []) if (option.value) secrets.add(option.value);
+      for (const option of el.selectedOptions || []) {
+        if (option.value) secrets.add(option.value);
+        if (text(option)) secrets.add(text(option));
+      }
     }
   }
 
@@ -114,10 +131,10 @@ export function inspectPage() {
       ...describe(el), type: el.localName === 'input' ? el.type : null,
       required: !!el.required || el.getAttribute('aria-required') === 'true',
       value: redacted ? null : rawValue(el), redacted,
-      checked: el.localName === 'input' && ['checkbox', 'radio'].includes(el.type) ? el.checked : el.getAttribute('aria-checked'),
+      checked: redacted ? null : el.localName === 'input' && ['checkbox', 'radio'].includes(el.type) ? el.checked : el.getAttribute('aria-checked'),
       selected: el.localName === 'select' ? [...el.options].map((o, index) => ({ o, index })).filter(({ o }) => o.selected)
         .map(({ o, index }) => ({ index, value: redacted ? null : o.value, text: redacted ? null : text(o) })) : null,
-      aria_selected: el.getAttribute('aria-selected'),
+      aria_selected: redacted ? null : el.getAttribute('aria-selected'),
       invalid, native_invalid: nativeInvalid, user_invalid: el.matches(':user-invalid'), aria_invalid: ariaInvalid,
       aria_describedby: el.getAttribute('aria-describedby'), described_by: described, described_by_text: described.map((r) => r.text).filter(Boolean).join(' '),
       aria_errormessage: el.getAttribute('aria-errormessage'), error_messages: errors,
@@ -142,13 +159,13 @@ export function inspectPage() {
   // A page may echo a secret in a label, error or contenteditable region. Scrub
   // those echoes too, before anything crosses the browser/driver boundary.
   const secretList = [...secrets].sort((a, b) => b.length - a.length);
-  const scrub = (value) => {
+  const scrub = (value, key = '') => {
     if (typeof value === 'string') {
-      for (const secret of secretList) value = value.split(secret).join('[redacted]');
+      for (const secret of secretList) value = secret.length < 3 ? (value === secret ? '[redacted]' : value) : value.split(secret).join('[redacted]');
       return value.replace(/\b(?:\d[ -]?){13,19}\b/g, '[redacted]');
     }
-    if (Array.isArray(value)) return value.map(scrub);
-    if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, scrub(v)]));
+    if (Array.isArray(value)) return value.map((item) => scrub(item, key));
+    if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, scrub(v, k)]));
     return value;
   };
   return scrub(result);
