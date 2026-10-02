@@ -388,7 +388,8 @@ class PersonaExportCommand(unittest.TestCase):
         code,result=self.command("export-personas")
         self.assertEqual(code,2,result);self.assertEqual(result["issues"][0]["code"],"output_conflict")
         self.assertEqual(read_bytes(authored_path),b'{"steps":["authored"]}')
-        self.assertFalse((self.run/"persona-export.json").exists())
+        marker=read_json(self.run/"persona-export.json")
+        self.assertEqual(marker["result"],"fail")  # a failed latest export blocks intake; recovery keeps the authored file
         authored_path.unlink();self.assertEqual(self.command("export-personas")[0],0)
         stub=read_json(authored_path);stub["steps"]=[dict(action="click",selector="#approved-fixture")]
         atomic(authored_path,canonical(stub));before=read_bytes(authored_path)
@@ -413,6 +414,32 @@ class PersonaExportCommand(unittest.TestCase):
         self.assertFalse((self.run/"qa-scenarios/SC-new-condition.json").exists())
         for name in ("qa-personas.json","qa-personas.md","persona-export.json","persona.hypotheses.starter.json"):
             self.assertFalse((self.run/name).exists(),name)
+
+    def test_failed_export_marks_latest_and_blocks_intake_until_corrected_export(self):
+        self.gated();self.author_from_current_gate();self.assertEqual(self.command("export-personas")[0],0)
+        with Store(self.run) as store:
+            generation=store.state()["generation_id"];packet=store.committed("qa-personas.json")
+        hypotheses=self.run/"persona.hypotheses.json";authored_bytes=read_bytes(hypotheses)
+        atomic(hypotheses,b'{"persona file": not valid json')  # malformed authored input
+        code,result=self.command("export-personas");self.assertEqual(code,2,result)
+        self.assertEqual(result["issues"][0]["code"],"invalid_json")
+        marker=read_json(self.run/"persona-export.json")
+        self.assertEqual((marker["result"],marker["exit_code"]),("fail",2))
+        self.assertNotIn("not valid json",canonical(marker).decode())  # no raw input in the marker
+        code,result=self.command("persona-intake");self.assertEqual(code,2,result)
+        self.assertEqual(result["issues"][0]["code"],"failed_export")
+        hypotheses.unlink()  # a missing authored input is a marked failed export too
+        code,result=self.command("export-personas");self.assertEqual(code,2,result)
+        self.assertEqual(result["issues"][0]["code"],"io")
+        code,result=self.command("persona-intake");self.assertEqual(code,2,result)
+        self.assertEqual(result["issues"][0]["code"],"failed_export")
+        with Store(self.run) as store:  # the last committed snapshot and generation wait intact for recovery
+            self.assertEqual(store.state()["generation_id"],generation)
+            self.assertEqual(store.committed("qa-personas.json"),packet)
+        atomic(hypotheses,authored_bytes)  # the corrected export unblocks intake
+        code,result=self.command("export-personas");self.assertEqual(code,0,result)
+        code,result=self.command("persona-intake");self.assertEqual(code,0,result)
+        self.assertEqual(validate_bundle(read_json(result["qa_intake"]["packet"]),now=NOW),[])
 
     def test_staging_crash_never_publishes_a_partial_export(self):
         self.gated();self.author_from_current_gate()

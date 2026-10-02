@@ -1778,7 +1778,14 @@ class ReaderHygieneTests(ServerCase):
             created = Path(json.loads(out)["run"])
             self.assertEqual(code, 0)
             self.assertTrue(created.is_relative_to(state / "remorsearch-ux-qa" / "runs"))
-            self.assertNotIn("warning", json.loads(out))
+            # Hosted runners may keep the whole temp tree inside a git work tree
+            # (for example /tmp/.git or /workspace/.git); the protective warning
+            # must track the run folder's real ancestors, never the host's luck.
+            git_ancestor = any((parent / ".git").exists() for parent in created.resolve().parents)
+            if git_ancestor:
+                self.assertIn("git working tree", json.loads(out)["warning"])
+            else:
+                self.assertNotIn("warning", json.loads(out))
         with mock.patch.dict(os.environ, {}, clear=False):
             os.environ.pop("XDG_STATE_HOME", None)
             root = ledger.default_root()

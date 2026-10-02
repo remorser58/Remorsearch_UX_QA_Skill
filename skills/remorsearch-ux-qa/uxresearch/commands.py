@@ -62,8 +62,24 @@ def _persona_files(run,store,bundle,gate):
     return [str(safe_path(run.path/state["outputs"][name]["generation_path"],run.path/".engine")) for name in files]
 
 
+def _mark_failed_export(store,generation,issue):
+    """A failed latest export blocks silent intake; the committed snapshot stays for recovery."""
+    try:
+        current=store.state()
+    except EngineError:
+        return
+    if current is None or current["generation_id"]!=generation:
+        return  # a manifest that already advanced keeps its publication semantics
+    try:
+        store.failure("persona-export.json",dict(schema_version="ux-persona-export.v1",result="fail",
+                                                 exit_code=2,issues=[issue],warnings=[]))
+    except (OSError,EngineError):
+        pass
+
+
 def execute(args,run):
     with Store(run.path,args.lock_timeout) as store:
+        export_generation=None
         def validate_publish(outputs):
             from .engine import expired_sources, now_of
             from .merge import validate_policy
@@ -86,6 +102,8 @@ def execute(args,run):
                 return 0,["persona.hypotheses.starter.json"],[],[]
             if args.command=="export-personas":
                 from .engine import now_of
+                prior=store.state()
+                export_generation=prior["generation_id"] if prior else None
                 bundle,gate=fresh(run,store,args.bundle,args.gate)
                 from . import personas
                 doc=read_json(args.hypotheses)
@@ -130,10 +148,14 @@ def execute(args,run):
             error=EngineError("io_or_integrity", "Required input is missing, malformed or unsafe.")
             if args.command in {"merge", "gate"}:
                 store.failure("gate_failed.json", dict(result="fail", exit_code=2, issues=[error.issue]))
+            if args.command=="export-personas":
+                _mark_failed_export(store,export_generation,error.issue)
             raise error from exc
         except EngineError as exc:
             if args.command=="report-check" and exc.exit_code!=3:
                 store.failure("report_check.json",dict(schema_version="ux-report-check.v1",result="fail",exit_code=exc.exit_code,violations=[exc.issue],warnings=[],citations=[],mapping_checks=[],supported_coverage=None,bundle_id=None,gate_input_sha256=None,report_sha256=None,mapping_sha256=None))
             if exc.exit_code!=3 and args.command in {"merge","gate"}:
                 store.failure("gate_failed.json",dict(result="fail",exit_code=exc.exit_code,issues=[exc.issue]))
+            if exc.exit_code!=3 and args.command=="export-personas":
+                _mark_failed_export(store,export_generation,exc.issue)
             raise

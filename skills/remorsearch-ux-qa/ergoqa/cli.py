@@ -40,8 +40,33 @@ def _load_scenarios(paths: list[str]) -> dict[str, dict[str, Any]]:
         for file in files:
             doc = load_json(file)
             if isinstance(doc, dict) and doc.get("schema_version") == "ergo-scenario.v1":
-                scenarios[doc["scenario_id"]] = doc
+                scenario_id = doc["scenario_id"]
+                if scenario_id in scenarios and scenarios[scenario_id] != doc:
+                    raise ValueError(f"conflicting duplicate scenario id {scenario_id!r} in {file}")
+                scenarios[scenario_id] = doc
+    if paths and not scenarios:
+        # Explicit --scenario paths that yield nothing valid must not silently
+        # degrade into the omitted---scenario mode.
+        raise ValueError(f"--scenario produced no valid ergo-scenario.v1 documents from {paths}; "
+                         "pass matching scenario files (or a directory containing them) or omit --scenario")
     return scenarios
+
+
+def _bound_scenario(scenarios: dict[str, dict[str, Any]], run_doc: dict[str, Any], run_dir: Path) -> dict[str, Any] | None:
+    """Explicitly supplied scenarios must bind every run's declared scenario id.
+
+    Omitting --scenario stays a valid mode (runs are analyzed without scenario
+    context); a silent None from a missing or mismatched binding is not.
+    """
+    if not scenarios:
+        return None
+    scenario_id = run_doc.get("scenario_id")
+    scenario = scenarios.get(scenario_id)
+    if scenario is None:
+        run_id = run_doc.get("run_id") or run_dir.name
+        raise ValueError(f"run {run_id}: scenario {scenario_id!r} is not among the provided --scenario files; "
+                         "pass the matching scenario file or omit --scenario")
+    return scenario
 
 
 def cmd_devices(args: argparse.Namespace) -> int:
@@ -138,8 +163,8 @@ def _analyses(args: argparse.Namespace, profiles: list[dict[str, Any]], scenario
     out = []
     for run_dir in run_dirs:
         run_doc = load_json(run_dir / "run.json")
-        scenario = scenarios.get(run_doc.get("scenario_id"))
-        out.append(analyze.analyze_run(run_dir, profiles, scenario, cross_profile=args.cross_profile, gaze_enabled=not args.no_gaze))
+        out.append(analyze.analyze_run(run_dir, profiles, _bound_scenario(scenarios, run_doc, run_dir),
+                                       cross_profile=args.cross_profile, gaze_enabled=not args.no_gaze))
     return out
 
 
@@ -320,8 +345,9 @@ def cmd_attach(args: argparse.Namespace) -> int:
             raise ValueError("--receipts-dir and receipt artifacts must live outside every source run directory")
     attached = 0
     for run_dir in run_dirs:
+        run_doc = load_json(run_dir / "run.json")
         bundle_doc = attach_run(bundle_doc, run_dir, profiles, binding, receipts_root=receipts,
-                                scenario=scenarios.get(load_json(run_dir / "run.json").get("scenario_id")),
+                                scenario=_bound_scenario(scenarios, run_doc, run_dir),
                                 cross_profile=args.cross_profile, gaze_enabled=not args.no_gaze, second_pass=second_pass)
         attached += 1
     # Exclusive creation also protects against an output appearing after preflight.
