@@ -261,6 +261,10 @@ python3 scripts/check_release.py --output dist/release-check
 - The ergonomics mode's thumb-reach model is uncalibrated, and its benchmark suites
   are small and authored by agents. Treat its findings as screening, not
   certification. See `docs/validation/`.
+  The [recorded held-out evaluation](docs/validation/experiments/heldout-2-results.md)
+  missed its confirmatory noise limit (1.75 P0–P2 units per clean scenario;
+  limit 0.35) and condition-identification target. Later fixes do not establish
+  that those original targets now pass; review findings before acting on them.
 - Only Chromium device emulation is exercised by the web driver; no real iOS
   Safari, native apps or real devices.
 
