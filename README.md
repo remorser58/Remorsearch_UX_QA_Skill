@@ -1,182 +1,299 @@
-# UX Research QA Skills
+# Remorsearch UX QA
 
-Two Codex skills for evidence-driven UX research, design proposal, and browser-based UX QA.
+English | [한국어](README.ko.md) | [PRD · 제품 요구사항](PRD.md)
 
-## Skills
+Remorsearch (*ree-mor-search*, 리모서치) UX QA helps developers improve the UX of
+an existing product in Claude Code or Codex. Provide a URL or repository and ask
+for improvement. The host agent inspects the product and relevant developer
+decisions, discovers questions through baseline QA, researches related user
+experiences, applies scoped reversible fixes and replays the affected tasks.
+A prepared problem list, persona set or research brief is optional.
 
-### `/aside-community-ux-research`
+## What it does
 
-Aside-first research across public communities, comments, reviews, official sources, and comparable products. It separates firsthand evidence from inference, traces root causes and outcomes, and turns findings into Figma-ready flows and validation plans.
+Four components support that workflow; you do not need to select modes or pass
+artifacts between them. A research-only or review-only request keeps its scope.
 
-File: [`skills/aside-community-ux-research/SKILL.md`](skills/aside-community-ux-research/SKILL.md)
+| Component | What it does | Needs |
+| --- | --- | --- |
+| **research** | Finds task-specific experiences, workarounds and counterexamples in communities, comments, reviews and official sources; preserves source context and gaps. | A permitted source route. YouTube comments use your own YouTube Data API key (`REMORSEARCH_YOUTUBE_API_KEY`). |
+| **persona-qa** | Exercises completion, input preservation, errors/recovery, keyboard and accessibility on the real product with synthetic test conditions. | An accessible product and safe fixtures; the bundled web driver needs Node.js 22 and Playwright. |
+| **ergonomics** *(experimental)* | Screens reach, touch, perception, timing and layout with simulated profiles. | Relevant scenarios; model results remain separate from real-device and human evidence. |
+| **loop** | Records bounded fixes, current-build replay, regression and preserved-intent checks. | Host browser/Figma tools and actual receipts. Existing improvement authority is recorded explicitly for scoped local patches. |
 
-### `/persona-driven-ux-qa`
+The host-agent instructions implement this integrated entry path. The CLI validates
+imported evidence and applies bounded local text patches; the host performs
+browser actions, Figma work and builds. Whole-product execution from request to
+verified improvement still needs a separate live acceptance run. Existing fixture
+and component tests do not establish that result.
 
-UX QA that combines Korean synthetic persona scenarios, Aside community signals, real browser reproduction, Figma comparison, causal analysis, and prioritized remediation with P0–P3 severity.
+## Install
 
-File: [`skills/persona-driven-ux-qa/SKILL.md`](skills/persona-driven-ux-qa/SKILL.md)
+Install one folder into your skills directory. It includes the original
+insane-search toolkit as reference material for Remorsearch's research stage;
+users do not install a separate search skill. The Python tools need Python 3.10+
+on macOS, Linux or WSL and use the standard library and POSIX file locks.
 
-## Design boundary
-
-- Synthetic personas generate plausible test situations. They do not represent measured user prevalence.
-- Community findings generate hypotheses. Product behavior is confirmed through the real surface or a reliable product artifact.
-- Figma remains the source of truth for screen composition, interaction states, navigation, and design intent.
-- Research and QA stay read-only unless a separate action is explicitly authorized.
-- Side accent bars, attached side tabs, and decorative rails are excluded from the design language.
-
-## Evidence bundle contract
-
-Research and QA runs can exchange a machine-readable evidence bundle. The bundle keeps source, evidence, claim, persona, scenario, run, observation, finding, proposal, and Figma records separately linked by stable IDs.
-
-- `permissions` records requested, granted, and blocked capabilities: `read_only`, `design_write`, `test_data_write`, and `code_write`.
-- `epistemic_status` is one of `observed`, `inferred`, or `unknown`. Inference does not become verified by repetition.
-- A synthetic persona can create a scenario. It cannot directly support a claim about real-user preference or prevalence.
-- `figma` records keep `file_key`, `branch_key`, `baseline_version`, `node_ids`, `read_at`, and `readback_artifact_ref` when comparison is claimed.
-- Channel sources keep access basis, access method, public scope, and retention or withdrawal status.
-
-Validate a bundle from the repository root:
+The current candidate is on `codex/release-candidate-20261002`; use that branch
+until the skill is merged into `main`.
 
 ```sh
-python3 scripts/validate_bundle.py tests/fixtures/valid-bundle.json
+git clone --branch codex/release-candidate-20261002 https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
+# Claude Code (personal); use .claude/skills/ inside a project to share it with a team
+mkdir -p ~/.claude/skills
+cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
+# Codex
+mkdir -p ~/.codex/skills
+cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.codex/skills/
+```
+
+Copying the folder completes the skill installation. Maintainer-only packaging
+and integrity checks are documented in [build and release checks](docs/release.md).
+
+The folder contains the Python tools, JSON schemas, demo fixtures, live web
+driver, and original search instructions with their references and provenance.
+
+The live web driver (persona-qa and ergonomics on real web pages) also needs Node.js
+22 and Playwright. The commands below select the Codex installation. For Claude
+Code, set `REMORSEARCH_SKILL_DIR` to `~/.claude/skills/remorsearch-ux-qa`.
+
+```sh
+REMORSEARCH_SKILL_DIR="$HOME/.codex/skills/remorsearch-ux-qa"
+cd "$REMORSEARCH_SKILL_DIR/drivers/web"
+npm ci && npx playwright install chromium
+```
+
+Use Node.js 22. With the pinned Playwright 1.56.1, `npx playwright install` hangs after the
+download on Node.js 24.16 or later and on Node.js 26
+([microsoft/playwright#40724](https://github.com/microsoft/playwright/issues/40724);
+Playwright 1.60 works).
+
+## Use
+
+Ask in plain words, or call it by name:
+
+```text
+/remorsearch-ux-qa Improve our app UX. URL: https://app.example.test or repository: /path/to/product
+/remorsearch-ux-qa 우리 앱 UX 개선해줘. URL 또는 저장소는 여기야.
+/remorsearch-ux-qa Find out why people abandon our checkout, from reviews and community posts.
+/remorsearch-ux-qa 결제 화면을 처음 쓰는 사용자 페르소나로 QA해 줘. Figma 파일은 이거야.
+/remorsearch-ux-qa Check one-handed and colour-blind usability of the signup flow on a Galaxy S24.
+/remorsearch-ux-qa 간편결제 실패 경험을 한국어 커뮤니티와 앱 리뷰에서 근거 붙여서 정리해 줘.
+```
+
+The agent derives tasks, questions and scenarios from the product, inspects
+relevant project documents and accessible intent memory, and preserves confirmed
+decisions through replay. It asks only for material missing access or unresolved
+decisions and continues unaffected work. Subagents are optional; existing host
+settings apply without a mandatory model-selection setup.
+
+Default research candidates are 당근 (Karrot), 디시인사이드 (DC Inside), 유튜브 댓글
+(YouTube comments), X, 인스타그램 (Instagram) and Threads(쓰레드). The agent selects
+those relevant to observed tasks; availability and collection are not guaranteed.
+After URL discovery, the bundled insane-search methods remain subject to the
+existing access/evidence rules. See the [operational checklist](skills/remorsearch-ux-qa/references/loop/product-improvement.md)
+for the product-to-replay workflow and existing plan/bundle/loop commands.
+
+## Evidence rules
+
+- Every statement is `observed`, `inferred` or `unknown`; repetition does not make
+  inference a fact.
+- Synthetic personas and simulated profiles create test situations. They never
+  show real-user preference, prevalence or discomfort.
+- Community signals are hypotheses until the behaviour is confirmed on the real
+  product.
+- Research/review requests remain read-only. An improvement request authorizes
+  ordinary reversible fixes within its scope; the agent records that existing
+  authority in CLI grants. Deployment, publication and real account changes need
+  their own authorization.
+- Screen composition and UX changes are created in Figma first, with actual file,
+  node, version and readback records. Missing access blocks the affected change
+  while feasible investigation and QA continue.
+- Complete improvement requires current-build replay, adjacent regression and
+  preserved-intent checks. If scoped QA finds no reproducible issue, inspection
+  can finish without changes; missing required evidence stays incomplete.
+
+Research and QA runs can exchange a machine-readable **evidence bundle**
+(`schemas/ux-evidence-bundle.v1.schema.json`). The offline validator checks IDs,
+cross-references, permission records, synthetic-persona misuse, unsupported
+verified findings and retention dates that have passed. The skill ships a small
+valid bundle to try it on:
+
+```sh
+python3 ~/.claude/skills/remorsearch-ux-qa/scripts/validate_bundle.py bundle.json
+python3 ~/.claude/skills/remorsearch-ux-qa/scripts/validate_bundle.py ~/.claude/skills/remorsearch-ux-qa/examples/bundle/minimal.json
+```
+
+## Reading public pages
+
+Research and persona-qa read what anyone can read without an account.
+
+- **Tools.** The skill uses the best browser tool your agent host has: first an
+  agentic tool that drives your own browser (Aside, Claude in Chrome, the Claude
+  app's built-in browser), then an automation browser (Playwright MCP, Chrome
+  DevTools MCP, or the bundled page reader `read_page.mjs`; the bundled live web
+  driver tests your product, it does not read community pages), then its own
+  reader, and last plain web search and fetch, whose results are leads only. It
+  records which tool read each source.
+- **The reader** (`scripts/ux_research.py`) climbs a short ladder only as far as
+  needed: an official feed or API, one honestly identified request, the site's
+  own mobile or feed version, then a real-browser render.
+- **Stops.** It stops at logins, paywalls, member-only groups, age checks, human
+  checks such as CAPTCHAs, bot blocks and "checking your browser" pages (it
+  never waits one out), robots.txt and AI or TDM opt-outs, rate limits and
+  removed posts, and reports each as a coverage gap. A check, a block or a rate
+  limit stops the whole site for the run, and no browser render follows. It also
+  stops where a
+  platform's published terms or an official notice restrict automated collection
+  or AI use (`terms_restricted`), and it honours robots.txt rules for AI agents
+  that fetch pages on a user's behalf. It never reads search results pages. It
+  never disguises itself, and it reads one page at a time per host, at least 8
+  seconds apart by default, within a budget.
+- **Privacy.** Quotes are short, authors become salted keys, and temporary page
+  text is kept outside your project and deleted when the run closes. Phone
+  numbers, e-mail addresses, ID numbers, card and account numbers and IP addresses
+  are removed before the agent sees the text. Signed-in reading happens only in
+  communities you authorise for the run, and keeps summaries only.
+
+Details: [`public-page-access.md`](skills/remorsearch-ux-qa/references/research/public-page-access.md).
+
+## Korean research
+
+For a Korean product, Korean-speaking users or a report in Korean, research mode
+also follows the Korean pack, which starts at
+[`overview.md`](skills/remorsearch-ux-qa/references/research/korea/overview.md).
+persona-qa adds the accessibility notes in
+[`kwcag-2.2.md`](skills/remorsearch-ux-qa/references/persona-qa/kwcag-2.2.md). The
+pack is written in Korean and adds:
+
+- a map of 27 Korean channels: how public each is, the legitimate way to read it,
+  the stops to expect and its terms status;
+- Korean query craft and user-language reading (초성체, sarcasm, register);
+- disclosure and review-reward markers, and the grading rules that follow from them;
+- provenance cards and population frames for Korean statistics;
+- a legal checklist (not legal advice) and a report template in Korean;
+- KWCAG 2.2 and WCAG 2.2 accessibility results, reported apart.
+
+**Terms stops.** Restricted hosts and their short links stop before any request.
+Evidence status (`reported` or `confirmed`) is separate from `lift_requires`:
+`never` prohibits a page lift; `written_permission` needs your current terms
+check and applicable prior written permission; `terms_check` needs your current
+check. Every covering entry must be lifted separately, with at most 10 documents
+per entry across its hosts. Open-run commands revalidate the 365-day limit and
+`effective_from`; older runs must restart. An agent never records a user's check.
+
+YouTube pages, Meta, TikTok, Clien and App Store pages/feeds use `never`.
+DC Inside, Naver, Coupang, X, Daangn and Reddit require written permission; the
+Naver Cafe notice has its own terms URL and needs a separate current user check
+and applicable prior written permission. YouTube keeps its
+official-only Data API route. HN pages use `never`, and its official-only API
+reports `official_route_unavailable` until an adapter exists. X oEmbed is removed
+after an unauthenticated HTML response on 2026-09-30; no retirement notice was
+found. Own-app App Store Connect exports remain `team_provided`.
+See [the entries and checks](skills/remorsearch-ux-qa/references/research/public-page-access.md#171-entries).
+
+**YouTube comments** come only through the YouTube Data API, with your own key in
+the environment variable `REMORSEARCH_YOUTUBE_API_KEY` (`YOUTUBE_API_KEY` is
+accepted as an alias). Keys are read from environment variables only, never from a
+file. A missing key is a coverage gap and a question to you, never a reason to read
+the page another way. As the key holder you follow YouTube's API terms and
+developer policies. [Developer Policies III.E.4.d](https://developers.google.com/youtube/terms/developer-policies), read on 2026-09-30,
+requires stored Non-Authorized Data to be deleted or refreshed after 30 calendar days.
+The reader stamps each API item with `retention_until`, 30 days
+after the fetch, and deletes its own page text when the run closes; you must delete
+or re-read each item kept in bundles or reports by its `retention_until`
+(`validate_bundle.py` reports one that is past it), and no bundle items are deleted
+automatically yet.
+
+**Plain limits.** Most Naver posts cannot be read by the agent. The automation
+restrictions in [Naver’s terms](https://policy.naver.com/rules/service.html) and the
+[cafe notice dated 2026-08-25](https://notice.naver.com/notices/cafe/33743) were read from the primary pages on 2026-10-01.
+2026-08-31 was the press date. Each entry requires its own user check and applicable
+prior written permission under `lift_requires: written_permission`. Naver and Kakao
+search APIs stay off until the owner reads their current terms. Coverage gaps are
+filled with team data, other channel families, surveys and interviews. Directly read
+facts are marked 관찰됨; facts not reached in the primary source remain 미확인(...).
+`verified_at` stays null until a person reads the primary page.
+
+## Repository layout
+
+```text
+skills/remorsearch-ux-qa/    the installable skill (copy this folder)
+  SKILL.md                   entry point: modes, shared rules, tools
+  references/                mode workflows and reference material
+    research/korea/          Korean research pack (in Korean): platform map, query craft, markers, statistics, legal checklist, report template
+    persona-qa/kwcag-2.2.md  KWCAG 2.2 and WCAG 2.2 notes for Korean products (in Korean)
+  scripts/                   CLIs: validate_bundle, ux_loop, ux_research, ergo_qa, benchmarks
+  uxloop/ uxresearch/        Python packages behind the loop CLI and the public-page reader
+  ergoqa/ schemas/           ergonomics package and the JSON schemas used by the CLIs
+  drivers/web/               live Playwright driver (Node.js)
+  examples/loop/             synthetic demo fixture for the loop CLI
+tests/                       unit tests and fixtures
+benchmarks/                  blind benchmark suites with answer keys
+docs/                        design notes, human-factors research, validation records
+README.md, README.ko.md      this page in English and in Korean
+```
+
+## Development
+
+From a repository checkout:
+
+```sh
 python3 -m unittest discover -s tests -p 'test_*.py'
+python3 skills/remorsearch-ux-qa/scripts/smoke_loop.py
+(cd skills/remorsearch-ux-qa/drivers/web && npm install && node selftest.mjs)
+python3 skills/remorsearch-ux-qa/scripts/ergo_bench.py --suite benchmarks/heldout-mixed --out .ergo-bench/heldout
 ```
 
-The validator checks structural IDs, cross-references, permission boundaries, synthetic-persona misuse, unsupported verified findings, withdrawn sources, bounded persona provenance, and Figma version conflicts. It does not prove that an artifact is authentic or that a source sample is representative.
+The loop CLI's full reference, including resume, exit codes and trust limits, is
+in [`references/loop/cli.md`](skills/remorsearch-ux-qa/references/loop/cli.md).
 
-## Installation
+The tests never reach the network. The reader tests serve their pages from a local
+server on 127.0.0.1.
 
-Copy either skill directory into `~/.codex/skills/` or `~/.claude/skills/`.
-
-The skill directories include their own evidence-bundle reference. The repository-level `schemas/`, `scripts/`, and `tests/` directories provide optional offline validation for teams that keep research and QA artifacts together.
-
-## One-entry improvement loop
-
-The optional `ux-improvement-loop` skill and `scripts/ux_loop.py` compose the two
-skills without merging their ownership. The CLI is a foreground, receipt-driven
-state machine: it validates research intake, plans P0–P3 findings, gates browser
-and visual evidence, applies explicitly authorized **local text patches**,
-requires same-scenario regression replay, and persists an evidence-backed stop
-report. It does not launch agents, browsers, Figma, Aside, builds or deployments.
-Missing live receipts stop as `blocked`; they are never replaced by fixture proof.
-
-Use Python 3.10+ on Linux or macOS from the repository root. No third-party Python
-packages, Node packages, database, Git executable at runtime, or network are
-required for offline validation. This implementation was tested on Python 3.13.5
-on Linux; macOS and other Python versions have not been executed here. Keep the
-repository-level `uxloop/`, `schemas/`, and `scripts/` together for the CLI; this is
-not a published pip package. Each original skill still installs independently.
-
-### One command with an actual, isolated example patch
+Run the complete package check with Python 3.10+ and the pinned web
+driver dependencies installed. The report records test results and verifies the
+extracted ZIP from another working directory. See [release checks](docs/release.md).
 
 ```sh
-python3 scripts/ux_loop.py demo --output .ux-loop/demo \
-  --grant code_write --actor local-supervisor \
-  --reason 'Approve the reviewed patch to this disposable fixture site only'
+python3 scripts/check_release.py --output dist/release-check
 ```
 
-The command creates `.ux-loop/demo/site/index.html`, applies the provided label
-patch, and runs all offline gates. The bundled screenshots, Figma readback,
-research, browser telemetry and comparisons are **authored synthetic test
-fixtures**, not live observations. Expected result: `status: complete`,
-`decision: fixture_only_pass_not_product_verification`, `product_complete: false`.
-The initial sample copy is local demo setup; no accounts or product data are
-created. Existing sample source is never reset on resume.
+## Limits
 
-Without `--grant code_write`, the same command stops with exit 3 at the permission
-gate and leaves the original sample label unchanged. Provider-supplied v1
-`permissions.granted` fields are historical evidence, not permission to operate.
-Only the supervisor's explicit CLI grants authorize new actions for this goal.
+- Live browser research (Aside or another agentic browser), Figma and browser
+  collection for the loop mode are provided by you or your agent host; the loop
+  CLI imports their receipts and never launches them.
+- The reader honours robots.txt and AI or TDM opt-outs and stops at bot blocks
+  and browser checks, so some sites end up as coverage gaps. Renders never click, so long comment threads and "more reviews"
+  lists are only partly read.
+- Many Korean platforms restrict automated collection, so DC Inside, Naver and
+  Coupang end as coverage gaps unless you record a terms check with their written
+  permission, and YouTube is read
+  only through its API with your key. The Korean pack is not legal advice.
+- The ergonomics mode's thumb-reach model is uncalibrated, and its benchmark suites
+  are small and authored by agents. Treat its findings as screening, not
+  certification. See `docs/validation/`.
+  The [recorded held-out evaluation](docs/validation/experiments/heldout-2-results.md)
+  missed its confirmatory noise limit (1.75 P0–P2 units per clean scenario;
+  limit 0.35) and condition-identification target. Later fixes do not establish
+  that those original targets now pass; review findings before acting on them.
+- Only Chromium device emulation is exercised by the web driver; no real iOS
+  Safari, native apps or real devices.
 
-### Persist, interrupt, and resume
+## License
 
-Use a new output directory to see the interruption rather than reopen a completed
-demo:
+MIT, see [`LICENSE`](LICENSE). Third-party material and references are listed in
+[`THIRD_PARTY_NOTICES.md`](skills/remorsearch-ux-qa/THIRD_PARTY_NOTICES.md).
 
-```sh
-python3 scripts/ux_loop.py demo --output .ux-loop/resume-demo \
-  --grant code_write --actor local-supervisor \
-  --reason 'Approve only the isolated fixture patch' --pause-after browser
-# Expected exit 6: checkpoint exists; the patch has not been applied.
-python3 scripts/ux_loop.py resume \
-  --checkpoint .ux-loop/resume-demo/checkpoint.json \
-  --report .ux-loop/resume-demo/report.json
-# Expected exit 0: same goal/run IDs and operational grant; no re-grant needed.
-```
-
-`--pause-after fix` demonstrates a patch that is applied but **not accepted**.
-`--max-steps 1` yields a durable interruption after one gate. `--revoke code_write
---actor NAME --reason TEXT` removes future write permission, without pretending
-that a previous authorized change never happened. All permission changes are
-recorded. Checkpoints and the scoped product workspace are locked separately;
-concurrent cooperating writers are blocked.
-
-### Product evidence intake
-
-First prepare a `ux-loop.v1` JSON packet following
-[`docs/provider-contract.md`](docs/provider-contract.md). A live packet must
-contain actual, versioned provider receipts; do not relabel the demo as live.
-The complete annotated example is [`examples/loop/packet.json`](examples/loop/packet.json).
-
-```sh
-python3 scripts/ux_loop.py validate /path/to/packet.json \
-  --evidence-root /path/to/evidence
-python3 scripts/ux_loop.py run /path/to/packet.json \
-  --workspace /path/to/product-checkout --evidence-root /path/to/evidence \
-  --checkpoint /path/to/product-checkout/.ux-loop/goal.json
-# Default read-only. To approve reviewed, scoped patches explicitly:
-python3 scripts/ux_loop.py resume \
-  --checkpoint /path/to/product-checkout/.ux-loop/goal.json \
-  --grant code_write --actor APPROVING_OPERATOR --reason 'Approved goal and patch scope'
-```
-
-A provider can later append a replay to a blocked checkpoint with `resume --input
-/path/to/extended-packet.json`. Old arrays must remain identical prefixes, and the
-goal, scenario matrix, mode, privacy policy and historical permission record are
-immutable. A failed/unknown attempt is not automatically retried: append a new
-numbered round and new evidence/run/artifact IDs, then explicitly use `--retry`.
-Maximum iterations are 1–10, chosen in the original goal. Old failed receipts
-remain visible. A changed goal, scenario, Figma baseline or required evidence
-identity requires a new goal/checkpoint rather than overwriting history.
-
-Exit codes: **0** completed (read `mode` and `product_complete`); **1** invalid
-packet in `validate`; **2** malformed input/CLI/integrity error; **3** blocked;
-**4** unknown; **5** failed; **6** interrupted; **7** iteration limit. `validate`
-checks the input graph and optionally artifact hashes; it explicitly does **not**
-assess goal completion. A valid failed/blocked receipt is still valid input.
-
-### Validation and design trade-offs
-
-```sh
-python3 scripts/validate_bundle.py tests/fixtures/valid-bundle.json
-python3 scripts/ux_loop.py validate examples/loop/packet.json --evidence-root examples/loop
-python3 -m unittest discover -s tests -p 'test_*.py' -v
-python3 scripts/smoke_loop.py
-```
-
-The original v1 schema and both skill directories are retained. The v1 validator
-now also rejects malformed categorical/reference field types, duplicate IDs
-across record groups, and purported verified findings from uncompleted runs. The
-new strict envelope is additive, not a v1 migration requirement. Standalone v1
-supports bounded excerpts under its original rules; composition intake is
-stricter and requires removing raw/excerpt content and retaining summaries.
-
-The implementation intentionally imports browser/Figma/comparison receipts rather
-than adding a privileged autonomous runner. Actual Aside, browser execution,
-Figma reads/writes, test-data setup/cleanup, pixel comparison, accessibility
-scanners, builds, deployment and signed provider authentication are **not
-implemented or exercised** here. External operators/providers must perform and
-attest those actions. Explicit grants do not turn an absent integration into a
-success. `design_write` and `test_data_write` fix requests therefore remain blocked
-even after authorization; authorized test-data scenario receipts can be imported.
-
-Content hashes bind the declared `code_paths`, not every file in the product or a
-remote deployed build. Include every relevant source/configuration path and
-use an external provider that binds its running build to that exact scope. There
-is no broad shell-command runner, automatic deployment, UX aggregate score, raw
-community archive, or implicit claim of WCAG conformance. Figma-first and the ban
-on side accent bars/side-tab cards remain hard gates. Community signals and
-synthetic personas cannot establish population prevalence or user preference.
-
-See [architecture](docs/architecture.md), [provider contract](docs/provider-contract.md),
-[OMO inspection and provenance](docs/omo-reference-review.md), and
-[implementation/verification report](IMPLEMENTATION_REPORT.md) for exact boundaries.
+Credits: the public-page reader and the research gate were designed after studying
+fivetaku's [insane-search](https://github.com/fivetaku/insane-search) and
+[insane-research](https://github.com/fivetaku/insane-research) (both MIT). The original insane-search toolkit is bundled as reference material and invoked
+during research acquisition. Its bytes, provenance and upstream license are
+preserved. The gate draws ideas from insane-research; none of its code or text is included. The Korean pack and this README's bilingual layout also draw
+ideas from [K-skill](https://github.com/NomaDamas/k-skill) (MIT), DaleSeo's
+[korean-skills](https://github.com/DaleSeo/korean-skills) (MIT),
+[SoDam-Persona-Codex](https://github.com/sodam-ai/SoDam-Persona-Codex) (Apache-2.0)
+and fivetaku's [gptaku_plugins](https://github.com/fivetaku/gptaku_plugins) (MIT),
+again ideas only. Platform names are descriptive; there is no affiliation with
+any of them.
