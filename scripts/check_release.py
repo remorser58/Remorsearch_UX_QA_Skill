@@ -89,6 +89,8 @@ def main(argv=None):
                                              "--verify", extracted / SKILL_NAME]):
                 extracted_skill = extracted / SKILL_NAME
                 launcher = extracted_skill / "scripts/remorsearch.py"
+                check("extracted-runtime-discovery",
+                      [python, extracted_skill / "scripts/find_runtime.py"], cwd=output)
                 check("extracted-research-help", [python, launcher, "research", "--help"], cwd=output)
                 check("extracted-search-source", [python, launcher, "ref", SOURCE_COPY,
                                                   "phase-0-특수-엔드포인트-인덱스"], cwd=output)
