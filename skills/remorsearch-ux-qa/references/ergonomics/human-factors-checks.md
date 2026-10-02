@@ -101,10 +101,23 @@ gaze-visual-attention.md.
 | ID | Basis | Rule | Severity |
 | --- | --- | --- | --- |
 | PC-01 | measured | WCAG 1.4.3: 4.5:1, or 3:1 for ≥ 24 px / ≥ 18.66 px bold (KWCAG 2.2 5.4.3 expansion exception is assessed separately), over the whole rendered page. Disabled controls exempt. | < 3:1 or primary/critical → P1, else P2 |
-| PC-02 | measured | WCAG 1.4.11 for components identified by their boundary: native form controls, switches and sliders (their track or thumb is the state indicator, even with a label), and unlabelled custom controls; border vs the layer below, or fill vs container ≥ 3:1. Icon-only buttons pass when the glyph has ≥ 3:1. Text buttons and text-labelled custom radio/checkbox cards are exempt (the text identifies them; 1.4.11 then concerns the state indicator). | P2 |
-| PC-03 | model | Colour-only states: within same-shaped groups, each channel (fill, border, text) that splits into clearly different colours (ΔE00 ≥ 20) is treated as a state code; different labels (times, names) are not a state cue, explicit state words (including 입금/출금, 승인/취소) and signed amounts (+/−) are. After Machado per-severity simulation, ΔE00 < 5 confusable, 5–10 marginal; exempt when the states differ by ≥ 3:1 luminance (G183). Tritan simulation is low confidence. | < 5 → P2; 5–10 → P3, but P2 when the colour encodes a status, warning or error |
+| PC-02 | measured | WCAG 1.4.11: rendered identifying boundary, glyph or state indicator ≥ 3:1 against its known adjacent layer. Web captures use solid CSS parts and SVG fill/stroke; unused CSS foreground cannot stand in for a glyph. Switch/slider track and thumb nodes are checked separately from the label and each other. Text-labelled custom radio/checkbox cards are exempt from outline contrast; a rendered state indicator is still checked. Inactive controls are exempt. | P2 |
+| PC-03 | model | Colour-only states: within same-shaped groups, corresponding rendered CSS/SVG paint channels that differ clearly (ΔE00 ≥ 20) are treated as candidate state codes. Different SVG geometry supplies another cue; visible state words (including 입금/출금, 승인/취소), check/cross glyphs and signed amounts supply redundancy. ARIA-only names do not supply a visible cue. After Machado per-severity simulation, ΔE00 < 5 confusable, 5–10 marginal; exempt when the states differ by ≥ 3:1 luminance (G183). Tritan simulation is low confidence. | < 5 → P2; 5–10 → P3, but P2 when the colour encodes a status, warning or error |
 | PC-04 | model | Font-size visual angle at the profile's viewing distance: < 16′ (ISO 9241-303 minimum) → P2 (P1 for critical messages), all text; < Hangul critical print size (24.6′ young, 31.2′ 60s+/presbyopic; snippet-level, metric unconfirmed) → P3 for running Hangul prose only (≥ 12 Hangul syllables; not buttons, links, headings or table cells). Only elements that own their text are measured. The older-adult value is not combined with a longer viewing distance. | as rule |
 | PC-05 (hypothesis) | model | Reported as a hypothesis (no unique detection; judges split). Bright-sun profile: primary, status, error and critical text below 7:1 (one ambient model: 2000 nits, 50 klx, ρ 0.02 ≈ WCAG 7.07). | P3 |
+
+Web `paint.source = dom-solid-v1` is a bounded DOM measurement: at most 64
+visited nodes and 16 paint channels per extracted element. It owns textless
+child indicator parts, skips nested controls and fully covered/clipped parts,
+and composites supported alpha over known solid layers. SVG shape/group CSS
+box backgrounds are ignored because they do not paint those shapes. Partial
+occlusion/clipping, gradients/media backdrops, pseudo-elements, effects, complex
+SVG and browser-native checkbox/radio/select paint remain explicit gaps in the
+report; they produce no PC-02/PC-03 verdict. Authored CSS boundaries on native
+text inputs remain measurable. Legacy captures without paint metadata retain
+their boundary checks; a foreground glyph requires visible glyph text.
+Colour-only grouping and shape correspondence are screening heuristics, not a
+WCAG certification or a calibrated prediction of an individual's perception.
 
 Korean CVD prevalence: men 5.9 % (1989) / 6.5 % (KNHANES 2013, 19–49), women
 0.44 % / 1.1 %; deutan ≈ 6× protan [snippet]. KRDS body text ≥ 16 px (17 px

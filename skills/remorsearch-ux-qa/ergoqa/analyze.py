@@ -277,6 +277,11 @@ def analyze_run(
     ]
     health, health_notes = run_health(run, snapshots, scenario)
     limitations += health_notes
+    limitations += sorted({
+        f"{run['run_id']} {snap['snapshot_id']} {element.get('selector') or element['id']}: PC-02/PC-03 paint unverified ({', '.join(element['paint']['gaps'])})"
+        for snap in snapshots for element in snap.get("elements", [])
+        if element.get("enabled", True) and element.get("paint", {}).get("gaps")
+    })
     return {
         "health": health,
         "limitations": limitations,

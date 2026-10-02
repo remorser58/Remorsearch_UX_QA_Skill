@@ -229,8 +229,10 @@ class RuleFixes(unittest.TestCase):
 
     def test_text_labelled_custom_radio_is_exempt_from_boundary_contrast(self) -> None:
         card = el("opt", "radio", (10, 100, 300, 60), text="③ _count", interactive=True, tag="button", border="#eeeeee", container="#ffffff")
-        faint_icon = el("icon", "button", (10, 200, 44, 44), interactive=True, tag="button", fg="#cccccc", border="#eeeeee", container="#ffffff")
-        dark_icon = el("icon2", "button", (60, 200, 44, 44), interactive=True, tag="button", fg="#374151", border="#eeeeee", container="#ffffff")
+        # A visible glyph is required; unused CSS foreground on an empty button
+        # does not identify it (the independent painted-state regression).
+        faint_icon = el("icon", "button", (10, 200, 44, 44), text="×", interactive=True, tag="button", fg="#cccccc", border="#eeeeee", container="#ffffff")
+        dark_icon = el("icon2", "button", (60, 200, 44, 44), text="×", interactive=True, tag="button", fg="#374151", border="#eeeeee", container="#ffffff")
         ids = {o.element_ids[0] for o in checks.check_contrast(ctx([card, faint_icon, dark_icon])) if o.check_id == "PC-02"}
         # The glyph identifies an icon-only button: a dark icon passes without a boundary.
         self.assertEqual(ids, {"icon"})

@@ -22,7 +22,7 @@ import { CATALOG } from './devices.mjs';
 import { openBrowser, validateBrowserWs } from './browser_transport.mjs';
 import { loadPlaywright } from './playwright_loader.mjs';
 import { capturePage } from './read_capture.mjs';
-import { STATE_KEY, armBinaryControl, pageInit } from './page_scripts.mjs';
+import { STATE_KEY, armBinaryControl, pageInit, extractSnapshot } from './page_scripts.mjs';
 import { WebSession } from './session.mjs';
 import { decodePng } from './png.mjs';
 import { snapshotReply } from './serve.mjs';
@@ -168,7 +168,7 @@ function readFixture(pathname, res, req) {
 }
 
 // Fixture files served at /<name> (same origin as the pages, no CORS headers).
-const FIXTURE_FILES = Object.fromEntries(['layers.html', 'dialog.html', 'reflow.html', 'reflow2.html', 'reflow2.css', 'viewport.html', 'focus.html', 'focus2.html', 'feedback_ambient.html', 'native_feedback.html', 'inspect.html']
+const FIXTURE_FILES = Object.fromEntries(['layers.html', 'dialog.html', 'reflow.html', 'reflow2.html', 'reflow2.css', 'viewport.html', 'focus.html', 'focus2.html', 'feedback_ambient.html', 'native_feedback.html', 'inspect.html', 'painted_state.html']
   .map((f) => [`/${f}`, f]));
 
 function startFixtureServer() {
@@ -2024,6 +2024,77 @@ async function taskIntegrityTest(base, tmp) {
     interactive.steps[3].action.text === '[redacted]' && !JSON.stringify(interactive).includes('another owned synthetic input'));
 }
 
+async function paintedStateTest(base, tmp) {
+  const { pw, info } = loadPlaywright();
+  const transport = await openBrowser(pw, info, { endpoint: undefined });
+  const context = await transport.browser.newContext({ viewport: { width: 1100, height: 1000 }, deviceScaleFactor: 1 });
+  try {
+    const page = await context.newPage();
+    const captures = [];
+    for (const suffix of ['', '?unused-pale']) {
+      await page.goto(`${base}/painted_state.html${suffix}`);
+      const ex = await page.evaluate(extractSnapshot, { key: STATE_KEY, cap: 400, knownRoles: [...KNOWN_ROLES] });
+      const png = await page.screenshot({ path: path.join(tmp, `painted${suffix ? '-pale' : ''}.png`) });
+      captures.push({ ...ex, png_sha256: crypto.createHash('sha256').update(png).digest('hex') });
+    }
+    writeJson(path.join(tmp, 'painted-captures.json'), captures);
+    check('paint: unused CSS foreground produces identical rendered pixels', captures[0].png_sha256 === captures[1].png_sha256);
+    const item = (id) => captures[0].elements.find((e) => e.selector === `#${id}`);
+    const parts = (id) => item(id)?.paint?.parts || [];
+    check('paint: an empty switch has no foreground glyph channel', item('unused')?.paint && !parts('unused').some((p) => p.kind === 'text'));
+    check('paint: changing unused foreground does not change measured parts', JSON.stringify(item('unused')?.paint?.parts)
+      === JSON.stringify(captures[1].elements.find((e) => e.selector === '#unused')?.paint?.parts) && !!item('unused')?.paint);
+    check('paint: pale track and thumb are measured separately from the dark label',
+      parts('child-pale').some((p) => p.key === 'self/0:fill' && p.color === '#eeeeee' && p.background === '#ffffff')
+      && parts('child-pale').some((p) => p.key === 'self/0/0:fill' && p.color === '#dddddd' && p.background === '#eeeeee'), parts('child-pale'));
+    check('paint: SVG fill is rendered paint, not the parent foreground', parts('svg-red').some((p) => p.color === '#d32f2f' && p.kind === 'graphic')
+      && parts('svg-green').some((p) => p.color === '#388e3c' && p.kind === 'graphic'), parts('svg-red'));
+    check('paint: SVG stroke records its real colour and uniform adjacent background', parts('stroke-red').some((p) => p.key.endsWith(':stroke') && p.color === '#d32f2f' && p.background === '#ffffff'), parts('stroke-red'));
+    check('paint: alpha fills are composited against their actual solid layer', parts('alpha').some((p) => p.color === '#808080' && p.background === '#ffffff')
+      && parts('alpha').some((p) => p.color === '#bfbfbf' && p.background === '#808080'), parts('alpha'));
+    check('paint: unsupported gradient and browser native paint remain explicit gaps', item('gradient')?.paint?.gaps.includes('unknown_background')
+      && item('native')?.paint?.gaps.includes('native_appearance'));
+    check('paint: caps are bounded and unverified', parts('capped').length <= 16 && item('capped')?.paint?.gaps.includes('part_cap'));
+    check('paint: nested controls do not supply their paint to another owner', !parts('nested').some((p) => p.key.startsWith('self/0')));
+    check('paint: decorative and transparent graphics supply no state channels', item('decorative')?.paint?.decorative === true
+      && parts('transparent').length === 0);
+    check('paint: covered and clipped state parts supply no red/green channel', ['covered-red', 'covered-green', 'clip-red', 'clip-green']
+      .every((id) => parts(id).every((p) => !['#d32f2f', '#388e3c'].includes(p.color))));
+    check('paint: a styled native text field retains its known CSS border', parts('native-styled').some((p) => p.key === 'self:border' && p.color === '#eeeeee')
+      && item('native-styled')?.paint?.gaps.length === 0, item('native-styled'));
+    check('paint: rendered child icon-font glyphs retain their own foreground', parts('glyph-dark').some((p) => p.kind === 'text' && p.color === '#111111')
+      && parts('glyph-pale').some((p) => p.kind === 'text' && p.color === '#eeeeee'));
+    await page.goto(`${base}/painted_state.html`);
+    const beforeSvg = await page.locator('#svg-pale').screenshot();
+    await page.locator('#svg-pale rect').evaluate((n) => { n.style.backgroundColor = '#111'; });
+    const afterSvg = await page.locator('#svg-pale').screenshot();
+    const exSvg = await page.evaluate(extractSnapshot, { key: STATE_KEY, cap: 400, knownRoles: [...KNOWN_ROLES] });
+    const pale = exSvg.elements.find((e) => e.selector === '#svg-pale');
+    check('paint: unused SVG shape CSS background is pixel and measurement invariant', beforeSvg.equals(afterSvg)
+      && JSON.stringify(pale?.paint?.parts) === JSON.stringify(parts('svg-pale')), pale?.paint);
+    writeJson(path.join(tmp, 'painted-svg-background.json'), exSvg);
+    const beforeAttribute = await page.screenshot();
+    const beforeGeometry = exSvg.elements.find((e) => e.selector === '#svg-green')?.paint;
+    await page.locator('#svg-green rect').evaluate((n) => { n.setAttribute('d', 'UNUSED-PRIVATE-SHAPE'); });
+    const afterAttribute = await page.screenshot();
+    const exAttribute = await page.evaluate(extractSnapshot, { key: STATE_KEY, cap: 400, knownRoles: [...KNOWN_ROLES] });
+    check('paint: unused SVG geometry attributes cannot invent a shape cue', beforeAttribute.equals(afterAttribute)
+      && JSON.stringify(beforeGeometry) === JSON.stringify(exAttribute.elements.find((e) => e.selector === '#svg-green')?.paint));
+    check('paint: unused SVG attributes never enter measured metadata', !JSON.stringify(exAttribute).includes('UNUSED-PRIVATE-SHAPE'));
+    writeJson(path.join(tmp, 'painted-svg-attribute.json'), exAttribute);
+    await page.locator('#svg-pale svg').evaluate((svg) => {
+      svg.innerHTML = '<path fill="#eee" d="M2 2 H26 V26 H2 Z"/>';
+    });
+    const pathPaint = await page.evaluate(extractSnapshot, { key: STATE_KEY, cap: 400, knownRoles: [...KNOWN_ROLES] });
+    check('paint: a bounded valid SVG path retains solid painted evidence', pathPaint.elements.find((e) => e.selector === '#svg-pale')?.paint?.parts.some((p) => p.shape?.startsWith('path|')));
+    await page.locator('#svg-pale path').evaluate((n) => { n.setAttribute('d', 'M2 2 H26 V26 H2 Z L'); });
+    const invalidPath = await page.evaluate(extractSnapshot, { key: STATE_KEY, cap: 400, knownRoles: [...KNOWN_ROLES] });
+    check('paint: malformed SVG path geometry is unverified', invalidPath.elements.find((e) => e.selector === '#svg-pale')?.paint?.gaps.includes('unsupported_svg'));
+  } finally {
+    await transport.close([context]);
+  }
+}
+
 async function main() {
   const keep = process.argv.includes('--keep');
   // --only a,b: run just these groups (scripted, actions, layers, focus, focus2, feedback, native-feedback,
@@ -2042,6 +2113,7 @@ async function main() {
     deviceTableTest();
     if (want('connect')) await connectTest(base, tmp);
     if (want('integrity')) await taskIntegrityTest(base, tmp);
+    if (want('painted')) await paintedStateTest(base, tmp);
 
     const outDir = path.join(tmp, 'runs');
     let r = null;

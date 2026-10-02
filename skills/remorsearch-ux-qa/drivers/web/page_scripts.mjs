@@ -300,7 +300,12 @@ export function extractSnapshot(args) {
 
   // Effective opaque colours with group opacity for ancestors (spec: walk ancestors,
   // composite rgba over white; null when an image/gradient/canvas is underneath).
-  const colorsFor = (el, rect, cs) => {
+  const colorsFor = (el, rect, cs, svgPaint = false) => {
+    const unknownMedia = (n) => MEDIA.has(n.tagName?.toLowerCase()) && !(svgPaint && n.tagName?.toLowerCase() === 'svg');
+    // SVG shapes/groups do not paint CSS box backgrounds. The outer <svg> does.
+    const svgGraphic = (n) => svgPaint && n instanceof SVGElement && n.tagName.toLowerCase() !== 'svg';
+    const background = (n, ncs) => svgGraphic(n) ? null : parseColor(ncs.backgroundColor);
+    const imageBackground = (n, ncs) => !svgGraphic(n) && ncs.backgroundImage && ncs.backgroundImage !== 'none';
     const { chain, ancestors } = layersBelow(el, rect);
     const anc = new Set(ancestors);
     let color = baseColor();
@@ -314,9 +319,9 @@ export function extractSnapshot(args) {
       const n = chain[i];
       const tag = n.tagName ? n.tagName.toLowerCase() : '';
       const ncs = style(n);
-      if (MEDIA.has(tag) || (ncs.backgroundImage && ncs.backgroundImage !== 'none')) break;
+      if (unknownMedia(n) || imageBackground(n, ncs)) break;
       if ((parseFloat(ncs.opacity) || 0) < 1) break;
-      const bg = parseColor(ncs.backgroundColor);
+      const bg = background(n, ncs);
       if (bg && bg.a >= 0.999) {
         start = i;
         break;
@@ -325,11 +330,13 @@ export function extractSnapshot(args) {
     for (let i = start; i >= 0; i--) {
       const n = chain[i];
       const tag = n.tagName ? n.tagName.toLowerCase() : '';
-      if (MEDIA.has(tag)) return null;
+      if (unknownMedia(n)) return null;
+      // A different SVG shape behind this one is not a uniform CSS backdrop.
+      if (svgPaint && n instanceof SVGElement && n !== el && !n.contains(el) && n.tagName.toLowerCase() !== 'svg') return null;
       const ncs = style(n);
-      if (ncs.backgroundImage && ncs.backgroundImage !== 'none') return null;
+      if (imageBackground(n, ncs)) return null;
       const op = parseFloat(ncs.opacity);
-      const bg = parseColor(ncs.backgroundColor);
+      const bg = background(n, ncs);
       if (n === el) outer = { color, groups: groups.slice() };
       if (anc.has(n)) {
         if (op < 1) groups.push({ backdrop: color, alpha: op });
@@ -363,21 +370,26 @@ export function extractSnapshot(args) {
         const n = chain[i];
         const tag = n.tagName ? n.tagName.toLowerCase() : '';
         const ncs = style(n);
-        if (MEDIA.has(tag) || (ncs.backgroundImage && ncs.backgroundImage !== 'none')) { blocked = true; break; }
-        const bg = parseColor(ncs.backgroundColor);
+        if (unknownMedia(n) || imageBackground(n, ncs)) { blocked = true; break; }
+        const bg = background(n, ncs);
         if (bg && bg.a >= 0.999) { below = i; break; }
       }
       if (blocked) containerC = null;
       else {
         let c = baseColor();
         for (let i = below; i >= 1; i--) {
-          const bg = parseColor(style(chain[i]).backgroundColor);
+          const bg = background(chain[i], style(chain[i]));
           if (bg && bg.a > 0) c = over(bg, c);
         }
         containerC = c;
       }
     }
-    return { fg: fgC, bg: bgC, container: containerC };
+    const composite = (raw, backdrop = color) => {
+      let c = over(raw, backdrop);
+      for (let i = groups.length - 1; i >= 0; i--) c = mix(groups[i].backdrop, c, groups[i].alpha);
+      return c;
+    };
+    return { fg: fgC, bg: bgC, container: containerC, composite, rawBg: color };
   };
 
   const borderFor = (cs, bg) => {
@@ -388,8 +400,8 @@ export function extractSnapshot(args) {
       if (w <= 0 || st === 'none' || st === 'hidden') continue;
       if (!best || w > best.w) best = { w, c: parseColor(cs[`border${side}Color`]) };
     }
-    if (!best || !best.c || best.c.a <= 0) return { color: null, width: 0 };
-    return { color: bg ? hex(over(best.c, bg)) : hex(best.c), width: round2(best.w) };
+    if (!best || !best.c || best.c.a <= 0) return { color: null, width: 0, raw: null };
+    return { color: bg ? hex(over(best.c, bg)) : hex(best.c), width: round2(best.w), raw: best.c };
   };
 
   // ---------- semantics
@@ -856,6 +868,148 @@ export function extractSnapshot(args) {
     return false;
   };
 
+  // Bounded solid-paint evidence, not a general rendering model. CSS `color` is
+  // included only when a text node actually occupies a rendered glyph box.
+  const paintFor = (el) => {
+    const parts = [];
+    const gaps = new Set();
+    if (!geo(el).vis) return { source: 'dom-solid-v1', parts, gaps: [], decorative: false };
+    const graphic = ['switch', 'slider', 'checkbox', 'radio', 'status', 'alert'].includes(roleOf(el))
+      || [...(roleMap.get(el) || [])].some((r) => ['status', 'error_message', 'critical_message'].includes(r));
+    if (!isInteractive(el) && el.closest('[aria-hidden="true"], [role="presentation"], [role="none"]')) {
+      return { source: 'dom-solid-v1', parts, gaps: [], decorative: true };
+    }
+    const symbolOnly = /^[\s×✕✗✓✔+−\-→←↑↓⋯…☰]*$/.test(visibleText(el));
+    const scanChildren = graphic || (isInteractive(el) && (!visibleText(el) || symbolOnly || a11yOf(el).icon_font));
+    let visited = 0;
+    const add = (node, key, kind, color, background, shape = null) => {
+      if (parts.length >= 16) { gaps.add('part_cap'); return; }
+      const r = geo(node).r;
+      if (!color || !background) { gaps.add('unknown_background'); return; }
+      parts.push({ key, kind, color: hex(color), background: hex(background), shape,
+        box: { x: round2(r.left), y: round2(r.top), w: round2(r.width), h: round2(r.height) } });
+    };
+    const walkPaint = (node, key) => {
+      if (++visited > 64) { gaps.add('node_cap'); return; }
+      if (node !== el && isInteractive(node)) return; // another control owns its paint
+      if (!geo(node).vis) return;
+      const cs = style(node);
+      const tag = node.tagName.toLowerCase();
+      if (['style', 'script', 'title', 'desc', 'defs'].includes(tag)) return;
+      const r = geo(node).r;
+      for (let p = parentOf(node); p; p = parentOf(p)) {
+        const ps = style(p), pr = geo(p).r;
+        const clipX = ['hidden', 'clip'].includes(ps.overflowX), clipY = ['hidden', 'clip'].includes(ps.overflowY);
+        if ((clipX && (r.right <= pr.left || r.left >= pr.right)) || (clipY && (r.bottom <= pr.top || r.top >= pr.bottom))) return;
+        if ((clipX && (r.left < pr.left || r.right > pr.right)) || (clipY && (r.top < pr.top || r.bottom > pr.bottom))) {
+          gaps.add('clipped_paint'); return;
+        }
+      }
+      const cover = geo(node).inVp ? occlusion(node, r).fraction : null;
+      if (cover === 1) return;
+      if (cover > 0) { gaps.add('occluded_paint'); return; }
+      if (node.shadowRoot) gaps.add('shadow_paint');
+      for (const pseudo of ['::before', '::after']) {
+        const ps = getComputedStyle(node, pseudo);
+        if (ps.display !== 'none' && ps.visibility === 'visible' && ps.content && !['none', 'normal'].includes(ps.content)) gaps.add('pseudo_paint');
+      }
+      for (let p = node; p; p = parentOf(p)) {
+        const ps = style(p);
+        if ((ps.filter && ps.filter !== 'none') || (ps.mixBlendMode && ps.mixBlendMode !== 'normal')
+          || (ps.maskImage && ps.maskImage !== 'none') || (ps.clipPath && ps.clipPath !== 'none')) {
+          gaps.add('unsupported_effect'); return;
+        }
+      }
+      if (node === el && ['input', 'select'].includes(tag) && cs.appearance !== 'none'
+        && (tag === 'select' || ['checkbox', 'radio', 'range', 'color', 'file'].includes(node.type))) {
+        gaps.add('native_appearance'); return;
+      }
+      const svgShape = node instanceof SVGElement && ['rect', 'circle', 'ellipse', 'path', 'polygon', 'polyline', 'line'].includes(tag);
+      const colors = colorsFor(node, geo(node).r, cs, node instanceof SVGElement);
+      if (svgShape) {
+        const attributes = { rect: ['x', 'y', 'width', 'height', 'rx', 'ry'], circle: ['cx', 'cy', 'r'],
+          ellipse: ['cx', 'cy', 'rx', 'ry'], line: ['x1', 'y1', 'x2', 'y2'], path: ['d'], polygon: ['points'], polyline: ['points'] }[tag];
+        const geometry = [];
+        let validGeometry = true;
+        for (const attr of attributes) {
+          const value = (node.getAttribute(attr) || '').trim();
+          if (attr === 'd' || attr === 'points') {
+            const allowed = attr === 'd' ? /^[MmLlHhVvCcSsQqTtAaZzEe\d+.,\s-]+$/ : /^[Ee\d+.,\s-]+$/;
+            if (!value || value.length > 400 || !allowed.test(value)) { validGeometry = false; break; }
+            const numbers = value.match(/[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g) || [];
+            if (!numbers.length || numbers.some((v) => !Number.isFinite(Number(v)) || Math.abs(Number(v)) > 1e6)) { validGeometry = false; break; }
+            if (attr === 'points' && (numbers.length % 2 || numbers.length < (tag === 'polygon' ? 6 : 4))) { validGeometry = false; break; }
+            if (attr === 'd') {
+              const tokens = value.match(/[MmLlHhVvCcSsQqTtAaZz]|[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g) || [];
+              const arity = { m: 2, l: 2, h: 1, v: 1, c: 6, s: 4, q: 4, t: 2, a: 7, z: 0 };
+              let command = null, count = 0;
+              validGeometry = /^[Mm]/.test(tokens[0] || '') && value.replace(/[MmLlHhVvCcSsQqTtAaZz]|[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g, '').replace(/[\s,]/g, '') === '';
+              for (const token of tokens) {
+                if (token.toLowerCase() in arity) {
+                  if (command && arity[command] && (!count || count % arity[command])) validGeometry = false;
+                  command = token.toLowerCase(); count = 0;
+                } else {
+                  if (!command || !arity[command] || (command === 'a' && [3, 4].includes(count % 7) && ![0, 1].includes(Number(token)))) validGeometry = false;
+                  count++;
+                }
+              }
+              if (command && arity[command] && (!count || count % arity[command])) validGeometry = false;
+              if (!validGeometry) break;
+            }
+            geometry.push(value.replace(/[\s,]+/g, ' '));
+          } else {
+            const numeric = value ? Number(value) : 0;
+            if ((value && !/^[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?$/.test(value)) || !Number.isFinite(numeric) || Math.abs(numeric) > 1e6
+              || (['width', 'height', 'r', 'rx', 'ry'].includes(attr) && numeric < 0)) { validGeometry = false; break; }
+            geometry.push(String(numeric));
+          }
+        }
+        const signature = [tag, ...geometry].join('|');
+        if (!validGeometry || signature.length > 512 || node.closest('svg')?.querySelector('use, image, foreignObject')) {
+          gaps.add('unsupported_svg'); return;
+        }
+        for (const channel of ['fill', 'stroke']) {
+          if (cs[channel] === 'none' || (channel === 'stroke' && !(parseFloat(cs.strokeWidth) > 0))) continue;
+          if (!cs[channel] || /url\(/.test(cs[channel])) { gaps.add('unsupported_svg'); continue; }
+          const parsed = parseColor(cs[channel]);
+          if (!parsed || parsed.a <= 0) continue;
+          const raw = { ...parsed };
+          raw.a *= parseFloat(cs[channel === 'fill' ? 'fillOpacity' : 'strokeOpacity']);
+          if (raw.a > 0) add(node, `${key}:${channel}`, 'graphic', colors?.composite(raw), colors?.bg, signature);
+        }
+      } else if (!(node instanceof SVGElement)) {
+        const rawBg = parseColor(cs.backgroundColor);
+        const hasText = hasDirectText(node);
+        if (cs.backgroundImage && cs.backgroundImage !== 'none') gaps.add('unknown_background');
+        // Label wrappers are not state-indicator parts. Their own text is extracted
+        // separately; textless track/thumb boxes supply the graphical channels.
+        if (node === el || !hasText) {
+          if (rawBg && rawBg.a > 0) add(node, `${key}:fill`, 'boundary', colors?.bg, colors?.container);
+          const border = borderFor(cs, null);
+          if (border.raw) add(node, `${key}:border`, 'boundary', colors?.composite(border.raw), colors?.container);
+        }
+        if (hasText && parseFloat(cs.fontSize) > 0 && (parseColor(cs.color)?.a || 0) > 0) {
+          let glyph = false;
+          for (const child of node.childNodes) {
+            if (child.nodeType !== 3 || !child.nodeValue.trim()) continue;
+            const range = document.createRange(); range.selectNodeContents(child);
+            if ([...range.getClientRects()].some((r) => r.width > 0 && r.height > 0)) { glyph = true; break; }
+          }
+          if (glyph) add(node, `${key}:text`, 'text', colors?.fg, colors?.bg);
+        }
+      } else if (tag !== 'svg' && !svgShape) gaps.add('unsupported_svg');
+      if (!scanChildren) return;
+      let i = 0;
+      for (const child of node.children) {
+        if (visited >= 64) { gaps.add('node_cap'); break; }
+        walkPaint(child, `${key}/${i++}`);
+      }
+    };
+    walkPaint(el, 'self');
+    if (graphic && !parts.some((p) => p.kind !== 'text') && !gaps.size) gaps.add('no_graphic_paint');
+    return { source: 'dom-solid-v1', parts, gaps: [...gaps].sort(), decorative: false };
+  };
+
   const candidates = [];
   for (const el of all) {
     const tag = el.tagName.toLowerCase();
@@ -985,6 +1139,7 @@ export function extractSnapshot(args) {
       border_color: border.color,
       border_width_px: border.width,
       opacity: Math.round(cumOpacity * 1000) / 1000,
+      paint: paintFor(el),
       // Associated <label> boxes accept the same click (HTML activation behaviour),
       // so they are part of the control's target (WCAG 2.5.8 "target").
       ...(() => {
@@ -1156,6 +1311,7 @@ export function extractSnapshot(args) {
       if (e.source !== 'dom') continue;
       shift(e.box);
       for (const hb of e.hit_boxes || []) shift(hb);
+      for (const p of e.paint?.parts || []) shift(p.box);
     }
     if (active) { active.x = round2(active.x - VX0); active.y = round2(active.y - VY0); }
     for (const l of layerOut) shift(l.box);

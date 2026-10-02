@@ -237,6 +237,42 @@ def _device_block(errors: _Errors, device: dict | None, path: str) -> None:
     errors.enum(device, "orientation", ORIENTATIONS, path)
 
 
+def _paint(errors: _Errors, el: dict, path: str) -> None:
+    if "paint" not in el:
+        return
+    paint = errors.obj(el, "paint", path)
+    if paint is None:
+        return
+    ppath = f"{path}.paint"
+    errors.enum(paint, "source", ("dom-solid-v1",), ppath)
+    errors.boolean(paint, "decorative", ppath)
+    gaps = errors.array(paint, "gaps", ppath)
+    if gaps is not None:
+        errors.require(len(gaps) <= 12 and all(g in ("part_cap", "node_cap", "unknown_background", "shadow_paint", "pseudo_paint", "unsupported_effect", "native_appearance", "unsupported_svg", "no_graphic_paint", "clipped_paint", "occluded_paint") for g in gaps), f"{ppath}.gaps", "must contain known paint gaps (at most 12)")
+    parts = errors.array(paint, "parts", ppath)
+    if parts is not None:
+        errors.require(len(parts) <= 16, f"{ppath}.parts", "must contain at most 16 parts")
+        seen: set[str] = set()
+        for i, part in enumerate(parts):
+            pp = f"{ppath}.parts[{i}]"
+            if not isinstance(part, dict):
+                errors.add(pp, "must be an object")
+                continue
+            errors.string(part, "key", pp)
+            key = part.get("key")
+            if isinstance(key, str):
+                errors.require(len(key) <= 256 and key not in seen, f"{pp}.key", "must be unique and at most 256 characters")
+                seen.add(key)
+            errors.enum(part, "kind", ("boundary", "graphic", "text"), pp)
+            for color in ("color", "background"):
+                errors.string(part, color, pp)
+                _color(errors, part, color, pp)
+            _box(errors, part.get("box"), f"{pp}.box")
+            errors.string(part, "shape", pp, nullable=True)
+            if isinstance(part.get("shape"), str):
+                errors.require(len(part["shape"]) <= 512, f"{pp}.shape", "must be at most 512 characters")
+
+
 def _element(errors: _Errors, el: Any, path: str) -> None:
     if not isinstance(el, dict):
         errors.add(path, "must be an object")
@@ -257,6 +293,7 @@ def _element(errors: _Errors, el: Any, path: str) -> None:
         _color(errors, el, key, path)
     _roles(errors, el.get("roles"), f"{path}.roles")
     errors.enum(el, "source", ELEMENT_SOURCES, path)
+    _paint(errors, el, path)
 
 
 def validate_snapshot(doc: Any) -> list[str]:

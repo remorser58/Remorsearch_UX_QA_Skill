@@ -1150,33 +1150,56 @@ def check_contrast(ctx: Context) -> list[Observation]:
     for element in _interactive(ctx, whole_page=True):
         tag = element.get("tag")
         role = element.get("role")
-        labelled = bool((element.get("text") or "").strip())
+        labelled = bool(_label_tokens(element.get("text") or "")) and not element.get("a11y", {}).get("icon_font")
         native = tag in ("input", "select", "textarea")
         # A text-labelled custom radio/checkbox card is identified by its text; WCAG 1.4.11
         # then concerns the state indicator, not the card outline (adjudication 2026-09-28).
         # A switch's track and a slider's thumb are the state indicator itself, so their
         # boundary matters even with a text label.
-        form_control = native or role in ("switch", "slider") or (role in ("checkbox", "radio", "textbox", "combobox", "searchbox", "spinbutton") and not labelled)
+        paint = element.get("paint")
+        if isinstance(paint, dict) and (paint.get("gaps") or paint.get("decorative")):
+            continue  # unmeasured paint may identify the control; the report records the gap
+        state_parts = isinstance(paint, dict) and any(p.get("kind") != "text" and not p.get("key", "").startswith("self:") for p in paint.get("parts", []))
+        form_control = native or role in ("switch", "slider") or (role in ("checkbox", "radio") and state_parts) or (role in ("checkbox", "radio", "textbox", "combobox", "searchbox", "spinbutton") and not labelled)
         icon_only = tag in ("button", "a") and not labelled
         if not (form_control or icon_only):
             continue  # WCAG 1.4.11 does not require a boundary when text identifies the control
+        if isinstance(paint, dict):
+            # A label's dark foreground cannot stand in for its track/thumb. Distinct
+            # indicator nodes are evaluated independently; fill/border on one node
+            # remain alternative ways of identifying that node.
+            by_part: dict[str, list[tuple[str, float]]] = {}
+            for part in paint.get("parts", []):
+                if part.get("kind") == "text" and form_control:
+                    continue
+                if state_parts and role in ("switch", "slider", "checkbox", "radio") and part.get("key", "").startswith("self:"):
+                    continue
+                fg = perception.parse_color(part.get("color"))
+                below = perception.parse_color(part.get("background"))
+                if fg and below:
+                    node = part["key"].rsplit(":", 1)[0] if form_control else "control"
+                    by_part.setdefault(node, []).append((part["key"], perception.contrast_ratio(fg, below)))
+            measured_parts = [max(values, key=lambda c: c[1]) for values in by_part.values()]
+        else:
+            measured_parts = []
         border = perception.parse_color(element.get("border_color"))
         bg = perception.parse_color(element.get("container_bg") or element.get("color_bg"))
         fill = perception.parse_color(element.get("color_bg"))
         container = perception.parse_color(element.get("container_bg"))
         candidates = []
-        if border and bg:
+        if not isinstance(paint, dict) and border and bg:
             candidates.append(("border", perception.contrast_ratio(border, bg)))
-        if fill and container and fill != container:
+        if not isinstance(paint, dict) and fill and container and fill != container:
             candidates.append(("fill", perception.contrast_ratio(fill, container)))
-        if icon_only:
+        if not isinstance(paint, dict) and icon_only and (element.get("text") or "").strip():
             glyph, glyph_bg = perception.parse_color(element.get("color_fg")), perception.parse_color(element.get("color_bg"))
             if glyph and glyph_bg:
                 candidates.append(("glyph", perception.contrast_ratio(glyph, glyph_bg)))
-        if not candidates:
-            continue
-        best_kind, best = max(candidates, key=lambda c: c[1])
-        if best < params.NON_TEXT_CONTRAST_MIN and element.get("enabled", True):
+        if candidates:
+            measured_parts.append(max(candidates, key=lambda c: c[1]))
+        for best_kind, best in measured_parts:
+            if best >= params.NON_TEXT_CONTRAST_MIN or element.get("enabled", True) is False:
+                continue
             out.append(Observation(
                 "PC-02", ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
                 [element["id"]], element_key(element),
@@ -1205,12 +1228,24 @@ def _colour_groups(ctx: Context) -> list[list[dict[str, Any]]]:
     """Same-shaped siblings (tag, role, size bucket, roles) that could encode state."""
     groups: dict[tuple, list[dict[str, Any]]] = {}
     for element in ctx.elements:
-        if not _present(element):
+        if not _present(element) or element.get("paint", {}).get("decorative") or element.get("paint", {}).get("gaps") or (element.get("interactive") and element.get("enabled", True) is False):
             continue
         box = element["box"]
         key = (element.get("tag"), element.get("role"), round(box["w"] / 4), round(box["h"] / 4), tuple(sorted(_roles(element) - {"primary"})))
         groups.setdefault(key, []).append(element)
     return [g for g in groups.values() if len(g) >= 2]
+
+
+def _paint_channels(element: dict[str, Any]) -> dict[str, str]:
+    paint = element.get("paint")
+    if isinstance(paint, dict):
+        # Relative DOM part and SVG geometry must match. Different graphic shapes
+        # provide another cue and cannot be inferred to be a colour-only state.
+        return {f"{p['key']}|{p.get('shape') or ''}": p["color"] for p in paint.get("parts", [])}
+    channels = {k: element.get(k) for k in ("color_bg", "border_color")}
+    if (element.get("text") or "").strip():
+        channels["color_fg"] = element.get("color_fg")
+    return channels
 
 
 def check_colour_only(ctx: Context) -> list[Observation]:
@@ -1230,8 +1265,9 @@ def check_colour_only(ctx: Context) -> list[Observation]:
     out: list[Observation] = []
     seen: set[tuple[str, str]] = set()
     for group in _colour_groups(ctx):
-        for channel in ("color_bg", "border_color", "color_fg"):
-            coloured = [(e, perception.parse_color(e.get(channel))) for e in group]
+        channels = {e["id"]: _paint_channels(e) for e in group}
+        for channel in sorted({k for member in channels.values() for k in member}):
+            coloured = [(e, perception.parse_color(channels[e["id"]].get(channel))) for e in group]
             coloured = [(e, c) for e, c in coloured if c is not None]
             for i, (a, ca) in enumerate(coloured):
                 for b, cb in coloured[i + 1:]:
@@ -1241,8 +1277,9 @@ def check_colour_only(ctx: Context) -> list[Observation]:
                     normal = perception.color_difference(ca, cb)
                     if normal < params.CVD_DISTINCT_NORMAL_DE:
                         continue
-                    text_a = (a.get("text") or a.get("name") or "").strip()
-                    text_b = (b.get("text") or b.get("name") or "").strip()
+                    # ARIA labels are not visible state redundancy.
+                    text_a = (a.get("text") or (a.get("name") if "paint" not in a else "") or "").strip()
+                    text_b = (b.get("text") or (b.get("name") if "paint" not in b else "") or "").strip()
                     if _state_cue(text_a) or _state_cue(text_b):
                         continue
                     state_contrast = perception.contrast_ratio(ca, cb)
@@ -1262,7 +1299,7 @@ def check_colour_only(ctx: Context) -> list[Observation]:
                          "normal_delta_e2000": round(normal, 1), "cvd": kind, "channel": channel, "state_contrast": round(state_contrast, 2),
                          "confidence": "low" if kind == "tritan" else "model"},
                         False, "P2" if (not marginal or status_like) else "P3",
-                        f"'{text_a or a.get('selector')}'와 '{text_b or b.get('selector')}'의 {channel.replace('color_', '').replace('_color', '')} 색 차이가 {kind} 시뮬레이션에서 ΔE00 {simulated:.1f}로 사라집니다(색 외 상태 단서 확인 필요).",
+                        f"'{text_a or a.get('selector')}'와 '{text_b or b.get('selector')}'의 상태 표시 색 차이가 {kind} 시뮬레이션에서 ΔE00 {simulated:.1f}로 사라집니다(색 외 상태 단서 확인 필요).",
                         "machado2009-ciede2000-v1",
                     ))
     return out
