@@ -273,3 +273,33 @@ if their reviewed before-revision matches the actual tree. Dependent patches
 retain their original order and remain blocked; no patch is silently rebased. After
 an independent sibling changes the tree, an older deferred patch may need a new
 reviewed goal/checkpoint because its full-tree revision and packet are immutable.
+
+## Native application identity
+
+The historical `browser_runs` collection also accepts native runs; it does not
+launch the application. For iOS use `origin: "ios-app://com.example.app"`; for
+Android use `android-app://com.example.app`. The authority is the exact bundle or
+application ID, without credentials, ports, query or fragment. `route` remains an
+explicit application screen path such as `/member/events`; it is not an API URL.
+The v1 run `surface_ref` must equal origin plus route. Preserve the actual device,
+viewport, fixture, input, scoped content revision and Git/build identity in receipts.
+
+A native `tool` requires `name`, `version`, `platform` (`ios` or `android`),
+`os_version`, and `application_id` matching the origin. Omit browser fields.
+Existing HTTP(S) runs still require `browser` and `browser_version`; native fields
+cannot substitute for those. Screenshots of a browser viewer are not native runs.
+Use real XCUITest/UIAutomator or host-platform actions, original result bundles,
+activity traces and capture hashes. Synthetic app data is distinct from synthetic
+execution: mark real native execution `live`, while clearly identifying test data.
+
+This identity extension does not waive accessibility, visual, replay or intent
+gates. Required keyboard/focus/semantics checks that were not executed stay
+`unknown` or `blocked`; element existence and `isHittable` do not prove VoiceOver
+speech or keyboard completion. Platform applicability is recorded in the reason,
+not converted to a pass. A run with those gaps cannot establish product completion.
+The annotation bridge retains estimated geometry and cannot prove physical reach
+or real assistive-technology behavior. Unsupported device models remain unsupported.
+
+Safe relative source and artifact paths permit `+`, including Swift extension
+filenames. Traversal, absolute paths, protected directories and symlinks remain
+forbidden; the existing explicit code scope still applies.

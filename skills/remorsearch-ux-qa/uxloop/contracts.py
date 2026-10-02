@@ -1,6 +1,7 @@
 """Versioned graph validation, independent from execution and permissions."""
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
@@ -85,7 +86,16 @@ def validate_packet(packet: Any) -> list[str]:
         except ValueError:
             errors.append(f"scenario {scenario['id']}: malformed origin")
             continue
-        if parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.username or parsed.password or parsed.path not in {"", "/"} or parsed.query or parsed.fragment:
+        native = parsed.scheme in {"ios-app", "android-app"}
+        common_invalid = (not parsed.hostname or parsed.username or parsed.password
+                          or parsed.path not in {"", "/"} or parsed.query or parsed.fragment)
+        if native:
+            # Application identity, never a screenshot viewer or backend origin.
+            if (scenario["origin"] not in {f"{parsed.scheme}://{parsed.netloc}", f"{parsed.scheme}://{parsed.netloc}/"}
+                    or common_invalid or parsed.port is not None or not re.fullmatch(
+                    r"[A-Za-z][A-Za-z0-9_-]*(?:\.[A-Za-z][A-Za-z0-9_-]*)+", parsed.netloc)):
+                errors.append(f"scenario {scenario['id']}: expected a credential-free native application origin")
+        elif parsed.scheme not in {"http", "https"} or common_invalid:
             errors.append(f"scenario {scenario['id']}: expected a credential-free HTTP(S) origin")
         if not scenario["route"].startswith("/") or scenario["route"].startswith("//"):
             errors.append(f"scenario {scenario['id']}: expected an origin-relative route")
@@ -125,6 +135,21 @@ def validate_packet(packet: Any) -> list[str]:
             errors.append("browser sessions must be isolated per run")
         sessions.add(env["session_id"])
         if scenario:
+            tool = run["tool"]
+            try:
+                native_origin = urlsplit(scenario["origin"])
+            except ValueError:
+                continue  # Malformed origin already reported by scenario validation.
+            scheme = native_origin.scheme
+            platform = {"ios-app": "ios", "android-app": "android"}.get(scheme, "web")
+            if platform == "web":
+                if tool.get("platform", "web") != "web" or not tool.get("browser") or not tool.get("browser_version") or any(
+                        key in tool for key in ("os_version", "application_id")):
+                    errors.append(f"run {run['id']}: web surface requires browser identity only")
+            elif (tool.get("platform") != platform or not tool.get("os_version")
+                  or tool.get("application_id") != native_origin.netloc
+                  or any(key in tool for key in ("browser", "browser_version"))):
+                errors.append(f"run {run['id']}: native surface requires matching platform/application and OS identity, without browser fields")
             if legacy.get("surface_ref") != scenario["origin"].rstrip("/") + scenario["route"]:
                 errors.append(f"run {run['id']}: v1 surface_ref mismatch")
             if run["scenario_digest"] != digest(scenario):

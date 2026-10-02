@@ -75,7 +75,7 @@ def load_json(path: Path) -> Any:
 
 def safe_relative(value: str) -> str:
     # Restrict patch targets and artifact names to portable, reviewable names.
-    if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9_./-]+", value):
+    if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9_./+-]+", value):
         raise ContractError(f"Unsafe/nonportable relative path: {value!r}")
     p = PurePosixPath(value)
     denied = {".git", ".ux-loop", "node_modules", ".venv", "venv", "__pycache__"}

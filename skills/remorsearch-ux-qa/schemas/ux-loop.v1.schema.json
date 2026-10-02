@@ -639,9 +639,7 @@
           "type": "object",
           "required": [
             "name",
-            "version",
-            "browser",
-            "browser_version"
+            "version"
           ],
           "properties": {
             "name": {
@@ -663,6 +661,23 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 2000
+            },
+            "platform": {
+              "enum": [
+                "web",
+                "ios",
+                "android"
+              ]
+            },
+            "os_version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "application_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
             }
           },
           "additionalProperties": false
