@@ -1112,7 +1112,8 @@ export class WebSession {
   async adaptationCapture(page, screen, kind, condition) {
     const id = `S-${this.runId}-${String(this.snapSeq++).padStart(3, '0')}`;
     const png = await page.screenshot({ type: 'png', scale: 'device', timeout: 15000 });
-    const ex = await page.evaluate(extractSnapshot, { key: STATE_KEY, cap: ELEMENT_CAP, knownRoles: KNOWN_ROLES });
+    const ex = await page.evaluate(extractSnapshot, { key: STATE_KEY, cap: ELEMENT_CAP, knownRoles: KNOWN_ROLES,
+      redactSelectors: [...this.redactSelectors], privateValues: [...this.privateValues, '[redacted]'] });
     const { width, height } = pngSize(png);
     const viewport = page.viewportSize();
     const snap = this.redactRecord({
