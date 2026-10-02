@@ -149,6 +149,13 @@ def run_health(run: dict[str, Any], snapshots: list[dict[str, Any]], scenario: d
     if capped:
         health = "degraded" if health == "ok" else health
         notes.append(f"{rid}: 요소 수 상한으로 일부 요소를 검사하지 못했습니다({capped[0]}).")
+    for rec in run.get("adaptation", []):
+        if rec.get("gaps"):
+            health = "degraded" if health == "ok" else health
+            notes.append(f"{rid}: {rec['kind']} 복제 검사 범위 미확인: {', '.join(rec['gaps'])}.")
+    if run.get("reflow_screens_dropped"):
+        health = "degraded" if health == "ok" else health
+        notes.append(f"{rid}: 화면 수 상한으로 {run['reflow_screens_dropped']}개 화면의 복제 검사를 생략했습니다.")
     declared = {w.get("id") for w in (scenario or {}).get("timing_windows", [])}
     for w in run.get("timing_windows", []):
         if w.get("id") in declared and not w.get("appearances") and not w.get("error"):
@@ -217,17 +224,21 @@ def analyze_run(
             if p is not own and p["attributes"]["device_id"] == device_id and p["attributes"].get("orientation", "portrait") == orientation
         ]
     snapshots_by_id = {s["snapshot_id"]: s for s in snapshots}
+    live_snapshots = [s for s in snapshots if s.get("device", {}).get("probe") != "adaptation"]
+    if not live_snapshots:
+        raise ValueError(f"run {run['run_id']} has no live task captures")
+    live_by_id = {s["snapshot_id"]: s for s in live_snapshots}
     step_by_after = {s.get("after"): s for s in run.get("steps", []) if s.get("after")}
-    selectors = _path_selectors(run, snapshots_by_id)
-    clicked = _path_selectors(run, snapshots_by_id, CLICK_ACTIONS)
+    selectors = _path_selectors(run, live_by_id)
+    clicked = _path_selectors(run, live_by_id, CLICK_ACTIONS)
     conspicuity: dict[str, Any] = {}
     if gaze_enabled:
-        for snap in snapshots:
+        for snap in live_snapshots:
             conspicuity[snap["snapshot_id"]] = conspicuity_for_snapshot(snap)
     observations: list[checks.Observation] = []
     for profile in evaluated:
         previous = None
-        for snap in snapshots:
+        for snap in live_snapshots:
             device = _device_for(snap, profile)
             path_ids = {e["id"] for e in snap.get("elements", []) if e.get("selector") in selectors}
             ctx = checks.Context(
@@ -238,10 +249,11 @@ def analyze_run(
             )
             observations.extend(checks.run_snapshot_checks(ctx))
             previous = snap
-        device = _device_for(snapshots[-1], profile)
-        run_obs = (checks.check_run_timing(run, profile, device, snapshots_by_id, scenario) + checks.check_focus_walks(run, profile, snapshots_by_id)
-                   + checks.check_reflow(run, profile, snapshots_by_id) + checks.check_clicked_controls(run, profile, snapshots_by_id)
-                   + checks.check_task_integrity(run, profile, snapshots_by_id))
+        device = _device_for(live_snapshots[-1], profile)
+        run_obs = (checks.check_run_timing(run, profile, device, live_by_id, scenario) + checks.check_focus_walks(run, profile, live_by_id)
+                   + checks.check_reflow(run, profile, live_by_id) + checks.check_adaptation(run, profile, snapshots_by_id)
+                   + checks.check_clicked_controls(run, profile, live_by_id)
+                   + checks.check_task_integrity(run, profile, live_by_id))
         if profile is not own:
             run_obs = [o for o in run_obs if o.check_id != "PJ-01"]
         observations.extend(run_obs)

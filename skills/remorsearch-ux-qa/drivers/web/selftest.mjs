@@ -168,7 +168,7 @@ function readFixture(pathname, res, req) {
 }
 
 // Fixture files served at /<name> (same origin as the pages, no CORS headers).
-const FIXTURE_FILES = Object.fromEntries(['layers.html', 'dialog.html', 'reflow.html', 'reflow2.html', 'reflow2.css', 'viewport.html', 'focus.html', 'focus2.html', 'feedback_ambient.html', 'native_feedback.html', 'inspect.html', 'painted_state.html']
+const FIXTURE_FILES = Object.fromEntries(['layers.html', 'dialog.html', 'reflow.html', 'reflow2.html', 'reflow2.css', 'reflow_adaptation.html', 'viewport.html', 'focus.html', 'focus2.html', 'feedback_ambient.html', 'native_feedback.html', 'inspect.html', 'painted_state.html']
   .map((f) => [`/${f}`, f]));
 
 function startFixtureServer() {
@@ -1526,6 +1526,78 @@ async function reflowCopyTest(base, tmp) {
     !lost.includes('gnb-a1') && !lost.includes('foot-a1'), recs.map((x) => x.lost));
 }
 
+async function adaptationTest(base, tmp) {
+  const { pw, info } = loadPlaywright();
+  const { scenario } = normalizeScenario({ schema_version: 'ergo-scenario.v1', scenario_id: 'SC-adaptation',
+    surface: { kind: 'web', url: `${base}/reflow_adaptation.html` }, targets: {},
+    steps: [{ action: 'type', target: '#private-note', text: 'TYPED-PRIVATE-SENTINEL-8fb2', redact: true }],
+    success: { selector_visible: '#ordinary-label' } }, { requireSteps: true });
+  const dir = path.join(tmp, 'runs', 'R-adaptation');
+  fs.mkdirSync(dir, { recursive: true });
+  const session = new WebSession({ pw, pwInfo: info, scenario, runDir: dir, runId: 'R-adaptation', profileId: 'EP-S24',
+    deviceRequest: { id: 'galaxy-s24' }, mode: 'scripted', warnings: [],
+    options: { headed: false, settleMs: 0, feedbackTimeoutMs: 0, focusWalk: false, visualFeedback: false,
+      locale: 'ko-KR', timezoneId: 'Asia/Seoul', buildId: 'owned-adaptation-v1', buildIdSource: 'fixture' } });
+  try {
+    await session.start();
+    const first = JSON.parse(fs.readFileSync(path.join(dir, `${session.lastSnapshotId}.json`), 'utf8'));
+    check('adaptation privacy: prefilled textarea value is absent from its exported accessible label',
+      first.elements.find((e) => e.selector === '#private-note')?.a11y.visible_label === ''
+      && !JSON.stringify(first).includes('PREFILLED-PRIVATE-SENTINEL-7f4c'));
+    check('adaptation privacy: ordinary button label survives', first.elements.find((e) => e.selector === '#ordinary-label')?.a11y.visible_label === '정상 버튼 이름');
+    await session.act(scenario.steps[0]);
+    await session.page.locator('#private-note').focus();
+    await session.page.evaluate(() => window.scrollTo(0, 80));
+    const state = () => session.page.evaluate(() => ({ width: innerWidth, height: innerHeight, scroll: scrollY, focus: document.activeElement.id, value: document.querySelector('#private-note').value }));
+    const before = await state();
+    check('adaptation privacy: serialized copies omit prefilled and typed sentinel', session.reflowScreens.every((s) => !s.html.includes('PREFILLED-PRIVATE-SENTINEL-7f4c') && !s.html.includes('TYPED-PRIVATE-SENTINEL-8fb2')));
+    await session.adaptationPass();
+    check('adaptation: live viewport, input, focus and scroll stay unchanged', JSON.stringify(before) === JSON.stringify(await state()));
+    await session.reflowPass();
+    await session.finish();
+    const run = JSON.parse(fs.readFileSync(path.join(dir, 'run.json'), 'utf8'));
+    const spacing = run.adaptation.find((r) => r.kind === 'text_spacing');
+    const short = run.adaptation.find((r) => r.kind === 'short_height');
+    check('adaptation: conditions keep source CSS mapping and have both capture anchors', [spacing, short].every((r) => r.status === 'measured' && r.applied && r.evaluable
+      && r.dpr === 3 && r.baseline_snapshot_id && r.snapshot_id && r.baseline_viewport_css.join() === '360,780'), run.adaptation);
+    check('adaptation spacing: fixed element box stays same but Range content is lost', spacing?.lost.some((x) => x.selector === '#spacing-cut'
+      && x.before.box.h === x.after.box.h && x.before.visible_fraction >= .999 && x.after.visible_fraction < .999), spacing);
+    const larger = spacing?.overrides.find((x) => x.selector === '#already-large');
+    check('adaptation spacing: larger authored settings are never reduced', !!larger
+      && ['line_height', 'paragraph_after', 'letter_spacing', 'word_spacing'].every((key) => larger.after[key] >= larger.before[key]), larger);
+    check('adaptation short height: fixed toolbar CTA is clipped and remains eligible', short?.viewport_css.join() === '360,390'
+      && short.lost.some((x) => x.selector === '#fixed-cta' && x.kind === 'control'), short);
+    check('adaptation: growing text, long scrollable lines and document/container controls remain reachable', run.adaptation.every((r) => !r.lost.some((x) => ['#spacing-safe', '#spacing-scrollword', '#document-cta', '#scroll-cta', '#carousel-hidden'].includes(x.selector))));
+    check('adaptation privacy: all saved records omit field sentinels', fs.readdirSync(dir).filter((n) => n.endsWith('.json')).every((n) => {
+      const text = fs.readFileSync(path.join(dir, n), 'utf8');
+      return !text.includes('PREFILLED-PRIVATE-SENTINEL-7f4c') && !text.includes('TYPED-PRIVATE-SENTINEL-8fb2');
+    }));
+    const python = process.env.ERGOQA_PYTHON || 'python3';
+    const result = spawnSync(python, ['-c', 'from ergoqa.snapshot import load_run_dir; import sys; load_run_dir(sys.argv[1])', dir],
+      { encoding: 'utf8', env: { ...process.env, PYTHONPATH: REPO } });
+    check('adaptation: loader verifies auxiliary PNG hashes and conditions', result.status === 0, result.stderr);
+  } finally {
+    if (session.browserTransport) await session.browserTransport.close([session.context]);
+  }
+  const cleanScenario = { schema_version: 'ergo-scenario.v1', scenario_id: 'SC-adaptation-clean',
+    surface: { kind: 'web', url: `${base}/reflow_adaptation.html?clean` }, targets: {},
+    steps: [{ action: 'type', target: '#private-note', text: 'TYPED-PRIVATE-SENTINEL-8fb2', redact: true }],
+    success: { selector_visible: '#ordinary-label' } };
+  writeJson(path.join(tmp, 'adaptation-clean.json'), cleanScenario);
+  const clean = await runDriver(['run', '--scenario', path.join(tmp, 'adaptation-clean.json'), '--device', 'galaxy-s24',
+    '--out', path.join(tmp, 'runs'), '--run-id', 'R-adaptation-clean', '--no-focus-walk']);
+  const cleanRun = clean.code === 0 ? loadRun(path.join(tmp, 'runs', 'R-adaptation-clean')).run : null;
+  check('adaptation: responsive clean variant has measured conditions and no new losses', cleanRun?.adaptation.length === 2
+    && cleanRun.adaptation.every((r) => r.status === 'measured' && r.lost.length === 0), cleanRun?.adaptation ?? clean.err);
+  cleanScenario.surface.url = `${base}/reflow_adaptation.html?disappear`;
+  writeJson(path.join(tmp, 'adaptation-disappear.json'), cleanScenario);
+  const disappeared = await runDriver(['run', '--scenario', path.join(tmp, 'adaptation-disappear.json'), '--device', 'galaxy-s24',
+    '--out', path.join(tmp, 'runs'), '--run-id', 'R-adaptation-disappear', '--no-focus-walk']);
+  const disappearRun = disappeared.code === 0 ? loadRun(path.join(tmp, 'runs', 'R-adaptation-disappear')).run : null;
+  check('adaptation: a newly hidden control requires alternate-access review', disappearRun?.adaptation.some((r) => r.kind === 'short_height'
+    && r.status === 'unevaluable' && !r.evaluable && r.gaps.includes('content_disappeared_unverified')), disappearRun?.adaptation ?? disappeared.err);
+}
+
 async function dialogTest(base, tmp) {
   const sc = {
     schema_version: 'ergo-scenario.v1', scenario_id: 'SC-driver-dialog-01', surface: { kind: 'web', url: '{BASE}/dialog.html' },
@@ -2217,6 +2289,7 @@ async function main() {
     if (want('read')) await readPageTest(base, tmp);
     if (want('reflow')) await reflowTest(base, tmp);
     if (want('reflow-copy')) await reflowCopyTest(base, tmp);
+    if (want('adaptation')) await adaptationTest(base, tmp);
     if (want('viewport')) await viewportTest(base, tmp);
     if (want('dialog')) await dialogTest(base, tmp);
     if (want('serve')) await serveTest(base, tmp);

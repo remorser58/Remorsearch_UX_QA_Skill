@@ -186,6 +186,21 @@ precision; a full audit still needs axe-core or a manual WCAG review.
 | LY-01 | measured | Text is cut off by its own box (overflow hidden or clip and scroll size > client size; XCTest `textClipped`, a symptom for WCAG 1.4.4 and 1.4.12), or by a clipping ancestor within three levels (a fixed-width chip or label) while partly visible. ACT 59br37's exceptions mark a clean cut (`act_59br37: passed`): one nowrap line ending in a marker (text-overflow other than clip, drawn only by a block container), or a box one line high (used line-height ≥ its height, a "normal" line height measured from the text's first line box; the text's glyphs fit). Clean cuts stay as P3 truncation notes (a value cut in a confirmation screen still hides information) and do not count against the ACT gate. Boxes under 4 px (screen-reader-only text) and moving text (tickers, marquees) are skipped. | P2; P3 with an ellipsis, line clamp or clean cut |
 | RF-01 | measured | WCAG 1.4.10 at 320 CSS px. The driver keeps a static copy of each distinct screen (fingerprint: path, headings, dialogs, `main`/`form`/`section` elements with an id, large regions with an id and messages on screen (alerts, status and live regions with text), digits removed; the newest copy per screen; 12 screens per run, later ones counted as dropped) as the browser holds it: CSSOM-inserted rules, adopted sheets and open shadow roots included, scripts off, loaded under the page's own URL so its CSS and fonts load same-origin. It renders the copy at the device width and at 320 px. Findings: (a) the outermost elements past the right edge when the page scrolls sideways or the root clips, or inside a fixed bar (a fixed box cannot be scrolled to) that is not wholly off screen (a fixed off-canvas menu is exempt); two-dimensional content (tables, maps, video, code, `role=grid/toolbar`), inert and `aria-hidden` content, content with its own scroll or clipping box, and anything off screen at the device width too are exempt; (b) text ≥ 90 % visible at the device width and < 50 % visible at 320 px (cut by a clipping container), except text that is invisible, sits in a collapsed disclosure (a clipping box 0 high or `max-height: 0`), in a clipping box a control points to with `aria-controls` (a disclosure, carousel or tabs: reachable through it) or in a carousel track (`aria-roledescription` carousel, or a carousel library's class), or in a fixed box wholly off screen; (c) the page itself when it scrolls sideways and no element was located, unless exempt content (a table, code, an off-canvas box) reaches as far as the page scrolls (`exempt_right`). When more than three boxes stick out on one screen, the layout does not reflow at all and the screen gets one finding naming every box (`offender_count`). A copy that kept < 90 % of the live page's CSS rules is not measured (`styles_lost`). Layouts switched by scripts (`matchMedia`) are not re-evaluated. | P2 |
 
+| ID | Basis | Rule | Severity |
+| --- | --- | --- | --- |
+| RF-02 | measured | 같은 viewport와 DPR의 정적 복제에서 지원하는 HTML 텍스트에 WCAG 1.4.12 간격 조건을 적용합니다. 기존 값이 큰 경우에는 유지합니다. 실제 적용값을 확인한 뒤 텍스트 Range가 새로 잘린 경우를 기록하며 기본 간격에는 판정을 붙이지 않습니다. 문서·컨테이너 스크롤 접근은 유지합니다. 입력 UI·아이콘·이미지 문자, 지원하지 않는 문자 체계, 대체 접근 경로와 확인할 수 없는 스타일은 근거 부족으로 남깁니다. 실제 브라우저 확대나 전체 WCAG 적합성 검증은 포함하지 않습니다. | P2 |
+| RF-03 | measured | 폭과 DPR을 유지하고 높이를 `max(256, floor(원래 높이 / 2))`로 줄인 실험에서 새로 잘려 접근할 수 없는 텍스트와 조작을 비교합니다. 고정 영역의 버튼은 toolbar 역할만으로 면제하지 않습니다. 스크롤로 접근하는 콘텐츠는 유지됩니다. 화면 비율·높이 자체에는 통과·실패 기준을 부여하지 않습니다. 원래 높이가 256 CSS px 이하면 생략 이유를 기록합니다. | P2 |
+
+RF-02/RF-03은 `run.adaptation[]`과 원본·복제 baseline·변경 조건의 캡처 ID를
+연결합니다. 실제 변경 캡처의 PNG 해시와 기존 QA 영수증 경로를 사용합니다.
+일부 글자가 사라지는 경우도 비교하며 0.25 CSS px²를 계산 오차로 허용합니다.
+정수 CSS API로 읽은 스크롤 범위에는 해당 축의 끝 경계에 1 CSS px 반올림
+오차를 허용합니다. 숨김 상자의 경계는 유지합니다.
+이 허용량은 접근성 기준이 아닙니다. CSS·스캔·적용값 확인 실패와 사라진
+요소의 대체 경로 미확인은 `gaps`에 남습니다. 정적 복제가 재현하지 못하는
+스크립트 배치·키보드·가림은 추가 확인이 필요합니다.
+[WCAG 1.4.12 해설](https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html).
+
 `TI-01` is an opt-in measured task comparison on the recorded owner execution:
 `success.task_checks` compares authored value/text/checked expectations after
 specified actions and at completion. It stores checkpoint/capture IDs without

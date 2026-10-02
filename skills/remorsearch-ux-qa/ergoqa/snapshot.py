@@ -319,6 +319,15 @@ def validate_snapshot(doc: Any) -> list[str]:
         for key in ("url", "title", "app_id"):
             errors.string(surface, key, "$.surface", required=False, nullable=True, nonempty=False)
     _device_block(errors, errors.obj(doc, "device", "$"), "$.device")
+    device = doc.get("device")
+    if "adaptation" in doc or (isinstance(device, dict) and device.get("probe") == "adaptation"):
+        meta = errors.obj(doc, "adaptation", "$")
+        errors.require(isinstance(device, dict) and device.get("probe") == "adaptation", "$.device.probe", "must identify the auxiliary capture")
+        if meta is not None:
+            errors.enum(meta, "kind", ("baseline", "text_spacing", "short_height"), "$.adaptation")
+            errors.string(meta, "source_snapshot_id", "$.adaptation")
+            expected = ADAPTATION_CONDITIONS.get(meta["kind"]) if isinstance(meta.get("kind"), str) else None
+            errors.require(meta.get("condition") == expected, "$.adaptation.condition", "must match the captured condition")
     shot = errors.obj(doc, "screenshot", "$")
     if shot is not None:
         errors.require(safe_relative_path(shot.get("path")), "$.screenshot.path",
@@ -355,6 +364,129 @@ def validate_snapshot(doc: Any) -> list[str]:
 
 NATIVE_STATE_KEYS = ("source", "via", "type", "dom_id", "before", "after", "changed",
                      "event", "latency_ms", "stable")
+ADAPTATION_CONDITIONS = {
+    "text_spacing": {"line_height": 1.5, "paragraph_after": 2, "letter_spacing": 0.12,
+                     "word_spacing": 0.16, "preserve_larger": True},
+    "short_height": {"height_ratio": 0.5, "min_height_css": 256},
+}
+ADAPTATION_GAPS = ("baseline_already_short", "budget_exhausted", "capture_mapping_unverified", "styles_incomplete",
+                   "scan_capped", "copy_disconnected", "condition_unverified", "no_supported_content", "probe_failed",
+                   "unsupported_content", "unsupported_script", "unsupported_text", "unsupported_text_metrics",
+                   "alternate_access_unverified", "override_unverified", "findings_capped", "content_disappeared_unverified")
+
+
+def validate_adaptation(record: object, path: str = "$.adaptation[]") -> list[str]:
+    """Reject unbounded or contradictory imported static-copy measurements."""
+    errors = _Errors()
+    if not isinstance(record, dict):
+        return [f"{path}: must be an object"]
+    errors.enum(record, "kind", tuple(ADAPTATION_CONDITIONS), path)
+    condition = record.get("condition")
+    expected = ADAPTATION_CONDITIONS.get(record.get("kind")) if isinstance(record.get("kind"), str) else None
+    errors.require(isinstance(condition, dict) and expected is not None and condition == expected
+                   and all(type(condition.get(k)) is type(v) for k, v in expected.items()),
+                   f"{path}.condition", "must match the fixed probe definition")
+    for key in ("source_snapshot_id", "baseline_snapshot_id", "snapshot_id"):
+        errors.string(record, key, path, nullable=key != "source_snapshot_id")
+    viewports = []
+    for key in ("baseline_viewport_css", "viewport_css"):
+        value = record.get(key)
+        valid = isinstance(value, list) and len(value) == 2 and all(_is_int(v) and 1 <= v <= 16384 for v in value)
+        errors.require(valid, f"{path}.{key}", "must contain two bounded CSS dimensions")
+        viewports.append(value if valid else None)
+    before, after = viewports
+    if before and after:
+        expected_height = before[1] if record.get("kind") == "text_spacing" else max(256, math.floor(before[1] * 0.5))
+        errors.require(after == [before[0], expected_height], f"{path}.viewport_css", "must use the fixed width and height condition")
+    errors.number(record, "dpr", path, minimum=0.1, maximum=16)
+    errors.enum(record, "status", ("measured", "unevaluable", "inapplicable"), path)
+    for key in ("applied", "evaluable", "scan_capped"):
+        errors.boolean(record, key, path)
+    errors.number(record, "evaluated_elements", path, integer=True, minimum=0, maximum=2000)
+    gaps = errors.array(record, "gaps", path)
+    known_gaps = {gap for gap in (gaps or []) if isinstance(gap, str)}
+    for i, gap in enumerate(gaps or []):
+        errors.require(gap in ADAPTATION_GAPS, f"{path}.gaps[{i}]", "must be a known completeness gap")
+    lost = errors.array(record, "lost", path)
+    errors.require(lost is None or len(lost) <= 20, f"{path}.lost", "must contain at most 20 losses")
+    if record.get("status") == "measured":
+        errors.require(record.get("applied") is True and record.get("evaluable") is True and record.get("scan_capped") is False
+                       and _is_int(record.get("evaluated_elements")) and record["evaluated_elements"] > 0, path, "measured requires a complete applied scan")
+        errors.require(not known_gaps & {"styles_incomplete", "scan_capped", "copy_disconnected", "capture_mapping_unverified",
+                                             "condition_unverified", "probe_failed", "budget_exhausted", "override_unverified", "content_disappeared_unverified"}, path,
+                       "measured cannot carry a blocking completeness gap")
+        for key in ("baseline_snapshot_id", "snapshot_id"):
+            errors.require(isinstance(record.get(key), str), f"{path}.{key}", "measured requires a capture")
+        styles = errors.obj(record, "styles", path)
+        if styles is not None:
+            for key in ("live_rules", "copy_rules"):
+                errors.number(styles, key, f"{path}.styles", integer=True, minimum=0, maximum=1000000)
+            errors.require(styles.get("complete") is True, f"{path}.styles.complete", "must be true")
+            if _is_int(styles.get("live_rules")) and _is_int(styles.get("copy_rules")):
+                errors.require(styles["copy_rules"] >= styles["live_rules"], f"{path}.styles", "cannot lose authored rules")
+    else:
+        errors.require(record.get("evaluable") is False and not lost and bool(gaps), path,
+                       "unmeasured records require a reason and no loss claims")
+    if record.get("status") == "inapplicable":
+        errors.require(record.get("kind") == "short_height" and before is not None and before[1] <= 256
+                       and "baseline_already_short" in (gaps or []), path, "inapplicable requires an already-short baseline")
+    seen: set[str] = set()
+    for i, loss in enumerate(lost or []):
+        lp = f"{path}.lost[{i}]"
+        if not isinstance(loss, dict):
+            errors.add(lp, "must be an object")
+            continue
+        errors.string(loss, "selector", lp)
+        selector = loss.get("selector")
+        errors.require(isinstance(selector, str) and len(selector) <= 1000 and selector not in seen, f"{lp}.selector", "must be bounded and unique")
+        if isinstance(selector, str):
+            seen.add(selector)
+        errors.enum(loss, "kind", ("text", "control"), lp)
+        errors.require(loss.get("reason") == ("text_clipped" if loss.get("kind") == "text" else "control_clipped"), lp, "requires measured clipping")
+        states = []
+        for key in ("before", "after"):
+            state = errors.obj(loss, key, lp)
+            states.append(state)
+            if state is None:
+                continue
+            sp = f"{lp}.{key}"
+            errors.number(state, "index", sp, integer=True, minimum=0, maximum=19999)
+            errors.require(state.get("selector") == selector and state.get("kind") == loss.get("kind"), sp, "must describe the same target")
+            for field in ("area", "visible_area"):
+                errors.number(state, field, sp, minimum=0, maximum=1e12)
+            errors.number(state, "visible_fraction", sp, minimum=0, maximum=1)
+            area, visible, fraction = (state.get(k) for k in ("area", "visible_area", "visible_fraction"))
+            if all(is_number(v) for v in (area, visible, fraction)):
+                errors.require(area > 0 and visible <= area + 0.01 and abs(visible / area - fraction) < 0.0001, sp, "area and visibility must agree")
+        bs, changed = states
+        if bs is not None and changed is not None:
+            bf, af = bs.get("visible_fraction"), changed.get("visible_fraction")
+            errors.require(bs.get("index") == changed.get("index"), lp, "indices must match across the same static copy")
+            if is_number(bf) and is_number(af):
+                if all(is_number(s.get(k)) for s in (bs, changed) for k in ("area", "visible_area")):
+                    errors.require(bs["area"] - bs["visible_area"] <= 0.25 and changed["area"] - changed["visible_area"] > 0.25, lp, "requires new measured content loss")
+            if record.get("kind") == "text_spacing":
+                errors.require(loss.get("kind") == "text" and changed.get("applied") is True, lp, "requires an applied HTML text override")
+                props = changed.get("properties")
+                errors.require(isinstance(props, list) and all(isinstance(p, str) for p in props) and {"line_height", "letter_spacing"} <= set(props)
+                               and set(props) <= {"line_height", "letter_spacing", "word_spacing", "paragraph_after"}, lp, "requires applicable spacing properties")
+                for key in ("before", "after"):
+                    style = errors.obj(loss[key], "style", f"{lp}.{key}")
+                    if style is not None:
+                        for field in ("font_size", "line_height", "paragraph_after", "letter_spacing", "word_spacing"):
+                            errors.number(style, field, f"{lp}.{key}.style", minimum=-100000, maximum=100000)
+                old, new = bs.get("style"), changed.get("style")
+                if isinstance(old, dict) and isinstance(new, dict) and isinstance(props, list):
+                    font = new.get("font_size")
+                    if is_number(font) and font > 0:
+                        errors.require(old.get("font_size") == font, lp, "must preserve font size")
+                        for prop in [p for p in props if isinstance(p, str)]:
+                            if prop in ADAPTATION_CONDITIONS["text_spacing"] and is_number(old.get(prop)) and is_number(new.get(prop)):
+                                errors.require(new[prop] + 0.05 >= max(old[prop], ADAPTATION_CONDITIONS["text_spacing"][prop] * font), lp,
+                                               "effective spacing must reach the target without reducing larger values")
+                    else:
+                        errors.add(lp, "font size must be positive")
+    return errors.items
 
 
 def validate_native_state(native: Any, step: dict, path: str = "$.feedback_native_state") -> list[str]:
@@ -464,6 +596,10 @@ def validate_run(doc: Any) -> list[str]:
             continue
         errors.number(sample, "t_ms", path, minimum=0)
         errors.number(sample, "mean_luminance", path, minimum=0, maximum=1)
+    adaptation = errors.array(doc, "adaptation", "$", required=False)
+    errors.require(adaptation is None or len(adaptation) <= 24, "$.adaptation", "at most two conditions for 12 captured screens")
+    for i, record in enumerate(adaptation or []):
+        errors.items.extend(validate_adaptation(record, f"$.adaptation[{i}]"))
     for i, note in enumerate(errors.array(doc, "persona_notes", "$", required=False) or []):
         path = f"$.persona_notes[{i}]"
         if not isinstance(note, dict):
@@ -855,6 +991,25 @@ def load_run_dir(path: str | Path, *, verify_screenshots: bool = True) -> tuple[
             if ref is not None and ref not in seen:
                 raise SnapshotError(f"run step {step.get('step_index')} references missing snapshot {ref!r} ({key})")
     by_id = {snap["snapshot_id"]: snap for snap in snapshots}
+    for record in run.get("adaptation", []):
+        source = by_id.get(record["source_snapshot_id"])
+        if source is None or source["device"].get("probe") == "adaptation":
+            raise SnapshotError("adaptation source capture is missing or is another probe")
+        if source["device"]["viewport_css"] != record["baseline_viewport_css"] or source["device"]["dpr"] != record["dpr"]:
+            raise SnapshotError("adaptation dimensions or DPR differ from the source capture")
+        for key, kind, viewport in (("baseline_snapshot_id", "baseline", record["baseline_viewport_css"]),
+                                    ("snapshot_id", record["kind"], record["viewport_css"])):
+            if record.get(key) is None:
+                continue
+            snap = by_id.get(record[key])
+            if (snap is None or snap.get("adaptation", {}).get("source_snapshot_id") != source["snapshot_id"]
+                    or snap.get("adaptation", {}).get("kind") != kind or snap["device"].get("probe") != "adaptation"
+                    or snap.get("adaptation", {}).get("condition") != (None if kind == "baseline" else record["condition"])
+                    or snap["device"]["viewport_css"] != viewport or snap["device"]["dpr"] != record["dpr"]
+                    or snap["step_index"] != source["step_index"] or snap["captured_at"] < source["captured_at"]
+                    or any(abs(snap["screenshot"][field] - value * record["dpr"]) > 1
+                           for field, value in zip(("width_px", "height_px"), viewport))):
+                raise SnapshotError("adaptation capture is missing or does not match its recorded condition")
     steps_by_index = {step["step_index"]: step for step in run["steps"]}
     for check in (run.get("success_detail") or {}).get("criteria", []):
         if check.get("kind") != "task_check" or check.get("snapshot_id") is None:

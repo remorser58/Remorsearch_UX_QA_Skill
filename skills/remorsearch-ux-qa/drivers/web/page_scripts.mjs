@@ -588,7 +588,7 @@ export function extractSnapshot(args) {
         }
       })(),
       described_by: ids('aria-describedby').slice(0, 8),
-      visible_label: visibleInnerText(el),
+      visible_label: tag === 'textarea' ? '' : visibleInnerText(el),
       // Hidden from assistive technology (aria-hidden or inert on it or an ancestor).
       hidden: !!(el.closest && (el.closest('[aria-hidden="true"]') || el.closest('[inert]'))),
       // Rendered (not display:none, not visibility:hidden), even with a zero-size box: such

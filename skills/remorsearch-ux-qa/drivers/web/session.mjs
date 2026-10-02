@@ -68,6 +68,8 @@ const STEP_PROBE_MAX = 16; // focus probes before clicks, per run
 const REFLOW_WIDTH = 320;
 const REFLOW_MAX_SCREENS = 12;
 const REFLOW_BUDGET_MS = 40000;
+const TEXT_SPACING = Object.freeze({ line_height: 1.5, paragraph_after: 2, letter_spacing: 0.12, word_spacing: 0.16, preserve_larger: true });
+const SHORT_HEIGHT = Object.freeze({ height_ratio: 0.5, min_height_css: 256 });
 
 const MEASURED = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'type', 'press', 'scroll', 'gamepad']);
 const POINTER = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'scroll']);
@@ -136,6 +138,7 @@ function reflowCopy({ redactSelectors = [] } = {}) {
   const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/ /g, '&nbsp;');
   const escAttr = (t) => t.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/ /g, '&nbsp;');
   let rules = 0;
+  let inaccessibleStyles = 0;
   const sheetText = (sheet) => {
     try {
       const list = sheet.cssRules;
@@ -144,6 +147,7 @@ function reflowCopy({ redactSelectors = [] } = {}) {
       for (const r of list) t += `${r.cssText}\n`;
       return t;
     } catch (e) {
+      inaccessibleStyles++;
       return null; // a cross-origin sheet: its link reloads in the copy
     }
   };
@@ -154,7 +158,9 @@ function reflowCopy({ redactSelectors = [] } = {}) {
     try { redacted.push(...document.querySelectorAll(selector)); } catch { /* invalid CSS stays unevaluable */ }
   }
   const privateNode = (node) => {
-    for (let current = node; current; current = current.parentNode || current.host || null) if (redacted.includes(current)) return true;
+    for (let current = node; current; current = current.parentNode || current.host || null) {
+      if (redacted.includes(current) || (current.matches && current.matches('input, textarea, select, [contenteditable], [data-sensitive], [data-private]'))) return true;
+    }
     return false;
   };
   const adopted = (root) => {
@@ -175,7 +181,7 @@ function reflowCopy({ redactSelectors = [] } = {}) {
       if (tag === 'meta' && /refresh/i.test(c.getAttribute('http-equiv') || '')) continue;
       out.push(`<${tag}`);
       for (const a of c.attributes) {
-        if (privateNode(c) && ['value', 'title', 'aria-label'].includes(a.name)) continue;
+        if (privateNode(c) && (['value', 'title', 'aria-label', 'placeholder'].includes(a.name) || a.name.startsWith('data-'))) continue;
         out.push(` ${a.name}="${escAttr(a.value)}"`);
       }
       out.push('>');
@@ -242,7 +248,8 @@ function reflowCopy({ redactSelectors = [] } = {}) {
     parts.push(`!${n.localName}${idOf(n) ? `#${strip(idOf(n))}` : ''}`);
     alerts += 1;
   }
-  return { html: out.join(''), rules, key: parts.join('|') };
+  return { html: out.join(''), rules, inaccessibleStyles, key: parts.join('|'),
+    viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio, scale: visualViewport?.scale ?? 1 } };
 }
 
 /** In-page, on a reflow copy: the accessible CSS rules (document and open shadow roots, nested too). */
@@ -367,7 +374,7 @@ function reflowInfo(arg) {
     }
     return Math.round(100 * Math.max(0, x1 - x0) * Math.max(0, y1 - y0) / (r.width * r.height)) / 100;
   };
-  if (arg.mode === 'scan') {
+  if (arg.mode === 'scan' && !arg.probe) {
     const vis = [];
     const off = [];
     for (const n of all) {
@@ -403,6 +410,140 @@ function reflowInfo(arg) {
     return false;
   };
   const box = (r) => ({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) });
+  const sel = (n) => {
+    if (idOf(n)) return `#${CSS.escape(idOf(n))}`;
+    const parts = [];
+    for (let m = n; m && m.nodeType === 1 && m !== document.body && parts.length < 5; m = m.parentElement) {
+      if (idOf(m)) {
+        parts.unshift(`#${CSS.escape(idOf(m))}`);
+        break;
+      }
+      const sib = m.parentElement ? [...m.parentElement.children].filter((c) => c.tagName === m.tagName) : [];
+      parts.unshift(sib.length > 1 ? `${m.localName}:nth-of-type(${sib.indexOf(m) + 1})` : m.localName);
+    }
+    return parts.join(' > ');
+  };
+  // Additional conditions use text Range rectangles (the element's own box can
+  // remain unchanged while glyphs are clipped). Scroll ranges describe the best
+  // reachable position, so content below a fold is not automatically lost.
+  if (arg.probe) {
+    const gaps = new Set();
+    const states = [];
+    const plans = [];
+    const textNodes = (n) => [...n.childNodes].filter((c) => c.nodeType === 3 && c.nodeValue.trim());
+    const control = (n) => n.matches('button, a[href], input, select, textarea, summary, [role="button"], [tabindex]');
+    const metric = (n) => {
+      const cs = getComputedStyle(n);
+      return { font_size: parseFloat(cs.fontSize), line_height: parseFloat(cs.lineHeight),
+        paragraph_after: n.localName === 'p' ? parseFloat(cs.marginBlockEnd) : 0,
+        letter_spacing: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing),
+        word_spacing: cs.wordSpacing === 'normal' ? 0 : parseFloat(cs.wordSpacing) };
+    };
+    const eligible = (n) => {
+      if (hidden(n) || !shown(n) || !n.getClientRects().length) return false;
+      if (n.matches('canvas, iframe, object, embed, svg') || n.namespaceURI !== 'http://www.w3.org/1999/xhtml') {
+        gaps.add('unsupported_content');
+        return false;
+      }
+      if (getComputedStyle(n).writingMode !== 'horizontal-tb') { gaps.add('unsupported_script'); return false; }
+      for (let m = n; m && !top(m); m = up(m)) {
+        const cs = getComputedStyle(m);
+        if (carousel(m) || (controlledIds.has(idOf(m)) && ['hidden', 'clip'].includes(cs.overflowY))) {
+          gaps.add('alternate_access_unverified');
+          return false;
+        }
+        const r = m.getBoundingClientRect();
+        if ((r.width <= 1 || r.height <= 1) && (['hidden', 'clip'].includes(cs.overflowX) || ['hidden', 'clip'].includes(cs.overflowY))) return false;
+        if (cs.position === 'fixed' && (r.right <= 0 || r.left >= vw)) return false;
+      }
+      return true;
+    };
+    // Read all authored values before changing any inherited property.
+    if (arg.apply) {
+      for (const n of all) {
+        const nodes = textNodes(n);
+        if ((!nodes.length && n.localName !== 'p') || !eligible(n)) continue;
+        if (n.matches('input, textarea, select, option') || /\p{Co}/u.test(nodes.map((c) => c.nodeValue).join(''))) { gaps.add('unsupported_text'); continue; }
+        const text = nodes.map((c) => c.nodeValue).join('');
+        if (/[\p{Script=Arabic}\p{Script=Syriac}\p{Script=Thaana}]/u.test(text)) { gaps.add('unsupported_script'); continue; }
+        const before = metric(n);
+        if (!Object.values(before).every(Number.isFinite) || before.font_size <= 0) { gaps.add('unsupported_text_metrics'); continue; }
+        const lang = (n.closest('[lang]')?.getAttribute('lang') || document.documentElement.lang).toLowerCase();
+        plans.push({ n, before, paragraph: n.localName === 'p' && !/^(ja|zh)(-|$)/.test(lang), words: /\S\s+\S/u.test(text) });
+      }
+      for (const { n, before, paragraph, words } of plans) {
+        for (const [property, key] of [['line-height', 'line_height'], ['letter-spacing', 'letter_spacing'], ...(words ? [['word-spacing', 'word_spacing']] : []), ...(paragraph ? [['margin-block-end', 'paragraph_after']] : [])]) {
+          n.style.setProperty(property, `${Math.max(before[key], arg.spacing[key] * before.font_size)}px`, 'important');
+        }
+      }
+    }
+    const overlap = (a, b, lo, hi, min, max) => {
+      // Union of positions accessible across ordinary scrolling. A long line
+      // can be read in pieces; it need not fit one viewport simultaneously.
+      // scrollWidth/clientWidth and their height counterparts are integer CSS
+      // pixels, unlike Range coordinates. Allow their one-pixel edge rounding
+      // only on axes with an observed scroll range; hidden clips retain exact bounds.
+      const rounding = max > min ? 1 : 0;
+      return Math.max(0, Math.min(b, hi - min + rounding) - Math.max(a, lo - max - rounding));
+    };
+    const visibleArea = (n, r) => {
+      let w = r.width, h = r.height;
+      let xmin = 0, xmax = 0, ymin = 0, ymax = 0, fixed = false;
+      for (let m = n; m && m.nodeType === 1; m = up(m)) {
+        const cs = getComputedStyle(m);
+        const b = m.getBoundingClientRect();
+        // Native scroll extents, including the current position, are independent
+        // per axis. Never stop at a scroll box and ignore a clipping outer shell.
+        if (m !== se && ['auto', 'scroll'].includes(cs.overflowX)) { xmin += m.scrollLeft - Math.max(0, m.scrollWidth - m.clientWidth); xmax += m.scrollLeft; }
+        if (m !== se && ['auto', 'scroll'].includes(cs.overflowY)) { ymin += m.scrollTop - Math.max(0, m.scrollHeight - m.clientHeight); ymax += m.scrollTop; }
+        if (['hidden', 'clip', 'auto', 'scroll'].includes(cs.overflowX)) w = Math.min(w, overlap(r.left, r.right, b.left + m.clientLeft, b.left + m.clientLeft + m.clientWidth, xmin, xmax));
+        if (['hidden', 'clip', 'auto', 'scroll'].includes(cs.overflowY)) h = Math.min(h, overlap(r.top, r.bottom, b.top + m.clientTop, b.top + m.clientTop + m.clientHeight, ymin, ymax));
+        if (cs.position === 'fixed') { fixed = true; break; }
+      }
+      const locked = [document.documentElement, document.body].filter(Boolean).some((m) => ['hidden', 'clip'].includes(getComputedStyle(m).overflowY));
+      if (!fixed && !locked) { ymin += se.scrollTop - Math.max(0, se.scrollHeight - se.clientHeight); ymax += se.scrollTop; }
+      if (!fixed && !rootClips) { xmin += se.scrollLeft - Math.max(0, se.scrollWidth - se.clientWidth); xmax += se.scrollLeft; }
+      w = Math.min(w, overlap(r.left, r.right, 0, vw, xmin, xmax));
+      h = Math.min(h, overlap(r.top, r.bottom, 0, innerHeight, ymin, ymax));
+      return Math.max(0, w * h);
+    };
+    for (let i = 0; i < all.length; i++) {
+      const n = all[i];
+      const nodes = textNodes(n);
+      const isControl = arg.probe === 'short_height' && control(n);
+      if ((!nodes.length && !isControl) || !eligible(n)) continue;
+      if (arg.probe === 'text_spacing' && (n.matches('input, textarea, select, option') || /\p{Co}/u.test(nodes.map((c) => c.nodeValue).join('')))) { gaps.add('unsupported_text'); continue; }
+      const rects = [];
+      if (isControl) rects.push(n.getBoundingClientRect());
+      else for (const node of nodes) { const range = document.createRange(); range.selectNodeContents(node); rects.push(...range.getClientRects()); }
+      if (rects.length > 1000 || states.length >= 2000) { capped = true; gaps.add('scan_capped'); break; }
+      let area = 0, visible = 0;
+      for (const r of rects) { if (r.width <= 0 || r.height <= 0) continue; area += r.width * r.height; visible += visibleArea(n, r); }
+      if (!area) continue;
+      const style = metric(n);
+      if (arg.probe === 'text_spacing' && (!Object.values(style).every(Number.isFinite) || style.font_size <= 0)) { gaps.add('unsupported_text_metrics'); continue; }
+      const plan = plans.find((p) => p.n === n);
+      const applied = arg.apply ? !!plan && ['line_height', 'letter_spacing', ...(plan.words ? ['word_spacing'] : []), ...(plan.paragraph ? ['paragraph_after'] : [])].every((key) => style[key] + 0.05 >= Math.max(plan.before[key], arg.spacing[key] * style.font_size)) : false;
+      if (arg.apply && !applied) { gaps.add('override_unverified'); continue; }
+      states.push({ index: i, selector: sel(n), dom_id: idOf(n) || null, ancestor_ids: ids(n), tag: n.localName,
+        kind: isControl ? 'control' : 'text', area, visible_area: visible, visible_fraction: Math.min(1, visible / area), box: box(n.getBoundingClientRect()),
+        ...(arg.probe === 'text_spacing' ? { style, ...(plan ? { applied, properties: ['line_height', 'letter_spacing', ...(plan.words ? ['word_spacing'] : []), ...(plan.paragraph ? ['paragraph_after'] : [])] } : {}) } : {}) });
+    }
+    const lost = [];
+    const baseline = new Map((arg.baseline?.states || []).map((s) => [s.index, s]));
+    const changedIndices = new Set(states.map((s) => s.index));
+    for (const before of baseline.values()) if (!changedIndices.has(before.index) && before.area - before.visible_area <= 0.25) gaps.add('content_disappeared_unverified');
+    for (const after of states) {
+      const before = baseline.get(after.index);
+      // 0.25 CSS px² is numerical tolerance, independent of text length; a
+      // percentage cutoff could overlook a clipped word in a long paragraph.
+      if (!before || before.selector !== after.selector || before.area - before.visible_area > 0.25 || after.area - after.visible_area <= 0.25) continue;
+      if (lost.length < 20) lost.push({ selector: after.selector, dom_id: after.dom_id, ancestor_ids: after.ancestor_ids, tag: after.tag, kind: after.kind,
+        reason: after.kind === 'text' ? 'text_clipped' : 'control_clipped', before, after });
+      else { gaps.add('findings_capped'); break; }
+    }
+    return { states, lost, count: all.length, evaluated: states.length, scan_capped: capped, applied: arg.apply ? plans.length > 0 && !gaps.has('override_unverified') : false, gaps: [...gaps] };
+  }
   // Text visible at the device width but cut away by clipping containers here.
   if (full.vis.length) {
     for (let i = 0; i < all.length && out.lost.length < limit; i++) {
@@ -428,19 +569,6 @@ function reflowInfo(arg) {
       if (cs.position === 'fixed') return m.getBoundingClientRect().left >= cw - 1 ? null : 'fixed'; // null: an off-canvas menu
     }
     return pageOverflow ? 'page' : null;
-  };
-  const sel = (n) => {
-    if (idOf(n)) return `#${CSS.escape(idOf(n))}`;
-    const parts = [];
-    for (let m = n; m && m.nodeType === 1 && m !== document.body && parts.length < 5; m = m.parentElement) {
-      if (idOf(m)) {
-        parts.unshift(`#${CSS.escape(idOf(m))}`);
-        break;
-      }
-      const sib = m.parentElement ? [...m.parentElement.children].filter((c) => c.tagName === m.tagName) : [];
-      parts.unshift(sib.length > 1 ? `${m.localName}:nth-of-type(${sib.indexOf(m) + 1})` : m.localName);
-    }
-    return parts.join(' > ');
   };
   const hits = new Map();
   for (let i = 0; i < all.length; i++) {
@@ -755,6 +883,7 @@ export class WebSession {
     this.reflowScreens = [];
     this.reflowDropped = new Set();
     this.reflow = [];
+    this.adaptation = [];
     this.frameIndex = 0;
     this.blocked = [];
     this.blockedCount = 0;
@@ -915,13 +1044,14 @@ export class WebSession {
     if (!this.reflowEnabled()) return;
     try {
       const copy = await this.page.evaluate(reflowCopy, { redactSelectors: [...this.redactSelectors] });
+      copy.html = this.redactRecord(copy.html);
       const url = this.page.url();
       const key = `${stripQuery(url)}|${copy.key}`;
       const kept = this.reflowScreens.find((s) => s.key === key);
       if (kept) {
-        Object.assign(kept, { snapshot_id: snapshotId, url, html: copy.html, rules: copy.rules });
+        Object.assign(kept, { ...copy, key, snapshot_id: snapshotId, url });
       } else if (this.reflowScreens.length < REFLOW_MAX_SCREENS) {
-        this.reflowScreens.push({ key, snapshot_id: snapshotId, url, html: copy.html, rules: copy.rules });
+        this.reflowScreens.push({ ...copy, key, snapshot_id: snapshotId, url });
       } else if (!this.reflowDropped.has(key)) {
         this.reflowDropped.add(key);
       }
@@ -975,6 +1105,83 @@ export class WebSession {
     // Web fonts load on first use; wait briefly so text is measured in its own font (the
     // time limit is kept here: page timers may not run with scripts off).
     await Promise.race([page.evaluate(() => document.fonts.ready.then(() => true)).catch(() => false), sleep(1500)]);
+  }
+
+  /** Auxiliary snapshots use the existing PNG/JSON and QA receipt path. They
+   * never advance the live task's capture, focus, input, or screen-copy state. */
+  async adaptationCapture(page, screen, kind, condition) {
+    const id = `S-${this.runId}-${String(this.snapSeq++).padStart(3, '0')}`;
+    const png = await page.screenshot({ type: 'png', scale: 'device', timeout: 15000 });
+    const ex = await page.evaluate(extractSnapshot, { key: STATE_KEY, cap: ELEMENT_CAP, knownRoles: KNOWN_ROLES });
+    const { width, height } = pngSize(png);
+    const viewport = page.viewportSize();
+    const snap = this.redactRecord({
+      schema_version: 'ergo-snapshot.v1', snapshot_id: id, run_id: this.runId,
+      step_index: this.snapshots.find((s) => s.snapshot_id === screen.snapshot_id)?.step_index ?? 0, captured_at: isoNow(),
+      surface: { kind: 'web', url: screen.url, title: await page.title(), app_id: null, scroll: ex.scroll, visual: ex.visual,
+        ...(this.opts.buildId ? { build_id: this.opts.buildId, build_id_basis: 'operator_supplied', build_id_source: this.opts.buildIdSource } : {}) },
+      device: { ...this.dev.snapshotDevice, viewport_css: [viewport.width, viewport.height], probe: 'adaptation' },
+      adaptation: { kind, source_snapshot_id: screen.snapshot_id, condition },
+      screenshot: { path: `${id}.png`, sha256: sha256(png), width_px: width, height_px: height },
+      elements: ex.elements, focus_point: null, console_errors: [], notes: ['static_copy', ...(ex.truncated ? ['elements capped in auxiliary capture'] : [])],
+    });
+    writeFileAtomic(path.join(this.runDir, `${id}.png`), png);
+    writeJsonAtomic(path.join(this.runDir, `${id}.json`), snap);
+    this.snapshots.push({ snapshot_id: id, step_index: snap.step_index, path: `${id}.json`, png: `${id}.png` });
+    return id;
+  }
+
+  async adaptationPass() {
+    if (!this.reflowScreens.length) return;
+    let context;
+    const deadline = epochNow() + REFLOW_BUDGET_MS;
+    try {
+      context = await this.browser.newContext({ ...this.dev.contextOptions, javaScriptEnabled: false,
+        locale: this.opts.locale, timezoneId: this.opts.timezoneId, colorScheme: 'light', serviceWorkers: 'block', acceptDownloads: false });
+      await this.installNetworkPolicy(context, false);
+      const page = await context.newPage();
+      for (const screen of this.reflowScreens) {
+        const baselineViewport = [this.vw, this.vh];
+        const shortHeight = Math.max(SHORT_HEIGHT.min_height_css, Math.floor(this.vh * SHORT_HEIGHT.height_ratio));
+        for (const [kind, condition, height] of [['text_spacing', TEXT_SPACING, this.vh], ['short_height', SHORT_HEIGHT, shortHeight]]) {
+          const rec = { kind, condition, source_snapshot_id: screen.snapshot_id, baseline_snapshot_id: null, snapshot_id: null,
+            baseline_viewport_css: baselineViewport, viewport_css: [this.vw, height], dpr: this.dev.snapshotDevice.dpr,
+            status: 'unevaluable', applied: false, evaluable: false, scan_capped: false, gaps: [], lost: [], evaluated_elements: 0 };
+          this.adaptation.push(rec);
+          if (kind === 'short_height' && this.vh <= SHORT_HEIGHT.min_height_css) { rec.status = 'inapplicable'; rec.gaps.push('baseline_already_short'); continue; }
+          if (epochNow() > deadline) { rec.gaps.push('budget_exhausted'); continue; }
+          try {
+            if (screen.viewport.width !== this.vw || screen.viewport.height !== this.vh || screen.viewport.dpr !== rec.dpr || screen.viewport.scale !== 1) { rec.gaps.push('capture_mapping_unverified'); continue; }
+            await page.setViewportSize({ width: this.vw, height: this.vh });
+            await this.loadReflowCopy(page, screen);
+            const rules = await page.evaluate(reflowRuleCount);
+            rec.styles = { live_rules: screen.rules, copy_rules: rules, complete: !screen.inaccessibleStyles && rules >= screen.rules };
+            if (!rec.styles.complete) { rec.gaps.push('styles_incomplete'); continue; }
+            const before = await page.evaluate(reflowInfo, { probe: kind });
+            rec.baseline_snapshot_id = await this.adaptationCapture(page, screen, 'baseline', null);
+            if (kind === 'short_height') await page.setViewportSize({ width: this.vw, height });
+            const after = await page.evaluate(reflowInfo, { probe: kind, baseline: before, apply: kind === 'text_spacing', spacing: TEXT_SPACING });
+            rec.applied = kind === 'short_height' || after.applied;
+            rec.evaluated_elements = after.evaluated;
+            if (kind === 'text_spacing') rec.overrides = after.states.filter((s) => s.applied).slice(0, 20)
+              .map((s) => ({ selector: s.selector, before: before.states.find((b) => b.index === s.index)?.style ?? null, after: s.style, properties: s.properties }));
+            rec.scan_capped = before.scan_capped || after.scan_capped;
+            rec.gaps = [...new Set([...before.gaps, ...after.gaps, ...(rec.scan_capped ? ['scan_capped'] : []), ...(before.count !== after.count ? ['copy_disconnected'] : [])])];
+            if (!rec.applied) rec.gaps.push('condition_unverified');
+            if (!after.evaluated) rec.gaps.push('no_supported_content');
+            rec.evaluable = rec.applied && !rec.scan_capped && before.count === after.count && after.evaluated > 0 && !rec.gaps.includes('content_disappeared_unverified');
+            rec.snapshot_id = await this.adaptationCapture(page, screen, kind, condition);
+            rec.status = rec.evaluable ? 'measured' : 'unevaluable';
+            if (rec.evaluable) rec.lost = after.lost;
+          } catch (err) {
+            rec.status = 'unevaluable'; rec.evaluable = false; rec.lost = []; rec.gaps.push('probe_failed');
+            this.warnOnce('adaptation-failed', `adaptation copy failed: ${firstLine(err.message)}`);
+          }
+        }
+      }
+    } finally {
+      if (context) await context.close().catch(() => {});
+    }
   }
 
   /**
@@ -2883,7 +3090,10 @@ export class WebSession {
         await this.boundedWalk(() => this.focusWalk(this.page, 'end', this.lastSnapshotId), 'end');
         await this.boundedWalk(() => this.focusWalkFresh(), 'load');
       }
-      if (!reason && !this.crashed && !this.blockReasons.length && this.dev && this.reflowEnabled()) await this.reflowPass();
+      if (!reason && !this.crashed && !this.blockReasons.length && this.dev && this.reflowEnabled()) {
+        await this.adaptationPass().catch((err) => this.warnOnce('adaptation-pass', `adaptation pass failed: ${firstLine(err.message)}`));
+        await this.reflowPass();
+      }
       if (success === null && !detail && typeof personaSuccess === 'boolean') {
         success = personaSuccess;
         basis = 'judgment';
@@ -2948,6 +3158,7 @@ export class WebSession {
         flash_samples: this.flashSamples,
         focus_walks: this.focusWalks,
         reflow: this.reflow,
+        adaptation: this.adaptation,
         ...(this.reflowDropped.size ? { reflow_screens_dropped: this.reflowDropped.size } : {}),
         flash_sampling: this.opts.flashSampleMs > 0 ? {
           enabled: true,

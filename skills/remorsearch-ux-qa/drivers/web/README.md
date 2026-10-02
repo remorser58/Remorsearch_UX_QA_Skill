@@ -608,6 +608,35 @@ they belong to (0 = initial load), so a step can own two snapshots.
   visible at the device width, < 50 % at 320 px),
   `lost_height`, `scan_capped` (more than 20,000 elements), or `styles_lost` (the
   copy kept < 90 % of the live CSS rules; not measured) or `error`.
+- **텍스트 간격과 짧은 창**: 같은 화면 복제를 재사용해 `run.adaptation[]`에
+  `text_spacing`과 `short_height` 조건을 추가합니다. 간격 검사는 폭·높이·DPR을
+  유지한 채 해당 HTML 텍스트의 줄 높이 1.5em, 문단 뒤 간격 2em, 자간 .12em,
+  어간 .16em을 동시에 적용하고, 기존 값이 더 크면 보존합니다. 실제 적용된
+  값은 `overrides[]`의 최대 20개 샘플과 `lost[].after.style`에 기록합니다.
+  짧은 창은 폭과 DPR을 유지하고 높이를 `max(256, floor(원래 높이 / 2))`로
+  바꾸는 실험입니다. 원래 높이가 256 CSS px 이하이면 `inapplicable`로 남깁니다.
+  이 높이와 화면 비율에는 WCAG 통과·실패 기준을 부여하지 않습니다.
+  [WCAG 1.4.12 해설](https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html)은
+  간격을 바꾼 뒤에도 내용과 기능을 유지하도록 요구합니다.
+  텍스트 `Range`와 조작 대상의 실제 범위를 비교해 새 잘림만 RF-02/RF-03으로
+  기록합니다(P2). 원래 내용에 접근할 수 있고 변경 뒤 범위의 일부가 잘린 경우를
+  비교하며, 계산 오차 허용량은 0.25 CSS px²입니다. 스크롤 길이를 반환하는
+  정수 CSS API에는 실제 스크롤 범위가 있는 축에만 끝 경계 1 CSS px의 반올림
+  오차를 허용합니다. 숨김 상자 자체의 경계는 유지합니다. 문서·컨테이너의 스크롤로
+  도달하는 내용은 손실로 세지 않습니다. 기본 줄 간격은 판정 대상이 아닙니다.
+  `source_snapshot_id`는 원본 화면, `baseline_snapshot_id`는 원래 크기의 복제,
+  `snapshot_id`는 변경 조건의 복제를 가리킵니다. 보조 캡처는 `device.probe:
+  adaptation`과 조건을 기록하며 기존 PNG 해시·QA 영수증 경로를 사용합니다.
+  원본 과업의 화면 이력과 일반 인체공학 분석에서는 보조 캡처를 제외합니다.
+  `applied`, `evaluable`, `scan_capped`, `styles`, `gaps`, `lost[].before/after`로
+  실제 적용 여부와 비교 범위를 확인할 수 있습니다.
+  읽을 수 없는 CSS, 스캔·시간 상한, 적용값 확인 실패는 측정 불가로 남깁니다.
+  `normal` 줄 높이처럼 실제 값을 확정할 수 없는 텍스트, 입력 UI·아이콘·이미지
+  문자, 일부 문자 체계, 세로쓰기와 상세·슬라이드 접근 경로는 `gaps`에 남습니다.
+  한국어 어간처럼 존재하는 속성을 적용하며, 공백이 없는 텍스트의 어간과
+  일본어·중국어의 문단 뒤 간격은 적용 범위를 줄입니다.
+  스크립트로 바뀌는 배치, 실제 브라우저 확대·키보드 초점 이동, 가림을 모두
+  재현하지 않습니다. 이 결과는 기록된 정적 복제의 잘림 관찰입니다.
 - **Console**: `console.error` and uncaught page errors, per snapshot (since the
   previous one) and in `run.json`. Errors caused by the driver's own network block
   are counted separately, not reported as page errors.

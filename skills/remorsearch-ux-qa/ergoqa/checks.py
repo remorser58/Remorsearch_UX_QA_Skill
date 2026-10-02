@@ -22,7 +22,7 @@ from typing import Any, Callable, Iterable
 
 from . import params
 from .hf import cognition, game, gaze, perception, pointing, reach
-from .snapshot import is_number, validate_native_state
+from .snapshot import is_number, validate_adaptation, validate_native_state
 
 SEVERITY_ORDER = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
 
@@ -256,6 +256,18 @@ RF01 = _register(CheckSpec(
     "Content sticks out sideways at 320 CSS px (reflow)",
     ("REF-wcag22-1410",), ("web", "desktop"), "visual",
     "고정 폭(width: 400px 등)을 max-width: 100%와 줄바꿈되는 배치로 바꿔, 320 CSS px 폭(400 % 확대)에서 가로 스크롤 없이 읽히게 하세요.",
+))
+RF02 = _register(CheckSpec(
+    "RF-02", "layout", "measured", "텍스트 간격 변경 뒤 글자가 잘림",
+    "Text is clipped after the applicable spacing override",
+    ("REF-wcag22-1412",), ("web", "desktop"), "visual",
+    "텍스트 간격을 늘린 조건에서도 전문을 읽을 수 있도록 고정 높이와 잘림을 조정하세요.",
+))
+RF03 = _register(CheckSpec(
+    "RF-03", "layout", "measured", "짧은 창에서 콘텐츠에 접근할 수 없음",
+    "Content becomes unreachable in the shorter viewport experiment",
+    (), ("web", "desktop"), "visual",
+    "창 높이가 줄어도 주요 내용과 조작에 도달할 수 있도록 고정 영역과 스크롤 범위를 조정하세요.",
 ))
 SM04 = _register(CheckSpec(
     "SM-04", "semantics", "measured", "오류 문구가 입력 칸과 떨어져 있고 연결되지 않음",
@@ -2403,6 +2415,57 @@ def check_reflow(run: dict[str, Any], profile: dict[str, Any], snapshots: dict[s
     return out
 
 
+def check_adaptation(run: dict, profile: dict, snapshots: dict | None = None) -> list[Observation]:
+    """New clipping only, in an applied condition with matching capture receipts.
+
+    The height ratio is a recorded experiment, with no WCAG/aspect-ratio verdict.
+    The spacing result covers supported HTML text in the static copy only.
+    """
+    out: list[Observation] = []
+    seen: set[tuple[str, str]] = set()
+    for rec in run.get("adaptation") or []:
+        if validate_adaptation(rec) or rec.get("status") != "measured":
+            continue
+        source = (snapshots or {}).get(rec["source_snapshot_id"])
+        baseline = (snapshots or {}).get(rec["baseline_snapshot_id"])
+        changed = (snapshots or {}).get(rec["snapshot_id"])
+        if not source or not baseline or not changed:
+            continue
+        valid = all(s.get("run_id") == run.get("run_id") for s in (source, baseline, changed))
+        valid = valid and source.get("device", {}).get("viewport_css") == rec["baseline_viewport_css"] and source["device"].get("dpr") == rec["dpr"]
+        for snap, kind, viewport, condition in ((baseline, "baseline", rec["baseline_viewport_css"], None),
+                                               (changed, rec["kind"], rec["viewport_css"], rec["condition"])):
+            meta = snap.get("adaptation") or {}
+            valid = valid and (meta.get("kind") == kind and meta.get("source_snapshot_id") == source["snapshot_id"]
+                               and meta.get("condition") == condition and snap.get("device", {}).get("probe") == "adaptation"
+                               and snap["device"].get("viewport_css") == viewport and snap["device"].get("dpr") == rec["dpr"])
+        if not valid:
+            continue
+        check_id = "RF-02" if rec["kind"] == "text_spacing" else "RF-03"
+        for loss in rec["lost"]:
+            selector = loss["selector"]
+            if (check_id, selector) in seen:
+                continue
+            seen.add((check_id, selector))
+            element = next((e for e in changed.get("elements", []) if e.get("selector") == selector), None)
+            fraction = loss["after"]["visible_fraction"]
+            condition_text = "텍스트 간격을 늘린 복제 화면" if check_id == "RF-02" else f"높이를 {rec['viewport_css'][1]} CSS px로 줄인 복제 화면"
+            out.append(Observation(
+                check_id, run["run_id"], profile["profile_id"], changed["snapshot_id"], None,
+                [element["id"]] if element else [], element_key(element) if element else f"{selector}|",
+                {"name": "reachable_visible_fraction", "value": fraction, "unit": "fraction",
+                 "baseline_value": loss["before"]["visible_fraction"], "reason": loss["reason"], "kind": loss["kind"],
+                 "condition": rec["condition"], "baseline_viewport_css": rec["baseline_viewport_css"], "viewport_css": rec["viewport_css"],
+                 "dpr": rec["dpr"], "source_snapshot_id": source["snapshot_id"], "baseline_snapshot_id": baseline["snapshot_id"],
+                 "changed_snapshot_id": changed["snapshot_id"], "before": loss["before"], "after": loss["after"],
+                 "geometry_tolerance_css_area": 0.25, "scroll_extent_rounding_css_px": 1,
+                 "scope": "supported static HTML text" if check_id == "RF-02" else "experimental short-height clipping"},
+                False, "P2", f"{condition_text}에서 '{selector}'의 내용이 잘려 {100 * fraction:.1f}%에 접근할 수 있습니다. 원래 조건에서는 전체가 보였습니다.",
+                extra={"anchor_selectors": [selector], "context_selectors": [f"#{a}" for a in loss.get("ancestor_ids", [])]},
+            ))
+    return out
+
+
 FOCUS_INDICATOR_MIN_PX = 4  # changed pixels (>= 24/255 per channel) inside the element box + 4 px
 
 
@@ -2559,7 +2622,7 @@ HYPOTHESIS_CHECKS = frozenset({"GZ-01", "GZ-04", "PC-05", "PT-05", "GM-06"})
 # Checks that read no profile attribute: one verdict per snapshot, reported as
 # "profile-independent" instead of a k/n coverage (STF-08).
 PROFILE_INVARIANT_CHECKS = frozenset({"TI-01", "PT-01", "PT-05", "PT-06", "PC-01", "PC-02", "CG-01", "CG-03", "GZ-03", "GM-05", "GM-06",
-                                      "SM-01", "SM-02", "SM-03", "SM-04", "SM-05", "SM-06", "SM-07", "SM-08", "LY-01", "RF-01",
+                                      "SM-01", "SM-02", "SM-03", "SM-04", "SM-05", "SM-06", "SM-07", "SM-08", "LY-01", "RF-01", "RF-02", "RF-03",
                                       "FM-02"})
 
 
