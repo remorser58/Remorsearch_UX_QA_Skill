@@ -168,7 +168,7 @@ function readFixture(pathname, res, req) {
 }
 
 // Fixture files served at /<name> (same origin as the pages, no CORS headers).
-const FIXTURE_FILES = Object.fromEntries(['layers.html', 'dialog.html', 'reflow.html', 'reflow2.html', 'reflow2.css', 'reflow_adaptation.html', 'viewport.html', 'focus.html', 'focus2.html', 'feedback_ambient.html', 'native_feedback.html', 'inspect.html', 'painted_state.html']
+const FIXTURE_FILES = Object.fromEntries(['layers.html', 'dialog.html', 'reflow.html', 'reflow2.html', 'reflow2.css', 'reflow_adaptation.html', 'viewport.html', 'focus.html', 'focus2.html', 'feedback_ambient.html', 'native_feedback.html', 'inspect.html', 'painted_state.html', 'typography.html']
   .map((f) => [`/${f}`, f]));
 
 function startFixtureServer() {
@@ -2217,6 +2217,80 @@ async function gazeGeometryTest(tmp) {
   }
 }
 
+async function typographyTest(base, tmp) {
+  const { pw, info } = loadPlaywright();
+  const transport = await openBrowser(pw, info, { endpoint: undefined });
+  const context = await transport.browser.newContext({ viewport: { width: 1100, height: 1000 }, deviceScaleFactor: 1 });
+  try {
+    const page = await context.newPage();
+    await page.goto(`${base}/typography.html`);
+    await page.evaluate(() => document.fonts.ready);
+    const capture = () => page.evaluate(extractSnapshot, { key: STATE_KEY, cap: 400, knownRoles: [...KNOWN_ROLES] });
+    const ex = await capture();
+    const item = (id) => ex.elements.find((e) => e.selector === `#${id}`);
+    const metric = (id) => item(id)?.font_metrics;
+    writeJson(path.join(tmp, 'typography-capture.json'), ex);
+    await page.screenshot({ path: path.join(tmp, 'typography.png') });
+    check('typography: equal CSS em retains distinct actual body metrics',
+      item('arial16')?.font_size_px === 16 && item('courier16')?.font_size_px === 16
+      && metric('arial16')?.status === 'matched_font' && metric('courier16')?.status === 'matched_font'
+      && metric('arial16').body_height_px > metric('courier16').body_height_px);
+    check('typography: equal 22px em straddles the 18px PC body floor',
+      item('arial')?.font_size_px === 22 && item('courier')?.font_size_px === 22
+      && metric('arial')?.body_height_px > 18 && metric('courier')?.body_height_px < 18, [metric('arial'), metric('courier')]);
+    check('typography: displayed body uses actual text, not a fixed Hg probe',
+      metric('xonly')?.body_height_px === metric('xonly')?.probes?.x_height_px
+      && metric('xonly').body_height_px < metric('xonly').probes.body_Hg_px);
+    check('typography: larger body supplies a negative control', metric('above')?.body_height_px > 18);
+    check('typography: mixed fonts and transformed or vertical text remain unavailable',
+      ['mixed', 'transformed', 'zoomed', 'vertical', 'pseudo'].every((id) => metric(id)?.status === 'unavailable'
+        && metric(id)?.body_height_px === null && metric(id)?.probes === null), ['mixed', 'transformed', 'zoomed', 'vertical', 'pseudo'].map(metric));
+    check('typography: individual descendant transforms remain unavailable', ['child-scale', 'child-rotate', 'child-translate']
+      .every((id) => metric(id)?.status === 'unavailable' && metric(id)?.body_height_px === null));
+    check('typography: sensitive ancestors and subtrees contribute no numeric text fingerprint', ['sensitive', 'private-descendant', 'private-subtree']
+      .every((id) => metric(id)?.status === 'unavailable' && metric(id)?.probes === null && metric(id)?.limitations.includes('private_control')));
+    check('typography: private controls have no font text measurements or leaked values',
+      ['input', 'textarea', 'select', 'private'].every((id) => metric(id)?.status === 'unavailable' && metric(id)?.limitations.includes('private_control'))
+      && ['INPUT-PRIVATE-93485', 'TEXTAREA-PRIVATE-19458', 'SELECT-PRIVATE-94752'].every((value) => !JSON.stringify(ex).includes(value)));
+    check('typography: raster and font fallback limits accompany matched Canvas data',
+      metric('arial')?.method === 'canvas-textmetrics-v1' && metric('arial')?.unit === 'css_px'
+      && metric('arial')?.limitations.join() === 'dom_ink_unmeasured,font_fallback_unverified');
+    const secret = 'TYPOGRAPHY-OWNED-PRIVATE-54283';
+    await page.locator('#echo').evaluate((n, value) => { n.textContent = value; }, secret);
+    const { scenario: privateScenario } = normalizeScenario({ schema_version: 'ergo-scenario.v1', scenario_id: 'SC-typography-private',
+      surface: { kind: 'web', url: `${base}/typography.html` }, task_goal_ko: '보호된 글자를 확인합니다', device_ids: ['desktop-1920'],
+      targets: {}, steps: [{ action: 'type', target: '#input', text: secret, redact: true }], success: { url_contains: 'typography' } },
+      { requireSteps: true });
+    const session = new WebSession({ pw, pwInfo: info, runDir: tmp, runId: 'R-typography-private', options: {}, scenario: privateScenario });
+    session.page = page;
+    session.redactSelectors.add('#opted');
+    const protectedCapture = session.redactRecord(await session.extract());
+    writeJson(path.join(tmp, 'typography-protected-capture.json'), protectedCapture);
+    check('typography: session redaction applies before font measurement including private echoes', ['#opted', '#echo']
+      .every((selector) => protectedCapture.elements.find((e) => e.selector === selector)?.font_metrics?.status === 'unavailable')
+      && !JSON.stringify(protectedCapture).includes(secret));
+    await page.evaluate(() => { Object.defineProperty(document.fonts, 'check', { value: () => false }); });
+    const unloaded = await capture();
+    writeJson(path.join(tmp, 'typography-font-unavailable.json'), unloaded);
+    check('typography: unavailable font produces no body metric', unloaded.elements.find((e) => e.selector === '#arial')?.font_metrics?.limitations.includes('font_not_loaded'));
+    await page.goto(`${base}/typography.html`);
+    await page.evaluate(() => { HTMLCanvasElement.prototype.getContext = () => null; });
+    const noCanvas = await capture();
+    writeJson(path.join(tmp, 'typography-canvas-unavailable.json'), noCanvas);
+    check('typography: unavailable Canvas remains an explicit gap', noCanvas.elements.find((e) => e.selector === '#arial')?.font_metrics?.limitations.includes('canvas_unavailable'));
+    const py = process.env.ERGOQA_PYTHON;
+    if (py) {
+      const r = spawnSync(py, [path.resolve(HERE, '../../../../tests/test_ergo_typography.py'), '--capture', path.join(tmp, 'typography-capture.json')],
+        { encoding: 'utf8', env: process.env });
+      fs.writeFileSync(path.join(tmp, 'typography-analysis.json'), r.stdout || '');
+      check('typography: captured fonts drive typed XAG estimates and preserve unknown controls', r.status === 0, r.stderr || r.stdout);
+    } else skip('typography: Python captured-font analysis', 'ERGOQA_PYTHON not configured');
+  } finally {
+    await context.close();
+    await transport.close();
+  }
+}
+
 async function main() {
   const keep = process.argv.includes('--keep');
   // --only a,b: run just these groups (scripted, actions, layers, focus, focus2, feedback, native-feedback,
@@ -2237,6 +2311,7 @@ async function main() {
     if (want('integrity')) await taskIntegrityTest(base, tmp);
     if (want('painted')) await paintedStateTest(base, tmp);
     if (want('gaze')) await gazeGeometryTest(tmp);
+    if (want('typography')) await typographyTest(base, tmp);
 
     const outDir = path.join(tmp, 'runs');
     let r = null;

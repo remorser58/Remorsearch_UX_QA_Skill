@@ -117,7 +117,7 @@ Z-pattern and golden-ratio rules are not encoded.
 | PC-01 | measured | WCAG 1.4.3: 4.5:1, or 3:1 for ≥ 24 px / ≥ 18.66 px bold (KWCAG 2.2 5.4.3 expansion exception is assessed separately), over the whole rendered page. Disabled controls exempt. | < 3:1 or primary/critical → P1, else P2 |
 | PC-02 | measured | WCAG 1.4.11: rendered identifying boundary, glyph or state indicator ≥ 3:1 against its known adjacent layer. Web captures use solid CSS parts and SVG fill/stroke; unused CSS foreground cannot stand in for a glyph. Switch/slider track and thumb nodes are checked separately from the label and each other. Text-labelled custom radio/checkbox cards are exempt from outline contrast; a rendered state indicator is still checked. Inactive controls are exempt. | P2 |
 | PC-03 | model | Colour-only states: within same-shaped groups, corresponding rendered CSS/SVG paint channels that differ clearly (ΔE00 ≥ 20) are treated as candidate state codes. Different SVG geometry supplies another cue; visible state words (including 입금/출금, 승인/취소), check/cross glyphs and signed amounts supply redundancy. ARIA-only names do not supply a visible cue. After Machado per-severity simulation, ΔE00 < 5 confusable, 5–10 marginal; exempt when the states differ by ≥ 3:1 luminance (G183). Tritan simulation is low confidence. | < 5 → P2; 5–10 → P3, but P2 when the colour encodes a status, warning or error |
-| PC-04 | model | Font-size visual angle at the profile's viewing distance: < 16′ (ISO 9241-303 minimum) → P2 (P1 for critical messages), all text; < Hangul critical print size (24.6′ young, 31.2′ 60s+/presbyopic; snippet-level, metric unconfirmed) → P3 for running Hangul prose only (≥ 12 Hangul syllables; not buttons, links, headings or table cells). Only elements that own their text are measured. The older-adult value is not combined with a longer viewing distance. | as rule |
+| PC-04 | model | Retained project policy on CSS em angle: < 16′ → P2 (P1 for critical messages); < 24.6′ young / 31.2′ 60s+/presbyopic → P3 for running Hangul prose (≥ 12 syllables; excludes controls, headings and table cells). These values do not certify ISO/HIG conformance or an individual's critical print size. Apple 11pt is a platform-point guideline; the retained 11 CSS px floor is project policy. Profile distance and device vertical physical scale remain assumptions. | as rule |
 | PC-05 (hypothesis) | model | Reported as a hypothesis (no unique detection; judges split). Bright-sun profile: primary, status, error and critical text below 7:1 (one ambient model: 2000 nits, 50 klx, ρ 0.02 ≈ WCAG 7.07). | P3 |
 
 Web `paint.source = dom-solid-v1` is a bounded DOM measurement: at most 64
@@ -132,6 +132,24 @@ text inputs remain measurable. Legacy captures without paint metadata retain
 their boundary checks; a foreground glyph requires visible glyph text.
 Colour-only grouping and shape correspondence are screening heuristics, not a
 WCAG certification or a calibrated prediction of an individual's perception.
+
+글자 추출 시 브라우저의
+[Canvas TextMetrics](https://html.spec.whatwg.org/multipage/canvas.html#textmetrics)로
+`font_metrics`를 CSS px 단위로 저장할 수 있다. 화면에 표시된 텍스트의 본문 높이는
+고정 표본 H의 cap-height, x의 x-height, Hg의 본문 높이, 한의 높이와 구분한다.
+글꼴 로드가 완료되고 같은 글꼴·스타일을 사용하는 가로 텍스트에 적용한다.
+변형·확대, 지원하지 않는 글자 조형, 입력 필드와 보호된 텍스트는 측정에서 제외한다.
+혼합 글꼴, Canvas·글꼴 지원 부족, 노드·문자 수 상한 초과는 측정 불가 사유로 남긴다.
+Canvas 값은 DOM의 래스터 픽셀을 실측하지 않으며 실제 대체 글꼴도 확정하지 못한다.
+모든 측정에 이 제한을 기록하고, PC-04는 em 정책과 글리프·표본의 시각각을 구분한다.
+
+[XAG 101](https://learn.microsoft.com/en-us/xbox/accessibility/xbox-accessibility-guidelines/101)은
+ascender부터 descender까지 렌더링된 본문 높이를 사용한다. 1080p에서 콘솔 26px,
+PC 18px를 기준으로 한다. GM-01은 선언된 패널 높이와 DPR로 환산한 기존 비교값에
+표시 텍스트의 Canvas 본문 높이 추정값을 비교한다. 측정 불가 시 XAG 판정을 보류하고,
+기존 em 경고는 프로젝트의 대리 지표로 표시한다. 추정값 비교만으로 렌더링된 글자의
+XAG 적합성을 확정하지 않는다. NASA의 cap-height 요건은 우주 비행 시스템에 적용되며,
+연속 독서의 x-height 연구도 모든 CSS em에 적용할 하한을 제시하지 않는다.
 
 Korean CVD prevalence: men 5.9 % (1989) / 6.5 % (KNHANES 2013, 19–49), women
 0.44 % / 1.1 %; deutan ≈ 6× protan [snippet]. KRDS body text ≥ 16 px (17 px

@@ -1442,7 +1442,9 @@ def check_colour_only(ctx: Context) -> list[Observation]:
 
 
 def check_text_size(ctx: Context) -> list[Observation]:
-    """Font-size visual angle: floor (ISO ~16') and Hangul critical print size (P3)."""
+    """Legacy em-angle policy and explicit Canvas body estimates for XAG 101."""
+    from .snapshot import validate_font_metrics
+
     out: list[Observation] = []
     vision = ctx.attrs.get("vision", {})
     presbyopic = bool(vision.get("presbyopia")) or vision.get("acuity") in ("reduced", "low")
@@ -1456,8 +1458,20 @@ def check_text_size(ctx: Context) -> list[Observation]:
         size = element.get("font_size_px")
         if not text or not size or not _present(element):
             continue
-        size_mm = _point_mm(ctx, float(size), 0)[0]
+        size_mm = _point_mm(ctx, 0, float(size))[1]
         angle = perception.visual_angle_arcmin(size_mm, viewing)
+        metrics = element.get("font_metrics")
+        valid_metrics = isinstance(metrics, dict) and not validate_font_metrics(metrics)
+        matched = valid_metrics and metrics.get("status") == "matched_font"
+        metric_angles = {}
+        if matched:
+            heights = {"displayed_body": metrics["body_height_px"], **metrics["probes"]}
+            metric_angles = {key: round(perception.visual_angle_arcmin(_point_mm(ctx, 0, height)[1], viewing), 3)
+                             for key, height in heights.items()}
+        provenance = {"metric": "css_em", "basis": "project_policy", "conformance": "not_assessed",
+                      "font_metric_status": metrics.get("status") if valid_metrics else "missing_or_invalid",
+                      "font_metric_angles_arcmin": metric_angles, "viewing_distance_mm": viewing,
+                      "physical_scale_basis": "device_catalog_vertical_scale", "dom_ink_measured": False}
         hud = "hud" in _roles(element) or is_game_surface
         critical = bool(_roles(element) & {"error_message", "critical_message", "primary"}) or len(text) >= params.BODY_TEXT_MIN_CHARS
         form = getattr(ctx.device, "form_factor", "phone")
@@ -1466,25 +1480,58 @@ def check_text_size(ctx: Context) -> list[Observation]:
             display_px_h = (getattr(ctx.device, "display_px", (0, 0)) or (0, 0))[1] or 1080
             dpr = float(getattr(ctx.device, "dpr", 1.0) or 1.0)
             floor_css = floor_1080 * (display_px_h / 1080.0) / dpr
-            if float(size) < floor_css:
+            if matched:
+                body_height = metrics["body_height_px"]
+                below = body_height < floor_css
                 out.append(Observation(
                     "GM-01", ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
                     [element["id"]], element_key(element),
-                    {"name": "hud_text_css_px", "value": size, "unit": "css_px", "threshold": round(floor_css, 1), "comparator": ">=", "standard": "XAG 101"},
-                    False, "P2",
-                    f"HUD 글자 '{text[:20]}' {size}px < 플랫폼 최소 {floor_css:.0f}px(XAG 101, 1080p 기준 {floor_1080:.0f}px).",
-                    "xag-101-floor",
+                    {**provenance, "name": "hud_displayed_body_height_estimate", "value": body_height,
+                     "metric": "displayed_text_ink_body", "unit": "css_px", "threshold": round(floor_css, 3), "comparator": ">=",
+                     "guideline": "XAG 101", "method": metrics["method"], "basis": "canvas_font_estimate",
+                     "limitations": metrics["limitations"], "font_size_px": size, "reference_floor_px_1080": floor_1080,
+                     "display_height_px": display_px_h, "device_dpr": dpr},
+                    not below, "P2" if below else None,
+                    f"HUD 글자 '{text[:20]}'의 Canvas 본문 높이 추정 {body_height:.2f}px가 XAG 101 비교값 {floor_css:.2f}px"
+                    + ("보다 작습니다." if below else " 이상입니다.") + " 화면 글리프 픽셀의 적합성 확인은 필요합니다.",
+                    "xag-101-canvas-estimate-v1", extra={"verdict": "estimated_fail" if below else "estimated_pass"},
                 ))
+            else:
+                # Explicit unsupported captures abstain. Old snapshots retain their
+                # small-em warning, with no implied rendered-body or XAG verdict.
+                legacy_small = metrics is None and float(size) < floor_css
+                out.append(Observation(
+                    "GM-01", ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
+                    [element["id"]], element_key(element),
+                    {**provenance, "name": "hud_body_height_unverified", "value": None, "unit": "css_px",
+                     "threshold": round(floor_css, 3), "comparator": ">=", "guideline": "XAG 101",
+                     "css_em_proxy_px": size, "proxy_below_floor": float(size) < floor_css,
+                     "limitations": metrics.get("limitations", []) if valid_metrics else ["font_metrics_missing_or_invalid"]},
+                    False, None,
+                    f"HUD 글자 '{text[:20]}'의 표시 본문 높이를 확인할 수 없어 XAG 101 판정을 보류했습니다.",
+                    "xag-101-unverified-v1", extra={"verdict": "inconclusive"},
+                ))
+                if legacy_small:
+                    out.append(Observation(
+                        "GM-01", ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
+                        [element["id"]], element_key(element),
+                        {**provenance, "name": "hud_text_css_em_proxy", "value": size, "unit": "css_px",
+                         "threshold": round(floor_css, 3), "comparator": ">=", "tier": "legacy_em_policy"},
+                        False, "P2", f"HUD 글자 '{text[:20]}'의 CSS em {size}px가 기존 프로젝트 비교값 {floor_css:.2f}px보다 작습니다. 표시 본문 높이 확인은 필요합니다.",
+                        "hud-em-policy-v1",
+                    ))
+                if metrics is not None:
+                    continue
         check_id = "GM-01" if hud else "PC-04"
         if form in ("phone", "foldable", "tablet", "handheld_console") and float(size) < params.TEXT_PLATFORM_MIN_CSS_PX_MOBILE:
             severity = "P2" if (hud or critical) else "P3"
             out.append(Observation(
                 check_id, ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
                 [element["id"]], element_key(element),
-                {"name": "font_size_css_px", "value": size, "unit": "css_px", "threshold": params.TEXT_PLATFORM_MIN_CSS_PX_MOBILE, "comparator": ">=",
+                {**provenance, "name": "font_size_css_px", "value": size, "unit": "css_px", "threshold": params.TEXT_PLATFORM_MIN_CSS_PX_MOBILE, "comparator": ">=",
                  "tier": "platform_minimum"},
                 False, severity,
-                f"'{text[:30]}' 글자 {size}px가 모바일 플랫폼 최소 글자 크기(Apple HIG 11pt)보다 작습니다.",
+                f"'{text[:30]}'의 CSS em {size}px가 프로젝트의 모바일 비교값 {params.TEXT_PLATFORM_MIN_CSS_PX_MOBILE:.0f}px보다 작습니다. Apple 플랫폼 포인트 적합성은 별도 확인이 필요합니다.",
                 "platform-min-text",
             ))
             continue
@@ -1492,20 +1539,18 @@ def check_text_size(ctx: Context) -> list[Observation]:
             severity, threshold, tier = ("P1" if critical and _roles(element) & {"error_message", "critical_message"} else "P2"), params.TEXT_FLOOR_ARCMIN, "floor"
         elif (angle < comfortable and not hud and cognition.reading_units(text)[0] >= params.BODY_TEXT_MIN_CHARS
               and not element.get("interactive") and element.get("role") not in ("heading", "button", "link", "cell", "columnheader", "rowheader")):
-            # The Hangul critical print size concerns reading speed of running Hangul
-            # prose: count syllables (not spaces or Latin data such as e-mail addresses).
-            # Critical print size concerns reading speed of continuous text, not labels.
+            # Preserve the legacy running-prose policy without claiming that em
+            # is the source paper's glyph metric or calibrated reading speed.
             severity, threshold, tier = "P3", comfortable, "critical_print_size"
         else:
             continue
         out.append(Observation(
             check_id, ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
             [element["id"]], element_key(element),
-            {"name": "font_visual_angle_arcmin", "value": round(angle, 1), "unit": "arcmin", "threshold": threshold, "comparator": ">=",
+            {**provenance, "name": "font_visual_angle_arcmin", "value": round(angle, 1), "unit": "arcmin", "threshold": threshold, "comparator": ">=",
              "tier": tier, "font_size_px": size, "viewing_distance_mm": viewing},
             False, severity,
-            f"'{text[:30]}' 글자({size}px≈{size_mm:.1f}mm)가 {viewing/10:.0f}cm 거리에서 {angle:.0f}′"
-            + (" — 가독 하한(16′) 미만." if tier == "floor" else f" — 한글 임계 글자 크기({threshold:.0f}′) 미만으로 읽기 속도가 떨어질 수 있음."),
+            f"'{text[:30]}'의 CSS em({size}px≈{size_mm:.1f}mm)이 가정한 {viewing/10:.0f}cm 거리에서 {angle:.0f}′로 프로젝트 비교값 {threshold:.1f}′보다 작습니다. 실제 글리프 높이와 독서 수행은 별도 확인이 필요합니다.",
             "visual-angle-v2",
         ))
     return out

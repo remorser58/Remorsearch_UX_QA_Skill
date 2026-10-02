@@ -17,7 +17,7 @@ import math
 import re
 from datetime import datetime
 from pathlib import Path, PurePosixPath
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, Literal, Sequence, TypedDict
 
 SNAPSHOT_SCHEMA = "ergo-snapshot.v1"
 RUN_SCHEMA = "ergo-run.v1"
@@ -41,6 +41,26 @@ HANDEDNESS = ("right", "left", "mixed")
 GRIPS = ("one_hand_right", "one_hand_left", "cradle_right", "cradle_left", "two_thumbs",
          "mouse_right", "mouse_left", "keyboard_only", "gamepad", "remote")
 MAX_JSON_BYTES = 8 * 1024 * 1024
+FONT_METRIC_LIMITATIONS = ("dom_ink_unmeasured", "font_fallback_unverified", "node_cap", "text_cap",
+                           "private_control", "transform_or_zoom", "vertical_text", "mixed_font_or_style",
+                           "unsupported_text", "pseudo_text", "text_mismatch", "font_not_loaded", "canvas_unavailable")
+
+
+class FontProbeHeights(TypedDict):
+    cap_H_px: float
+    x_height_px: float
+    body_Hg_px: float
+    hangul_px: float
+
+
+class FontMetrics(TypedDict):
+    method: Literal["canvas-textmetrics-v1"]
+    unit: Literal["css_px"]
+    status: Literal["matched_font", "unavailable"]
+    body_height_px: float | None
+    probes: FontProbeHeights | None
+    limitations: list[str]
+
 _HEX = re.compile(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})")
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 
@@ -273,6 +293,44 @@ def _paint(errors: _Errors, el: dict, path: str) -> None:
                 errors.require(len(part["shape"]) <= 512, f"{pp}.shape", "must be at most 512 characters")
 
 
+def validate_font_metrics(value: object, path: str = "font_metrics") -> list[str]:
+    """Optional bounded Canvas metadata; no text, input values or font enumeration."""
+    errors = _Errors()
+    if not isinstance(value, dict):
+        return [f"{path}: must be an object"]
+    errors.require(set(value) == {"method", "unit", "status", "body_height_px", "probes", "limitations"},
+                   path, "must contain only the bounded font metric fields")
+    errors.enum(value, "method", ("canvas-textmetrics-v1",), path)
+    errors.enum(value, "unit", ("css_px",), path)
+    errors.enum(value, "status", ("matched_font", "unavailable"), path)
+    errors.number(value, "body_height_px", path, nullable=True, minimum=0, maximum=10000)
+    gaps = errors.array(value, "limitations", path)
+    if gaps is not None:
+        errors.require(2 <= len(gaps) <= len(FONT_METRIC_LIMITATIONS)
+                       and all(isinstance(g, str) and g in FONT_METRIC_LIMITATIONS for g in gaps),
+                       f"{path}.limitations", "must contain bounded known limitations")
+        errors.require("dom_ink_unmeasured" in gaps and "font_fallback_unverified" in gaps,
+                       f"{path}.limitations", "must declare raster and resolved-font limits")
+    probes = errors.obj(value, "probes", path, nullable=True)
+    if probes is not None:
+        fields = ("cap_H_px", "x_height_px", "body_Hg_px", "hangul_px")
+        errors.require(set(probes) == set(fields), f"{path}.probes", "must contain only fixed H/x/Hg/한 probe heights")
+        for key in fields:
+            errors.number(probes, key, f"{path}.probes", minimum=0, maximum=10000)
+            if is_number(probes.get(key)):
+                errors.require(probes[key] > 0, f"{path}.probes.{key}", "must be positive")
+    if value.get("status") == "matched_font":
+        errors.require(is_number(value.get("body_height_px")) and value["body_height_px"] > 0,
+                       f"{path}.body_height_px", "matched font requires a positive displayed-text height")
+        errors.require(probes is not None and isinstance(gaps, list) and len(gaps) == 2,
+                       path, "matched font requires fixed probes and no applicability gap")
+    elif value.get("status") == "unavailable":
+        errors.require(value.get("body_height_px") is None and value.get("probes") is None,
+                       path, "unavailable metrics must not supply a height or probes")
+        errors.require(isinstance(gaps, list) and len(gaps) >= 3, path, "unavailable metrics require a reason")
+    return errors.items
+
+
 def _element(errors: _Errors, el: Any, path: str) -> None:
     if not isinstance(el, dict):
         errors.add(path, "must be an object")
@@ -298,6 +356,8 @@ def _element(errors: _Errors, el: Any, path: str) -> None:
         errors.boolean(el, key, path, required=False)
     errors.number(el, "font_size_px", path, required=False, nullable=True, minimum=0)
     errors.number(el, "font_weight", path, required=False, nullable=True, minimum=1, maximum=1000)
+    if "font_metrics" in el:
+        errors.items.extend(validate_font_metrics(el["font_metrics"], f"{path}.font_metrics"))
     for key in ("color_fg", "color_bg", "border_color"):
         _color(errors, el, key, path)
     _roles(errors, el.get("roles"), f"{path}.roles")

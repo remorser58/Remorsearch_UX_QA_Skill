@@ -2134,6 +2134,8 @@ export class WebSession {
         hotspots: this.scenario.hotspots,
         hotspotRoles,
         knownRoles: KNOWN_ROLES,
+        redactSelectors: [...this.redactSelectors],
+        privateValues: [...this.privateValues],
       });
       if (this.redactSelectors.size) {
         const ids = await this.page.evaluate(({ selectors, key }) => {

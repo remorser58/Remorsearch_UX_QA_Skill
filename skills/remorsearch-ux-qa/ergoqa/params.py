@@ -50,7 +50,9 @@ TOUCH_SIGMA_MULT = {
     # Ng, Brewster & Williamson 2014's +40 % is an encumbrance effect, not walking.
     "mobility_walking": 1.4,
     "mobility_transit": 1.4,    # [assumption] an alias of walking (no separate data)
-    "encumbered": 1.4,          # [paper] Ng et al. 2014, thumb with a carried object (not used by the strata yet)
+    # [assumption] Ng et al. 2014 report +40% mean absolute distance error,
+    # not a 1.4 multiplier of coordinate SD; all conditions involved walking.
+    "encumbered": 1.4,
     "tremor_none": 1.0,
     "tremor_mild": 1.3,         # [derived] essential-tremor amplitude and Findlater & Zhang 2020 open data (self-reported tremor 1.07-1.15); was 1.5
     "tremor_moderate": 1.8,     # [derived] as above; was 2.25
@@ -136,15 +138,16 @@ CVD_DISTINCT_NORMAL_DE = 20.0    # [policy] colours intended as different catego
 CVD_CONFUSABLE_DE = 5.0          # [snippet+policy] below: confusable after simulation (JND ~1; Palettailor uses 10 as distinct)
 CVD_MARGINAL_DE = 10.0           # [snippet+policy] 5-10: marginal; >= 10 distinct
 CVD_STATE_CONTRAST_EXEMPT = 3.0  # [recalled] WCAG technique G183: >= 3:1 luminance contrast between states is a non-colour cue
-# Text size, compared with FONT SIZE (em) visual angle, two tiers:
-TEXT_PLATFORM_MIN_CSS_PX_MOBILE = 11.0  # [industry] Apple HIG minimum text size 11 pt (game brief GQA-07; Material Body Small 12 sp)
-TEXT_FLOOR_ARCMIN = 16.0         # [recalled] ISO 9241-303 / ANSI-HFES 100 minimum character height -> P2 (P1 critical)
-TEXT_MIN_ARCMIN = 24.6           # [snippet] Hangul critical print size, young adults 0.41 deg (KJCP 2015; metric unconfirmed) -> P3
-TEXT_MIN_ARCMIN_PRESBYOPIA = 31.2  # [snippet] Hangul critical print size, older adults 0.52 deg -> P3
+# Legacy CSS em proxy thresholds remain project policy: character height,
+# Latin x-height and cap-height are different metrics. No ISO/HIG conformance.
+TEXT_PLATFORM_MIN_CSS_PX_MOBILE = 11.0  # [policy] retained CSS px floor; Apple HIG's 11pt applies to Apple platform points
+TEXT_FLOOR_ARCMIN = 16.0         # [policy] retained em-angle floor; character-height source applicability unverified
+TEXT_MIN_ARCMIN = 24.6           # [policy] retained young-adult em proxy; Hangul CPS snippet metric unconfirmed
+TEXT_MIN_ARCMIN_PRESBYOPIA = 31.2  # [policy] retained older-adult em proxy; no calibrated individual reading prediction
 # Presbyopia is represented by the older-adult critical print size at the normal
 # viewing distance (Hofstetter: near point 15 - 0.25*age D, usually corrected).
-HUD_MIN_ARCMIN = 16.0            # [recalled] ISO 9241-303 / ANSI-HFES 100 character-height minimum (~16', 20-22' preferred); verify
-HUD_PLATFORM_MIN_PX_1080 = {"tv": 26.0, "handheld_console": 26.0, "desktop": 18.0, "laptop": 18.0}  # [snippet] XAG 101 console 26 px @1080p; PC 18 px @1080p
+HUD_MIN_ARCMIN = 16.0            # [policy] retained em-angle proxy, not measured character height
+HUD_PLATFORM_MIN_PX_1080 = {"tv": 26.0, "handheld_console": 26.0, "desktop": 18.0, "laptop": 18.0}  # [standard] XAG 101 rendered ascender-to-descender body pixels, not CSS em
 BODY_TEXT_MIN_CHARS = 12         # [policy] strings at least this long count as body text
 
 # ------------------------------------------------------------------ gaze

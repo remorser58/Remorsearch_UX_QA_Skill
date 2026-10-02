@@ -703,6 +703,105 @@ export function extractSnapshot(args) {
     return false;
   };
 
+  // Canvas bounds describe glyphs in a matching CSS font, not DOM raster pixels
+  // or line layout. Keep actual displayed text separate from fixed font probes.
+  let fontContext = null;
+  const fontProbeCache = new Map();
+  const privateFontNodes = new Set();
+  const fontProperties = ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'fontStretch',
+    'fontVariant', 'fontFeatureSettings', 'fontVariationSettings', 'fontOpticalSizing',
+    'fontKerning', 'letterSpacing', 'wordSpacing', 'textTransform', 'direction', 'writingMode'];
+  const fontMetricsFor = (el, displayedText) => {
+    const gaps = new Set(['dom_ink_unmeasured', 'font_fallback_unverified']);
+    const result = { method: 'canvas-textmetrics-v1', unit: 'css_px', status: 'unavailable',
+      body_height_px: null, probes: null, limitations: [] };
+    const finish = () => ({ ...result, limitations: [...gaps].sort() });
+    const privateControl = (n) => ['input', 'textarea', 'select'].includes(n.tagName?.toLowerCase()) || n.isContentEditable
+      || ['textbox', 'searchbox', 'combobox', 'listbox', 'spinbutton'].includes(n.getAttribute('role'))
+      || n.hasAttribute('data-sensitive') || n.hasAttribute('data-private') || privateFontNodes.has(n);
+    if ((args.privateValues || []).some((value) => typeof value === 'string' && value && displayedText.includes(value))) {
+      gaps.add('private_control'); return finish();
+    }
+    for (let n = el, count = 0; n; n = parentOf(n)) {
+      if (++count > 64) { gaps.add('node_cap'); return finish(); }
+      if (privateControl(n)) { gaps.add('private_control'); return finish(); }
+      const cs = style(n);
+      if ((cs.transform && cs.transform !== 'none') || ['scale', 'rotate', 'translate'].some((k) => cs[k] && cs[k] !== 'none')
+        || (cs.zoom && Number(cs.zoom) !== 1)) { gaps.add('transform_or_zoom'); return finish(); }
+    }
+    if (vvp && Math.abs(vvp.scale - 1) > 0.001) { gaps.add('transform_or_zoom'); return finish(); }
+    const cs = style(el);
+    if (cs.writingMode !== 'horizontal-tb') { gaps.add('vertical_text'); return finish(); }
+    const font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    const signature = fontProperties.map((k) => cs[k]).join('|');
+    const chunks = [];
+    let visited = 0;
+    let characters = 0;
+    const walk = (n) => {
+      if (++visited > 64) { gaps.add('node_cap'); return; }
+      if (n.nodeType === 3) {
+        const value = n.nodeValue || '';
+        characters += value.length;
+        if (characters > 300) { gaps.add('text_cap'); return; }
+        chunks.push(value);
+        return;
+      }
+      if (n.nodeType !== 1) return;
+      const tag = n.tagName.toLowerCase();
+      if (privateControl(n)) { gaps.add('private_control'); return; }
+      if (['script', 'style', 'template', 'noscript'].includes(tag) || visuallyHidden(n)) return;
+      if (!(n instanceof HTMLElement) || n.shadowRoot) { gaps.add('unsupported_text'); return; }
+      const ns = style(n);
+      if (fontProperties.map((k) => ns[k]).join('|') !== signature) { gaps.add('mixed_font_or_style'); return; }
+      if (ns.textTransform !== 'none' || !['normal', '0px'].includes(ns.letterSpacing) || !['normal', '0px'].includes(ns.wordSpacing)
+        || ns.fontVariant !== 'normal' || ns.fontFeatureSettings !== 'normal' || ns.fontVariationSettings !== 'normal'
+        || !['normal', '100%'].includes(ns.fontStretch) || (ns.fontSizeAdjust && ns.fontSizeAdjust !== 'none')
+        || (ns.textShadow && ns.textShadow !== 'none') || parseFloat(ns.webkitTextStrokeWidth) > 0
+        || ns.transform !== 'none' || ['scale', 'rotate', 'translate'].some((k) => ns[k] && ns[k] !== 'none')
+        || (ns.zoom && Number(ns.zoom) !== 1)) gaps.add('unsupported_text');
+      for (const pseudo of ['::before', '::after']) {
+        const content = getComputedStyle(n, pseudo).content;
+        if (content && !['none', 'normal', '""'].includes(content)) gaps.add('pseudo_text');
+      }
+      if (tag === 'br' || (n !== el && !/^inline/.test(ns.display))) chunks.push(' ');
+      for (const child of n.childNodes) {
+        if (visited >= 64 || characters > 300) { gaps.add(visited >= 64 ? 'node_cap' : 'text_cap'); break; }
+        walk(child);
+      }
+      if (n !== el && !/^inline/.test(ns.display)) chunks.push(' ');
+    };
+    walk(el);
+    const measuredText = chunks.join('').replace(/\s+/g, ' ').trim();
+    if (!measuredText || measuredText !== displayedText) gaps.add('text_mismatch');
+    if (gaps.size > 2) return finish();
+    try {
+      if (!document.fonts || document.fonts.status !== 'loaded' || !document.fonts.check(font, measuredText)) {
+        gaps.add('font_not_loaded'); return finish();
+      }
+      if (!fontContext) fontContext = document.createElement('canvas').getContext('2d');
+      if (!fontContext || !CSS.supports('font', font)) { gaps.add('canvas_unavailable'); return finish(); }
+      fontContext.font = font;
+      fontContext.textBaseline = 'alphabetic';
+      fontContext.direction = cs.direction;
+      fontContext.fontKerning = cs.fontKerning;
+      const height = (value) => {
+        const m = fontContext.measureText(value);
+        const h = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent;
+        if (!Number.isFinite(h) || h <= 0 || h > 10000) throw new Error('unsupported text bounds');
+        return h;
+      };
+      let probes = fontProbeCache.get(signature);
+      if (!probes) {
+        probes = { cap_H_px: height('H'), x_height_px: height('x'), body_Hg_px: height('Hg'), hangul_px: height('한') };
+        fontProbeCache.set(signature, probes);
+      }
+      result.body_height_px = height(measuredText);
+      result.probes = probes;
+      result.status = 'matched_font';
+    } catch (e) { gaps.add('canvas_unavailable'); }
+    return finish();
+  };
+
   // ---------- selectors
   const cssStr = (v) => String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   const uniqueSelector = (el) => {
@@ -777,6 +876,11 @@ export function extractSnapshot(args) {
     }
   };
   walk(document);
+  for (const root of [document, ...all.map((n) => n.shadowRoot).filter(Boolean)]) {
+    for (const selector of args.redactSelectors || []) {
+      try { for (const node of root.querySelectorAll(selector)) privateFontNodes.add(node); } catch (e) { /* no valid selector */ }
+    }
+  }
   const order = new Map(all.map((el, i) => [el, i]));
 
   const roleMap = new Map();
@@ -1152,11 +1256,12 @@ export function extractSnapshot(args) {
     })();
     const fw = parseInt(cs.fontWeight, 10);
     const fs = parseFloat(cs.fontSize);
+    const displayedText = visibleText(el);
     elements.push({
       id,
       role: roleOf(el),
       name: accName(el).slice(0, 300),
-      text: visibleText(el),
+      text: displayedText,
       tag,
       selector: uniqueSelector(el),
       dom_id: el.id ? String(el.id).slice(0, 120) : null,
@@ -1168,6 +1273,7 @@ export function extractSnapshot(args) {
       in_viewport: g.inVp,
       font_size_px: Number.isFinite(fs) ? round2(fs) : null,
       font_weight: Number.isFinite(fw) ? Math.max(1, Math.min(1000, fw)) : null,
+      font_metrics: fontMetricsFor(el, displayedText),
       color_fg: colors ? hex(colors.fg) : hex(fgRaw),
       color_bg: colors ? hex(colors.bg) : null,
       container_bg: colors && colors.container ? hex(colors.container) : null,
