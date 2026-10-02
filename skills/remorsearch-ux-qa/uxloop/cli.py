@@ -21,8 +21,14 @@ def emit(value: dict) -> None:
 
 
 def output_path(path: Path) -> None:
-    if any(p.is_symlink() for p in (path, *path.parents)) or ".git" in path.parts:
+    if ".git" in path.parts:
         raise ContractError("Output paths cannot traverse symlinks or .git")
+    if any(p.is_symlink() for p in (path, *path.parents)):
+        raise ContractError(
+            "Output paths cannot traverse symlinks or .git. Choose the canonical "
+            "directory inside the authorized workspace; on macOS use /private/tmp "
+            "instead of the /tmp symlink."
+        )
 
 
 def execution_options(parser: argparse.ArgumentParser) -> None:

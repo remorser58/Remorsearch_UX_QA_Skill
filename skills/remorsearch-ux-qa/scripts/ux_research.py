@@ -3,7 +3,7 @@
 from pathlib import Path
 import sys
 
-if sys.version_info < (3, 10) and sys.argv[1:2] == ["start"]:
+if sys.version_info < (3, 10):
     print("Python 3.10 or newer is required; found " + sys.version.split()[0], file=sys.stderr)
     raise SystemExit(2)
 
