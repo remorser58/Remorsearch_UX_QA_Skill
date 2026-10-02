@@ -432,11 +432,17 @@ def attach_run(
             if finding.get("recommendation_ko"):
                 proposal_id = f"ERGO-PR-{finding['id']}@{run_id}@{pair_profile}"
                 _claim(proposal_id)
+                # Same-severity groups can carry different per-profile advice data;
+                # each persona's proposal quotes its own observation, never a copy of
+                # another profile's numbers (falls back to the labelled aggregate text
+                # when this profile's observations have no advice data).
+                own_summary = swarm.recommendation_for_profile(
+                    finding["check_id"], [new_observations[o] for o in obs_ids], pair_profile)
                 new_proposals.append({
                     "id": proposal_id,
                     "finding_ids": [finding_id],
                     "fix_layer": finding["fix_layer"],
-                    "summary": finding["recommendation_ko"],
+                    "summary": own_summary or finding["recommendation_ko"],
                 })
 
     if missing_reviews:

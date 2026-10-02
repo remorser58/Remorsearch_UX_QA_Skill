@@ -26,6 +26,9 @@ from .hf import cognition, game, gaze, perception, pointing, reach
 
 SEVERITY_ORDER = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
 
+# Reach-zone labels (thumb-reach-v3); shared with the swarm's derived advice.
+ZONE_KO = {"out": "파지를 바꿔야 닿는", "stretch": "엄지를 크게 뻗어야 하는", "mild": "약간 불편한", "natural": "편한"}
+
 
 @dataclass(frozen=True)
 class CheckSpec:
@@ -516,10 +519,11 @@ def check_reach(ctx: Context) -> list[Observation]:
             severity = "P2" if difficulty >= params.REACH_HARD else "P3"
         elif score["cramped"] and key_control and min(_box_mm(ctx, element["box"])) < params.TOUCH_TARGET_CORNER_MM:
             severity = "P3"
-        zone_ko = {"out": "파지를 바꿔야 닿는", "stretch": "엄지를 크게 뻗어야 하는", "mild": "약간 불편한", "natural": "편한"}[score["zone"]]
+        zone_ko = ZONE_KO[score["zone"]]
         out.append(Observation(
             "RH-01", *base, [element["id"]], element_key(element),
-            {"name": "reach_difficulty", "value": difficulty, "unit": "0-1", "threshold": params.REACH_HARD, "comparator": "<"},
+            {"name": "reach_difficulty", "value": difficulty, "unit": "0-1", "threshold": params.REACH_HARD, "comparator": "<",
+             "grip": grip, "zone": score["zone"]},
             severity is None, severity,
             f"'{label}'은(는) {grip} 파지·엄지 {thumb:.0f}mm 기준 {zone_ko} 위치입니다(난이도 {difficulty:.2f}"
             + (", 손바닥 가까운 좁은 영역" if score["cramped"] else "") + ").",
@@ -577,18 +581,22 @@ def check_target_size(ctx: Context) -> list[Observation]:
             side = min(w_mm, h_mm)
             severity = None
             threshold = params.TOUCH_TARGET_MIN_MM
+            criterion = "platform_min"
             if side < params.TOUCH_TARGET_PLATFORM_FLOOR_MM and critical:
                 severity, threshold = "P1", params.TOUCH_TARGET_PLATFORM_FLOOR_MM
+                criterion = "platform_floor"
             elif side < params.TOUCH_TARGET_MIN_MM:
                 severity = "P2" if critical else "P3"
             elif one_handed and critical and side < params.TOUCH_TARGET_ONE_HAND_MM and \
                     pointing.dual_gaussian_hit_probability(w_mm, h_mm, 1.0) < pointing.dual_gaussian_hit_probability(params.TOUCH_TARGET_ONE_HAND_MM, params.TOUCH_TARGET_ONE_HAND_MM, 1.0):
                 severity, threshold = "P3", params.TOUCH_TARGET_ONE_HAND_MM
+                criterion = "one_hand_reference"
             if severity:
                 out.append(Observation(
                     "PT-02", ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
                     [element["id"]], element_key(element),
-                    {"name": "target_mm", "value": [round(w_mm, 2), round(h_mm, 2)], "unit": "mm", "threshold": threshold, "comparator": ">="},
+                    {"name": "target_mm", "value": [round(w_mm, 2), round(h_mm, 2)], "unit": "mm", "threshold": threshold, "comparator": ">=",
+                     "criterion": criterion},
                     False, severity,
                     f"'{label}' 물리 크기 {w_mm:.1f}×{h_mm:.1f}mm (기준 {threshold}mm 이상).",
                 ))
@@ -671,12 +679,35 @@ def check_touch_accuracy(ctx: Context) -> list[Observation]:
             inflated = _worse(severity, _cap(_miss_severity(p_miss), cap))
             profile_only = severity is None and inflated is not None
             severity = inflated
+        measurement = {"name": "miss_probability", "value": round(p_miss, 4), "unit": "probability", "threshold": params.MISS_PROBABILITY_SEVERITY[-1][0], "comparator": "<",
+                       "sigma_multiplier": k, "baseline_miss_probability": round(p_base, 4), "target_mm": [round(rect["w"], 2), round(rect["h"], 2)],
+                       "profile_only": profile_only}
+        if (severity is not None and k > 1.0 and ("primary" in roles or element.get("id") in ctx.path_element_ids)
+                and params.TOUCH_TARGET_MIN_MM <= min(rect["w"], rect["h"]) < ref):
+            # Advice data only (SIT-05), never a verdict: the smallest square at this
+            # profile's observed spread that matches the 9.2 mm reference square at
+            # k = 1 in the same dual-Gaussian model — a model-equivalent comparison,
+            # not an accessibility requirement or a calibrated human error rate.
+            # Limited to the failed primary/taskpath 7-9.2 mm targets PT-04 already flags.
+            # reference_miss_probability is the reference square's own miss at k = 1
+            # (~0.46%), kept distinct from baseline_miss_probability, which is the
+            # actual target's miss at k = 1. The equivalent size is rounded UP to
+            # 0.1 mm so a "minimum" wording never under-shoots the model bound;
+            # found_within_search_bound=False only means no match inside the bound.
+            same = pointing.equivalent_square_mm(ref, k)
+            measurement["same_error_square"] = {
+                "reference_mm": ref,
+                "reference_sigma_multiplier": 1.0,
+                "reference_miss_probability": round(1.0 - pointing.dual_gaussian_hit_probability(ref, ref, 1.0), 5),
+                "sigma_multiplier": round(k, 4),
+                "equivalent_square_mm": None if same is None else math.ceil(same * 10.0 - 1e-9) / 10.0,
+                "found_within_search_bound": same is not None,
+                "search_bound_mm": pointing.EQUIV_SQUARE_SEARCH_MAX_MM,
+            }
         out.append(Observation(
             "PT-04", ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"),
             [element["id"]], element_key(element),
-            {"name": "miss_probability", "value": round(p_miss, 4), "unit": "probability", "threshold": params.MISS_PROBABILITY_SEVERITY[-1][0], "comparator": "<",
-             "sigma_multiplier": k, "baseline_miss_probability": round(p_base, 4), "target_mm": [round(rect["w"], 2), round(rect["h"], 2)],
-             "profile_only": profile_only},
+            measurement,
             severity is None, severity,
             f"'{element.get('name') or element.get('text')}' 예측 오터치 확률 {p_miss*100:.1f}% (기준 인구 {p_base*100:.1f}%, σ배수 {k:.2f}, {rect['w']:.1f}×{rect['h']:.1f}mm).",
             "bi-zhai-2016-dual-gaussian",

@@ -50,6 +50,38 @@ phone use is left-thumb, so always keep a left-grip profile.
 Reference values (derived): 3.8 mm (≈ 24 CSS px on a phone) → P(hit) 0.74;
 7 mm → 0.975; 9.6 mm → 0.997. Passing WCAG never implies ergonomic adequacy.
 
+Derived advice (SIT-05): PT-02/PT-04/RH-01 findings append sentences derived
+from the supporting observations' own measurements to the catalog
+recommendation. PT-02 names the recorded target's w × h mm (converted through the
+device catalogue's density; retain the input's measured or estimated geometry basis) and the
+exact criterion missed (the 4.4 / 7.0 / 9.2 mm tier). PT-04, for the failed
+primary/taskpath targets it already flags in the 7.0–9.2 mm band, records
+`same_error_square`: the smallest square whose dual-Gaussian hit probability at
+the profile's σ multiplier equals the 9.2 mm reference square at k = 1. The
+reference square's own miss probability at k = 1 is stored explicitly as
+`reference_miss_probability` (≈ 0.46%) and stays distinct from
+`baseline_miss_probability`, which is the *actual target's* miss at k = 1 — the
+two are never conflated into one "same error" claim. The equivalent size is
+rounded **up** to 0.1 mm, because the text words it as a minimum and the printed
+bound must not under-shoot the model reference (k = 1.5 solves at 24.148…
+→ 24.2). The search is a bounded monotone bisection; `found_within_search_bound:
+false` only means no matching square was found inside the 40 mm search bound —
+a match may exist beyond it or not at all, so the advice says the bounded
+comparison is unavailable (unknown within the bound) and keeps the alternative
+guidance instead of claiming size can never help or recommending giant sizes.
+It is a same-model comparison labelled as model output under declared
+assumptions — not an accessibility requirement and not a calibrated human error
+rate. RH-01 quotes the model-*predicted* (uncalibrated thumb-reach-v3) grip,
+zone, difficulty and easiest-point coordinates; it is never called a
+measurement of actual users. A same-severity group can hold distinct
+per-profile evidence (seated k = 1.3 → 15.0 mm; walking k = 1.82 → none within
+the bound), so every derived segment is labelled with the profile id(s) whose
+observation supports it, in sorted order — the aggregate text and the per-profile
+QA-bundle proposals (each quoting the persona's own observation) are
+order-independent and never present one profile's numbers as another's. This
+layer only adds text and typed measurement fields: pass/fail, severity, tiers,
+counts and thresholds stay computed exactly as above.
+
 ## Gaze and attention
 
 | ID | Basis | Rule | Severity |

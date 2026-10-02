@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import Any, Iterable
 
 from . import checks
+from .hf import reach
 from .profiles import _get_path
 
 DIFFERENTIAL_ATTRIBUTES = (
@@ -19,6 +20,138 @@ DIFFERENTIAL_ATTRIBUTES = (
     "vision.cvd", "vision.presbyopia", "vision.acuity", "motor.tremor", "context.mobility",
     "context.lighting", "cognition.familiarity", "cognition.time_pressure", "hand_percentile",
 )
+
+# Derived advice (research brief SIT-05): PT-02/PT-04/RH-01 findings quote the
+# supporting observations' own measurements instead of only the catalog's static
+# text, so each recommendation carries the estimated geometry and the exact
+# failed criterion. The advice is text only: pass/fail, severity, tiers and
+# thresholds stay computed in checks.py and are never changed here. Numbers that
+# come from a model are labelled as model output, separated from the defect
+# grade. A same-severity group can hold distinct per-profile evidence, so every
+# derived segment is labelled with the profile id(s) it was measured for — one
+# profile's numbers are never presented as another's (the aggregate text and the
+# per-profile attach proposals both follow this rule).
+
+_GRIP_KO = {"one_hand_right": "오른손 한 손(엄지) 파지", "one_hand_left": "왼손 한 손(엄지) 파지", "two_thumbs": "양손 두 엄지 파지"}
+
+_PT02_CRITERION_KO = {
+    "platform_floor": "플랫폼 최소 하한(iOS HIG 28pt 유래)",
+    "platform_min": "플랫폼 권장 최소(44pt/48dp 상당)",
+    "one_hand_reference": "한 손 엄지 조작 기준(Parhi 2006)",
+}
+
+
+def _num(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _severity_rank(obs: dict[str, Any]) -> int:
+    return checks.SEVERITY_ORDER.get(obs.get("severity") or "P3", 3)
+
+
+def _pt02_segment(measurement: dict[str, Any]) -> str:
+    value, threshold = measurement.get("value"), measurement.get("threshold")
+    criterion = _PT02_CRITERION_KO.get(measurement.get("criterion"))
+    if not (isinstance(value, (list, tuple)) and len(value) == 2 and all(_num(v) for v in value)
+            and _num(threshold) and criterion):
+        return ""
+    w, h = float(value[0]), float(value[1])
+    side = min(w, h)
+    return (f"기록된 타깃 상자를 기기 카탈로그 밀도로 환산하면 {w:.1f}×{h:.1f}mm(짧은 변 {side:.1f}mm)이며 {criterion} {threshold:g}mm에 미달했습니다. "
+            f"짧은 변을 {threshold:g}mm 이상으로 키우세요(현재 {side:.1f}mm, {threshold - side:.1f}mm 이상 증가). "
+            "mm 값은 카탈로그 밀도로 환산한 추정치이며 44pt/48dp와 정확히 일치하는 단위 환산이 아니므로 플랫폼 도구에서는 pt/dp 권장을 그대로 적용하세요.")
+
+
+def _pt04_segment(measurement: dict[str, Any]) -> str:
+    same = measurement.get("same_error_square")
+    if not isinstance(same, dict):
+        return ""
+    k, ref = same.get("sigma_multiplier"), same.get("reference_mm")
+    p_base, p_miss, p_ref = measurement.get("baseline_miss_probability"), measurement.get("value"), same.get("reference_miss_probability")
+    if not (_num(k) and _num(ref) and _num(p_base) and _num(p_miss) and _num(p_ref)):
+        return ""
+    target = measurement.get("target_mm")
+    head = f"이 타깃({target[0]:.1f}×{target[1]:.1f}mm)의 " if isinstance(target, (list, tuple)) and len(target) == 2 and all(_num(v) for v in target) else "이 타깃의 "
+    text = (f"{head}예측 놓침 확률(이중 가우시안, Bi & Zhai 2016): 기준 모델(k=1) {p_base * 100:.1f}% → 이 조건 {p_miss * 100:.1f}%(σ배수 {k:.2f}, 선언된 가정). "
+            f"모델 동등 크기 비교: 기준 모델의 {ref:g}mm 정사각형은 예측 놓침 {p_ref * 100:.2f}%입니다. 이 조건에서 같은 적중 확률이 되는 크기를 계산했습니다. ")
+    if same.get("found_within_search_bound") and _num(same.get("equivalent_square_mm")):
+        text += f"계산 결과는 최소 {same['equivalent_square_mm']:.1f}mm 정사각형입니다(보정 전 모델의 검토용 비교값, 접근성 요구치 아님)."
+    else:
+        bound = same.get("search_bound_mm")
+        bound_text = f"{bound:g}mm" if _num(bound) else "탐색 상한"
+        text += f"{bound_text} 탐색 범위 안에서는 해당 크기를 찾지 못했습니다. 범위 밖의 값은 미확인입니다."
+    return text
+
+
+def _rh01_segment(measurement: dict[str, Any], worst: dict[str, Any]) -> str:
+    grip, zone, difficulty = measurement.get("grip"), measurement.get("zone"), measurement.get("value")
+    if not (zone and _num(difficulty)):
+        return ""
+    point = (worst.get("extra") or {}).get("point_mm")
+    where = f", 대표 지점 {point[0]:.0f},{point[1]:.0f}mm" if isinstance(point, (list, tuple)) and len(point) == 2 and all(_num(v) for v in point) else ""
+    return (f"도달 모델 예측({reach.MODEL_ID}, 비보정): {_GRIP_KO.get(grip, grip or '알 수 없는 파지')}, "
+            f"구역 '{checks.ZONE_KO.get(zone, zone)}', 난이도 {difficulty:.2f}{where}.")
+
+
+def _advice_segment(check_id: str, worst: dict[str, Any]) -> str:
+    """Derived sentences for one observation; '' when it carries no advice data."""
+    measurement = worst.get("measurement") or {}
+    if check_id == "PT-02":
+        return _pt02_segment(measurement)
+    if check_id == "PT-04":
+        return _pt04_segment(measurement)
+    if check_id == "RH-01":
+        return _rh01_segment(measurement, worst)
+    return ""
+
+
+def _worst_by_profile(failed: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    by_profile: dict[str, dict[str, Any]] = {}
+    for obs in failed:
+        pid = str(obs.get("profile_id") or "?")
+        current = by_profile.get(pid)
+        if current is None or _severity_rank(obs) < _severity_rank(current):
+            by_profile[pid] = obs
+    return by_profile
+
+
+def _derived_recommendation(check_id: str, spec: Any, failed: list[dict[str, Any]]) -> str:
+    """Catalog text, plus per-profile labelled advice for distinct supported observations.
+
+    Same-severity observations from different profiles can carry different
+    advice data (e.g. seated k=1.3 → 15.0 mm equivalent square, walking k=1.82 →
+    none within the search bound). Each distinct segment is labelled with the
+    profile id(s) whose measurement supports it, in sorted order, so the text is
+    order-independent and one profile's numbers are never read as another's.
+    """
+    base = spec.recommendation_ko
+    by_content: dict[str, list[str]] = {}
+    for pid, obs in sorted(_worst_by_profile(failed).items()):
+        segment = _advice_segment(check_id, obs)
+        if segment:
+            by_content.setdefault(segment, []).append(pid)
+    if not by_content:
+        return base
+    labelled = [f"{', '.join(pids)} 조건: {segment}" for segment, pids in by_content.items()]
+    return " ".join(labelled) + " " + base
+
+
+def recommendation_for_profile(check_id: str, observations: list[dict[str, Any]], profile_id: str) -> str | None:
+    """Advice derived from this profile's own observations, for attach proposals.
+
+    Narrow companion to :func:`_derived_recommendation`: a QA-bundle proposal
+    quotes the profile's own worst observation (labelled with its id) instead of
+    a copy of the aggregate text, so a same-severity group never hands one
+    persona another persona's numbers. Returns None when the observations carry
+    no advice data; the caller then falls back to the aggregate recommendation.
+    """
+    if not observations:
+        return None
+    worst = min(observations, key=_severity_rank)
+    segment = _advice_segment(check_id, worst)
+    if not segment:
+        return None
+    return f"{profile_id} 조건: {segment} " + checks.CATALOG[check_id].recommendation_ko
 
 
 def _differential(triggered: list[dict[str, Any]], untriggered: list[dict[str, Any]]) -> dict[str, Any]:
@@ -138,7 +271,7 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
             "title_ko": spec.title_ko,
             "summary_ko": worst["message_ko"],
             "fix_layer": spec.fix_layer,
-            "recommendation_ko": spec.recommendation_ko,
+            "recommendation_ko": _derived_recommendation(check_id, spec, group["failed"]),
             "refs": list(spec.refs),
         })
     findings.sort(key=lambda f: (checks.SEVERITY_ORDER.get(f["severity"] or "P3", 3), f["category"], f["scenario_id"], f["element_key"]))

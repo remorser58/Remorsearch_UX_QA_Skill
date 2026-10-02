@@ -11,6 +11,10 @@ from typing import Sequence
 
 Box = dict  # {"x","y","w","h"} in CSS px
 
+# Numerical search bound (mm) for equivalent_square_mm: far beyond any real touch
+# target; only marks the bisection domain, never a design threshold.
+EQUIV_SQUARE_SEARCH_MAX_MM = 40.0
+
 
 def fitts_id(distance: float, width: float) -> float:
     """Shannon formulation of Fitts' index of difficulty (bits)."""
@@ -63,6 +67,45 @@ def dual_gaussian_hit_probability(width_mm: float, height_mm: float, multiplier:
     sx = dual_gaussian_sigma_mm(width_mm, "x", multiplier)
     sy = dual_gaussian_sigma_mm(height_mm, "y", multiplier)
     return math.erf(width_mm / (2 * math.sqrt(2) * sx)) * math.erf(height_mm / (2 * math.sqrt(2) * sy))
+
+
+def equivalent_square_mm(reference_mm: float, multiplier: float, max_mm: float = EQUIV_SQUARE_SEARCH_MAX_MM,
+                         tolerance_mm: float = 0.05) -> float | None:
+    """Smallest square whose dual-Gaussian hit probability at ``multiplier``
+    matches the ``reference_mm`` square at k = 1 (same-hit-probability size).
+
+    A model-equivalent comparison for advice (SIT-05), not an accessibility
+    requirement and not a calibrated human error rate. P(hit) of a square is
+    monotone increasing in its side (the absolute sigma term dominates), so a
+    bounded bisection is exact. ``None`` means no square was found within
+    ``max_mm``: a matching size may still exist beyond the bound (or not — with
+    the published constants sigma grows with W, so P(hit) saturates), so None is
+    "unknown within the bound", never proof that size cannot help. The bound
+    exists so the advice never recommends giant sizes.
+    """
+    if reference_mm <= 0:
+        raise ValueError("reference_mm must be positive")
+    if multiplier <= 0:
+        raise ValueError("multiplier must be positive")
+    if max_mm <= reference_mm:
+        raise ValueError("max_mm must exceed reference_mm")
+    target = dual_gaussian_hit_probability(reference_mm, reference_mm, 1.0)
+
+    def hit(side: float) -> float:
+        return dual_gaussian_hit_probability(side, side, multiplier)
+
+    if hit(reference_mm) >= target:
+        return reference_mm
+    if hit(max_mm) < target:
+        return None
+    lo, hi = reference_mm, max_mm
+    while hi - lo > tolerance_mm:
+        mid = (lo + hi) / 2.0
+        if hit(mid) >= target:
+            hi = mid
+        else:
+            lo = mid
+    return hi
 
 
 def dual_gaussian_neighbour_probability(target_mm: dict, neighbour_mm: dict, multiplier: float = 1.0) -> float:
