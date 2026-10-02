@@ -86,15 +86,29 @@ counts and thresholds stay computed exactly as above.
 
 | ID | Basis | Rule | Severity |
 | --- | --- | --- | --- |
-| GZ-01 (hypothesis) | model | Reported as a **hypothesis**, not a defect: no unique detection on 53 seeded defects and 0/6 judged valid. `gaze-priority-v2`: priority = bottom-up conspicuity + layout prior (upper-left pull for all UI types, UEyes 2023 / Leiva 2020; web left-half ~80 %, NN/g) + element cues, ad-like penalty. 300 Monte Carlo scanpaths with a 5° distance penalty, inhibition of return and right/down bias give P(primary fixated within 4 fixations ≈ 1 s). Free-viewing priors do not model goal-directed search, so this stays a prompt to check hierarchy. | < 0.5 → P3 |
-| GZ-02 | model | Feedback noticing: angle θ from the touch/click point to the **nearest point** of new or changed feedback. Salient change (new object ≥ 1° with ≥ 3:1 box contrast, or bold/icon-led text at ≥ 4.5:1): likely ≤ 10°, uncertain ≤ 20°, else likely missed. Non-salient: 2° / 5°. Bands × 0.7 for 70+, low vision or high load (assumption); the scaled bands are stored. One-hand grips also test the thumb/hand occlusion wedge (±35° toward the thumb base). Not flagged when another salient message appeared where the user was looking (redundant), or when the action replaced the screen (except declared transient messages). Only messages with text count, and "new" means absent (or blank) before the action: a message that was already there and only changed its text is reported at P3 at most. After the app itself scrolled by half a screen or more (`APP_SCROLL_REORIENT_FRACTION`) without a scroll gesture, the user re-orients, so the angle from the old tap point is not used (declared transient messages still are). Feedback rendered outside the viewport is flagged directly. | new message off-screen: error/critical P1, else P2; likely missed or occluded: error/critical P2, status P3; uncertain critical P3; changed message P3 |
+| GZ-01 (hypothesis) | model | Reported as a **hypothesis**, not a defect: no unique detection on 53 seeded defects and 0/6 judged valid. `gaze-priority-v3`: priority combines screenshot conspicuity, hand-fit layout priors, element cues and ad-like penalty. 300 simulated paths of 10 selections report the fraction that includes the primary region within the first 4 selections. Equivalent visual representations share one sampled region; distinct controls remain separate. This fraction has no human-probability calibration or fixed time equivalent. Free-viewing priors do not predict goal-directed search; the output prompts hierarchy review. | < 0.5 → P3 |
+| GZ-02 | model | Action-to-feedback separation: exact angle θ between display rays to the last input location and the nearest visible point of new or changed feedback, with independent x/y physical scales. The eye projection is assumed at viewport centre; `focus_point` is a pointer/keyboard anchor, with no measured gaze. Salient change (new object ≥ 1° with ≥ 3:1 box contrast, or bold/icon-led text at ≥ 4.5:1): likely ≤ 10°, uncertain ≤ 20°, else likely missed. Non-salient: 2° / 5°. Bands × 0.7 for 70+, low vision or high load (assumption); the scaled bands are stored. One-hand grips also test the thumb/hand occlusion wedge (±35° toward the thumb base). Not flagged when another salient message appeared near the input anchor (redundant), or when the action replaced the screen (except declared transient messages). Only messages with text count, and "new" means absent (or blank) before the action: a message that was already there and only changed its text is reported at P3 at most. After the app itself scrolled by half a screen or more (`APP_SCROLL_REORIENT_FRACTION`) without a scroll gesture, the user re-orients, so the angle from the old tap point is not used (declared transient messages still are). Feedback rendered outside the viewport is flagged directly. | new message off-screen: error/critical P1, else P2; likely missed or occluded: error/critical P2, status P3; uncertain critical P3; changed message P3 |
 | GZ-03 | model | Critical information in a desktop right rail, a thin full-width top banner or declared `ad_like` styling (banner blindness: banners found ~58 % vs 94 % for links, Benway & Lane 1998). Needs judgment. | P3 |
-| GZ-04 (hypothesis) | model | ≥ 4 interactive elements out-prioritise the primary action. Reported as a hypothesis (no unique detection; 1/6 judged valid). | – |
+| GZ-04 (hypothesis) | model | ≥ 4 distinct interactive visual regions out-prioritise the primary action; aliases of the same entity count once. Reported as a hypothesis (no unique detection; 1/6 judged valid). | – |
 
-Gutenberg/Z-patterns are not encoded (no eye-tracking support). All gaze data
-were free viewing of static screenshots in labs; outputs are population-level
-hypotheses. A Korean calibration pilot (~20 people × 30 screens) is proposed in
-gaze-visual-attention.md.
+Each GZ-01 observation records model version, run/selection counts, starting
+anchor, seed, visible-region aliases, physical scales and unmeasured eye
+projection. The existing P3 threshold is 0.5; 0.8 remains an advisory reference.
+GZ-01/GZ-04 retain the hypothesis tier. Parent-clipped or unsupported painted
+geometry produces an explicit inconclusive record, with no gaze score. Raw
+boxes remain available to target-size and reach checks; legacy captures without
+`visible_box` retain viewport-only intersection, except an explicit clipped-paint
+gap also abstains.
+
+[UEyes](https://userinterfaces.aalto.fi/ueyeschi23/) and
+[Leiva et al.](https://arxiv.org/abs/2101.09176) observed static screenshots in
+labs. The model's hand-fit coefficients and feedback bands remain policy
+assumptions. [Task-driven webpage saliency](https://openaccess.thecvf.com/content_ECCV_2018/html/Quanlong_Zheng_Task-driven_Webpage_Saliency_ECCV_2018_paper.html)
+distinguishes task conditions. The display-ray formula is geometry;
+[PsychoPy's unit documentation](https://psychopy.org/general/units.html) explains
+why physical scales and viewing distance matter. No empirical human accuracy,
+message understanding or Korean task-search improvement is claimed. Gutenberg,
+Z-pattern and golden-ratio rules are not encoded.
 
 ## Perception
 

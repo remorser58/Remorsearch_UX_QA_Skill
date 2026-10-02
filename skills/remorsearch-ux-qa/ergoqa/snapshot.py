@@ -283,6 +283,15 @@ def _element(errors: _Errors, el: Any, path: str) -> None:
     for key in ("text", "tag", "selector"):
         errors.string(el, key, path, required=False, nullable=True, nonempty=False)
     _box(errors, el.get("box"), f"{path}.box")
+    if "visible_box" in el and el["visible_box"] is not None:
+        _box(errors, el["visible_box"], f"{path}.visible_box")
+    errors.enum(el, "visible_geometry", ("measured", "ancestor_clipped", "empty", "unsupported"), path, required=False)
+    if "visible_geometry" in el:
+        errors.require("visible_box" in el, f"{path}.visible_box", "is required with visible_geometry")
+        if el["visible_geometry"] in ("empty", "unsupported"):
+            errors.require(el.get("visible_box") is None, f"{path}.visible_box", "must be null for empty or unsupported geometry")
+        elif el["visible_geometry"] in ("measured", "ancestor_clipped"):
+            errors.require(isinstance(el.get("visible_box"), dict), f"{path}.visible_box", "must be a finite box for measured geometry")
     for key in ("interactive", "visible"):
         errors.boolean(el, key, path)
     for key in ("enabled", "in_viewport"):

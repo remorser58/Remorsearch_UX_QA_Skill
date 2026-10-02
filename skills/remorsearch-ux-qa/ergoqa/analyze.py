@@ -103,7 +103,9 @@ def _dedupe(observations: list[checks.Observation]) -> list[checks.Observation]:
     best: dict[tuple, checks.Observation] = {}
     order: list[tuple] = []
     for obs in observations:
-        key = (obs.check_id, obs.element_key, obs.profile_id, obs.run_id)
+        # A capture gap and a valid verdict are independent evidence. Preserve
+        # the gap even when another snapshot of the same element was evaluable.
+        key = (obs.check_id, obs.element_key, obs.profile_id, obs.run_id, obs.extra.get("verdict") == "inconclusive")
         current = best.get(key)
         if current is None:
             best[key] = obs
@@ -277,6 +279,10 @@ def analyze_run(
     ]
     health, health_notes = run_health(run, snapshots, scenario)
     limitations += health_notes
+    limitations += sorted({
+        f"{obs.run_id} {obs.snapshot_id} {obs.check_id} {obs.element_key.split('|', 1)[0]}: {obs.message_ko}"
+        for obs in observations if obs.extra.get("verdict") == "inconclusive"
+    })
     limitations += sorted({
         f"{run['run_id']} {snap['snapshot_id']} {element.get('selector') or element['id']}: PC-02/PC-03 paint unverified ({', '.join(element['paint']['gaps'])})"
         for snap in snapshots for element in snap.get("elements", [])

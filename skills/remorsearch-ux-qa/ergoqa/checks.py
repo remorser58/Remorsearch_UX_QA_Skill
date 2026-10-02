@@ -17,13 +17,12 @@ from __future__ import annotations
 import math
 import re
 import unicodedata
-import zlib
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable
 
 from . import params
 from .hf import cognition, game, gaze, perception, pointing, reach
-from .snapshot import validate_native_state
+from .snapshot import is_number, validate_native_state
 
 SEVERITY_ORDER = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
 
@@ -897,8 +896,17 @@ def _salient_change(ctx: Context, element: dict[str, Any], new: bool) -> tuple[b
     """GZ-02 salience: a new object that is >= 1 deg and >= 3:1 against its surroundings."""
     from .devices import mm_per_css_px
 
-    size_px = max(element["box"]["w"], element["box"]["h"])
-    size_deg = math.degrees(math.atan2(size_px * mm_per_css_px(ctx.device, "x"), _viewing_distance(ctx)))
+    b = gaze.clipped_visible_box(element, ctx.viewport)
+    if b is None:
+        return False, {"size_deg": None, "reason": "visible_geometry_unverified"}
+    x, y, w, h = b
+    eye = (ctx.viewport[0] / 2, ctx.viewport[1] / 2)
+    sx, sy, distance = mm_per_css_px(ctx.device, "x"), mm_per_css_px(ctx.device, "y"), _viewing_distance(ctx)
+    width = gaze.angular_separation_css((x, y + h / 2), (x + w, y + h / 2), sx, sy, distance, eye)
+    height = gaze.angular_separation_css((x + w / 2, y), (x + w / 2, y + h), sx, sy, distance, eye)
+    if width is None or height is None:
+        return False, {"size_deg": None, "reason": "invalid_geometry"}
+    size_deg = max(width, height)
     fg = perception.parse_color(element.get("color_fg"))
     bg = perception.parse_color(element.get("color_bg"))
     container = perception.parse_color(element.get("container_bg") or "#ffffff")
@@ -953,55 +961,87 @@ def check_gaze(ctx: Context) -> list[Observation]:
 
     out: list[Observation] = []
     priorities = _priorities(ctx)
-    if not priorities:
-        return out
     kind = _gaze_kind(ctx)
     base = (ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"))
     focus = ctx.snapshot.get("focus_point")
     vw, vh = ctx.viewport
+    if not all(is_number(v) and v > 0 for v in (vw, vh)):
+        return out
+    if focus is not None and (not isinstance(focus, dict) or not all(is_number(focus.get(k)) for k in ("x", "y"))):
+        return out
     if focus:
         start = (float(focus["x"]), float(focus["y"]))
+        start_basis = gaze.START_LAST_ACTION
     else:
         px, py = gaze.prior_peak(kind)
         start = (px * vw, py * vh)
-    mm_px = mm_per_css_px(ctx.device, "x")
+        start_basis = gaze.START_PRIOR_PEAK
+    sx, sy = mm_per_css_px(ctx.device, "x"), mm_per_css_px(ctx.device, "y")
     viewing = _viewing_distance(ctx)
-    centres = {e["id"]: pointing.centre(e["box"]) for e in ctx.elements if e["id"] in priorities}
-    visible_primary = [e for e in ctx.elements if "primary" in _roles(e) and _visible(e) and e.get("enabled", True) and e["id"] in priorities]
-    if visible_primary:
-        # Key on every Monte Carlo input, not just the snapshot: priorities change with
-        # the conspicuity map and the usable element set (code review 2026-09-28).
-        inputs = tuple(sorted((k, round(v, 6), round(centres[k][0], 2), round(centres[k][1], 2)) for k, v in priorities.items() if k in centres))
-        cache_key = (ctx.snapshot.get("snapshot_id"), ctx.run.get("run_id"), round(viewing), round(start[0], 1), round(start[1], 1), round(mm_px, 5), hash(inputs))
-        probs = _FIXATION_CACHE.get(cache_key)
-        if probs is None:
-            probs = gaze.fixation_probabilities(centres, priorities, start, mm_px, viewing, seed=zlib.crc32(str(ctx.snapshot.get("snapshot_id")).encode()) & 0xFFFF)
-            _FIXATION_CACHE[cache_key] = probs
-        k = params.GAZE_EARLY_FIXATIONS
-        for element in visible_primary:
-            p_seen = probs.get(element["id"], [0.0] * k)[k - 1]
-            # Free-viewing eye-tracking priors do not model goal-directed search, so this
-            # heuristic stays at P3 (a prompt to check hierarchy, not a defect by itself).
-            severity = "P3" if p_seen < params.GAZE_PRIMARY_P2 else None
+    if not all(is_number(v) and v > 0 for v in (sx, sy, viewing)):
+        return out
+    eye = (vw / 2, vh / 2)
+    geometry = {"geometry_model": gaze.GEOMETRY_ID, "eye_projection": gaze.EYE_PROJECTION,
+                "eye_projection_css": list(eye), "mm_per_css_px": [sx, sy], "viewing_distance_mm": viewing,
+                "anchor_basis": start_basis, "anchor_css": list(start), "measured_gaze": False}
+    regions = gaze.equivalent_regions([e for e in ctx.elements if e["id"] in priorities], ctx.viewport)
+    region_of = {i: r for r in regions for i in r["member_ids"]}
+    for region in regions:
+        region["priority"] = max(priorities[i] for i in region["member_ids"])
+    visible_primary = [e for e in ctx.elements if "primary" in _roles(e) and _visible(e) and e.get("enabled", True)]
+    inputs = tuple((r["member_ids"], r["centre"], r["priority"]) for r in regions)
+    cache_key = (gaze.MODEL_ID, inputs, viewing, start, sx, sy, eye, params.GAZE_MC_RUNS, params.GAZE_MC_FIXATIONS)
+    probs = _FIXATION_CACHE.get(cache_key)
+    if probs is None and regions and visible_primary:
+        _, probs = gaze.sample_equivalent_fixations(ctx.elements, priorities, ctx.viewport, start, sx, viewing,
+                                                   mm_per_css_px_y=sy, eye_css=eye, seed=1)
+        _FIXATION_CACHE[cache_key] = probs
+    probs = probs or {}
+    interactive_ids = {e["id"] for e in _interactive(ctx)}
+    k = params.GAZE_EARLY_FIXATIONS
+    sampling = {"model_version": gaze.MODEL_ID, "n_runs": params.GAZE_MC_RUNS,
+                "n_fix": params.GAZE_MC_FIXATIONS, "start_basis": start_basis, "seed": 1,
+                "region_count": len(regions), "calibrated": False, **geometry}
+    for element in visible_primary:
+        region = region_of.get(element["id"])
+        series = probs.get(element["id"])
+        if region is None or not series or len(series) < k:
+            reason = "visible_geometry_unverified" if region is None else "invalid_sampling_geometry"
             out.append(Observation(
                 "GZ-01", *base, [element["id"]], element_key(element),
-                {"name": "p_fixated_within_k", "value": round(p_seen, 3), "unit": "probability", "threshold": params.GAZE_PRIMARY_PASS,
-                 "comparator": ">=", "k": k, "priority": round(priorities[element["id"]], 3)},
-                severity is None, severity,
-                f"주요 동작 '{element.get('name') or element.get('text')}'을(를) 처음 {k}번 시선 안에 볼 확률(모델) {p_seen:.2f}.",
-                gaze.MODEL_ID,
+                {"name": "p_fixated_within_k", "value": None, "unit": "simulation_hit_fraction", "k": k,
+                 "reason": reason, "visible_geometry": element.get("visible_geometry"), **sampling},
+                False, None, "주요 동작의 보이는 영역을 확인할 수 없어 시선 시뮬레이션 판정을 보류했습니다.",
+                gaze.MODEL_ID, extra={"verdict": "inconclusive"},
             ))
-            stronger = [key for key, v in priorities.items() if v > priorities[element["id"]] and key != element["id"]]
-            interactive_ids = {e["id"] for e in _interactive(ctx)}
-            competing = [key for key in stronger if key in interactive_ids]
-            failed = len(competing) >= params.GAZE_COMPETITORS_MAX
-            out.append(Observation(
-                "GZ-04", *base, [element["id"], *competing[:5]], element_key(element),
-                {"name": "competing_interactive_elements", "value": len(competing), "unit": "count", "threshold": params.GAZE_COMPETITORS_MAX, "comparator": "<"},
-                not failed, "P3" if failed else None,
-                f"주요 동작보다 시각적 우선순위가 높은 조작 요소 {len(competing)}개.",
-                gaze.MODEL_ID,
-            ))
+            continue
+        fraction = series[k - 1]
+        severity = "P3" if fraction < params.GAZE_PRIMARY_P2 else None
+        out.append(Observation(
+            "GZ-01", *base, [element["id"]], element_key(element),
+            {"name": "p_fixated_within_k", "value": round(fraction, 3), "unit": "simulation_hit_fraction",
+             "threshold": params.GAZE_PRIMARY_P2, "comparator": ">=", "k": k,
+             "reference_target": params.GAZE_PRIMARY_PASS, "decision_rule": "P3 below hypothesis threshold; reference target is advisory",
+             "priority": round(region["priority"], 3), "region_aliases": list(region["member_ids"]), **sampling},
+            severity is None, severity,
+            f"주요 동작 '{element.get('name') or element.get('text')}' 영역을 처음 {k}번 선택 안에 포함한 시뮬레이션 비율 {fraction:.2f}"
+            + f" ({params.GAZE_MC_RUNS}회 실행, 경로당 {params.GAZE_MC_FIXATIONS}회 선택). 시작점은 "
+            + ("마지막 입력 위치" if focus else "위치 prior의 최고점")
+            + "이며 실제 시선 관측과 사람의 발견 확률은 확인되지 않았습니다.",
+            gaze.MODEL_ID,
+        ))
+        competing = [r for r in regions if r is not region and r["priority"] > region["priority"]
+                     and interactive_ids.intersection(r["member_ids"])]
+        failed = len(competing) >= params.GAZE_COMPETITORS_MAX
+        out.append(Observation(
+            "GZ-04", *base, [element["id"], *(r["member_ids"][0] for r in competing[:5])], element_key(element),
+            {"name": "competing_interactive_elements", "value": len(competing), "unit": "region_count",
+             "threshold": params.GAZE_COMPETITORS_MAX, "comparator": "<",
+             "competing_region_aliases": [list(r["member_ids"]) for r in competing], **sampling},
+            not failed, "P3" if failed else None,
+            f"주요 동작보다 시각적 우선순위가 높은 조작 영역 {len(competing)}개. 같은 요소의 중복 표현은 한 번 계산했습니다.",
+            gaze.MODEL_ID,
+        ))
     # GZ-02: feedback noticing after an action (change blindness + thumb occlusion).
     if ctx.previous is not None and focus:
         # After a screen replacement, content of the new screen is where the user
@@ -1041,7 +1081,7 @@ def check_gaze(ctx: Context) -> list[Observation]:
                 out.append(Observation(
                     "GZ-02", *base, [element["id"]], element_key(element),
                     {"name": "feedback_eccentricity_deg", "value": None, "unit": "deg", "threshold": "in viewport", "comparator": "band",
-                     "band": "offscreen", "box": element["box"], "new": prior is None},
+                     "band": "offscreen", "box": element["box"], "new": prior is None, **geometry},
                     False, sev,
                     f"조작 후 {'새로 나타난' if prior is None else '바뀐'} 메시지 '{(element.get('text') or '')[:30]}'이(가) 화면 밖(뷰포트 바깥)에 있어 보이지 않습니다.",
                     gaze.MODEL_ID,
@@ -1049,22 +1089,34 @@ def check_gaze(ctx: Context) -> list[Observation]:
                 continue
             if not _visible(element) or (reoriented and element.get("selector") not in transient):
                 continue
-            centre_css = pointing.centre(element["box"])
+            visible_box = gaze.clipped_visible_box(element, ctx.viewport)
+            if visible_box is None:
+                out.append(Observation(
+                    "GZ-02", *base, [element["id"]], element_key(element),
+                    {"name": "feedback_eccentricity_deg", "value": None, "unit": "deg",
+                     "band": "unverified", "reason": "visible_geometry_unverified", **geometry},
+                    False, None, "피드백의 보이는 영역을 확인할 수 없어 조작 지점과의 각도 판정을 보류했습니다.",
+                    gaze.MODEL_ID, extra={"verdict": "inconclusive"},
+                ))
+                continue
+            x, y, w, h = visible_box
+            centre_css = (x + w / 2, y + h / 2)
             # Eccentricity to the nearest point of the message, not its centroid: a wide
             # error box beside the button starts right next to the click (gaze brief rule).
-            b = element["box"]
-            near_css = (min(max(focus["x"], b["x"]), b["x"] + b["w"]), min(max(focus["y"], b["y"]), b["y"] + b["h"]))
-            theta = gaze.eccentricity_deg_css((focus["x"], focus["y"]), near_css, mm_px, viewing)
+            near_css = (min(max(focus["x"], x), x + w), min(max(focus["y"], y), y + h))
+            theta = gaze.angular_separation_css(start, near_css, sx, sy, viewing, eye)
+            if theta is None:
+                continue
             salient, sal = _salient_change(ctx, element, new=prior is None)
             band = gaze.notice_band(theta, salient, scale)
             occluded = False
             if geom is not None and grip.startswith("one_hand"):
                 occluded = reach.occluded_by_thumb(_point_mm(ctx, focus["x"], focus["y"]), _point_mm(ctx, *centre_css), geom, grip, thumb, params.OCCLUSION_WEDGE_DEG)
-            feedback.append((element, roles, prior, theta, salient, sal, band, occluded))
+            feedback.append((element, roles, prior, theta, salient, sal, band, occluded, near_css))
         # Redundant feedback: when another new, salient message appears where the user is
         # looking (likely noticed, not occluded), a far secondary label is not missed feedback.
         noticed = [f for f in feedback if f[6] == "likely" and f[4] and not f[7]]
-        for element, roles, prior, theta, salient, sal, band, occluded in feedback:
+        for element, roles, prior, theta, salient, sal, band, occluded, near_css in feedback:
             critical = bool(roles & {"error_message", "critical_message"}) or element.get("role") == "alert"
             redundant = any(n[0] is not element for n in noticed)
             severity = None
@@ -1079,10 +1131,11 @@ def check_gaze(ctx: Context) -> list[Observation]:
                 "GZ-02", *base, [element["id"]], element_key(element),
                 {"name": "feedback_eccentricity_deg", "value": round(theta, 1), "unit": "deg",
                  "threshold": [round(v * scale, 1) for v in params.NOTICE_BANDS_DEG["salient" if salient else "non_salient"]],
-                 "comparator": "band", "band": band, "salient": salient, "occluded_by_thumb": occluded, "persona_scale": scale, **sal},
+                 "comparator": "band", "band": band, "salient": salient, "occluded_by_thumb": occluded, "persona_scale": scale, "nearest_feedback_css": list(near_css), **geometry, **sal},
                 severity is None, severity,
                 f"조작 지점에서 {theta:.0f}° 떨어진 곳에 {'새' if prior is None else '바뀐'} 메시지 '{(element.get('text') or element.get('name') or '')[:30]}'"
-                + f" ({'돌출' if salient else '비돌출'} 변화, 인지 가능성: {band})" + (", 한 손 파지 엄지에 가려질 위치" if occluded else "") + ".",
+                + f" ({'돌출' if salient else '비돌출'} 변화, 인지 가능성: {band})" + (", 한 손 파지 엄지에 가려질 위치" if occluded else "")
+                + ". 마지막 입력 위치에서 계산했으며, 눈의 화면 투영점은 화면 중심으로 가정했습니다.",
                 gaze.MODEL_ID,
             ))
     # GZ-03: banner-blindness proxy on desktop/web.
@@ -1091,7 +1144,10 @@ def check_gaze(ctx: Context) -> list[Observation]:
             roles = _roles(element)
             if not (roles & {"critical_message", "error_message", "status"}) or not _visible(element):
                 continue
-            box = element["box"]
+            visible_box = gaze.clipped_visible_box(element, ctx.viewport)
+            if visible_box is None:
+                continue
+            box = dict(zip("xywh", visible_box))
             right_rail = box["x"] >= vw * params.AD_RAIL_X_FRAC
             banner = box["y"] <= vh * params.AD_BANNER_Y_FRAC and box["w"] >= vw * 0.6 and box["h"] <= params.AD_BANNER_MAX_H
             ad_like = "ad_like" in roles

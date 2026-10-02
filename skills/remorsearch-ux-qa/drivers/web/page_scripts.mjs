@@ -816,6 +816,40 @@ export function extractSnapshot(args) {
     return g;
   };
 
+  // Gaze uses the viewport/overflow intersection, while target-size and reach
+  // retain the authored bounding box. Non-rectangular clipping stays unknown.
+  const visibleBoxOf = (el) => {
+    const r = geo(el).r;
+    let x0 = Math.max(VX0, r.left), y0 = Math.max(VY0, r.top);
+    let x1 = Math.min(VX1, r.right), y1 = Math.min(VY1, r.bottom);
+    let clipped = false;
+    for (let p = el; p; p = p.assignedSlot || parentOf(p)) {
+      const cs = style(p);
+      if ((cs.clipPath && cs.clipPath !== 'none') || (cs.clip && cs.clip !== 'auto')
+        || (cs.maskImage && cs.maskImage !== 'none')) return { visible_box: null, visible_geometry: 'unsupported' };
+      if (cs.transform && cs.transform !== 'none') {
+        const m = new DOMMatrixReadOnly(cs.transform);
+        if (!m.is2D || Math.abs(m.b) > 1e-6 || Math.abs(m.c) > 1e-6) return { visible_box: null, visible_geometry: 'unsupported' };
+      }
+      if (p === el) continue; // an element's own overflow clips its children
+      const clipX = ['hidden', 'clip', 'auto', 'scroll'].includes(cs.overflowX);
+      const clipY = ['hidden', 'clip', 'auto', 'scroll'].includes(cs.overflowY);
+      if (!clipX && !clipY) continue;
+      const pr = geo(p).r;
+      if (!p.offsetWidth || !p.offsetHeight) return { visible_box: null, visible_geometry: 'unsupported' };
+      const sx = pr.width / p.offsetWidth, sy = pr.height / p.offsetHeight;
+      const left = pr.left + p.clientLeft * sx, top = pr.top + p.clientTop * sy;
+      const right = left + p.clientWidth * sx, bottom = top + p.clientHeight * sy;
+      const old = [x0, y0, x1, y1];
+      if (clipX) { x0 = Math.max(x0, left); x1 = Math.min(x1, right); }
+      if (clipY) { y0 = Math.max(y0, top); y1 = Math.min(y1, bottom); }
+      if (old.some((v, i) => v !== [x0, y0, x1, y1][i])) clipped = true;
+    }
+    if (x1 <= x0 || y1 <= y0) return { visible_box: null, visible_geometry: 'empty' };
+    return { visible_box: { x: round2(x0), y: round2(y0), w: round2(x1 - x0), h: round2(y1 - y0) },
+      visible_geometry: clipped ? 'ancestor_clipped' : 'measured' };
+  };
+
   // Open modal layers: <dialog> opened with showModal() or a visible [aria-modal="true"].
   const modals = all.filter((el) => {
     try {
@@ -1127,6 +1161,7 @@ export function extractSnapshot(args) {
       selector: uniqueSelector(el),
       dom_id: el.id ? String(el.id).slice(0, 120) : null,
       box: { x: round2(g.r.left), y: round2(g.r.top), w: round2(g.r.width), h: round2(g.r.height) },
+      ...visibleBoxOf(el),
       interactive: c.interactive,
       visible: g.vis,
       enabled: !disabled,
@@ -1310,6 +1345,7 @@ export function extractSnapshot(args) {
     for (const e of elements) {
       if (e.source !== 'dom') continue;
       shift(e.box);
+      shift(e.visible_box);
       for (const hb of e.hit_boxes || []) shift(hb);
       for (const p of e.paint?.parts || []) shift(p.box);
     }

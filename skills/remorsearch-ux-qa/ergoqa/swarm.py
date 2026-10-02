@@ -197,6 +197,8 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
             evaluated_by_run.setdefault(run_id, [])
             evaluated_by_run[run_id] += [p for p in analysis["profiles_evaluated"] if p not in evaluated_by_run[run_id]]
         for obs in analysis["observations"]:
+            if (obs.get("extra") or {}).get("verdict") == "inconclusive":
+                continue  # retained in raw observations and analysis limitations
             # Group by the element's selector, not its current text: a countdown or score
             # whose text changes every snapshot is one element (cross-review 2026-09-28).
             key = (scenario_id, obs["check_id"], obs["element_key"].split("|", 1)[0])

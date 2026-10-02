@@ -2095,6 +2095,56 @@ async function paintedStateTest(base, tmp) {
   }
 }
 
+async function gazeGeometryTest(tmp) {
+  const { pw, info } = loadPlaywright();
+  const transport = await openBrowser(pw, info, { endpoint: undefined });
+  const context = await transport.browser.newContext({ viewport: { width: 360, height: 780 }, deviceScaleFactor: 1 });
+  try {
+    const page = await context.newPage();
+    await page.setContent(`<!doctype html><style>
+      body { margin:0 } button { box-sizing:border-box; width:180px; height:48px }
+      #tiny { position:absolute; top:100px; left:10px; height:2px; overflow:hidden }
+      #partial { position:absolute; top:200px; left:10px; height:24px; overflow:hidden }
+      #clear { position:absolute; top:300px; left:10px }
+      #outside { position:absolute; top:900px; left:10px }
+      #scroll { position:absolute; top:400px; left:10px; height:24px; overflow:auto }
+      #viewport { position:absolute; top:-24px; left:200px }
+      </style><div id=tiny><button id=clipped data-ergo-role=primary>Continue</button></div>
+      <div id=partial><button id=half>Half</button></div><button id=clear>Clear</button>
+      <button id=outside>Offscreen</button><div id=scroll><button id=scrolled>Scroll</button></div>
+      <button id=viewport>Viewport</button>`);
+    const ex = await page.evaluate(extractSnapshot, { key: STATE_KEY, cap: 400, knownRoles: [...KNOWN_ROLES] });
+    writeJson(path.join(tmp, 'gaze-geometry-capture.json'), ex);
+    await page.screenshot({ path: path.join(tmp, 'gaze-geometry.png') });
+    const item = (id) => ex.elements.find((e) => e.selector === `#${id}`);
+    check('gaze geometry: tiny ancestor retains raw 48 px but visible height is 2 px',
+      item('clipped')?.box.h === 48 && item('clipped')?.visible_box?.h === 2
+      && item('clipped')?.visible_geometry === 'ancestor_clipped', item('clipped'));
+    check('gaze geometry: partial ancestor and scroll clipping are explicit',
+      ['half', 'scrolled'].every((id) => item(id)?.visible_box?.h === 24 && item(id)?.visible_geometry === 'ancestor_clipped'));
+    check('gaze geometry: unclipped control keeps its exact rectangle',
+      JSON.stringify(item('clear')?.visible_box) === JSON.stringify(item('clear')?.box)
+      && item('clear')?.visible_geometry === 'measured');
+    check('gaze geometry: offscreen control has no visible rectangle',
+      item('outside')?.in_viewport === false && item('outside')?.visible_box === null && item('outside')?.visible_geometry === 'empty');
+    check('gaze geometry: viewport intersection excludes hidden half',
+      item('viewport')?.visible_box?.h === 24 && item('viewport')?.visible_box?.y === 0);
+    const png = await page.screenshot();
+    await page.evaluate(() => {
+      const button = document.querySelector('#clear');
+      for (let i = 0; i < 20; i++) { const wrapper = document.createElement('div'); button.parentNode.insertBefore(wrapper, button); wrapper.append(button); }
+    });
+    const wrapped = await page.evaluate(extractSnapshot, { key: STATE_KEY, cap: 400, knownRoles: [...KNOWN_ROLES] });
+    writeJson(path.join(tmp, 'gaze-geometry-wrapped.json'), wrapped);
+    const clear = wrapped.elements.find((e) => e.selector === '#clear');
+    check('gaze geometry: plain wrappers preserve pixels and visible rectangle',
+      png.equals(await page.screenshot()) && JSON.stringify(clear?.visible_box) === JSON.stringify(item('clear')?.visible_box));
+  } finally {
+    await context.close();
+    await transport.close();
+  }
+}
+
 async function main() {
   const keep = process.argv.includes('--keep');
   // --only a,b: run just these groups (scripted, actions, layers, focus, focus2, feedback, native-feedback,
@@ -2114,6 +2164,7 @@ async function main() {
     if (want('connect')) await connectTest(base, tmp);
     if (want('integrity')) await taskIntegrityTest(base, tmp);
     if (want('painted')) await paintedStateTest(base, tmp);
+    if (want('gaze')) await gazeGeometryTest(tmp);
 
     const outDir = path.join(tmp, 'runs');
     let r = null;

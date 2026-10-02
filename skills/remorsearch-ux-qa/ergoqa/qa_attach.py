@@ -344,7 +344,7 @@ def attach_run(
         }
 
     for obs in analysis["observations"]:
-        if obs["passed"]:
+        if obs["passed"] or (obs.get("extra") or {}).get("verdict") == "inconclusive":
             continue
         pair_profile = obs["profile_id"]
         pair_run_id = f"ERGO-RUN-{run_id}@{pair_profile}"
@@ -464,6 +464,7 @@ def attach_run(
         "analytical_evaluations": sum(1 for r in new_runs.values() if r["cross_profile_evaluation"]),
         "build_identity_status": "unknown" if any(r["build_id"] == "unknown" for r in receipts_by_snapshot.values()) else "recorded",
         "capture_count": len(receipts_by_snapshot),
+        "limitations": list(analysis.get("limitations") or []),
         "basis_note": "Owner-execution findings may verify from measured observations; cross-profile evaluations are "
                       "analytical model coverage and never count as persona executions or verified experiences. "
                       "Counts are simulated-profile coverage, not prevalence.",

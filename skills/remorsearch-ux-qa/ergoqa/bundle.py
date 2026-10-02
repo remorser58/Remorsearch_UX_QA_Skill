@@ -89,7 +89,7 @@ def to_evidence_bundle(
                 "coverage": [key for key, pids in analysis.get("coverage", {}).items() if pid in pids],
             }
         for obs in analysis["observations"]:
-            if obs["passed"]:
+            if obs["passed"] or (obs.get("extra") or {}).get("verdict") == "inconclusive":
                 continue
             pair_id = f"{scenario_id}@{obs['profile_id']}"
             run_record_id = f"{analysis['run_id']}@{obs['profile_id']}"
@@ -171,5 +171,6 @@ def to_evidence_bundle(
         "notes": {
             "coverage_strata": [name for name, _ in COVERAGE_STRATA],
             "prevalence": "Synthetic ergonomic profiles give coverage, not prevalence.",
+            "limitations": sorted({line for analysis in analyses for line in analysis.get("limitations", [])}),
         },
     }
