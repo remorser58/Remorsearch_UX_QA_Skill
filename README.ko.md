@@ -19,7 +19,10 @@ Remorsearch(리모서치, *ree-mor-search*) UX QA는 Claude Code와 Codex에서 
 
 ## 설치
 
-폴더 하나를 스킬 폴더에 복사하면 됩니다. Python 도구는 Linux나 macOS에서 돌아갑니다(Windows는 WSL). reader와 loop가 POSIX 파일 잠금을 쓰기 때문입니다.
+폴더 하나를 스킬 폴더에 복사합니다. 사용자 리서치에서 쓰는 insane-search 원문과
+참조 자료가 안에 들어 있으므로 검색 스킬을 따로 설치할 필요가 없습니다.
+Python 도구는 Python 3.10 이상에서 표준 라이브러리와 POSIX 파일 잠금을 사용합니다.
+macOS, Linux, Windows의 WSL에서 실행할 수 있습니다.
 
 ```sh
 git clone https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
@@ -29,13 +32,27 @@ cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.codex/skills/
 ```
 
-폴더에 스킬이 실행하는 모든 것이 들어 있습니다. Python 도구(3.10 이상, 표준 라이브러리만), JSON 스키마, 시연용 예제, 실시간 웹 드라이버입니다.
-
-실제 웹 페이지에서 persona-qa와 ergonomics를 돌리는 실시간 웹 드라이버에는 Node.js 22와 Playwright도 필요합니다.
+CLI와 무결성 검사 정보를 갖춘 배포 ZIP은 저장소에서 빌드합니다.
+빌더는 저장소에 포함된 검색 자료를 기본으로 쓰며 네트워크에 접속하지 않습니다.
+[빌드와 배포 전 검사](docs/release.md)를 참고하세요.
 
 ```sh
-cd ~/.claude/skills/remorsearch-ux-qa/drivers/web
-npm install && npx playwright install chromium
+python3 scripts/build_insane_search_bundle.py --output dist/remorsearch-rc
+python3 scripts/build_insane_search_bundle.py --verify dist/remorsearch-rc
+python3 dist/remorsearch-rc/remorsearch-ux-qa/scripts/remorsearch.py smoke
+```
+
+폴더에는 Python 도구, JSON 스키마, 시연용 예제, 실시간 웹 드라이버와 검색 원문,
+참조 자료, 출처 기록이 들어 있습니다.
+
+실제 웹 페이지에서 persona-qa와 ergonomics를 돌리는 웹 드라이버에는 Node.js 22와 Playwright도 필요합니다.
+아래 명령은 Codex 설치 경로를 선택합니다. Claude Code에서는 `REMORSEARCH_SKILL_DIR`를
+`~/.claude/skills/remorsearch-ux-qa`로 지정하세요.
+
+```sh
+REMORSEARCH_SKILL_DIR="$HOME/.codex/skills/remorsearch-ux-qa"
+cd "$REMORSEARCH_SKILL_DIR/drivers/web"
+npm ci && npx playwright install chromium
 ```
 
 Node.js 22를 쓰십시오. 고정된 Playwright 1.56.1에서는 Node.js 24.16 이상과 Node.js 26에서 `npx playwright install`이 다운로드 뒤 멈춥니다([microsoft/playwright#40724](https://github.com/microsoft/playwright/issues/40724), Playwright 1.60에서는 됩니다).
@@ -55,7 +72,7 @@ Node.js 22를 쓰십시오. 고정된 Playwright 1.56.1에서는 Node.js 24.16 �
 
 요청에 "간단히"가 있으면 가장 중요한 축만 돌립니다. "깊게"가 있으면 기본 축을 모두 돌립니다. "근거 붙여서"가 있으면 모든 주장에 출처 ID를 붙입니다. "간단히"가 다른 말과 함께 나오면 "간단히"를 따릅니다. 어느 경우에도 중단 규칙, 등급 규칙, 확인 표시는 그대로입니다([`overview.md`](skills/remorsearch-ux-qa/references/research/korea/overview.md) 4절).
 
-**처음 실행할 때.** 실행에 하위 에이전트(페르소나 에이전트, 병렬 조사, 심사 에이전트)가 필요하면, 스킬은 먼저 하네스에 이미 있는 하위 에이전트 모델 설정(`CLAUDE_CODE_SUBAGENT_MODEL`, 에이전트 정의, 플러그인 에이전트)을 찾아 묻지 않고 그대로 따릅니다. 설정이 없을 때만 호스트의 선택 창으로 모델과 추론 강도를 한 번 묻고, 답을 `~/.config/remorsearch-ux-qa/config.json`에 저장합니다. "에이전트 모델 바꿔줘"라고 말하면 다시 묻습니다. 권장 기본값인 Sonnet 최대 강도는 화면 11개로 한 블라인드 벤치마크에서 나왔습니다([`docs/validation/subagent-model-benchmark.md`](docs/validation/subagent-model-benchmark.md), 영문). Claude Code는 하위 에이전트의 추론 강도를 에이전트 정의로만 적용하므로, 스킬은 `~/.claude/agents/`에 작은 정의 두 개를 만들겠다고 제안합니다.
+**처음 실행할 때.** 실행에 하위 에이전트(페르소나 에이전트, 병렬 조사, 심사 에이전트)가 필요하면, 현재 요청에서 지정한 모델과 추론 강도를 우선합니다. 별도 지정이 없으면 하네스에 이미 있는 설정(`CLAUDE_CODE_SUBAGENT_MODEL`, 에이전트 정의, 플러그인 에이전트)을 찾아 묻지 않고 따릅니다. 설정이 없을 때만 호스트의 선택 창으로 모델과 추론 강도를 한 번 묻습니다. 사용자가 저장을 요청한 경우에만 답을 `~/.config/remorsearch-ux-qa/config.json`에 저장합니다. "에이전트 모델 바꿔줘"라고 말하면 다시 묻습니다. 권장 기본값인 Sonnet 최대 강도는 화면 11개로 한 블라인드 벤치마크에서 나왔습니다([`docs/validation/subagent-model-benchmark.md`](docs/validation/subagent-model-benchmark.md), 영문). Claude Code는 하위 에이전트의 추론 강도를 에이전트 정의로만 적용하므로, 스킬은 `~/.claude/agents/`에 작은 정의 두 개를 만들겠다고 제안합니다.
 
 ## 근거 규칙
 
@@ -143,6 +160,13 @@ loop CLI의 전체 설명(재개, 종료 코드, 신뢰 한계 포함)은 [`refe
 
 테스트는 네트워크에 나가지 않습니다. reader 테스트는 127.0.0.1의 로컬 서버에서 페이지를 내려 줍니다.
 
+Python 3.10 이상과 고정된 웹 드라이버 의존성을 준비한 뒤 배포 패키지 전체를 검사합니다.
+보고서에 각 테스트 결과를 남기고 ZIP을 다른 위치에 풀어 실행합니다. [배포 전 검사](docs/release.md)를 참고하세요.
+
+```sh
+python3 scripts/check_release.py --output dist/release-check
+```
+
 ## 한계
 
 - 실시간 브라우저 조사(Aside 같은 에이전트 브라우저), Figma, loop 모드의 브라우저 수집은 사용자나 에이전트 호스트가 제공합니다. loop CLI는 그 기록을 가져올 뿐 직접 실행하지 않습니다.
@@ -155,4 +179,4 @@ loop CLI의 전체 설명(재개, 종료 코드, 신뢰 한계 포함)은 [`refe
 
 MIT 라이선스입니다. [`LICENSE`](LICENSE)를 보십시오. 서드파티 자료와 참고 자료는 [`THIRD_PARTY_NOTICES.md`](skills/remorsearch-ux-qa/THIRD_PARTY_NOTICES.md)에 있습니다.
 
-출처 표시: 공개 페이지 reader와 리서치 게이트는 fivetaku의 [insane-search](https://github.com/fivetaku/insane-search)와 [insane-research](https://github.com/fivetaku/insane-research)(둘 다 MIT)를 살펴본 뒤 설계했습니다. 생각만 참고했고 코드와 글은 옮기지 않았으며, 스킬은 두 프로젝트 어느 쪽에도 의존하거나 호출하지 않습니다. 한국 팩과 이중 언어 README 구성은 [K-skill](https://github.com/NomaDamas/k-skill)(MIT), DaleSeo의 [korean-skills](https://github.com/DaleSeo/korean-skills)(MIT), [SoDam-Persona-Codex](https://github.com/sodam-ai/SoDam-Persona-Codex)(Apache-2.0), fivetaku의 [gptaku_plugins](https://github.com/fivetaku/gptaku_plugins)(MIT)에서도 생각을 얻었습니다. 이 역시 생각만 참고했습니다. 플랫폼 이름은 설명을 위해 썼으며 어느 곳과도 제휴 관계가 없습니다.
+출처 표시: 공개 페이지 reader와 리서치 게이트는 fivetaku의 [insane-search](https://github.com/fivetaku/insane-search)와 [insane-research](https://github.com/fivetaku/insane-research)(둘 다 MIT)를 살펴본 뒤 설계했습니다. insane-search 원문과 참조 자료는 스킬 안에 포함되어 리서치 수집 단계에서 사용합니다. 원문, 파일 해시, 출처와 upstream 라이선스를 보존했습니다. insane-research는 게이트 설계의 아이디어만 참고했습니다. 한국 팩과 이중 언어 README 구성은 [K-skill](https://github.com/NomaDamas/k-skill)(MIT), DaleSeo의 [korean-skills](https://github.com/DaleSeo/korean-skills)(MIT), [SoDam-Persona-Codex](https://github.com/sodam-ai/SoDam-Persona-Codex)(Apache-2.0), fivetaku의 [gptaku_plugins](https://github.com/fivetaku/gptaku_plugins)(MIT)에서도 생각을 얻었습니다. 이 역시 생각만 참고했습니다. 플랫폼 이름은 설명을 위해 썼으며 어느 곳과도 제휴 관계가 없습니다.

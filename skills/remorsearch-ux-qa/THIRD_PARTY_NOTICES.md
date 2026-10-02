@@ -6,6 +6,29 @@ were studied or can be used alongside it without any of their code being include
 
 ## Included material
 
+### Insane Search toolkit
+
+The original insane-search entrypoint and twelve references are included under
+`references/insane-search/`. The entrypoint is renamed `SOURCE.md` with unchanged
+bytes, so Remorsearch remains the one discoverable skill. Research loads the
+toolkit during acquisition, after candidate URL discovery and before capture.
+Selected methods and outputs follow Remorsearch's access, privacy and evidence
+controls; unsupported output remains a lead.
+
+Attributed source: https://github.com/fivetaku/insane-search, fivetaku, 2026.
+`references/insane-search/PROVENANCE.json` records original file hashes and the
+snapshot date. The installed input omitted its license; the upstream MIT notice
+retrieved on 2026-10-02 is retained verbatim as
+`references/insane-search/upstream-LICENSE`. These records identify the attributed
+snapshot and do not prove a current upstream comparison or assign the upstream
+license to unrelated maintainer input. Release overrides preserve supplied
+license files and record whether their bytes match the attributed snapshot.
+
+The public-page reader also drew ideas from this project: official routes first,
+graded response verdicts, honest untried-route reporting, redirect SSRF checks
+and an untrusted-content envelope. Its runtime implementation is Remorsearch's
+own; bundled reference instructions do not change its supported capture formats.
+
 ### Colour vision deficiency matrices (colour-science)
 
 `ergoqa/hf/machado_data.py` contains the colour vision deficiency simulation
@@ -69,16 +92,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   inspected for the loop mode; no OMO code or installation is redistributed.
 - **Nemotron-Personas-Korea** (NVIDIA, CC BY 4.0): persona records may be linked
   at run time by the user; no dataset rows are included in this folder.
-- **insane-search** (github.com/fivetaku/insane-search, part of the gptaku-plugins
-  collection, MIT License, Copyright (c) 2026 fivetaku). Ideas used in the
-  public-page reader (`scripts/ux_research.py`, `uxresearch/`) and
-  `references/research/public-page-access.md`: official routes first, with
-  cheapest-first escalation; graded verdicts, because HTTP 200 is not success;
-  honest reporting of untried routes; an SSRF guard that re-checks every redirect;
-  an untrusted-content envelope for page text; and the rule that generic code
-  names no sites. We deliberately did not adopt its TLS-impersonation grid,
-  stealth browsers, cookie and clearance bridging, search-page scraping or archive
-  sidecars. Nothing in this folder calls, installs or depends on it.
 - **insane-research** (github.com/fivetaku/insane-research, MIT License, Copyright
   (c) 2026 fivetaku). Ideas used in `references/research/audience-pipeline.md` and
   `references/research/source-grading.md`: phase contracts; claim status computed
@@ -123,9 +136,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   bilingual README pattern, an English README, a README.ko.md with the same section
   skeleton, and a language switcher line at the top.
 
-No code, text, marker lists, word lists or tables from the projects above are
-included in this folder, and the skill does not depend on, install or call any of
-them.
+The projects in this reference-only section supplied ideas; none of their code,
+text, marker lists, word lists or tables is included. Bundled material is listed
+separately under Included material.
 
 ## Cited or read for facts
 

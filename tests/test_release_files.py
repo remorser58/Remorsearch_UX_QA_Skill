@@ -3,8 +3,8 @@
 Three groups, all offline checks against scripts/release_files.py:
 
   * The list is the skills/remorsearch-ux-qa/ tree minus what the skill does not need
-    at run time (the pinned driver node_modules, caches, local run folders and the
-    driver self-test fixtures); every entry exists on disk, the order is sorted, and
+    at run time (the pinned driver node_modules, caches and local run folders);
+    documented synthetic self-test fixtures remain installed. Every entry exists on disk, the order is sorted, and
     the printed total matches the file sizes.
   * Files the shipped tools read at run time stay listed, so an exclusion cannot
     silently swallow a mode.
@@ -31,13 +31,19 @@ SCRIPT = REPO / "scripts" / "release_files.py"
 # demo fixtures that smoke reads.
 RUN_TIME_FILES = (
     "SKILL.md",
+    "references/insane-search/SOURCE.md",
+    "references/insane-search/references/public-api.md",
+    "references/insane-search/PROVENANCE.json",
+    "references/insane-search/upstream-LICENSE",
     "scripts/smoke_loop.py",
     "drivers/web/package-lock.json",
     "examples/loop/packet.json",
     "uxloop/io.py",
+    "drivers/web/fixtures/inspect.html",
+    "drivers/web/selftest.mjs",
 )
 PRUNED_PARTS = ("node_modules", "__pycache__", ".pytest_cache", ".ux-loop", ".ux-research")
-PRUNED_PATHS = ("drivers/web/fixtures/",)
+PRUNED_PATHS = ()
 DENIED_PATHS = (
     "skills/remorsearch-ux-qa/HANDOFF.md",
     "skills/remorsearch-ux-qa/COORDINATION.md",
@@ -157,6 +163,30 @@ class DenylistTests(unittest.TestCase):
             result = run_script(root)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("1 files, 11 bytes total", result.stdout)
+
+    def test_missing_skill_is_not_a_successful_empty_release(self):
+        with tempfile.TemporaryDirectory() as folder:
+            result = run_script(folder)
+            self.assertEqual(result.returncode, 1)
+            self.assertNotIn("0 files", result.stdout)
+
+    def test_symlinked_files_and_directories_cannot_ship_outside_content(self):
+        for directory in (False, True):
+            with self.subTest(directory=directory), tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                skill = root / "skills/remorsearch-ux-qa"
+                skill.mkdir(parents=True)
+                (skill / "SKILL.md").write_text("entry point", encoding="utf-8")
+                outside = root / "private"
+                if directory:
+                    outside.mkdir()
+                    (outside / "secret.txt").write_text("not for release", encoding="utf-8")
+                else:
+                    outside.write_text("not for release", encoding="utf-8")
+                (skill / "linked").symlink_to(outside, target_is_directory=directory)
+                result = run_script(root)
+                self.assertEqual(result.returncode, 1)
+                self.assertNotIn("not for release", result.stdout)
 
 
 if __name__ == "__main__":

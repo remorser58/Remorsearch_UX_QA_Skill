@@ -5,6 +5,28 @@ parallel source readers in research, and judges or verifiers in any mode. This
 page decides which model and reasoning effort they use. Skip it when the run
 starts no subagents.
 
+## 0. Current request takes precedence
+
+Apply model, effort and role assignments explicitly supplied in the current
+conversation before any saved choice or harness default. Mixed-provider teams
+are allowed. Use the exact identifiers and effort options exposed by the host;
+record requested and actual settings separately. Do not infer that `fast`,
+`priority`, a subscription tier or a quota pool is active merely from the model
+name. Apply such options only through a supported host control.
+
+If the requested provider rejects the host's task envelope, retry through an
+available documented plaintext task interface with the same model and scope.
+Keep the same concurrency limit and never copy authentication data between
+providers. Do not change global provider configuration to repair one task.
+If the exact model, effort or quota route remains unavailable, report the actual
+error and complete independent work. Never silently replace an explicitly
+requested model. A model substitution requires an existing user-approved
+fallback or a new user choice.
+
+For task-local choices, keep settings in the run record. Write persistent model
+preferences only when the user asks to save them. A session request to use
+subagents does not require another model-selection question.
+
 ## 1. Saved choice
 
 Read `${XDG_CONFIG_HOME:-~/.config}/remorsearch-ux-qa/config.json` if it exists:
@@ -53,7 +75,7 @@ If any mapping exists:
    research agent, judges to its review or verification agent, persona operators
    to its general worker. The skill's own definitions from step 3,
    `remorsearch-operator` and `remorsearch-judge`, are role agents too.
-3. Save `"source": "harness"` with `"model": "inherit"` for each role, tell the
+3. Record `"source": "harness"` with `"model": "inherit"` for each role, tell the
    user in one line which mapping is being followed, and do not ask.
 
 `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` forces one model on every subagent. Any
@@ -111,7 +133,8 @@ Use the chosen model and effort in it. Write
 Never overwrite a file that already exists; if one differs, show it and ask.
 Save each agent type in the config (`agent_type`).
 
-Save the answers with `"source": "user"`. Create the folder if needed. Never
+Keep the answers with `"source": "user"` in the run record; save the config only
+when requested. Create the folder if needed. Never
 write secrets or tokens to this file.
 
 ## 4. Use the choice
@@ -122,8 +145,8 @@ write secrets or tokens to this file.
 - Otherwise pass the saved model for each call. Where the call also takes an
   effort, pass that too.
 - Skip both when the source is `harness`.
-- A subagent that fails because the model is unavailable falls back to the
-  session model; record the fallback in the run report.
+- If a model is unavailable, use only a fallback the user has already allowed;
+  otherwise record the blocked role and continue independent work.
 - Record in every report the model and effort each role actually ran with,
   including an effort that could not be applied. Persona agents from one model
   count as one correlated rater
@@ -138,7 +161,7 @@ These rules add to the steps above. They do not change how the model is chosen.
 - Run readers 2-3 per batch, or 5-6 when the host enforces the return schema
   (schema-forced fan-out). Never start 10 or more at once. The research run ledger
   caps the load on each host, whatever the concurrency.
-- Readers return `ux-reader-return.v1` (planned schema) and never write their own
+- Readers return `ux-reader-return.v1` (bundled schema) and never write their own
   fetch code. They read through `scripts/ux_research.py` and the browser tools in
   `references/research/public-page-access.md`.
 - Harvest rule: the orchestrator does not finish until every reader has returned

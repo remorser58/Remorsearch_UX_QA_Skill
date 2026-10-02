@@ -50,12 +50,16 @@ Python 3.10+ standard library on Linux, macOS or WSL; `start` reports the runtim
 
 `python3 scripts/ref.py <file> <section-id>` prints one bounded section; without an ID it lists the IDs. `python3 scripts/ref.py platform naver-blog` prints one channel. Large references are lookup-only.
 
+## Bundled search in research
+
+After planning and finding candidate URLs, research invokes the original toolkit at `references/insane-search/SOURCE.md` and its linked platform method before capture. Complaint and audience research use the same stage; persona-only and ergonomics-only requests enable it only when research is requested. Follow `references/research/workflow.md` section 2 for method loading, relative paths and capture ingestion. The toolkit is part of this folder; its frontmatter is reference material, never a second skill dispatch. Every method remains subject to the access and evidence cards.
+
 ## Lookup index
 
 | Question | File |
 | --- | --- |
 | Access, terms, privacy | `references/research/public-page-access.md` 3, 5, 13, 17.1, 17.5 |
-| Grades, counter-search, time | `references/research/source-grading.md` 3-10 |
+| Grades, counter-search, time | `references/research/source-grading.md` 1-6 |
 | Reader returns, audience | `references/research/audience-pipeline.md` |
 | Cause layers | `references/shared/causal-chain.md` |
 | Scenarios | `references/persona-qa/persona-scenario-design.md`, `references/persona-qa/community-to-test.md` |

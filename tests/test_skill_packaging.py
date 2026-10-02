@@ -1,4 +1,4 @@
-"""Packaging checks: the SKILL.md front matter, the two READMEs, and where other projects may be named.
+"""Packaging checks for the primary skill, bilingual install docs and bundled toolkit.
 
 Three groups, all offline file checks:
 
@@ -6,14 +6,20 @@ Three groups, all offline file checks:
     a valid name, Korean trigger words, and no byte-order marks in the files a host parses.
   * README.md and README.ko.md must say the same things under the same headings. Headings are read outside
     fenced code blocks, because a shell comment such as "# Codex" inside a fence is not a heading.
-  * The reader no longer calls, installs or depends on another project's search tool. The name of that tool
-    may appear only in the credit texts, and the variables and the opt-in field of the removed rung must not
-    come back.
+  * The original search toolkit ships inside the one Remorsearch skill, its source
+    and methods retain their hashes, and relocated source installations can read it.
 """
 from __future__ import annotations
 
+import hashlib
+import json
+import os
 import posixpath
 import re
+import shutil
+import subprocess
+import sys
+import tempfile
 import unicodedata
 import unittest
 from pathlib import Path
@@ -40,13 +46,10 @@ SECTIONS = (
     ("Limits", "한계"),
     ("License", "라이선스"),
 )
-CREDIT_SECTION = {README: "License", README_KO: "라이선스"}
 SKIPPED_DIRS = {"node_modules", "__pycache__", ".git", ".ux-loop", ".ux-research"}
 # Runtime files belong to other packages; every routing-owned reference is scanned.
 UNSCANNED_DIRS = ("drivers/", "ergoqa/")
 REPO_PATH = re.compile(r"`((?:docs|tests|benchmarks)/[^`\n]*)`")
-CODE_SUFFIXES = {".py", ".mjs", ".js", ".json", ".yaml", ".yml", ".sh"}
-TOOL_NAME = re.compile(r"insane[-_ ]?search", re.IGNORECASE)
 REMOVED_VARIABLE = re.compile(r"INSANE_[A-Z0-9_]+")
 REMOVED_FIELD = "engine_opt_in"
 YAML_INDICATORS = "-?:,[]{}#&*!|>'\"%@`"
@@ -201,12 +204,6 @@ def text_of(path: Path):
         return path.read_text(encoding="utf-8")
     except UnicodeDecodeError:
         return None  # a binary file: an image, a font
-
-
-def mentions_outside_credit(text: str, allowed_title) -> list:
-    """The offsets of the tool's name that lie outside every section whose title `allowed_title` accepts."""
-    allowed = [(start, end) for title, start, end in sections(text) if allowed_title(title)]
-    return [m.start() for m in TOOL_NAME.finditer(text) if not any(a <= m.start() < b for a, b in allowed)]
 
 
 class SkillFrontMatterTests(unittest.TestCase):
@@ -364,51 +361,63 @@ class SkillFolderTests(unittest.TestCase):
             self.assertTrue((SKILL / path).is_file(), path)
 
 
-class CreditOnlyTests(unittest.TestCase):
-    def test_the_guard_finds_a_mention_outside_the_credit_section(self):
-        text = "# T\n\n## Use\n\nTry insane-search here.\n\n## License\n\nCredit: Insane Search (MIT).\n"
-        found = mentions_outside_credit(text, lambda title: title == "License")
-        self.assertEqual(len(found), 1)
-        self.assertEqual(text[found[0]:found[0] + 13], "insane-search")
-        self.assertEqual(mentions_outside_credit(text, lambda title: title in ("License", "Use")), [])
-        # a mention inside a fenced block of the credit section counts as inside; one under another heading does not
-        fenced = "## License\n\n```text\ninsane-search\n```\n\n## Use\n\ninsane search\n"
-        self.assertEqual(len(mentions_outside_credit(fenced, lambda title: title == "License")), 1)
+class BundledToolkitTests(unittest.TestCase):
+    def test_primary_skill_is_the_only_discoverable_entrypoint(self):
+        self.assertEqual(sorted(SKILL.rglob("SKILL.md")), [SKILL_MD])
 
-    def test_the_tool_is_named_only_in_credit_texts(self):
-        credit_files = {SKILL / "THIRD_PARTY_NOTICES.md"}
-        for path in project_files():
-            text = text_of(path)
-            if text is None or not TOOL_NAME.search(text) or path in credit_files:
-                continue
-            relative = path.relative_to(REPO)
-            if path == SKILL / "references" / "research" / "public-page-access.md":
-                allowed = lambda title: re.match(r"\d+\.\s+Credit", title) is not None
-            elif path in CREDIT_SECTION:
-                allowed = lambda title, wanted=CREDIT_SECTION[path]: title == wanted
-            else:
-                self.fail(f"{relative} names the tool outside a credit text")
-            self.assertEqual(mentions_outside_credit(text, allowed), [],
-                             f"{relative} names the tool outside its credit section")
+    def test_original_source_and_method_bytes_match_recorded_provenance(self):
+        toolkit = SKILL / "references/insane-search"
+        provenance = json.loads((toolkit / "PROVENANCE.json").read_text())
+        expected = set()
+        for relative, receipt in provenance["files"].items():
+            shipped = "SOURCE.md" if relative == "SKILL.md" else relative
+            expected.add(shipped)
+            raw = (toolkit / shipped).read_bytes()
+            self.assertEqual(len(raw), receipt["bytes"], shipped)
+            self.assertEqual(hashlib.sha256(raw).hexdigest(), receipt["sha256"], shipped)
+        actual = {path.relative_to(toolkit).as_posix()
+                  for path in toolkit.rglob("*") if path.is_file()}
+        self.assertEqual(actual - {"PROVENANCE.json", "upstream-LICENSE"}, expected)
+        license_raw = (toolkit / "upstream-LICENSE").read_bytes()
+        self.assertEqual(hashlib.sha256(license_raw).hexdigest(),
+                         provenance["upstream_license"]["sha256"])
+        self.assertEqual(license_raw, (REPO / "integrations/insane-search/upstream-LICENSE").read_bytes())
 
-    def test_the_credit_texts_exist(self):
-        notices = read(SKILL / "THIRD_PARTY_NOTICES.md")
-        self.assertRegex(notices, r"insane-search")
-        self.assertIn("Nothing in this folder calls, installs or depends on it", notices)
-        access = read(SKILL / "references" / "research" / "public-page-access.md")
-        self.assertTrue(any(re.match(r"\d+\.\s+Credit", title) for title, _, _ in sections(access)))
-        for path in (README, README_KO):
-            self.assertTrue(TOOL_NAME.search(read(path)), path.name)
+    def test_original_local_reference_links_resolve_inside_the_toolkit(self):
+        toolkit = SKILL / "references/insane-search"
+        count = 0
+        for path in toolkit.rglob("*.md"):
+            for target in links(read(path)):
+                clean = target.split("#")[0]
+                if not clean or re.match(r"[a-zA-Z][a-zA-Z0-9+.-]*:", clean):
+                    continue
+                resolved = (path.parent / clean).resolve()
+                self.assertTrue(resolved.is_relative_to(toolkit.resolve()), (path, target))
+                self.assertTrue(resolved.is_file(), (path, target))
+                count += 1
+        self.assertGreater(count, 0)
 
-    def test_code_and_data_never_name_the_other_project(self):
-        for path in project_files():
-            if path.suffix not in CODE_SUFFIXES:
-                continue
-            text = text_of(path)
-            if text is not None:
-                self.assertNotIn("insane", text.lower(), path.relative_to(REPO))
+    def test_relocated_source_folder_loads_a_linked_platform_method_body(self):
+        with tempfile.TemporaryDirectory() as folder:
+            installed = Path(folder) / "installed" / "remorsearch-ux-qa"
+            shutil.copytree(SKILL, installed, ignore=shutil.ignore_patterns(*SKIPPED_DIRS))
+            caller = Path(folder) / "another-project"
+            caller.mkdir()
+            command = [sys.executable, str(installed / "scripts/ref.py")]
+            env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
+            source = subprocess.run([*command, "references/insane-search/SOURCE.md",
+                "phase-0-특수-엔드포인트-인덱스"], cwd=caller, env=env, text=True, capture_output=True)
+            self.assertEqual(source.returncode, 0, source.stderr)
+            self.assertIn("references/public-api.md", source.stdout)
+            method = subprocess.run([*command, "references/insane-search/references/public-api.md",
+                "stack-exchange-v23"], cwd=caller, env=env, text=True, capture_output=True)
+            self.assertEqual(method.returncode, 0, method.stderr)
+            self.assertIn("curl", method.stdout)
+            self.assertIn("https://api.stackexchange.com/", method.stdout)
+            self.assertNotIn("Section IDs:", method.stdout)
+            self.assertEqual(list(caller.iterdir()), [])
 
-    def test_the_removed_variables_and_field_do_not_come_back(self):
+    def test_the_removed_runtime_variables_and_field_do_not_come_back(self):
         for path in project_files():
             text = text_of(path)
             if text is None:

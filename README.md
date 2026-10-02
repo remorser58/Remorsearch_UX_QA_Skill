@@ -23,8 +23,10 @@ One skill, four modes. The skill picks the mode from your request.
 
 ## Install
 
-Copy one folder into your skills directory. The Python tools need Linux or
-macOS (WSL on Windows); the reader and the loop use POSIX file locks.
+Install one folder into your skills directory. It includes the original
+insane-search toolkit as reference material for Remorsearch's research stage;
+users do not install a separate search skill. The Python tools need Python 3.10+
+on macOS, Linux or WSL and use the standard library and POSIX file locks.
 
 ```sh
 git clone https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
@@ -34,15 +36,27 @@ cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.codex/skills/
 ```
 
-The folder contains everything the skill runs: Python tools (3.10+, standard
-library only), JSON schemas, a demo fixture and the live web driver.
-
-The live web driver (persona-qa and ergonomics on real web pages) also needs Node.js
-22 and Playwright:
+For a release ZIP with a portable launcher and integrity manifest, build from
+the repository. The builder uses the checked-in toolkit by default, works
+offline and leaves installed skills untouched. See [build and release checks](docs/release.md).
 
 ```sh
-cd ~/.claude/skills/remorsearch-ux-qa/drivers/web
-npm install && npx playwright install chromium
+python3 scripts/build_insane_search_bundle.py --output dist/remorsearch-rc
+python3 scripts/build_insane_search_bundle.py --verify dist/remorsearch-rc
+python3 dist/remorsearch-rc/remorsearch-ux-qa/scripts/remorsearch.py smoke
+```
+
+The folder contains the Python tools, JSON schemas, demo fixtures, live web
+driver, and original search instructions with their references and provenance.
+
+The live web driver (persona-qa and ergonomics on real web pages) also needs Node.js
+22 and Playwright. The commands below select the Codex installation. For Claude
+Code, set `REMORSEARCH_SKILL_DIR` to `~/.claude/skills/remorsearch-ux-qa`.
+
+```sh
+REMORSEARCH_SKILL_DIR="$HOME/.codex/skills/remorsearch-ux-qa"
+cd "$REMORSEARCH_SKILL_DIR/drivers/web"
+npm ci && npx playwright install chromium
 ```
 
 Use Node.js 22. With the pinned Playwright 1.56.1, `npx playwright install` hangs after the
@@ -62,11 +76,12 @@ Ask in plain words, or call it by name:
 ```
 
 **First run.** If the run needs subagents (persona agents, parallel research,
-judges), the skill first looks for a subagent model mapping your harness already
+judges), explicit model and effort choices in your request take precedence.
+Otherwise, the skill looks for a subagent model mapping your harness already
 has (`CLAUDE_CODE_SUBAGENT_MODEL`, agent definitions, plugin agents) and follows
 it without asking. Only if there is none does it ask once, with the host's
 selection prompt, which model and reasoning effort to use, and it saves the answer
-in `~/.config/remorsearch-ux-qa/config.json`. Say "change the agent model" to be
+in `~/.config/remorsearch-ux-qa/config.json` only if you ask to save it. Say "change the agent model" to be
 asked again. The recommended default, Sonnet at max effort, comes from a blind
 benchmark on 11 screens
 ([`docs/validation/subagent-model-benchmark.md`](docs/validation/subagent-model-benchmark.md)).
@@ -223,6 +238,14 @@ in [`references/loop/cli.md`](skills/remorsearch-ux-qa/references/loop/cli.md).
 The tests never reach the network. The reader tests serve their pages from a local
 server on 127.0.0.1.
 
+Run the complete package check with Python 3.10+ and the pinned web
+driver dependencies installed. The report records test results and verifies the
+extracted ZIP from another working directory. See [release checks](docs/release.md).
+
+```sh
+python3 scripts/check_release.py --output dist/release-check
+```
+
 ## Limits
 
 - Live browser research (Aside or another agentic browser), Figma and browser
@@ -248,9 +271,9 @@ MIT, see [`LICENSE`](LICENSE). Third-party material and references are listed in
 
 Credits: the public-page reader and the research gate were designed after studying
 fivetaku's [insane-search](https://github.com/fivetaku/insane-search) and
-[insane-research](https://github.com/fivetaku/insane-research) (both MIT). Ideas
-only; no code or text from them is included, and the skill does not depend on or
-call either project. The Korean pack and this README's bilingual layout also draw
+[insane-research](https://github.com/fivetaku/insane-research) (both MIT). The original insane-search toolkit is bundled as reference material and invoked
+during research acquisition. Its bytes, provenance and upstream license are
+preserved. The gate draws ideas from insane-research; none of its code or text is included. The Korean pack and this README's bilingual layout also draw
 ideas from [K-skill](https://github.com/NomaDamas/k-skill) (MIT), DaleSeo's
 [korean-skills](https://github.com/DaleSeo/korean-skills) (MIT),
 [SoDam-Persona-Codex](https://github.com/sodam-ai/SoDam-Persona-Codex) (Apache-2.0)
