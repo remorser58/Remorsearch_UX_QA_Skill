@@ -930,7 +930,9 @@ export function extractSnapshot(args) {
     for (let p = el; p; p = p.assignedSlot || parentOf(p)) {
       const cs = style(p);
       if ((cs.clipPath && cs.clipPath !== 'none') || (cs.clip && cs.clip !== 'auto')
-        || (cs.maskImage && cs.maskImage !== 'none')) return { visible_box: null, visible_geometry: 'unsupported' };
+        || (cs.maskImage && cs.maskImage !== 'none')
+        // Individual rotate (including axis/3D forms) is separate from transform.
+        || (cs.rotate && cs.rotate !== 'none')) return { visible_box: null, visible_geometry: 'unsupported' };
       if (cs.transform && cs.transform !== 'none') {
         const m = new DOMMatrixReadOnly(cs.transform);
         if (!m.is2D || Math.abs(m.b) > 1e-6 || Math.abs(m.c) > 1e-6) return { visible_box: null, visible_geometry: 'unsupported' };

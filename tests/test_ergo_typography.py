@@ -122,10 +122,14 @@ def verify_capture(filename: str) -> None:
     before_rows, after_rows = xag_result(before), xag_result(items)
     by_id = {o.element_ids[0]: o for o in after_rows}
     by_selector = {item["selector"]: by_id[item["id"]] for item in items if item["id"] in by_id}
-    assert by_selector["#arial"].passed
-    assert not by_selector["#courier"].passed and by_selector["#courier"].severity == "P2"
-    assert by_selector["#above"].passed
-    assert by_selector["#xonly"].measurement["value"] < by_selector["#xonly"].measurement["threshold"]
+    for item in items:
+        if item["font_metrics"]["status"] != "matched_font" or item["selector"] not in by_selector:
+            continue
+        row = by_selector[item["selector"]]
+        assert row.measurement["value"] == item["font_metrics"]["body_height_px"]
+        assert row.passed == (row.measurement["value"] >= row.measurement["threshold"])
+        assert row.severity == (None if row.passed else "P2")
+    assert not by_selector["#arial16"].passed and by_selector["#above"].passed
     for selector in ("#mixed", "#transformed", "#zoomed", "#vertical", "#pseudo", "#private"):
         assert by_selector[selector].extra["verdict"] == "inconclusive"
         assert by_selector[selector].severity is None

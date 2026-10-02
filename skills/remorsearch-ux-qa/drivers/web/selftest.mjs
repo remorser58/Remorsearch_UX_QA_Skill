@@ -370,12 +370,41 @@ function checkSnapshotFiles(label, runDir, run, snaps, dev) {
       shapeOk = false;
       firstBad = firstBad || `${id} header`;
     }
+    let expectedHeight = eh;
+    const viewport = s.device?.viewport_css;
+    let deviceOk = s.device?.id === dev.id && s.device?.dpr === dev.dpr && s.device?.orientation === dev.orientation
+      && viewport?.[0] === dev.vw && viewport?.[1] === dev.vh;
+    if (s.device?.probe === 'adaptation') {
+      const record = (run.adaptation || []).find((r) => r.baseline_snapshot_id === id || r.snapshot_id === id);
+      const baseline = record?.baseline_snapshot_id === id;
+      const source = snaps.get(record?.source_snapshot_id);
+      const kind = baseline ? 'baseline' : record?.kind;
+      const condition = record?.condition;
+      const short = kind === 'short_height';
+      const expectedCssHeight = short ? Math.max(256, Math.floor(dev.vh * 0.5)) : dev.vh;
+      const knownCondition = record?.kind === 'short_height'
+        ? condition?.height_ratio === 0.5 && condition?.min_height_css === 256
+        : record?.kind === 'text_spacing' && condition?.line_height === 1.5 && condition?.paragraph_after === 2
+          && condition?.letter_spacing === 0.12 && condition?.word_spacing === 0.16 && condition?.preserve_larger === true;
+      deviceOk = !!record && !!source && source.device?.probe !== 'adaptation' && knownCondition
+        && s.adaptation?.kind === kind && s.adaptation?.source_snapshot_id === source.snapshot_id
+        && JSON.stringify(s.adaptation?.condition) === JSON.stringify(baseline ? null : condition)
+        && record.dpr === dev.dpr && record.baseline_viewport_css?.[0] === dev.vw && record.baseline_viewport_css?.[1] === dev.vh
+        && record.viewport_css?.[0] === dev.vw && record.viewport_css?.[1] === (record.kind === 'short_height' ? Math.max(256, Math.floor(dev.vh * 0.5)) : dev.vh)
+        && s.device.id === dev.id && s.device.orientation === dev.orientation && s.device.dpr === dev.dpr
+        && viewport?.[0] === dev.vw && viewport?.[1] === expectedCssHeight;
+      expectedHeight = Math.round(expectedCssHeight * dev.dpr);
+    }
+    if (!deviceOk || (!!s.adaptation && s.device?.probe !== 'adaptation')) {
+      shapeOk = false;
+      firstBad = firstBad || `${id} device/auxiliary condition`;
+    }
     const pngPath = path.join(runDir, s.screenshot.path);
     const buf = fs.existsSync(pngPath) ? fs.readFileSync(pngPath) : null;
     if (!buf || crypto.createHash('sha256').update(buf).digest('hex') !== s.screenshot.sha256
-      || buf.readUInt32BE(16) !== ew || buf.readUInt32BE(20) !== eh || s.screenshot.width_px !== ew || s.screenshot.height_px !== eh) {
+      || buf.readUInt32BE(16) !== ew || buf.readUInt32BE(20) !== expectedHeight || s.screenshot.width_px !== ew || s.screenshot.height_px !== expectedHeight) {
       pngOk = false;
-      firstBad = firstBad || `${id} png ${buf ? `${buf.readUInt32BE(16)}x${buf.readUInt32BE(20)}` : 'missing'} want ${ew}x${eh}`;
+      firstBad = firstBad || `${id} png ${buf ? `${buf.readUInt32BE(16)}x${buf.readUInt32BE(20)}` : 'missing'} want ${ew}x${expectedHeight}`;
     }
     const ids = new Set();
     if (s.elements.length > 400) elemOk = false;
@@ -394,7 +423,7 @@ function checkSnapshotFiles(label, runDir, run, snaps, dev) {
     }
   }
   check(`${label}: every snapshot has the ergo-snapshot.v1 fields`, shapeOk, firstBad);
-  check(`${label}: every PNG matches its sha256 and is viewport*dpr = ${ew}x${eh} device px`, pngOk, firstBad);
+  check(`${label}: every PNG matches its sha256 and live or verified auxiliary viewport*dpr`, pngOk, firstBad);
   check(`${label}: every element has typed fields, known roles, hex colours, <= 400 per snapshot`, elemOk, firstBad);
 }
 
@@ -858,7 +887,7 @@ async function serveTest(base, tmp) {
   check(`${label}: interactive steps recorded including no_target`,
     run.steps.length === 4 && run.steps.map((s) => s.result).join() === 'ok,ok,no_target,ok', run.steps.map((s) => s.result));
   check(`${label}: on-demand snapshot is noted`, [...snaps.values()].some((s) => s.notes.includes('on_demand')));
-  checkSnapshotFiles(label, runDir, run, snaps, { vw: 360, vh: 780, dpr: 3 });
+  checkSnapshotFiles(label, runDir, run, snaps, { id: 'galaxy-s24', orientation: 'portrait', vw: 360, vh: 780, dpr: 3 });
   pythonLoadRun(label, runDir);
 }
 
@@ -2219,6 +2248,20 @@ async function gazeGeometryTest(tmp) {
     const clear = wrapped.elements.find((e) => e.selector === '#clear');
     check('gaze geometry: plain wrappers preserve pixels and visible rectangle',
       png.equals(await page.screenshot()) && JSON.stringify(clear?.visible_box) === JSON.stringify(item('clear')?.visible_box));
+    await page.evaluate(() => {
+      const fixture = document.createElement('div');
+      fixture.innerHTML = '<button id="rotate-transform" style="transform:rotate(45deg)">Rotation</button>'
+        + '<button id="rotate-individual" style="rotate:45deg">Rotation</button>'
+        + '<div style="rotate:45deg"><button id="rotate-ancestor">Rotation</button></div>';
+      document.body.append(fixture);
+    });
+    const rotations = await page.evaluate(extractSnapshot, { key: STATE_KEY, cap: 400, knownRoles: [...KNOWN_ROLES] });
+    writeJson(path.join(tmp, 'gaze-rotation-capture.json'), rotations);
+    check('gaze geometry: equivalent rotations and rotated ancestors remain unsupported',
+      ['#rotate-transform', '#rotate-individual', '#rotate-ancestor'].every((selector) => {
+        const target = rotations.elements.find((e) => e.selector === selector);
+        return target?.visible_geometry === 'unsupported' && target?.visible_box === null;
+      }) && rotations.elements.find((e) => e.selector === '#clear')?.visible_geometry === 'measured');
   } finally {
     await context.close();
     await transport.close();
@@ -2239,17 +2282,29 @@ async function typographyTest(base, tmp) {
     const metric = (id) => item(id)?.font_metrics;
     writeJson(path.join(tmp, 'typography-capture.json'), ex);
     await page.screenshot({ path: path.join(tmp, 'typography.png') });
-    check('typography: equal CSS em retains distinct actual body metrics',
+    const nativeHeights = await page.evaluate(() => {
+      const canvas = document.createElement('canvas').getContext('2d');
+      return Object.fromEntries(['arial', 'courier', 'arial16', 'courier16', 'above'].map((id) => {
+        const node = document.getElementById(id);
+        const cs = getComputedStyle(node);
+        canvas.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+        canvas.textBaseline = 'alphabetic';
+        const metric = canvas.measureText(node.textContent);
+        return [id, metric.actualBoundingBoxAscent + metric.actualBoundingBoxDescent];
+      }));
+    });
+    check('typography: equal CSS em records native glyph heights including shared platform fallbacks',
       item('arial16')?.font_size_px === 16 && item('courier16')?.font_size_px === 16
       && metric('arial16')?.status === 'matched_font' && metric('courier16')?.status === 'matched_font'
-      && metric('arial16').body_height_px > metric('courier16').body_height_px);
-    check('typography: equal 22px em straddles the 18px PC body floor',
+      && ['arial16', 'courier16'].every((id) => nativeHeights[id] > 0 && metric(id).body_height_px === nativeHeights[id]));
+    check('typography: both named font requests match actual platform Canvas bounds',
       item('arial')?.font_size_px === 22 && item('courier')?.font_size_px === 22
-      && metric('arial')?.body_height_px > 18 && metric('courier')?.body_height_px < 18, [metric('arial'), metric('courier')]);
+      && ['arial', 'courier'].every((id) => nativeHeights[id] > 0 && metric(id)?.body_height_px === nativeHeights[id]), [metric('arial'), metric('courier')]);
     check('typography: displayed body uses actual text, not a fixed Hg probe',
       metric('xonly')?.body_height_px === metric('xonly')?.probes?.x_height_px
       && metric('xonly').body_height_px < metric('xonly').probes.body_Hg_px);
-    check('typography: larger body supplies a negative control', metric('above')?.body_height_px > 18);
+    check('typography: actual small and large bodies straddle the 18px PC floor',
+      metric('arial16')?.body_height_px < 18 && metric('above')?.body_height_px > 18);
     check('typography: mixed fonts and transformed or vertical text remain unavailable',
       ['mixed', 'transformed', 'zoomed', 'vertical', 'pseudo'].every((id) => metric(id)?.status === 'unavailable'
         && metric(id)?.body_height_px === null && metric(id)?.probes === null), ['mixed', 'transformed', 'zoomed', 'vertical', 'pseudo'].map(metric));
@@ -2288,8 +2343,37 @@ async function typographyTest(base, tmp) {
     check('typography: unavailable Canvas remains an explicit gap', noCanvas.elements.find((e) => e.selector === '#arial')?.font_metrics?.limitations.includes('canvas_unavailable'));
     const py = process.env.ERGOQA_PYTHON;
     if (py) {
-      const r = spawnSync(py, [path.resolve(HERE, '../../../../tests/test_ergo_typography.py'), '--capture', path.join(tmp, 'typography-capture.json')],
-        { encoding: 'utf8', env: process.env });
+      const r = spawnSync(py, ['-c', [
+        'import json, sys',
+        'from ergoqa import checks',
+        'from ergoqa.devices import get_device',
+        'from ergoqa.snapshot import validate_font_metrics',
+        'capture = json.load(open(sys.argv[1]))',
+        'items = capture["elements"]',
+        'for item in items:',
+        '    if "font_metrics" in item: assert not validate_font_metrics(item["font_metrics"]), item["selector"]',
+        'device = get_device("desktop-1920")',
+        'profile = {"profile_id": "EP-font-check", "attributes": {"age_band": "30s", "vision": {}}}',
+        'def evaluate(elements):',
+        '    snapshot = {"surface": {"kind": "web"}, "device": {"viewport_css": list(device.viewport_css)}, "elements": elements}',
+        '    context = checks.Context(run={"run_id": "R-font-check"}, snapshot=snapshot, previous=None, step=None, profile=profile, device=device, scenario=None)',
+        '    return [o for o in checks.check_text_size(context) if o.model and o.model.startswith("xag-101")]',
+        'before = evaluate([{k: v for k, v in item.items() if k != "font_metrics"} for item in items])',
+        'after = evaluate(items)',
+        'by_id = {o.element_ids[0]: o for o in after}',
+        'rows = {item["selector"]: by_id[item["id"]] for item in items if item["id"] in by_id}',
+        'for item in items:',
+        '    if item["font_metrics"]["status"] != "matched_font" or item["selector"] not in rows: continue',
+        '    row = rows[item["selector"]]',
+        '    assert row.measurement["value"] == item["font_metrics"]["body_height_px"]',
+        '    assert row.passed == (row.measurement["value"] >= row.measurement["threshold"])',
+        '    assert row.severity == (None if row.passed else "P2")',
+        'assert not rows["#arial16"].passed and rows["#above"].passed',
+        'for selector in ("#mixed", "#transformed", "#zoomed", "#vertical", "#pseudo", "#private"):',
+        '    assert rows[selector].extra["verdict"] == "inconclusive" and rows[selector].severity is None',
+        'assert all(o.extra["verdict"] == "inconclusive" for o in before)',
+        'print(json.dumps({"before": [o.to_dict(i) for i, o in enumerate(before)], "after": [o.to_dict(i) for i, o in enumerate(after)]}, ensure_ascii=False, indent=2))',
+      ].join('\n'), path.join(tmp, 'typography-capture.json')], { cwd: REPO, encoding: 'utf8', env: { ...process.env, PYTHONPATH: REPO } });
       fs.writeFileSync(path.join(tmp, 'typography-analysis.json'), r.stdout || '');
       check('typography: captured fonts drive typed XAG estimates and preserve unknown controls', r.status === 0, r.stderr || r.stdout);
     } else skip('typography: Python captured-font analysis', 'ERGOQA_PYTHON not configured');
