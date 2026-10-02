@@ -115,6 +115,19 @@ class ReadingBudgetTests(unittest.TestCase):
                         with self.subTest(provider=provider, switches=enabled, external=external, bytes=total):
                             self.assertLessEqual(total, cap, " + ".join(sorted(files)))
 
+    def test_product_improvement_is_a_conditional_qa_entry(self):
+        guide = "references/loop/product-improvement.md"
+        rule = self.manifest["modes"]["loop"]
+        variant = rule["first_provider_variants"]["product-improvement"]
+        self.assertEqual(set(variant["files"]),
+                         {guide, "references/persona-qa/workflow.md"})
+        self.assertIn("research_channels_or_users", variant["defer_switches"])
+        self.assertIn(guide, self.manifest["card_limits"])
+        for component in self.manifest["modes"].values():
+            self.assertNotIn(guide, component["before_first_action"])
+        self.assertEqual(whole_lookup_reads((SKILL / guide).read_text(),
+                                            rule["lookup_only"]), [])
+
     def test_language_switch_adds_no_channel_or_qa_reading(self):
         for mode in self.manifest["modes"]:
             self.assertEqual(closure(self.manifest, mode), closure(self.manifest, mode, ["report_language"]))

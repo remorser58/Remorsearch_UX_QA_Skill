@@ -112,6 +112,13 @@
             }
           },
           "additionalProperties": false
+        },
+        "product_context_artifact_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
         }
       },
       "additionalProperties": false
@@ -412,7 +419,9 @@
             "accessibility",
             "visual_report",
             "regression",
-            "code_patch"
+            "code_patch",
+            "product_context",
+            "intent_review"
           ]
         },
         "provenance": {
@@ -969,6 +978,24 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 2000
+        },
+        "constraint_acknowledgements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/constraint_acknowledgement"
+          },
+          "minItems": 0,
+          "maxItems": 500,
+          "uniqueItems": true
+        },
+        "conflict_resolutions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/conflict_resolution"
+          },
+          "minItems": 0,
+          "maxItems": 500,
+          "uniqueItems": true
         }
       },
       "additionalProperties": false
@@ -1041,6 +1068,13 @@
           "maxItems": 500,
           "uniqueItems": true
         },
+        "intent_review_artifact_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
         "regression": {
           "type": "object",
           "required": [
@@ -1086,6 +1120,62 @@
             }
           },
           "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "constraint_acknowledgement": {
+      "type": "object",
+      "required": [
+        "constraint_id",
+        "decision",
+        "evidence"
+      ],
+      "properties": {
+        "constraint_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "decision": {
+          "enum": [
+            "preserved",
+            "authorized_change"
+          ]
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "actor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        }
+      },
+      "additionalProperties": false
+    },
+    "conflict_resolution": {
+      "type": "object",
+      "required": [
+        "conflict_id",
+        "actor",
+        "note"
+      ],
+      "properties": {
+        "conflict_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "actor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
         }
       },
       "additionalProperties": false

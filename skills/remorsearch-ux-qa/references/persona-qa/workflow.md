@@ -1,13 +1,13 @@
 <!-- Mode: persona-qa. Entry point: `SKILL.md`. -->
 # Persona QA mode
 
-Test whether each priority task completes with its entered data intact. Synthetic scenarios test conditions; product traces establish failures. Community research requires a user request.
+Test task completion and input preservation. Synthetic scenarios define conditions; product traces establish failures. Integrated improvement includes task-linked research; standalone QA adds it only when requested.
 
 ## Phase 0 recap
 
-Use `SKILL.md` Phase 0. Record URL/app/build/tasks, device/viewport/input, criteria/constraints, Figma version, grants and test identities. Choose smoke/persona/heuristic/visual/regression/deep; community is separately requested. Sufficient brief: no question; missing material input: one grouped question. No dataset/audience blocker: brief conditions are first-class.
+Use `SKILL.md` Phase 0. Discover tasks from the product; record URL/build, device/viewport/input, constraints, intent, Figma version, grants and synthetic fixtures. Begin baseline QA without a prepared audience or problem list. Ask only for missing material access; preserve existing grants.
 
-Before scenarios, disclose Chromium viewport/DPR/input emulation limits: no real device/grip/keyboard occlusion/safe area/screen reader; repeat in report. Korean product: `references/persona-qa/kwcag-card.md`, no platform map; report language: wording/headings only. Outside-product pages, even mid-run: `references/shared/access-card.md` in persona/verifier prompts. Host browser first, preserve tabs/context; authorized-product rules govern local QA.
+Disclose Chromium emulation limits: real device/grip/keyboard occlusion/safe area/screen reader remain untested. Korean product: `references/persona-qa/kwcag-card.md`; report language changes wording only. Outside-product pages: `references/shared/access-card.md` in operator/verifier prompts. Host browser first; preserve user state.
 
 ## 1. Build the priority-task matrix
 
@@ -79,7 +79,7 @@ Write a receipt beside **each capture during the run**:
 
 ## 3. Conditional evidence and intended experience
 
-Only requested community research enters `references/research/workflow.md` with access/evidence cards. Use `references/persona-qa/community-to-test.md` by section for conversion; supported_high/medium may motivate P0/P1, single_voice/lead_only are exploratory. Missing gate means manual unverified assessment. This affects community motivation only; product failures keep impact-based severity. No raw community text reaches personas.
+Task-linked research during improvement, or separately requested research, enters `references/research/workflow.md` with access/evidence cards. Use `references/persona-qa/community-to-test.md` by section; supported_high/medium may motivate P0/P1, single_voice/lead_only stay exploratory. Missing gate leaves community motivation unverified; reproduced product harm keeps impact-based severity. Personas receive scrubbed summaries only.
 
 Inspect Figma/spec entry/journey/hierarchy/content/units/variants/tokens/critical states/responsive/input. Record file/branch/baseline/readback/nodes/time/artifact. Differences need task/comprehension/trust/accessibility/maintainability impact. Separate implementation_defect/design_defect/spec_conflict/approved_deviation; unresolved conflict blocks code acceptance, missing source limits comparison. Proposals: no side accent bars, attached side tabs or decorative rails; existing product bars require task harm.
 
@@ -100,7 +100,7 @@ Without subagents, run a labelled self-pass; it is not independent review. Resol
 
 ## 5. Remediate, replay and report
 
-Propose the smallest useful change in copy, interaction/state, IA, hierarchy/tokens, accessibility, service policy/trust or persistence/system behavior. Each states expected behavior, trade-off and validation; benefit claims need measurements. Writes need their separate existing grants. After any fix replay the same scenario/data/build scope/device/input, original failure, primary task, recovery, adjacent states, Figma alignment and accessibility/content. Record baseline/change/replay artifacts; applied is not accepted until replay passes.
+Fix the reproduced cause with a minimal intent-compatible change. State expected behavior, trade-off and validation; benefit claims need measurements. Reuse the improvement request's scoped grants; standalone review remains read-only. Create UX changes in Figma first with actual nodes/version/readback. Missing design blocks affected implementation only. Replay the original scenario/data/build scope/device/input, primary task, recovery, adjacent states, Figma and accessibility. Explicitly recheck preserved decisions; retain baseline/change/replay evidence. Acceptance requires passing replay, regression and intent checks.
 
 Use `references/persona-qa/qa-report-template.md` by section. First heading after title is Decision/결론: verdict/reason naming build; up to three actions, each at most 25 words with behavior, finding IDs and confirming state; one line untested. Verdict rules:
 
@@ -133,7 +133,7 @@ P0/P1은 정확한 `finding_id`의 캡처·텍스트 재검토 기록을 `--seco
 | --- | --- |
 | Browser/build | Highest available fallback; if denied/unavailable, named blocker and inconclusive. Ask only for access needed to exercise the task. |
 | Dataset/audience | Brief-derived synthetic conditions; continue QA, no invented participants. |
-| Community source/key | Only when requested: obey final stops; use other families. Ask for environment key only if needed and not already declined. |
+| Community source/key | When research is active: obey final stops, continue eligible sources and QA; ask for an environment key only if material and not declined. |
 | Figma/verifier | Conditional comparison; labelled self-pass. Ask for missing required design decision or independent/human verification. |
 | Coverage/time | Finish bounded rows, list untested ones; minimum unmet means inconclusive. |
 

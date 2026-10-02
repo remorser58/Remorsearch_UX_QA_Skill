@@ -2,24 +2,30 @@
 
 English | [한국어](README.ko.md) | [PRD · 제품 요구사항](PRD.md)
 
-**Research before release. No remorse after.**
-
-Remorsearch (*ree-mor-search*, 리모서치) UX QA is an evidence-first agent skill for
-Claude Code and Codex. It researches what real users say, tests your product on the
-real screen with personas, checks ergonomics and accessibility, and replays the same
-scenario after a fix. It keeps observed facts, inference and synthetic personas
-apart, so a report never passes off a simulation as user research.
+Remorsearch (*ree-mor-search*, 리모서치) UX QA helps developers improve the UX of
+an existing product in Claude Code or Codex. Provide a URL or repository and ask
+for improvement. The host agent inspects the product and relevant developer
+decisions, discovers questions through baseline QA, researches related user
+experiences, applies scoped reversible fixes and replays the affected tasks.
+A prepared problem list, persona set or research brief is optional.
 
 ## What it does
 
-One skill, four modes. The skill picks the mode from your request.
+Four components support that workflow; you do not need to select modes or pass
+artifacts between them. A research-only or review-only request keeps its scope.
 
-| Mode | What it does | Needs |
+| Component | What it does | Needs |
 | --- | --- | --- |
-| **research** | Collects real user experiences from communities, comments, app reviews and official sources; separates firsthand evidence from inference; traces root causes; proposes Figma-ready flows. Also researches who the users are, as audience segments that personas are built from. | Public pages need no account. YouTube comments need your own YouTube Data API key (`REMORSEARCH_YOUTUBE_API_KEY`). |
-| **persona-qa** | Builds persona scenarios, runs them on the real product in a browser, compares against Figma, and reports P0–P3 findings with reproduction steps and root causes. | Node.js 22 and Playwright for live web pages. A Figma file is optional. |
-| **ergonomics** *(experimental)* | Persona agents with body and sense profiles (one-handed or left-handed grip, thumb reach, tremor, walking, colour vision deficiency, presbyopia) operate the real screen; deterministic human-factors models score reach, touch accuracy, gaze, contrast, reading time, game timing and flashing. Results are coverage over simulated profiles, never prevalence. | Node.js 22 and Playwright for live web pages. Screening only. |
-| **loop** | Composes research and QA into a bounded, resumable goal: an explicitly authorised fix, then a same-scenario replay, then an evidence-backed stop report. | A separate write grant for the fix. Browser and Figma receipts come from your agent host. |
+| **research** | Finds task-specific experiences, workarounds and counterexamples in communities, comments, reviews and official sources; preserves source context and gaps. | A permitted source route. YouTube comments use your own YouTube Data API key (`REMORSEARCH_YOUTUBE_API_KEY`). |
+| **persona-qa** | Exercises completion, input preservation, errors/recovery, keyboard and accessibility on the real product with synthetic test conditions. | An accessible product and safe fixtures; the bundled web driver needs Node.js 22 and Playwright. |
+| **ergonomics** *(experimental)* | Screens reach, touch, perception, timing and layout with simulated profiles. | Relevant scenarios; model results remain separate from real-device and human evidence. |
+| **loop** | Records bounded fixes, current-build replay, regression and preserved-intent checks. | Host browser/Figma tools and actual receipts. Existing improvement authority is recorded explicitly for scoped local patches. |
+
+The host-agent instructions implement this integrated entry path. The CLI validates
+imported evidence and applies bounded local text patches; the host performs
+browser actions, Figma work and builds. Whole-product execution from request to
+verified improvement still needs a separate live acceptance run. Existing fixture
+and component tests do not establish that result.
 
 ## Install
 
@@ -67,24 +73,26 @@ Playwright 1.60 works).
 Ask in plain words, or call it by name:
 
 ```text
+/remorsearch-ux-qa Improve our app UX. URL: https://app.example.test or repository: /path/to/product
+/remorsearch-ux-qa 우리 앱 UX 개선해줘. URL 또는 저장소는 여기야.
 /remorsearch-ux-qa Find out why people abandon our checkout, from reviews and community posts.
 /remorsearch-ux-qa 결제 화면을 처음 쓰는 사용자 페르소나로 QA해 줘. Figma 파일은 이거야.
 /remorsearch-ux-qa Check one-handed and colour-blind usability of the signup flow on a Galaxy S24.
 /remorsearch-ux-qa 간편결제 실패 경험을 한국어 커뮤니티와 앱 리뷰에서 근거 붙여서 정리해 줘.
 ```
 
-**First run.** If the run needs subagents (persona agents, parallel research,
-judges), explicit model and effort choices in your request take precedence.
-Otherwise, the skill looks for a subagent model mapping your harness already
-has (`CLAUDE_CODE_SUBAGENT_MODEL`, agent definitions, plugin agents) and follows
-it without asking. Only if there is none does it ask once, with the host's
-selection prompt, which model and reasoning effort to use, and it saves the answer
-in `~/.config/remorsearch-ux-qa/config.json` only if you ask to save it. Say "change the agent model" to be
-asked again. The recommended default, Sonnet at max effort, comes from a blind
-benchmark on 11 screens
-([`docs/validation/subagent-model-benchmark.md`](docs/validation/subagent-model-benchmark.md)).
-Claude Code applies a subagent's effort only through an agent definition, so the
-skill offers to create two small ones in `~/.claude/agents/`.
+The agent derives tasks, questions and scenarios from the product, inspects
+relevant project documents and accessible intent memory, and preserves confirmed
+decisions through replay. It asks only for material missing access or unresolved
+decisions and continues unaffected work. Subagents are optional; existing host
+settings apply without a mandatory model-selection setup.
+
+Default research candidates are 당근 (Karrot), 디시인사이드 (DC Inside), 유튜브 댓글
+(YouTube comments), X, 인스타그램 (Instagram) and Threads(쓰레드). The agent selects
+those relevant to observed tasks; availability and collection are not guaranteed.
+After URL discovery, the bundled insane-search methods remain subject to the
+existing access/evidence rules. See the [operational checklist](skills/remorsearch-ux-qa/references/loop/product-improvement.md)
+for the product-to-replay workflow and existing plan/bundle/loop commands.
 
 ## Evidence rules
 
@@ -94,9 +102,16 @@ skill offers to create two small ones in `~/.claude/agents/`.
   show real-user preference, prevalence or discomfort.
 - Community signals are hypotheses until the behaviour is confirmed on the real
   product.
-- Read-only by default. Design, test-data and code writes each need an explicit
-  grant.
-- Figma is the design source of truth when it exists.
+- Research/review requests remain read-only. An improvement request authorizes
+  ordinary reversible fixes within its scope; the agent records that existing
+  authority in CLI grants. Deployment, publication and real account changes need
+  their own authorization.
+- Screen composition and UX changes are created in Figma first, with actual file,
+  node, version and readback records. Missing access blocks the affected change
+  while feasible investigation and QA continue.
+- Complete improvement requires current-build replay, adjacent regression and
+  preserved-intent checks. If scoped QA finds no reproducible issue, inspection
+  can finish without changes; missing required evidence stays incomplete.
 
 Research and QA runs can exchange a machine-readable **evidence bundle**
 (`schemas/ux-evidence-bundle.v1.schema.json`). The offline validator checks IDs,

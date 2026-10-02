@@ -9,10 +9,7 @@ fabricate gate.json. Reading follows public-page-access.md.
 
 ## Brief and plan
 
-Read the request/product, then ask once for missing product/surface/locale/release
-information, downstream mode, sanitized team data, authorized communities, current
-user terms checks and institutional ethics status where relevant. Never ask for
-API keys in chat. Record only the user's access authorizations/checks.
+Inspect the request and product; derive surface, locale, release, tasks and questions from available evidence. Product improvement starts with baseline QA and continues here with the questions it discovers. Do not require a user-authored brief or mode choice. Ask only for material missing access/authority, including required current terms checks; other research and QA continues. Never ask for API keys in chat or invent the user's authorizations/checks.
 
 lift_requires decides lifts: never remains closed; written_permission needs a
 current user check and applicable prior written permission; terms_check needs a
@@ -26,9 +23,9 @@ python3 scripts/ux_research.py start --brief brief.json
 
 Keep plan.md and axes.json in RUN. Manifest specifies axis IDs, questions,
 assignments/rounds, excluded-axis reasons and owner/brief segment priorities.
-Default axes: stats; store-reviews; kr-communities; global-communities;
+Candidate axes: stats; store-reviews; kr-communities; global-communities;
 product-competitors; accessibility-edge. Run Korean first for Korean products,
-otherwise global first. Use legitimate routes/platform/statistics cards; plan
+otherwise global first. Select axes relevant to the observed tasks within the depth budget. Use legitimate routes/platform/statistics cards; plan
 terms stops as gaps. Questions: segments, weight, priority, devices_and_grips,
 abilities_and_conditions, contexts_of_use, key_tasks, pain_points. Priority is an
 owner decision. Posts establish existence, never weights. Task test data comes
@@ -67,7 +64,7 @@ call_id, tool, called_at, phase, queries [{q, lang}], results_n, outcome,
 assignment_id. Keep duplicate query text as separate actual calls. Disabled
 search APIs stay disabled. Search snippets are leads; do not harvest result pages.
 
-Once candidate URLs are available, run the bundled insane-search acquisition stage in `references/research/workflow.md` section 2: load `references/insane-search/SOURCE.md` and the applicable linked method body, then invoke its permitted route with available tools. Resolve links from the bundled search directory; method links resolve from their own directory. Use the same stage for complaint and audience questions. Persona-only and ergonomics-only work adds research only when requested.
+Once candidate URLs are available, run the bundled insane-search acquisition stage in `references/research/workflow.md` section 2: load `references/insane-search/SOURCE.md` and the applicable linked method body by section, then invoke its permitted route with available tools. Resolve links from their containing directory. Complaint and audience questions share this stage, including integrated product improvement. Standalone persona-only and ergonomics-only work adds research only when requested.
 
 Apply the access/evidence cards before every method. Actual supported captures enter the reader/ingest checks below; unsupported method output stays a lead for a supported source capture. Keep actual request receipts, budgets and gaps. Stops apply to all methods for that site/run, and no tool output may fabricate a reader receipt or bypass privacy review.
 

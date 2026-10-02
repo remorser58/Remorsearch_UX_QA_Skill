@@ -52,6 +52,9 @@ def validate_packet(packet: Any) -> list[str]:
             errors.append(f"{where}: wrong artifact kind")
 
     goal = packet["goal"]
+    context_binding = goal.get("product_context_artifact_id")
+    if context_binding is not None:
+        artifact(context_binding, {"product_context"}, "goal.product_context_artifact_id")
     if set(goal["scenario_ids"]) != set(maps["scenarios"]):
         errors.append("goal.scenario_ids must exactly cover the explicit scenario matrix")
     for name in goal["code_paths"]:
@@ -200,6 +203,17 @@ def validate_packet(packet: Any) -> list[str]:
             artifact(fix["patch_artifact_id"], {"code_patch"}, "code fix patch")
             if not fix["changed_paths"] or not set(fix["changed_paths"]) <= set(goal["code_paths"]):
                 errors.append(f"fix {fix['id']}: changed paths exceed explicit code scope")
+        acks = fix.get("constraint_acknowledgements") or []
+        resolutions = fix.get("conflict_resolutions") or []
+        if (acks or resolutions) and context_binding is None:
+            errors.append(f"fix {fix['id']}: intent acknowledgements require the goal product_context_artifact_id binding")
+        if len({x["constraint_id"] for x in acks}) != len(acks):
+            errors.append(f"fix {fix['id']}: duplicate constraint acknowledgement")
+        if len({x["conflict_id"] for x in resolutions}) != len(resolutions):
+            errors.append(f"fix {fix['id']}: duplicate conflict resolution")
+        for ack in acks:
+            if ack["decision"] == "authorized_change" and not ack.get("actor", "").strip():
+                errors.append(f"fix {fix['id']}: authorized_change requires the actor of the current human decision")
     numbers = [x["number"] for x in packet["rounds"]]
     if numbers != list(range(1, len(numbers) + 1)) or len(numbers) > goal["max_iterations"]:
         errors.append("rounds must be contiguous, ordered and within max_iterations")
@@ -218,6 +232,11 @@ def validate_packet(packet: Any) -> list[str]:
         if replay["round_id"] in replay_rounds:
             errors.append("one immutable replay per round; retry requires a new bounded round")
         replay_rounds.add(replay["round_id"])
+        review_id = replay.get("intent_review_artifact_id")
+        if review_id is not None:
+            artifact(review_id, {"intent_review"}, f"replay {replay['id']} intent review")
+            if context_binding is None:
+                errors.append(f"replay {replay['id']}: intent review requires the goal product_context_artifact_id binding")
         for run_id in replay["run_ids"]:
             run = need(run_id, maps["browser_runs"], "replay run")
             if run and run["phase"] != "replay":

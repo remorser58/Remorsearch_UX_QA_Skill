@@ -1,11 +1,11 @@
 <!-- Mode: research. Entry point: `SKILL.md`. -->
 # Research mode
 
-Scoped claims/causes/tests from reported experience; drafts keep unknowns; design by request.
+Scoped claims/causes/tests from reported experience. In product improvement, use baseline QA to discover questions; standalone research uses the request. Preserve unknowns.
 
 ## Phase 0 recap
 
-`SKILL.md` Phase 0; always read `references/shared/access-card.md` and `references/shared/evidence-card.md` before search. Korean channels/users: `references/research/korea/overview.md`; language alone: headings. Problem/users/job/risk/surface/version/data/grants/tools; supplied answers, one grouped question if needed; serial readers/judges, labelled self-checks.
+`SKILL.md` Phase 0; read `references/shared/access-card.md` and `references/shared/evidence-card.md` before search. Korean channels/users: `references/research/korea/overview.md`; language alone: headings. Derive tasks/questions from supplied context and product observations; ask only for material missing access. Reuse grants; label self-checks.
 
 | Depth | Axes / distinct queries | Search-tool calls | Page reads | EXPAND |
 | --- | --- | --- | --- | --- |
@@ -95,7 +95,7 @@ Engine: 0 process pass (unsupported allowed), 1 process violation, 2 integrity/s
 
 Priority: `references/shared/causal-chain.md`, cause/hypothesis/next evidence, unknown organization allowed; proposal layer/behavior/trade-off/validation/critical states/accessibility. Benefits need measurement.
 
-Requested design only: editable Figma flow/states/hierarchy/variants/tokens/content/prototype/accessibility, design_write and file/branch/version/nodes/readback. Missing tool: plan. Reusable IDs/artifacts: `references/research/evidence-bundle-contract.md`.
+Authorized design, including product improvement: Figma first for flow/states/hierarchy/variants/tokens/content/accessibility; record grant and actual file URL/branch/version/nodes/readback. Missing Figma blocks affected design, while research/QA continues. IDs/artifacts: `references/research/evidence-bundle-contract.md`.
 
 ## 5. Report, hand off and close
 
@@ -134,7 +134,7 @@ Requested export only; draft cannot compose, no invented weights. When the audie
 | URL count corroborates | Repeated people/copies / independent units |
 | Complaints set shares | No denominator / unknown or measured frame |
 | Gate called truth | Process only / scope review |
-| Research becomes Figma | Scope expansion / requested changes only |
+| Narrow research becomes a redesign | Preserve request scope; improvement grants stay scoped |
 
 ## Done when
 

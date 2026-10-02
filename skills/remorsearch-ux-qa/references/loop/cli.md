@@ -6,12 +6,14 @@ state machine: it validates research intake, plans P0–P3 findings, gates brows
 and visual evidence, applies explicitly authorized **local text patches**,
 requires same-scenario regression replay, and persists an evidence-backed stop
 report. It does not launch agents, browsers, Figma, Aside, builds or deployments.
-Missing live receipts stop as `blocked`; they are never replaced by fixture proof.
+Missing live receipts stop as `blocked`; the host continues feasible collection
+and resumes. Fixture proof cannot replace them. The integrated entry is
+[`product-improvement.md`](product-improvement.md); narrow loop requests retain
+their original scope.
 
 Use Python 3.10+ on Linux or macOS from the skill folder. No third-party Python
 packages, Node packages, database, Git executable at runtime, or network are
-required for offline validation. This implementation was tested on Python 3.13.5
-on Linux; macOS and other Python versions have not been executed here. Keep
+required for offline validation. Test records describe the executed environments. Keep
 `uxloop/`, `schemas/`, `scripts/` and `examples/` together inside the skill folder;
 this is not a published pip package.
 
@@ -72,11 +74,16 @@ python3 scripts/ux_loop.py validate /path/to/packet.json \
 python3 scripts/ux_loop.py run /path/to/packet.json \
   --workspace /path/to/product-checkout --evidence-root /path/to/evidence \
   --checkpoint /path/to/product-checkout/.ux-loop/goal.json
-# Default read-only. To approve reviewed, scoped patches explicitly:
+# Record existing user authority for reviewed, scoped patches:
 python3 scripts/ux_loop.py resume \
   --checkpoint /path/to/product-checkout/.ux-loop/goal.json \
-  --grant code_write --actor APPROVING_OPERATOR --reason 'Approved goal and patch scope'
+  --grant code_write --actor OPERATOR --reason 'Existing improvement request; reviewed reversible scope'
 ```
+
+An improvement request authorizes ordinary reversible in-scope changes. The
+supervisor records that existing authority in CLI grants without asking again.
+Imported packet grants do not authorize operations, and a code grant does not
+settle a conflicting product decision or permit deployment/publication.
 
 A provider can later append a replay to a blocked checkpoint with `resume --input
 /path/to/extended-packet.json`. Old arrays must remain identical prefixes, and the

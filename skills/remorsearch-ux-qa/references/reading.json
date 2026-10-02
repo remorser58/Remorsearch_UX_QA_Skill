@@ -17,7 +17,8 @@
     "references/research/workflow.md": 12288,
     "references/persona-qa/workflow.md": 14336,
     "references/ergonomics/workflow.md": 12288,
-    "references/loop/workflow.md": 6144
+    "references/loop/workflow.md": 6144,
+    "references/loop/product-improvement.md": 9216
   },
   "research_commands": [
     "start",
@@ -258,6 +259,16 @@
           ],
           "defer_switches": [],
           "reason": "QA provider is first; external access card is counted if its earliest page is external."
+        },
+        "product-improvement": {
+          "files": [
+            "references/loop/product-improvement.md",
+            "references/persona-qa/workflow.md"
+          ],
+          "defer_switches": [
+            "research_channels_or_users"
+          ],
+          "reason": "Whole-product improvement begins with product/intent discovery and baseline QA; research cards and channel guidance load only when research begins."
         }
       }
     }

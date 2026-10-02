@@ -9,6 +9,7 @@ from .contracts import index, merge_packet, require_packet
 from .evidence import Evidence
 from .io import ContractError, GateStop, code_snapshot, digest, now, timestamp
 from .patching import finish_intent, plan_intent
+from .product_context import context_binding, context_summary, load_context, prewrite_gate, verify_intent_review
 from .storage import PHASES, event, load, lock, save
 
 WRITE_CAPABILITIES = {"code_write", "design_write", "test_data_write"}
@@ -108,6 +109,9 @@ def apply_fixes(state: dict, evidence: Evidence, checkpoint: Path) -> None:
     # pretending their pre-fix revision describes the now-modified source tree.
     for run_id in current_round(state)["baseline_run_ids"]:
         evidence.browser(run_id, evidence.runs[run_id]["code_revision"], False, state["permissions"])
+    # The opt-in product-context binding protects only writes; a context gap never
+    # stops research, planning or QA, and a no-write round reads no context here.
+    context = load_context(evidence) if context_binding(state["packet"]) and queue else None
     for fix in queue:
         if any(x["fix_id"] == fix["id"] for x in state["applied_fixes"]):
             continue
@@ -117,6 +121,8 @@ def apply_fixes(state: dict, evidence: Evidence, checkpoint: Path) -> None:
         evidence.figma(fix["figma_id"])
         if capability != "code_write":
             raise GateStop("blocked", f"{capability} is granted but its live integration is not implemented; no write performed")
+        if context is not None:
+            prewrite_gate(state, evidence, fix, context)
         patch = evidence.artifact(fix["patch_artifact_id"])
         if state["pending_intent"] is None:
             state["pending_intent"] = plan_intent(Path(state["workspace"]), state["packet"]["goal"]["code_paths"], fix, patch)
@@ -152,6 +158,10 @@ def replay_gate(state: dict, evidence: Evidence) -> None:
     for run_id in replay["run_ids"]:
         evidence.browser(run_id, rev, True, state["permissions"], after)
     evidence.regression(replay, rev)
+    if context_binding(packet):
+        # No-change rounds and retries obey the same intent checks: completion always
+        # needs a fresh, same-round replay-linked review of every preserved constraint.
+        verify_intent_review(state, evidence, replay, rev, load_context(evidence))
     fixes = index(packet["fixes"])
     covered_findings: set[str] = set()
     for applied in state["applied_fixes"]:
@@ -275,6 +285,13 @@ def report(state: dict) -> dict:
     packet = state["packet"]
     complete = state["status"] == "complete"
     records = packet["bundle"]["records"]
+    limitations = ["No embedded Aside, Figma, browser, design-write, or test-data-write integration.",
+                   "Imported receipts and hashes establish consistency, not independent artifact authenticity.",
+                   "Scope is the declared scenarios, accessibility checks and code_paths; not whole-site or WCAG certification.",
+                   "Synthetic personas and community signals do not establish population preference/prevalence."]
+    if context_binding(packet):
+        limitations.append("Product context and intent reviews are imported authored records attesting "
+                           "consistency, not independent authenticity.")
     return {"run_id": state["run_id"], "goal_id": packet["goal"]["id"], "status": state["status"],
             "phase": state["phase"], "reason": state["reason"], "mode": packet["mode"],
             "product_complete": complete and packet["mode"] == "live",
@@ -286,13 +303,11 @@ def report(state: dict) -> dict:
             "prioritized_findings": state["prioritized_findings"], "applied_fixes": state["applied_fixes"],
             "accepted_fix_ids": state["accepted_fix_ids"] if complete else [],
             "pending_write_intent": state["pending_intent"] is not None,
+            "product_context": context_summary(state),
             "evidence_ids": {key: [x["id"] for x in values] for key, values in records.items()},
             "epistemic_status": {kind: {x["id"]: x.get("epistemic_status", "unknown") for x in records[kind]}
                                  for kind in ("evidence", "claims", "observations", "findings")},
             "browser_runs": [{k: x[k] for k in ("id", "scenario_id", "scenario_digest", "phase", "outcome", "execution", "tool", "code_revision", "environment")} for x in packet["browser_runs"]],
             "figma": records["figma"], "visual_checks": packet["visual_checks"],
             "artifact_refs": packet["artifacts"], "replays": packet["replays"],
-            "limitations": ["No embedded Aside, Figma, browser, design-write, or test-data-write integration.",
-                            "Imported receipts and hashes establish consistency, not independent artifact authenticity.",
-                            "Scope is the declared scenarios, accessibility checks and code_paths; not whole-site or WCAG certification.",
-                            "Synthetic personas and community signals do not establish population preference/prevalence."]}
+            "limitations": limitations}
