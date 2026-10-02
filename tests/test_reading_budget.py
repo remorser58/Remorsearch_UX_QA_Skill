@@ -13,7 +13,8 @@ import _paths
 SKILL = _paths.SKILL
 MANIFEST = SKILL / "references/reading.json"
 COMMANDS = {"start", "read", "ingest", "robots", "author-key", "merge", "gate",
-            "report-check", "export-audience", "minimize", "close"}
+            "report-check", "export-audience", "minimize", "close", "plan",
+            "persona-starter", "export-personas", "persona-intake"}
 
 
 def documents():

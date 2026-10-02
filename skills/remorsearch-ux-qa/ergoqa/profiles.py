@@ -149,7 +149,10 @@ def _base_profile(index: int, rng: random.Random, device_id: str, input_kind: st
     handedness = _weighted(rng, {"right": max(0.0, 1.0 - left - mixed), "left": left, "mixed": mixed})
     percentile = rng.choice((25, 50, 50, 75))
     cvd = "none"
-    presbyopia = age_band in ("50s", "60s", "70s+")
+    # Age stays context (spec: an age band never switches a sensory/motor condition).
+    # Presbyopia is an explicit input: only a condition stratum, a persona record that
+    # declares it, or a caller sets it; 50s+ demographics alone never imply it.
+    presbyopia = False
     profile = {
         "schema_version": SCHEMA_VERSION,
         "profile_id": f"EP-{index:02d}",
@@ -378,9 +381,10 @@ def sample_profiles(
             }
             if record.get("age_band") in AGE_BANDS and "age_band" not in overrides:
                 attrs["age_band"] = record["age_band"]
-                # Re-derive what the base profile derived from the discarded sampled age.
-                if "vision.presbyopia" not in overrides:
-                    attrs["vision"]["presbyopia"] = record["age_band"] in ("50s", "60s", "70s+")
+            # Explicit sensory input does not require a demographic field. A
+            # declared coverage condition takes precedence over a linked record.
+            if "vision.presbyopia" not in overrides and isinstance(record.get("presbyopia"), bool):
+                attrs["vision"]["presbyopia"] = record["presbyopia"]
         _finalise(profile, device)
         profiles.append(profile)
     return profiles
@@ -426,6 +430,20 @@ def validate_profile(profile: Any) -> list[str]:
     if not isinstance(profile.get("assumption_fields"), list):
         errors.append("assumption_fields must be an array")
     return errors
+
+
+def profile_index(profiles: Iterable[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Validate identities before any caller can overwrite a profile in a map."""
+    indexed: dict[str, dict[str, Any]] = {}
+    for profile in profiles:
+        errors = validate_profile(profile)
+        if errors:
+            raise ValueError("invalid profile: " + "; ".join(errors))
+        pid = profile["profile_id"]
+        if pid in indexed:
+            raise ValueError(f"duplicate profile id {pid!r}")
+        indexed[pid] = profile
+    return indexed
 
 
 def profile_fingerprint(profile: dict[str, Any]) -> str:

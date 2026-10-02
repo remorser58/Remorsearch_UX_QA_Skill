@@ -213,6 +213,25 @@ class ResearchRules(unittest.TestCase):
             if p["audience_ref"]["segment_id"] == "SEG-commuter" and p["audience_ref"]["facet"] == "age":
                 self.assertEqual(p["attributes"]["vision"]["presbyopia"], base["attributes"]["vision"]["presbyopia"])
 
+    def test_an_age_band_alone_never_sets_presbyopia(self) -> None:
+        # SEG-lowvision's modal age is 50s but it does not declare presbyopia; the
+        # demographic alone must not imply the sensory condition (spec: age is
+        # context, conditions are explicit inputs or declared assumptions).
+        doc = load()
+        senior = copy.deepcopy(doc["segments"][1])
+        senior.update(segment_id="SEG-quiet-60s", name_ko="조용한 60대", conditions=[], evidence=[copy.deepcopy(doc["segments"][0]["evidence"][0])])
+        doc["segments"].append(senior)
+        plan = audience.compose(doc, 16)
+        for p in plan["profiles"]:
+            if p["audience_ref"]["segment_id"] in ("SEG-lowvision", "SEG-quiet-60s"):
+                self.assertFalse(p["attributes"]["vision"]["presbyopia"], p["profile_id"])
+
+    def test_declared_presbyopia_condition_still_applies(self) -> None:
+        plan = audience.compose(load(), 6)
+        seniors = [p for p in plan["profiles"] if p["audience_ref"]["segment_id"] == "SEG-senior"]
+        self.assertTrue(seniors)
+        self.assertTrue(all(p["attributes"]["vision"]["presbyopia"] for p in seniors))
+
 
 class StubsAndReport(unittest.TestCase):
     def test_scenario_stubs_embed_concrete_data(self) -> None:
@@ -222,6 +241,13 @@ class StubsAndReport(unittest.TestCase):
         topup = next(s for s in stubs if s["scenario_id"] == "SC-T-topup")
         self.assertIn("20,000원", topup["task_goal_ko"])
         self.assertEqual(sorted(topup["audience_ref"]["segment_ids"]), ["SEG-commuter", "SEG-senior"])
+        # The emitted role contract (targets.irreversible) must satisfy the
+        # scenario validator's role set (stubs leave url/success as TODO).
+        from ergoqa.snapshot import validate_scenario
+        self.assertIn("irreversible", topup["targets"])
+        topup["surface"]["url"] = "http://127.0.0.1:9477/topup"
+        topup["success"] = {"selector_visible": "#done"}
+        self.assertEqual(validate_scenario(topup), [], json.dumps(validate_scenario(topup), ensure_ascii=False))
 
     def test_segments_affected_and_report(self) -> None:
         doc = load()

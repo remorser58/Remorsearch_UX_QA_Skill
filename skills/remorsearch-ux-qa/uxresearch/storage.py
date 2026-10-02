@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import fcntl
 import os
+import re
 import shutil
 import stat
 import time
@@ -11,6 +12,11 @@ from pathlib import Path
 from .canonical import EngineError, byte_digest, canonical, digest, loads
 
 MAX_BYTES = 16 * 1024 * 1024
+PERSONA_OUTPUTS = {"persona.hypotheses.starter.json", "qa-personas.json", "qa-personas.md", "persona-export.json"}
+
+
+def scenario_output(name):
+    return re.fullmatch(r"qa-scenarios/SC-[A-Za-z0-9_.:-]{1,64}\.json", name) is not None
 
 
 def safe_path(path, root=None):
@@ -139,10 +145,17 @@ class Store:
 
     def publish(self, operation, outputs, inputs=None, *, keep=True, invalidates_gate=False, mirror_exclusions=()):
         prior = self.state()
+        invalidates_personas = invalidates_gate or (
+            "gate.json" in outputs and prior and "gate.json" in prior["outputs"]
+            and self.committed("gate.json")["bundle_input_sha256"] != outputs["gate.json"]["bundle_input_sha256"])
         combined = {}
         if keep and prior:
             for name in prior["outputs"]:
                 if invalidates_gate and name in {"gate.json", "gate_failed.json", "audience.draft.json", "audience.todo.md", "report_check.json", "bundle.min.json", "minimize.json"}:
+                    continue
+                if invalidates_personas and (name in PERSONA_OUTPUTS or scenario_output(name)):
+                    continue
+                if operation == "export-personas" and scenario_output(name):
                     continue
                 combined[name] = self.committed(name)
         combined.update(outputs)
@@ -151,6 +164,18 @@ class Store:
         if "gate_failed.json" in outputs:
             combined.pop("gate.json", None)
         raw = {k: v.encode("utf-8") if isinstance(v, str) else canonical(v) for k, v in combined.items()}
+        for name in raw:
+            if Path(name).name != name and not scenario_output(name):
+                raise EngineError("unsafe_path", "Outputs must be plain filenames or generated QA scenario paths.")
+        for name in outputs:
+            if not scenario_output(name):
+                continue
+            path = safe_path(self.root / name, self.root)
+            if path.exists():
+                old = prior["outputs"].get(name) if prior else None
+                if old is None or byte_digest(read_bytes(path)) != old["sha256"]:
+                    raise EngineError("output_conflict", "An authored or unrelated scenario already uses this output path; it is preserved.",
+                                      location=name, next_step="Choose a new scenario ID or move your authored scenario to a separate input directory.")
         snapshot = digest({k: byte_digest(v) for k, v in raw.items()})
         engine = safe_path(self.root / ".engine")
         engine.mkdir(mode=0o700, exist_ok=True)
@@ -161,8 +186,7 @@ class Store:
         dest = safe_path(engine / snapshot)
         try:
             for name, data in raw.items():
-                if Path(name).name != name:
-                    raise EngineError("unsafe_path", "Output names must be plain filenames.")
+                safe_path((stage / name).parent, stage).mkdir(mode=0o700, exist_ok=True)
                 atomic(stage / name, data)
             sync_dir(stage)
             self.fault("staged")
@@ -181,12 +205,20 @@ class Store:
             atomic(self.root / "engine-state.json", canonical(state))
             self.fault("after_manifest")
             # Mirrors are for agent review only; consumers never read them as authority.
-            for name, data in raw.items():
+            # Scenario snapshots are already complete when the manifest advances. Publish
+            # their review mirrors before the pass marker; edited mirrors remain authored.
+            for name in sorted(raw, key=lambda x: (x == "persona-export.json", not scenario_output(x), x)):
+                data = raw[name]
+                if scenario_output(name) and name not in outputs:
+                    continue
                 if name not in mirror_exclusions:
+                    safe_path((self.root / name).parent, self.root).mkdir(mode=0o700, exist_ok=True)
                     atomic(self.root / name, data)
             for name in (set(prior["outputs"]) if prior else set()) - set(raw):
                 path = safe_path(self.root / name)
                 if path.exists():
+                    if scenario_output(name) and byte_digest(read_bytes(path)) != prior["outputs"][name]["sha256"]:
+                        continue
                     path.unlink()
             if "gate.json" in raw:
                 failed = safe_path(self.root / "gate_failed.json")

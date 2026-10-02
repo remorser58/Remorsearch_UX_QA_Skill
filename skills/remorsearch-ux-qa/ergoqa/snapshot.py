@@ -25,7 +25,7 @@ SCENARIO_SCHEMA = "ergo-scenario.v1"
 PROFILE_SCHEMA = "ergo-profile.v1"
 
 SURFACE_KINDS = ("web", "android", "ios", "desktop", "game")
-ROLES = ("primary", "destructive", "critical_message", "error_message", "status",
+ROLES = ("primary", "destructive", "irreversible", "critical_message", "error_message", "status",
          "navigation", "ad_like", "hud", "game_control", "timed")
 ELEMENT_SOURCES = ("dom", "uiautomator", "a11y", "vision", "manual")
 ORIENTATIONS = ("portrait", "landscape")
@@ -321,7 +321,11 @@ def validate_run(doc: Any) -> list[str]:
     _device_block(errors, errors.obj(doc, "device", "$"), "$.device")
     errors.enum(doc, "mode", RUN_MODES, "$")
     errors.timestamp(doc, "started_at", "$")
-    errors.timestamp(doc, "ended_at", "$", nullable=True)
+    errors.timestamp(doc, "ended_at", "$", nullable=doc.get("status") != "completed")
+    if _timestamp_ok(doc.get("started_at")) and _timestamp_ok(doc.get("ended_at")):
+        start = datetime.fromisoformat(doc["started_at"].replace("Z", "+00:00"))
+        end = datetime.fromisoformat(doc["ended_at"].replace("Z", "+00:00"))
+        errors.require(end >= start, "$.ended_at", "must be >= started_at")
     errors.enum(doc, "status", RUN_STATUSES, "$")
     errors.boolean(doc, "success", "$", nullable=True)
     steps = errors.array(doc, "steps", "$")
@@ -645,6 +649,18 @@ def load_run_dir(path: str | Path, *, verify_screenshots: bool = True) -> tuple[
             raise SnapshotError(f"{file.name}: run_id {snap['run_id']!r} != {run['run_id']!r}")
         if snap["snapshot_id"] in seen:
             raise SnapshotError(f"duplicate snapshot_id {snap['snapshot_id']!r}")
+        for key in ("id", "orientation"):
+            if snap["device"][key] != run["device"][key]:
+                raise SnapshotError(f"{file.name}: device.{key} {snap['device'][key]!r} differs from "
+                                    f"run device.{key} {run['device'][key]!r}")
+        # Auxiliary reflow/focus measurements may vary viewport/DPR; their
+        # original device and probe metadata stays intact.
+        captured = datetime.fromisoformat(snap["captured_at"].replace("Z", "+00:00"))
+        started = datetime.fromisoformat(run["started_at"].replace("Z", "+00:00"))
+        if captured < started:
+            raise SnapshotError(f"{file.name}: captured_at predates run start")
+        if run.get("ended_at") and captured > datetime.fromisoformat(run["ended_at"].replace("Z", "+00:00")):
+            raise SnapshotError(f"{file.name}: captured_at is after run end")
         seen.add(snap["snapshot_id"])
         if verify_screenshots:
             snap["screenshot"]["resolved_path"] = str(_verify_screenshot(run_dir, snap))

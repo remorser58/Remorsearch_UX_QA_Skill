@@ -10,7 +10,7 @@ from typing import Any
 
 from . import analyze, audience, bench, bundle, checks, report, swarm
 from .devices import get_device, list_devices
-from .profiles import sample_profiles, validate_profile
+from .profiles import profile_index, sample_profiles
 from .snapshot import SnapshotError, load_json
 
 EXIT_OK, EXIT_FINDINGS, EXIT_USAGE, EXIT_DEGRADED = 0, 1, 2, 3
@@ -28,10 +28,7 @@ def _load_profiles(path: str) -> list[dict[str, Any]]:
     profiles = data.get("profiles") if isinstance(data, dict) else data
     if not isinstance(profiles, list):
         raise ValueError("profiles file must be a list or {\"profiles\": [...]}")
-    for profile in profiles:
-        errors = validate_profile(profile)
-        if errors:
-            raise ValueError(f"{profile.get('profile_id', '?')}: {'; '.join(errors)}")
+    profile_index(profiles)
     return profiles
 
 
@@ -274,6 +271,70 @@ def cmd_android_snapshot(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def cmd_attach(args: argparse.Namespace) -> int:
+    from .qa_attach import attach_run
+
+    bundle_doc = load_json(args.bundle)
+    if not isinstance(bundle_doc, dict):
+        raise ValueError(f"{args.bundle}: not a JSON object")
+    binding: dict[str, str] = {}
+    for entry in args.bind:
+        scenario_id, sep, profile_id = entry.partition("=")
+        if not sep or not scenario_id.strip() or not profile_id.strip():
+            raise ValueError(f"--bind expects BUNDLE_SCENARIO_ID=ERGO_PROFILE_ID (got {entry!r})")
+        scenario_id, profile_id = scenario_id.strip(), profile_id.strip()
+        if scenario_id in binding:
+            raise ValueError(f"duplicate scenario binding {scenario_id!r}; supply each --bind once")
+        binding[scenario_id] = profile_id
+    profiles = _load_profiles(args.profiles)
+    scenarios = _load_scenarios(args.scenario or [])
+    second_pass = load_json(args.second_pass) if args.second_pass else None
+    runs_root = Path(args.runs)
+    run_dirs = [runs_root] if (runs_root / "run.json").is_file() else sorted(p for p in runs_root.iterdir() if (p / "run.json").is_file())
+    if not run_dirs:
+        raise ValueError(f"no run directories under {runs_root}")
+    receipts = Path(args.receipts_dir)
+    out_path = Path(args.out)
+    if out_path.is_symlink():
+        raise ValueError("--out must be a new regular file, not a symlink")
+    out_path = out_path.resolve()
+    inputs = [args.bundle, args.profiles, *(args.scenario or [])]
+    if args.second_pass:
+        inputs.append(args.second_pass)
+    if any(out_path == Path(p).resolve() for p in inputs):
+        raise ValueError("--out must differ from every input file")
+    source_roots = [p.resolve() for p in run_dirs]
+    if any(out_path.is_relative_to(p) for p in source_roots):
+        raise ValueError("--out must live outside every source run directory")
+    if out_path.exists():
+        raise ValueError(f"--out {out_path} already exists; choose a new file")
+    if receipts.is_symlink():
+        raise ValueError("--receipts-dir must not be a symlink")
+    receipt_root = receipts.resolve()
+    for run_dir in run_dirs:
+        target_root = receipt_root / load_json(run_dir / "run.json")["run_id"]
+        if any(receipt_root.is_relative_to(p) or target_root.resolve().is_relative_to(p) for p in source_roots):
+            raise ValueError("--receipts-dir and receipt artifacts must live outside every source run directory")
+    attached = 0
+    for run_dir in run_dirs:
+        bundle_doc = attach_run(bundle_doc, run_dir, profiles, binding, receipts_root=receipts,
+                                scenario=scenarios.get(load_json(run_dir / "run.json").get("scenario_id")),
+                                cross_profile=args.cross_profile, gaze_enabled=not args.no_gaze, second_pass=second_pass)
+        attached += 1
+    # Exclusive creation also protects against an output appearing after preflight.
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with out_path.open("x", encoding="utf-8") as output:
+        output.write(json.dumps(bundle_doc, ensure_ascii=False, indent=2) + "\n")
+    runs = bundle_doc["records"]["runs"]
+    owner_runs = [r for r in runs if isinstance(r, dict) and r.get("recorded_run_id") and not r.get("cross_profile_evaluation")]
+    analytical = [r for r in runs if isinstance(r, dict) and r.get("cross_profile_evaluation")]
+    print(f"attached {attached} run(s): {len(owner_runs)} owner execution(s), {len(analytical)} analytical evaluation(s) -> {args.out}")
+    print(f"receipts: {args.receipts_dir} (validate with --artifacts-root {args.receipts_dir})")
+    if (bundle_doc.get("notes", {}).get("ergo_attach", {}).get("build_identity_status") == "unknown"):
+        print("빌드 ID가 기록되지 않은 결과는 미검증 상태입니다. 같은 빌드의 재현 증거로 사용할 수 없습니다.", file=sys.stderr)
+    return EXIT_OK
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="ergo_qa.py", description="Ergonomic persona-swarm UX QA (evidence-first, stdlib only).")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -330,6 +391,22 @@ def build_parser() -> argparse.ArgumentParser:
             p.add_argument("--allow-degraded", action="store_true", help="exit 0 even when a run failed or was degraded")
             p.add_argument("--audience", help="ergo-audience.v1 file the profiles were composed from (segment names in the report)")
         p.set_defaults(func=func)
+
+    p = sub.add_parser("attach", help="attach completed ergo runs to an existing ux-evidence-bundle.v1 (persona QA bridge)")
+    p.add_argument("--bundle", required=True, help="existing QA evidence bundle (left unmodified)")
+    p.add_argument("--runs", required=True, help="a run directory or a directory of run directories")
+    p.add_argument("--profiles", required=True)
+    p.add_argument("--scenario", action="append", help="ergo scenario JSON file or directory (repeatable)")
+    p.add_argument("--bind", action="append", required=True, metavar="SCENARIO=PROFILE",
+                   help="bind a bundle scenario to the ergo profile that stands for its persona (repeatable)")
+    p.add_argument("--receipts-dir", required=True,
+                   help="directory outside the run roots receiving capture receipt copies; pass it as --artifacts-root to validate_bundle")
+    p.add_argument("--cross-profile", action="store_true",
+                   help="also attach analytical evaluations for every other bound profile with the same device and orientation")
+    p.add_argument("--second-pass", help="JSON array of P0/P1 reviews, each with the exact attached finding_id")
+    p.add_argument("--no-gaze", action="store_true")
+    p.add_argument("--out", required=True, help="output bundle path (a new file)")
+    p.set_defaults(func=cmd_attach)
 
     p = sub.add_parser("heatmap", help="render a reach or gaze-priority heatmap over a snapshot")
     p.add_argument("--snapshot", required=True)

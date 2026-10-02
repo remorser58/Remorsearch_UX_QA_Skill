@@ -245,7 +245,10 @@ def main(argv: list[str] | None = None, *, clock=None, sleeper=None, jitter=None
         from .commands import COMMANDS, execute
         if args.command in COMMANDS:
             exit_code, files, issues, warnings = execute(args, run)
-            _emit(dict(command=args.command, result="pass" if exit_code == 0 else "fail", exit_code=exit_code, files=files, issues=issues, warnings=warnings))
+            output=dict(command=args.command, result="pass" if exit_code == 0 else "fail", exit_code=exit_code, files=files, issues=issues, warnings=warnings)
+            if args.command in {"export-personas","persona-intake"} and exit_code==0:
+                output["qa_intake"]=dict(packet=files[0],scenario_files=files[3:])
+            _emit(output)
             return exit_code
         if args.command == "close":
             _emit(run.close())
@@ -283,7 +286,7 @@ def main(argv: list[str] | None = None, *, clock=None, sleeper=None, jitter=None
         _emit(dict(command=args.command, result="fail", exit_code=exc.exit_code, files=[], issues=[exc.issue], warnings=[]))
         return exc.exit_code
     except RunError as exc:
-        if args.command in {"merge", "gate", "report-check", "export-audience", "minimize"}:
+        if args.command in {"merge", "gate", "plan", "report-check", "export-audience", "persona-starter", "export-personas", "persona-intake", "minimize"}:
             _emit(dict(command=args.command, result="fail", exit_code=2, files=[], issues=[dict(code="policy", location="run", reason="Reader policy or run files are invalid.", next_step="Correct the run inputs.")], warnings=[]))
             return 2
         _emit({"status": "refused", "reason": str(exc)})

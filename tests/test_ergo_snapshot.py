@@ -121,6 +121,19 @@ class ValidationTests(unittest.TestCase):
             with self.subTest(fragment):
                 self.assertInvalid(validate_scenario, doc, fragment)
 
+    def test_irreversible_role_is_accepted_wherever_roles_are(self):
+        # docs/ergonomic-swarm-spec.md includes `irreversible` and audience
+        # scenario-stubs emit targets.irreversible; the validators must accept it.
+        doc = load("sample_scenario.json")
+        doc["targets"]["irreversible"] = ["#pay"]
+        self.assertEqual(validate_scenario(doc), [])
+        doc["hotspots"].append({"id": "h-ir", "name": "탈퇴", "box": {"x": 0, "y": 0, "w": 10, "h": 10},
+                                "roles": ["irreversible"]})
+        self.assertEqual(validate_scenario(doc), [])
+        snap = load("sample_snapshot.json")
+        snap["elements"][0]["roles"] = ["irreversible"]
+        self.assertEqual(validate_snapshot(snap), [])
+
     def test_malformed_profiles(self):
         base = load("sample_profile.json")
         cases = [

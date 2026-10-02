@@ -67,7 +67,11 @@ def manifest_plan(manifest, run, previous=None):
         if not axis["excluded"]:
             covered.update(axis["audience_questions"])
         for x in axis["assignments"]:
-            if x["assignment_id"] in assignments or (x["purpose"] in {"discovery", "counter_search"} and x["round"] != 0) or (x["purpose"] == "expansion" and x["round"] not in {1, 2}):
+            # Round indexes the search stage: discovery only starts a plan (round 0); expansion
+            # only runs in the two EXPAND rounds (1-2); counter_search may be dispatched in any
+            # round (0-2) because required counters arise from initial or expanded findings and
+            # run inside the same budgets. The schema range and the expansion budget are unchanged.
+            if x["assignment_id"] in assignments or (x["purpose"] == "discovery" and x["round"] != 0) or (x["purpose"] == "counter_search" and x["round"] not in {0, 1, 2}) or (x["purpose"] == "expansion" and x["round"] not in {1, 2}):
                 raise EngineError("manifest", "Assignments have invalid identity, purpose or round.")
             assignments[x["assignment_id"]] = (axis, x)
     if len({x["segment_id"] for x in manifest["segments"]}) != len(manifest["segments"]):

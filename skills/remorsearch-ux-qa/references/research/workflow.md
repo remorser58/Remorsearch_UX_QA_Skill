@@ -25,11 +25,30 @@ python3 scripts/ux_research.py start --brief brief.json
 
 RUN/runtime/UA/key availability/terms, no key values; missing runtime: interpreter version. Then `python3 scripts/ux_research.py --help`; missing features use failure ladder.
 
-Before dispatch: axes.json/axis-acknowledgements.json/search-ledger.jsonl in RUN (`references/research/audience-pipeline.md` by ID). Reviewed sanitized team data first, real types. Three source types when available/independent families/segment and counter queries/two changed-version windows; explain omissions.
+Before dispatch: axes.json/axis-acknowledgements.json/search-ledger.jsonl in RUN (`references/research/audience-pipeline.md` by ID). Create them together before the first search; the command validates every companion first and never writes search receipts:
+
+```sh
+python3 scripts/ux_research.py plan --run RUN --manifest plan.draft.json [--acknowledgements ack.json]
+```
+
+Assignment rounds index the search stage: discovery only at round 0; expansion only at rounds 1-2 (the two EXPAND rounds); counter_search at rounds 0-2, because required counters arise from initial or expanded findings and run inside the same budgets. Reviewed sanitized team data first, real types. Three source types when available/independent families/segment and counter queries/two changed-version windows; explain omissions.
 
 ## 2. Search, pre-read and capture
 
 Task/failure/consequence/competitor/counter queries; log calls/failures. Korean dictionary optional; lexicon.json observed terms. Snippets/summaries: leads.
+
+After discovery, invoke the bundled insane-search toolkit for each selected source. Read its routing body and the linked platform method by section before acquisition:
+
+```sh
+python3 scripts/ref.py references/insane-search/SOURCE.md phase-0-특수-엔드포인트-인덱스
+python3 scripts/ref.py references/insane-search/references/public-api.md stack-exchange-v23
+```
+
+The second command is a platform example; choose the method for the actual URL. Without a section ID, `ref.py` lists IDs only: use a listed ID to load the method body. Resolve SOURCE.md links from `references/insane-search/`; its `references/public-api.md` therefore resolves to `references/insane-search/references/public-api.md`. Links inside a method resolve from that method's directory. Keep the original toolkit intact, including fallback references; load only the needed sections and never redispatch its frontmatter as a skill.
+
+Before invoking the selected method with available tools, apply the access card and pre-read below. Use permitted public routes and the recorded tool capability; a missing tool is a gap. The toolkit does not lift terms, robots, privacy or authorization controls. Stop at unauthorized login, private or paywalled content and human checks; existing site/run stops forbid every alternate method. Automatic installs, identity spoofing, cookie transfer and other methods barred by the access card remain unavailable.
+
+Capture actual output and request provenance. Supported outputs pass through `read` or `ingest` and the existing privacy/provenance checks. Unsupported API/media/CLI output remains a lead until its source is captured through a supported reader path; a summary, snippet or successful command is not a fetch receipt. Never invent fetch IDs, adapter attestations or evidence from missing captures. Log actual requests and failures against the same budgets. Audience research uses this identical acquisition stage before merge, gate and export.
 
 `read` performs all policy checks; `robots` is an optional preflight:
 
@@ -83,13 +102,17 @@ Requested design only: editable Figma flow/states/hierarchy/variants/tokens/cont
 ```sh
 python3 scripts/ux_research.py report-check --run RUN --bundle RUN/bundle.json --gate RUN/gate.json --report report.md --statements report-claims.json
 python3 scripts/ux_research.py export-audience --run RUN --bundle RUN/bundle.json --gate RUN/gate.json --audience-id AU-product-202610
+python3 scripts/ux_research.py persona-starter --run RUN --bundle RUN/bundle.json --gate RUN/gate.json
+python3 scripts/ux_research.py export-personas --run RUN --bundle RUN/bundle.json --gate RUN/gate.json --hypotheses persona.hypotheses.json --audience-id AU-product-202610
+python3 scripts/ux_research.py persona-intake --run RUN --bundle RUN/bundle.json --gate RUN/gate.json
 python3 scripts/ergo_qa.py audience-check RUN/audience.draft.json --draft --gate RUN/gate.json --bundle RUN/bundle.json --run RUN
 python3 scripts/ux_research.py minimize --run RUN --bundle RUN/bundle.json --gate RUN/gate.json
 python3 scripts/validate_bundle.py RUN/bundle.json
+python3 scripts/validate_bundle.py QA_PACKET_FROM_QA_INTAKE
 python3 scripts/ux_research.py close --run RUN
 ```
 
-Requested export only; draft cannot compose, no invented weights. Minimize loop intake. **Retention:** close after quote checks even on failure; deletes pages/salt, reduces URLs. Keep closed scrubbed run/receipts until owner cleanup/retention; API deadlines bind outputs/generations. Identical checked quotes survive close; edits need capture.
+Requested export only; draft cannot compose, no invented weights. When the audience stays empty but gated claims exist, `persona-starter` supplies scrubbed claim cards and field diagnostics. Blocked cards expose only ID/status/reason. The agent authors the behavioral hypothesis with explicit assumptions, expected behavior/decision and falsifying tests; shares/frequency stay unknown. `export-personas` returns an explicitly synthetic QA packet and ergo-scenario templates in `qa_intake.packet`/`qa_intake.scenario_files`, only with provided safe task inputs. Use those returned verified paths for `validate_bundle.py` and the existing QA `--scenario` option. `persona-intake` retrieves the current paths immediately before QA and works after `close` while the gate remains valid. The review copies at RUN/qa-scenarios may lag after an interrupted write. Author actual steps in the QA task's own copied input, validate it and retain its packet/gate/claim IDs; no selector or run is fabricated. See audience-pipeline.md for edit and invalidation rules. Unsafe/stopped/withdrawn/injection material never enters persona prompts. Minimize loop intake. **Retention:** close after quote checks even on failure; deletes pages/salt, reduces URLs. Keep closed scrubbed run/receipts until owner cleanup/retention; API deadlines bind outputs/generations. Identical checked quotes survive close; edits need capture.
 
 ## Failure ladder
 

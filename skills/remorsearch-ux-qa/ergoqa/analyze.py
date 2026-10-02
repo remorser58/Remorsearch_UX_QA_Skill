@@ -15,6 +15,7 @@ from typing import Any, Iterable
 from . import checks, png
 from .devices import device_for_snapshot, get_device, rotate
 from .hf import gaze
+from .profiles import profile_index
 from .snapshot import load_run_dir
 
 SEVERITY_RANK = checks.SEVERITY_ORDER
@@ -162,7 +163,7 @@ def analyze_run(
 ) -> dict[str, Any]:
     run, snapshots = load_run_dir(run_dir, verify_screenshots=verify_screenshots)
     profile_list = list(profiles)
-    by_id = {p["profile_id"]: p for p in profile_list}
+    by_id = profile_index(profile_list)
     own = by_id.get(run.get("profile_id"))
     no_profile = run.get("profile_id") == "no-profile"
     if no_profile and not cross_profile:
@@ -176,9 +177,9 @@ def analyze_run(
     if not snapshots:
         raise ValueError(f"run {run['run_id']} has no snapshots")
     if no_profile:
-        recorded_device = snapshots[0].get("device", {})
-        device_id = recorded_device.get("id") or run.get("device", {}).get("id")
-        orientation = recorded_device.get("orientation", run.get("device", {}).get("orientation", "portrait"))
+        recorded_device = run["device"]
+        device_id = recorded_device["id"]
+        orientation = recorded_device["orientation"]
         if not device_id:
             raise ValueError(f"run {run['run_id']} has no recorded device ID; record it again with --device ID")
         evaluated = [
@@ -193,7 +194,11 @@ def analyze_run(
         own = None  # No profile owns this operator's judgment notes.
     else:
         device_id = own["attributes"]["device_id"]
-        orientation = snapshots[0].get("device", {}).get("orientation", own["attributes"].get("orientation", "portrait"))
+        orientation = own["attributes"].get("orientation", "portrait")
+        if run["device"]["id"] != device_id or run["device"]["orientation"] != orientation:
+            raise ValueError(f"run {run['run_id']}: recorded device {run['device']['id']!r}/"
+                             f"{run['device']['orientation']!r} does not match profile "
+                             f"{own['profile_id']} ({device_id!r}/{orientation!r})")
         evaluated = [own]
     if cross_profile and not no_profile:
         evaluated += [
@@ -270,8 +275,14 @@ def analyze_run(
         "scenario_id": run.get("scenario_id"),
         "run_status": run.get("status"),
         "run_success": run.get("success"),
+        "started_at": run["started_at"],
+        "ended_at": run.get("ended_at"),
         "device_id": device_id,
         "orientation": orientation,
+        # The profile that actually operated the run (None for --device captures with
+        # no profile). Consumers must use this instead of profiles_evaluated order:
+        # every other evaluation is analytical (spec: cross-profile evaluation).
+        "owner_profile_id": None if no_profile else run.get("profile_id"),
         "profiles_evaluated": [p["profile_id"] for p in evaluated],
         "observations": dicts,
         "coverage": coverage,

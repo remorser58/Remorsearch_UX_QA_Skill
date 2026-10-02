@@ -26,7 +26,7 @@ import { STATE_KEY, pageInit } from './page_scripts.mjs';
 import { WebSession } from './session.mjs';
 import { decodePng } from './png.mjs';
 import { snapshotReply } from './serve.mjs';
-import { normalizeScenario } from './validate.mjs';
+import { normalizeBuildId, normalizeScenario } from './validate.mjs';
 import { writeJsonAtomic } from './util.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -586,6 +586,30 @@ async function toolingTest(base, tmp) {
   check('init: all required fields are present and the driver validates the output', !normalized.error && normalized.warnings.length === 0
     && doc.surface.kind === 'web' && doc.surface.url === url && doc.task_goal_ko === 'Check required options and retain the order request.'
     && doc.device_ids[0] === 'desktop-1920' && Array.isArray(doc.steps) && doc.success === null, normalized);
+  const buildId = `fixture-source-sha256:${crypto.createHash('sha256').update(fs.readFileSync(path.join(HERE, 'fixtures', 'inspect.html'))).digest('hex')}`;
+  const versioned = { ...doc, surface: { ...doc.surface, build_id: buildId }, success: { selector_visible: '#request' } };
+  check('build identity: scenario retains an explicit source identifier',
+    normalizeScenario(versioned, { requireSteps: true }).scenario.build_id === buildId);
+  for (const bad of [null, '', ' ', 'unknown', 'unrecorded', 'x\n', 42]) {
+    let rejected = false;
+    try { normalizeBuildId(bad); } catch { rejected = true; }
+    check(`build identity: rejects ${JSON.stringify(bad)}`, rejected);
+  }
+  const versionedPath = path.join(tmp, 'versioned.json');
+  writeJson(versionedPath, versioned);
+  r = await runDriver(['run', '--scenario', versionedPath, '--profile', path.join(tmp, 'p-s24.json'),
+    '--build-id', 'different-source', '--out', path.join(tmp, 'conflicting-runs'), '--run-id', 'R-conflict'], { env: noBrowserEnv });
+  check('build identity: conflicting operator and scenario identities fail before browser or write',
+    r.code === 2 && /conflicts/.test(r.err) && !fs.existsSync(path.join(tmp, 'conflicting-runs')), r.err);
+  r = await runDriver(['run', '--scenario', versionedPath, '--profile', path.join(tmp, 'p-s24.json'),
+    '--out', path.join(tmp, 'versioned-runs'), '--run-id', 'R-versioned', '--no-focus-walk', '--no-reflow']);
+  if (check('build identity: profile-bearing scenario metadata records on a real surface', r.code === 0, r.err)) {
+    const recorded = loadRun(path.join(tmp, 'versioned-runs', 'R-versioned'));
+    check('build identity: run and every snapshot retain the source identifier and operator provenance',
+      recorded.run.surface.build_id === buildId && recorded.run.surface.build_id_basis === 'operator_supplied'
+      && recorded.run.surface.build_id_source === 'scenario.surface.build_id'
+      && [...recorded.snaps.values()].every((s) => s.surface.build_id === buildId && s.surface.build_id_basis === 'operator_supplied'));
+  }
   if (pythonAvailable()) {
     const py = spawnSync('python3', ['-c', 'import json, sys; from ergoqa.snapshot import validate_scenario; errors = validate_scenario(json.load(open(sys.argv[1]))); print(errors); sys.exit(bool(errors))', sc], { cwd: REPO, encoding: 'utf8' });
     check('init: Python scenario validator accepts the output', py.status === 0, `${py.stdout} ${py.stderr}`);
@@ -1606,12 +1630,19 @@ async function main() {
     let r = null;
     if (want('scripted')) {
     r = await runDriver(['run', '--scenario', path.join(tmp, 'scenario.json'), '--profile', path.join(tmp, 'p-s24.json'),
-      '--out', outDir, '--run-id', 'R-s24', '--base', base]);
+      '--out', outDir, '--run-id', 'R-s24', '--base', base,
+      '--build-id', `fixture-source-sha256:${crypto.createHash('sha256').update(fs.readFileSync(path.join(HERE, 'fixtures', 'selftest.html'))).digest('hex')}`]);
     const fin = r.lines.find((l) => l.event === 'finished');
     if (check('run galaxy-s24: exit 0 with a finished line', r.code === 0 && fin && fin.status === 'completed' && fin.success === true, `${r.code} ${r.err}`)) {
       checkScripted('run galaxy-s24', path.join(outDir, 'R-s24'), {
         id: 'galaxy-s24', vw: 360, vh: 780, dpr: 3, orientation: 'portrait', input: 'touch',
       }, { flash: false });
+      const recorded = loadRun(path.join(outDir, 'R-s24'));
+      check('build identity: CLI value survives in run and every capture with operator provenance',
+        recorded.run.surface.build_id.startsWith('fixture-source-sha256:') && recorded.run.surface.build_id_source === '--build-id'
+        && recorded.run.surface.build_id_basis === 'operator_supplied'
+        && [...recorded.snaps.values()].every((s) => s.surface.build_id === recorded.run.surface.build_id
+          && s.surface.build_id_basis === 'operator_supplied'));
     }
 
     r = await runDriver(['run', '--scenario', path.join(tmp, 'scenario.json'), '--profile', path.join(tmp, 'p-desk.json'),

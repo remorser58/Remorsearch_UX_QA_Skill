@@ -34,14 +34,29 @@ Exercise actual product/input/start state; capture decisions/recovery, console/n
 
 Bundled fallback (Node.js 22; detect installed dependencies first):
 
+기록과 분석에 같은 프로필을 사용합니다. 아래 예시는 기존 `bundle.json`의 `scenario-1`에 `EP-01`을 연결합니다. 제품 URL·빌드 ID와 안전한 데이터·성공 조건을 먼저 지정합니다.
+
 ```sh
+: "${PRODUCT_URL:?검사할 제품 URL을 지정하세요}"
+: "${PRODUCT_BUILD_ID:?실제 커밋, 버전, 배포 ID 또는 페이지 소스 해시를 지정하세요}"
 node drivers/web/ergo_drive.mjs devices
-node drivers/web/ergo_drive.mjs init --url URL --device DEVICE --task TASK --out sc.json
-node drivers/web/ergo_drive.mjs serve --scenario sc.json --device DEVICE --agent-json agent.json --out runs/ --port 9477
+python3 scripts/ergo_qa.py profiles --count 1 --seed 7 --devices galaxy-s24 --out work/profiles.json
+python3 - <<'PY'
+import json
+from pathlib import Path
+profiles = json.loads(Path("work/profiles.json").read_text())
+profile = next(p for p in profiles["profiles"] if p["profile_id"] == "EP-01")
+Path("work/EP-01.json").write_text(json.dumps(profile, ensure_ascii=False))
+PY
+node drivers/web/ergo_drive.mjs init --url "$PRODUCT_URL" --device galaxy-s24 --task '입력한 값이 최종 결과에 유지되는지 확인' --out sc.json
+node drivers/web/ergo_drive.mjs serve --scenario sc.json --profile work/EP-01.json \
+  --build-id "$PRODUCT_BUILD_ID" --agent-json agent.json --out runs/ --run-id R-persona-01 --port 9477
 node drivers/web/drive_client.mjs --port 9477 observe
 node drivers/web/drive_client.mjs --port 9477 act '{"action":"tap","target":"#control"}'
 node drivers/web/drive_client.mjs --port 9477 note '{"intent":"Complete the task","expected":"Entered values survive","observed":"Describe the screen","confusion":false}'
-node drivers/web/drive_client.mjs --port 9477 finish '{"success":false}'
+# 실제 입력값과 최종 상태를 대조한 후 성공 여부를 기록합니다.
+node drivers/web/drive_client.mjs --port 9477 finish '{"success":true}'
+python3 scripts/ergo_qa.py analyze --runs runs/R-persona-01 --profiles work/profiles.json --scenario sc.json --out work/analysis.json
 ```
 
 Use real targets/outcome; agent.json records actual operator/model/input_channel. **Blind touch:** screenshot-only decisions before DOM/source/run data. Then separate a11y or screenshot+a11y technical auditor reproduces transitions with provenance. After each step/failed submit:
@@ -50,7 +65,7 @@ Use real targets/outcome; agent.json records actual operator/model/input_channel
 node drivers/web/drive_client.mjs --port 9477 inspect
 ```
 
-Inspect returns values/choices/invalid/error association/focus/reading order; link receipt to screen/step. Screenshot channel refuses inspect; no DOM knowledge in blind pass. Programmatic evidence cannot stand for assistive-tech speech. Scripted replay: `node drivers/web/ergo_drive.mjs run --scenario sc.json --device DEVICE --out replay/`, recorded steps/integrity criteria. Driver success cannot override data loss.
+Inspect returns values/choices/invalid/error association/focus/reading order; link receipt to screen/step. Screenshot channel refuses inspect; no DOM knowledge in blind pass. Programmatic evidence cannot stand for assistive-tech speech. Scripted replay: `node drivers/web/ergo_drive.mjs run --scenario sc.json --profile work/EP-01.json --build-id "$PRODUCT_BUILD_ID" --out replay/ --run-id R-persona-replay`, recorded steps/integrity criteria. Driver success cannot override data loss.
 
 Budget a bounded task matrix, no population download; driver run/idle default 900 s. Stop missing access/unsafe action. Separate authorization for posting/purchase/signup/account/data changes. Production identity/SMS/CAPTCHA/security-keypad/certificate/payment gates stop; only approved staging mocks/test payment can complete. No real government/contact/payment/account inputs. Team-approved origins govern widgets; unavailable iframe/popup/app-switch evidence is untested. Lookup `drivers/web/README.md` options/sandbox by section; no installation to pass blocks.
 
@@ -60,7 +75,7 @@ Write a receipt beside **each capture during the run**:
 {artifact_path, sha256, captured_at, surface_url, build_id, device, quoted_ui_text}
 ```
 
-Build ID is commit/version/deploy ID or page hash. Check file/type/viewport, redact private data and quote exact visible UI text. Every P0/P1 receipt must be newer than run start; stale/missing receipts leave it unverified.
+빌드 ID는 커밋·버전·배포 ID 또는 페이지 소스 해시입니다. `--build-id`/`scenario.surface.build_id`는 제공자 지정 정보로 남습니다. PNG 해시는 캡처 무결성만 확인합니다. `unknown` 결과는 미검증이며 같은 빌드 재현에 쓰지 않습니다. 개인정보를 가리고 화면 문구를 그대로 인용합니다. 캡처 시각은 실행 시작과 종료 사이여야 합니다.
 
 ## 3. Conditional evidence and intended experience
 
@@ -99,6 +114,18 @@ Then matrix/basis, ranked cards, P0/P1 causes, recommendations, Figma/artifacts/
 ```sh
 python3 scripts/validate_bundle.py bundle.json
 ```
+
+`--bind scenario-1=EP-01`은 위 프로필과 기존 QA 시나리오를 연결합니다. 기기·방향과 모든 캡처 시각을 확인하며 정상 실행도 보존합니다. `--cross-profile`은 분석 대조군입니다. 출력과 사본은 입력·실행 폴더 밖의 새 경로를 사용합니다.
+
+```sh
+python3 scripts/ergo_qa.py attach --bundle bundle.json --runs runs/R-persona-01 --profiles work/profiles.json \
+  --scenario sc.json --bind scenario-1=EP-01 --receipts-dir receipts/ --out bundle.ergo.json
+python3 scripts/validate_bundle.py bundle.ergo.json --artifacts-root receipts/
+```
+
+P0/P1이면 연결 명령이 필요한 `finding_id`를 출력하고 저장 전에 중단합니다. 각 캡처와 텍스트를 재검토해 정확한 ID가 있는 JSON 배열을 작성하고 `--second-pass second-passes.json`을 추가합니다. 익명 기록을 복제할 수 없으며 기존 증거는 보존합니다.
+
+`--device galaxy-s24` 기록은 `analyze`/`swarm --cross-profile`에서 분석용으로 평가합니다. QA 페르소나의 실행으로 연결하지 않습니다.
 
 ## Failure ladder
 

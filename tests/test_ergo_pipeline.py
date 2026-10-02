@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import copy
+import io
 import json
+import shutil
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 from _paths import SKILL as ROOT  # noqa: E402,F401  (puts the skill folder on sys.path)
@@ -205,6 +209,422 @@ class PipelineTests(unittest.TestCase):
         result = bench.score(key, self.findings, self.profiles)
         self.assertAlmostEqual(result["recall_strict"], 2 / 3, places=3)
         self.assertEqual(result["decoys_flagged"], 0)
+
+
+class AttachBridgeTests(unittest.TestCase):
+    """The persona-qa <-> ergonomics bridge: attach a completed run to a QA bundle."""
+
+    SECOND_PASS = {"reviewer": "self", "task_completed": True, "control_name": "결제하기", "omitted": [],
+                   "severity": "agree", "inconclusive": False}
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.root = Path(cls.tmp.name)
+        cls.run_dir = make_run(cls.root)
+        cls.profiles = sample_profiles(3, 7, ["galaxy-s24"])
+        qa = json.loads((Path(__file__).parent / "fixtures" / "valid-bundle.json").read_text(encoding="utf-8"))
+        # An existing QA graph whose findings carry no P0/P1 (those would need their
+        # own fresh receipts and second passes under the same validator).
+        qa["records"]["findings"][0]["severity"] = "P2"
+        cls.qa_bundle = qa
+        cls.receipts = cls.root / "receipts"
+        # Owned synthetic fixture metadata is distinct from screenshot bytes.
+        for path in [cls.run_dir / "run.json", *cls.run_dir.glob("S-*.json")]:
+            doc = json.loads(path.read_text())
+            doc.setdefault("surface", {})["build_id"] = "synthetic-checkout-fixture-v1"
+            path.write_text(json.dumps(doc))
+        cls.reviews = {}
+        for cross in (False, True):
+            analysis = analyze.analyze_run(cls.run_dir, cls.profiles, cross_profile=cross, gaze_enabled=False)
+            cls.reviews[cross] = [dict(cls.SECOND_PASS, finding_id=f"ERGO-{f['id']}@R-1@{pid}")
+                                  for f in swarm.aggregate([analysis], cls.profiles)
+                                  if f["severity"] in ("P0", "P1") for pid in f["triggered_profiles"]]
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.tmp.cleanup()
+
+    def attach(self, bundle=None, run_dir=None, binding=None, profiles=None, **kwargs):
+        from ergoqa.qa_attach import attach_run
+
+        return attach_run(bundle or self.qa_bundle, run_dir or self.run_dir, profiles or self.profiles,
+                          binding or {"scenario-1": "EP-01"},
+                          receipts_root=kwargs.pop("receipts_root", self.receipts),
+                          gaze_enabled=kwargs.pop("gaze_enabled", False),
+                          second_pass=kwargs.pop("second_pass", self.reviews[kwargs.get("cross_profile", False)]), **kwargs)
+
+    def test_owner_attach_validates_and_preserves_the_existing_graph(self) -> None:
+        before = {p.name: sha256_file(p) for p in sorted(self.run_dir.iterdir())}
+        out = self.attach()
+        self.assertEqual(validate_bundle(out, artifacts_root=self.receipts), [])
+        # Original records, permissions and ids are preserved untouched.
+        self.assertEqual(out["permissions"], self.qa_bundle["permissions"])
+        for name in ("sources", "evidence", "claims", "personas", "scenarios", "findings", "proposals", "figma"):
+            for record in self.qa_bundle["records"][name]:
+                self.assertIn(record, out["records"][name], name)
+        self.assertEqual(out["records"]["personas"][0]["id"], "persona-1")
+        self.assertEqual(out["records"]["scenarios"][0]["id"], "scenario-1")
+        # Source run files are unmodified and receipts live outside the run root.
+        self.assertEqual({p.name: sha256_file(p) for p in sorted(self.run_dir.iterdir())}, before)
+        receipt_files = sorted(p.relative_to(self.receipts).as_posix() for p in self.receipts.rglob("*.png"))
+        self.assertTrue(receipt_files)
+        self.assertFalse(any((self.run_dir / name).exists() for name in receipt_files))
+        # The attached evidence is namespaced, owner-executed and receipt-backed.
+        runs = [r for r in out["records"]["runs"] if str(r["id"]).startswith("ERGO-")]
+        self.assertEqual([r["cross_profile_evaluation"] for r in runs], [False])
+        self.assertEqual(runs[0]["scenario_id"], "scenario-1")
+        self.assertEqual(runs[0]["recorded_run_id"], "R-1")
+        observations = [o for o in out["records"]["observations"] if str(o["id"]).startswith("ERGO-")]
+        self.assertTrue(observations)
+        receipts_out = [o["receipt"] for o in observations if o.get("receipt")]
+        self.assertTrue(receipts_out)
+        for receipt in receipts_out:
+            artifact = self.receipts / receipt["artifact_path"]
+            self.assertTrue(artifact.is_file(), receipt["artifact_path"])
+            self.assertEqual(sha256_file(artifact), receipt["sha256"])
+            self.assertFalse(Path(receipt["artifact_path"]).is_absolute())
+            self.assertTrue(receipt["quoted_ui_text"])
+        findings = [f for f in out["records"]["findings"] if str(f["id"]).startswith("ERGO-")]
+        self.assertTrue(findings)
+        self.assertTrue(any(f["verification_status"] == "verified" for f in findings))
+        self.assertTrue(all("second_pass" in f for f in findings if f["severity"] in ("P0", "P1")))
+
+    def test_cli_round_trip_reaches_the_same_bundle(self) -> None:
+        from ergoqa import cli
+
+        profiles_path = self.root / "profiles.json"
+        profiles_path.write_text(json.dumps({"profiles": self.profiles}), encoding="utf-8")
+        qa_path = self.root / "qa-bundle.json"
+        qa_path.write_text(json.dumps(self.qa_bundle, ensure_ascii=False), encoding="utf-8")
+        second_path = self.root / "second-pass.json"
+        second_path.write_text(json.dumps(self.reviews[False]), encoding="utf-8")
+        out_path = self.root / "qa-attached.json"
+        args = ["attach", "--bundle", str(qa_path), "--runs", str(self.run_dir), "--profiles", str(profiles_path),
+                "--bind", "scenario-1=EP-01", "--receipts-dir", str(self.root / "cli-receipts"),
+                "--second-pass", str(second_path), "--no-gaze", "--out", str(out_path)]
+        stdout = io.StringIO()
+        with redirect_stdout(stdout):
+            self.assertEqual(cli.main(args), cli.EXIT_OK, stdout.getvalue())
+        attached = json.loads(out_path.read_text(encoding="utf-8"))
+        self.assertEqual(validate_bundle(attached, artifacts_root=self.root / "cli-receipts"), [])
+        self.assertEqual(attached["bundle_id"], "bundle-demo-001")
+        self.assertIn("attached 1 run(s)", stdout.getvalue())
+
+    def test_contract_violations_fail_honestly(self) -> None:
+        from ergoqa.qa_attach import AttachError
+
+        def variant_run(name: str, updates: dict | None = None, corrupt_png: bool = False) -> Path:
+            target = self.root / name
+            if target.exists():
+                shutil.rmtree(target)
+            shutil.copytree(self.run_dir, target)
+            run_path = target / "run.json"
+            run = json.loads(run_path.read_text(encoding="utf-8"))
+            run.update(updates or {})
+            run_path.write_text(json.dumps(run, ensure_ascii=False), encoding="utf-8")
+            if corrupt_png:
+                (target / "S-R-1-000.png").write_bytes(b"not a png")
+            return target
+
+        cases = {
+            "unknown bundle scenario": ({"scenario-x": "EP-01"}, {}, "bundle has no scenario"),
+            "unknown profile": ({"scenario-1": "EP-99"}, {}, "was not supplied"),
+            "owner not bound": ({"scenario-1": "EP-02"}, {}, "is not bound"),
+            "failed run": ({"scenario-1": "EP-01"}, {"status": "failed", "success": False}, "only completed runs"),
+            "incomplete run": ({"scenario-1": "EP-01"}, {"status": "blocked"}, "only completed runs"),
+            "no-profile run": ({"scenario-1": "EP-01"}, {"profile_id": "no-profile"}, "no persona executed"),
+            "run without persona": ({"scenario-1": "EP-01"}, {"profile_id": "EP-missing"}, "not supplied"),
+        }
+        for label, (binding, mutate, fragment) in cases.items():
+            with self.subTest(label):
+                with self.assertRaisesRegex(AttachError, fragment):
+                    self.attach(bundle=self.qa_bundle, run_dir=variant_run(label.replace(" ", "-"), mutate), binding=binding)
+        with self.subTest("corrupt screenshot"):
+            with self.assertRaisesRegex(AttachError, "failed verification"):
+                self.attach(run_dir=variant_run("corrupt", corrupt_png=True))
+        with self.subTest("stale capture"):
+            with self.assertRaisesRegex(AttachError, "predates run start"):
+                self.attach(run_dir=variant_run("stale", {"started_at": "2026-09-28T23:00:00Z",
+                                                          "ended_at": "2026-09-28T23:00:05Z"}))
+        with self.subTest("device mismatch"):
+            wrong = copy.deepcopy(self.profiles)
+            wrong[0]["attributes"]["device_id"] = "iphone-15"
+            with self.assertRaisesRegex(AttachError, "does not match profile"):
+                self.attach(profiles=wrong, receipts_root=self.root / "r-dm")
+        with self.subTest("orientation mismatch"):
+            wrong = copy.deepcopy(self.profiles)
+            wrong[0]["attributes"]["orientation"] = "landscape"
+            with self.assertRaisesRegex(AttachError, "does not match profile"):
+                self.attach(profiles=wrong, receipts_root=self.root / "r-om")
+        with self.subTest("identity collision on re-attach"):
+            out = self.attach()
+            with self.assertRaisesRegex(AttachError, "already exists"):
+                self.attach(bundle=out)
+        with self.subTest("receipts inside the run root"):
+            with self.assertRaisesRegex(AttachError, "outside the run directory"):
+                self.attach(receipts_root=self.run_dir / "receipts")
+        with self.subTest("missing second pass for P0/P1"):
+            with self.assertRaisesRegex(AttachError, "second pass"):
+                self.attach(second_pass=None, receipts_root=self.root / "r-sp")
+
+    def test_cross_profile_attach_stays_analytical(self) -> None:
+        binding = {"scenario-1": "EP-01", "scenario-1-copy": "EP-02", "scenario-1-copy-2": "EP-03"}
+        qa = copy.deepcopy(self.qa_bundle)
+        qa["records"]["scenarios"] += [
+            {"id": "scenario-1-copy", "persona_id": "persona-1", "task": "ergo 분석 대조"},
+            {"id": "scenario-1-copy-2", "persona_id": "persona-1", "task": "ergo 분석 대조"},
+        ]
+        out = self.attach(bundle=qa, binding=binding, cross_profile=True, receipts_root=self.root / "cp-receipts")
+        self.assertEqual(validate_bundle(out, artifacts_root=self.root / "cp-receipts"), [])
+        runs = {r["id"]: r for r in out["records"]["runs"] if str(r["id"]).startswith("ERGO-")}
+        self.assertEqual(sum(1 for r in runs.values() if not r["cross_profile_evaluation"]), 1)
+        analytical = [r for r in runs.values() if r["cross_profile_evaluation"]]
+        self.assertEqual(len(analytical), 2)
+        findings = [f for f in out["records"]["findings"] if str(f["id"]).startswith("ERGO-")]
+        self.assertTrue(any(f["verification_status"] == "verified" for f in findings
+                            if f["analysis_kind"] == "owner_execution"))
+        self.assertFalse(any(f["verification_status"] == "verified" for f in findings
+                             if f["analysis_kind"] == "analytical_cross_profile"))
+        unbound = dict(binding)
+        unbound.pop("scenario-1-copy-2")
+        with self.assertRaisesRegex(ValueError, "not bound"):
+            self.attach(bundle=qa, binding=unbound, cross_profile=True, receipts_root=self.root / "cp-unbound")
+
+
+class AttachIntegrityTests(unittest.TestCase):
+    """Negative evidence and filesystem checks use owned synthetic files only."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.run_dir = make_run(self.root)
+        self.receipts = self.root / "receipts"
+        self.profiles = sample_profiles(3, 7, ["galaxy-s24"])
+        self.qa = json.loads((Path(__file__).parent / "fixtures" / "valid-bundle.json").read_text())
+        self.qa["records"]["findings"][0]["severity"] = "P2"
+
+    def edit_run(self, **updates):
+        path = self.run_dir / "run.json"
+        doc = json.loads(path.read_text())
+        doc.update(updates)
+        path.write_text(json.dumps(doc))
+
+    def edit_snap(self, index=1, **updates):
+        path = self.run_dir / f"S-R-1-{index:03d}.json"
+        doc = json.loads(path.read_text())
+        doc.update(updates)
+        path.write_text(json.dumps(doc))
+
+    def attach(self, **kwargs):
+        from ergoqa.qa_attach import attach_run
+        # This default is intentionally anonymous for the regression that rejects
+        # blanket reviews. Positive attachments below supply identity-matched rows.
+        kwargs.setdefault("second_pass", AttachBridgeTests.SECOND_PASS)
+        return attach_run(self.qa, self.run_dir, kwargs.pop("profiles", self.profiles),
+                          {"scenario-1": "EP-01"}, receipts_root=self.receipts,
+                          gaze_enabled=False, **kwargs)
+
+    def reviews(self):
+        analysis = analyze.analyze_run(self.run_dir, self.profiles, gaze_enabled=False)
+        return [dict(AttachBridgeTests.SECOND_PASS, finding_id=f"ERGO-{f['id']}@R-1@EP-01")
+                for f in swarm.aggregate([analysis], self.profiles) if f["severity"] in ("P0", "P1")]
+
+    def test_receipt_directory_and_file_symlinks_never_mutate_targets(self) -> None:
+        from ergoqa.qa_attach import AttachError
+        outside = self.root / "unrelated"
+        outside.mkdir()
+        sentinel = outside / "S-R-1-000.png"
+        sentinel.write_bytes(b"unrelated bytes")
+        before = sentinel.read_bytes(), sentinel.stat().st_mode
+        self.receipts.mkdir()
+        (self.receipts / "R-1").symlink_to(outside, target_is_directory=True)
+        with self.assertRaisesRegex(AttachError, "symlink"):
+            self.attach()
+        self.assertEqual((sentinel.read_bytes(), sentinel.stat().st_mode), before)
+        (self.receipts / "R-1").unlink()
+        (self.receipts / "R-1").mkdir()
+        (self.receipts / "R-1" / sentinel.name).symlink_to(sentinel)
+        with self.assertRaisesRegex(AttachError, "symlink"):
+            self.attach()
+        self.assertEqual((sentinel.read_bytes(), sentinel.stat().st_mode), before)
+
+    def test_conflicting_later_artifact_rejects_before_any_copy(self) -> None:
+        from ergoqa.qa_attach import AttachError
+        folder = self.receipts / "R-1"
+        folder.mkdir(parents=True)
+        conflict = folder / "S-R-1-001.png"
+        conflict.write_bytes(b"other evidence")
+        before = conflict.read_bytes(), conflict.stat().st_mode
+        with self.assertRaisesRegex(AttachError, "conflicting"):
+            self.attach()
+        self.assertEqual((conflict.read_bytes(), conflict.stat().st_mode), before)
+        self.assertFalse((folder / "S-R-1-000.png").exists())
+
+    def test_all_device_records_and_completion_intervals_are_checked(self) -> None:
+        from ergoqa.qa_attach import AttachError
+        original_run = (self.run_dir / "run.json").read_bytes()
+        original_snap = (self.run_dir / "S-R-1-001.json").read_bytes()
+        device = {"id": "galaxy-s24", "viewport_css": [W, H], "dpr": 1, "orientation": "portrait"}
+        cases = [("run device", {"device": dict(device, id="iphone-15")}, {}, "device"),
+                 ("later device", {}, {"device": dict(device, id="iphone-15")}, "device"),
+                 ("later orientation", {}, {"device": dict(device, orientation="landscape")}, "orientation"),
+                 ("null end", {"ended_at": None}, {}, "ended_at"),
+                 ("end before start", {"ended_at": "2026-09-28T11:59:59Z"}, {}, "ended_at"),
+                 ("capture after end", {}, {"captured_at": "2026-09-28T12:00:06Z"}, "after run end"),
+                 ("later stale capture", {}, {"captured_at": "2026-09-28T11:59:59Z"}, "predates run start")]
+        for label, run_changes, snap_changes, fragment in cases:
+            with self.subTest(label=label):
+                (self.run_dir / "run.json").write_bytes(original_run)
+                (self.run_dir / "S-R-1-001.json").write_bytes(original_snap)
+                self.edit_run(**run_changes)
+                self.edit_snap(**snap_changes)
+                with self.assertRaisesRegex(AttachError, fragment):
+                    self.attach()
+                self.assertFalse(self.receipts.exists())
+
+    def test_review_identity_is_required_and_existing_evidence_is_preserved(self) -> None:
+        from ergoqa.qa_attach import AttachError
+        for review in (AttachBridgeTests.SECOND_PASS,
+                       dict(AttachBridgeTests.SECOND_PASS, finding_id="unrelated-finding")):
+            with self.subTest(review=review):
+                with self.assertRaisesRegex(AttachError, "finding_id|second pass"):
+                    self.attach(second_pass=review)
+                self.assertFalse(self.receipts.exists())
+        reviews = self.reviews()
+        self.assertTrue(reviews)
+        with self.assertRaisesRegex(AttachError, "second pass"):
+            self.attach(second_pass=reviews[:-1])
+        self.assertFalse(self.receipts.exists())
+        out = self.attach(second_pass=reviews)
+        by_id = {r["finding_id"]: r for r in reviews}
+        for finding in out["records"]["findings"]:
+            if finding["id"] in by_id:
+                self.assertEqual(finding["second_pass"], by_id[finding["id"]])
+        for group, originals in self.qa["records"].items():
+            self.assertTrue(all(row in out["records"][group] for row in originals))
+
+    def test_unknown_builds_stay_unverified_without_image_derived_identity(self) -> None:
+        reviews = self.reviews()
+        out = self.attach(second_pass=reviews)
+        for obs in out["records"]["observations"]:
+            if str(obs["id"]).startswith("ERGO-") and obs.get("receipt"):
+                self.assertEqual(obs["receipt"]["build_id"], "unknown")
+        self.assertFalse(any(f["verification_status"] == "verified" for f in out["records"]["findings"]
+                             if str(f["id"]).startswith("ERGO-")))
+        # A second run of the same scenario with equally unknown metadata cannot
+        # turn the first run into verified evidence of the same build.
+        self.edit_run(run_id="R-2")
+        for index in (0, 1):
+            self.edit_snap(index=index, run_id="R-2")
+        from ergoqa.qa_attach import attach_run
+        analysis = analyze.analyze_run(self.run_dir, self.profiles, gaze_enabled=False)
+        reviews = [dict(AttachBridgeTests.SECOND_PASS, finding_id=f"ERGO-{f['id']}@R-2@EP-01")
+                   for f in swarm.aggregate([analysis], self.profiles) if f["severity"] in ("P0", "P1")]
+        out = attach_run(out, self.run_dir, self.profiles, {"scenario-1": "EP-01"},
+                         receipts_root=self.receipts, gaze_enabled=False, second_pass=reviews)
+        self.assertFalse(any(f["verification_status"] == "verified" for f in out["records"]["findings"]
+                             if str(f["id"]).startswith("ERGO-")))
+
+    def test_duplicate_profiles_are_rejected_on_attach(self) -> None:
+        from ergoqa.qa_attach import AttachError
+        conflicting = copy.deepcopy(self.profiles[0])
+        conflicting["attributes"]["vision"]["presbyopia"] = True
+        with self.assertRaisesRegex(AttachError, "duplicate profile"):
+            self.attach(profiles=[*self.profiles, conflicting])
+        self.assertFalse(self.receipts.exists())
+
+    def test_known_build_and_probe_context_survive_without_relabeling(self) -> None:
+        self.edit_run(surface={"kind": "web", "build_id": "owned-fixture-v2"},
+                      reflow=[{"snapshot_id": "S-R-1-001", "width": 320}],
+                      focus_walks=[{"snapshot_id": "S-R-1-000", "where": "load"}])
+        for index in (0, 1):
+            self.edit_snap(index=index, surface={"kind": "web", "url": "http://127.0.0.1/checkout.html",
+                                                "title": "checkout", "build_id": "owned-fixture-v2"})
+        path = self.run_dir / "S-R-1-001.json"
+        snap = json.loads(path.read_text())
+        snap["device"].update(viewport_css=[320, 568], dpr=1.0, probe="reflow")
+        image = png.new_image(320, 568, 3, (255, 255, 255))
+        png.write_png(self.run_dir / snap["screenshot"]["path"], image)
+        snap["screenshot"].update(width_px=320, height_px=568,
+                                  sha256=sha256_file(self.run_dir / snap["screenshot"]["path"]))
+        path.write_text(json.dumps(snap))
+        out = self.attach(second_pass=self.reviews())
+        attached_run = next(r for r in out["records"]["runs"] if str(r["id"]).startswith("ERGO-"))
+        self.assertEqual(attached_run["reflow"], [{"snapshot_id": "S-R-1-001", "width": 320}])
+        self.assertEqual(attached_run["focus_walks"], [{"snapshot_id": "S-R-1-000", "where": "load"}])
+        captures = {o["snapshot_id"]: o for o in out["records"]["observations"] if o.get("kind") == "capture_coverage"}
+        self.assertEqual(captures["S-R-1-001"]["snapshot_device"], snap["device"])
+        self.assertIn("320x568", captures["S-R-1-001"]["receipt"]["device"])
+        self.assertIn("360x780", captures["S-R-1-000"]["receipt"]["device"])
+        self.assertTrue(all(o["receipt"]["build_id"] == "owned-fixture-v2" for o in captures.values()))
+        self.assertTrue(any(f["verification_status"] == "verified" for f in out["records"]["findings"]
+                            if str(f["id"]).startswith("ERGO-")))
+        self.assertEqual(validate_bundle(out, artifacts_root=self.receipts), [])
+
+    def test_existing_priority_receipt_and_review_are_preserved(self) -> None:
+        self.receipts.mkdir()
+        old_png = self.receipts / "original-qa.png"
+        write_png(old_png)
+        self.qa["records"]["runs"][0].update(started_at="2026-09-28T11:00:00Z", ended_at="2026-09-28T11:00:05Z")
+        self.qa["records"]["observations"][0]["receipt"] = {
+            "artifact_path": old_png.name, "sha256": sha256_file(old_png), "captured_at": "2026-09-28T11:00:01Z",
+            "surface_url": "https://example.com/product", "build_id": "original-qa-v1", "device": "original-device",
+            "quoted_ui_text": "다음 행동"}
+        self.qa["records"]["findings"][0].update(severity="P1",
+            second_pass=dict(AttachBridgeTests.SECOND_PASS, finding_id="finding-1"))
+        original = copy.deepcopy(self.qa)
+        old_bytes, old_mode = old_png.read_bytes(), old_png.stat().st_mode
+        out = self.attach(second_pass=self.reviews())
+        self.assertEqual((old_png.read_bytes(), old_png.stat().st_mode), (old_bytes, old_mode))
+        for group, rows in original["records"].items():
+            self.assertTrue(all(row in out["records"][group] for row in rows))
+        self.assertEqual(validate_bundle(out, artifacts_root=self.receipts), [])
+
+    def test_cli_guards_inputs_source_roots_and_existing_outputs_before_mutation(self) -> None:
+        from ergoqa import cli
+        qa = self.root / "qa.json"
+        qa.write_text(json.dumps(self.qa))
+        profiles = self.root / "profiles.json"
+        profiles.write_text(json.dumps({"profiles": self.profiles}))
+        reviews = self.root / "reviews.json"
+        reviews.write_text(json.dumps(AttachBridgeTests.SECOND_PASS))
+        existing = self.root / "existing.json"
+        existing.write_text("unrelated output")
+        before = {p: p.read_bytes() for p in (qa, profiles, reviews, existing, self.run_dir / "run.json")}
+        args = ["attach", "--bundle", str(qa), "--runs", str(self.run_dir), "--profiles", str(profiles),
+                "--bind", "scenario-1=EP-01", "--receipts-dir", str(self.receipts), "--second-pass", str(reviews)]
+        for out in (*before, self.run_dir / "new.json"):
+            with self.subTest(out=out), redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                self.assertEqual(cli.main([*args, "--out", str(out)]), cli.EXIT_USAGE)
+                self.assertFalse(self.receipts.exists())
+                for path, data in before.items():
+                    self.assertEqual(path.read_bytes(), data)
+        for bind in ("scenario-1=EP-02", "scenario-1=EP-01"):
+            with self.subTest(bind=bind), redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()) as err:
+                self.assertEqual(cli.main([*args, "--bind", bind, "--out", str(self.root / "new.json")]), cli.EXIT_USAGE)
+                self.assertIn("duplicate scenario binding", err.getvalue())
+                self.assertFalse(self.receipts.exists())
+
+    def test_clean_runs_keep_owner_coverage_and_capture_receipts(self) -> None:
+        self.edit_run(steps=[], timing_windows=[], persona_notes=[])
+        for index in (0, 1):
+            self.edit_snap(index=index, elements=[el("title", "heading", (16, 70, 200, 28), text="주문 확인", size=20)],
+                           focus_point=None)
+        analysis = analyze.analyze_run(self.run_dir, self.profiles, gaze_enabled=False)
+        self.assertFalse([o for o in analysis["observations"] if not o["passed"]])
+        out = self.attach(second_pass=None)
+        new_runs = [r for r in out["records"]["runs"] if str(r["id"]).startswith("ERGO-")]
+        self.assertEqual(len(new_runs), 1)
+        self.assertFalse(new_runs[0]["cross_profile_evaluation"])
+        new_observations = [o for o in out["records"]["observations"] if str(o["id"]).startswith("ERGO-")]
+        self.assertEqual(len(new_observations), 2)
+        self.assertTrue(all(o["kind"] == "capture_coverage" and o.get("receipt") for o in new_observations))
+        self.assertEqual(out["records"]["findings"], self.qa["records"]["findings"])
+        exported = bundle.to_evidence_bundle("clean", [analysis], [], self.profiles)
+        self.assertEqual(len(exported["records"]["runs"]), 1)
+        self.assertEqual(validate_bundle(out, artifacts_root=self.receipts), [])
 
 
 if __name__ == "__main__":

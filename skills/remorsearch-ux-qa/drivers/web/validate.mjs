@@ -5,7 +5,7 @@
 import { ActionError, UsageError, isPlainObject } from './util.mjs';
 
 export const KNOWN_ROLES = [
-  'primary', 'destructive', 'critical_message', 'error_message', 'status',
+  'primary', 'destructive', 'irreversible', 'critical_message', 'error_message', 'status',
   'navigation', 'ad_like', 'hud', 'game_control', 'timed',
 ];
 
@@ -147,6 +147,14 @@ function checkBox(b, where) {
 
 export const SUCCESS_KEYS = ['selector_visible', 'url_contains', 'text_present'];
 
+export function normalizeBuildId(value, where = 'build_id') {
+  if (typeof value !== 'string' || !value.trim() || value.length > 256 || /[\u0000-\u001f]/.test(value)
+    || ['unknown', 'unrecorded'].includes(value.trim().toLowerCase())) {
+    usage(`${where} must be a known commit/version/deploy or source identity (1-256 characters)`);
+  }
+  return value;
+}
+
 /** Validate an ergo-scenario.v1 document and substitute {BASE}. */
 export function normalizeScenario(doc, { base, requireSteps }) {
   const warnings = [];
@@ -264,6 +272,7 @@ export function normalizeScenario(doc, { base, requireSteps }) {
     scenario: {
       scenario_id: doc.scenario_id,
       surface_kind: surface.kind,
+      build_id: surface.build_id === undefined ? null : normalizeBuildId(surface.build_id, 'scenario.surface.build_id'),
       url,
       origin: parsed,
       task_goal_ko: typeof doc.task_goal_ko === 'string' ? doc.task_goal_ko : '',

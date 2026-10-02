@@ -34,6 +34,23 @@ abilities_and_conditions, contexts_of_use, key_tasks, pain_points. Priority is a
 owner decision. Posts establish existence, never weights. Task test data comes
 from product observations or approved safe fixtures.
 
+Initialize the pre-dispatch companions together, before the first search; the
+command validates the whole plan first (pinned schemas, run identity, question
+coverage, assignment rounds) and writes axes.json, axis-acknowledgements.json
+and an empty search-ledger.jsonl only when everything passes. Existing
+acknowledgements are validated even when the option is omitted. Identical
+plans are idempotent and preserve actual receipts; different plans or
+acknowledgements fail without replacement. A nonempty ledger with no prior
+plan is refused. No search receipt is fabricated:
+
+```sh
+python3 scripts/ux_research.py plan --run RUN --manifest plan.draft.json [--acknowledgements RUN/axis-acknowledgements.json]
+```
+
+Assignment rounds index the search stage: discovery only at round 0, expansion
+only at rounds 1-2, counter_search at rounds 0-2 (required counters arise from
+initial or expanded findings and run inside the same budgets).
+
 Use quick/standard/deep budgets and query targets from RELEASE-CONTRACT.md section 2.
 Targets never fail merge or gate; acknowledge coverage per axis. Specify channels,
 languages, windows, counter queries, budget and completion rule. Set the chosen depth ceilings explicitly in brief.budgets. Standard research
@@ -49,6 +66,10 @@ or links already read; write each actual call receipt to search-ledger.jsonl:
 call_id, tool, called_at, phase, queries [{q, lang}], results_n, outcome,
 assignment_id. Keep duplicate query text as separate actual calls. Disabled
 search APIs stay disabled. Search snippets are leads; do not harvest result pages.
+
+Once candidate URLs are available, run the bundled insane-search acquisition stage in `references/research/workflow.md` section 2: load `references/insane-search/SOURCE.md` and the applicable linked method body, then invoke its permitted route with available tools. Resolve links from the bundled search directory; method links resolve from their own directory. Use the same stage for complaint and audience questions. Persona-only and ergonomics-only work adds research only when requested.
+
+Apply the access/evidence cards before every method. Actual supported captures enter the reader/ingest checks below; unsupported method output stays a lead for a supported source capture. Keep actual request receipts, budgets and gaps. Stops apply to all methods for that site/run, and no tool output may fabricate a reader receipt or bypass privacy review.
 
 ```sh
 python3 scripts/ux_research.py robots --run RUN URL
@@ -113,6 +134,9 @@ partitions support/context without losing original inputs. See source-grading.md
 
 ```sh
 python3 scripts/ux_research.py export-audience --run RUN --bundle RUN/bundle.json --gate RUN/gate.json --audience-id AU-product-202610
+python3 scripts/ux_research.py persona-starter --run RUN --bundle RUN/bundle.json --gate RUN/gate.json
+python3 scripts/ux_research.py export-personas --run RUN --bundle RUN/bundle.json --gate RUN/gate.json --hypotheses persona.hypotheses.json --audience-id AU-product-202610
+python3 scripts/ux_research.py persona-intake --run RUN --bundle RUN/bundle.json --gate RUN/gate.json
 python3 scripts/ux_research.py report-check --run RUN --bundle RUN/bundle.json --gate RUN/gate.json --report report.md --statements report-claims.json
 python3 scripts/ux_research.py minimize --run RUN --bundle RUN/bundle.json --gate RUN/gate.json
 python3 scripts/ergo_qa.py audience-check RUN/audience.draft.json --draft --gate RUN/gate.json --bundle RUN/bundle.json --run RUN
@@ -162,6 +186,82 @@ may be any safe scalar proved by completed product observations or approved brie
 
 Shared community/review/social citations use channel, date and source ID; report
 bodies may not contain their URLs. Official/statistical URLs remain allowed.
+
+## Synthetic persona hypotheses for QA
+
+audience가 비어 있어도 안전한 조사 근거는 탐색용 QA 조건으로 사용할 수 있다.
+`persona-starter`는 현재 bundle과 gate에서 정확한 주장 ID, 상태, confidence,
+근거·출처·반례 검색 연결을 가져온다. single_voice와 lead_only의 confidence는
+null로 유지한다. 사용할 수 없는 카드는 ID·상태·이유·exportable=false만 담으며,
+원문과 출처 주소를 프롬프트에 넣지 않는다. 중단·철회·삭제 출처, unfit 주장,
+미해결 지시문 삽입과 위험한 반례 자료는 페르소나 작성에 사용할 수 없다.
+
+작성자는 `persona.hypotheses.json`에 다음을 적는다. 문서와 각 항목의 authored를
+true로 지정하고, 시작 파일의 bundle_id와 gate_bundle_input_sha256을 유지한다.
+
+- persona_id, label_ko, situation_ko, assumptions_ko, motivation_claim_ids: 검사할
+  상황·가정과 정확한 CLM- ID. ID는 기존 기록과 겹치지 않는 PER-/SC- 형식이다.
+- scenario: scenario_id, task_goal_ko, expected_behavior_ko, expected_decision_ko,
+  likely_failure_ko, falsifying_product_test_ko, falsifying_interview_question_ko,
+  priority. 예상과 다른 관찰이 나오면 가설을 수정할 수 있어야 한다.
+- 실제 과제 입력: surface_url, concrete_data, device_ids. 승인된 브리프·제품 관찰·
+  검사용 데이터에서 가져온다. 모르는 값은 null/빈 목록으로 두고 빠진 입력을 확인한다.
+
+과제에 필요한 조건은 상황·맥락·가정으로 작성한다. 게시물 말투나 커뮤니티 소속에서
+인구 특성·능력·선호를 추정하지 않는다. 인구·시장·이용자·기기 비중, 인구 분포와
+이용 빈도는 미확인으로 유지한다. 안전한 single_voice/lead_only는 P2/P3 탐색에
+사용할 수 있다. P0/P1은 해당 우선순위로 검증한 supported 주장과 완료한 반례 검색이
+필요하다. 먼저 원 주장에 우선순위를 기록하고 반례를 검색한 뒤 gate를 다시 실행한다.
+
+`export-personas`는 작성 파일을 현재 저장 기록과 대조한다. 다른 bundle, 오래된 gate,
+존재하지 않는 주장 ID, 미작성 시작 파일, 식별자나 인증 정보가 든 URL, 지원하지 않는
+기기 ID는 실패한다. 통과하면 다음 산출물을 함께 저장한다.
+
+- qa-personas.json: 원 출처·근거·주장 연결과 basis=synthetic 페르소나·시나리오를
+  담는 QA 패킷. 가정·예상 행동·반증 검사와 주장별 상태·반례를 보존하며,
+  시나리오는 inferred/unverified로 유지한다. 출처 그래프는 검증용 자료다.
+- qa-personas.md: 검사용 가설·과제·예상 행동·반증 검사와 근거 연결을 담는 카드.
+- qa-scenarios/SC-*.json: URL·과제 데이터·기기가 제공된 경우의 ergo-scenario.v1
+  시작 파일. 실제 화면의 역할·수행 단계·시간 제약·성공 조건은 QA에서 작성한다.
+  빠진 입력은 필드별 진단으로 반환하며, 선택자나 완료한 실행을 만들지 않는다.
+
+정상 내보내기 응답의 `qa_intake.packet`과 `qa_intake.scenario_files`는 기존 QA가
+바로 읽을 수 있는 검증된 경로다. QA 직전에는 다음 명령으로 현재 경로를 받는다.
+`close` 뒤에도 보존기한과 gate가 유효하면 같은 명령을 사용할 수 있다.
+
+```sh
+python3 scripts/ux_research.py persona-intake --run RUN --bundle RUN/bundle.json --gate RUN/gate.json > RUN/persona-intake.json
+python3 - RUN/persona-intake.json <<'PYTHON'
+import json, subprocess, sys
+from pathlib import Path
+from ergoqa.snapshot import validate_scenario
+
+intake = json.loads(Path(sys.argv[1]).read_text())["qa_intake"]
+subprocess.run([sys.executable, "scripts/validate_bundle.py", intake["packet"]], check=True)
+for filename in intake["scenario_files"]:
+    errors = validate_scenario(json.loads(Path(filename).read_text()))
+    if errors:
+        raise SystemExit("; ".join(errors))
+PYTHON
+```
+
+기존 `ergo_qa.py analyze`/`swarm`의 `--scenario`에는 응답의 시나리오 경로를 하나씩
+전달한다. `RUN/qa-scenarios`는 검토용 사본이며, 중단된 저장 뒤에는 이전 내용이
+남을 수 있다. 현재 응답 경로를 사용하면 패킷과 시나리오가 같은 저장본을 가리킨다.
+
+행동 가설을 바꿀 때는 `persona.hypotheses.json`을 수정해 다시 내보낸다. 실제 화면의
+역할·단계·성공 조건을 작성할 때는 반환된 시나리오를 해당 QA 작업의 입력 폴더로
+복사한다. 주장 ID와 원 패킷·gate ID를 보존하고, 위 validate_scenario 검사에
+작성한 파일 경로를 넣은 뒤 기존 QA 실행에 전달한다. 이미 작성한 파일과 내보내기
+경로가 겹치면 충돌로 알리고 파일을 보존한다. 시작 파일의 로딩은 QA 실행 완료를
+뜻하지 않는다. 원문·캡처 이력은 검증자가 확인하고, 페르소나 작성 프롬프트에는
+정제한 가설과 시나리오만 제공한다.
+
+재병합·입력이 달라진 gate·보존기한 만료는 생성된 카드·패킷·시나리오와 이전 저장본을
+무효화한다. 직접 작성한 사본은 보존되며 다시 사용하기 전에 새 근거와 대조한다.
+`persona-intake`는 무효화되거나 만료된 자료를 반환하지 않는다. export-audience와
+compose의 인구 근거 기준은 그대로 적용된다. 이 내보내기로 실제 선호·빈도·집단
+비중이나 관찰한 검사 결과가 생기지 않는다.
 
 Minimize checks field allowlists, identifier patterns and retained quotations.
 Authored summaries/statements/results need a content-bound reviewer attestation;

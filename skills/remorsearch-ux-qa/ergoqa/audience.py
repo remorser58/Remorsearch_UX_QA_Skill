@@ -456,12 +456,12 @@ def _make_profile(audience: dict[str, Any], seg: dict[str, Any], device_id: str,
     attrs["grip"], attrs["handedness"] = _grip_for(device, orient, grip_kind, left)
     if attrs["grip"].startswith("one_hand"):
         attrs["context"]["free_hands"] = 1
-    # Presbyopia comes from the segment's own conditions (or a facet/floor), never from
-    # an age facet, so each variation changes one thing (AP-14). The base profile of a
-    # segment whose modal age is 50+ is presbyopic unless the segment says otherwise.
-    declared = {c["condition"] for c in seg.get("conditions") or []}
-    if modal_age in ("50s", "60s", "70s+") and "presbyopia" not in declared:
-        attrs["vision"]["presbyopia"] = True
+    # Presbyopia comes from the segment's own declared conditions (or a facet/floor),
+    # never from an age band — neither the modal age nor an age facet (AP-14 and the
+    # personas-and-audience rules: age is context; a sensory condition is an explicit
+    # input or a separately declared simulation assumption). A 50+ segment that does
+    # not declare presbyopia keeps it unset; the inclusive floor still guarantees
+    # coverage when the audience needs it.
     reasons = [f"segment {seg['segment_id']} base profile (a base for variation, not an average user): {age}, {device_id}, {attrs['grip']}"]
     for cond in majority:
         for k, v in CONDITIONS[cond["condition"]].items():

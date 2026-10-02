@@ -433,3 +433,49 @@ class CoveragePlan(unittest.TestCase):
         for p in plan:
             if p.get("coverage_stratum") in ("walking", "small_hand", "tremor"):
                 self.assertEqual(p["attributes"]["device_id"], "galaxy-s24")
+
+
+class PresbyopiaIsExplicit(unittest.TestCase):
+    """Age is context; presbyopia is an explicit input or declared assumption."""
+
+    def test_age_band_alone_never_sets_presbyopia(self) -> None:
+        for seed in range(12):
+            for p in sample_profiles(16, seed, ["galaxy-s24"]):
+                if p["attributes"]["age_band"] in ("50s", "60s", "70s+"):
+                    self.assertEqual(p["attributes"]["vision"]["presbyopia"],
+                                     p.get("coverage_stratum") in ("presbyopia_60s", "70s_plus"),
+                                     f"{p['profile_id']} (seed {seed})")
+
+    def test_mutating_only_the_age_band_never_flips_presbyopia(self) -> None:
+        profiles = sample_profiles(8, 3, ["galaxy-s24"])
+        for p in profiles:
+            attrs = p["attributes"]
+            before = attrs["vision"]["presbyopia"]
+            attrs["age_band"] = "70s+" if attrs["age_band"] != "70s+" else "20s"
+            self.assertEqual(attrs["vision"]["presbyopia"], before)
+
+    def test_explicit_presbyopia_coverage_still_works(self) -> None:
+        plan = sample_profiles(14, 11, ["galaxy-s24"])
+        for stratum in ("presbyopia_60s", "70s_plus"):
+            p = next(q for q in plan if q.get("coverage_stratum") == stratum)
+            self.assertTrue(p["attributes"]["vision"]["presbyopia"])
+            self.assertEqual(p["attributes"]["age_band"], "60s" if stratum == "presbyopia_60s" else "70s+")
+
+    def test_persona_record_age_does_not_set_presbyopia_but_an_explicit_flag_does(self) -> None:
+        records = [{"dataset": "d", "revision": "1", "record_id": f"r{i}", "age_band": band}
+                   for i, band in enumerate(("60s", "70s+", "50s"))]
+        profiles = sample_profiles(3, 7, ["galaxy-s24"], persona_records=records)
+        for p in profiles:
+            self.assertFalse(p["attributes"]["vision"]["presbyopia"], p["profile_id"])
+        explicit = [dict(record, presbyopia=True) for record in records]
+        profiles = sample_profiles(3, 7, ["galaxy-s24"], persona_records=explicit)
+        for p in profiles:
+            self.assertTrue(p["attributes"]["vision"]["presbyopia"], p["profile_id"])
+
+    def test_explicit_presbyopia_without_age_is_respected(self) -> None:
+        for age in (None, "unknown", "20s"):
+            record = {"dataset": "d", "revision": "1", "record_id": "r", "presbyopia": True}
+            if age is not None:
+                record["age_band"] = age
+            prof = sample_profiles(1, 7, ["galaxy-s24"], persona_records=[record])[0]
+            self.assertTrue(prof["attributes"]["vision"]["presbyopia"], age)

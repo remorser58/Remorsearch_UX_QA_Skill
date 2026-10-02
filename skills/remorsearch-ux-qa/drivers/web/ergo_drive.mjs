@@ -15,7 +15,7 @@ import crypto from 'node:crypto';
 import { CATALOG, DeviceError, deviceFromJson, resolveDevice } from './devices.mjs';
 import { WebSession, ensureRunDir } from './session.mjs';
 import { startServer } from './serve.mjs';
-import { normalizeProfile, normalizeScenario } from './validate.mjs';
+import { normalizeBuildId, normalizeProfile, normalizeScenario } from './validate.mjs';
 import { loadPlaywright } from './playwright_loader.mjs';
 import { DriverFailure, EXIT, UsageError, readJsonFile } from './util.mjs';
 
@@ -28,6 +28,7 @@ const USAGE = `usage:
 options:
   --run-id ID              run directory name (default R-<scenario>-<profile>-<utc>-<rand>)
   --base URL               replaces "{BASE}" in scenario urls, e.g. http://127.0.0.1:8765
+  --build-id ID            operator-supplied product commit/version/deploy or source identity
   --device ID              override the profile's attributes.device_id (${[...CATALOG.keys()].join(', ')})
   --device-json FILE       device object (ergoqa Device.to_dict) instead of the built-in table
   --orientation O          override the profile's orientation (portrait|landscape)
@@ -68,7 +69,7 @@ function readAgentJson(file) {
 }
 
 const VALUE_FLAGS = new Set([
-  'scenario', 'profile', 'out', 'run-id', 'base', 'port', 'flash-sample-ms', 'device', 'device-json', 'orientation',
+  'scenario', 'profile', 'out', 'run-id', 'base', 'build-id', 'port', 'flash-sample-ms', 'device', 'device-json', 'orientation',
   'allow-origin', 'feedback-timeout-ms', 'settle-ms', 'timeout-s', 'idle-timeout-s', 'locale', 'timezone', 'agent', 'agent-json', 'url', 'task',
 ]);
 const BOOL_FLAGS = new Set(['headed', 'continue-on-error', 'no-auto-scroll', 'no-visual-feedback', 'focus-walk', 'no-focus-walk', 'no-reflow', 'help']);
@@ -136,7 +137,7 @@ function checkCommandFlags(args, allowed) {
 }
 
 function initScenario(args) {
-  checkCommandFlags(args, ['url', 'device', 'task', 'out']);
+  checkCommandFlags(args, ['url', 'device', 'task', 'out', 'build-id']);
   const f = args.flags;
   for (const flag of ['url', 'device', 'out']) if (!f[flag]) throw new UsageError(`--${flag} is required by init`);
   if (!CATALOG.has(f.device)) throw new UsageError(`unknown device ${JSON.stringify(f.device)}; use the devices command to list IDs`);
@@ -144,7 +145,7 @@ function initScenario(args) {
   const scenario = {
     schema_version: 'ergo-scenario.v1',
     scenario_id: `SC-${slug(path.basename(f.out, path.extname(f.out)), 64)}`,
-    surface: { kind: 'web', url: f.url },
+    surface: { kind: 'web', url: f.url, ...(f['build-id'] !== undefined ? { build_id: normalizeBuildId(f['build-id'], '--build-id') } : {}) },
     task_goal_ko: f.task || 'Complete the task and check that entered values are preserved.',
     device_ids: [f.device],
     steps: [],
@@ -235,6 +236,10 @@ async function main(argv) {
   if (f.orientation && !['portrait', 'landscape'].includes(f.orientation)) throw new UsageError('--orientation must be portrait or landscape');
 
   const { scenario, warnings } = normalizeScenario(readJsonFile(f.scenario, 'scenario'), { base, requireSteps: args.command === 'run' });
+  const buildId = f['build-id'] === undefined ? scenario.build_id : normalizeBuildId(f['build-id'], '--build-id');
+  if (scenario.build_id && buildId !== scenario.build_id) throw new UsageError('--build-id conflicts with scenario.surface.build_id');
+  options.buildId = buildId;
+  options.buildIdSource = buildId ? (f['build-id'] === undefined ? 'scenario.surface.build_id' : '--build-id') : null;
   const profile = f.profile ? normalizeProfile(readJsonFile(f.profile, 'profile')) : null;
   let device = null;
   if (f['device-json']) {

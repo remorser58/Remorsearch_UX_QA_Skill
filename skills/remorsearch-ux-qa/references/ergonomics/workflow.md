@@ -61,6 +61,19 @@ python3 scripts/ergo_qa.py swarm --runs runs/ --profiles work/profiles.json --sc
 python3 scripts/validate_bundle.py report/bundle.json
 ```
 
+기록된 프로필의 실행은 기존 QA 증거 묶음에 연결할 수 있습니다. `references/persona-qa/workflow.md`의 예시는 `work/EP-01.json`을 생성하고 같은 프로필과 빌드 ID로 `R-persona-01`을 기록합니다. 기기만 기록한 위의 `--device` 예시는 분석용 대조에 사용합니다. QA 연결에는 아래처럼 `--profile`을 사용합니다. 제품의 실제 빌드 ID를 넘기면 실행과 모든 캡처에 제공자 지정 정보로 남습니다. 빌드 정보가 없는 결과는 미검증 상태이며 같은 빌드 재현을 주장할 수 없습니다.
+
+```sh
+node drivers/web/ergo_drive.mjs run --scenario sc.json --profile work/EP-01.json \
+  --build-id "$PRODUCT_BUILD_ID" --out runs/ --run-id R-persona-01
+python3 scripts/ergo_qa.py analyze --runs runs/R-persona-01 --profiles work/profiles.json --scenario sc.json --out analysis.json
+python3 scripts/ergo_qa.py attach --bundle qa/bundle.json --runs runs/R-persona-01 --profiles work/profiles.json \
+  --scenario sc.json --bind scenario-1=EP-01 --receipts-dir receipts/ --out qa/bundle.ergo.json
+python3 scripts/validate_bundle.py qa/bundle.ergo.json --artifacts-root receipts/
+```
+
+P0/P1이 있으면 연결 명령이 필요한 `finding_id`를 출력하고 저장 전에 중단합니다. 각 캡처와 텍스트를 다시 검토하고 정확한 ID가 있는 JSON 배열을 작성한 뒤 `--second-pass second-passes.json`을 추가합니다. 익명 기록 하나를 여러 발견사항에 복제하지 않습니다. 완료된 정상 실행도 검사 범위와 캡처가 남습니다. 모든 실행·캡처의 기기와 방향, 시작부터 종료까지의 시각을 확인하며, reflow와 focus 측정의 원래 뷰포트·DPR·문맥은 보존합니다. `--out`은 기존 입력과 실행 폴더 밖의 새 파일이어야 합니다.
+
 Add `--audience audience.json` only for a completed audience. Use the emitted bundle path if this version names it differently. Outputs: findings.json, analyses.json, report.md and an evidence bundle. Segment groups/segments_affected describe triggered profiles, never user shares. Record model IDs and differential conditions (shared by triggered profiles and no untriggered profile). Use `python3 scripts/ergo_qa.py heatmap --help` for reach/gaze review options.
 
 Lookup fired check IDs in `references/ergonomics/human-factors-checks.md`: reach, pointing/Fitts/misfire, gaze, contrast/CVD/visual angle/bright light, choice/reading/latency, game reaction/flash, names/labels/errors/focus/clipping/reflow. Formulas and validity limits are in `ergoqa/params.py`; repository briefs `docs/human-factors/` are not installed. A detector alone cannot decide WCAG size exceptions, irreversible actions, destructive-primary styling, ad-like information, game intent, left-handed options or heuristic fit: record screenshot/step-backed judgment and its limit. ACT examples gate covered checks; a screening result never certifies standards compliance.

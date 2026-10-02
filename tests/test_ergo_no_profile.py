@@ -11,9 +11,92 @@ from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 from _paths import SKILL  # noqa: F401 (makes the skill importable)
-from ergoqa import analyze, cli
+from ergoqa import analyze, bundle, cli, swarm
 from ergoqa.profiles import sample_profiles
 from test_ergo_pipeline import make_run
+
+
+class OwnerIdentityTests(unittest.TestCase):
+    """The recorded owner is explicit; ownership never comes from list order."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.profiles = sample_profiles(4, 7, ["galaxy-s24"])
+
+    def _run(self, profile_id: str) -> Path:
+        target = self.root / profile_id
+        target.mkdir(parents=True, exist_ok=True)
+        run_dir = make_run(target)
+        run_path = run_dir / "run.json"
+        run = json.loads(run_path.read_text(encoding="utf-8"))
+        run["profile_id"] = profile_id
+        run_path.write_text(json.dumps(run), encoding="utf-8")
+        return run_dir
+
+    def test_analysis_exposes_the_recorded_owner(self) -> None:
+        named = analyze.analyze_run(self._run("EP-03"), self.profiles, cross_profile=True, gaze_enabled=False)
+        self.assertEqual(named["owner_profile_id"], "EP-03")
+        self.assertEqual(named["profiles_evaluated"][0], "EP-03")
+        device_only = analyze.analyze_run(self._run("no-profile"), self.profiles, cross_profile=True, gaze_enabled=False)
+        self.assertIsNone(device_only["owner_profile_id"])
+
+    def test_ownerless_export_is_always_analytical_and_never_verifies(self) -> None:
+        analysis = analyze.analyze_run(self._run("no-profile"), self.profiles, cross_profile=True, gaze_enabled=False)
+        findings = swarm.aggregate([analysis], self.profiles)
+        doc = bundle.to_evidence_bundle("ergo-ownerless", [analysis], findings, self.profiles)
+        runs = {r["id"]: r for r in doc["records"]["runs"]}
+        self.assertTrue(runs)
+        self.assertTrue(all(r["cross_profile_evaluation"] for r in runs.values()))
+        self.assertFalse(any(f["verification_status"] == "verified" for f in doc["records"]["findings"]))
+
+    def test_cross_profile_export_classifies_only_the_owner_as_execution(self) -> None:
+        analysis = analyze.analyze_run(self._run("EP-02"), self.profiles, cross_profile=True, gaze_enabled=False)
+        findings = swarm.aggregate([analysis], self.profiles)
+        # A consumer that reorders profiles_evaluated must not change classification:
+        # ownership comes from the recorded owner, never from list order.
+        reordered = dict(analysis, profiles_evaluated=list(reversed(analysis["profiles_evaluated"])))
+        doc = bundle.to_evidence_bundle("ergo-named", [reordered], findings, self.profiles)
+        runs = {r["id"]: r for r in doc["records"]["runs"]}
+        owner_runs = [r for r in runs.values() if not r["cross_profile_evaluation"]]
+        analytical_runs = [r for r in runs.values() if r["cross_profile_evaluation"]]
+        self.assertEqual({r["recorded_run_id"] for r in owner_runs}, {"R-1"})
+        self.assertEqual({r["id"].split("@")[1] for r in owner_runs}, {"EP-02"})
+        self.assertTrue(analytical_runs)
+        self.assertFalse(any("@EP-02" in r["id"] for r in analytical_runs))
+        by_id = {f["id"]: f for f in doc["records"]["findings"]}
+        owner_findings = [f for f in by_id.values() if f["id"].endswith("@EP-02")]
+        analytical_findings = [f for f in by_id.values() if not f["id"].endswith("@EP-02")]
+        self.assertTrue(any(f["verification_status"] == "verified" for f in owner_findings))
+        self.assertFalse(any(f["verification_status"] == "verified" for f in analytical_findings))
+
+    def test_mixed_owner_runs_cannot_borrow_the_first_pairs_owner(self) -> None:
+        first = analyze.analyze_run(self._run("EP-01"), self.profiles, cross_profile=True, gaze_enabled=False)
+        for owner in ("EP-02", "no-profile", "missing-owner-evidence"):
+            with self.subTest(owner=owner):
+                later = copy.deepcopy(first)
+                later["run_id"] = "R-2"
+                later["owner_profile_id"] = None if owner == "no-profile" else owner
+                if owner == "missing-owner-evidence":
+                    later.pop("owner_profile_id")
+                for o in later["observations"]:
+                    o["id"] = o["id"].replace("R-1", "R-2")
+                    o["run_id"] = "R-2"
+                analyses = [first, later]
+                findings = swarm.aggregate(analyses, self.profiles)
+                for order in (analyses, list(reversed(analyses))):
+                    doc = bundle.to_evidence_bundle("mixed-owners", order, findings, self.profiles)
+                    ep1 = [f for f in doc["records"]["findings"] if f["id"].endswith("@EP-01")]
+                    self.assertTrue(ep1)
+                    self.assertFalse(any(f["verification_status"] == "verified" for f in ep1))
+
+    def test_duplicate_profiles_are_rejected_before_analysis(self) -> None:
+        run = self._run("EP-01")
+        conflicting = copy.deepcopy(self.profiles[0])
+        conflicting["attributes"]["vision"]["presbyopia"] = True
+        with self.assertRaisesRegex(ValueError, "duplicate profile"):
+            analyze.analyze_run(run, [*self.profiles, conflicting], gaze_enabled=False)
 
 
 class NoProfileTests(unittest.TestCase):
