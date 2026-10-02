@@ -318,7 +318,7 @@ class BundleTests(unittest.TestCase):
         shutil.rmtree(self.base)
         caller = self.root / "another-project"
         caller.mkdir()
-        result = self.launcher("ref", "SKILL.md", "modes", root=skill, cwd=caller)
+        result = self.launcher("ref", "SKILL.md", "components", root=skill, cwd=caller)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("persona-qa", result.stdout)
         result = self.launcher("ref", "references/insane-search/SOURCE.md",

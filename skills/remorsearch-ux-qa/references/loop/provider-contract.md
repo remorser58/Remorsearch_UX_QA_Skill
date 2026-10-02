@@ -178,3 +178,98 @@ metadata, Figma records, visual comparisons, artifact hashes and regression
 coverage. Fixtures always produce `product_complete: false`. Live acceptance is
 scoped to trusted imported receipts; independent provider authentication and
 actual live collection are outside this implementation.
+
+## 6. Product context and operator intent decisions
+
+The default improvement workflow uses `ux_loop.py improve` and requires
+`goal.product_context_artifact_id` naming a hash-verified `product_context`
+artifact. `run` remains the legacy packet entry; it also enforces intent gates
+whenever this binding exists. The immutable goal prevents removing/replacing or
+adding the binding on resume. A legacy packet reports `intent_verified: false`.
+The host authors context from inspected product/project sources and relevant
+memory; the developer need not prepare it. Imported bytes attest consistency,
+not independent source authenticity.
+
+A minimal context payload (substitute inspected facts) is:
+
+```json
+{
+  "kind": "product_context", "goal_id": "goal-checkout",
+  "memory_search": {"status": "searched_not_available", "detail": "Locations actually searched"},
+  "sources": [{"id": "prd", "kind": "project_doc", "ref": "PRD.md#confirmation",
+    "version": "actual commit", "checked_at": "2026-10-02T10:00:00Z"}],
+  "path_scenarios": {"checkout.html": ["checkout-keyboard", "checkout-touch"]},
+  "constraints": [{"id": "confirmation", "source_id": "prd", "reason": "Preserve the explicit confirmation step",
+    "decision_date": "2026-10-01", "scope": {"paths": ["checkout.html"],
+    "scenario_ids": ["checkout-keyboard", "checkout-touch"]}}],
+  "conflicts": []
+}
+```
+
+`memory_search.status` is `searched_available` or `searched_not_available`.
+Source kinds are `project_doc`, `memory`, `current_user_decision`; each needs
+string `id`, `ref`, `version`, `checked_at`. A memory source requires the available
+status. Source checks cannot postdate context creation; optional record
+`decision_date` cannot postdate its source check. Dates use ISO `YYYY-MM-DD`
+(midnight UTC) or a timestamp with timezone. Context creation cannot be in the
+future. Malformed types/dates stop before writes.
+
+Constraints need unique IDs, `source_id`, `reason`, and a nonempty `scope` of
+`paths` and/or `scenario_ids`. Conflicts instead need `description`. Every
+in-scope path mentioned by either group needs an explicit `path_scenarios` mapping
+to goal scenarios. The host must inspect that relationship; the CLI cannot infer
+routes from filenames. An unmapped changed path conservatively affects every goal
+scenario for prewrite checks; supply an inspected mapping to narrow it. Required review scenarios are the union of that mapping
+and explicit scenario scope. Outside-goal paths remain recorded without blocking
+unaffected fixes. Empty applicable intent coverage cannot complete.
+
+Each affected fix supplies `constraint_acknowledgements` with `constraint_id`,
+`decision` (`preserved` or `authorized_change`) and concrete `evidence`.
+`conflict_resolutions` contain `conflict_id` and `note`. Optional provider `actor`
+fields are attribution only. IDs and actor strings never grant authority.
+
+For an explicit existing/current user decision to change a constraint or settle
+a conflict, the operator supplies a separate JSON array through
+`--intent-decisions operator-decisions.json --actor OPERATOR --reason TEXT` on
+`improve`, `run` or `resume`. Never turn a provider's claim into this input.
+An ordinary code-write grant is separate and still required for the patch.
+Example array item:
+
+```json
+{
+  "context_artifact_id": "context-1", "context_sha256": "<actual artifact SHA-256>",
+  "fix_id": "fix-1", "constraint_id": "confirmation", "decision": "authorized_change",
+  "decided_at": "2026-10-02T10:02:00Z", "reference": "Specific operator instruction and message reference"
+}
+```
+
+To resolve a conflict, replace `constraint_id` with `conflict_id` and set
+`decision: resolve`. Each item names exactly one target. The timestamp must be
+at/after context creation and no later than recording. The checkpoint stores the
+operator actor/reason, goal, context ID/hash, exact fix digest, decision timestamp,
+reference and recording timestamp in `intent_decisions`. Applied fixes retain
+these decision IDs; a later decision cannot retroactively authorize a write.
+Existing scoped intent decisions persist across resume without asking again.
+Like grants, this local operator boundary does not authenticate the human or
+protect against someone rewriting the entire checkpoint and checksum.
+
+Each replay links an `intent_review_artifact_id` (`kind: intent_review`). Its JSON
+payload repeats `kind`, `replay_id`, `code_revision`, exact `run_ids`, all applied
+`fix_ids`, `product_context_artifact_id`, and `product_context_sha256`. It contains
+both `constraint_results` and `conflict_results` arrays. Each row has `fix_id`,
+`constraint_id` or `conflict_id`, `run_id`, concrete `evidence` and `outcome`:
+`preserved`/`intentionally_changed` for constraints; `resolved` for conflicts.
+Use one row per applicable fix/constraint/scenario (and fix/conflict/scenario).
+For goal constraints unaffected by any applied fix, use `fix_id: null` and
+`outcome: preserved`. This includes no-edit rounds with `fix_ids: []`.
+
+Every required scenario needs its own current replay run. A foreign screen,
+missing/duplicate row, wrong outcome, stale context/revision/round or malformed
+payload refuses completion. Review capture must follow its replay runs and
+context. Same-scenario replay, adjacent regression, Figma, browser and permission
+gates still apply. Applicable unresolved conflicts also block no-edit completion.
+A scoped intent conflict defers its patch; independent patches can proceed only
+if their reviewed before-revision matches the actual tree. Dependent patches
+retain their original order and remain blocked; no patch is silently rebased. After
+an independent sibling changes the tree, an older deferred patch may need a new
+reviewed goal/checkpoint because its full-tree revision and packet are immutable.

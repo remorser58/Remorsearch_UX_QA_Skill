@@ -282,8 +282,8 @@ class ReadmeParityTests(unittest.TestCase):
     def test_each_readme_links_to_the_other_under_its_title(self):
         first_en = next(line for line in self.en.split("\n")[1:] if line.strip())
         first_ko = next(line for line in self.ko.split("\n")[1:] if line.strip())
-        self.assertEqual(first_en, "English | [한국어](README.ko.md)")
-        self.assertEqual(first_ko, "[English](README.md) | 한국어")
+        self.assertEqual(first_en, "English | [한국어](README.ko.md) | [PRD · 제품 요구사항](PRD.md)")
+        self.assertEqual(first_ko, "[English](README.md) | 한국어 | [PRD · 제품 요구사항](PRD.md)")
 
     def test_shell_commands_are_the_same_in_both_languages(self):
         self.assertTrue(shell_commands(self.en))

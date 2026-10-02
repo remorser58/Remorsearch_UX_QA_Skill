@@ -1,11 +1,11 @@
 ---
 name: remorsearch-ux-qa
-description: "Improve the UX of an existing product from its URL or repository: inspect the product and developer intent, discover questions through QA, research relevant user experiences, apply scoped reversible fixes and replay them. Also handles research-only, persona QA, accessibility (KWCAG 2.2, WCAG 2.2), ergonomics and Figma comparison requests (우리 앱 UX 개선해줘, UX 리서치해줘, 사용자 불만 조사해줘, 사용성 테스트해줘, 접근성 점검해줘). Not for general web search, backend-only tests or new-product planning."
+description: Improve the UX of an existing product from its URL or repository. Inspect the product and developer intent, discover questions through QA, research relevant user experiences, apply scoped reversible fixes and replay them. Also handles research-only, persona QA, accessibility (KWCAG 2.2, WCAG 2.2), ergonomics and Figma comparison requests (우리 앱 UX 개선해줘, UX 리서치해줘, 사용자 불만 조사해줘, 사용성 테스트해줘, 접근성 점검해줘). Not for general web search, backend-only tests or new-product planning.
 ---
 
 # Remorsearch UX QA
 
-For product improvement, start with the supplied URL or repository and discover tasks/questions yourself. Read `references/loop/product-improvement.md`; no prepared brief or personas are required. It composes the four components below. Narrow research/review remains read-only. Separate observation, inference and untested work.
+For product improvement, discover tasks/questions from the URL or repository. Read `references/loop/product-improvement.md`; use `ux_loop.py improve` with a bound product context. No prepared brief or personas are required. Narrow research/review stays read-only. Separate observation, inference and untested work.
 
 ## Components
 

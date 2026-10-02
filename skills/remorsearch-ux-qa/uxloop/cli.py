@@ -34,6 +34,7 @@ def output_path(path: Path) -> None:
 def execution_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--grant", action="append", default=[], choices=["code_write", "design_write", "test_data_write"])
     parser.add_argument("--revoke", action="append", default=[], choices=["code_write", "design_write", "test_data_write"])
+    parser.add_argument("--intent-decisions", type=Path, help="Operator-authored context-bound intent decisions; never provider input")
     parser.add_argument("--actor", default="")
     parser.add_argument("--reason", default="")
     parser.add_argument("--pause-after", choices=PHASES[:-1])
@@ -48,7 +49,7 @@ def main(argv: list[str] | None = None) -> int:
     validator = commands.add_parser("validate", help="Validate packet graph; optional local artifact hash checks")
     validator.add_argument("packet", type=Path)
     validator.add_argument("--evidence-root", type=Path)
-    fresh = commands.add_parser("run", help="Research intake -> plan -> QA -> authorized fixes -> replay -> decision")
+    fresh = commands.add_parser("run", aliases=["improve"], help="Research intake -> plan -> QA -> authorized fixes -> replay -> decision")
     fresh.add_argument("packet", type=Path)
     fresh.add_argument("--checkpoint", type=Path, required=True)
     fresh.add_argument("--workspace", type=Path, required=True)
@@ -95,7 +96,7 @@ def main(argv: list[str] | None = None) -> int:
                 if not target.exists() and not args.checkpoint.exists():
                     atomic_bytes(target, within(ROOT / "examples" / "loop" / "site", name).read_bytes(), 0o644)
         else:
-            source = args.packet if args.command == "run" else args.input
+            source = args.packet if args.command in {"run", "improve"} else args.input
             packet = load_json(source) if source else None
             if source and args.checkpoint.resolve() == source.resolve():
                 raise ContractError("Checkpoint cannot overwrite the input packet")
@@ -118,6 +119,8 @@ def main(argv: list[str] | None = None) -> int:
         source = getattr(args, "packet", None) or getattr(args, "input", None)
         if source:
             protected.add(source.resolve())
+        if args.intent_decisions:
+            protected.add(args.intent_decisions.resolve())
         if args.checkpoint.resolve() in protected:
             raise ContractError("Checkpoint cannot overwrite input, code or evidence")
         if args.report:
@@ -129,6 +132,8 @@ def main(argv: list[str] | None = None) -> int:
                 raise ContractError("Report cannot overwrite input, code, evidence, checkpoint or its locks")
         state = run(packet, args.checkpoint, args.workspace, args.evidence_root,
                     grants=args.grant, revokes=args.revoke, actor=args.actor, reason=args.reason,
+                    intent_decisions=load_json(args.intent_decisions) if args.intent_decisions else None,
+                    require_product_context=args.command == "improve",
                     pause_after=args.pause_after, retry=args.retry, max_steps=args.max_steps)
         result = report(state)
         if args.report:

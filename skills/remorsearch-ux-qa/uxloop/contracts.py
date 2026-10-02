@@ -211,9 +211,6 @@ def validate_packet(packet: Any) -> list[str]:
             errors.append(f"fix {fix['id']}: duplicate constraint acknowledgement")
         if len({x["conflict_id"] for x in resolutions}) != len(resolutions):
             errors.append(f"fix {fix['id']}: duplicate conflict resolution")
-        for ack in acks:
-            if ack["decision"] == "authorized_change" and not ack.get("actor", "").strip():
-                errors.append(f"fix {fix['id']}: authorized_change requires the actor of the current human decision")
     numbers = [x["number"] for x in packet["rounds"]]
     if numbers != list(range(1, len(numbers) + 1)) or len(numbers) > goal["max_iterations"]:
         errors.append("rounds must be contiguous, ordered and within max_iterations")

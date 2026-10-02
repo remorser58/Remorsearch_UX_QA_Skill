@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from .contracts import require_packet
-from .io import ContractError, GateStop, atomic_json, digest, load_json, now
+from .io import ContractError, GateStop, atomic_json, digest, load_json, now, timestamp
 
 PHASES = ("research", "plan", "browser", "fix", "replay", "decision")
 STATUSES = {"running", "interrupted", "blocked", "unknown", "failed", "iteration_limit", "complete"}
@@ -68,8 +68,24 @@ def load(path: Path) -> dict:
     required = {"schema_version", "packet", "phase", "status", "iteration", "run_id", "workspace",
                 "evidence_root", "permissions", "permission_events", "events", "applied_fixes",
                 "accepted_fix_ids", "pending_intent", "reason", "prioritized_findings"}
-    if set(value) != required or value["schema_version"] != "ux-loop-checkpoint.v1":
+    if set(value) not in (required, required | {"intent_decisions"}) or value["schema_version"] != "ux-loop-checkpoint.v1":
         raise ContractError("Unsupported or malformed checkpoint")
+    if "intent_decisions" in value and (not isinstance(value["intent_decisions"], list) or
+            any(not isinstance(x, dict) for x in value["intent_decisions"])):
+        raise ContractError("Malformed operator intent decision ledger")
+    seen_decisions = set()
+    base = {"id", "goal_id", "context_artifact_id", "context_sha256", "fix_id", "fix_digest",
+            "decision", "decided_at", "reference", "actor", "reason", "recorded_at"}
+    for decision in value.get("intent_decisions", []):
+        if (set(decision) not in (base | {"constraint_id"}, base | {"conflict_id"}) or
+                any(not isinstance(x, str) or not x.strip() for x in decision.values())):
+            raise ContractError("Malformed operator intent decision ledger entry")
+        expected = "authorized_change" if "constraint_id" in decision else "resolve"
+        if decision["decision"] != expected or decision["id"] in seen_decisions:
+            raise ContractError("Invalid/duplicate operator intent decision")
+        if timestamp(decision["decided_at"]) > timestamp(decision["recorded_at"]):
+            raise ContractError("Intent decision recorded before it was made")
+        seen_decisions.add(decision["id"])
     require_packet(value["packet"])
     if value["phase"] not in PHASES or value["status"] not in STATUSES or type(value["iteration"]) is not int:
         raise ContractError("Invalid checkpoint phase/status/iteration")

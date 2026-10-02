@@ -9,7 +9,7 @@ from .contracts import index, merge_packet, require_packet
 from .evidence import Evidence
 from .io import ContractError, GateStop, code_snapshot, digest, now, timestamp
 from .patching import finish_intent, plan_intent
-from .product_context import context_binding, context_summary, load_context, prewrite_gate, verify_intent_review
+from .product_context import context_binding, context_summary, load_context, prewrite_gate, verify_intent_review, record_operator_decisions
 from .storage import PHASES, event, load, lock, save
 
 WRITE_CAPABILITIES = {"code_write", "design_write", "test_data_write"}
@@ -24,7 +24,7 @@ def create_state(packet: dict, workspace: Path, evidence_root: Path) -> dict:
              "run_id": "ux-" + uuid.uuid4().hex, "workspace": str(workspace.resolve()),
              "evidence_root": str(evidence_root.resolve()), "phase": "research", "status": "running",
              "iteration": 1, "permissions": {"read_only": default}, "permission_events": [default],
-             "events": [], "applied_fixes": [], "accepted_fix_ids": [], "pending_intent": None,
+             "events": [], "intent_decisions": [], "applied_fixes": [], "accepted_fix_ids": [], "pending_intent": None,
              "reason": "Created", "prioritized_findings": []}
     event(state, "research", "running", "Created; historical bundle permissions are not operational grants")
     return state
@@ -112,6 +112,7 @@ def apply_fixes(state: dict, evidence: Evidence, checkpoint: Path) -> None:
     # The opt-in product-context binding protects only writes; a context gap never
     # stops research, planning or QA, and a no-write round reads no context here.
     context = load_context(evidence) if context_binding(state["packet"]) and queue else None
+    deferred = []
     for fix in queue:
         if any(x["fix_id"] == fix["id"] for x in state["applied_fixes"]):
             continue
@@ -121,10 +122,18 @@ def apply_fixes(state: dict, evidence: Evidence, checkpoint: Path) -> None:
         evidence.figma(fix["figma_id"])
         if capability != "code_write":
             raise GateStop("blocked", f"{capability} is granted but its live integration is not implemented; no write performed")
-        if context is not None:
-            prewrite_gate(state, evidence, fix, context)
+        try:
+            decision_ids = prewrite_gate(state, evidence, fix, context) if context is not None else []
+        except GateStop as exc:
+            if state["pending_intent"] is not None:
+                raise  # never skip reconciliation of a partially written patch
+            deferred.append(exc.reason)
+            continue
         patch = evidence.artifact(fix["patch_artifact_id"])
         if state["pending_intent"] is None:
+            if deferred and revision(state) != fix["before_revision"]:
+                deferred.append(f"Fix {fix['id']} depends on an unapplied revision; preserve its reviewed patch order")
+                continue
             state["pending_intent"] = plan_intent(Path(state["workspace"]), state["packet"]["goal"]["code_paths"], fix, patch)
             event(state, "fix", "running", f"Durable write intent for {fix['id']}; not yet applied or accepted")
             save(checkpoint, state)
@@ -133,10 +142,14 @@ def apply_fixes(state: dict, evidence: Evidence, checkpoint: Path) -> None:
         finish_intent(Path(state["workspace"]), state["pending_intent"])
         state["applied_fixes"].append({"fix_id": fix["id"], "at": now(), "iteration": state["iteration"],
                                        "after_revision": fix["after_revision"],
-                                       "authorization_event": state["permissions"][capability]["id"]})
+                                       "authorization_event": state["permissions"][capability]["id"],
+                                       "intent_decision_ids": decision_ids})
         state["pending_intent"] = None
         event(state, "fix", "running", f"Applied {fix['id']}; acceptance awaits full same-scenario replay")
         save(checkpoint, state)
+
+    if deferred:
+        raise GateStop("blocked", "; ".join(deferred))
 
 
 def replay_gate(state: dict, evidence: Evidence) -> None:
@@ -189,6 +202,7 @@ def replay_gate(state: dict, evidence: Evidence) -> None:
 def run(packet: dict | None, checkpoint: Path, workspace: Path | None = None,
         evidence_root: Path | None = None, *, grants: list[str] | None = None,
         revokes: list[str] | None = None, actor: str = "", reason: str = "",
+        intent_decisions: list | None = None, require_product_context: bool = False,
         pause_after: str | None = None, retry: bool = False, max_steps: int = 12) -> dict:
     if type(max_steps) is not int or not 1 <= max_steps <= 20:
         raise ContractError("max_steps must be an integer from 1 to 20")
@@ -214,6 +228,14 @@ def run(packet: dict | None, checkpoint: Path, workspace: Path | None = None,
             if packet is None:
                 raise ContractError("A packet is required for the first run")
             state = create_state(packet, workspace, evidence_root)
+        if require_product_context and not context_binding(state["packet"]):
+            raise GateStop("blocked", "Product improvement requires goal.product_context_artifact_id; legacy run does not verify intent")
+        evidence = Evidence(state["packet"], evidence_root)
+        prior_decisions = len(state.get("intent_decisions", []))
+        record_operator_decisions(state, evidence, [] if intent_decisions is None else intent_decisions, actor, reason)
+        if len(state.get("intent_decisions", [])) > prior_decisions:
+            event(state, state["phase"], state["status"], "Operator recorded specific context-bound intent decisions",
+                  completed_gate=state["status"] == "complete")
         permissions(state, grants or [], revokes or [], actor, reason)
         save(checkpoint, state)
         evidence = Evidence(state["packet"], evidence_root)
@@ -292,7 +314,11 @@ def report(state: dict) -> dict:
     if context_binding(packet):
         limitations.append("Product context and intent reviews are imported authored records attesting "
                            "consistency, not independent authenticity.")
-    return {"run_id": state["run_id"], "goal_id": packet["goal"]["id"], "status": state["status"],
+    else:
+        limitations.append("Legacy packet: product context and intent preservation were not checked.")
+    return {"intent_verified": complete and bool(context_binding(packet)),
+            "intent_decisions": state.get("intent_decisions", []),
+            "run_id": state["run_id"], "goal_id": packet["goal"]["id"], "status": state["status"],
             "phase": state["phase"], "reason": state["reason"], "mode": packet["mode"],
             "product_complete": complete and packet["mode"] == "live",
             "decision": ("scoped_pass_from_imported_evidence" if packet["mode"] == "live" else "fixture_only_pass_not_product_verification") if complete else "stop_without_completion",

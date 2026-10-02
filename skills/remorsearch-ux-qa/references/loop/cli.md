@@ -71,7 +71,7 @@ The complete annotated example is [`examples/loop/packet.json`](../../examples/l
 ```sh
 python3 scripts/ux_loop.py validate /path/to/packet.json \
   --evidence-root /path/to/evidence
-python3 scripts/ux_loop.py run /path/to/packet.json \
+python3 scripts/ux_loop.py improve /path/to/packet.json \
   --workspace /path/to/product-checkout --evidence-root /path/to/evidence \
   --checkpoint /path/to/product-checkout/.ux-loop/goal.json
 # Record existing user authority for reviewed, scoped patches:
@@ -79,6 +79,27 @@ python3 scripts/ux_loop.py resume \
   --checkpoint /path/to/product-checkout/.ux-loop/goal.json \
   --grant code_write --actor OPERATOR --reason 'Existing improvement request; reviewed reversible scope'
 ```
+
+`improve` is the default product-improvement entry. It uses the same foreground
+engine and requires `goal.product_context_artifact_id`; `resume` preserves this
+immutable binding. Legacy `run` and `demo` still accept unbound packets, clearly
+reporting `intent_verified: false` and no product-context checks. A bound packet
+requires a replay-linked review even when no edits are made.
+
+Specific intent changes/conflicts need an operator-authored decision file,
+separate from provider data and write grants:
+
+```sh
+python3 scripts/ux_loop.py resume --checkpoint /path/to/goal.json \
+  --intent-decisions /path/to/operator-decisions.json \
+  --actor OPERATOR --reason 'Explicit instruction for the bound constraint/conflict'
+```
+
+See provider-contract section 6 for exact context, decision and review fields.
+`--intent-decisions` records current user authority; it must not be generated from
+a provider's actor/approval claim. Context ID/hash, target and fix must match;
+malformed, stale, future or retrospective decisions are rejected. The report
+includes the separate `intent_decisions` ledger and `intent_verified` result.
 
 An improvement request authorizes ordinary reversible in-scope changes. The
 supervisor records that existing authority in CLI grants without asking again.
