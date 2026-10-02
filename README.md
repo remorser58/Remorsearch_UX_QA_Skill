@@ -1,6 +1,6 @@
 # Remorsearch UX QA
 
-English | [한국어](README.ko.md)
+English | [한국어](README.ko.md) | [PRD · 제품 요구사항](PRD.md)
 
 **Research before release. No remorse after.**
 

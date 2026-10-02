@@ -1,6 +1,6 @@
 # Remorsearch UX QA
 
-[English](README.md) | 한국어
+[English](README.md) | 한국어 | [PRD · 제품 요구사항](PRD.md)
 
 **Research before release. No remorse after.** 출시 전에 조사하고, 출시 뒤에 후회하지 않습니다.
 
