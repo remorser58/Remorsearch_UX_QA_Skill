@@ -1,7 +1,12 @@
 # 이전 핸드오프 자료
 
 현재 Mac mini 개발은 저장소 루트의 [HANDOFF.md](../../HANDOFF.md)부터 읽습니다.
-이 폴더는 2026-09-30 클라우드 작업과 2026-10-01까지의 후속 메모를 보관합니다.
+이 폴더는 이전 클라우드 작업과 후속 Mac mini 핸드오프를 보관합니다.
+
+[원클릭 개발 이전 Mac mini 핸드오프](mac-mini-before-one-request-20261003.md)는
+`611ca99`까지의 루트 핸드오프를 바이트 단위로 옮긴 기록입니다.
+SHA-256은 `9507312fafbf6d01c0a98b7040a914354333cb9209ed73a7abf104354e4690a3`입니다.
+그 안의 상대 경로는 당시 저장소 루트 기준이며, 오래된 결과와 다음 작업 지시는 현재 상태를 대신하지 않습니다.
 
 [당시 루트 핸드오프](cloud-handoff-through-20261001.md)는 옮기기 전 파일을 바이트 단위로 보존했습니다.
 SHA-256은 `55ec71211c9b77e51250a262bb1b22d018d8326ad5a8f02966b32fee0b78e636`입니다.
@@ -14,6 +19,7 @@ SHA-256은 `55ec71211c9b77e51250a262bb1b22d018d8326ad5a8f02966b32fee0b78e636`입
 | 경로 | 보관 내용 |
 | --- | --- |
 | `cloud-handoff-through-20261001.md` | 이전 핸드오프 원본 |
+| `mac-mini-before-one-request-20261003.md` | 원클릭 개발 인계 이전의 Mac mini 핸드오프 원본 |
 | `design/owner-decisions.md` | 한국형 팩 구현 당시 소유자 결정 D1~D13과 안전 규칙 S1~S6 |
 | `design/design.json`, `design/critique.json`, `design/research.json` | 당시 설계·비판 검토·출처 조사 |
 | `design/implement-results.json` | 당시 구현 결과와 미확인 항목 |
