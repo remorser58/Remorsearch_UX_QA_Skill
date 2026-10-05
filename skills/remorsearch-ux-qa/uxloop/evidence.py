@@ -1,14 +1,13 @@
 """Artifact integrity and scoped completion gates; never infer proof from a URL."""
 from __future__ import annotations
 
-import struct
-import zlib
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from xml.etree import ElementTree
 
 from .contracts import index
 from .io import ContractError, GateStop, parse_json, read_artifact, timestamp
+from .png_capture import PNGValidationError, validate_png
 
 
 class Evidence:
@@ -90,26 +89,10 @@ class Evidence:
             return
         if not raw.startswith(b"\x89PNG\r\n\x1a\n"):
             raise GateStop("unknown", f"Live capture must be PNG, not a URL/mock: {artifact_id}")
-        offset, dimensions, saw_end, saw_pixels = 8, None, False, False
-        while offset + 12 <= len(raw):
-            size = struct.unpack(">I", raw[offset:offset + 4])[0]
-            chunk = raw[offset + 4:offset + 8]
-            end = offset + 12 + size
-            if end > len(raw):
-                break
-            payload = raw[offset + 8:offset + 8 + size]
-            checksum = struct.unpack(">I", raw[end - 4:end])[0]
-            if zlib.crc32(chunk + payload) & 0xffffffff != checksum:
-                break
-            if offset == 8 and chunk == b"IHDR" and size == 13:
-                dimensions = struct.unpack(">II", payload[:8])
-            saw_pixels = saw_pixels or chunk == b"IDAT"
-            if chunk == b"IEND" and size == 0:
-                saw_end = end == len(raw)
-                break
-            offset = end
-        if dimensions != expected or not saw_end or not saw_pixels:
-            raise GateStop("unknown", f"Corrupt/wrong-size PNG capture: {artifact_id}")
+        try:
+            validate_png(raw, expected)
+        except PNGValidationError as exc:
+            raise GateStop("unknown", f"Corrupt/wrong-size PNG capture: {artifact_id}: {exc}") from exc
 
     def visual(self, run: dict, must_pass: bool) -> None:
         checks = [x for x in self.packet["visual_checks"] if x["run_id"] == run["id"]]
