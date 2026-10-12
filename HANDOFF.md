@@ -1,6 +1,6 @@
 # 원클릭 Remorsearch UX QA 인계
 
-**2026-10-12 최신 검증:** [맥미니 검증 기록](docs/validation/mac-mini-20261012.md)에서 전체 Python 1,059, 웹 selftest 568, 실제 캡처 가져오기, UniClub 실제 iOS 실행(접근성 9건 실패 보존), 고정 Figma 버전 대조, game-desktop 회귀를 확인했다. 실기기 실행과 호스트 채택·복구 성숙도는 아직 미확인이다.
+**2026-10-12 최신 검증:** [맥미니 검증 기록](docs/validation/mac-mini-20261012.md)에 Python 1,059·웹 selftest 570 통과, 실제 XCTest 캡처 가져오기, CG-01 행별 버튼 오탐 수정, 고정 Figma 버전 대조와 UniClub 입력란·미리보기 개선을 기록했다. 기존 game-desktop 결함 16/16 탐지를 유지했고 clean 경고는 17→16이다. UniClub 최종 XCTest의 접근성 감사 10건 실패와 heldout-2 실패 판정은 보존했다. 두 PR은 Draft/open이며 실기기 인증은 사용자 요청으로 보류했다. 호스트 채택·복구 성숙도 검증은 남아 있다.
 
 아래 문단은 2026-10-03 시점의 과거 기록이다.
 

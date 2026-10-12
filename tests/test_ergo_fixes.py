@@ -13,6 +13,7 @@ from ergoqa import bench, checks, params, swarm  # noqa: E402
 from ergoqa.devices import get_device  # noqa: E402
 from ergoqa.hf import reach  # noqa: E402
 from ergoqa.profiles import _finalise, sample_profiles, touch_sigma_multiplier  # noqa: E402
+from ergoqa.snapshot import load_document, validate_snapshot  # noqa: E402
 
 
 def el(eid, role, box, *, text="", name="", interactive=False, roles=(), fg="#111111", bg="#ffffff", size=16, weight=400,
@@ -220,8 +221,54 @@ class RuleFixes(unittest.TestCase):
 
     def test_choices_group_by_container_even_when_one_is_selected(self) -> None:
         methods = [el(f"m{i}", "button", (10, 100 + i * 50, 340, 44), text=f"결제수단 {i}", interactive=True, tag="button",
-                      bg=("#e8f0fe" if i == 0 else "#ffffff"), ancestor_ids=["pay-methods"]) for i in range(10)]
-        self.assertEqual(len(checks.check_choice_overload(ctx(methods))), 1)
+                      bg=("#e8f0fe" if i == 0 else "#ffffff"), ancestor_ids=["pay-methods"],
+                      sibling_scope_id="pay-methods", sibling_scope_status="measured") for i in range(10)]
+        observed = checks.check_choice_overload(ctx(methods))
+        self.assertEqual(len(observed), 1)
+        self.assertEqual(observed[0].measurement["value"], 10)
+        self.assertEqual(observed[0].measurement["grouping_basis"], "dom_sibling_structure")
+        self.assertEqual(observed[0].measurement["grouping_status"], "measured")
+        self.assertIn("alternative_semantics_unverified", observed[0].measurement["limitations"])
+        template = load_document(ROOT / "tests/fixtures/ergo/sample_snapshot.json")
+        self.assertEqual(validate_snapshot({**template, "elements": methods}), [])
+        for scope in (None, 42, "", " ", "x" * 257):
+            unknown = [{**item, "sibling_scope_id": scope, "sibling_scope_status": "unavailable"} for item in methods]
+            with self.subTest(scope=scope):
+                held = checks.check_choice_overload(ctx(unknown))
+                self.assertEqual(len(held), 10)
+                self.assertTrue(all(o.severity is None and o.extra.get("verdict") == "inconclusive"
+                                    and o.measurement["value"] is None for o in held))
+                errors = validate_snapshot({**template, "elements": unknown})
+                self.assertEqual(bool(errors), scope is not None)
+        fresh_null = [{**item, "sibling_scope_id": None} for item in methods]
+        for item in fresh_null:
+            item.pop("sibling_scope_status")
+        self.assertTrue(all(o.extra.get("verdict") == "inconclusive" for o in checks.check_choice_overload(ctx(fresh_null))))
+        self.assertEqual(validate_snapshot({**template, "elements": fresh_null}), [])
+        no_boundary = [{**item, "sibling_scope_id": None, "sibling_scope_status": "none"} for item in methods]
+        self.assertEqual(checks.check_choice_overload(ctx(no_boundary)), [])
+        self.assertEqual(validate_snapshot({**template, "elements": no_boundary}), [])
+        for status in ("unknown", None):
+            invalid_status = [{**item, "sibling_scope_status": status} for item in methods]
+            self.assertTrue(validate_snapshot({**template, "elements": invalid_status}))
+            self.assertTrue(all(o.extra.get("verdict") == "inconclusive" for o in checks.check_choice_overload(ctx(invalid_status))))
+        missing_id = [{k: v for k, v in item.items() if k != "sibling_scope_id"} for item in no_boundary]
+        self.assertTrue(validate_snapshot({**template, "elements": missing_id}))
+        self.assertTrue(all(o.extra.get("verdict") == "inconclusive" for o in checks.check_choice_overload(ctx(missing_id))))
+        self.assertTrue(validate_snapshot({**template, "elements": [{**methods[0], "sibling_scope_id": None}]}))
+        self.assertTrue(validate_snapshot({**template, "elements": [{**methods[0], "sibling_scope_status": "none"}]}))
+        legacy = [{k: v for k, v in item.items() if k not in ("sibling_scope_id", "sibling_scope_status")} for item in methods]
+        legacy_obs = checks.check_choice_overload(ctx(legacy))
+        self.assertEqual(len(legacy_obs), 1)
+        self.assertEqual(legacy_obs[0].measurement["grouping_basis"], "legacy_ancestor")
+        self.assertEqual(legacy_obs[0].measurement["grouping_status"], "estimated")
+        admin = []
+        for row in range(6):
+            admin += [el(f"edit-{row}", "button", (10, 100 + row * 48, 44, 32), text=f"회원 {row} 편집", interactive=True, tag="button",
+                         ancestor_ids=["rows", "list-card"], sibling_scope_id=f"row-{row}"),
+                      el(f"remove-{row}", "button", (62, 100 + row * 48, 44, 32), text=f"회원 {row} 삭제", interactive=True, tag="button",
+                         ancestor_ids=["rows", "list-card"], sibling_scope_id=f"row-{row}")]
+        self.assertEqual(checks.check_choice_overload(ctx(admin)), [])
         mixed = [el("back", "button", (8, 8, 44, 44), text="<", interactive=True, tag="button", ancestor_ids=["header"])]
         mixed += [el(f"d{i}", "button", (10 + i * 48, 100, 44, 44), text=f"{i + 1}", interactive=True, tag="button", ancestor_ids=["dates"]) for i in range(7)]
         mixed += [el(f"s{i}", "button", (10 + i * 48, 200, 44, 44), text="+-"[i], interactive=True, tag="button", ancestor_ids=["people"]) for i in range(2)]

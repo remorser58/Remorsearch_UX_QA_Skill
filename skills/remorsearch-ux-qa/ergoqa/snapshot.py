@@ -340,6 +340,17 @@ def _element(errors: _Errors, el: Any, path: str) -> None:
     errors.string(el, "name", path, required=False, nullable=True, nonempty=False)
     for key in ("text", "tag", "selector"):
         errors.string(el, key, path, required=False, nullable=True, nonempty=False)
+    errors.string(el, "sibling_scope_id", path, required=False, nullable=True)
+    scope = el.get("sibling_scope_id")
+    if isinstance(scope, str):
+        errors.require(len(scope) <= 256, f"{path}.sibling_scope_id", "must be at most 256 characters")
+    errors.enum(el, "sibling_scope_status", ("measured", "none", "unavailable"), path, required=False)
+    if "sibling_scope_status" in el:
+        errors.require("sibling_scope_id" in el, f"{path}.sibling_scope_id", "is required with sibling_scope_status")
+        if el["sibling_scope_status"] == "measured":
+            errors.require(_nonempty_str(scope), f"{path}.sibling_scope_id", "measured scope requires a non-empty string")
+        elif el["sibling_scope_status"] in ("none", "unavailable"):
+            errors.require(scope is None, f"{path}.sibling_scope_id", "must be null for none or unavailable scope")
     _box(errors, el.get("box"), f"{path}.box")
     if "visible_box" in el and el["visible_box"] is not None:
         _box(errors, el["visible_box"], f"{path}.visible_box")
