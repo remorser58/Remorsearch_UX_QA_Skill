@@ -124,6 +124,53 @@ class Denominators(unittest.TestCase):
         self.assertEqual(finding["coverage_label"].split(" ")[0], "1/2")
         self.assertEqual(finding["profile_specific"].get("vision.cvd"), "deutan")  # the condition is named
 
+    def test_inconclusive_profiles_are_not_negative_contrasts(self) -> None:
+        young = profile("EP-Y")
+        old = profile("EP-O", age_band="60s", presbyopia=True)
+        failed = {"id": "OB-1", "check_id": "PC-04", "element_key": "#p|본문", "profile_id": "EP-O",
+                  "passed": False, "severity": "P2", "run_id": "R-1",
+                  "measurement": {"name": "font_visual_angle_arcmin", "value": 25, "unit": "arcmin", "threshold": 31.2, "comparator": ">="},
+                  "message_ko": "작음", "model": "visual-angle-v2", "selectors": ["#p"], "context_selectors": []}
+        unknown = dict(failed, id="OB-2", profile_id="EP-Y", severity=None, extra={"verdict": "inconclusive"},
+                       measurement=dict(failed["measurement"], value=None))
+        young_failed = dict(failed, id="OB-3", profile_id="EP-Y")
+        young_passed = dict(young_failed, id="OB-4", passed=True, severity=None)
+        specific = {"age_band": "60s", "vision.presbyopia": True}
+        cases = [
+            ("unknown_only", [failed, unknown], ["EP-O"], {}, ["OB-1"]),
+            ("unknown_first", [unknown, failed], ["EP-O"], {}, ["OB-1"]),
+            ("earlier_pass_later_unknown", [
+                dict(failed, id="OB-5", snapshot_id="S-1", step_index=1, passed=True, severity=None),
+                dict(young_passed, id="OB-6", snapshot_id="S-1", step_index=1),
+                dict(failed, snapshot_id="S-2", step_index=2),
+                dict(unknown, snapshot_id="S-2", step_index=2),
+            ], ["EP-O"], {}, ["OB-1"]),
+            ("failure_and_unknown", [failed, dict(unknown, profile_id="EP-O")], ["EP-O"], specific, ["OB-1"]),
+            ("pass_and_unknown", [failed, unknown, young_passed], ["EP-O"], {}, ["OB-1"]),
+            ("known_pass", [failed, young_passed], ["EP-O"], specific, ["OB-1"]),
+            ("both_fail_and_unknown", [failed, unknown, young_failed], ["EP-O", "EP-Y"], {}, ["OB-1", "OB-3"]),
+            ("all_fail", [failed, young_failed], ["EP-O", "EP-Y"], {}, ["OB-1", "OB-3"]),
+            ("other_selector", [failed, dict(unknown, element_key="#q|본문")], ["EP-O"], specific, ["OB-1"]),
+            ("other_check", [failed, dict(unknown, check_id="GZ-02")], ["EP-O"], specific, ["OB-1"]),
+        ]
+        for name, observations, triggered, differential, ids in cases:
+            with self.subTest(name=name):
+                analysis = {"scenario_id": "SC-1", "run_id": "R-1", "profiles_evaluated": ["EP-Y", "EP-O"],
+                            "observations": observations, "limitations": ["PC-04 보류"]}
+                finding = swarm.aggregate([analysis], [young, old])[0]
+                self.assertEqual(finding["profile_specific"], differential)
+                self.assertEqual(finding["severity"], "P2")
+                self.assertEqual(finding["triggered_profiles"], triggered)
+                self.assertEqual(finding["tested_profiles"], ["EP-O", "EP-Y"])
+                self.assertEqual(finding["coverage_label"].split(" ")[0], f"{len(triggered)}/2")
+                self.assertEqual(finding["observation_ids"], ids)
+                self.assertEqual(finding["measurement"], failed["measurement"])
+                self.assertEqual(analysis["limitations"], ["PC-04 보류"])
+        self.assertFalse(unknown["passed"])
+        self.assertIsNone(unknown["severity"])
+        self.assertIsNone(unknown["measurement"]["value"])
+        self.assertEqual(unknown["extra"]["verdict"], "inconclusive")
+
     def test_applicability(self) -> None:
         s24, desk = get_device("galaxy-s24"), get_device("desktop-1920")
         self.assertTrue(checks.applicable("PC-03", profile(cvd="deutan"), s24))
