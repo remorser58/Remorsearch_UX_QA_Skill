@@ -350,8 +350,11 @@ def _element(errors: _Errors, el: Any, path: str) -> None:
             errors.require(el.get("visible_box") is None, f"{path}.visible_box", "must be null for empty or unsupported geometry")
         elif el["visible_geometry"] in ("measured", "ancestor_clipped"):
             errors.require(isinstance(el.get("visible_box"), dict), f"{path}.visible_box", "must be a finite box for measured geometry")
-    for key in ("interactive", "visible"):
-        errors.boolean(el, key, path)
+    errors.boolean(el, "interactive", path)
+    errors.boolean(el, "visible", path, nullable=True)
+    if el.get("visible") is None:
+        errors.require(el.get("visible_geometry") == "unsupported" and el.get("visible_box") is None,
+                       f"{path}.visible", "may be null only when visible_geometry is unsupported and visible_box is null")
     for key in ("enabled", "in_viewport"):
         errors.boolean(el, key, path, required=False)
     errors.number(el, "font_size_px", path, required=False, nullable=True, minimum=0)
