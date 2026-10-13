@@ -143,7 +143,8 @@
         "references/loop/cli.md",
         "references/agent-setup.md",
         "drivers/web/README.md",
-        "references/ergonomics/visual-science.md"
+        "references/ergonomics/visual-science.md",
+        "references/persona-qa/generated-ui-preflight.md"
       ],
       "later_conditions": {
         "causal_analysis": [
@@ -229,7 +230,8 @@
         "references/loop/cli.md",
         "references/agent-setup.md",
         "drivers/web/README.md",
-        "references/ergonomics/visual-science.md"
+        "references/ergonomics/visual-science.md",
+        "references/persona-qa/generated-ui-preflight.md"
       ],
       "later_conditions": {
         "causal_analysis": [

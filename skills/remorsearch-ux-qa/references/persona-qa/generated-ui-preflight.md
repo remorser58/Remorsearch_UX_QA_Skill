@@ -1,0 +1,46 @@
+# Generated UI preflight
+
+## 1. When and what to record
+
+After the first product observation, run this check before concluding baseline QA, cosmetic refinement or task-linked research. Repeat affected rows after a fix. Apply it to UI behavior regardless of how the code was authored; it is not an AI-origin detector. Reuse the current task matrix, browser, screenshots and receipts. Add no harness, dependency or test suite just for this checklist.
+
+For each applicable row record: task, URL/build, engine/device, CSS viewport and pixel ratio, state/input, expected versus observed, capture/trace, pass/fail/untested/not-applicable and reason. A missing engine or state is untested. Preserve the user's design, content and existing authority; all writes remain within owned safe fixtures. Fix only reproduced, authorized defects. Composition and interaction changes follow the existing Figma-first rule.
+
+## 2. Sample the states that hide defects
+
+Start with the main task, longest real title/body/label, longest list and densest control group. Include realistic Korean/English wrapping and empty or missing values. Use owned fixture content where needed, preserving actual user data.
+
+- Desktop and the requested mobile viewport, plus a short mobile height and 320 CSS px reflow where relevant. Record actual `innerWidth`/`innerHeight`, browser chrome and safe-area offsets; device names alone are insufficient.
+- Separately check text resized to 200%, and applicable text-spacing overrides: line 1.5 times font size, paragraphs 2 times, letters 0.12em, words 0.16em. Do not present 200% resizing as the 320 CSS px reflow check. Necessary two-dimensional content has scoped exceptions.
+- Menus/dialogs open and closed; keyboard focus and touch activation; initial/loading/empty/error/success states and back/return/reload if persistence is promised.
+- For scroll scenes, inspect entry, each readable hold, transition and exit in both directions. For four narrative beats, reach all four; a hero screenshot is insufficient. Keep normal-motion and reduced-motion results separate.
+- Use Safari on an iOS simulator when iOS Safari is in scope. Chromium with an iPhone viewport/user agent does not test WebKit. A simulator does not establish real-device or assistive-technology behavior; record tool input failures separately from product failures.
+
+## 3. Checks and minimal repairs
+
+| Check | Failure to look for | Verify and repair |
+| --- | --- | --- |
+| Text and layers | Wrapped heading collides with body/label; graph text or sticky HUD obscures reading; clipping/overflow hides actions | Inspect painted frames and text rects at the same state. Rect intersections are candidates: account for opacity, clipping, stacking and opaque covers. Intended image counters/captions are not defects by themselves. Let content determine space; reserve room for fixed controls. Do not hide meaningful copy, force nowrap or shrink it solely to clear a detector. |
+| Images and icons | Loaded image is blank, wrong, clipped or fails on one engine | Check network/decode status AND actual painted content after a fresh load and scroll reveal. HTTP 200, `complete` and `naturalWidth` cannot prove painting. Inspect filters, masks, fit and compositing; isolate the smallest cause. Use the correct asset or an honest fallback, never invented evidence imagery. |
+| Actions and destinations | Decorative CTA, dead social link, inert preview, menu cannot close, invalid control remains actionable | Follow each primary control to its promised state. Test menu close, scroll unlock and focus return; inspect external targets without sending forms or posting. Remove only unauthorized placeholders or fix real handlers/routes. A click receipt or success toast alone cannot pass the task. |
+| State and data | Submitted options differ; back/error/reload loses values; optimistic success masks failure | Compare inputs with final stored/displayed result on owned fixtures. Check slow response, failure and retry, empty results and duplicate activation when safe. Preserve intended resets and confirmations. Reuse existing integrity checks. |
+| Input and accessibility | Hover-only meaning, invisible/covered focus, unlabeled icons, wrong reading order, closely packed targets | Complete the task with keyboard and touch; confirm labels, semantics, error association and focus after transitions. Apply the relevant standard with its exceptions; 44pt platform advice is not a universal WCAG pixel rule. DOM inspection alone is not a screen-reader test. |
+| Copy and trust | Generic headline hides purpose; contradictory CTA; invented metrics/testimonials/logos; leftover placeholders; awkward Korean | Name the audience, task and result using verified product facts. Trace factual claims to supplied evidence or mark them unresolved. Preserve terms, numbers and uncertainty. Do not manufacture replacement claims or turn a draft placeholder into a real endorsement. |
+| Hierarchy and consistency | Everything looks equally important; unrelated icons, repeated cards or decoration conceal the main decision | Compare the main action, groups, spacing and type roles with the approved Figma design and task. Color, font, radius, gradients and cards alone prove neither a defect nor AI authorship. Preserve brand choices and explicit user restrictions; no side accent bars or attached side tabs. |
+| Motion and responsiveness | Scroll animation blocks reading/input, persistent blank space, layout shifts, slow or stuck controls | Compare normal/reduced motion, touch and keyboard, including the transition frames. Measure observed latency/shift on the actual build; do not infer speed from complexity. Keep intentional motion while removing its reproduced obstruction. |
+
+## 4. Completion and replay
+
+Resolve task-blocking visibility/action/data defects before recommending cosmetic changes. Route failures into the existing severity and second-pass process; community opinions alone do not justify P0/P1. Retain unresolved rows explicitly. There is no global slop score or pass based on screenshot count.
+
+Rebuild and replay the original failing state with the same viewport, input and fixture, then adjacent states and the other scoped engine. Recheck intended motion, copy and Figma decisions. Save before/after evidence, including successful controls. A passing automated suite does not replace rendered review; a checklist pass does not establish product readiness.
+
+## 5. Evidence and interpretation
+
+Community sources are qualitative scenario inputs, not prevalence estimates, proof of AI causation or formal research-gate statuses. On 2026-10-13, public post/comment reads found a reported [mobile-menu close failure](https://www.reddit.com/r/webdev/comments/1l1agmo/vibe_coding_sucks/) and [inert previews, placeholders and input/output mismatch](https://www.reddit.com/r/vibecoding/comments/1r5dt4a/how_difficult_would_it_be_to_make_my_own_no_code/). Their linked products were not retested. A [contrary discussion](https://www.reddit.com/r/vibecoding/comments/1tzie7q/how_to_create_a_ui_which_doesnt_scream_ai_slop/) prioritizes working options and truthful content while disputing appearance-only judgments. Commercial advice and search excerpts require explicit qualification.
+
+Other channels add bounded examples: a [DC Inside builder](https://gall.dcinside.com/mgallery/board/view/?id=ai_utilize&no=116963) reports drift after incremental UI changes; a [Threads rewrite experiment](https://www.threads.com/@skuwamoto/post/DbCKxfzmQ7j) reports omitted behavior and later human correction. Keep an accepted behavior/visual inventory for regression checks. An [X design catalog](https://x.com/yuwen_lu_/article/2041187936738447565) supplies opinion-level hierarchy and animation heuristics, not universal style bans; its body was summarized from a signed-in read, without inspecting images/replies. Threads conversation replies were gated. All were read on 2026-10-13; no cross-channel prevalence is inferred.
+
+The portfolio replay separately exposed Safari image-paint failure and text collisions at short heights and during scroll. Those observations motivate the engine/state checks; they do not prove a universal CSS cause or community frequency.
+
+Primary references: WCAG 2.2 [Reflow 1.4.10](https://www.w3.org/WAI/WCAG22/Understanding/reflow.html), [Resize Text 1.4.4](https://www.w3.org/WAI/WCAG22/Understanding/resize-text.html), [Text Spacing 1.4.12](https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html), [Focus Not Obscured 2.4.11](https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html), [Status Messages 4.1.3](https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html). Minimum focus visibility forbids complete obscuring; a task may need stronger readability. Interaction-motion guidance under 2.3.3 is AAA, not an automatic AA requirement.

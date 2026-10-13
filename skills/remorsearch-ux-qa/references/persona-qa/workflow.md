@@ -1,13 +1,15 @@
 <!-- Mode: persona-qa. Entry point: `SKILL.md`. -->
 # Persona QA mode
 
-Test task completion and input preservation. Synthetic scenarios define conditions; product traces establish failures. Integrated improvement includes task-linked research; standalone QA adds it only when requested.
+Test completion and input preservation. Synthetic scenarios define conditions; traces establish failures. Improvement adds task-linked research; standalone QA only when requested.
 
 ## Phase 0 recap
 
-Use `SKILL.md` Phase 0. Discover tasks from the product; record URL/build, device/viewport/input, constraints, intent, Figma version, grants and synthetic fixtures. Begin baseline QA without a prepared audience or problem list. Ask only for missing material access.
+Use `SKILL.md` Phase 0. Record product tasks, URL/build, device/viewport/input, constraints, intent, Figma version, grants and fixtures. Start QA without a prepared audience. Ask only for missing material access.
 
 Chromium emulation leaves Safari/WebKit, real device/grip/occlusion/safe area/screen reader untested. Korean product: `references/persona-qa/kwcag-card.md`; report language changes wording only. Outside-product pages: `references/shared/access-card.md` in operator/verifier prompts. Host browser first; preserve user state.
+
+After first observation, use `references/persona-qa/generated-ui-preflight.md` sections 1–4 before baseline verdict; replay affected checks after fixes.
 
 ## 1. Build the priority-task matrix
 
@@ -22,7 +24,7 @@ For every priority task, require all these rows on each device in scope:
 | Keyboard only | Whole primary task, including intermediate choices and recovery |
 | Reading order | Each intermediate screen's meaningful sequence and focus order |
 
-List screens, states, devices reached or not. Where relevant, test Korean clipping, IME, input retention, recovery. After every step, verify prior values/choices. Author `success.task_checks` for material fields after error/coupon/address/recovery transitions and at completion (`drivers/web/README.md`). Use explicit expected reset/normalized values; `from_step` reuses an authored input, `type.redact:true` protects its recorded text. Failed submit: first-invalid focus, invalid state and error association. Success requires final options/quantities/amounts/notes to match. Each row: pass/partial/fail/untested with reason.
+List reached/missing screens, states and devices. Check Korean clipping/IME where relevant; verify retained values after every step. Author `success.task_checks` for material fields after error/coupon/address/recovery transitions and at completion (`drivers/web/README.md`). Use explicit expected reset/normalized values; `from_step` reuses an authored input, `type.redact:true` protects its recorded text. Failed submit: first-invalid focus, invalid state and error association. Success requires final options/quantities/amounts/notes to match. Each row: pass/partial/fail/untested with reason.
 
 Scenario: ID/task/goal/safe data, basis/brief condition, context/constraints/device/input/start, expected decision/integrity/risk, claim IDs and omissions. Audience rows cite audience_id/segment_id/task_id/facet and gate-supported motivations. Without an audience, choose task-changing strata: new/returning, touch/keyboard, interruption, delay, empty/stale/edge data. Do not add demographic decoration or stereotype behavior.
 
@@ -102,7 +104,7 @@ Without subagents, run a labelled self-pass; it is not independent review. Resol
 
 Fix the reproduced cause with a minimal intent-compatible change. State expected behavior, trade-off and validation; benefit claims need measurements. Reuse the improvement request's scoped grants; standalone review remains read-only. Create UX changes in Figma first with actual nodes/version/readback. Missing design blocks affected implementation only. Replay the original scenario/data/build scope/device/input, primary task, recovery, adjacent states, Figma and accessibility. Explicitly recheck preserved decisions; retain baseline/change/replay evidence. Acceptance requires passing replay, regression and intent checks.
 
-Use `references/persona-qa/qa-report-template.md` by section. First heading after title is Decision/결론: verdict/reason naming build; up to three actions, each at most 25 words with behavior, finding IDs and confirming state; one line untested. Verdict rules:
+Use `references/persona-qa/qa-report-template.md` by section. First section after title: Decision/결론, verdict/reason and build; up to three actions, each at most 25 words with behavior, finding IDs and confirming state; one line untested. Verdict rules:
 
 - hold: verified current P0, primary task completed by no scenario, or primary P1 without workaround.
 - ship after fixes: no P0; primary task completes; P1s have concrete fixes.

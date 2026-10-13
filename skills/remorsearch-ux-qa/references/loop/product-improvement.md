@@ -1,12 +1,12 @@
 # Improve an existing product
 
-Improve a working product from one URL or repository with available tools and the four components. No user-prepared packet, persona, brief or model choice. Narrow research/review keeps its scope.
+Improve a product from a URL or repository; no prepared packet or persona. Keep narrow requests scoped.
 
 ## Stages
 
 1. Runtime: use `python3` if it is 3.10+; otherwise run `python3 scripts/find_runtime.py` and reuse the paths it prints. Missing Node 22 gaps only the bundled driver; host-browser QA continues.
 2. Product and intent discovery.
-3. Baseline assessment: scoped QA on the real product. Its report, with or without changes, is a useful result before any packet, loop or research.
+3. Baseline: scoped real-product QA before packets or research. After first observation, use `references/persona-qa/generated-ui-preflight.md` sections 1–4; replay affected checks after fixes.
 4. Task-linked research, only from questions the assessment raised.
 5. A warranted reversible fix, then fill, strict improve and replay.
 
