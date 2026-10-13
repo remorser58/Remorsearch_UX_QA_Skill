@@ -51,6 +51,15 @@ class Evidence:
         if not timestamp(run["started_at"]) <= at <= timestamp(run["ended_at"]):
             raise GateStop("unknown", f"Capture {artifact_id} is not from run interval {run['id']}")
 
+    def compared_after_inputs(self, check: dict) -> None:
+        # A comparison may postdate its run, e.g. a target drawn in Figma after baseline QA,
+        # but it cannot precede the capture or reference export it compares.
+        compared = timestamp(self.artifacts[check["comparison_artifact_id"]]["created_at"])
+        inputs = max(timestamp(self.artifacts[check[key]]["created_at"])
+                     for key in ("actual_artifact_id", "reference_artifact_id"))
+        if compared < inputs:
+            raise GateStop("unknown", f"Comparison {check['comparison_artifact_id']} predates its capture or reference export")
+
     def research(self) -> None:
         for evidence_id in self.packet["goal"]["evidence_ids"]:
             evidence = self.records["evidence"][evidence_id]
@@ -105,8 +114,8 @@ class Evidence:
             self.screenshot(check["actual_artifact_id"], check["viewport"])
             self.screenshot(check["reference_artifact_id"], check["viewport"])
             self.capture_time(check["actual_artifact_id"], run)
-            self.capture_time(check["comparison_artifact_id"], run)
             payload = self.payload(check["comparison_artifact_id"])
+            self.compared_after_inputs(check)
             self.identity(payload, run, "visual_report")
             if payload.get("comparison") != check:
                 raise GateStop("unknown", f"Visual report disagrees with declared comparison: {check['id']}")
