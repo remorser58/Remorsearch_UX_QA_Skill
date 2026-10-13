@@ -83,6 +83,10 @@ revision and scenario digest must agree across every payload; captures fall
 inside the run interval. Missing checks are not marked passed. A blocked/unknown
 run records an explicit reason and cannot verify a finding.
 
+Every scenario carries keyboard, focus and semantics checks, pointer and touch flows
+included. Check what that flow uses, such as activated links staying in the tab order
+and where focus lands after activation; an unexercised check is not passed.
+
 QA owns observations linking actual runs to findings. A fix requires a verified,
 observed finding reproduced by that round's baseline, the original scenario,
 linked proposal, rationale/expected effect, and explicit P0–P3 severity. A
@@ -112,6 +116,21 @@ and has `comparison` equal to the full visual-check object. Record actual failur
 or unknown results. A screenshot file, Figma link, pixel difference count or a
 reviewer's name alone cannot pass the gate. Accessibility coverage is separately
 required; visual matching does not prove keyboard operation or semantics.
+
+Export each reference from a frame of exactly the CSS viewport at the run's device
+scale (Figma `download_assets` with `defaultFormat: png` and `defaultScale` set to the
+device scale); a 1x export for a 2x run is rejected. A comparison report follows its
+actual capture and reference export and may postdate the run, as when the target is
+drawn in Figma after baseline QA; an earlier stamp is rejected.
+
+Every goal scenario needs a reference, a regression-only scenario included. With the
+owner's approval to send product screens to Figma, upload the approved baseline capture
+as that reference. `upload_assets` places a 400x300 frame and garbles non-ASCII file
+names in the layer name, so resize the frame to the viewport and rename it with
+`use_figma`, re-export it at device scale and confirm the export equals the capture.
+Compare replays under a stated pixel tolerance and show that it rejects another state of
+the same screen. Quote multipart paths that contain spaces:
+`curl -F 'file=@"PATH";type=image/png' URL`.
 
 ## 4. Reviewed local code fixes
 

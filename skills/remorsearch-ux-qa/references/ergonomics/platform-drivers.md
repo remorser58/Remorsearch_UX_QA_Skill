@@ -9,6 +9,7 @@ These are repository documents, not installed with the skill.
 | Surface | Path | What is real | What is not exercised here |
 | --- | --- | --- | --- |
 | Web, mobile web, browser games (canvas/WebGL) | `drivers/web/ergo_drive.mjs` (Node 22 + Playwright/Chromium) | Real touch/mouse/keyboard input (CDP), device-emulated viewport/DPR/touch, screenshots, DOM geometry and composited colours, feedback latency, 16 ms timing-window polling, flash sampling, off-origin network blocking | WebKit/Safari, real phones, on-screen keyboards, browser chrome, iframes/closed shadow roots |
+| iOS Safari (mobile web) | Host route: `safaridriver` with a task-owned iOS Simulator (W3C WebDriver, `safari:useSimulator`) | Mobile Safari/WebKit layout and media queries, touch actions dispatched by Safari automation, exact URL/scroll/DOM state, web-view and `simctl io` device screenshots | Real devices, VoiceOver, ergo snapshots; on iOS 27.0, touch actions on a page scrolled by a hash jump reached no page event |
 | Android apps | `adb exec-out uiautomator dump` + `adb exec-out screencap -p` → `scripts/ergo_qa.py android-snapshot`; inputs via `ergoqa/drivers/android.py` argv builders | Real device geometry (bounds in px → dp) and screenshots when run against a device/emulator | Live device execution is not exercised in this repository (fixture-tested only) |
 | iOS apps | Exported XCUITest attachments + typed `xcuitest-capture.v1` JSON → `scripts/ergo_qa.py ios-import` | Actual XCUIElement point frames, label/identifier/value/enabled, PNG dimensions/hash, xcresult attachment/test summary join, built app bundle identity | VoiceOver/accessibility order, fonts, colours, intent, action/task outcome, and independent screenshot authenticity; device geometries absent from `ergoqa/devices.py` are rejected rather than nearest-mapped |
 | Desktop apps, engine-rendered games | Platform screenshot + vision/human annotation → `ergoqa/drivers/annotation.py` | Screenshots from the real device | Geometry is estimated (`source: vision`), so every geometry-based observation is `inferred` |
@@ -48,6 +49,40 @@ Scenario notes:
   reported by their container.
 
 Full option list, measured fields and limitations: `drivers/web/README.md`.
+
+## Mobile Safari on an iOS Simulator
+
+A Chromium profile such as `iphone-15` renders an iPhone-sized viewport with Blink. A
+claim about iPhone or iPad Safari needs Mobile Safari itself:
+
+```sh
+UDID=$(xcrun simctl create 'RQ product QA YYYYMMDD' \
+  com.apple.CoreSimulator.SimDeviceType.iPhone-17 com.apple.CoreSimulator.SimRuntime.iOS-27-0)
+xcrun simctl boot "$UDID" && xcrun simctl bootstatus "$UDID" -b
+safaridriver -p 4723 &
+# POST /session {"capabilities":{"alwaysMatch":{"browserName":"Safari","platformName":"iOS",
+#   "safari:useSimulator":true,"safari:deviceUDID":"<UDID>"}}}
+# Tap: POST /session/<id>/actions with a pointer source {"pointerType":"touch"}:
+#   pointerMove to the element, pointerDown, pause 80 ms, pointerUp
+# State: POST /session/<id>/execute/sync, reading location.href, scrollY and attributes
+# Capture: GET /session/<id>/screenshot and xcrun simctl io "$UDID" screenshot step.png
+xcrun simctl shutdown "$UDID" && xcrun simctl delete "$UDID"
+```
+
+- Create the task's own device and address it by UDID; `booted` can select another
+  project's simulator.
+- Simulator.app is not required; safaridriver drives a headless booted device. If session
+  creation reports that remote automation is off, run `safaridriver --enable` once as an
+  administrator.
+- Record the viewport the page reports (`innerWidth`, `innerHeight`, `devicePixelRatio`;
+  iPhone 17 Safari gave 402x714 at 3x with toolbars), UA, iOS runtime and session
+  capabilities. Compare Safari runs with each other; their captures differ from Chromium
+  profiles in size and browser chrome.
+- Confirm that each tap produced page events, a URL change or a state change before judging
+  the product. On iOS 27.0, element- and viewport-origin taps on a page scrolled by a hash
+  jump produced no page event; report such steps unknown.
+- Use script only to read state. A touch claim needs a touch action.
+- These receipts are not ergo snapshots; report them as a separate WebKit check.
 
 ## Real devices and games
 

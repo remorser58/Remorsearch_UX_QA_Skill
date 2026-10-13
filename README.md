@@ -290,8 +290,9 @@ python3 scripts/check_release.py --output dist/release-check
   missed its confirmatory noise limit (1.75 P0–P2 units per clean scenario;
   limit 0.35) and condition-identification target. Later fixes do not establish
   that those original targets now pass; review findings before acting on them.
-- Only Chromium device emulation is exercised by the web driver; no real iOS
-  Safari, native apps or real devices.
+- The bundled web driver runs Chromium device emulation only. Mobile Safari is
+  checked through a documented host route (safaridriver with an iOS Simulator) and
+  native iOS apps through imported XCUITest evidence; real devices are not exercised.
 
 ## License
 

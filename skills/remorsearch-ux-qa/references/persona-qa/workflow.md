@@ -7,7 +7,7 @@ Test task completion and input preservation. Synthetic scenarios define conditio
 
 Use `SKILL.md` Phase 0. Discover tasks from the product; record URL/build, device/viewport/input, constraints, intent, Figma version, grants and synthetic fixtures. Begin baseline QA without a prepared audience or problem list. Ask only for missing material access.
 
-Emulation leaves real device/grip/occlusion/safe area/screen reader untested. Korean product: `references/persona-qa/kwcag-card.md`; report language changes wording only. Outside-product pages: `references/shared/access-card.md` in operator/verifier prompts. Host browser first; preserve user state.
+Chromium emulation leaves Safari/WebKit, real device/grip/occlusion/safe area/screen reader untested. Korean product: `references/persona-qa/kwcag-card.md`; report language changes wording only. Outside-product pages: `references/shared/access-card.md` in operator/verifier prompts. Host browser first; preserve user state.
 
 ## 1. Build the priority-task matrix
 
