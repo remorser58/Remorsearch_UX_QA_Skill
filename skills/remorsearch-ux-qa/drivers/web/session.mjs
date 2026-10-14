@@ -68,7 +68,8 @@ const ANALYZE_FINISH_BUDGET_MS = 110_000;
 const ANALYZE_TIMEOUT_MS = 30_000;
 const ANALYZE_RECORD_MARGIN_MS = 5_000;
 const ANALYZE_ERR_CAP = 16384;
-const LOCATOR_FIELDS = new Set(['selector', 'selectors', 'target', 'to', 'anchor_selectors', 'dom_id', 'ancestor_ids']);
+const LOCATOR_FIELDS = new Set(['selector', 'selectors', 'target', 'to', 'anchor_selectors', 'dom_id', 'ancestor_ids',
+  'controls', 'described_by', 'error_message']);
 
 // Reflow (WCAG 1.4.10, AUT-06): each distinct screen's DOM is copied as the run goes
 // and re-rendered after the run at 320 CSS px wide with scripts off (a static copy,
@@ -976,6 +977,10 @@ export class WebSession {
   redactRecord(record, key = '') {
     if (typeof record === 'string') {
       if (key === 'notes' && record === 'task_check_final') return record;
+      // Inspection retains raw, whitespace-separated IDREF attributes as well as objects.
+      if (key === 'aria_describedby' || key === 'aria_errormessage') {
+        return record.replace(/\S+/g, (id) => this.redactRecord(id, 'dom_id'));
+      }
       if (LOCATOR_FIELDS.has(key)) {
         if (this.privateLocators.has(record)) return this.privateLocators.get(record);
         if ([...this.privateValues].some((value) => record.includes(value))) {
@@ -994,6 +999,7 @@ export class WebSession {
     if (Array.isArray(record)) return record.map((value) => this.redactRecord(value, key));
     if (record && typeof record === 'object') return Object.fromEntries(Object.entries(record).map(([field, value]) => [field,
       key === 'driver' && field === 'name' ? value : this.redactRecord(value,
+        field === 'id' && (key === 'described_by' || key === 'error_messages') ? 'dom_id' :
         key === 'targets' || (field === 'path' && ('selector' in record || 'dom_id' in record)) ? 'selector' : field)]));
     return record;
   }

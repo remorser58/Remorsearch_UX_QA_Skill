@@ -1991,7 +1991,63 @@ async function connectTest(base, tmp) {
   }
 }
 
+function privateIdrefsTest() {
+  const secret = 'PRIVATE-IDREF-73196';
+  const session = Object.create(WebSession.prototype);
+  Object.assign(session, { privateValues: new Set([secret]), privateLocators: new Map(), warned: new Set(), warnings: [] });
+  const record = {
+    run_id: 'R-idrefs', scenario_id: 'SC-idrefs', profile_id: 'EP-idrefs',
+    snapshot: { snapshot_id: 'S-idrefs', step_index: 1, surface: { kind: 'web' },
+      focus: { dom_id: 'trigger', expanded: true, controls: [secret, 'public-control'], on_body: false },
+      layers: [{ dom_id: secret, selector: '#owned-panel', kind: 'dialog', contains_focus: false, box: { x: 0, y: 0, w: 300, h: 300 } }],
+      elements: [
+        { id: 'field', tag: 'input', name: 'Email', visible: true, box: { x: 0, y: 0, w: 80, h: 20 },
+          a11y: { name_source: 'label', invalid: true, described_by: [secret, 'public-help'], error_message: secret } },
+        { id: 'error', dom_id: secret, text: 'Please try again.', roles: ['error_message'], visible: true,
+          box: { x: 0, y: 700, w: 200, h: 40 } },
+      ] },
+    inspection: { fields: [{ dom_id: 'field', aria_describedby: `${secret}  public-help`, aria_errormessage: `public-error\t${secret}`,
+      described_by: [{ id: secret, text: 'Owned description', exists: true }, { id: 'public-help', text: 'Help', exists: true }],
+      error_messages: [{ id: secret, text: 'Owned error', exists: true }] }] },
+  };
+  const safe = session.redactRecord(record);
+  const alias = safe.snapshot.layers[0].dom_id;
+  const refs = safe.inspection.fields[0];
+  check('analysis IDREF privacy: controls, a11y and inspection references share the DOM ID alias',
+    alias !== secret && safe.snapshot.focus.controls[0] === alias
+    && safe.snapshot.elements[0].a11y.described_by[0] === alias && safe.snapshot.elements[0].a11y.error_message === alias
+    && safe.snapshot.elements[1].dom_id === alias && refs.described_by[0].id === alias && refs.error_messages[0].id === alias
+    && refs.aria_describedby === `${alias}  public-help` && refs.aria_errormessage === `public-error\t${alias}`
+    && !JSON.stringify(safe).includes(secret));
+  const structural = { run_id: secret, scenario_id: secret, profile_id: secret, snapshot_id: secret,
+    elements: [{ id: secret }], other: { id: secret } };
+  check('analysis IDREF privacy: structural IDs and public references stay unchanged; redaction is idempotent',
+    JSON.stringify(session.redactRecord(structural)) === JSON.stringify(structural)
+    && safe.snapshot.focus.controls[1] === 'public-control' && refs.described_by[1].id === 'public-help'
+    && JSON.stringify(session.redactRecord(safe)) === JSON.stringify(safe));
+  const py = spawnSync(process.env.ERGOQA_PYTHON || 'python3', ['-c', [
+    'import copy, json, sys',
+    'from ergoqa.checks import Context, check_focus_management, check_semantics',
+    'docs = json.load(sys.stdin)',
+    'def findings(doc):',
+    '    ctx = Context(run={"run_id": doc["run_id"]}, snapshot=doc["snapshot"], previous={"layers": []}, step={"action": {"action": "tap"}}, profile={"profile_id": doc["profile_id"]}, device=None, scenario=None)',
+    '    return {o.check_id for o in check_focus_management(ctx) + check_semantics(ctx)} & {"FM-02", "SM-04"}',
+    'for doc in docs:',
+    '    assert not findings(doc)',
+    '    for field in ("described_by", "error_message"):',
+    '        one = copy.deepcopy(doc); one["snapshot"]["elements"][0]["a11y"].pop(field)',
+    '        assert not findings(one), field',
+    '    broken = copy.deepcopy(doc); broken["snapshot"]["focus"]["controls"] = []',
+    '    broken["snapshot"]["elements"][0]["a11y"].update(described_by=[], error_message=None)',
+    '    assert findings(broken) == {"FM-02", "SM-04"}',
+    'print("FM-02/SM-04 relations preserved; broken-reference controls detected")',
+  ].join('\n')], { cwd: REPO, input: JSON.stringify([record, safe]), encoding: 'utf8' });
+  check('analysis IDREF privacy: Python FM-02/SM-04 retain both valid associations without false positives',
+    py.status === 0, py.stderr || py.stdout);
+}
+
 async function analyzeTest(base, tmp) {
+  privateIdrefsTest();
   const python = process.env.ERGOQA_PYTHON || 'python3';
   const script = path.join(REPO, 'scripts', 'ergo_qa.py');
   const outDir = path.join(tmp, 'analysis runs'); // spaces stay inside argv entries
