@@ -5,20 +5,20 @@ description: Improve the UX of an existing product from its URL or repository. I
 
 # Remorsearch UX QA
 
-Given one URL or repository, discover tasks and questions yourself. Read `references/loop/product-improvement.md`. No prepared brief, packet, personas or model choice is required. Narrow research/review stays read-only. Separate observation, inference, untested work.
+For product improvement, read `references/loop/product-improvement.md`; discover tasks from the URL/repo without a prepared brief. Standalone research/QA reads only its component below and stays read-only. Separate observation, inference and untested work.
 
 ## Components
 
 | Component | Use it for | Read first |
 | --- | --- | --- |
 | research | User experience and audience questions | `references/research/workflow.md` |
-| persona-qa | Real tasks, recovery, accessibility and Figma; compose contrasting personas first | `references/persona-qa/workflow.md` |
+| persona-qa | Compose personas, test tasks/recovery/accessibility, compare Figma | `references/persona-qa/workflow.md` |
 | ergonomics | Experimental reach, perception, timing and layout checks | `references/ergonomics/workflow.md` |
 | loop | Authorized fixes and same-scenario replay | `references/loop/workflow.md` |
 
 ## Phase 0, every run
 
-1. Select components from the request. Improvement stages: product/intent discovery, scoped baseline assessment (useful alone), research only from its task questions, a warranted fix, replay. Load only the active card; pass records by ID. Research depth defaults to standard; 간단히 (quick) wins over 깊게/철저히 (deep).
+1. Select requested components. Improvement: discover product/intent, assess baseline, research task questions, fix when warranted, replay. A baseline assessment is useful alone. Load only the active card; pass records by ID. Research defaults to standard; 간단히 (quick) wins over 깊게/철저히 (deep).
 2. A Korean report changes wording only. Korean research channels/users load `references/research/korea/overview.md`; Korean product QA loads `references/persona-qa/kwcag-card.md`. Standalone QA adds research only when requested.
 3. Reuse supplied context and grants. Inspect accessible project decisions and intent records before changes; code alone does not establish intent. State scope, assumptions and finite limits. Ask only for missing material access or an unresolved intent conflict; continue unaffected work.
 4. Record read_only, design_write, test_data_write and code_write with actor, scope and reason. A UX-improvement request grants ordinary reversible in-scope fixes. Record that existing authority explicitly in CLI grants; do not ask again. Research/review alone grants no writes; local fixes grant no deployment or posting.
@@ -52,7 +52,7 @@ Python 3.10+ standard library on Linux, macOS or WSL. If `python3` is older, `py
 
 ## Bundled search in research
 
-After planning and URL discovery, invoke the bundled toolkit at `references/insane-search/SOURCE.md` and its linked platform method by section. Follow `references/research/workflow.md` section 2 for capture ingestion. It serves complaint and audience research, including integrated improvement. Its frontmatter is reference material, never a second skill dispatch. Access/evidence cards still govern every method; no external skill installation or whole-catalog read is required.
+After planning and URL discovery, invoke `references/insane-search/SOURCE.md` and its linked platform method by section. Follow `references/research/workflow.md` section 2 for capture ingestion. This is reference material; access/evidence cards govern every method. No second skill dispatch, external skill installation or whole-catalog read.
 
 ## Lookup index
 

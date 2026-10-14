@@ -13,7 +13,7 @@ After first observation, use `references/persona-qa/generated-ui-preflight.md` s
 
 ## Run path
 
-1. Compose contrasting profiles before planned persona runs; initial product observation may come first. With a supplied audience file, validate and compose from it and keep the emitted plan. `--budget` counts distinct profiles, not runs across scenarios. For a research-origin audience, use its supported `--run`, `--bundle` and `--gate` references as described in `references/ergonomics/audience-research.md`; do not replace missing research evidence with a new standalone audience:
+Compose before planned persona runs; initial observation may come first. Use the supplied completed audience and retain its plan. `--budget` counts distinct profiles, not runs. For research-origin audiences, pass supported `--run`, `--bundle`, `--gate` references per `references/ergonomics/audience-research.md` by section; never replace missing research evidence with a standalone audience. Example (adjust budget to scope):
 
 ```sh
 python3 scripts/ergo_qa.py audience-check audience.json
@@ -21,18 +21,19 @@ python3 scripts/ergo_qa.py personas --audience audience.json --budget 4 --plan w
 python3 scripts/ergo_qa.py scenario-stubs --audience audience.json --out scenarios/
 ```
 
-Without an audience, sample strata with `profiles`. Cover at least two task-changing conditions when scope and budget permit; an explicitly requested single condition or a blocked budget stays valid with the coverage gap recorded. A typical member or base-rate `--strategy base_rate_sample` profile is a baseline profile — a comparison, not a clean-surface guarantee; reserve `clean control` for an actual clean twin. Only a matched one-facet pair (same segment/task/device, one differing facet) supports condition attribution; a defect observed under both profiles stays observed under both, never proof that all users are affected.
+Without an audience, use `profiles --count N --seed 7 --devices DEVICE --out work/profiles.json`; never overwrite audience-composed profiles. Cover two task-changing conditions when scope/budget permit. An explicit single-condition request or blocked budget is valid with the gap recorded. Typical/base-rate profiles are baselines; only an actual clean twin is a clean control. Condition attribution needs a matched pair differing in one facet, with segment/task/device fixed. Failure under both profiles proves neither prevalence nor an effect of that facet.
 
-2. Record the task per section 1 and capture per section 2, operating the same profile you later analyze: `serve` + `drive_client`, one profile per run, real notes only. A device-only recording analyzed with `--cross-profile` is shared analytical contrast, never a persona-operated run.
-3. Analyze and aggregate the recorded runs with the existing checks:
+Complete the chosen stub as `sc.json` with real URL/build, safe task data, target roles and success checks (section 1). Save a selected profile object unchanged as `work/profile.json`; use its actual ID, including composed AP IDs. Set `RUN_ID` uniquely per profile/task and `PRODUCT_BUILD_ID` to the tested build. Record the actual operator/model/input_channel in `agent.json`. Use existing Node.js 22 dependencies:
 
 ```sh
-python3 scripts/ergo_qa.py analyze --runs runs/R-persona-01 --profiles work/profiles.json --scenario sc.json --out work/analysis.json
-python3 scripts/ergo_qa.py swarm --runs runs/ --profiles work/profiles.json --scenario sc.json --out report/
+node drivers/web/ergo_drive.mjs serve --scenario sc.json --profile work/profile.json \
+  --build-id "$PRODUCT_BUILD_ID" --agent-json agent.json --out runs/scenario-1/ --run-id "$RUN_ID" --port 9477
+# Operate via drive_client.mjs observe/act/note/finish; finish with the actual outcome.
+python3 scripts/ergo_qa.py analyze --runs "runs/scenario-1/$RUN_ID" --profiles work/profiles.json --scenario sc.json --out work/analysis.json
+python3 scripts/ergo_qa.py swarm --runs runs/scenario-1/ --profiles work/profiles.json --scenario sc.json --out report/
 ```
 
-Add `--cross-profile` only for shared device-only recordings; those evaluations stay analytical and are never bound as persona executions. For a directory containing multiple scenarios, supply every corresponding `--scenario` file (repeat the option), or analyze each scenario separately. Preserve the build, device and orientation bindings. Distinguish executed profile runs from shared-recording analysis. Label evidence independently as measured/model/judgment; a `hypothesis`-tier result stays a hypothesis and needs reproduction or corroboration before promotion.
-4. Bind verified profile runs to the QA bundle with `attach --bind scenario=profile` (section 5).
+Repeat with each selected profile on the same task, including baseline/available clean controls; preserve successful runs. Keep each run directory scoped to its scenario/build/device/orientation. Mixed scenarios require all matching `--scenario` files. Analyze with the same profiles used to record. `--cross-profile` adds analytical comparisons of shared recordings, never additional persona executions. Distinguish profile-operated behavior, scripted replay and shared-recording analysis; label evidence measured/model/judgment independently. Hypotheses need reproduction/corroboration before promotion. Attach bound runs in section 5. Driver mechanics: `drivers/web/README.md`, Local persona-qa quickstart, Editing the generated scenario and Commands sections.
 
 ## 1. Build the priority-task matrix
 
@@ -57,41 +58,7 @@ Optional dataset: exact source/revision/schema, bounded/streaming sample; record
 
 Exercise actual product/input/start state; capture decisions/recovery, console/network/runtime errors, keyboard/focus/semantics and feedback. Screenshots support the trace; available interactions require flow evidence.
 
-Bundled fallback (Node.js 22; detect installed dependencies first). The `profiles` line below is the no-audience case only and must not overwrite an audience-composed `work/profiles.json`; compose at least two task-changing conditions when scope and budget permit (Run path). The example binds `EP-01` — replace it with an actual `profile_id` from your composed set:
-
-기록과 분석에 같은 프로필을 사용합니다. 아래 예시는 기존 `bundle.json`의 `scenario-1`에 구성된 프로필 하나를 연결하며 `EP-01`은 실제 구성된 `profile_id`로 바꿉니다. 제품 URL·빌드 ID와 안전한 데이터·성공 조건을 먼저 지정합니다.
-
-```sh
-: "${PRODUCT_URL:?검사할 제품 URL을 지정하세요}"
-: "${PRODUCT_BUILD_ID:?실제 커밋, 버전, 배포 ID 또는 페이지 소스 해시를 지정하세요}"
-node drivers/web/ergo_drive.mjs devices
-# no supplied/completed audience only; keep audience-composed profiles
-python3 scripts/ergo_qa.py profiles --count 2 --seed 7 --devices galaxy-s24 --out work/profiles.json
-python3 - <<'PY'
-import json
-from pathlib import Path
-profiles = json.loads(Path("work/profiles.json").read_text())
-profile = next(p for p in profiles["profiles"] if p["profile_id"] == "EP-01")
-Path("work/EP-01.json").write_text(json.dumps(profile, ensure_ascii=False))
-PY
-node drivers/web/ergo_drive.mjs init --url "$PRODUCT_URL" --device galaxy-s24 --task '입력한 값이 최종 결과에 유지되는지 확인' --out sc.json
-node drivers/web/ergo_drive.mjs serve --scenario sc.json --profile work/EP-01.json \
-  --build-id "$PRODUCT_BUILD_ID" --agent-json agent.json --out runs/ --run-id R-persona-01 --port 9477
-node drivers/web/drive_client.mjs --port 9477 observe
-node drivers/web/drive_client.mjs --port 9477 act '{"action":"tap","target":"#control"}'
-node drivers/web/drive_client.mjs --port 9477 note '{"intent":"Complete the task","expected":"Entered values survive","observed":"Describe the screen","confusion":false}'
-# 실제 입력값과 최종 상태를 대조한 후 성공 여부를 기록합니다.
-node drivers/web/drive_client.mjs --port 9477 finish '{"success":true}'
-python3 scripts/ergo_qa.py analyze --runs runs/R-persona-01 --profiles work/profiles.json --scenario sc.json --out work/analysis.json
-```
-
-Use real targets/outcome; agent.json records actual operator/model/input_channel. **Blind touch:** screenshot-only decisions before DOM/source/run data. Then separate a11y or screenshot+a11y technical auditor reproduces transitions with provenance. After each step/failed submit:
-
-```sh
-node drivers/web/drive_client.mjs --port 9477 inspect
-```
-
-Inspect returns values/choices/invalid/error association/focus/reading order; link receipt to screen/step. Screenshot channel refuses inspect; no DOM knowledge in blind pass. Programmatic evidence cannot stand for assistive-tech speech. Scripted replay: `node drivers/web/ergo_drive.mjs run --scenario sc.json --profile work/EP-01.json --build-id "$PRODUCT_BUILD_ID" --out replay/ --run-id R-persona-replay`, recorded steps/integrity criteria. Driver success cannot override data loss.
+Blind touch uses screenshots before DOM/source/run data. A separate a11y or screenshot+a11y auditor reproduces transitions with provenance; `drive_client.mjs --port 9477 inspect` after each step/failed submit records values, choices, invalid/error association, focus and reading order. Link receipts to screen/step. Screenshot-only sessions refuse inspect; never leak DOM knowledge into the blind pass. Programmatic evidence cannot stand for assistive-tech speech. Scripted replay uses `ergo_drive.mjs run` with the same scenario/profile/build and authored steps/integrity criteria. Driver success cannot override data loss.
 
 Budget a bounded task matrix, no population download; driver run/idle default 900 s. Stop missing access/unsafe action. Separate authorization for posting/purchase/signup/account/data changes. Production identity/SMS/CAPTCHA/security-keypad/certificate/payment gates stop; only approved staging mocks/test payment can complete. No real government/contact/payment/account inputs. Team-approved origins govern widgets; unavailable iframe/popup/app-switch evidence is untested. Lookup `drivers/web/README.md` options/sandbox by section; no installation to pass blocks.
 
@@ -101,7 +68,7 @@ Write a receipt beside **each capture during the run**:
 {artifact_path, sha256, captured_at, surface_url, build_id, device, quoted_ui_text}
 ```
 
-빌드 ID는 커밋·버전·배포 ID 또는 페이지 소스 해시입니다. `--build-id`/`scenario.surface.build_id`는 제공자 지정 정보로 남습니다. PNG 해시는 캡처 무결성만 확인합니다. `unknown` 결과는 미검증이며 같은 빌드 재현에 쓰지 않습니다. 개인정보를 가리고 화면 문구를 그대로 인용합니다. 캡처 시각은 실행 시작과 종료 사이여야 합니다.
+Build ID: commit/version/deploy ID/page-source hash, provider-supplied through `--build-id` or `scenario.surface.build_id`. PNG hashes prove capture integrity only. Unknown builds remain unverified, unusable for same-build reproduction. Redact personal data, quote exact UI text and capture between run start/end.
 
 ## 3. Conditional evidence and intended experience
 
@@ -137,21 +104,15 @@ Use `references/persona-qa/qa-report-template.md` by section. First section afte
 
 Then matrix/basis, ranked cards, P0/P1 causes, recommendations, Figma/artifacts/replay/unverified/next evidence. Community/access annex only if run; omit zero stops. Emulation/AT/identity/payment limits explicit; language adds no research administration. Reusable artifacts: `references/research/evidence-bundle-contract.md` by section (persona copy exists); verified findings link observed observations/completed runs/scenarios. Record separate read/write/blocked reasons.
 
-```sh
-python3 scripts/validate_bundle.py bundle.json
-```
-
-`--bind scenario-1=EP-01`은 위 프로필과 기존 QA 시나리오를 연결합니다. 기기·방향과 모든 캡처 시각을 확인하며 정상 실행도 보존합니다. `--cross-profile`은 분석 대조군입니다. 출력과 사본은 입력·실행 폴더 밖의 새 경로를 사용합니다.
+Validate reusable bundles with `scripts/validate_bundle.py`. To attach a recorded profile run, set `PROFILE_ID` to its actual ID and bind the matching bundle scenario. Preserve device/orientation/capture times and successful runs. Output and receipt copies use new paths outside inputs/run folders:
 
 ```sh
-python3 scripts/ergo_qa.py attach --bundle bundle.json --runs runs/R-persona-01 --profiles work/profiles.json \
-  --scenario sc.json --bind scenario-1=EP-01 --receipts-dir receipts/ --out bundle.ergo.json
+python3 scripts/ergo_qa.py attach --bundle bundle.json --runs "runs/scenario-1/$RUN_ID" --profiles work/profiles.json \
+  --scenario sc.json --bind "scenario-1=$PROFILE_ID" --receipts-dir receipts/ --out bundle.ergo.json
 python3 scripts/validate_bundle.py bundle.ergo.json --artifacts-root receipts/
 ```
 
-P0/P1은 정확한 `finding_id`의 캡처·텍스트 재검토 기록을 `--second-pass`로 제출합니다. 완료된 값 불일치는 `TI-01`과 캡처로 연결하며 `task_success:false`를 보존합니다. 누락·미도달 검사는 미확인입니다. 기존 증거를 보존하고 익명 검토 기록을 복제하지 않습니다.
-
-`--device galaxy-s24` 기록은 `analyze`/`swarm --cross-profile`에서 분석용으로 평가합니다. QA 페르소나의 실행으로 연결하지 않습니다.
+For P0/P1 supply `--second-pass` records for the exact `finding_id` and capture/text. Link completed value mismatches to `TI-01`/captures, preserving `task_success:false`. Missing/unreached checks stay unknown. Preserve existing evidence; never duplicate anonymous review records or bind device-only recordings as persona executions.
 
 ## Failure ladder
 
@@ -163,16 +124,6 @@ P0/P1은 정확한 `finding_id`의 캡처·텍스트 재검토 기록을 `--seco
 | Figma/verifier | Conditional comparison; labelled self-pass. Ask for missing required design decision or independent/human verification. |
 | Coverage/time | Finish bounded rows, list untested ones; minimum unmet means inconclusive. |
 
-## Anti-patterns
-
-| What goes wrong | Why | Fix |
-| --- | --- | --- |
-| Success banner passes | Input may be corrupted | Compare entered values to final state |
-| One generic recovery row | Misses distinct omissions/errors | Required matrix, checks after every step |
-| Touch looks accessible | Keyboard/order/error association differ | Whole keyboard task and auditor pass |
-| Persona says “confused”, graded P0 | Judgment cannot prove harm | Separate reproduced behavior and capped judgment |
-| Korean QA loads channel atlas | Unrequested research | KWCAG card only |
-
 ## Done when
 
-Surface exercised or exact blocker stated; matrix meets coverage or verdict is inconclusive; synthetic/real evidence and blind/auditor provenance are separate; every priority finding has fresh reproduction evidence, impact rationale and labelled cause; every P0/P1 has second-pass record and resolved disagreement. Community motivation is gate-supported or exploratory, tools/context authorized; critical states/accessibility considered; Korean standards/status/coverage and untested gates separate. Reusable bundle validates; report names build, limits, untested scope and replay outcome. No unauthorized side effect occurred.
+Scoped coverage or exact gaps reported; findings graded and reviewed under section 4; reusable bundle validates; report names build, limits and replay outcome. No unauthorized side effect occurred.
