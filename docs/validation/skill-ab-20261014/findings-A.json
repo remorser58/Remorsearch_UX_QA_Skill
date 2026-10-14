@@ -1,0 +1,111 @@
+{
+  "cases": [
+    {
+      "case_id": "case-1",
+      "task_completed": true,
+      "findings": [
+        {
+          "title": "Coupon banner close button has a 16x16 px touch target (below the 24x24 WCAG 2.5.8 AA minimum and 44x44 platform guidance)",
+          "target": "#promo-close (aria-label '쿠폰 안내 닫기') in the cart coupon banner",
+          "state": "Initial cart page with the coupon banner open (page-1.html, galaxy-s24 portrait)",
+          "steps": [
+            "Load case-1 cart page and capture the initial snapshot",
+            "Read the measured visible box of #promo-close from the snapshot",
+            "Tap #promo-close and confirm the banner dismisses (52 -> 50 elements)"
+          ],
+          "expected": "The only dismiss control for the banner should offer at least a 24x24 px tappable area (44x44 recommended on touch devices)",
+          "observed": "Measured visible box of #promo-close is 16x16 px at (318,86). The same control in the case-2 sample measures 44x44 px, so the undersized target is not consistent across the product samples.",
+          "severity": "P2",
+          "basis": "observed",
+          "evidence": [
+            "local-evidence/A/runs/case-1/S-case-1-001.json",
+            "local-evidence/A/runs/case-1/S-case-1-001.png",
+            "local-evidence/A/runs/case-2/S-case-2-001.json"
+          ],
+          "confidence": "high"
+        },
+        {
+          "title": "Destructive '전체삭제' control sits in the sticky bottom bar immediately beside the primary pay CTA",
+          "target": "#btn-clear (전체삭제) and #pay (143,900원 결제하기) in the sticky bottom action bar",
+          "state": "Initial cart page, bottom action bar",
+          "steps": [
+            "Load case-1 cart page and capture the initial snapshot",
+            "Measure bottom bar geometry: #btn-clear 84x52 at (16,716), #pay 240x52 at (104,716), 4 px gap",
+            "Search the snapshot for confirmation-dialog elements for the clear-all action: none are present"
+          ],
+          "expected": "A destructive clear-all action placed next to the primary CTA should be separated or guarded by a confirmation step",
+          "observed": "전체삭제 is rendered directly left of the primary pay button in the fixed bottom bar. No confirmation-dialog elements exist in the DOM (case-2 pre-renders hidden #clear-cancel/#clear-confirm for the same action). The 전체삭제 tap itself was not exercised, so any runtime confirmation remains unverified.",
+          "severity": "P2",
+          "basis": "inferred",
+          "evidence": [
+            "local-evidence/A/runs/case-1/S-case-1-001.json",
+            "local-evidence/A/runs/case-1/S-case-1-001.png",
+            "local-evidence/A/runs/case-2/S-case-2-001.json"
+          ],
+          "confidence": "medium"
+        }
+      ],
+      "limitations": [
+        "Coupon '받기' (claim) flow was not exercised; the banner was closed per the task.",
+        "The '전체삭제' tap behavior and any runtime confirmation dialog were not exercised.",
+        "Single viewport sampled (galaxy-s24 portrait); keyboard focus-walk disabled by launch flags."
+      ]
+    },
+    {
+      "case_id": "case-4",
+      "task_completed": true,
+      "findings": [
+        {
+          "title": "Phone-number error state persists while the user types a corrected value",
+          "target": "#phone (휴대폰 번호) field error text and the submit-area error banner",
+          "state": "Reservation form after a failed submit without a phone number, then corrected input",
+          "steps": [
+            "Select 수 30 / 15:30, fill name '테스트', check the consent box, leave 휴대폰 번호 empty and tap 예약 신청하기",
+            "Observe the field-level error and the bottom error banner",
+            "Type 010-0000-0000 into #phone and inspect the form state before re-submitting"
+          ],
+          "expected": "When the field contains a format-valid number, the error state should clear or re-validate while typing",
+          "observed": "After typing 010-0000-0000, the field still reports invalid=true / aria-invalid=true, and the red text '⚠ 휴대폰 번호를 정확히 입력해 주세요. 예: 010-1234-5678' plus the bottom banner remain visible; the state cleared only on the next submit, which then succeeded.",
+          "severity": "P3",
+          "basis": "observed",
+          "evidence": [
+            "local-evidence/A/runs/case-4/S-case-4-007.png",
+            "local-evidence/A/runs/case-4/S-case-4-008.png",
+            "local-evidence/A/runs/case-4/I-case-4-001.json"
+          ],
+          "confidence": "high"
+        }
+      ],
+      "limitations": [
+        "Person-count stepper was not exercised (1 was the default and the required value).",
+        "Frozen fixture dates (Sep 29 - Oct 5) are deliberate; not evaluated as an issue.",
+        "Single viewport sampled (galaxy-s24 portrait); keyboard focus-walk disabled by launch flags."
+      ]
+    },
+    {
+      "case_id": "case-2",
+      "task_completed": true,
+      "findings": [],
+      "limitations": [
+        "No reproducible user-facing issue was confirmed within the sampled flow (banner close, Toss Pay selection, payment).",
+        "At the sampled scroll position the sticky bottom bar overlapped payment-method rows (카카오페이 measured 60% occluded); whether the page can scroll enough to fully reveal rows above the bar was not verified.",
+        "Coupon '받기' (claim) flow was not exercised; the banner was closed per the task."
+      ]
+    },
+    {
+      "case_id": "case-3",
+      "task_completed": null,
+      "findings": [],
+      "limitations": [
+        "Not started: the 25-minute observation/execution budget expired after case-1, case-2 and case-4. No observations exist for case-3."
+      ]
+    }
+  ],
+  "overall_limitations": [
+    "Execution order was case-1, case-2, case-4; case-3 was never started before the budget expired.",
+    "The first case-1 server launch inside the sandbox failed with 'cannot launch Chromium' (a sandbox denial, not a product failure); that attempt was moved to runs/case-1-sandbox-blocked-attempt/ and the run was relaunched outside the sandbox. The product run is runs/case-1/.",
+    "All actions ran against offline synthetic samples served at 127.0.0.1:8876 through the provided transport with device galaxy-s24 portrait; findings may not generalize to other devices or viewports.",
+    "The provided launch flags disabled the 320 px reflow pass and focus-walk (--no-reflow, --no-focus-walk), so reflow and keyboard focus-order behavior were not evaluated.",
+    "Success is based on the driver-measured run.json (success_basis: measured) plus observed confirmation screens, not on inference."
+  ]
+}

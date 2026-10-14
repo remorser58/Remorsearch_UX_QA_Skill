@@ -278,6 +278,8 @@ python3 scripts/check_release.py --output dist/release-check
 
 ## Limits
 
+The [skill-on / skill-off pilot](docs/validation/skill-ab-20261014/report.md) compares two repetitions on existing local fixtures with the same model and browser tools. It reports detection, unsupported warnings, task completion, time and tokens separately from installation/self-tests; it does not establish general superiority.
+
 - Live browser research (Aside or another agentic browser), Figma and browser
   collection for the loop mode are provided by you or your agent host; the loop
   CLI imports their receipts and never launches them.

@@ -1,0 +1,158 @@
+{
+  "cases": [
+    {
+      "case_id": "case-1",
+      "task_completed": true,
+      "findings": [
+        {
+          "title": "Coupon banner close control has a 16x16 px hit target",
+          "target": "#promo-close (쿠폰 안내 닫기, coupon banner X)",
+          "state": "Cart page with coupon banner visible, default state",
+          "steps": [
+            "Open cart page and observe (S-case-1-001)",
+            "Read measured geometry of #promo-close from the snapshot"
+          ],
+          "expected": "A mobile close control has a touch target of at least 24x24 px (commonly 44x44 px); the same control on the case-2 sample measures 44x44.",
+          "observed": "The #promo-close button's measured box is 16x16 CSS px at (318, 86); the neighboring 받기 button is 56x44. A tap at the center (326, 94) hit the target, but the tappable area is far smaller than the control next to it and than the equivalent control in case-2.",
+          "severity": "P2",
+          "basis": "observed",
+          "evidence": [
+            "local-evidence/D/runs/case-1/S-case-1-001.json",
+            "local-evidence/D/runs/case-1/S-case-1-001.png"
+          ],
+          "confidence": "high"
+        },
+        {
+          "title": "Destructive 전체삭제 button sits flush beside the primary pay button in the sticky footer",
+          "target": "#btn-clear (전체삭제), #pay (143,900원 결제하기)",
+          "state": "Cart with 2 items, before payment",
+          "steps": [
+            "Observe cart page after closing the banner (S-case-1-002)",
+            "Compare footer geometry: #btn-clear at x=16..100 y=716 (84x52), #pay at x=104..344 y=716 (240x52)"
+          ],
+          "expected": "A destructive clear-cart action is separated from the primary payment CTA, as in case-2 where 전체 삭제 is a text button at the top of the list and the footer contains only the pay button.",
+          "observed": "A red-bordered destructive button (roles: destructive, border #d32f2f) sits in the same sticky bottom bar, 4 px to the left of the primary pay button, so a slightly leftward mis-tap deletes all cart items instead of paying.",
+          "severity": "P2",
+          "basis": "observed",
+          "evidence": [
+            "local-evidence/D/runs/case-1/S-case-1-002.json",
+            "local-evidence/D/runs/case-1/S-case-1-002.png"
+          ],
+          "confidence": "medium"
+        }
+      ],
+      "limitations": [
+        "Only the happy path (close banner, select 토스페이, pay) was exercised.",
+        "No near-miss tap testing for the 16x16 close target; no test of paying without selecting a payment method."
+      ]
+    },
+    {
+      "case_id": "case-2",
+      "task_completed": true,
+      "findings": [],
+      "limitations": [
+        "No findings on the exercised path; only the happy path (close banner, confirm 토스페이 default, pay) was tested.",
+        "Empty cart, payment failure, and the '다른 결제 수단 9개 보기' expander were not exercised."
+      ]
+    },
+    {
+      "case_id": "case-3",
+      "task_completed": true,
+      "findings": [
+        {
+          "title": "Validation error is not tied to the offending phone field (no invalid state, no association, focus stays on submit)",
+          "target": "#phone (휴대폰 번호) and #form-error alert",
+          "state": "After submitting the booking form with the phone number empty",
+          "steps": [
+            "Fill name 테스트, check consent, submit with phone empty",
+            "Read the error alert and inspect #phone"
+          ],
+          "expected": "The invalid field is programmatically marked and associated with its message (e.g., aria-invalid + aria-describedby), so both visual and assistive-technology users can locate it; case-4 does this.",
+          "observed": "A role=alert box appears at the top of the form ('입력 내용을 확인해 주세요. / 휴대폰 번호를 정확히 입력해 주세요.'), but #phone reports invalid:false, aria_invalid:null, described_by:[], error_associated:false, keeps its normal border (#8b95a1), and focus remains on #submit. Nothing on the field itself shows the error.",
+          "severity": "P2",
+          "basis": "observed",
+          "evidence": [
+            "local-evidence/D/runs/case-3/S-case-3-008.json",
+            "local-evidence/D/runs/case-3/S-case-3-008.png",
+            "local-evidence/D/runs/case-3/I-case-3-001.json"
+          ],
+          "confidence": "high"
+        },
+        {
+          "title": "Error alert stays visible after the value is corrected; it clears only on resubmission",
+          "target": "#form-error",
+          "state": "After typing the corrected phone number 010-0000-0000",
+          "steps": [
+            "Submit with phone empty so the alert shows",
+            "Type 010-0000-0000 into #phone and observe"
+          ],
+          "expected": "Error feedback clears or updates when the field content changes.",
+          "observed": "The full alert text remains visible with the corrected value already entered; only the next submit removes it.",
+          "severity": "P3",
+          "basis": "observed",
+          "evidence": [
+            "local-evidence/D/runs/case-3/S-case-3-009.json",
+            "local-evidence/D/runs/case-3/S-case-3-009.png"
+          ],
+          "confidence": "high"
+        }
+      ],
+      "limitations": [
+        "Only the intended flow (miss phone, follow guidance, resubmit) was exercised; one date/time combination was used.",
+        "Keyboard-only navigation and near-miss taps were not tested."
+      ]
+    },
+    {
+      "case_id": "case-4",
+      "task_completed": true,
+      "findings": [
+        {
+          "title": "Inline error and footer alert persist after the value is corrected; they clear only on resubmission",
+          "target": "#err-phone (inline error) and #form-error (footer alert)",
+          "state": "After typing the corrected phone number 010-0000-0000",
+          "steps": [
+            "Submit with phone empty (inline error + footer alert appear, field marked aria-invalid=true)",
+            "Type 010-0000-0000 into #phone and observe"
+          ],
+          "expected": "Error feedback clears or updates when the field content changes.",
+          "observed": "Both the inline '⚠ 휴대폰 번호를 정확히 입력해 주세요. 예: 010-1234-5678' and the footer '⚠ 휴대폰 번호를 확인해 주세요.' remain visible with the corrected value entered; only the next submit clears them.",
+          "severity": "P3",
+          "basis": "observed",
+          "evidence": [
+            "local-evidence/D/runs/case-4/S-case-4-008.json",
+            "local-evidence/D/runs/case-4/S-case-4-008.png"
+          ],
+          "confidence": "high"
+        },
+        {
+          "title": "Focus stays on the submit button after the validation failure",
+          "target": "#submit (예약 신청하기) and #phone",
+          "state": "Immediately after the failed submit with empty phone",
+          "steps": [
+            "Submit with phone empty",
+            "Read focus state via the provided inspect interface"
+          ],
+          "expected": "Focus moves to the first invalid field (or its error is otherwise directly reachable) so keyboard users can correct it without searching.",
+          "observed": "Focus remains on #submit; #phone is marked aria-invalid=true with the inline message, but the user must move focus back up to the field manually.",
+          "severity": "P3",
+          "basis": "observed",
+          "evidence": [
+            "local-evidence/D/runs/case-4/I-case-4-000.json",
+            "local-evidence/D/runs/case-4/S-case-4-007.png"
+          ],
+          "confidence": "high"
+        }
+      ],
+      "limitations": [
+        "Only the intended flow (miss phone, follow guidance, resubmit) was exercised; one date/time combination was used.",
+        "Near-miss taps and keyboard-only traversal were not tested."
+      ]
+    }
+  ],
+  "overall_limitations": [
+    "All pages are offline synthetic samples; results cover only the four assigned tasks on build bda38f67f8ff4b5f56588d487430c282d1483be1 (galaxy-s24 viewport 360x780).",
+    "State observations come from the provided observe/inspect interface and the driver's screenshots; no page source or JS was read.",
+    "The first case-3 server launch failed inside the sandbox (Chromium launch blocked); it was rerun with escalated permissions as the brief allows. The failed run directory is preserved as runs/case-3-launchfailed and is not part of the results.",
+    "Each case ran as its own server session on port 9604 with fresh state; no findings depend on cross-case state."
+  ]
+}

@@ -1,0 +1,3490 @@
+{
+  "schema_version": "ergo-snapshot.v1",
+  "snapshot_id": "S-case-3-001",
+  "run_id": "case-3",
+  "step_index": 0,
+  "captured_at": "2026-10-14T02:37:37Z",
+  "surface": {
+    "kind": "web",
+    "url": "http://127.0.0.1:8876/page-3.html",
+    "title": "예약하기 | 헤어살롱 봄",
+    "app_id": null,
+    "scroll": {
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 780
+    },
+    "visual": {
+      "offset_x": 0,
+      "offset_y": 0,
+      "width": 360,
+      "height": 780,
+      "scale": 1
+    },
+    "build_id": "bda38f67f8ff4b5f56588d487430c282d1483be1",
+    "build_id_basis": "operator_supplied",
+    "build_id_source": "--build-id"
+  },
+  "device": {
+    "id": "galaxy-s24",
+    "viewport_css": [
+      360,
+      780
+    ],
+    "dpr": 3,
+    "orientation": "portrait",
+    "input": "touch",
+    "form_factor": "phone"
+  },
+  "screenshot": {
+    "path": "S-case-3-001.png",
+    "sha256": "055e52edad1fdcbcb89c41a5891d82dd4f9727bcec542f92d8c5733b264c0bf0",
+    "width_px": 1080,
+    "height_px": 2340,
+    "css": {
+      "path": "S-case-3-001.css.png",
+      "sha256": "ff8de1043efe71923326c2ec1ba3f2fb031c2ba7d0086eb45a7e9e5b8493d5e0",
+      "width_px": 360,
+      "height_px": 780,
+      "factor": 3
+    }
+  },
+  "elements": [
+    {
+      "id": "el-1",
+      "role": "button",
+      "name": "뒤로 가기",
+      "text": "‹",
+      "tag": "button",
+      "selector": "#back",
+      "dom_id": "back",
+      "box": {
+        "x": 4,
+        "y": 3.5,
+        "w": 44,
+        "h": 44
+      },
+      "visible_box": {
+        "x": 4,
+        "y": 3.5,
+        "w": 44,
+        "h": 44
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 28,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 11.484375,
+        "probes": {
+          "cap_H_px": 19.728515625,
+          "x_height_px": 14.21875,
+          "body_Hg_px": 24.787109375,
+          "hangul_px": 23.688003540039062
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 4,
+              "y": 3.5,
+              "w": 44,
+              "h": 44
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "aria-label",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "‹",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-2",
+      "role": "heading",
+      "name": "예약하기",
+      "text": "예약하기",
+      "tag": "h1",
+      "selector": "h1",
+      "dom_id": null,
+      "box": {
+        "x": 48,
+        "y": 13.17,
+        "w": 264,
+        "h": 24.64
+      },
+      "visible_box": {
+        "x": 48,
+        "y": 13.17,
+        "w": 264,
+        "h": 24.64
+      },
+      "visible_geometry": "measured",
+      "interactive": false,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 17,
+      "font_weight": 700,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 15.164000511169434,
+        "probes": {
+          "cap_H_px": 11.97802734375,
+          "x_height_px": 9.13916015625,
+          "body_Hg_px": 15.1904296875,
+          "hangul_px": 14.790000915527344
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 48,
+              "y": 13.17,
+              "w": 264,
+              "h": 24.64
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [],
+      "ancestor_ids": [],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-3",
+      "role": "paragraph",
+      "name": "헤어살롱 봄 강남점 · 여성 커트 60분 · 35,000원",
+      "text": "헤어살롱 봄 강남점 · 여성 커트 60분 · 35,000원",
+      "tag": "p",
+      "selector": "#step-1 > div:nth-of-type(1) > p",
+      "dom_id": null,
+      "box": {
+        "x": 16,
+        "y": 60,
+        "w": 328,
+        "h": 23.19
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 60,
+        "w": 328,
+        "h": 23.19
+      },
+      "visible_geometry": "measured",
+      "interactive": false,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 16,
+      "font_weight": 700,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "mixed_font_or_style",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#f9fafb",
+      "container_bg": "#f9fafb",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#f9fafb",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 60,
+              "w": 328,
+              "h": 23.19
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [],
+      "ancestor_ids": [
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-4",
+      "role": "generic",
+      "name": "· 여성 커트 60분 · 35,000원",
+      "text": "· 여성 커트 60분 · 35,000원",
+      "tag": "span",
+      "selector": "div:nth-of-type(1) > p > span",
+      "dom_id": null,
+      "box": {
+        "x": 138.17,
+        "y": 63,
+        "w": 163.16,
+        "h": 17
+      },
+      "visible_box": {
+        "x": 138.17,
+        "y": 63,
+        "w": 163.16,
+        "h": 17
+      },
+      "visible_geometry": "measured",
+      "interactive": false,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 13.764789581298828,
+        "probes": {
+          "cap_H_px": 9.8642578125,
+          "x_height_px": 7.369140625,
+          "body_Hg_px": 12.4619140625,
+          "hangul_px": 11.844001770019531
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#4e5968",
+      "color_bg": "#f9fafb",
+      "container_bg": "#f9fafb",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#4e5968",
+            "background": "#f9fafb",
+            "shape": null,
+            "box": {
+              "x": 138.17,
+              "y": 63,
+              "w": 163.16,
+              "h": 17
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [],
+      "ancestor_ids": [
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-5",
+      "role": "heading",
+      "name": "날짜",
+      "text": "날짜",
+      "tag": "h2",
+      "selector": "#step-1 > div:nth-of-type(2) > h2:nth-of-type(1)",
+      "dom_id": null,
+      "box": {
+        "x": 16,
+        "y": 104.19,
+        "w": 328,
+        "h": 21.75
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 104.19,
+        "w": 328,
+        "h": 21.75
+      },
+      "visible_geometry": "measured",
+      "interactive": false,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 15,
+      "font_weight": 700,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 13.36500072479248,
+        "probes": {
+          "cap_H_px": 10.56884765625,
+          "x_height_px": 8.06396484375,
+          "body_Hg_px": 13.4033203125,
+          "hangul_px": 13.050000190734863
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 104.19,
+              "w": 328,
+              "h": 21.75
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [],
+      "ancestor_ids": [
+        "step-1"
+      ],
+      "sibling_scope_id": "#step-1 > div:nth-of-type(2)",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-6",
+      "role": "button",
+      "name": "화 29",
+      "text": "화 29",
+      "tag": "button",
+      "selector": "#dates > button:nth-of-type(1)",
+      "dom_id": null,
+      "box": {
+        "x": 12,
+        "y": 133.94,
+        "w": 44.56,
+        "h": 52
+      },
+      "visible_box": {
+        "x": 12,
+        "y": 133.94,
+        "w": 44.56,
+        "h": 52
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "mixed_font_or_style",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#d1d6db",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:border",
+            "kind": "boundary",
+            "color": "#d1d6db",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 12,
+              "y": 133.94,
+              "w": 44.56,
+              "h": 52
+            }
+          },
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 12,
+              "y": 133.94,
+              "w": 44.56,
+              "h": 52
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "화 29",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "dates",
+        "step-1"
+      ],
+      "sibling_scope_id": "#dates",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-7",
+      "role": "button",
+      "name": "수 30",
+      "text": "수 30",
+      "tag": "button",
+      "selector": "#dates > button:nth-of-type(2)",
+      "dom_id": null,
+      "box": {
+        "x": 60.56,
+        "y": 133.94,
+        "w": 44.58,
+        "h": 52
+      },
+      "visible_box": {
+        "x": 60.56,
+        "y": 133.94,
+        "w": 44.58,
+        "h": 52
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "mixed_font_or_style",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#d1d6db",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:border",
+            "kind": "boundary",
+            "color": "#d1d6db",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 60.56,
+              "y": 133.94,
+              "w": 44.58,
+              "h": 52
+            }
+          },
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 60.56,
+              "y": 133.94,
+              "w": 44.58,
+              "h": 52
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "수 30",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "dates",
+        "step-1"
+      ],
+      "sibling_scope_id": "#dates",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-8",
+      "role": "button",
+      "name": "목 1",
+      "text": "목 1",
+      "tag": "button",
+      "selector": "#dates > button:nth-of-type(3)",
+      "dom_id": null,
+      "box": {
+        "x": 109.14,
+        "y": 133.94,
+        "w": 44.56,
+        "h": 52
+      },
+      "visible_box": {
+        "x": 109.14,
+        "y": 133.94,
+        "w": 44.56,
+        "h": 52
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "mixed_font_or_style",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#d1d6db",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:border",
+            "kind": "boundary",
+            "color": "#d1d6db",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 109.14,
+              "y": 133.94,
+              "w": 44.56,
+              "h": 52
+            }
+          },
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 109.14,
+              "y": 133.94,
+              "w": 44.56,
+              "h": 52
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "목 1",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "dates",
+        "step-1"
+      ],
+      "sibling_scope_id": "#dates",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-9",
+      "role": "button",
+      "name": "금 2",
+      "text": "금 2",
+      "tag": "button",
+      "selector": "#dates > button:nth-of-type(4)",
+      "dom_id": null,
+      "box": {
+        "x": 157.7,
+        "y": 133.94,
+        "w": 44.58,
+        "h": 52
+      },
+      "visible_box": {
+        "x": 157.7,
+        "y": 133.94,
+        "w": 44.58,
+        "h": 52
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "mixed_font_or_style",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#d1d6db",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:border",
+            "kind": "boundary",
+            "color": "#d1d6db",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 157.7,
+              "y": 133.94,
+              "w": 44.58,
+              "h": 52
+            }
+          },
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 157.7,
+              "y": 133.94,
+              "w": 44.58,
+              "h": 52
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "금 2",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "dates",
+        "step-1"
+      ],
+      "sibling_scope_id": "#dates",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-10",
+      "role": "button",
+      "name": "토 3",
+      "text": "토 3",
+      "tag": "button",
+      "selector": "#dates > button:nth-of-type(5)",
+      "dom_id": null,
+      "box": {
+        "x": 206.28,
+        "y": 133.94,
+        "w": 44.56,
+        "h": 52
+      },
+      "visible_box": {
+        "x": 206.28,
+        "y": 133.94,
+        "w": 44.56,
+        "h": 52
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "mixed_font_or_style",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#d1d6db",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:border",
+            "kind": "boundary",
+            "color": "#d1d6db",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 206.28,
+              "y": 133.94,
+              "w": 44.56,
+              "h": 52
+            }
+          },
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 206.28,
+              "y": 133.94,
+              "w": 44.56,
+              "h": 52
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "토 3",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "dates",
+        "step-1"
+      ],
+      "sibling_scope_id": "#dates",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-11",
+      "role": "button",
+      "name": "일 4",
+      "text": "일 4",
+      "tag": "button",
+      "selector": "#dates > button:nth-of-type(6)",
+      "dom_id": null,
+      "box": {
+        "x": 254.84,
+        "y": 133.94,
+        "w": 44.58,
+        "h": 52
+      },
+      "visible_box": {
+        "x": 254.84,
+        "y": 133.94,
+        "w": 44.58,
+        "h": 52
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "mixed_font_or_style",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#d1d6db",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:border",
+            "kind": "boundary",
+            "color": "#d1d6db",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 254.84,
+              "y": 133.94,
+              "w": 44.58,
+              "h": 52
+            }
+          },
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 254.84,
+              "y": 133.94,
+              "w": 44.58,
+              "h": 52
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "일 4",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "dates",
+        "step-1"
+      ],
+      "sibling_scope_id": "#dates",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-12",
+      "role": "button",
+      "name": "월 5",
+      "text": "월 5",
+      "tag": "button",
+      "selector": "#dates > button:nth-of-type(7)",
+      "dom_id": null,
+      "box": {
+        "x": 303.42,
+        "y": 133.94,
+        "w": 44.58,
+        "h": 52
+      },
+      "visible_box": {
+        "x": 303.42,
+        "y": 133.94,
+        "w": 44.58,
+        "h": 52
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "mixed_font_or_style",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#d1d6db",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:border",
+            "kind": "boundary",
+            "color": "#d1d6db",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 303.42,
+              "y": 133.94,
+              "w": 44.58,
+              "h": 52
+            }
+          },
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 303.42,
+              "y": 133.94,
+              "w": 44.58,
+              "h": 52
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "월 5",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "dates",
+        "step-1"
+      ],
+      "sibling_scope_id": "#dates",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-13",
+      "role": "heading",
+      "name": "인원",
+      "text": "인원",
+      "tag": "h2",
+      "selector": "div:nth-of-type(2) > div:nth-of-type(2) > h2",
+      "dom_id": null,
+      "box": {
+        "x": 16,
+        "y": 208.06,
+        "w": 25.95,
+        "h": 21.75
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 208.06,
+        "w": 25.95,
+        "h": 21.75
+      },
+      "visible_geometry": "measured",
+      "interactive": false,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 15,
+      "font_weight": 700,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 13.005000114440918,
+        "probes": {
+          "cap_H_px": 10.56884765625,
+          "x_height_px": 8.06396484375,
+          "body_Hg_px": 13.4033203125,
+          "hangul_px": 13.050000190734863
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 208.06,
+              "w": 25.95,
+              "h": 21.75
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [],
+      "ancestor_ids": [
+        "step-1"
+      ],
+      "sibling_scope_id": "#step-1 > div:nth-of-type(2)",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-14",
+      "role": "button",
+      "name": "인원 줄이기",
+      "text": "−",
+      "tag": "button",
+      "selector": "#people-minus",
+      "dom_id": "people-minus",
+      "box": {
+        "x": 215,
+        "y": 196.94,
+        "w": 44,
+        "h": 44
+      },
+      "visible_box": {
+        "x": 215,
+        "y": 196.94,
+        "w": 44,
+        "h": 44
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 20,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 1.58203125,
+        "probes": {
+          "cap_H_px": 14.091796875,
+          "x_height_px": 10.439605712890625,
+          "body_Hg_px": 17.779693603515625,
+          "hangul_px": 16.920001983642578
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 215,
+              "y": 196.94,
+              "w": 44,
+              "h": 44
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "aria-label",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "−",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "step-1"
+      ],
+      "sibling_scope_id": "div:nth-of-type(2) > div:nth-of-type(2) > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-15",
+      "role": "generic",
+      "name": "1",
+      "text": "1",
+      "tag": "span",
+      "selector": "#people",
+      "dom_id": "people",
+      "box": {
+        "x": 259,
+        "y": 208.06,
+        "w": 40,
+        "h": 21.75
+      },
+      "visible_box": {
+        "x": 259,
+        "y": 208.06,
+        "w": 40,
+        "h": 21.75
+      },
+      "visible_geometry": "measured",
+      "interactive": false,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 15,
+      "font_weight": 700,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 10.56884765625,
+        "probes": {
+          "cap_H_px": 10.56884765625,
+          "x_height_px": 8.06396484375,
+          "body_Hg_px": 13.4033203125,
+          "hangul_px": 13.050000190734863
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 259,
+              "y": 208.06,
+              "w": 40,
+              "h": 21.75
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [],
+      "ancestor_ids": [
+        "step-1"
+      ],
+      "sibling_scope_id": "div:nth-of-type(2) > div:nth-of-type(2) > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-16",
+      "role": "button",
+      "name": "인원 늘리기",
+      "text": "+",
+      "tag": "button",
+      "selector": "#people-plus",
+      "dom_id": "people-plus",
+      "box": {
+        "x": 299,
+        "y": 196.94,
+        "w": 44,
+        "h": 44
+      },
+      "visible_box": {
+        "x": 299,
+        "y": 196.94,
+        "w": 44,
+        "h": 44
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 20,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 10.324249267578125,
+        "probes": {
+          "cap_H_px": 14.091796875,
+          "x_height_px": 10.439605712890625,
+          "body_Hg_px": 17.779693603515625,
+          "hangul_px": 16.920001983642578
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 299,
+              "y": 196.94,
+              "w": 44,
+              "h": 44
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "aria-label",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "+",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "step-1"
+      ],
+      "sibling_scope_id": "div:nth-of-type(2) > div:nth-of-type(2) > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-17",
+      "role": "heading",
+      "name": "시간",
+      "text": "시간",
+      "tag": "h2",
+      "selector": "h2:nth-of-type(2)",
+      "dom_id": null,
+      "box": {
+        "x": 16,
+        "y": 253.94,
+        "w": 328,
+        "h": 21.75
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 253.94,
+        "w": 328,
+        "h": 21.75
+      },
+      "visible_geometry": "measured",
+      "interactive": false,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 15,
+      "font_weight": 700,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 13.36500072479248,
+        "probes": {
+          "cap_H_px": 10.56884765625,
+          "x_height_px": 8.06396484375,
+          "body_Hg_px": 13.4033203125,
+          "hangul_px": 13.050000190734863
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 253.94,
+              "w": 328,
+              "h": 21.75
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [],
+      "ancestor_ids": [
+        "step-1"
+      ],
+      "sibling_scope_id": "#step-1 > div:nth-of-type(2)",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-18",
+      "role": "button",
+      "name": "10:30",
+      "text": "10:30",
+      "tag": "button",
+      "selector": "#time-slots > button:nth-of-type(1)",
+      "dom_id": null,
+      "box": {
+        "x": 16,
+        "y": 283.69,
+        "w": 76,
+        "h": 44
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 283.69,
+        "w": 76,
+        "h": 44
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 15,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 11.09619140625,
+        "probes": {
+          "cap_H_px": 10.56884765625,
+          "x_height_px": 8.007774353027344,
+          "body_Hg_px": 13.386268615722656,
+          "hangul_px": 13.005000114440918
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#eaf6ec",
+      "container_bg": "#ffffff",
+      "border_color": "#289828",
+      "border_width_px": 2,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:fill",
+            "kind": "boundary",
+            "color": "#eaf6ec",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 283.69,
+              "w": 76,
+              "h": 44
+            }
+          },
+          {
+            "key": "self:border",
+            "kind": "boundary",
+            "color": "#289828",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 283.69,
+              "w": 76,
+              "h": 44
+            }
+          },
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#eaf6ec",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 283.69,
+              "w": 76,
+              "h": 44
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "10:30",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "time-slots",
+        "step-1"
+      ],
+      "sibling_scope_id": "#time-slots",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-19",
+      "role": "button",
+      "name": "11:00",
+      "text": "11:00",
+      "tag": "button",
+      "selector": "#time-slots > button:nth-of-type(2)",
+      "dom_id": null,
+      "box": {
+        "x": 100,
+        "y": 283.69,
+        "w": 76,
+        "h": 44
+      },
+      "visible_box": {
+        "x": 100,
+        "y": 283.69,
+        "w": 76,
+        "h": 44
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": false,
+      "in_viewport": true,
+      "font_size_px": 15,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 11.09619140625,
+        "probes": {
+          "cap_H_px": 10.56884765625,
+          "x_height_px": 8.007774353027344,
+          "body_Hg_px": 13.386268615722656,
+          "hangul_px": 13.005000114440918
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#fdeaea",
+      "container_bg": "#ffffff",
+      "border_color": "#d8383a",
+      "border_width_px": 2,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:fill",
+            "kind": "boundary",
+            "color": "#fdeaea",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 100,
+              "y": 283.69,
+              "w": 76,
+              "h": 44
+            }
+          },
+          {
+            "key": "self:border",
+            "kind": "boundary",
+            "color": "#d8383a",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 100,
+              "y": 283.69,
+              "w": 76,
+              "h": 44
+            }
+          },
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#fdeaea",
+            "shape": null,
+            "box": {
+              "x": 100,
+              "y": 283.69,
+              "w": 76,
+              "h": 44
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "11:00",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "time-slots",
+        "step-1"
+      ],
+      "sibling_scope_id": "#time-slots",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-20",
+      "role": "button",
+      "name": "13:00",
+      "text": "13:00",
+      "tag": "button",
+      "selector": "#time-slots > button:nth-of-type(3)",
+      "dom_id": null,
+      "box": {
+        "x": 184,
+        "y": 283.69,
+        "w": 76,
+        "h": 44
+      },
+      "visible_box": {
+        "x": 184,
+        "y": 283.69,
+        "w": 76,
+        "h": 44
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": false,
+      "in_viewport": true,
+      "font_size_px": 15,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 11.09619140625,
+        "probes": {
+          "cap_H_px": 10.56884765625,
+          "x_height_px": 8.007774353027344,
+          "body_Hg_px": 13.386268615722656,
+          "hangul_px": 13.005000114440918
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#fdeaea",
+      "container_bg": "#ffffff",
+      "border_color": "#d8383a",
+      "border_width_px": 2,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:fill",
+            "kind": "boundary",
+            "color": "#fdeaea",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 184,
+              "y": 283.69,
+              "w": 76,
+              "h": 44
+            }
+          },
+          {
+            "key": "self:border",
+            "kind": "boundary",
+            "color": "#d8383a",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 184,
+              "y": 283.69,
+              "w": 76,
+              "h": 44
+            }
+          },
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#fdeaea",
+            "shape": null,
+            "box": {
+              "x": 184,
+              "y": 283.69,
+              "w": 76,
+              "h": 44
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "13:00",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "time-slots",
+        "step-1"
+      ],
+      "sibling_scope_id": "#time-slots",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-21",
+      "role": "button",
+      "name": "13:30",
+      "text": "13:30",
+      "tag": "button",
+      "selector": "#time-slots > button:nth-of-type(4)",
+      "dom_id": null,
+      "box": {
+        "x": 268,
+        "y": 283.69,
+        "w": 76,
+        "h": 44
+      },
+      "visible_box": {
+        "x": 268,
+        "y": 283.69,
+        "w": 76,
+        "h": 44
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 15,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 11.09619140625,
+        "probes": {
+          "cap_H_px": 10.56884765625,
+          "x_height_px": 8.007774353027344,
+          "body_Hg_px": 13.386268615722656,
+          "hangul_px": 13.005000114440918
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#eaf6ec",
+      "container_bg": "#ffffff",
+      "border_color": "#289828",
+      "border_width_px": 2,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:fill",
+            "kind": "boundary",
+            "color": "#eaf6ec",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 268,
+              "y": 283.69,
+              "w": 76,
+              "h": 44
+            }
+          },
+          {
+            "key": "self:border",
+            "kind": "boundary",
+            "color": "#289828",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 268,
+              "y": 283.69,
+              "w": 76,
+              "h": 44
+            }
+          },
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#eaf6ec",
+            "shape": null,
+            "box": {
+              "x": 268,
+              "y": 283.69,
+              "w": 76,
+              "h": 44
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "13:30",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "time-slots",
+        "step-1"
+      ],
+      "sibling_scope_id": "#time-slots",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-22",
+      "role": "button",
+      "name": "14:00",
+      "text": "14:00",
+      "tag": "button",
+      "selector": "#time-slots > button:nth-of-type(5)",
+      "dom_id": null,
+      "box": {
+        "x": 16,
+        "y": 335.69,
+        "w": 76,
+        "h": 44
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 335.69,
+        "w": 76,
+        "h": 44
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 15,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 11.09619140625,
+        "probes": {
+          "cap_H_px": 10.56884765625,
+          "x_height_px": 8.007774353027344,
+          "body_Hg_px": 13.386268615722656,
+          "hangul_px": 13.005000114440918
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#eaf6ec",
+      "container_bg": "#ffffff",
+      "border_color": "#289828",
+      "border_width_px": 2,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:fill",
+            "kind": "boundary",
+            "color": "#eaf6ec",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 335.69,
+              "w": 76,
+              "h": 44
+            }
+          },
+          {
+            "key": "self:border",
+            "kind": "boundary",
+            "color": "#289828",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 335.69,
+              "w": 76,
+              "h": 44
+            }
+          },
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#eaf6ec",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 335.69,
+              "w": 76,
+              "h": 44
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "14:00",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "time-slots",
+        "step-1"
+      ],
+      "sibling_scope_id": "#time-slots",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-23",
+      "role": "button",
+      "name": "15:00",
+      "text": "15:00",
+      "tag": "button",
+      "selector": "#time-slots > button:nth-of-type(6)",
+      "dom_id": null,
+      "box": {
+        "x": 100,
+        "y": 335.69,
+        "w": 76,
+        "h": 44
+      },
+      "visible_box": {
+        "x": 100,
+        "y": 335.69,
+        "w": 76,
+        "h": 44
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": false,
+      "in_viewport": true,
+      "font_size_px": 15,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 11.09619140625,
+        "probes": {
+          "cap_H_px": 10.56884765625,
+          "x_height_px": 8.007774353027344,
+          "body_Hg_px": 13.386268615722656,
+          "hangul_px": 13.005000114440918
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#fdeaea",
+      "container_bg": "#ffffff",
+      "border_color": "#d8383a",
+      "border_width_px": 2,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:fill",
+            "kind": "boundary",
+            "color": "#fdeaea",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 100,
+              "y": 335.69,
+              "w": 76,
+              "h": 44
+            }
+          },
+          {
+            "key": "self:border",
+            "kind": "boundary",
+            "color": "#d8383a",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 100,
+              "y": 335.69,
+              "w": 76,
+              "h": 44
+            }
+          },
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#fdeaea",
+            "shape": null,
+            "box": {
+              "x": 100,
+              "y": 335.69,
+              "w": 76,
+              "h": 44
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "15:00",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "time-slots",
+        "step-1"
+      ],
+      "sibling_scope_id": "#time-slots",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-24",
+      "role": "button",
+      "name": "15:30",
+      "text": "15:30",
+      "tag": "button",
+      "selector": "#time-slots > button:nth-of-type(7)",
+      "dom_id": null,
+      "box": {
+        "x": 184,
+        "y": 335.69,
+        "w": 76,
+        "h": 44
+      },
+      "visible_box": {
+        "x": 184,
+        "y": 335.69,
+        "w": 76,
+        "h": 44
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 15,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 11.09619140625,
+        "probes": {
+          "cap_H_px": 10.56884765625,
+          "x_height_px": 8.007774353027344,
+          "body_Hg_px": 13.386268615722656,
+          "hangul_px": 13.005000114440918
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#eaf6ec",
+      "container_bg": "#ffffff",
+      "border_color": "#289828",
+      "border_width_px": 2,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:fill",
+            "kind": "boundary",
+            "color": "#eaf6ec",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 184,
+              "y": 335.69,
+              "w": 76,
+              "h": 44
+            }
+          },
+          {
+            "key": "self:border",
+            "kind": "boundary",
+            "color": "#289828",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 184,
+              "y": 335.69,
+              "w": 76,
+              "h": 44
+            }
+          },
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#eaf6ec",
+            "shape": null,
+            "box": {
+              "x": 184,
+              "y": 335.69,
+              "w": 76,
+              "h": 44
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "15:30",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "time-slots",
+        "step-1"
+      ],
+      "sibling_scope_id": "#time-slots",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-25",
+      "role": "button",
+      "name": "16:00",
+      "text": "16:00",
+      "tag": "button",
+      "selector": "button:nth-of-type(8)",
+      "dom_id": null,
+      "box": {
+        "x": 268,
+        "y": 335.69,
+        "w": 76,
+        "h": 44
+      },
+      "visible_box": {
+        "x": 268,
+        "y": 335.69,
+        "w": 76,
+        "h": 44
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": false,
+      "in_viewport": true,
+      "font_size_px": 15,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 11.098594665527344,
+        "probes": {
+          "cap_H_px": 10.56884765625,
+          "x_height_px": 8.007774353027344,
+          "body_Hg_px": 13.386268615722656,
+          "hangul_px": 13.005000114440918
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#fdeaea",
+      "container_bg": "#ffffff",
+      "border_color": "#d8383a",
+      "border_width_px": 2,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:fill",
+            "kind": "boundary",
+            "color": "#fdeaea",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 268,
+              "y": 335.69,
+              "w": 76,
+              "h": 44
+            }
+          },
+          {
+            "key": "self:border",
+            "kind": "boundary",
+            "color": "#d8383a",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 268,
+              "y": 335.69,
+              "w": 76,
+              "h": 44
+            }
+          },
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#fdeaea",
+            "shape": null,
+            "box": {
+              "x": 268,
+              "y": 335.69,
+              "w": 76,
+              "h": 44
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "16:00",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "time-slots",
+        "step-1"
+      ],
+      "sibling_scope_id": "#time-slots",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-26",
+      "role": "generic",
+      "name": "예약 가능",
+      "text": "예약 가능",
+      "tag": "span",
+      "selector": "div:nth-of-type(2) > p > span:nth-of-type(1)",
+      "dom_id": null,
+      "box": {
+        "x": 16,
+        "y": 387.69,
+        "w": 67.23,
+        "h": 20.3
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 387.69,
+        "w": 67.23,
+        "h": 20.3
+      },
+      "visible_geometry": "measured",
+      "interactive": false,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 12.236001014709473,
+        "probes": {
+          "cap_H_px": 9.8642578125,
+          "x_height_px": 7.369140625,
+          "body_Hg_px": 12.4619140625,
+          "hangul_px": 11.844001770019531
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#4e5968",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#4e5968",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 387.69,
+              "w": 67.23,
+              "h": 20.3
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [],
+      "ancestor_ids": [
+        "step-1"
+      ],
+      "sibling_scope_id": "#step-1 > div:nth-of-type(2)",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-27",
+      "role": "generic",
+      "name": "마감",
+      "text": "마감",
+      "tag": "span",
+      "selector": "span:nth-of-type(2)",
+      "dom_id": null,
+      "box": {
+        "x": 97.23,
+        "y": 387.69,
+        "w": 39.23,
+        "h": 20.3
+      },
+      "visible_box": {
+        "x": 97.23,
+        "y": 387.69,
+        "w": 39.23,
+        "h": 20.3
+      },
+      "visible_geometry": "measured",
+      "interactive": false,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 12.236001014709473,
+        "probes": {
+          "cap_H_px": 9.8642578125,
+          "x_height_px": 7.369140625,
+          "body_Hg_px": 12.4619140625,
+          "hangul_px": 11.844001770019531
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#4e5968",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#4e5968",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 97.23,
+              "y": 387.69,
+              "w": 39.23,
+              "h": 20.3
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [],
+      "ancestor_ids": [
+        "step-1"
+      ],
+      "sibling_scope_id": "#step-1 > div:nth-of-type(2)",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-28",
+      "role": "paragraph",
+      "name": "날짜와 시간을 선택해 주세요",
+      "text": "날짜와 시간을 선택해 주세요",
+      "tag": "p",
+      "selector": "#pick-summary",
+      "dom_id": "pick-summary",
+      "box": {
+        "x": 30,
+        "y": 445.11,
+        "w": 238,
+        "h": 21.75
+      },
+      "visible_box": {
+        "x": 30,
+        "y": 445.11,
+        "w": 238,
+        "h": 21.75
+      },
+      "visible_geometry": "measured",
+      "interactive": false,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 15,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 13.36500072479248,
+        "probes": {
+          "cap_H_px": 10.56884765625,
+          "x_height_px": 8.007774353027344,
+          "body_Hg_px": 13.386268615722656,
+          "hangul_px": 13.005000114440918
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#f2f4f6",
+      "container_bg": "#f2f4f6",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#f2f4f6",
+            "shape": null,
+            "box": {
+              "x": 30,
+              "y": 445.11,
+              "w": 238,
+              "h": 21.75
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [],
+      "ancestor_ids": [
+        "step-1"
+      ],
+      "sibling_scope_id": "#step-1 > div:nth-of-type(2)",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-29",
+      "role": "button",
+      "name": "다음",
+      "text": "다음",
+      "tag": "button",
+      "selector": "#next",
+      "dom_id": "next",
+      "box": {
+        "x": 280,
+        "y": 427.98,
+        "w": 56,
+        "h": 56
+      },
+      "visible_box": {
+        "x": 280,
+        "y": 427.98,
+        "w": 56,
+        "h": 56
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 15,
+      "font_weight": 700,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 13.36500072479248,
+        "probes": {
+          "cap_H_px": 10.56884765625,
+          "x_height_px": 8.06396484375,
+          "body_Hg_px": 13.4033203125,
+          "hangul_px": 13.050000190734863
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#ffffff",
+      "color_bg": "#1b64da",
+      "container_bg": "#f2f4f6",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:fill",
+            "kind": "boundary",
+            "color": "#1b64da",
+            "background": "#f2f4f6",
+            "shape": null,
+            "box": {
+              "x": 280,
+              "y": 427.98,
+              "w": 56,
+              "h": 56
+            }
+          },
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#ffffff",
+            "background": "#1b64da",
+            "shape": null,
+            "box": {
+              "x": 280,
+              "y": 427.98,
+              "w": 56,
+              "h": 56
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "다음",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [
+        "primary"
+      ],
+      "ancestor_ids": [
+        "step-1"
+      ],
+      "sibling_scope_id": "#step-1 > div:nth-of-type(2)",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-30",
+      "role": "alert",
+      "name": "",
+      "text": "",
+      "tag": "div",
+      "selector": "#form-error",
+      "dom_id": "form-error",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": false,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 14,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#b3261e",
+      "color_bg": "#fdecec",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [
+        "error_message"
+      ],
+      "ancestor_ids": [
+        "step-2"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-31",
+      "role": "textbox",
+      "name": "이름",
+      "text": "",
+      "tag": "input",
+      "selector": "#name",
+      "dom_id": "name",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 16,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "private_control"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#8b95a1",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "label",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "step-2"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-32",
+      "role": "textbox",
+      "name": "휴대폰 번호",
+      "text": "",
+      "tag": "input",
+      "selector": "#phone",
+      "dom_id": "phone",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 16,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "private_control"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#8b95a1",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "label",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "step-2"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-33",
+      "role": "textbox",
+      "name": "요청사항 (선택)",
+      "text": "",
+      "tag": "textarea",
+      "selector": "#memo",
+      "dom_id": "memo",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 16,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "private_control"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#8b95a1",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "label",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "step-2"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-34",
+      "role": "checkbox",
+      "name": "개인정보 수집·이용 동의 (필수)",
+      "text": "",
+      "tag": "input",
+      "selector": "#agree",
+      "dom_id": "agree",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 15,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "private_control"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "label",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "step-2"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-35",
+      "role": "button",
+      "name": "예약 신청하기",
+      "text": "예약 신청하기",
+      "tag": "button",
+      "selector": "#submit",
+      "dom_id": "submit",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 16,
+      "font_weight": 700,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 14.272000312805176,
+        "probes": {
+          "cap_H_px": 11.2734375,
+          "x_height_px": 8.6015625,
+          "body_Hg_px": 14.296875,
+          "hangul_px": 13.920001029968262
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#ffffff",
+      "color_bg": "#4a9af5",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "예약 신청하기",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [
+        "primary"
+      ],
+      "ancestor_ids": [
+        "step-2"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-36",
+      "role": "status",
+      "name": "예약 신청 완료",
+      "text": "✓ 예약 신청 완료",
+      "tag": "div",
+      "selector": "#booking-done",
+      "dom_id": "booking-done",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": false,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 15,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [
+        "status"
+      ],
+      "ancestor_ids": [],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-37",
+      "role": "status",
+      "name": "",
+      "text": "",
+      "tag": "div",
+      "selector": "#toast",
+      "dom_id": "toast",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": false,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 15,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#ffffff",
+      "color_bg": "#333d4b",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [
+        "status",
+        "timed"
+      ],
+      "ancestor_ids": [],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    }
+  ],
+  "focus_point": null,
+  "focus": {
+    "on_body": true,
+    "tag": null,
+    "dom_id": null,
+    "expanded": false,
+    "controls": []
+  },
+  "layers": [],
+  "console_errors": [],
+  "notes": [
+    "on_demand"
+  ]
+}
