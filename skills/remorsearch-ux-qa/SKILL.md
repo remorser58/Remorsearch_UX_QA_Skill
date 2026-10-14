@@ -12,7 +12,7 @@ Given one URL or repository, discover tasks and questions yourself. Read `refere
 | Component | Use it for | Read first |
 | --- | --- | --- |
 | research | User experience and audience questions | `references/research/workflow.md` |
-| persona-qa | Real tasks, recovery, accessibility and Figma | `references/persona-qa/workflow.md` |
+| persona-qa | Real tasks, recovery, accessibility and Figma; compose contrasting personas first | `references/persona-qa/workflow.md` |
 | ergonomics | Experimental reach, perception, timing and layout checks | `references/ergonomics/workflow.md` |
 | loop | Authorized fixes and same-scenario replay | `references/loop/workflow.md` |
 

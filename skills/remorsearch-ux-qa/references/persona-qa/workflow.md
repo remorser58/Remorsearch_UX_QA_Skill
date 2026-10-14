@@ -11,6 +11,29 @@ Chromium emulation leaves Safari/WebKit, real device/grip/occlusion/safe area/sc
 
 After first observation, use `references/persona-qa/generated-ui-preflight.md` sections 1–4 before baseline verdict; replay affected checks after fixes.
 
+## Run path
+
+1. Compose contrasting profiles before planned persona runs; initial product observation may come first. With a supplied audience file, validate and compose from it and keep the emitted plan. `--budget` counts distinct profiles, not runs across scenarios. For a research-origin audience, use its supported `--run`, `--bundle` and `--gate` references as described in `references/ergonomics/audience-research.md`; do not replace missing research evidence with a new standalone audience:
+
+```sh
+python3 scripts/ergo_qa.py audience-check audience.json
+python3 scripts/ergo_qa.py personas --audience audience.json --budget 4 --plan work/persona-plan.md --out work/profiles.json
+python3 scripts/ergo_qa.py scenario-stubs --audience audience.json --out scenarios/
+```
+
+Without an audience, sample strata with `profiles`. Cover at least two task-changing conditions when scope and budget permit; an explicitly requested single condition or a blocked budget stays valid with the coverage gap recorded. A typical member or base-rate `--strategy base_rate_sample` profile is a baseline profile — a comparison, not a clean-surface guarantee; reserve `clean control` for an actual clean twin. Only a matched one-facet pair (same segment/task/device, one differing facet) supports condition attribution; a defect observed under both profiles stays observed under both, never proof that all users are affected.
+
+2. Record the task per section 1 and capture per section 2, operating the same profile you later analyze: `serve` + `drive_client`, one profile per run, real notes only. A device-only recording analyzed with `--cross-profile` is shared analytical contrast, never a persona-operated run.
+3. Analyze and aggregate the recorded runs with the existing checks:
+
+```sh
+python3 scripts/ergo_qa.py analyze --runs runs/R-persona-01 --profiles work/profiles.json --scenario sc.json --out work/analysis.json
+python3 scripts/ergo_qa.py swarm --runs runs/ --profiles work/profiles.json --scenario sc.json --out report/
+```
+
+Add `--cross-profile` only for shared device-only recordings; those evaluations stay analytical and are never bound as persona executions. For a directory containing multiple scenarios, supply every corresponding `--scenario` file (repeat the option), or analyze each scenario separately. Preserve the build, device and orientation bindings. Distinguish executed profile runs from shared-recording analysis. Label evidence independently as measured/model/judgment; a `hypothesis`-tier result stays a hypothesis and needs reproduction or corroboration before promotion.
+4. Bind verified profile runs to the QA bundle with `attach --bind scenario=profile` (section 5).
+
 ## 1. Build the priority-task matrix
 
 For every priority task, require all these rows on each device in scope:
@@ -24,7 +47,7 @@ For every priority task, require all these rows on each device in scope:
 | Keyboard only | Whole primary task, including intermediate choices and recovery |
 | Reading order | Each intermediate screen's meaningful sequence and focus order |
 
-List reached/missing screens, states and devices. Check Korean clipping/IME where relevant; verify retained values after every step. Author `success.task_checks` for material fields after error/coupon/address/recovery transitions and at completion (`drivers/web/README.md`). Use explicit expected reset/normalized values; `from_step` reuses an authored input, `type.redact:true` protects its recorded text. Failed submit: first-invalid focus, invalid state and error association. Success requires final options/quantities/amounts/notes to match. Each row: pass/partial/fail/untested with reason.
+List reached/missing screens, states and devices. Check Korean clipping/IME where relevant; verify retained values after every step. Author `success.task_checks` for material fields after error/coupon/address/recovery transitions and at completion (`drivers/web/README.md`). Use explicit expected reset/normalized values; `from_step` reuses an authored input, `type.redact:true` protects its recorded text. Failed submit: record the actual focus, invalid state and error association. Automatic first-invalid focus and errors clearing while typing become findings only with blocked navigation or completion, broken error association, an incorrect submission, or explicit spec/standard support; otherwise they stay observations. Success requires final options/quantities/amounts/notes to match. Each row: pass/partial/fail/untested with reason.
 
 Scenario: ID/task/goal/safe data, basis/brief condition, context/constraints/device/input/start, expected decision/integrity/risk, claim IDs and omissions. Audience rows cite audience_id/segment_id/task_id/facet and gate-supported motivations. Without an audience, choose task-changing strata: new/returning, touch/keyboard, interruption, delay, empty/stale/edge data. Do not add demographic decoration or stereotype behavior.
 
@@ -34,15 +57,16 @@ Optional dataset: exact source/revision/schema, bounded/streaming sample; record
 
 Exercise actual product/input/start state; capture decisions/recovery, console/network/runtime errors, keyboard/focus/semantics and feedback. Screenshots support the trace; available interactions require flow evidence.
 
-Bundled fallback (Node.js 22; detect installed dependencies first):
+Bundled fallback (Node.js 22; detect installed dependencies first). The `profiles` line below is the no-audience case only and must not overwrite an audience-composed `work/profiles.json`; compose at least two task-changing conditions when scope and budget permit (Run path). The example binds `EP-01` — replace it with an actual `profile_id` from your composed set:
 
-기록과 분석에 같은 프로필을 사용합니다. 아래 예시는 기존 `bundle.json`의 `scenario-1`에 `EP-01`을 연결합니다. 제품 URL·빌드 ID와 안전한 데이터·성공 조건을 먼저 지정합니다.
+기록과 분석에 같은 프로필을 사용합니다. 아래 예시는 기존 `bundle.json`의 `scenario-1`에 구성된 프로필 하나를 연결하며 `EP-01`은 실제 구성된 `profile_id`로 바꿉니다. 제품 URL·빌드 ID와 안전한 데이터·성공 조건을 먼저 지정합니다.
 
 ```sh
 : "${PRODUCT_URL:?검사할 제품 URL을 지정하세요}"
 : "${PRODUCT_BUILD_ID:?실제 커밋, 버전, 배포 ID 또는 페이지 소스 해시를 지정하세요}"
 node drivers/web/ergo_drive.mjs devices
-python3 scripts/ergo_qa.py profiles --count 1 --seed 7 --devices galaxy-s24 --out work/profiles.json
+# no supplied/completed audience only; keep audience-composed profiles
+python3 scripts/ergo_qa.py profiles --count 2 --seed 7 --devices galaxy-s24 --out work/profiles.json
 python3 - <<'PY'
 import json
 from pathlib import Path

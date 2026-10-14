@@ -36,7 +36,7 @@ Order cards by P0, P1, P2, P3, then high, medium, low confidence within each sev
 - **Where:** build [commit/version/deploy ID/page hash]; screen [state]; device [ID], viewport [width × height CSS px, DPR], input [touch/keyboard/etc.].
 - **Who:** persona or scenario [ID, brief-derived synthetic condition or supported basis]; task [completion condition].
 - **Steps:** 1. Open [start URL] in [starting state]. 2. [Action/input]. 3. [Action that exposes the failure]. Number every step needed to reproduce it.
-- **Expected:** [Intended behaviour; quote the relevant visible control/label. Mark proposed wording as proposed.]
+- **Expected:** [Intended behaviour; quote the relevant visible control/label. Mark proposed wording as proposed. A behaviour claimed as required cites its spec/standard or names the task step it blocks; otherwise record it as an observation, not a defect.]
 - **Observed:** [What happened after which action; quote the exact visible UI text. Distinguish a success banner from an intact completed task.]
 - **Evidence:** [Capture link and adjacent receipt; corresponding text-dump link; supporting trace/observation IDs.]
 
