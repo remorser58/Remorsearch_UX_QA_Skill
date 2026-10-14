@@ -1,0 +1,524 @@
+{
+  "schema_version": 1,
+  "language": "en",
+  "verdict": "PARTIAL",
+  "comparison_verdict": "INCONCLUSIVE",
+  "artifact_quality_preference": "R17",
+  "task_benefit_quality_win": "INCONCLUSIVE",
+  "summary": "R17 supplies six supported unique defect families; R46 supplies five plus an unsupported-as-defect coupon-copy suggestion. Both find the two known high-impact failures. R17 adds confirmed 320px payment overflow and stronger keyboard/bottom-state proof. This is an artifact advantage in the supplied run; two variants plus one repeat cannot establish a robust task-benefit or general superiority claim.",
+  "scope": {
+    "inputs": "Only astra-blind/R17 and astra-blind/R46 findings, reports, PNGs and DOM/trace receipts.",
+    "outputs": [
+      "astra-judgment.json",
+      "astra-judgment.md"
+    ],
+    "anonymous_conditions": "Unknown; no identity or model inference.",
+    "excluded": "No other directories, state, label map, skills, models, prompts, live product, router or delegation. Start times and accounting excluded; separately verified by main.",
+    "r46_finding_ids": "F01-F06 assigned here by source order; source has no IDs."
+  },
+  "frozen_acceptance": {
+    "pointer_flow": "Same synthetic A/B delivery task at 384x832; 320x568 and 1440x900 key states.",
+    "configured_item": 25000,
+    "two_item_cart": 50000,
+    "delivery": 3000,
+    "coupon": 5000,
+    "final": 48000,
+    "allergy_note": "Exact entered note must survive missing-address validation and final receipt.",
+    "other_persistence": "Delivery preset and selected payment must survive; corrected address must appear in receipt. Empty address before validation is expected, not lost-address evidence.",
+    "recovery": "Omitted sauce then selection; HANKI5000 then HANKKI5000.",
+    "design_scope": "Text alignment, clipping, occlusion, keyboard and mobile flow. No Figma available."
+  },
+  "families": [
+    {
+      "family_id": "allergy-note-loss",
+      "title": "Missing-address validation clears the allergy note",
+      "severity": "high / P1",
+      "members": {
+        "R17": "F01",
+        "R46": "F01"
+      },
+      "result": "supported",
+      "reason": "The explicit persistence requirement fails: 28/50 becomes 0/50; correcting only the address produces a receipt with no store note. Delivery preset, coupon and payment survive.",
+      "limits": "Synthetic rendered order only; no backend transmission or physical harm established."
+    },
+    {
+      "family_id": "required-part-keyboard",
+      "title": "Required part selection is unavailable in the observed keyboard route",
+      "severity": "high / P1",
+      "members": {
+        "R17": "F02",
+        "R46": "F02"
+      },
+      "result": "supported",
+      "reason": "Tab skips both part choices. DOM reports non-focusable DIVs. R17 also captures selected sauce/cola, unset part and blocked add.",
+      "limits": "No screen-reader session or exhaustive alternate assistive-input search."
+    },
+    {
+      "family_id": "sauce-price-clipping",
+      "title": "Sauce surcharge labels are cropped on mobile",
+      "severity": "medium / P2",
+      "members": {
+        "R17": "F03",
+        "R46": "F04"
+      },
+      "result": "supported",
+      "reason": "Actual PNGs crop +500 won and +1,000 won at 384px, more extensively at 320px; desktop labels fit.",
+      "limits": "Complete DOM names do not repair the visible price loss. No separate price-chip issue is counted."
+    },
+    {
+      "family_id": "payment-summary-overflow",
+      "title": "320px payment summary cannot show labels and amounts together",
+      "severity": "medium / P2",
+      "members": {
+        "R17": "F04"
+      },
+      "result": "supported",
+      "reason": "Left-position PNG crops amounts; right-position PNG reveals amounts and crops labels. DOM corroborates 360px document width / row right edge 344px.",
+      "limits": "Isolated one-item, no-coupon state totals 28,000 won. This is a layout finding, not a 48,000-won arithmetic failure."
+    },
+    {
+      "family_id": "missing-sauce-feedback",
+      "title": "Rejected add does not identify the omitted required sauce",
+      "severity": "medium / P2",
+      "members": {
+        "R17": "F05",
+        "R46": "F03"
+      },
+      "result": "supported",
+      "reason": "With part and cola selected and sauce unchecked, rejected add leaves the screen without new error feedback; selecting sauce recovers. A visibly identifies the missing group.",
+      "limits": "Static required label supplies a partial cue. Completion is recoverable; no validation bypass or high-severity blocker claimed."
+    },
+    {
+      "family_id": "quantity-accessible-names",
+      "title": "Quantity buttons have empty accessible names",
+      "severity": "medium / P2",
+      "members": {
+        "R17": "F06",
+        "R46": "F05"
+      },
+      "result": "supported",
+      "reason": "PNG identifies minus/plus controls and correct quantity change; accessible snapshot/control inventory supplies the missing-name proof.",
+      "limits": "Pointer action works. Speech output and full standards conformance are untested."
+    },
+    {
+      "family_id": "coupon-correction-copy",
+      "title": "Coupon error has an internal code and no spelling hint",
+      "severity": "suggestion; no defect severity established",
+      "members": {
+        "R46": "F06"
+      },
+      "result": "unsupported",
+      "reason": "The wording observation is accurate, but the frozen task supplies the correct code and correction succeeds. No requirement for typo diagnosis, measured recovery failure or spec violation supports promotion to a defect.",
+      "limits": "Retain as an optional copy suggestion; do not call the observation factually false."
+    }
+  ],
+  "arms": {
+    "R17": {
+      "findings": [
+        {
+          "finding_id": "F01",
+          "source_index": 1,
+          "title": "Missing-address validation clears the allergy note",
+          "family_id": "allergy-note-loss",
+          "status": "supported",
+          "reported_severity": "P1",
+          "adjudicated_severity": "high / P1",
+          "severity_qualification": "Synthetic rendered order only; no backend transmission or physical harm established.",
+          "evidence": [
+            "astra-blind/R17/b-mobile-coupon-error.png",
+            "astra-blind/R17/b-mobile-coupon-error.json",
+            "astra-blind/R17/b-mobile-address-error.png",
+            "astra-blind/R17/b-mobile-address-error.json",
+            "astra-blind/R17/b-mobile-final.png",
+            "astra-blind/R17/b-mobile-final.json",
+            "astra-blind/R17/b-short-coupon-success.json",
+            "astra-blind/R17/b-short-address-error.json"
+          ],
+          "evidence_assessment": "The explicit persistence requirement fails: 28/50 becomes 0/50; correcting only the address produces a receipt with no store note. Delivery preset, coupon and payment survive."
+        },
+        {
+          "finding_id": "F02",
+          "source_index": 2,
+          "title": "Required part selection is unavailable in the observed keyboard route",
+          "family_id": "required-part-keyboard",
+          "status": "supported",
+          "reported_severity": "P1",
+          "adjudicated_severity": "high / P1",
+          "severity_qualification": "No screen-reader session or exhaustive alternate assistive-input search.",
+          "evidence": [
+            "astra-blind/R17/b-keyboard-blocked-add.png",
+            "astra-blind/R17/b-keyboard-blocked-add.json",
+            "astra-blind/R17/b-keyboard-skips-part.json",
+            "astra-blind/R17/keyboard-trace.json",
+            "astra-blind/R17/dom-observations.json"
+          ],
+          "evidence_assessment": "Tab skips both part choices. DOM reports non-focusable DIVs. R17 also captures selected sauce/cola, unset part and blocked add."
+        },
+        {
+          "finding_id": "F03",
+          "source_index": 3,
+          "title": "Sauce surcharge labels are cropped on mobile",
+          "family_id": "sauce-price-clipping",
+          "status": "supported",
+          "reported_severity": "P2",
+          "adjudicated_severity": "medium / P2",
+          "severity_qualification": "Complete DOM names do not repair the visible price loss. No separate price-chip issue is counted.",
+          "evidence": [
+            "astra-blind/R17/b-mobile-sauce-error.png",
+            "astra-blind/R17/b-mobile-sauce-error.json",
+            "astra-blind/R17/b-short-sauce-selected.png",
+            "astra-blind/R17/b-short-sauce-selected.json",
+            "astra-blind/R17/b-desktop-options.png"
+          ],
+          "evidence_assessment": "Actual PNGs crop +500 won and +1,000 won at 384px, more extensively at 320px; desktop labels fit."
+        },
+        {
+          "finding_id": "F04",
+          "source_index": 4,
+          "title": "320px payment summary cannot show labels and amounts together",
+          "family_id": "payment-summary-overflow",
+          "status": "supported",
+          "reported_severity": "P2",
+          "adjudicated_severity": "medium / P2",
+          "severity_qualification": "Isolated one-item, no-coupon state totals 28,000 won. This is a layout finding, not a 48,000-won arithmetic failure.",
+          "evidence": [
+            "astra-blind/R17/b-short-payment-bottom.png",
+            "astra-blind/R17/b-short-payment-bottom.json",
+            "astra-blind/R17/b-short-payment-right-edge.png",
+            "astra-blind/R17/b-short-payment-right-edge.json",
+            "astra-blind/R17/dom-observations.json",
+            "astra-blind/R17/a-short-payment-bottom.png"
+          ],
+          "evidence_assessment": "Left-position PNG crops amounts; right-position PNG reveals amounts and crops labels. DOM corroborates 360px document width / row right edge 344px."
+        },
+        {
+          "finding_id": "F05",
+          "source_index": 5,
+          "title": "Rejected add does not identify the omitted required sauce",
+          "family_id": "missing-sauce-feedback",
+          "status": "supported",
+          "reported_severity": "P2",
+          "adjudicated_severity": "medium / P2",
+          "severity_qualification": "Static required label supplies a partial cue. Completion is recoverable; no validation bypass or high-severity blocker claimed.",
+          "evidence": [
+            "astra-blind/R17/b-mobile-sauce-error.png",
+            "astra-blind/R17/b-mobile-sauce-error.json",
+            "astra-blind/R17/b-mobile-cart-one.png",
+            "astra-blind/R17/b-mobile-cart-one.json"
+          ],
+          "evidence_assessment": "With part and cola selected and sauce unchecked, rejected add leaves the screen without new error feedback; selecting sauce recovers. A visibly identifies the missing group."
+        },
+        {
+          "finding_id": "F06",
+          "source_index": 6,
+          "title": "Quantity buttons have empty accessible names",
+          "family_id": "quantity-accessible-names",
+          "status": "supported",
+          "reported_severity": "P2",
+          "adjudicated_severity": "medium / P2",
+          "severity_qualification": "Pointer action works. Speech output and full standards conformance are untested.",
+          "evidence": [
+            "astra-blind/R17/b-mobile-cart-one.png",
+            "astra-blind/R17/b-mobile-cart-two.png",
+            "astra-blind/R17/b-mobile-cart-one.json",
+            "astra-blind/R17/b-mobile-cart-two.json",
+            "astra-blind/R17/dom-observations.json"
+          ],
+          "evidence_assessment": "PNG identifies minus/plus controls and correct quantity change; accessible snapshot/control inventory supplies the missing-name proof."
+        }
+      ],
+      "counts": {
+        "submitted": 6,
+        "valid_unique_families": 6,
+        "unsupported": 0,
+        "falsepositive": 0,
+        "unsupported_rate": 0.0,
+        "valid_exclusive_families": 1,
+        "high_impact_families_found": 2,
+        "known_high_impact_families_missed": 0
+      },
+      "coverage": [
+        {
+          "variant": "A",
+          "viewport": "384x832",
+          "execution_class": "full pointer flow recorded; state artifacts corroborate outcome",
+          "task_integrity": "pass_scoped",
+          "evidence": [
+            "astra-blind/R17/a-mobile-cart-two.png",
+            "astra-blind/R17/a-mobile-address-error.png",
+            "astra-blind/R17/a-mobile-final.png"
+          ]
+        },
+        {
+          "variant": "A",
+          "viewport": "320x568",
+          "execution_class": "key-state replay / mixed-viewport sampling; not independent full flow",
+          "states": "menu, options, cart, coupon/address recovery, payment selection, receipt; R17 additionally payment summary and deletion dialog",
+          "receipt_proof": "R17 actual 320x568 top/bottom viewport captures; R46 full-page images 320x808 (A) and 320x784 (B), insufficient for fixed-viewport occlusion proof"
+        },
+        {
+          "variant": "A",
+          "viewport": "1440x900",
+          "execution_class": "key states only; not independent full flow",
+          "states": "options, cart, address error and final; R17 additionally bottom payment summary and deletion dialog",
+          "gaps": "Initial desktop menu and invalid-coupon rendering not demonstrated."
+        },
+        {
+          "variant": "B",
+          "viewport": "384x832",
+          "execution_class": "full pointer flow recorded; state artifacts corroborate outcome",
+          "task_integrity": "fail_allergy_note_missing",
+          "evidence": [
+            "astra-blind/R17/b-mobile-cart-one.png",
+            "astra-blind/R17/b-mobile-cart-two.png",
+            "astra-blind/R17/b-mobile-address-error.png",
+            "astra-blind/R17/b-mobile-final.png"
+          ]
+        },
+        {
+          "variant": "B",
+          "viewport": "320x568",
+          "execution_class": "key-state replay / mixed-viewport sampling; not independent full flow",
+          "states": "menu, options, cart, coupon/address recovery, payment selection, receipt; R17 additionally payment summary and deletion dialog",
+          "receipt_proof": "R17 actual 320x568 top/bottom viewport captures; R46 full-page images 320x808 (A) and 320x784 (B), insufficient for fixed-viewport occlusion proof"
+        },
+        {
+          "variant": "B",
+          "viewport": "1440x900",
+          "execution_class": "key states only; not independent full flow",
+          "states": "options, cart, address error and final; R17 additionally bottom payment summary and deletion dialog",
+          "gaps": "Initial desktop menu and invalid-coupon rendering not demonstrated."
+        }
+      ],
+      "keyboard_coverage": {
+        "A": "Recorded complete 384x832 keyboard flow, errors and intact final; focus sequence and endpoint PNG/DOM corroborate it. Not an immutable full input-event replay.",
+        "B": "Required-part skip observed at both widths; blocked add captured at 384x832; subsequent keyboard checkout not completed because this task cannot proceed."
+      }
+    },
+    "R46": {
+      "findings": [
+        {
+          "finding_id": "F01",
+          "source_index": 1,
+          "title": "Missing-address validation clears the allergy note",
+          "family_id": "allergy-note-loss",
+          "status": "supported",
+          "reported_severity": "high",
+          "adjudicated_severity": "high / P1",
+          "severity_qualification": "Synthetic rendered order only; no backend transmission or physical harm established.",
+          "evidence": [
+            "astra-blind/R46/b-coupon-error.png",
+            "astra-blind/R46/b-address-error.png",
+            "astra-blind/R46/b-final-mobile.png",
+            "astra-blind/R46/b-checkout-short-error.png",
+            "astra-blind/R46/dom-observations.json"
+          ],
+          "evidence_assessment": "The explicit persistence requirement fails: 28/50 becomes 0/50; correcting only the address produces a receipt with no store note. Delivery preset, coupon and payment survive."
+        },
+        {
+          "finding_id": "F02",
+          "source_index": 2,
+          "title": "Required part selection is unavailable in the observed keyboard route",
+          "family_id": "required-part-keyboard",
+          "status": "supported",
+          "reported_severity": "high",
+          "adjudicated_severity": "high / P1",
+          "severity_qualification": "No screen-reader session or exhaustive alternate assistive-input search.",
+          "evidence": [
+            "astra-blind/R46/b-options-short-top.png",
+            "astra-blind/R46/b-options-short-keyboard.png",
+            "astra-blind/R46/dom-observations.json"
+          ],
+          "evidence_assessment": "Tab skips both part choices. DOM reports non-focusable DIVs. R17 also captures selected sauce/cola, unset part and blocked add."
+        },
+        {
+          "finding_id": "F03",
+          "source_index": 3,
+          "title": "Rejected add does not identify the omitted required sauce",
+          "family_id": "missing-sauce-feedback",
+          "status": "supported",
+          "reported_severity": "medium",
+          "adjudicated_severity": "medium / P2",
+          "severity_qualification": "Static required label supplies a partial cue. Completion is recoverable; no validation bypass or high-severity blocker claimed.",
+          "evidence": [
+            "astra-blind/R46/b-missing-sauce.png",
+            "astra-blind/R46/b-sauce-no-feedback-confirm.png",
+            "astra-blind/R46/b-cart-two.png",
+            "astra-blind/R46/dom-observations.json"
+          ],
+          "evidence_assessment": "With part and cola selected and sauce unchecked, rejected add leaves the screen without new error feedback; selecting sauce recovers. A visibly identifies the missing group."
+        },
+        {
+          "finding_id": "F04",
+          "source_index": 4,
+          "title": "Sauce surcharge labels are cropped on mobile",
+          "family_id": "sauce-price-clipping",
+          "status": "supported",
+          "reported_severity": "medium",
+          "adjudicated_severity": "medium / P2",
+          "severity_qualification": "Complete DOM names do not repair the visible price loss. No separate price-chip issue is counted.",
+          "evidence": [
+            "astra-blind/R46/b-missing-sauce.png",
+            "astra-blind/R46/b-options-short-keyboard.png",
+            "astra-blind/R46/b-options-desktop.png",
+            "astra-blind/R46/dom-observations.json"
+          ],
+          "evidence_assessment": "Actual PNGs crop +500 won and +1,000 won at 384px, more extensively at 320px; desktop labels fit."
+        },
+        {
+          "finding_id": "F05",
+          "source_index": 5,
+          "title": "Quantity buttons have empty accessible names",
+          "family_id": "quantity-accessible-names",
+          "status": "supported",
+          "reported_severity": "medium",
+          "adjudicated_severity": "medium / P2",
+          "severity_qualification": "Pointer action works. Speech output and full standards conformance are untested.",
+          "evidence": [
+            "astra-blind/R46/b-cart-two.png",
+            "astra-blind/R46/b-cart-short.png",
+            "astra-blind/R46/dom-observations.json"
+          ],
+          "evidence_assessment": "PNG identifies minus/plus controls and correct quantity change; accessible snapshot/control inventory supplies the missing-name proof."
+        },
+        {
+          "finding_id": "F06",
+          "source_index": 6,
+          "title": "Coupon error has an internal code and no spelling hint",
+          "family_id": "coupon-correction-copy",
+          "status": "unsupported",
+          "reported_severity": "low",
+          "adjudicated_severity": "suggestion; no defect severity established",
+          "severity_qualification": "Retain as an optional copy suggestion; do not call the observation factually false.",
+          "evidence": [
+            "astra-blind/R46/b-coupon-error.png",
+            "astra-blind/R46/b-checkout-short-payment.png",
+            "astra-blind/R46/dom-observations.json"
+          ],
+          "evidence_assessment": "The wording observation is accurate, but the frozen task supplies the correct code and correction succeeds. No requirement for typo diagnosis, measured recovery failure or spec violation supports promotion to a defect."
+        }
+      ],
+      "counts": {
+        "submitted": 6,
+        "valid_unique_families": 5,
+        "unsupported": 1,
+        "falsepositive": 0,
+        "unsupported_rate": 0.16666666666666666,
+        "valid_exclusive_families": 0,
+        "high_impact_families_found": 2,
+        "known_high_impact_families_missed": 0
+      },
+      "coverage": [
+        {
+          "variant": "A",
+          "viewport": "384x832",
+          "execution_class": "full pointer flow recorded; state artifacts corroborate outcome",
+          "task_integrity": "pass_scoped",
+          "evidence": [
+            "astra-blind/R46/a-cart-two.png",
+            "astra-blind/R46/a-address-error.png",
+            "astra-blind/R46/a-final-mobile.png"
+          ]
+        },
+        {
+          "variant": "A",
+          "viewport": "320x568",
+          "execution_class": "key-state replay / mixed-viewport sampling; not independent full flow",
+          "states": "menu, options, cart, coupon/address recovery, payment selection, receipt; R17 additionally payment summary and deletion dialog",
+          "receipt_proof": "R17 actual 320x568 top/bottom viewport captures; R46 full-page images 320x808 (A) and 320x784 (B), insufficient for fixed-viewport occlusion proof"
+        },
+        {
+          "variant": "A",
+          "viewport": "1440x900",
+          "execution_class": "key states only; not independent full flow",
+          "states": "options, cart, address error and final; R17 additionally bottom payment summary and deletion dialog",
+          "gaps": "Initial desktop menu and invalid-coupon rendering not demonstrated."
+        },
+        {
+          "variant": "B",
+          "viewport": "384x832",
+          "execution_class": "full pointer flow recorded; state artifacts corroborate outcome",
+          "task_integrity": "fail_allergy_note_missing",
+          "evidence": [
+            "astra-blind/R46/b-cart-two.png",
+            "astra-blind/R46/b-address-error.png",
+            "astra-blind/R46/b-final-mobile.png"
+          ]
+        },
+        {
+          "variant": "B",
+          "viewport": "320x568",
+          "execution_class": "key-state replay / mixed-viewport sampling; not independent full flow",
+          "states": "menu, options, cart, coupon/address recovery, payment selection, receipt; R17 additionally payment summary and deletion dialog",
+          "receipt_proof": "R17 actual 320x568 top/bottom viewport captures; R46 full-page images 320x808 (A) and 320x784 (B), insufficient for fixed-viewport occlusion proof"
+        },
+        {
+          "variant": "B",
+          "viewport": "1440x900",
+          "execution_class": "key states only; not independent full flow",
+          "states": "options, cart, address error and final; R17 additionally bottom payment summary and deletion dialog",
+          "gaps": "Initial desktop menu and invalid-coupon rendering not demonstrated."
+        }
+      ],
+      "keyboard_coverage": {
+        "A": "Option Tab traversal and visible focus only; no complete keyboard checkout evidence.",
+        "B": "Part skip observed at 320x568 with a repeated 384px observation in consolidated DOM notes; no keyboard blocked-add sequence or later checkout proof."
+      }
+    }
+  },
+  "important_omissions": [
+    {
+      "missed_by": "R46",
+      "found_by": "R17",
+      "family_id": "payment-summary-overflow",
+      "severity": "medium / P2",
+      "evidence": [
+        "astra-blind/R17/b-short-payment-bottom.png",
+        "astra-blind/R17/b-short-payment-right-edge.png",
+        "astra-blind/R17/dom-observations.json"
+      ],
+      "reason": "R46 payment captures stop at coupon/payment choices before the lower summary. No evidence of inspection of the overflowing 320px payment amounts."
+    },
+    {
+      "missed_by": "R17",
+      "found_by": "R46",
+      "family_id": null,
+      "reason": "No supported exclusive defect in R46. Coupon wording is observed by both; R17 explicitly keeps it as an unproven hypothesis rather than a finding."
+    }
+  ],
+  "benefit_gate": {
+    "improved_meaningful_qa": "R17 adds one verified medium defect and broader keyboard/visual state proof.",
+    "critical_miss": "No known high-impact family missed by either; unknown defect inventory prevents a universal no-critical-miss claim.",
+    "unsupported_rate": "R17 0/6 vs R46 1/6; false factual observations 0 in both.",
+    "coverage": "No demonstrated loss of frozen-task coverage in R17; both primary mobile flows and secondary key states, R17 deeper keyboard and bottom-state coverage.",
+    "tradeoffs": "R17 discloses accidental BODY.textContent source exposure and two unreceipted initial PNGs. Priority findings have matching receipts; this does not erase supported defects, but qualifies procedural quality. R46 uses consolidated notes without per-PNG capture receipts.",
+    "artifact_gate": "R17 has the stronger supported artifact set for this supplied run.",
+    "task_benefit_quality_win": "INCONCLUSIVE: small, underpowered set; no condition identity, causal attribution or general ranking."
+  },
+  "integrity_checks": {
+    "R17_pngs": 69,
+    "R17_matching_sha256_receipts": 67,
+    "R17_sha256_mismatches": 0,
+    "R17_unreceipted": [
+      "a-mobile-menu.png",
+      "a-mobile-sauce-error.png"
+    ],
+    "R46_pngs": 34,
+    "R46_trace_type": "Consolidated rendered-DOM/action observations, no adjacent per-PNG receipts.",
+    "dimensions": "Parsed actual PNG IHDR; key 384x832 / 320x568 / 1440x900 frames verified. R46 short finals are full-page 320x808 and 320x784."
+  },
+  "not_counted": [
+    "No invented standards mapping or conformance verdict.",
+    "Content scrolling beneath fixed headers/footers is not automatically a defect; sampled content can be brought into view.",
+    "No separate menu/tab clipping claim: partially shown scrollable navigation does not establish lost content.",
+    "Sauce surcharge crop and payment overflow are distinct families; repeats across widths are not extra unique findings."
+  ],
+  "gaps": [
+    "Saved evidence adjudication, no new live reproduction.",
+    "No complete raw action-event recording proving every uninterrupted full-flow action; R17 has richer per-state evidence, R46 consolidated notes.",
+    "No Figma reference, verified build version, physical mobile/OS keyboard, real screen-reader speech, backend payload, fulfilment or real payment.",
+    "Secondary sizes are key states only; full-page receipt screenshots cannot prove 568px viewport occlusion.",
+    "Known families are the union of these reports, not an exhaustive defect oracle."
+  ],
+  "stop_condition": "All twelve findings adjudicated against directly viewed PNGs and associated traces/DOM notes; overlaps merged; remaining limits need evidence outside this read-only blind scope."
+}

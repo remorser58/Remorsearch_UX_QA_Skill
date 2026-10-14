@@ -278,6 +278,8 @@ python3 scripts/check_release.py --output dist/release-check
 
 ## Limits
 
+The [QA performance criterion](PRD.md#91-일반-omo-대비-qa-성능) compares ordinary OMO with the same OMO plus Remorsearch under matched models, tools, tasks and budgets. Required rendered checks cover alignment, clipping and component occlusion. The [OMO pilot and mobile QA](docs/validation/design-qa-20261015/report.md) records a final access-matched Astra medium result: 5 versus 6 supported issue families, 1 versus 0 unsupported suggestions, and report time of 5m07s versus 10m08s. An earlier access-mismatched attempt is retained separately. InferHub GLM 5.3 high failed upstream; no QA score is assigned. This small result does not establish general superiority.
+
 The [skill-on / skill-off pilot](docs/validation/skill-ab-20261014/report.md) compares two repetitions on existing local fixtures with the same model and browser tools. It reports detection, unsupported warnings, task completion, time and tokens separately from installation/self-tests; it does not establish general superiority.
 
 - Live browser research (Aside or another agentic browser), Figma and browser
