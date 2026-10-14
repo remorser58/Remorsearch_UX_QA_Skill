@@ -1,0 +1,21 @@
+{
+  "benchmarks/dev-2/README.md": "4f61cc0985ef3f5140044890251ae18a25bc2463b6a50040ce6ee665ae58a44e",
+  "benchmarks/dev-2/keys/civil.json": "44a78aa5ed03d168b72924bae53b06cbd5270f89ab5b3667fc79a9849dff98e4",
+  "benchmarks/dev-2/keys/delivery.json": "80f137eab10a1d57feeb49fb9d248a8225db6f13f02cb0ab19d14eb1915954a3",
+  "benchmarks/dev-2/keys/lms.json": "6d6895de3dbbdbc9d13bc621e2e10a46df0ab6b0b2b55c0a1cac34331a6fc27f",
+  "benchmarks/dev-2/products/civil/brief.md": "036e6e4ebd74034c001b37b7757c139e9cccd85c1df899532468f62c0fe6691c",
+  "benchmarks/dev-2/products/delivery/brief.md": "5a67a1376ca8d5d45662acd646d5b3d9f7b75c11680beccc5fde95f7b0bc1169",
+  "benchmarks/dev-2/products/lms/brief.md": "eda61003a3afa856df1d7a342d535bbbf0bccab25b72b1119c7c02bb239cdffa",
+  "benchmarks/dev-2/scenarios/SC-d2-civil-a.json": "668580b1df52eb33ec07c1aaac74170e96e7b2f08ed0166124ecb7d89ec08a36",
+  "benchmarks/dev-2/scenarios/SC-d2-civil-b.json": "a3d1d222710a855ac6b1c4e5f0c41c4c360a65acd4ecf1b4b1f7caab429e2afd",
+  "benchmarks/dev-2/scenarios/SC-d2-delivery-a.json": "adbb65d33bb0739aa5e80a97e4e7e819e782d490dfeea41efa2a47c9d04bb200",
+  "benchmarks/dev-2/scenarios/SC-d2-delivery-b.json": "f9baa22c2d6ce82d3bd2d129a46fa14808202348eb1fabeafc7d942cde6766a7",
+  "benchmarks/dev-2/scenarios/SC-d2-lms-a.json": "395c68db0f4865514af6253a0a6f25f1e32a896c86f6fbb65f6487a920a39928",
+  "benchmarks/dev-2/scenarios/SC-d2-lms-b.json": "d982dfa86c1dc5902bae867d6cbf09c82398813a25b3f15015e4308586233256",
+  "benchmarks/dev-2/site/civil/civil-a.html": "9f3f3383e4d97e5f211f9ade14cf8c799115284dbe2b32030da3ad7db031accd",
+  "benchmarks/dev-2/site/civil/civil-b.html": "56972d714ef90e3c4abc541c3d27d8cefdf35faac63c3052a466305e0fe6b481",
+  "benchmarks/dev-2/site/delivery/delivery-a.html": "76e2d9bd73fe15d4162a7ebb9352a164f4607ffaae82a9c93a90cfd80c1a44e5",
+  "benchmarks/dev-2/site/delivery/delivery-b.html": "ac149e3562c821182a3e9c73de43be52da922121acd2c5cf146a5c9091928eb5",
+  "benchmarks/dev-2/site/lms/lms-a.html": "c7a9659321ff7b9557d0516650c6f0103295d310cc2ce55e5a60255798bf220f",
+  "benchmarks/dev-2/site/lms/lms-b.html": "3b8a8b73f45ce02d1d39653fcfc76bdc72c23be35928efdbdc3578d184af4c2d"
+}

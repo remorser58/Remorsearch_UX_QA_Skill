@@ -1,0 +1,374 @@
+{
+  "off": {
+    "command_count": 68,
+    "selected_task_commands": [
+      {
+        "time": "2026-10-14T11:05:15.524Z",
+        "command": "<python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py --help",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:07:26.285Z",
+        "command": "<python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py profiles --help",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:07:26.465Z",
+        "command": "<python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py personas --help",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:07:26.645Z",
+        "command": "<python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py audience-check --help",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:07:34.524Z",
+        "command": "<python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py analyze --help",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:07:34.709Z",
+        "command": "<python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py swarm --help",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:07:34.888Z",
+        "command": "<python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py audience-check <trial-root>/evidence/recipe/delivery.audience.json",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:07:41.408Z",
+        "command": "<python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py personas --audience <trial-root>/evidence/recipe/delivery.audience.json --budget 4 --floors left_hand --plan plan.md --out profiles.json",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:08:38.512Z",
+        "command": "ls -la site/ && ls -la site/*/ 2>/dev/null | head -50",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:28:18.461Z",
+        "command": "<node22> <trial-root>/baseline/skills/remorsearch-ux-qa/drivers/web/ergo_drive.mjs serve --scenario <trial-root>/operators/off/page-1.json --profile <trial-root>/operators/off/profile-AP-01.json --agent-json <trial-root>/operators/off/agent.json --out <trial-root>/operators/off/runs --run-id P1-page1 --port 9620 --build-id ba090fe832799beeee1ea76167ac70954b9f7c2c --no-reflow --no-focus-walk --idle-timeout-s 600",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:31:52.697Z",
+        "command": "<node22> <trial-root>/baseline/skills/remorsearch-ux-qa/drivers/web/ergo_drive.mjs serve --scenario <trial-root>/operators/off/page-2.json --profile <trial-root>/operators/off/profile-AP-01.json --agent-json <trial-root>/operators/off/agent.json --out <trial-root>/operators/off/runs --run-id P1-page2 --port 9620 --build-id ba090fe832799beeee1ea76167ac70954b9f7c2c --no-reflow --no-focus-walk --idle-timeout-s 600",
+        "exit_code": 3
+      }
+    ],
+    "manual_review_candidates": [],
+    "scope": "Task command metadata only; no host prompts, model reasoning, credentials or unrelated sessions."
+  },
+  "old": {
+    "command_count": 75,
+    "selected_task_commands": [
+      {
+        "time": "2026-10-14T11:05:00.695Z",
+        "command": "cat <trial-root>/baseline/skills/remorsearch-ux-qa/SKILL.md",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:05:06.906Z",
+        "command": "<python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py --help",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:05:11.135Z",
+        "command": "cat <trial-root>/baseline/skills/remorsearch-ux-qa/references/persona-qa/persona-scenario-design.md",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:05:11.160Z",
+        "command": "cat <trial-root>/baseline/skills/remorsearch-ux-qa/references/persona-qa/workflow.md",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:05:11.223Z",
+        "command": "<python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py personas --help",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:05:11.228Z",
+        "command": "<python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py analyze --help",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:05:21.242Z",
+        "command": "<python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py audience-check --audience <trial-root>/evidence/recipe/delivery.audience.json --out <trial-root>/operators/old/audience-check.json",
+        "exit_code": 2
+      },
+      {
+        "time": "2026-10-14T11:05:24.275Z",
+        "command": "<python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py audience-check --help",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:05:28.111Z",
+        "command": "<python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py audience-check <trial-root>/evidence/recipe/delivery.audience.json",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:05:28.298Z",
+        "command": "<python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py personas --audience <trial-root>/evidence/recipe/delivery.audience.json --budget 2 --floors left_hand --plan <trial-root>/operators/old/plan.md --out <trial-root>/operators/old/profiles.json",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:05:39.338Z",
+        "command": "<node22> <trial-root>/baseline/skills/remorsearch-ux-qa/drivers/web/ergo_drive.mjs serve --scenario <trial-root>/operators/old/page-1.json --profile <trial-root>/operators/old/AP-01.json --agent-json <trial-root>/operators/old/agent.json --out <trial-root>/operators/old/runs --run-id P1-page1 --port 9621 --build-id ba090fe832799beeee1ea76167ac70954b9f7c2c --no-reflow --no-focus-walk --idle-timeout-s 600",
+        "exit_code": 4
+      },
+      {
+        "time": "2026-10-14T11:19:09.481Z",
+        "command": "<node22> <trial-root>/baseline/skills/remorsearch-ux-qa/drivers/web/ergo_drive.mjs serve --scenario <trial-root>/operators/old/page-1.json --profile <trial-root>/operators/old/AP-01.json --agent-json <trial-root>/operators/old/agent.json --out <trial-root>/operators/old/runs --run-id P1-page1 --port 9621 --build-id ba090fe832799beeee1ea76167ac70954b9f7c2c --no-reflow --no-focus-walk --idle-timeout-s 600",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:31:17.331Z",
+        "command": "<node22> <trial-root>/baseline/skills/remorsearch-ux-qa/drivers/web/ergo_drive.mjs serve --scenario <trial-root>/operators/old/page-2.json --profile <trial-root>/operators/old/AP-01.json --agent-json <trial-root>/operators/old/agent.json --out <trial-root>/operators/old/runs --run-id P1-page2 --port 9621 --build-id ba090fe832799beeee1ea76167ac70954b9f7c2c --no-reflow --no-focus-walk --idle-timeout-s 600",
+        "exit_code": 3
+      }
+    ],
+    "manual_review_candidates": [],
+    "scope": "Task command metadata only; no host prompts, model reasoning, credentials or unrelated sessions."
+  },
+  "new": {
+    "command_count": 93,
+    "selected_task_commands": [
+      {
+        "time": "2026-10-14T11:15:07.288Z",
+        "command": "cat <trial-root>/candidate/skills/remorsearch-ux-qa/SKILL.md",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:15:11.919Z",
+        "command": "ls -la <trial-root>/candidate/skills/remorsearch-ux-qa/references/ && echo \"=== persona-qa ===\" && ls -la <trial-root>/candidate/skills/remorsearch-ux-qa/references/persona-qa/ && echo \"=== scripts ===\" && ls -la <trial-root>/candidate/skills/remorsearch-ux-qa/scripts/ && echo \"=== drivers ===\" && ls -la <trial-root>/candidate/skills/remorsearch-ux-qa/drivers/web/",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:15:50.889Z",
+        "command": "cat <trial-root>/candidate/skills/remorsearch-ux-qa/references/persona-qa/workflow.md",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:16:01.164Z",
+        "command": "cat <trial-root>/candidate/skills/remorsearch-ux-qa/references/persona-qa/persona-scenario-design.md",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:16:01.340Z",
+        "command": "cat <trial-root>/candidate/skills/remorsearch-ux-qa/references/persona-qa/evidence-and-severity.md && echo \"=== kwcag-card ===\" && cat <trial-root>/candidate/skills/remorsearch-ux-qa/references/persona-qa/kwcag-card.md",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:16:06.162Z",
+        "command": "<python3.12> <trial-root>/candidate/skills/remorsearch-ux-qa/scripts/ergo_qa.py --help 2>&1 | head -80",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:16:20.038Z",
+        "command": "mkdir -p <trial-root>/operators/new/runs && cd <trial-root>/operators/new && <python3.12> <trial-root>/candidate/skills/remorsearch-ux-qa/scripts/ergo_qa.py audience-check <trial-root>/evidence/recipe/delivery.audience.json 2>&1 | head -40",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:16:23.483Z",
+        "command": "cd <trial-root>/operators/new && <python3.12> <trial-root>/candidate/skills/remorsearch-ux-qa/scripts/ergo_qa.py personas --help 2>&1 | head -40",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:16:27.944Z",
+        "command": "cd <trial-root>/operators/new && <python3.12> <trial-root>/candidate/skills/remorsearch-ux-qa/scripts/ergo_qa.py personas --audience <trial-root>/evidence/recipe/delivery.audience.json --budget 4 --floors left_hand --plan <trial-root>/operators/new/persona-plan.md --out <trial-root>/operators/new/profiles.json && echo \"=== PLAN ===\" && cat <trial-root>/operators/new/persona-plan.md && echo \"=== IDS ===\" && <python3.12> -c \"import json;d=json.load(open('<trial-root>/operators/new/profiles.json'));print([ (p['profile_id'],p['label_ko'],p['audience_ref']['facet'],p['attributes']['grip'],p['attributes']['motor']['touch_sigma_multiplier'],p['attributes']['context']['interruptions'],p['attributes']['cognition']['familiarity']) for p in d['profiles']]);print('floors_used',d['plan'].get('floors_used'),'untested',d['plan'].get('untested'))\"",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:16:38.591Z",
+        "command": "<python3.12> <trial-root>/candidate/skills/remorsearch-ux-qa/scripts/ergo_qa.py analyze --help 2>&1 | head -50; echo \"=== SWARM ===\"; <python3.12> <trial-root>/candidate/skills/remorsearch-ux-qa/scripts/ergo_qa.py swarm --help 2>&1 | head -50",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:16:38.747Z",
+        "command": "ls <trial-root>/site/ && ls -la <trial-root>/site/ 2>/dev/null | head -20",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:17:12.129Z",
+        "command": "<node22> <trial-root>/baseline/skills/remorsearch-ux-qa/drivers/web/ergo_drive.mjs serve --scenario <trial-root>/operators/new/page-1.json --profile <trial-root>/operators/new/profile-AP-01.json --agent-json <trial-root>/operators/new/agent.json --out <trial-root>/operators/new/runs --run-id P1-page1 --port 9622 --build-id ba090fe832799beeee1ea76167ac70954b9f7c2c --no-reflow --no-focus-walk --idle-timeout-s 600",
+        "exit_code": 4
+      },
+      {
+        "time": "2026-10-14T11:38:55.518Z",
+        "command": "<node22> <trial-root>/baseline/skills/remorsearch-ux-qa/drivers/web/ergo_drive.mjs serve --scenario <trial-root>/operators/new/page-1.json --profile <trial-root>/operators/new/profile-AP-01.json --agent-json <trial-root>/operators/new/agent.json --out <trial-root>/operators/new/runs --run-id P1-page1 --port 9622 --build-id ba090fe832799beeee1ea76167ac70954b9f7c2c --no-reflow --no-focus-walk --idle-timeout-s 600",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:41:32.890Z",
+        "command": "<node22> <trial-root>/baseline/skills/remorsearch-ux-qa/drivers/web/ergo_drive.mjs serve --scenario <trial-root>/operators/new/page-2.json --profile <trial-root>/operators/new/profile-AP-03.json --agent-json <trial-root>/operators/new/agent.json --out <trial-root>/operators/new/runs --run-id P3-page2 --port 9622 --build-id ba090fe832799beeee1ea76167ac70954b9f7c2c --no-reflow --no-focus-walk --idle-timeout-s 600",
+        "exit_code": 3
+      }
+    ],
+    "manual_review_candidates": [],
+    "scope": "Task command metadata only; no host prompts, model reasoning, credentials or unrelated sessions."
+  },
+  "new2": {
+    "command_count": 84,
+    "selected_task_commands": [
+      {
+        "time": "2026-10-14T11:32:20.870Z",
+        "command": "ls -la <trial-root>/candidate2/skills/remorsearch-ux-qa/ && echo '---' && ls -la <trial-root>/operators/new2/ 2>&1 && echo '---' && wc -l <trial-root>/candidate2/skills/remorsearch-ux-qa/SKILL.md <trial-root>/evidence/product-brief.md <trial-root>/evidence/recipe/delivery.audience.json",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:32:24.512Z",
+        "command": "cat <trial-root>/candidate2/skills/remorsearch-ux-qa/SKILL.md",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:32:33.054Z",
+        "command": "ls <trial-root>/candidate2/skills/remorsearch-ux-qa/references/persona-qa/ <trial-root>/candidate2/skills/remorsearch-ux-qa/references/shared/ && echo '=====WORKFLOW=====' && cat <trial-root>/candidate2/skills/remorsearch-ux-qa/references/persona-qa/workflow.md",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:32:42.795Z",
+        "command": "<python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py --help 2>&1 | head -80",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:32:46.437Z",
+        "command": "<python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py personas --help 2>&1; echo '====='; <python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py audience-check --help 2>&1; echo '====='; <python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py analyze --help 2>&1",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:33:00.637Z",
+        "command": "mkdir -p <trial-root>/operators/new2/work && cat <trial-root>/operators/new2/agent.json && echo '=====' && <python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py audience-check <trial-root>/evidence/recipe/delivery.audience.json 2>&1 | head -60",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:33:04.977Z",
+        "command": "cd <trial-root>/operators/new2 && <python3.12> <trial-root>/baseline/skills/remorsearch-ux-qa/scripts/ergo_qa.py personas --audience <trial-root>/evidence/recipe/delivery.audience.json --budget 2 --floors left_hand --plan <trial-root>/operators/new2/work/persona-plan.md --out <trial-root>/operators/new2/work/profiles.json 2>&1 | head -40",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:33:26.608Z",
+        "command": "wc -l <trial-root>/candidate2/skills/remorsearch-ux-qa/references/persona-qa/persona-scenario-design.md; sed -n '1,90p' <trial-root>/candidate2/skills/remorsearch-ux-qa/references/persona-qa/persona-scenario-design.md",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:33:31.860Z",
+        "command": "grep -n -i 'action' <trial-root>/baseline/skills/remorsearch-ux-qa/drivers/web/README.md | head -40; echo '====='; grep -rn -i 'interrupt' <trial-root>/candidate2/skills/remorsearch-ux-qa/references/persona-qa/*.md | head -20; echo '====='; grep -rn -i 'interrupt' <trial-root>/candidate2/skills/remorsearch-ux-qa/references/ergonomics/*.md 2>/dev/null | head -10",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:33:50.163Z",
+        "command": "sed -n '80,134p' <trial-root>/candidate2/skills/remorsearch-ux-qa/references/persona-qa/persona-scenario-design.md",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:34:07.894Z",
+        "command": "grep -rn -i 'interrupt\\|reload\\|resume' <trial-root>/candidate2/skills/remorsearch-ux-qa/references/ergonomics/*.md | head -20",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:34:38.948Z",
+        "command": "cat <trial-root>/candidate2/skills/remorsearch-ux-qa/references/persona-qa/generated-ui-preflight.md",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:47:46.218Z",
+        "command": "<node22> <trial-root>/baseline/skills/remorsearch-ux-qa/drivers/web/ergo_drive.mjs serve --scenario <trial-root>/operators/new2/page-1.json --profile <trial-root>/operators/new2/work/profile-AP-01.json --agent-json <trial-root>/operators/new2/agent.json --out <trial-root>/operators/new2/runs --run-id P1-page1 --port 9623 --build-id ba090fe832799beeee1ea76167ac70954b9f7c2c --no-reflow --no-focus-walk --idle-timeout-s 600",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:48:01.451Z",
+        "command": "jq -r '.success_detail' <trial-root>/operators/new2/runs/P1-page1/run.json | head -40; echo '---scenario---'; jq -r '{scenario_id,task_goal_ko,success:(.success//\"none\")}' <trial-root>/operators/new2/page-1.json 2>/dev/null | head -20",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T11:58:49.881Z",
+        "command": "<node22> <trial-root>/baseline/skills/remorsearch-ux-qa/drivers/web/ergo_drive.mjs serve --scenario <trial-root>/operators/new2/page-2.json --profile <trial-root>/operators/new2/work/profile-AP-01.json --agent-json <trial-root>/operators/new2/agent.json --out <trial-root>/operators/new2/runs --run-id P1-page2 --port 9623 --build-id ba090fe832799beeee1ea76167ac70954b9f7c2c --no-reflow --no-focus-walk --idle-timeout-s 600",
+        "exit_code": 0
+      }
+    ],
+    "manual_review_candidates": [],
+    "scope": "Task command metadata only; no host prompts, model reasoning, credentials or unrelated sessions."
+  },
+  "manual": {
+    "command_count": 31,
+    "selected_task_commands": [
+      {
+        "time": "2026-10-14T12:03:59.294Z",
+        "command": "cd <trial-root>/same-trace/recording && python3 <<'PY'\nimport json\ndef show(sid, filt=None):\n    d=json.load(open(sid+'.json'))\n    print('=====', sid, 'step', d['step_index'])\n    for e in d['elements']:\n        s=e['selector'] or ''\n        if filt and filt not in s and filt not in (e['dom_id'] or ''):\n            continue\n        vb=e.get('visible_box')\n        box = ('%.0f,%.0f %.0fx%.0f' % (vb['x'],vb['y'],vb['w'],vb['h'])) if vb else 'no-vbox'\n        a=e['a11y']\n        print('%7s %-6s role=%-8s name=%r text=%r sel=%-34s box=%-16s vis=%s inview=%s a11y=%s' % (e['id'], e['tag'], str(e['role']), e['name'], e['text'][:60], s[:34], box, e['visible'], e['in_viewport'], json.dumps({k:a[k] for k in ('name_source','invalid','error_message','focusable','tabindex','hidden')}, ensure_ascii=False)))\nfor sid in ['S-P1-page1-005','S-P1-page1-006','S-P1-page1-007']:\n    show(sid, filt='cola')\nPY",
+        "exit_code": 1
+      },
+      {
+        "time": "2026-10-14T12:04:05.444Z",
+        "command": "cd <trial-root>/same-trace/recording && python3 <<'PY'\nimport json\ndef show(sid, filt=None):\n    d=json.load(open(sid+'.json'))\n    print('=====', sid, 'step', d['step_index'], 'n=', len(d['elements']))\n    for e in d['elements']:\n        s=e.get('selector') or ''\n        anc=','.join(e.get('ancestor_ids') or [])\n        if filt and (filt not in s) and (filt not in anc) and (filt not in (e.get('dom_id') or '')):\n            continue\n        vb=e.get('visible_box')\n        box = ('%.0f,%.0f %.0fx%.0f' % (vb['x'],vb['y'],vb['w'],vb['h'])) if vb else 'no-vbox'\n        a=e.get('a11y') or {}\n        print('%7s %-6s role=%-8s name=%r text=%r sel=%-40s box=%-16s vis=%s a11y_name_src=%s' % (e['id'], e['tag'], str(e['role']), e['name'], e['text'][:50], s[:40], box, e['visible'], a.get('name_source')))\nshow('S-P1-page1-006', filt='grp-extra')\nshow('S-P1-page1-007', filt='grp-extra')\nPY",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T12:04:30.076Z",
+        "command": "cd <trial-root>/same-trace/recording && python3 <<'PY'\nimport json\ndef show(sid, key):\n    d=json.load(open(sid+'.json'))\n    print('=====', sid, 'step', d['step_index'])\n    for e in d['elements']:\n        s=e.get('selector') or ''\n        t=e.get('text') or ''\n        nm=e.get('name') or ''\n        if key not in s and key not in t and key not in nm and key not in (e.get('dom_id') or ''):\n            continue\n        vb=e.get('visible_box')\n        box = ('%.0f,%.0f %.0fx%.0f' % (vb['x'],vb['y'],vb['w'],vb['h'])) if vb else 'no-vbox'\n        a=e.get('a11y') or {}\n        print('%7s %-6s role=%-9s name=%r text=%r sel=%-30s box=%-16s vis=%s inview=%s a11y=%s' % (e['id'], e['tag'], str(e['role']), nm[:40], t[:40], s[:30], box, e['visible'], e['in_viewport'], json.dumps({k:a.get(k) for k in ('name_source','focusable')}, ensure_ascii=False)))\nfor sid in ['S-P1-page1-008','S-P1-page1-009','S-P1-page1-010']:\n    show(sid, 'cart')\n    show(sid, '장바구니')\nPY",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T12:04:37.125Z",
+        "command": "cd <trial-root>/same-trace/recording && python3 <<'PY'\nimport json\ndef show(sid, keys):\n    d=json.load(open(sid+'.json'))\n    print('=====', sid, 'step', d['step_index'])\n    for e in d['elements']:\n        s=e.get('selector') or ''\n        t=e.get('text') or ''\n        nm=e.get('name') or ''\n        blob=' '.join([s,t,nm,e.get('dom_id') or ''])\n        if not any(k in blob for k in keys):\n            continue\n        vb=e.get('visible_box')\n        box = ('%.0f,%.0f %.0fx%.0f' % (vb['x'],vb['y'],vb['w'],vb['h'])) if vb else 'no-vbox'\n        a=e.get('a11y') or {}\n        print('%7s %-6s role=%-9s name=%r text=%r sel=%-32s box=%-15s vis=%s a11y=%s' % (e['id'], e['tag'], str(e['role']), nm[:44], t[:44], s[:32], box, e['visible'], json.dumps({k:a.get(k) for k in ('name_source','invalid','user_invalid','error_message','described_by')}, ensure_ascii=False)))\nfor sid in ['S-P1-page1-017','S-P1-page1-018','S-P1-page1-019','S-P1-page1-020']:\n    show(sid, ['coupon','쿠폰','할인'])\nPY",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T12:06:45.409Z",
+        "command": "cd <trial-root>/same-trace/recording && python3 <<'PY'\nimport json\nd=json.load(open('S-P1-page1-014.json'))\nprint('===== 014 step', d['step_index'], 'scroll', d['surface']['scroll'])\nfor e in d['elements']:\n    anc=','.join(e.get('ancestor_ids') or [])\n    if 'co-body' not in anc and 'co-form' not in anc and 'scr-checkout' not in anc:\n        continue\n    vb=e.get('visible_box')\n    box = ('%.0f,%.0f %.0fx%.0f' % (vb['x'],vb['y'],vb['w'],vb['h'])) if vb else 'no-vbox'\n    a=e.get('a11y') or {}\n    print('%7s %-6s role=%-9s name=%r text=%r sel=%-40s box=%-16s vis=%s inview=%s a11y=%s' % (e['id'], e['tag'], str(e['role']), (e.get('name') or '')[:44], (e.get('text') or '')[:44], (e.get('selector') or '')[:40], box, e['visible'], e['in_viewport'], json.dumps({k:a.get(k) for k in ('name_source','described_by','invalid')}, ensure_ascii=False)))\nPY",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T12:07:10.335Z",
+        "command": "cd <trial-root>/same-trace/recording && python3 <<'PY'\nimport json\nd=json.load(open('S-P1-page1-010.json'))\nprint('===== 010 step', d['step_index'], 'scroll', d['surface']['scroll'])\nfor e in d['elements']:\n    anc=','.join(e.get('ancestor_ids') or [])\n    if 'cart-body' not in anc and 'scr-cart' not in anc:\n        continue\n    vb=e.get('visible_box')\n    box = ('%.0f,%.0f %.0fx%.0f' % (vb['x'],vb['y'],vb['w'],vb['h'])) if vb else 'no-vbox'\n    a=e.get('a11y') or {}\n    print('%7s %-6s role=%-9s name=%r text=%r sel=%-34s box=%-16s vis=%s inview=%s a11y=%s' % (e['id'], e['tag'], str(e['role']), (e.get('name') or '')[:40], (e.get('text') or '')[:40], (e.get('selector') or '')[:34], box, e['visible'], e['in_viewport'], json.dumps({k:a.get(k) for k in ('name_source','focusable')}, ensure_ascii=False)))\nPY",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T12:07:17.550Z",
+        "command": "cd <trial-root>/same-trace/recording && python3 <<'PY'\nimport json\nfor sid in ['S-P1-page1-010','S-P1-page1-011']:\n    d=json.load(open(sid+'.json'))\n    print('=====', sid, 'step', d['step_index'])\n    for e in d['elements']:\n        s=(e.get('selector') or '')\n        if 'qty' not in s and 'line-1' not in s:\n            continue\n        vb=e.get('visible_box')\n        box = ('%.0f,%.0f %.0fx%.0f' % (vb['x'],vb['y'],vb['w'],vb['h'])) if vb else 'no-vbox'\n        a=e.get('a11y') or {}\n        print('%7s %-6s role=%-9s name=%r text=%r sel=%-30s box=%-16s vis=%s a11y=%s' % (e['id'], e['tag'], str(e['role']), (e.get('name') or '')[:40], (e.get('text') or '')[:40], s[:30], box, e['visible'], json.dumps({k:a.get(k) for k in ('name_source','focusable')}, ensure_ascii=False)))\n    # order button\n    for e in d['elements']:\n        if e.get('selector')=='#order-btn':\n            vb=e.get('visible_box')\n            print('   order-btn text=', repr(e['text']), 'box=', vb)\nPY",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T12:07:24.963Z",
+        "command": "cd <trial-root>/same-trace/recording && python3 <<'PY'\nimport json, glob\nseen={}\nfor f in sorted(glob.glob('S-P1-page1-0*.json')):\n    d=json.load(open(f))\n    for e in d['elements']:\n        a=e.get('a11y') or {}\n        if not e.get('visible'): continue\n        if not e.get('interactive'): continue\n        nm=(e.get('name') or '').strip()\n        tx=(e.get('text') or '').strip()\n        if nm=='' and tx=='':\n            key=(e.get('selector') or '')+'|'+e['tag']\n            seen.setdefault(key, []).append((f.replace('S-P1-page1-',''), e['id'], a.get('name_source'), e.get('visible_box')))\nfor k,v in seen.items():\n    print(k, '->', v[0][0], v[0][1], 'name_source=', v[0][2], 'box=', v[0][3], 'count=', len(v))\nPY",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T12:07:38.872Z",
+        "command": "cd <trial-root>/same-trace/recording && python3 <<'PY'\nimport json\nd=json.load(open('S-P1-page1-006.json'))\nprint('===== 006 step', d['step_index'], 'n', len(d['elements']), 'scroll', d['surface']['scroll'])\nfor e in d['elements']:\n    if not e.get('visible'): continue\n    vb=e.get('visible_box')\n    box = ('%.0f,%.0f %.0fx%.0f' % (vb['x'],vb['y'],vb['w'],vb['h'])) if vb else 'no-vbox'\n    a=e.get('a11y') or {}\n    print('%7s %-6s role=%-9s name=%r text=%r sel=%-36s box=%-16s inview=%s src=%s' % (e['id'], e['tag'], str(e['role']), (e.get('name') or '')[:42], (e.get('text') or '')[:42], (e.get('selector') or '')[:36], box, e['in_viewport'], a.get('name_source')))\nPY",
+        "exit_code": 0
+      }
+    ],
+    "manual_review_candidates": [],
+    "scope": "Task command metadata only; no host prompts, model reasoning, credentials or unrelated sessions."
+  },
+  "assisted": {
+    "command_count": 29,
+    "selected_task_commands": [
+      {
+        "time": "2026-10-14T12:03:39.411Z",
+        "command": "cd <trial-root>/same-trace/recording && python3 -c \"\nimport json\nd=json.load(open('S-P1-page1-006.json'))\nfor e in d['elements']:\n    s=(e.get('selector') or '')+' '+(e.get('dom_id') or '')\n    if any(k in s for k in ['grp-extra','grp-part','grp-sauce','add-to-cart','opt-footer']):\n        a=e['a11y']\n        print(e['id'], '|', e.get('selector'), '| tag',e['tag'], '| role',e.get('role'), '| name',repr(e.get('name')), '| text',repr(e.get('text'))[:60], '| box',e['box'], '| vis_box',e.get('visible_box'), '| vis',e['visible'], '| inter',e['interactive'], '| focusable',a['focusable'], '| tabindex',a['tabindex'], '| namesrc',a['name_source'], '| vis_label',repr(a.get('visible_label'))[:40], '| roles',e.get('roles'), '| sib',e.get('sibling_scope_id'), e.get('sibling_scope_status'))\n\"",
+        "exit_code": 1
+      },
+      {
+        "time": "2026-10-14T12:03:43.860Z",
+        "command": "cd <trial-root>/same-trace/recording && python3 -c \"\nimport json\nd=json.load(open('S-P1-page1-006.json'))\nfor e in d['elements']:\n    s=(e.get('selector') or '')+' '+(e.get('dom_id') or '')\n    if any(k in s for k in ['grp-extra','grp-part','grp-sauce','add-to-cart','opt-footer']):\n        a=e.get('a11y') or {}\n        print(e['id'],'|',e.get('selector'),'| tag',e['tag'],'| role',e.get('role'),'| name',repr(e.get('name')),'| text',repr(e.get('text'))[:70],'| box',e['box'],'| vis',e['visible'],'| inter',e['interactive'],'| focusable',a.get('focusable'),'| tabindex',a.get('tabindex'),'| namesrc',a.get('name_source'),'| vis_label',repr(a.get('visible_label'))[:50],'| roles',e.get('roles'),'| sib',e.get('sibling_scope_id'),e.get('sibling_scope_status'))\n\"",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T12:06:11.421Z",
+        "command": "cd <trial-root>/same-trace/recording && python3 -c \"\nimport json\ndef els(sid):\n    return json.load(open(sid+'.json'))['elements']\nprint('=== all inputs/divs for part group, snapshots 001-003 ===')\nfor sid in ['S-P1-page1-001','S-P1-page1-002','S-P1-page1-003']:\n    print('--',sid)\n    for e in els(sid):\n        s=(e.get('selector') or '')+' '+(e.get('dom_id') or '')\n        if 'grp-part' in s or e['tag']=='input':\n            print('  ',e['id'],e.get('selector'),'|tag',e['tag'],'|role',e.get('role'),'|name',repr(e.get('name'))[:40],'|inter',e['interactive'],'|focus',(e.get('a11y') or {}).get('focusable'),'|extra keys',[k for k in e.keys() if k not in ('id','role','name','text','tag','selector','dom_id','box','visible_box','visible_geometry','interactive','visible','enabled','in_viewport','font_size_px','font_weight','font_metrics','color_fg','color_bg','container_bg','border_color','border_width_px','opacity','paint','occluded_fraction','occluded_by','inert_by_modal','a11y','roles','ancestor_ids','sibling_scope_id','sibling_scope_status','source')])\n\"",
+        "exit_code": 0
+      },
+      {
+        "time": "2026-10-14T12:14:34.290Z",
+        "command": "cd <trial-root>/same-trace/recording && python3 -c \"\nimport json\nsels=['#grp-extra-cola','#grp-extra-cheese','#grp-extra-radish','#grp-extra-mustard','#grp-sauce-hot','#grp-sauce-sweet','#grp-sauce-garlic','#grp-part-boneless','#grp-part-bone']\nfor i in [2,3,5,6,7]:\n    sid='S-P1-page1-%03d'%i\n    d=json.load(open(sid+'.json'))\n    m={e.get('selector'):e for e in d['elements']}\n    print('==',sid)\n    for s in sels:\n        e=m.get(s)\n        if not e: print('   ',s,'ABSENT'); continue\n        print('   ',s,'box',e['box'],'hit',e.get('hit_boxes'),'name_src',(e.get('a11y') or {}).get('name_source'),'vis',e['visible'])\n\"",
+        "exit_code": 0
+      }
+    ],
+    "manual_review_candidates": [],
+    "scope": "Task command metadata only; no host prompts, model reasoning, credentials or unrelated sessions."
+  }
+}

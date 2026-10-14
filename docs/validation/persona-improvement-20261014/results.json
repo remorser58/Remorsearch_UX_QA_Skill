@@ -1,0 +1,633 @@
+{
+  "schema_version": "persona-improvement-results.v1",
+  "live_instruction_pilot": [
+    {
+      "arm": "off",
+      "anonymous_label": "R63",
+      "seeded_matches": 2,
+      "seed_denominator": 12,
+      "unsupported_core_findings": 0,
+      "false_positive_core_findings": 0,
+      "raw_findings": 2,
+      "planned_runs": 4,
+      "actual_completed": 1,
+      "completed_within_cutoff": 1,
+      "late_completions": 0,
+      "generated_profiles": 4,
+      "selected_profiles": [
+        "AP-01",
+        "AP-02"
+      ],
+      "analysis_artifacts": [],
+      "models": [
+        "inferhub/combo-deepseek-4-1-flash"
+      ],
+      "end_to_end_seconds": 1783.352,
+      "reported_usage": {
+        "input_tokens": 6759730,
+        "cached_input_tokens": 6258816,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 73494,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 6833224
+      }
+    },
+    {
+      "arm": "old",
+      "anonymous_label": "R17",
+      "seeded_matches": 3,
+      "seed_denominator": 12,
+      "unsupported_core_findings": 0,
+      "false_positive_core_findings": 0,
+      "raw_findings": 3,
+      "planned_runs": 4,
+      "actual_completed": 1,
+      "completed_within_cutoff": 1,
+      "late_completions": 0,
+      "generated_profiles": 2,
+      "selected_profiles": [
+        "AP-01",
+        "AP-02"
+      ],
+      "analysis_artifacts": [],
+      "models": [
+        "inferhub/combo-deepseek-4-1-flash"
+      ],
+      "end_to_end_seconds": 1760.023,
+      "reported_usage": {
+        "input_tokens": 7434163,
+        "cached_input_tokens": 6859136,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 41980,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 7476143
+      }
+    },
+    {
+      "arm": "new",
+      "anonymous_label": "R88",
+      "seeded_matches": 2,
+      "seed_denominator": 12,
+      "unsupported_core_findings": 0,
+      "false_positive_core_findings": 1,
+      "raw_findings": 3,
+      "planned_runs": 4,
+      "actual_completed": 1,
+      "completed_within_cutoff": 1,
+      "late_completions": 0,
+      "generated_profiles": 4,
+      "selected_profiles": [
+        "AP-01",
+        "AP-03"
+      ],
+      "analysis_artifacts": [],
+      "models": [
+        "inferhub/combo-deepseek-4-1-flash"
+      ],
+      "end_to_end_seconds": 1649.823,
+      "reported_usage": {
+        "input_tokens": 8784754,
+        "cached_input_tokens": 7856768,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 59744,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 8844498
+      }
+    },
+    {
+      "arm": "new2",
+      "anonymous_label": "R42",
+      "seeded_matches": 3,
+      "seed_denominator": 12,
+      "unsupported_core_findings": 0,
+      "false_positive_core_findings": 0,
+      "raw_findings": 3,
+      "planned_runs": 4,
+      "actual_completed": 2,
+      "completed_within_cutoff": 1,
+      "late_completions": 1,
+      "generated_profiles": 2,
+      "selected_profiles": [
+        "AP-01",
+        "AP-02"
+      ],
+      "analysis_artifacts": [],
+      "models": [
+        "inferhub/combo-deepseek-4-1-flash"
+      ],
+      "end_to_end_seconds": 1875.484,
+      "reported_usage": {
+        "input_tokens": 10628658,
+        "cached_input_tokens": 10120320,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 83822,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 10712480
+      }
+    }
+  ],
+  "live_pilot_acceptance": "not_met: no increase in supported seed coverage vs old and full persona plan incomplete",
+  "same_recording_receipt_ablation": [
+    {
+      "arm": "manual",
+      "anonymous_label": "T73",
+      "counts": {
+        "raw_findings": 4,
+        "seeded_unique_matches": 4,
+        "raw_supported_seed_matches": 4,
+        "unique_supported_extras": 0,
+        "unsupported_core_findings": 0,
+        "false_positive_core_findings": 0,
+        "duplicate_findings": 0,
+        "withheld_hypotheses_excluded_from_findings": 4,
+        "missing_cited_files_unique": 0,
+        "reported_severity_below_key_minimum": 1,
+        "severity_elevations_not_established_by_recording": 0
+      },
+      "seed_ids": [
+        "D-delivery-02",
+        "D-delivery-04",
+        "D-delivery-06",
+        "D-delivery-08"
+      ],
+      "models": [
+        "inferhub/combo-deepseek-4-1-flash"
+      ],
+      "end_to_end_seconds": 1004.486,
+      "reported_usage": {
+        "input_tokens": 3273558,
+        "cached_input_tokens": 2623360,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 76243,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 3349801
+      }
+    },
+    {
+      "arm": "assisted",
+      "anonymous_label": "T14",
+      "counts": {
+        "raw_findings": 5,
+        "seeded_unique_matches": 5,
+        "raw_supported_seed_matches": 5,
+        "unique_supported_extras": 0,
+        "unsupported_core_findings": 0,
+        "false_positive_core_findings": 0,
+        "duplicate_findings": 0,
+        "withheld_hypotheses_excluded_from_findings": 7,
+        "missing_cited_files_unique": 0,
+        "reported_severity_below_key_minimum": 1,
+        "severity_elevations_not_established_by_recording": 2
+      },
+      "seed_ids": [
+        "D-delivery-02",
+        "D-delivery-03",
+        "D-delivery-04",
+        "D-delivery-06",
+        "D-delivery-08"
+      ],
+      "models": [
+        "inferhub/combo-deepseek-4-1-flash"
+      ],
+      "end_to_end_seconds": 744.129,
+      "reported_usage": {
+        "input_tokens": 3762564,
+        "cached_input_tokens": 3161472,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 66925,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 3829489
+      }
+    }
+  ],
+  "receipt_ablation_acceptance": "bounded core-detection criterion met in one recording, with unsupported subclaims and severity elevations; not a general performance result",
+  "scripted_pipeline": {
+    "profile_ids": [
+      "AP-01",
+      "AP-03"
+    ],
+    "runs": 4,
+    "success_selector_reached": 4,
+    "human_or_persona_behavior_proven": false,
+    "bundle_validation_before": "failed",
+    "bundle_validation_after": "passed",
+    "findings_unchanged": true,
+    "analyses_unchanged": true,
+    "raw_detector_score": {
+      "suite": null,
+      "defects": 12,
+      "recall_strict": 0.333,
+      "recall_lenient": 0.417,
+      "severity_agreement": 0.333,
+      "decoys": 4,
+      "decoys_flagged": 0,
+      "clean_control_findings": 5,
+      "clean_control_by_severity": {
+        "P0": 0,
+        "P1": 0,
+        "P2": 1,
+        "P3": 4
+      },
+      "precision_labeled": 0.583,
+      "unlabeled_findings_in_defect_variants": 9,
+      "thoroughness_strict": 0.333,
+      "thoroughness_ci95": [
+        0.138,
+        0.609
+      ],
+      "units": 13,
+      "matched_units": 4,
+      "clean_control_units": 4,
+      "clean_control_units_by_severity": {
+        "P0": 0,
+        "P1": 0,
+        "P2": 1,
+        "P3": 3
+      },
+      "decoy_units": 0,
+      "unlabeled_units": 5,
+      "validity_lb_units": 0.308,
+      "precision_labelled_subset_units": 0.5,
+      "recall_strict_by_operating_point": {
+        "p0_p1": 0.167,
+        "p0_p2": 0.333,
+        "all": 0.333
+      },
+      "recall_strict_unconditioned": 0.333,
+      "unconditioned_defects": 9,
+      "condition_identified": 0.0,
+      "recall_condition_attributed": 0.25,
+      "conditioned_defects": 3,
+      "effectiveness_lb": 0.103,
+      "false_alarm_units_per_clean_scenario": 4.0,
+      "exact_viewport_matching": false,
+      "hypotheses_excluded": 14,
+      "per_defect": [
+        {
+          "id": "D-delivery-01",
+          "scenario_id": "SC-d2-delivery-b",
+          "category": "reach",
+          "selector": "#cart-btn",
+          "profile_condition": {
+            "grip": [
+              "one_hand_left",
+              "one_hand_right"
+            ]
+          },
+          "detected_strict": true,
+          "detected_lenient": true,
+          "severity_expected_min": "P2",
+          "severity_found": "P2",
+          "severity_ok": true,
+          "differential_matches_condition": false,
+          "matched_findings": [
+            "EF-009"
+          ],
+          "matched_checks": [
+            "RH-01"
+          ]
+        },
+        {
+          "id": "D-delivery-02",
+          "scenario_id": "SC-d2-delivery-b",
+          "category": "semantics",
+          "selector": "#grp-part",
+          "profile_condition": {},
+          "detected_strict": true,
+          "detected_lenient": true,
+          "severity_expected_min": "P1",
+          "severity_found": "P1",
+          "severity_ok": true,
+          "differential_matches_condition": null,
+          "matched_findings": [
+            "EF-003"
+          ],
+          "matched_checks": [
+            "SM-08"
+          ]
+        },
+        {
+          "id": "D-delivery-03",
+          "scenario_id": "SC-d2-delivery-b",
+          "category": "layout",
+          "selector": "#grp-sauce",
+          "profile_condition": {},
+          "detected_strict": true,
+          "detected_lenient": true,
+          "severity_expected_min": "P3",
+          "severity_found": "P2",
+          "severity_ok": true,
+          "differential_matches_condition": null,
+          "matched_findings": [
+            "EF-007",
+            "EF-008"
+          ],
+          "matched_checks": [
+            "LY-01"
+          ]
+        },
+        {
+          "id": "D-delivery-04",
+          "scenario_id": "SC-d2-delivery-b",
+          "category": "pointing",
+          "selector": "#grp-extra",
+          "profile_condition": {
+            "motor.tremor": [
+              "mild",
+              "moderate"
+            ]
+          },
+          "detected_strict": false,
+          "detected_lenient": false,
+          "severity_expected_min": "P2",
+          "severity_found": null,
+          "severity_ok": false,
+          "differential_matches_condition": null,
+          "matched_findings": [],
+          "matched_checks": []
+        },
+        {
+          "id": "D-delivery-05",
+          "scenario_id": "SC-d2-delivery-b",
+          "category": "heuristic",
+          "selector": "#add-to-cart",
+          "profile_condition": {},
+          "detected_strict": false,
+          "detected_lenient": false,
+          "severity_expected_min": "P2",
+          "severity_found": null,
+          "severity_ok": false,
+          "differential_matches_condition": null,
+          "matched_findings": [],
+          "matched_checks": []
+        },
+        {
+          "id": "D-delivery-06",
+          "scenario_id": "SC-d2-delivery-b",
+          "category": "semantics",
+          "selector": "#qty-1",
+          "profile_condition": {},
+          "detected_strict": true,
+          "detected_lenient": true,
+          "severity_expected_min": "P2",
+          "severity_found": "P1",
+          "severity_ok": true,
+          "differential_matches_condition": null,
+          "matched_findings": [
+            "EF-004",
+            "EF-011"
+          ],
+          "matched_checks": [
+            "SM-01"
+          ]
+        },
+        {
+          "id": "D-delivery-07",
+          "scenario_id": "SC-d2-delivery-b",
+          "category": "semantics",
+          "selector": "#order-btn",
+          "profile_condition": {},
+          "detected_strict": false,
+          "detected_lenient": false,
+          "severity_expected_min": "P3",
+          "severity_found": null,
+          "severity_ok": false,
+          "differential_matches_condition": null,
+          "matched_findings": [],
+          "matched_checks": []
+        },
+        {
+          "id": "D-delivery-08",
+          "scenario_id": "SC-d2-delivery-b",
+          "category": "heuristic",
+          "selector": "#coupon",
+          "profile_condition": {},
+          "detected_strict": false,
+          "detected_lenient": true,
+          "severity_expected_min": "P2",
+          "severity_found": null,
+          "severity_ok": false,
+          "differential_matches_condition": null,
+          "matched_findings": [
+            "EF-006"
+          ],
+          "matched_checks": [
+            "GZ-02"
+          ]
+        },
+        {
+          "id": "D-delivery-09",
+          "scenario_id": "SC-d2-delivery-b",
+          "category": "semantics",
+          "selector": "#addr-detail",
+          "profile_condition": {},
+          "detected_strict": false,
+          "detected_lenient": false,
+          "severity_expected_min": "P2",
+          "severity_found": null,
+          "severity_ok": false,
+          "differential_matches_condition": null,
+          "matched_findings": [],
+          "matched_checks": []
+        },
+        {
+          "id": "D-delivery-10",
+          "scenario_id": "SC-d2-delivery-b",
+          "category": "heuristic",
+          "selector": "#note-store",
+          "profile_condition": {},
+          "detected_strict": false,
+          "detected_lenient": false,
+          "severity_expected_min": "P1",
+          "severity_found": null,
+          "severity_ok": false,
+          "differential_matches_condition": null,
+          "matched_findings": [],
+          "matched_checks": []
+        },
+        {
+          "id": "D-delivery-11",
+          "scenario_id": "SC-d2-delivery-b",
+          "category": "layout",
+          "selector": "#price-summary",
+          "profile_condition": {},
+          "detected_strict": false,
+          "detected_lenient": false,
+          "severity_expected_min": "P3",
+          "severity_found": null,
+          "severity_ok": false,
+          "differential_matches_condition": null,
+          "matched_findings": [],
+          "matched_checks": []
+        },
+        {
+          "id": "D-delivery-12",
+          "scenario_id": "SC-d2-delivery-b",
+          "category": "perception",
+          "selector": "#track-steps",
+          "profile_condition": {
+            "vision.cvd": [
+              "deutan",
+              "protan"
+            ]
+          },
+          "detected_strict": false,
+          "detected_lenient": false,
+          "severity_expected_min": "P3",
+          "severity_found": null,
+          "severity_ok": false,
+          "differential_matches_condition": null,
+          "matched_findings": [],
+          "matched_checks": []
+        }
+      ],
+      "decoy_hits": [
+        {
+          "id": "N-delivery-01",
+          "hit": false,
+          "findings": [],
+          "checks": []
+        },
+        {
+          "id": "N-delivery-02",
+          "hit": false,
+          "findings": [],
+          "checks": []
+        },
+        {
+          "id": "N-delivery-03",
+          "hit": false,
+          "findings": [],
+          "checks": []
+        },
+        {
+          "id": "N-delivery-04",
+          "hit": false,
+          "findings": [],
+          "checks": []
+        }
+      ],
+      "clean_findings": [
+        {
+          "id": "EF-005",
+          "scenario_id": "SC-d2-delivery-a",
+          "check_id": "GZ-02",
+          "severity": "P2",
+          "element_key": "#coupon-msg|‘HANKI5000’은(는) 없는 쿠폰 코드예요. 철자를 확인해 주세요("
+        },
+        {
+          "id": "EF-026",
+          "scenario_id": "SC-d2-delivery-a",
+          "check_id": "PT-02",
+          "severity": "P3",
+          "element_key": "#line-1-del|반반치킨 삭제"
+        },
+        {
+          "id": "EF-027",
+          "scenario_id": "SC-d2-delivery-a",
+          "check_id": "PT-02",
+          "severity": "P3",
+          "element_key": "#qty-1-inc|반반치킨 수량 늘리기"
+        },
+        {
+          "id": "EF-028",
+          "scenario_id": "SC-d2-delivery-a",
+          "check_id": "PT-04",
+          "severity": "P3",
+          "element_key": "#qty-1-inc|반반치킨 수량 늘리기"
+        },
+        {
+          "id": "EF-034",
+          "scenario_id": "SC-d2-delivery-a",
+          "check_id": "RH-01",
+          "severity": "P3",
+          "element_key": "#qty-1-inc|반반치킨 수량 늘리기"
+        }
+      ],
+      "unlabeled": [
+        {
+          "id": "EF-001",
+          "scenario_id": "SC-d2-delivery-b",
+          "check_id": "PT-02",
+          "severity": "P1",
+          "element_key": "#grp-extra-cola|콜라 1.25L +2,500원"
+        },
+        {
+          "id": "EF-002",
+          "scenario_id": "SC-d2-delivery-b",
+          "check_id": "PT-04",
+          "severity": "P1",
+          "element_key": "#grp-extra-cola|콜라 1.25L +2,500원"
+        },
+        {
+          "id": "EF-010",
+          "scenario_id": "SC-d2-delivery-b",
+          "check_id": "SM-02",
+          "severity": "P2",
+          "element_key": "#cart-btn|장바구니, 1개 담김"
+        },
+        {
+          "id": "EF-029",
+          "scenario_id": "SC-d2-delivery-b",
+          "check_id": "PT-02",
+          "severity": "P3",
+          "element_key": "#cart-btn|장바구니, 비어 있음"
+        },
+        {
+          "id": "EF-030",
+          "scenario_id": "SC-d2-delivery-b",
+          "check_id": "PT-04",
+          "severity": "P3",
+          "element_key": "#cart-btn|장바구니, 비어 있음"
+        },
+        {
+          "id": "EF-031",
+          "scenario_id": "SC-d2-delivery-b",
+          "check_id": "PT-02",
+          "severity": "P3",
+          "element_key": "#line-1-del|반반치킨 삭제"
+        },
+        {
+          "id": "EF-032",
+          "scenario_id": "SC-d2-delivery-b",
+          "check_id": "PT-02",
+          "severity": "P3",
+          "element_key": "#qty-1-inc|"
+        },
+        {
+          "id": "EF-033",
+          "scenario_id": "SC-d2-delivery-b",
+          "check_id": "PT-04",
+          "severity": "P3",
+          "element_key": "#qty-1-inc|"
+        },
+        {
+          "id": "EF-035",
+          "scenario_id": "SC-d2-delivery-b",
+          "check_id": "RH-01",
+          "severity": "P3",
+          "element_key": "#qty-1-inc|"
+        }
+      ]
+    }
+  },
+  "limits": [
+    "Synthetic existing development fixtures, not unseen products or real users.",
+    "Single operator per version and receipt condition, staggered starts.",
+    "One candidate failed instruction reading budgets; retained, not selected as final.",
+    "new2 second completion was about12s after cutoff and is excluded from strict completion count.",
+    "No matched persona contrast was completed in live pilot; generated profiles do not equal executed conditions.",
+    "Receipt study reviews fixed data only; no live persona execution or full-skill advantage inferred.",
+    "Provider counters include cached repeated context; no dollar-cost or causal speed conclusion."
+  ],
+  "final_implementation": {
+    "driver_analysis": "existing swarm CLI called once by existing driver finish with --analyze",
+    "new_harness": false,
+    "rules_or_thresholds_changed": false,
+    "instruction_pilot_is_final_driver_validation": false,
+    "receipt_study_is_live_persona_validation": false,
+    "final_package_sha256": "51a2a118d6a2934a890ae2111b315725f1baf08db92a89b2f87abe7e0ce572b2",
+    "all_components_retained": true,
+    "source_commit": "16e6b7a1d4527305a21ffd9b67143469962b3f02"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "baseline_commit": "ba090fe832799beeee1ea76167ac70954b9f7c2c",
+  "protocol_commit": "e26ad68",
+  "protocol_sha256": "1d092428ca6ea27e3ee0b66c3160ac8d91a2cb6626c6cdf494b62b48bd5ca2bf",
+  "arms": [
+    "off",
+    "old",
+    "new"
+  ],
+  "common_driver": "baseline/skills/remorsearch-ux-qa/drivers/web",
+  "node": "22.23.3",
+  "playwright": "1.56.1",
+  "runs_per_arm": 4,
+  "actions_per_run": 35,
+  "operator_budget_minutes": 25,
+  "criterion": "more supported issue coverage than old skill without higher unsupported count; complete persona path",
+  "no_live_external_research": true,
+  "audience_sha256": "dec9b4b953abae7b307422d2a31e5c8a0521647cd61ab7bb37c8afde8087a3f3",
+  "prompt_sha256": {
+    "off": "5fd72f8dca6e7ecff23cf8c607e3632b37bad3aa933c25916e640cd733a13597",
+    "old": "b36c2a352f0dab2ae37241f99e4976e4ad39e426070ba9ceb5d7676fd6f3db8b",
+    "new": "a45316c3c1c259d9b4e56edb19d61e37502f87ec07d923f591aa94ecc7bfbf86"
+  }
+}
