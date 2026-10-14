@@ -19,38 +19,39 @@ Remorsearch(리모서치, *ree-mor-search*) UX QA는 어느 정도 완성된 제
 
 ## 설치
 
-폴더 하나를 스킬 폴더에 복사합니다. 사용자 리서치에서 쓰는 insane-search 원문과
-참조 자료가 안에 들어 있으므로 검색 스킬을 따로 설치할 필요가 없습니다.
-Python 도구는 Python 3.10 이상에서 표준 라이브러리와 POSIX 파일 잠금을 사용합니다.
-macOS, Linux, Windows의 WSL에서 실행할 수 있습니다. 기본 `python3`가 더 낮으면(macOS 기본 Python은 3.9입니다) 호스트가 스킬 폴더에서 `python3 scripts/find_runtime.py`를 실행합니다. 지원되는 가장 높은 Python, Node.js 22 경로와 공백을 JSON으로 출력하며 아무것도 설치하지 않습니다.
+명령 하나로 스킬 전체를 설치합니다. research, persona-qa, ergonomics, loop 네 구성 요소와
+참조 문서·스키마, 번들로 포함된 insane-search 원문, 명령 실행기, 고정된 웹 드라이버와
+Chromium이 모두 담깁니다. 기능을 골라 설치하는 방식은 없고, 참조 문서는 작업마다 필요할 때
+불러 읽습니다. 사용자는 테스트 패킷이 아니라 URL이나 저장소를 넘겨 주면 되고, 번들 예제는
+스킬 자체 점검용 유지보수 자료일 뿐입니다. Python 도구는 macOS, Linux, Windows의 WSL에서
+Python 3.10 이상과 표준 라이브러리, POSIX 파일 잠금을 사용합니다. 기본 `python3`가 더 낮으면(macOS 기본 Python은 3.9입니다) 호스트가 스킬 폴더에서 `python3 scripts/find_runtime.py`를 실행합니다. 지원되는 가장 높은 Python, Node.js 22 경로와 공백을 JSON으로 출력하며 아무것도 설치하지 않습니다.
 
 ```sh
 git clone https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
-# Claude Code(개인용). 팀과 나누려면 프로젝트 안의 .claude/skills/에 복사합니다
-mkdir -p ~/.claude/skills
-cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
-# Codex
-mkdir -p ~/.codex/skills
-cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.codex/skills/
+cd Remorsearch_UX_QA_Skill
+python3 scripts/install.py --target codex
 ```
 
-폴더를 복사하면 스킬 설치가 끝납니다. 유지보수용 패키징과 무결성 검사는
+`--target claude`는 `~/.claude/skills/remorsearch-ux-qa`에, 기본값 `codex`는
+`~/.codex/skills/remorsearch-ux-qa`에 설치합니다. 격리해서 시험해 보려면
+`--destination /path/to/folder`로 경로를 직접 정하세요. 유지보수용 패키징과 무결성 검사는
 [빌드와 배포 전 검사](docs/release.md)에 정리했습니다.
 
-폴더에는 Python 도구, JSON 스키마, 시연용 예제, 실시간 웹 드라이버와 검색 원문,
-참조 자료, 출처 기록이 들어 있습니다.
+Python 3.10 이상, Node.js 22(>=22 <23), npm을 먼저 확인한 뒤에야 파일을 씁니다. 설치 스크립트는
+임시 복사본의 `drivers/web`에서 `npm ci`를 실행하고, Playwright가 쓰는 브라우저 캐시(macOS
+기본 `~/Library/Caches/ms-playwright`, `PLAYWRIGHT_BROWSERS_PATH`를 먼저 정하면 위치를 바꿀 수
+있습니다)로 Chromium을 내려받고, 마지막에 실제 Chromium 실행을 확인한 뒤 설치를 마칩니다.
+전역 런타임이나 계정은 건드리지 않습니다. Node.js 22를 쓰십시오. 고정된 Playwright 1.56.1에서는
+Node.js 24.16 이상과 Node.js 26에서 `npx playwright install`이 다운로드 뒤 멈춥니다
+([microsoft/playwright#40724](https://github.com/microsoft/playwright/issues/40724), Playwright 1.60에서는 됩니다).
 
-실제 웹 페이지에서 persona-qa와 ergonomics를 돌리는 웹 드라이버에는 Node.js 22와 Playwright도 필요합니다.
-아래 명령은 Codex 설치 경로를 선택합니다. Claude Code에서는 `REMORSEARCH_SKILL_DIR`를
-`~/.claude/skills/remorsearch-ux-qa`로 지정하세요.
-
-```sh
-REMORSEARCH_SKILL_DIR="$HOME/.codex/skills/remorsearch-ux-qa"
-cd "$REMORSEARCH_SKILL_DIR/drivers/web"
-npm ci && npx playwright install chromium
-```
-
-Node.js 22를 쓰십시오. 고정된 Playwright 1.56.1에서는 Node.js 24.16 이상과 Node.js 26에서 `npx playwright install`이 다운로드 뒤 멈춥니다([microsoft/playwright#40724](https://github.com/microsoft/playwright/issues/40724), Playwright 1.60에서는 됩니다).
+심볼릭 링크 경로, 원본 저장소, 관련 없는 기존 폴더, 파일 시스템 루트, 홈 디렉터리는 설치
+대상으로 거절합니다. 드라이버 준비는 임시 복사본에서 먼저 끝내고, 의존성을 설치한 뒤에는
+다시 검사합니다. npm이나 Chromium 내려받기가 실패해도 기존 설치는 그대로입니다.
+Node.js, npm, 네트워크를 고친 뒤 같은 명령을 다시 실행하면 됩니다. 이미 설치된 스킬을
+갱신할 때는 실행 기록과 심볼릭 링크까지 통째로 `remorsearch-ux-qa.backup-<timestamp>.tar.gz`로
+보관한 뒤 새 설치를 넣습니다. 계정은 사용자가 준비합니다. 유튜브 댓글은 본인의 YouTube Data
+API 키(`REMORSEARCH_YOUTUBE_API_KEY`)가 필요하고, Figma 비교에는 Figma 접근 권한이 필요합니다.
 
 ## 사용법
 
@@ -130,7 +131,7 @@ research와 persona-qa는 계정 없이 누구나 읽을 수 있는 것만 읽�
 ## 저장소 구성
 
 ```text
-skills/remorsearch-ux-qa/    설치하는 스킬(이 폴더를 복사함)
+skills/remorsearch-ux-qa/    설치하는 스킬(scripts/install.py가 설치함)
   SKILL.md                   진입점: 모드, 공통 규칙, 도구
   references/                모드별 흐름과 참고 문서
     research/korea/          한국 리서치 팩(한국어): 플랫폼 지도, 검색어, 표지, 통계, 법령 점검표, 보고서 틀

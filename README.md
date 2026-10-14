@@ -29,44 +29,49 @@ and component tests do not establish that result.
 
 ## Install
 
-Install one folder into your skills directory. It includes the original
-insane-search toolkit as reference material for Remorsearch's research stage;
-users do not install a separate search skill. The Python tools need Python 3.10+
-on macOS, Linux or WSL and use the standard library and POSIX file locks. If the
-default `python3` is older (the macOS system Python is 3.9), the host runs
-`python3 scripts/find_runtime.py` from the skill folder. It prints JSON with the
-highest supported Python, a Node.js 22 path and any gaps; it installs nothing.
+Install one folder with one command. It contains every component: research,
+persona-qa, ergonomics and loop with their references and schemas, the bundled
+insane-search toolkit and the portable launcher. The same command prepares
+the pinned web driver and Chromium. All features are included; references load per task. You supply a
+URL or repository, not prepared packets; the bundled examples are maintainer
+fixtures for the shipped self-tests. The Python tools need Python 3.10+ on
+macOS, Linux or WSL. If the default `python3` is older (the macOS system Python
+is 3.9), the host runs `python3 scripts/find_runtime.py` from the skill folder.
+It prints JSON with the highest supported Python, a Node.js 22 path and any
+gaps; it installs nothing.
 
 ```sh
 git clone https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
-# Claude Code (personal); use .claude/skills/ inside a project to share it with a team
-mkdir -p ~/.claude/skills
-cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
-# Codex
-mkdir -p ~/.codex/skills
-cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.codex/skills/
+cd Remorsearch_UX_QA_Skill
+python3 scripts/install.py --target codex
 ```
 
-Copying the folder completes the skill installation. Maintainer-only packaging
-and integrity checks are documented in [build and release checks](docs/release.md).
+`--target claude` installs into `~/.claude/skills/remorsearch-ux-qa`; the
+default is `codex` (`~/.codex/skills/remorsearch-ux-qa`). Pass
+`--destination /path/to/folder` for an explicit path, for isolated testing.
+Maintainer-only packaging and integrity checks are documented in
+[build and release checks](docs/release.md).
 
-The folder contains the Python tools, JSON schemas, demo fixtures, live web
-driver, and original search instructions with their references and provenance.
-
-The live web driver (persona-qa and ergonomics on real web pages) also needs Node.js
-22 and Playwright. The commands below select the Codex installation. For Claude
-Code, set `REMORSEARCH_SKILL_DIR` to `~/.claude/skills/remorsearch-ux-qa`.
-
-```sh
-REMORSEARCH_SKILL_DIR="$HOME/.codex/skills/remorsearch-ux-qa"
-cd "$REMORSEARCH_SKILL_DIR/drivers/web"
-npm ci && npx playwright install chromium
-```
-
-Use Node.js 22. With the pinned Playwright 1.56.1, `npx playwright install` hangs after the
+Python 3.10+, Node.js 22 (>=22 <23) and npm are checked before anything is
+written. The installer runs `npm ci` inside a staged copy's `drivers/web`,
+downloads Chromium through Playwright into its browser cache
+(`~/Library/Caches/ms-playwright` by default on macOS; set
+`PLAYWRIGHT_BROWSERS_PATH` first for another location), and finishes with an
+actual Chromium launch. It changes no global runtime or account. Use Node.js
+22. With the pinned Playwright 1.56.1, `npx playwright install` hangs after the
 download on Node.js 24.16 or later and on Node.js 26
 ([microsoft/playwright#40724](https://github.com/microsoft/playwright/issues/40724);
 Playwright 1.60 works).
+
+Destinations are guarded: symlinked paths, the source repository, unrelated
+existing folders, the filesystem root and the home directory are refused.
+Driver preparation happens on a staged copy, so a failed npm or Chromium
+download leaves an existing installation unchanged; fix Node.js, npm or the
+network and rerun the same command. Updating an owned installation first
+archives the complete previous folder, including run records and symlinks, as
+`remorsearch-ux-qa.backup-<timestamp>.tar.gz` beside the skill. Accounts stay
+user prerequisites: YouTube comments need your own YouTube Data API key
+(`REMORSEARCH_YOUTUBE_API_KEY`), and Figma comparison needs your Figma access.
 
 ## Use
 
@@ -230,7 +235,7 @@ facts are marked 관찰됨; facts not reached in the primary source remain 미�
 ## Repository layout
 
 ```text
-skills/remorsearch-ux-qa/    the installable skill (copy this folder)
+skills/remorsearch-ux-qa/    the installable skill (installed by scripts/install.py)
   SKILL.md                   entry point: modes, shared rules, tools
   references/                mode workflows and reference material
     research/korea/          Korean research pack (in Korean): platform map, query craft, markers, statistics, legal checklist, report template
