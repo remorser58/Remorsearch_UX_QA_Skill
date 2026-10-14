@@ -27,13 +27,12 @@ Complete the chosen stub as `sc.json` with real URL/build, safe task data, targe
 
 ```sh
 node drivers/web/ergo_drive.mjs serve --scenario sc.json --profile work/profile.json \
-  --build-id "$PRODUCT_BUILD_ID" --agent-json agent.json --out runs/scenario-1/ --run-id "$RUN_ID" --port 9477
+  --build-id "$PRODUCT_BUILD_ID" --agent-json agent.json --out runs/scenario-1/ --run-id "$RUN_ID" --port 9477 --analyze
 # Operate via drive_client.mjs observe/act/note/finish; finish with the actual outcome.
-python3 scripts/ergo_qa.py analyze --runs "runs/scenario-1/$RUN_ID" --profiles work/profiles.json --scenario sc.json --out work/analysis.json
 python3 scripts/ergo_qa.py swarm --runs runs/scenario-1/ --profiles work/profiles.json --scenario sc.json --out report/
 ```
 
-Repeat with each selected profile on the same task, including baseline/available clean controls; preserve successful runs. Keep each run directory scoped to its scenario/build/device/orientation. Mixed scenarios require all matching `--scenario` files. Analyze with the same profiles used to record. `--cross-profile` adds analytical comparisons of shared recordings, never additional persona executions. Distinguish profile-operated behavior, scripted replay and shared-recording analysis; label evidence measured/model/judgment independently. Hypotheses need reproduction/corroboration before promotion. Attach bound runs in section 5. Driver mechanics: `drivers/web/README.md`, Local persona-qa quickstart, Editing the generated scenario and Commands sections.
+`--analyze` screens this recording once at finish using frozen profile/context inputs; replies contain report paths/counts, never a QA-pass verdict. Analysis failure exits 4 with a reason; product status/success stay measured. Use `--python PATH` if needed (30 s analysis limit). Repeat with each selected profile on the same task, including baseline/available clean controls; preserve successful runs. Keep each run directory scoped to its scenario/build/device/orientation. Mixed scenarios require all matching `--scenario` files. Analyze with the same profiles used to record. `--cross-profile` adds analytical comparisons of shared recordings, never additional persona executions. Distinguish profile-operated behavior, scripted replay and shared-recording analysis; label evidence measured/model/judgment independently. Hypotheses need reproduction/corroboration before promotion. Attach bound runs in section 5. Driver mechanics: `drivers/web/README.md`, Commands section.
 
 ## 1. Build the priority-task matrix
 
