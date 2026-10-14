@@ -16,10 +16,12 @@ Writer guidance: keep at most three actions, each at most 25 words. Remove unuse
 | --- | --- |
 | `hold` | A P0 is verified on the current build; or no scenario could complete the primary task; or a P1 on the primary task has no workaround. |
 | `ship after fixes` | No P0; the primary task can be completed; P1 findings have concrete fixes. |
-| `ship` | The primary task and at least one recovery path were exercised on the current build on every device in scope, and no P0 or P1 remains. |
+| `ship` | The primary task and recovery were exercised, rendered readability/control checks passed on every scoped device/state/current build, and no P0 or P1 remains. |
 | `inconclusive` | The surface could not be exercised, the coverage minimum was not met, or evidence is stale. Name the blocker: browser failure, production gate, missing build access or missing current evidence. |
 
 A scoped inspection (named tasks, screens, devices) is a valid report with the same verdict rules; a task result is not whole-product release readiness or measured user benefit. Check evidence and coverage first. Where they cannot support the scoped verdict, use `inconclusive`. An empty findings list requires the same coverage proof as any other `ship` verdict. State remaining P2/P3 findings.
+
+Include rendered coverage by screen, state and viewport: inspected capture, alignment/wrapping/clipping, component occlusion, and pass/fail/untested with reason. Link the actual Figma node/version for fidelity claims; missing Figma leaves that comparison unverified. Functional success and DOM metrics do not pass missing visual review. Unresolved required-text or control obstruction prevents `ship` even at P2; use `ship after fixes` or the applicable stricter verdict. Show the same failing state and adjacent states after a fix.
 
 For Korean reports keep this QA structure. Use 결론, 발견, 수정 전후, 시나리오와 점검 범위, 조사 방법, 부록 and 완료 점검. Verdict labels are 점검 범위 통과 (`ship`), 수정 후 범위 재검증 (`ship after fixes`), 보류 (`hold`), 판단 불가 (`inconclusive`). Use the Korean research template's wording self-check and quoting rules when community evidence was requested.
 

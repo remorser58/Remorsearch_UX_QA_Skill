@@ -1,19 +1,19 @@
 <!-- Mode: persona-qa. Entry point: `SKILL.md`. -->
 # Persona QA mode
 
-Test completion and input preservation. Synthetic scenarios define conditions; traces establish failures. Improvement adds task-linked research; standalone QA only when requested.
+Test completion, input preservation and rendered design. Scenarios define conditions; traces establish failures. Improvement adds task-linked research; standalone QA is read-only.
 
 ## Phase 0 recap
 
-Use `SKILL.md` Phase 0. Record product tasks, URL/build, device/viewport/input, constraints, intent, Figma version, grants and fixtures. Start QA without a prepared audience. Ask only for missing material access.
+Use `SKILL.md` Phase 0: tasks, URL/build, device/viewport/input, constraints/intent, Figma version, grants and fixtures. A prepared audience is unnecessary.
 
 Chromium emulation leaves Safari/WebKit, real device/grip/occlusion/safe area/screen reader untested. Korean product: `references/persona-qa/kwcag-card.md`; report language changes wording only. Outside-product pages: `references/shared/access-card.md` in operator/verifier prompts. Host browser first; preserve user state.
 
-After first observation, use `references/persona-qa/generated-ui-preflight.md` sections 1–4 before baseline verdict; replay affected checks after fixes.
+Inspect rendered alignment, wrapping, clipping and component occlusion. Use `references/persona-qa/generated-ui-preflight.md` sections 1–4 before verdict; replay after fixes. Inspect screenshots, not just DOM boxes or analyzer counts.
 
 ## Run path
 
-Compose before planned persona runs; initial observation may come first. Use the supplied completed audience and retain its plan. `--budget` counts distinct profiles, not runs. For research-origin audiences, pass supported `--run`, `--bundle`, `--gate` references per `references/ergonomics/audience-research.md` by section; never replace missing research evidence with a standalone audience. Example (adjust budget to scope):
+Compose before persona runs; observation may come first. Retain supplied audience/plan. `--budget` counts profiles, not runs. Research-origin audiences require supported `--run`, `--bundle`, `--gate` per `references/ergonomics/audience-research.md` by section; never replace missing research with standalone assumptions. Adjust budget to scope:
 
 ```sh
 python3 scripts/ergo_qa.py audience-check audience.json
@@ -36,10 +36,11 @@ python3 scripts/ergo_qa.py swarm --runs runs/scenario-1/ --profiles work/profile
 
 ## 1. Build the priority-task matrix
 
-For every priority task, require all these rows on each device in scope:
+For each priority task and scoped device:
 
 | Path | Required checks |
 | --- | --- |
+| Rendered design | Mobile/desktop, short height, open overlays and error/selected states; readable text, alignment and unobscured controls |
 | Happy path | Enter all choices/values; compare with final state/payload |
 | Required omissions | Leave each required choice or field out separately |
 | Validation | Exercise each validation error with safe test data |
@@ -51,7 +52,7 @@ List reached/missing screens, states and devices. Check Korean clipping/IME wher
 
 Scenario: ID/task/goal/safe data, basis/brief condition, context/constraints/device/input/start, expected decision/integrity/risk, claim IDs and omissions. Audience rows cite audience_id/segment_id/task_id/facet and gate-supported motivations. Without an audience, choose task-changing strata: new/returning, touch/keyboard, interruption, delay, empty/stale/edge data. Do not add demographic decoration or stereotype behavior.
 
-Optional dataset: exact source/revision/schema, bounded/streaming sample; record adapter/schema fingerprint/seed/config/shard/read-byte-time bounds/IDs/strata/stop. Separate original attributes/assumptions. Scenario detail: `references/persona-qa/persona-scenario-design.md` by section.
+Optional dataset: record source/revision/schema, bounded sample/seed/config, IDs/strata and stop; separate attributes from assumptions. Scenario detail: `references/persona-qa/persona-scenario-design.md` by section.
 
 ## 2. Exercise and capture
 
@@ -98,7 +99,7 @@ Use `references/persona-qa/qa-report-template.md` by section. First section afte
 
 - hold: verified current P0, primary task completed by no scenario, or primary P1 without workaround.
 - ship after fixes: no P0; primary task completes; P1s have concrete fixes.
-- ship: primary and recovery exercised on every scoped device/current build, no P0/P1 left.
+- ship: primary/recovery exercised and rendered readability/control checks passed on every scoped device/build, no P0/P1 left.
 - inconclusive: unavailable surface, production gate, coverage minimum missing or stale evidence. No findings alone never means ship.
 
 Then matrix/basis, ranked cards, P0/P1 causes, recommendations, Figma/artifacts/replay/unverified/next evidence. Community/access annex only if run; omit zero stops. Emulation/AT/identity/payment limits explicit; language adds no research administration. Reusable artifacts: `references/research/evidence-bundle-contract.md` by section (persona copy exists); verified findings link observed observations/completed runs/scenarios. Record separate read/write/blocked reasons.

@@ -349,6 +349,22 @@ class Errors(unittest.TestCase):
 
 
 class Clipping(unittest.TestCase):
+    def test_clipped_interactive_labels_and_clean_controls(self) -> None:
+        items = [el(name, role, (10, 50 + i * 60, width, 40), text=text,
+                    interactive=True, tag=tag, a11y=a11y(), **extra)
+                 for i, (name, role, tag, width, text, extra) in enumerate([
+                     ("cut", "button", "button", 90, "Continue to checkout",
+                      {"clipped": {"x": True, "y": False, "act": "failed"}}),
+                     ("link", "link", "a", 90, "Read delivery terms",
+                      {"clipped": {"x": True, "y": False, "act": "failed"}}),
+                     ("clean", "button", "button", 330, "Continue to checkout", {}),
+                     ("dots", "button", "button", 90, "Optional details",
+                      {"clipped": {"x": True, "y": False, "ellipsis": True, "act": "passed"}}),
+                 ])]
+        findings = {o.element_key.split("|")[0]: o.severity
+                    for o in checks.check_semantics(ctx(items)) if o.check_id == "LY-01"}
+        self.assertEqual(findings, {"#cut": "P2", "#link": "P2", "#dots": "P3"})
+
     def test_clipped_text(self) -> None:
         cut = el("title", "paragraph", (10, 100, 120, 20), text="아주 긴 상품 이름이 여기서 잘립니다", clipped={"x": True, "y": False, "ellipsis": False})
         dots = el("sub", "paragraph", (10, 130, 120, 20), text="말줄임표로 줄인 설명 문구입니다", clipped={"x": True, "y": False, "ellipsis": True})

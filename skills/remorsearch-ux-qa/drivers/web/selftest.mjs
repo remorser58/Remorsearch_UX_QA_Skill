@@ -1520,6 +1520,17 @@ async function reflowTest(base, tmp) {
   check('reflow: text in a 90vh overflow:hidden shell is not lost because of a shorter viewport alone', !lost.includes('shell-note')
     && recs.every((x) => x.lost_height === 780), recs.map((x) => x.lost_height));
   const first = JSON.parse(fs.readFileSync(path.join(outDir, 'R-reflow', run.snapshots[0].path), 'utf8'));
+  const clippedControl = (id) => first.elements.find((e) => e.dom_id === id);
+  check('clipping: button and link labels retain clipping evidence',
+    ['clipped-button', 'clipped-link'].every((id) => clippedControl(id)?.interactive
+      && clippedControl(id)?.clipped?.x === true && clippedControl(id)?.clipped?.act === 'failed'));
+  check('clipping: a readable button remains clean and ellipsis remains an exception',
+    !clippedControl('clean-button')?.clipped && clippedControl('ellipsis-button')?.clipped?.ellipsis === true
+      && clippedControl('ellipsis-button')?.clipped?.act === 'passed');
+  check('clipping: overflowing decoration does not clip the readable control label',
+    !!clippedControl('decorated-button') && !clippedControl('decorated-button').clipped);
+  check('clipping: a tagged child label is not also counted through its readable parent text',
+    !clippedControl('child-label-button')?.clipped && clippedControl('tagged-label')?.clipped?.x === true);
   const chip = first.elements.find((e) => e.dom_id === 'chip-t');
   check('LY-01 data: text cut by a clipping ancestor records the ancestor', !!chip && chip.clipped && chip.clipped.x === true && chip.clipped.by === '#chip-l',
     chip && chip.clipped);

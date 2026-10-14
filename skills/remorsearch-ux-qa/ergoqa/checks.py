@@ -2284,7 +2284,7 @@ def check_semantics(ctx: Context) -> list[Observation]:
     for e in dom:
         clip = e.get("clipped")
         box = e.get("box") or {}
-        if not isinstance(clip, dict) or e.get("interactive") or box.get("w", 0) < 4 or box.get("h", 0) < 4 or not (e.get("text") or "").strip():
+        if not isinstance(clip, dict) or box.get("w", 0) < 4 or box.get("h", 0) < 4 or not (e.get("text") or "").strip():
             continue
         if clip.get("animated"):
             continue  # tickers and marquees clip by design
