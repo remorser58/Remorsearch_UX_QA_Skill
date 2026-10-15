@@ -30,6 +30,8 @@
       "layout": "passed",
       "interaction_states": "failed",
       "typography": "passed",
+      "text_clipping": "passed",
+      "component_occlusion": "passed",
       "side_accents": "passed"
     },
     "reason": "Synthetic comparison: ambiguous action label."

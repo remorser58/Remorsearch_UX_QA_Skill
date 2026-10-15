@@ -14,6 +14,8 @@ Treat a component as a small public system, not a screenshot. Inspect the compon
 | Hierarchy | one clear primary action, lower-emphasis alternatives, action versus navigation semantics, destructive separation | screen capture and task step that establishes the decision |
 | Content | action labels, sentence case or local writing convention, long Korean/English strings, plural and currency formatting | exact visible text, source/spec, long-content capture |
 | Responsive | narrow width, short height, mobile adaptation, safe-area/fixed bars, table/list/card changes | same component at each scoped viewport and engine |
+| Text geometry | text bounds wider than the parent content box, fixed-height text parents, `nowrap`, hidden/clip overflow, or a wrapped line colliding with the next block | Figma readback or DOM geometry plus the painted screenshot; record `text_clipping` separately from general layout |
+| Layer geometry | a component, overlay, sticky/fixed layer or transparent hit target covers required text or a control | same-state painted screenshot, layer/stack evidence and task consequence; record `component_occlusion` separately |
 | Interaction | focus indicator, tooltip for icon-only controls, keyboard activation, loading feedback, error association, focus return | action trace, capture before/after, accessibility fields; screen-reader speech remains separate |
 
 Do not turn a design-system recommendation into a defect automatically. A finding needs a task consequence, a stated product intent, a Figma/spec conflict, or a directly verified component rule. Keep taste, brand preference and untested states in the annex.
@@ -38,7 +40,7 @@ Create one row per meaningful component instance, not per DOM wrapper:
 }
 ```
 
-For screens, add a second matrix with hierarchy, container/grid alignment, repeated spacing, fixed-layer behavior, responsive changes, and the primary decision. A screenshot count is not coverage. A screen passes UI review only when every required component state and every scoped viewport has a row.
+For screens, add a second matrix with hierarchy, container/grid alignment, repeated spacing, fixed-layer behavior, responsive changes, text geometry, component occlusion and the primary decision. A screenshot count is not coverage. A screen passes UI review only when every required component state and every scoped viewport has a row, with explicit text-clipping and component-occlusion results.
 
 ## REA reverse-engineering pass
 

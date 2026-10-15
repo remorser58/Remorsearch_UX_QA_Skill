@@ -80,6 +80,12 @@ class ContractTests(unittest.TestCase):
         self.packet['visual_checks'][1]['checks']['side_accents'] = 'failed'
         self.assertTrue(validate_packet(self.packet))
 
+    def test_visual_pass_requires_clipping_and_occlusion_checks(self):
+        for field in ('text_clipping', 'component_occlusion'):
+            packet = copy.deepcopy(self.packet)
+            packet['visual_checks'][1]['checks'].pop(field)
+            self.assertTrue(validate_packet(packet), field)
+
     def test_run_pass_cannot_hide_step_failure(self):
         self.packet['browser_runs'][1]['steps'][0]['outcome'] = 'failed'
         self.assertTrue(validate_packet(self.packet))

@@ -120,7 +120,7 @@ def make_packet(root: Path, case: str = 'happy') -> dict:
                   'actual_artifact_id': actual_art, 'reference_artifact_id': 'artifact-reference',
                   'comparison_artifact_id': 'artifact-' + phase + '-visual', 'status': 'passed',
                   'method': 'review', 'reviewer': 'fixture-author',
-                  'checks': {name: 'passed' for name in ('layout', 'interaction_states', 'typography', 'side_accents')}, 'reason': ''}
+                  'checks': {name: 'passed' for name in ('layout', 'interaction_states', 'typography', 'text_clipping', 'component_occlusion', 'side_accents')}, 'reason': ''}
         if phase == 'baseline' or (phase == 'replay' and case == 'failed_visual'):
             visual.update({'status': 'failed', 'reason': 'Synthetic comparison: ambiguous action label.'})
             visual['checks']['interaction_states'] = 'failed'

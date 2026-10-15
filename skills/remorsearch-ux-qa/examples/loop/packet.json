@@ -290,7 +290,7 @@
     {
       "id": "artifact-baseline-visual",
       "path": "artifacts/artifact-baseline-visual.json",
-      "sha256": "e3893c599e29ea42b755fb48c3ff83f6223a5e74fc1b4b8fac94757f445f40e9",
+      "sha256": "75ca12021b14f81e05b1d2df869f2e8d733de68ba380cb591cf3423c8cb3180b",
       "kind": "visual_report",
       "provenance": "fixture",
       "created_at": "2026-09-14T00:01:00+00:00"
@@ -346,7 +346,7 @@
     {
       "id": "artifact-replay-visual",
       "path": "artifacts/artifact-replay-visual.json",
-      "sha256": "e2d54b03500f8628275b56b81a7b373a4ec625349b6d7622b73e64b443283a9e",
+      "sha256": "ac104fdba269ee771bfadcc90e5cff49a456b128839df9ce622ee1ddee5b3d18",
       "kind": "visual_report",
       "provenance": "fixture",
       "created_at": "2026-09-14T00:04:00+00:00"
@@ -564,6 +564,8 @@
         "layout": "passed",
         "interaction_states": "failed",
         "typography": "passed",
+        "text_clipping": "passed",
+        "component_occlusion": "passed",
         "side_accents": "passed"
       },
       "reason": "Synthetic comparison: ambiguous action label."
@@ -595,6 +597,8 @@
         "layout": "passed",
         "interaction_states": "passed",
         "typography": "passed",
+        "text_clipping": "passed",
+        "component_occlusion": "passed",
         "side_accents": "passed"
       },
       "reason": ""

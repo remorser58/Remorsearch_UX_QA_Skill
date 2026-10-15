@@ -869,6 +869,8 @@
             "layout",
             "interaction_states",
             "typography",
+            "text_clipping",
+            "component_occlusion",
             "side_accents"
           ],
           "properties": {
@@ -889,6 +891,22 @@
               ]
             },
             "typography": {
+              "enum": [
+                "passed",
+                "failed",
+                "blocked",
+                "unknown"
+              ]
+            },
+            "text_clipping": {
+              "enum": [
+                "passed",
+                "failed",
+                "blocked",
+                "unknown"
+              ]
+            },
+            "component_occlusion": {
               "enum": [
                 "passed",
                 "failed",
