@@ -9,7 +9,7 @@
 | Report-save median, two valid repetitions | 11.54 min | 12.02 min | +4.1% |
 | Final assistant median, two valid repetitions | 12.43 min | 12.62 min | +1.5% |
 
-The candidate was slower in both measures. Its first repetition produced a complete quality report, but the second report contained four finding cards and omitted two previously corroborated families: missing-sauce recovery feedback and unnamed quantity controls. The candidate fails the quality floor and is not merged. The two instruction files were restored to the last accepted commit.
+The candidate was slower in both measures. Its first repetition passed the core coverage floor. In the second repetition, the six core areas were evidenced, but the observed omitted-sauce feedback failure stayed in recovery observations instead of receiving its own finding card. The candidate was not accepted because it produced no speed win and weakened finding traceability. The two instruction files were restored to the last accepted commit.
 
 The ordinary OMO arm is a separate baseline. It is not used to claim a causal skill speedup. The InferHub GLM 5.3 high retry failed with provider 502 before any QA tool call and receives no score. Interrupted runs, server-unavailable runs and provider failures stay in the archive.
 
@@ -20,4 +20,4 @@ The supported public story is evidence-backed rendered QA: one installable packa
 [Machine-readable summary](verification.json), [timing records](accounting-r1.json), [second repetition records](accounting-r2.json), [blind quality judgment](judgment-r1.md), [second repetition judgment](judgment-r2.md), [GLM failure record](glm-retry.json), and [earlier interrupted/invalid run records](interruption.json).
 
 
-The second repetition judgment records the same quality boundary: W18 and W77 passed the core coverage, while W31 lacked 320px payment evidence. The candidate remained unaccepted.
+The second repetition judgment records the quality boundary: W18 and W77 passed the core coverage, while W31 lacked 320px payment evidence. W18 still needs a distinct omitted-sauce finding card for triage clarity. The candidate remained unaccepted.

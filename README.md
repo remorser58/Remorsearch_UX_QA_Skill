@@ -282,7 +282,7 @@ The [QA performance criterion](PRD.md#91-일반-omo-대비-qa-성능) compares o
 
 The [skill-on / skill-off pilot](docs/validation/skill-ab-20261014/report.md) compares two repetitions on existing local fixtures with the same model and browser tools. It reports detection, unsupported warnings, task completion, time and tokens separately from installation/self-tests; it does not establish general superiority.
 
-The [QA speed evaluation](docs/validation/qa-speed-20261015/report.md) tested an instruction-only speed revision with GPT-6.1 Sol high. It was rejected: the candidate was 4.1% slower by median report-save time and 1.5% slower by median final response time across two valid repetitions, and the second repetition missed two previously corroborated issue families. This keeps the performance claim honest while preserving the evidence for the next optimization.
+The [QA speed evaluation](docs/validation/qa-speed-20261015/report.md) tested an instruction-only speed revision with GPT-6.1 Sol high. It was rejected: the candidate was 4.1% slower by median report-save time and 1.5% slower by median final response time across two valid repetitions. Its second repetition covered the six core areas, but left the observed omitted-sauce feedback failure in recovery observations instead of giving it a separate finding card. The candidate produced no speed win and was not accepted.
 
 - Live browser research (Aside or another agentic browser), Figma and browser
   collection for the loop mode are provided by you or your agent host; the loop
