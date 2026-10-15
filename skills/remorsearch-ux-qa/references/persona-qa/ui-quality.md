@@ -40,21 +40,21 @@ Create one row per meaningful component instance, not per DOM wrapper:
 
 For screens, add a second matrix with hierarchy, container/grid alignment, repeated spacing, fixed-layer behavior, responsive changes, and the primary decision. A screenshot count is not coverage. A screen passes UI review only when every required component state and every scoped viewport has a row.
 
-## Optional REA-assisted reference analysis
+## REA reverse-engineering pass
 
-REA means [Reverse Engineer Anything](https://rea.tools/). It gives an agent local tools for inspecting an authorized app, website or runtime and returns code references, runtime observations, screenshots and limitations. Its public README describes the flow as decompile/inspect → understand → recreate, and explicitly says it does not recover original source or automatically clone an app. Its browser observation is passive unless a separate authorized action is requested.
+REA means [Reverse Engineer Anything](https://rea.tools/). Use it to recover how an authorized app, website or runtime works: code references, module and route relationships, component boundaries, runtime transitions, screenshots and unresolved questions. The goal is to explain the mechanism and the design reason, then rebuild that behavior in the user's project with its own Figma, tokens and components.
 
-Use REA only when it is already installed or the user explicitly authorizes setup. The Remorsearch package does not vendor REA, install Hopper/Ghidra, or add a second execution runtime. Detect it first (`rea doctor --json` or the configured MCP capability); if unavailable, continue with public design-system documentation and the existing browser evidence path.
+Use REA when it is already installed or the user explicitly authorizes setup. The Remorsearch package does not vendor REA or add another execution runtime. Detect it first (`rea doctor --json` or the configured MCP capability); if unavailable, use the same investigation record with public design-system documentation and the existing browser path.
 
-For a reference comparison:
+For each feature or screen:
 
-1. Define the target component or screen, the user decision, the exact state and the allowed target. Prefer a public design-system page or an app the user owns or is authorized to inspect.
-2. Inspect two or three relevant references. Capture the state, component anatomy, interaction rule, responsive change and evidence location. Do not collect a whole product catalogue.
-3. Normalize each observation into `observed`, `inferred` or `unknown`. Separate a design-system rule from a single product implementation.
-4. Map the reference to the local component matrix: `reuse principle`, `local adaptation`, `reason`, `risk`, `Figma node`, `replay state`.
-5. Apply only a reversible, intent-compatible change after the local product reproduces a concrete problem. Replay the original state and adjacent states.
+1. Define the user decision, target state, allowed target and the local project feature that should benefit from the investigation.
+2. Inspect the target's static structure and runtime behavior where the provider supports it: entry point, modules/routes, component boundaries, state variables, event handlers, network or storage relationships, responsive branches, error and recovery transitions.
+3. Replay the important states and record the causal chain: input → state change → render/update → feedback → persistence or recovery. Mark every item `observed`, `inferred` or `unknown`.
+4. Explain why the reference likely uses the pattern: task priority, error prevention, information hierarchy, latency, responsive constraint, accessibility or maintainability. Keep this as a hypothesis until the evidence supports it.
+5. Create a local transfer record: reference mechanism, local component/screen, Figma node, adaptation, implementation path, trade-off, replay state and acceptance evidence. Apply the change through the existing Figma-first and loop workflow, then rerun the original and adjacent states.
 
-Never copy private source, proprietary assets, hidden endpoints, user data or a vendor's visual identity. “Similar” means the interaction principle or component contract is useful; it does not mean a pixel clone. Record the target URL/build, REA version or provider, capture hashes, license/terms boundary, and unresolved questions.
+Inspect only the feature slice needed to answer the question. Record the target URL/build, REA version/provider, evidence hashes, access boundary and unresolved questions. Transfer the mechanism and rationale; use the user's project components, tokens, assets and content for implementation.
 
 ## Reference principles used by this card
 

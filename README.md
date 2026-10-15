@@ -133,10 +133,10 @@ for the product-to-replay workflow and existing plan/bundle/loop commands.
 UI QA also reviews the component contract and the composed screen: anatomy, token
 roles, state variants, action hierarchy, long content, responsive behavior and
 icon-only discoverability. The [UI quality card](skills/remorsearch-ux-qa/references/persona-qa/ui-quality.md)
-records a component/screen matrix and accepts REA only as an optional, local
-reference-analysis provider. REA is not vendored or required for installation;
-public design-system guidance and authorized observations remain reference
-material, while the local Figma, intent and rendered evidence decide the finding.
+can use REA to recover a reference feature's state transitions, component
+boundaries and design rationale, then map them into the user's own Figma and
+components for implementation and replay. REA is optional and is not vendored;
+the local Figma, intent and rendered evidence decide the finding.
 
 Research and QA runs can exchange a machine-readable **evidence bundle**
 (`schemas/ux-evidence-bundle.v1.schema.json`). The offline validator checks IDs,
