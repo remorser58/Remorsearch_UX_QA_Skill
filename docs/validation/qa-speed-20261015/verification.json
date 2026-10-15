@@ -1,0 +1,75 @@
+{
+  "model": "gpt-6.1-sol",
+  "effort": "high",
+  "repetitions": 2,
+  "valid_conditions": [
+    "ordinary OMO",
+    "previous skill eb193f1",
+    "candidate instruction change"
+  ],
+  "quality_floor": "six supported issue families, zero unsupported, full requested visual/keyboard/recovery coverage; no new P1 miss",
+  "timing": {
+    "report_saved_seconds": {
+      "ordinary_omo": [
+        609.4,
+        726.21
+      ],
+      "old_skill": [
+        742.61,
+        642.78
+      ],
+      "candidate": [
+        717.37,
+        725.49
+      ]
+    },
+    "final_assistant_seconds": {
+      "ordinary_omo": [
+        625.83,
+        779.39
+      ],
+      "old_skill": [
+        781.97,
+        709.14
+      ],
+      "candidate": [
+        717.53,
+        796.67
+      ]
+    },
+    "median_report_old": 692.6949999999999,
+    "median_report_candidate": 721.4300000000001,
+    "median_report_delta_percent": 4.15,
+    "median_final_old": 745.5550000000001,
+    "median_final_candidate": 757.0999999999999,
+    "median_final_delta_percent": 1.55
+  },
+  "quality": {
+    "r1_blind": "candidate PASS six supported families; old PARTIAL five supported plus one unsupported suggestion",
+    "r2_raw": "ordinary OMO five cards, old skill seven cards, candidate four cards; candidate visibly omits missing-sauce feedback and unnamed quantity controls found in prior evidence",
+    "decision": "candidate rejected: no speed win and quality floor not proven in repetition2"
+  },
+  "provider_failures": {
+    "inferhub_glm_5_3_high": "502 before QA tool call in retry; no score"
+  },
+  "claims_allowed": [
+    "one installable package with four bundled components",
+    "rendered screenshot-backed QA with input-preservation and recovery checks",
+    "button/link clipping regression coverage",
+    "mobile and scoped Safari evidence"
+  ],
+  "claims_rejected": [
+    "faster QA",
+    "2x faster",
+    "general accuracy superiority",
+    "real-user ROI",
+    "billed cost reduction",
+    "formal accessibility certification"
+  ],
+  "limits": [
+    "known synthetic delivery fixtures",
+    "two valid Sol repetitions but second candidate quality misses",
+    "no human study or production backend",
+    "Figma fidelity and full physical/Safari checkout unverified"
+  ]
+}

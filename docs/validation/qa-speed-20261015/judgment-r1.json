@@ -1,0 +1,489 @@
+{
+  "verdict": "PARTIAL",
+  "scope": "Frozen Q62/Q29/Q85 artifacts only; no source keys, prior judgments, model identity, outside state, browsing, rerun, router or delegation",
+  "normalization": "Count distinct components requiring distinct fixes; repeated widths and note-loss triggers share a family. Split Q29 card 3 and Q85 card 5. Coupon guidance is a suggestion.",
+  "important_six": [
+    "note_loss",
+    "keyboard_part",
+    "sauce_clipping",
+    "summary_clipping",
+    "sauce_feedback",
+    "quantity_names"
+  ],
+  "families": {
+    "note_loss": {
+      "severity": "high/P1",
+      "criterion": "Allergy note survives validation and remains in final order"
+    },
+    "keyboard_part": {
+      "severity": "high/P1",
+      "criterion": "Required boneless option is keyboard operable"
+    },
+    "sauce_clipping": {
+      "severity": "medium/P2",
+      "criterion": "Full sauce labels and surcharges are rendered at phone widths"
+    },
+    "summary_clipping": {
+      "severity": "medium/P2",
+      "criterion": "Payment breakdown remains readable at 320x568"
+    },
+    "sauce_feedback": {
+      "severity": "medium/P2",
+      "criterion": "Missing sauce produces an actionable error"
+    },
+    "quantity_names": {
+      "severity": "medium/P2",
+      "criterion": "Quantity controls expose accessible action names"
+    },
+    "address_feedback": {
+      "severity": "medium/P2 qualified",
+      "criterion": "Address error has accessible association and recovery focus"
+    },
+    "coupon_hint": {
+      "severity": "suggestion",
+      "criterion": "No spelling-hint requirement or failed correction was established"
+    }
+  },
+  "reports": {
+    "Q62": {
+      "verdict": "PARTIAL",
+      "raw_cards": 6,
+      "normalized_reported_families": 6,
+      "supported_distinct_defect_families": 5,
+      "important_six_covered": 5,
+      "important_six_total": 6,
+      "suggestions": 1,
+      "unsupported_defect_classifications": 1,
+      "unsupported_factual_findings": 0,
+      "findings": [
+        {
+          "card": 1,
+          "claim": "Address validation and cart return discard the allergy note",
+          "families": [
+            "note_loss"
+          ],
+          "verdict": "SUPPORTED",
+          "reported_severity": "P1",
+          "accepted_severity": [
+            "high/P1"
+          ],
+          "evidence": [
+            "Q62/b-mobile-coupon-error.png",
+            "Q62/b-mobile-address-error.png",
+            "Q62/b-mobile-final.png",
+            "Q62/b-short-address-error.png",
+            "Q62/b-desktop-address-error.png",
+            "Q62/b-mobile-back-return.png",
+            "Q62/evidence.json: flows and recovery"
+          ]
+        },
+        {
+          "card": 2,
+          "claim": "Required meat choice is unavailable to keyboard navigation",
+          "families": [
+            "keyboard_part"
+          ],
+          "verdict": "SUPPORTED",
+          "reported_severity": "P1",
+          "accepted_severity": [
+            "high/P1"
+          ],
+          "evidence": [
+            "Q62/b-desktop-keyboard-options.png",
+            "Q62/evidence.json: keyboard_variant_b_tab_trace and required_meat_b_dom",
+            "Q62/a-desktop-final.png"
+          ]
+        },
+        {
+          "card": 3,
+          "claim": "Narrow sauce choices clip their surcharges",
+          "families": [
+            "sauce_clipping"
+          ],
+          "verdict": "SUPPORTED",
+          "reported_severity": "P2",
+          "accepted_severity": [
+            "medium/P2"
+          ],
+          "evidence": [
+            "Q62/b-mobile-missing-sauce.png",
+            "Q62/b-short-missing-sauce.png",
+            "Q62/b-short-selected.png",
+            "Q62/b-desktop-selected.png",
+            "Q62/a-short-selected.png"
+          ]
+        },
+        {
+          "card": 4,
+          "claim": "Missing sauce silently blocks Add",
+          "families": [
+            "sauce_feedback"
+          ],
+          "verdict": "SUPPORTED",
+          "reported_severity": "P2",
+          "accepted_severity": [
+            "medium/P2"
+          ],
+          "evidence": [
+            "Q62/b-mobile-missing-sauce.png",
+            "Q62/b-short-missing-sauce.png",
+            "Q62/b-desktop-missing-sauce.png",
+            "Q62/evidence.json: missing-sauce states",
+            "Q62/a-desktop-missing-sauce.png"
+          ]
+        },
+        {
+          "card": 5,
+          "claim": "Coupon typo feedback gives no correction guidance",
+          "families": [
+            "coupon_hint"
+          ],
+          "verdict": "SUGGESTION",
+          "reported_severity": "P2",
+          "accepted_severity": [
+            "suggestion"
+          ],
+          "evidence": [
+            "Q62/b-mobile-coupon-error.png",
+            "Q62/b-short-coupon-error.png",
+            "Q62/b-desktop-coupon-error.png",
+            "Q62/a-mobile-coupon-error.png",
+            "Q62/b-mobile-final.png"
+          ]
+        },
+        {
+          "card": 6,
+          "claim": "Cart quantity buttons have no accessible names",
+          "families": [
+            "quantity_names"
+          ],
+          "verdict": "SUPPORTED",
+          "reported_severity": "P2",
+          "accepted_severity": [
+            "medium/P2"
+          ],
+          "evidence": [
+            "Q62/b-mobile-cart-one.png",
+            "Q62/b-mobile-cart-two.png",
+            "Q62/evidence.json: recovery cart-accessibility snapshot",
+            "Q62/a-desktop-cart-two.png"
+          ]
+        }
+      ]
+    },
+    "Q29": {
+      "verdict": "PASS",
+      "raw_cards": 5,
+      "normalized_reported_families": 6,
+      "supported_distinct_defect_families": 6,
+      "important_six_covered": 6,
+      "important_six_total": 6,
+      "suggestions": 0,
+      "unsupported_defect_classifications": 0,
+      "unsupported_factual_findings": 0,
+      "findings": [
+        {
+          "card": 1,
+          "claim": "Checkout recovery clears the allergy note and submits an order without it",
+          "families": [
+            "note_loss"
+          ],
+          "verdict": "SUPPORTED",
+          "reported_severity": "P1",
+          "accepted_severity": [
+            "high/P1"
+          ],
+          "evidence": [
+            "Q29/b-mobile-coupon-error.png",
+            "Q29/b-mobile-address-error.png",
+            "Q29/b-mobile-final.png",
+            "Q29/b-short-address-error.png",
+            "Q29/b-mobile-reentered-note.png",
+            "Q29/b-mobile-returned-checkout.png",
+            "Q29/interaction-evidence.json"
+          ]
+        },
+        {
+          "card": 2,
+          "claim": "Required portion choices cannot be operated by keyboard",
+          "families": [
+            "keyboard_part"
+          ],
+          "verdict": "SUPPORTED",
+          "reported_severity": "P1",
+          "accepted_severity": [
+            "high/P1"
+          ],
+          "evidence": [
+            "Q29/b-keyboard-part-unreachable.png",
+            "Q29/interaction-evidence.json"
+          ]
+        },
+        {
+          "card": 3,
+          "claim": "Narrow layouts clip option surcharges and payment-summary amounts",
+          "families": [
+            "sauce_clipping",
+            "summary_clipping"
+          ],
+          "verdict": "SUPPORTED",
+          "reported_severity": "P2",
+          "accepted_severity": [
+            "medium/P2",
+            "medium/P2"
+          ],
+          "evidence": [
+            "Q29/b-mobile-selected.png",
+            "Q29/b-short-options-selected.png",
+            "Q29/b-short-options-bottom.png",
+            "Q29/b-short-checkout-bottom.png",
+            "Q29/b-mobile-checkout-bottom.png",
+            "Q29/b-desktop-options-selected.png",
+            "Q29/b-desktop-checkout-bottom.png"
+          ]
+        },
+        {
+          "card": 4,
+          "claim": "Attempting to add without sauce provides no error explanation",
+          "families": [
+            "sauce_feedback"
+          ],
+          "verdict": "SUPPORTED",
+          "reported_severity": "P2",
+          "accepted_severity": [
+            "medium/P2"
+          ],
+          "evidence": [
+            "Q29/b-mobile-missing-sauce.png",
+            "Q29/b-mobile-selected.png",
+            "Q29/b-mobile-after-add.png",
+            "Q29/capture-receipts.json"
+          ]
+        },
+        {
+          "card": 5,
+          "claim": "Cart quantity buttons have no accessible names",
+          "families": [
+            "quantity_names"
+          ],
+          "verdict": "SUPPORTED",
+          "reported_severity": "P2",
+          "accepted_severity": [
+            "medium/P2"
+          ],
+          "evidence": [
+            "Q29/b-mobile-cart.png",
+            "Q29/b-mobile-cart-two.png",
+            "Q29/b-mobile-cart-accessibility.png",
+            "Q29/interaction-evidence.json"
+          ]
+        }
+      ]
+    },
+    "Q85": {
+      "verdict": "PARTIAL",
+      "raw_cards": 7,
+      "normalized_reported_families": 8,
+      "supported_distinct_defect_families": 7,
+      "important_six_covered": 6,
+      "important_six_total": 6,
+      "suggestions": 1,
+      "unsupported_defect_classifications": 1,
+      "unsupported_factual_findings": 0,
+      "findings": [
+        {
+          "card": 1,
+          "claim": "Address validation clears the allergy note and submits an order without it",
+          "families": [
+            "note_loss"
+          ],
+          "verdict": "SUPPORTED",
+          "reported_severity": "high",
+          "accepted_severity": [
+            "high/P1"
+          ],
+          "evidence": [
+            "Q85/b-mobile-coupon-typo.png",
+            "Q85/b-mobile-note-after-error.png",
+            "Q85/b-mobile-final.png",
+            "Q85/b-short-address-error.png",
+            "Q85/b-short-final.png",
+            "Q85/b-desktop-address-error.png",
+            "Q85/b-desktop-final.png",
+            "Q85/b-384-manual-note-recovery-final.png",
+            "Q85/dom-evidence.json"
+          ]
+        },
+        {
+          "card": 2,
+          "claim": "Required part choice cannot be selected with the keyboard",
+          "families": [
+            "keyboard_part"
+          ],
+          "verdict": "SUPPORTED",
+          "reported_severity": "high",
+          "accepted_severity": [
+            "high/P1"
+          ],
+          "evidence": [
+            "Q85/b-mobile-keyboard-options-result.png",
+            "Q85/a-mobile-keyboard-options-result.png",
+            "Q85/b-desktop-keyboard-first.png",
+            "Q85/dom-evidence.json"
+          ]
+        },
+        {
+          "card": 3,
+          "claim": "Sauce labels and surcharges are clipped on phone widths",
+          "families": [
+            "sauce_clipping"
+          ],
+          "verdict": "SUPPORTED",
+          "reported_severity": "medium",
+          "accepted_severity": [
+            "medium/P2"
+          ],
+          "evidence": [
+            "Q85/b-mobile-sauce-error.png",
+            "Q85/b-mobile-options-selected.png",
+            "Q85/b-short-sauce-error.png",
+            "Q85/b-short-options-selected.png",
+            "Q85/b-desktop-options-selected.png",
+            "Q85/a-mobile-options-selected.png"
+          ]
+        },
+        {
+          "card": 4,
+          "claim": "Short-screen payment summary overflows horizontally and clips amounts",
+          "families": [
+            "summary_clipping"
+          ],
+          "verdict": "SUPPORTED",
+          "reported_severity": "medium",
+          "accepted_severity": [
+            "medium/P2"
+          ],
+          "evidence": [
+            "Q85/b-320-checkout-total.png",
+            "Q85/b-320-total-left.png",
+            "Q85/b-320-total-right.png",
+            "Q85/a-320-checkout-total.png"
+          ]
+        },
+        {
+          "card": 5,
+          "claim": "Required-field failures lack accessible recovery feedback",
+          "families": [
+            "sauce_feedback",
+            "address_feedback"
+          ],
+          "verdict": "SUPPORTED",
+          "reported_severity": "medium",
+          "accepted_severity": [
+            "medium/P2",
+            "medium/P2 qualified"
+          ],
+          "evidence": [
+            "Q85/b-mobile-sauce-error.png",
+            "Q85/b-short-sauce-error.png",
+            "Q85/b-desktop-sauce-error.png",
+            "Q85/a-mobile-sauce-error.png",
+            "Q85/b-desktop-address-error.png",
+            "Q85/a-desktop-address-error.png",
+            "Q85/dom-evidence.json"
+          ]
+        },
+        {
+          "card": 6,
+          "claim": "Cart quantity buttons have no accessible names",
+          "families": [
+            "quantity_names"
+          ],
+          "verdict": "SUPPORTED",
+          "reported_severity": "medium",
+          "accepted_severity": [
+            "medium/P2"
+          ],
+          "evidence": [
+            "Q85/b-384-cart-recheck.png",
+            "Q85/b-320-cart-recheck.png",
+            "Q85/b-1440-cart-recheck.png",
+            "Q85/dom-evidence.json"
+          ]
+        },
+        {
+          "card": 7,
+          "claim": "Typo coupon error gives no actionable correction guidance",
+          "families": [
+            "coupon_hint"
+          ],
+          "verdict": "SUGGESTION",
+          "reported_severity": "low",
+          "accepted_severity": [
+            "suggestion"
+          ],
+          "evidence": [
+            "Q85/b-mobile-coupon-typo.png",
+            "Q85/b-short-coupon-typo.png",
+            "Q85/b-desktop-coupon-typo.png",
+            "Q85/a-mobile-coupon-typo.png",
+            "Q85/b-384-checkout-total.png"
+          ]
+        }
+      ]
+    }
+  },
+  "coverage": {
+    "Q62": {
+      "primary_pointer_both": "supported by state PNGs; mobile transitions incompletely recorded in evidence.json",
+      "keyboard": "B blocker proven by actual Tab cycle and DIV semantics; claimed complete A keyboard run has no comparable end-to-end trace",
+      "short_desktop": "options/errors/cart/final present; 320x568 final-bottom PNGs prove lower receipt reachability",
+      "lower_content": "PARTIAL: no lower checkout-summary or menu-bottom capture; misses summary clipping",
+      "claims_to_qualify": "Blanket fixed-control reachability/readability exceeds sampled evidence"
+    },
+    "Q29": {
+      "primary_pointer_both": "supported; final values plus captures and interaction evidence",
+      "keyboard": "A full keyboard sequence and final PNG; B required-choice blocker proven",
+      "short_desktop": "key-state checks, including checkout bottom and viewport-sized final top/bottom; desktop resize checks accurately disclosed",
+      "lower_content": "menu/options/checkout/final lower states captured",
+      "quality": "PASS for requested bounded coverage"
+    },
+    "Q85": {
+      "primary_pointer_both": "supported by before/error/final/recovery PNGs and DOM records",
+      "keyboard": "B blocker proven; A only option/cart checks, full A checkout not claimed",
+      "short_desktop": "selected/error/cart/summary/final states present; summary horizontal endpoints shown",
+      "lower_content": "PARTIAL: short final PNGs are 320x808 and 320x784; no 320x568 scrolled final-bottom or menu-bottom proof",
+      "claims_to_qualify": "Full-page receipts prove values and document layout, not fixed-viewport occlusion; precise 360px width has no measurement record in DOM evidence"
+    }
+  },
+  "artifact_integrity": {
+    "missing_referenced_artifacts": [],
+    "Q62_recorded_hashes_matched": 63,
+    "Q29_recorded_hashes_matched": 76,
+    "Q85_hash_receipts": "not supplied",
+    "originals_modified": false
+  },
+  "task_values": {
+    "unit": 25000,
+    "quantity": 2,
+    "subtotal": 50000,
+    "coupon_discount": 5000,
+    "delivery": 3000,
+    "total": 48000,
+    "A": "recorded final values preserve note, delivery, address and payment",
+    "B": "recorded final values preserve all except allergy note after address validation; manual re-entry restores note"
+  },
+  "gaps": [
+    "Historical PNG/DOM/trace adjudication; no fresh browser execution authorized",
+    "Full-page capture does not prove fixed-viewport safety",
+    "No real device/software keyboard, assistive-technology speech, backend or real fulfilment proof",
+    "Q62 lacks contemporaneous capture receipts; stored hashes match",
+    "Q85 early blank cart captures are capture/state anomalies; rechecks show complete carts, so no blank-cart defect accepted"
+  ],
+  "risks": [
+    "High severity concerns observed task integrity and keyboard blockage; actual food-safety harm is unobserved",
+    "Address feedback finding establishes focus/semantics gap, not demonstrated screen-reader silence",
+    "No incorrect charge established; horizontal scrolling and full CTA total qualify summary severity"
+  ],
+  "stop_condition": "All 18 cards mapped and the six union defects checked against PNG plus DOM/trace; remaining missing proof requires new captures outside frozen scope"
+}

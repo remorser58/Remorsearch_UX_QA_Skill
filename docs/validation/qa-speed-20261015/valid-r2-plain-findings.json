@@ -1,0 +1,202 @@
+{
+  "findings": [
+    {
+      "title": "B silently clears the allergy note when a missing detail address is rejected",
+      "target": "http://127.0.0.1:8877/dev-2/site/delivery/delivery-b.html",
+      "expected": "Reject the missing detail address while preserving the entered allergy note, delivery request, coupon and payment choice. The final order should contain the exact allergy note.",
+      "observed": "The note was present with a 28/50 counter before submission. After the missing-address error, the textarea was empty and the counter was 0/50. Entering only 302동1104호 and submitting produced a final order with 가게 요청: 없음. The delivery request, coupon and 동네페이 selection survived. Reproduced at 384x832, 320x568 and 1440x900. Explicitly re-entering the note after the error restored it in a separate completed order at 384x832.",
+      "severity": "high",
+      "steps": [
+        "Add 반반치킨 (후라이드+양념), 순살, 매운 양념 and 콜라 1.25L; increase quantity to 2.",
+        "Enter 땅콩 알레르기가 있어요. 양념에 땅콩가루 빼 주세요 and choose 문 앞에 두고 벨 눌러주세요.",
+        "Apply HANKKI5000 and choose 동네페이.",
+        "Submit with the detail address empty.",
+        "Observe the cleared note, enter 302동1104호, submit and inspect the final order details."
+      ],
+      "evidence": [
+        "b-mobile-coupon-typo.png",
+        "b-mobile-address-error.png",
+        "b-mobile-final.png",
+        "b-short-address-error.png",
+        "b-short-final-bottom.png",
+        "b-desktop-address-error.png",
+        "b-desktop-final.png",
+        "b-mobile-recovery-inputs.png",
+        "b-mobile-recovery-final.png",
+        "accessible-dom-evidence.json"
+      ],
+      "limits": "Observed only in the synthetic fixture. The manually re-entered-note workaround succeeded; there is no claim about a real restaurant or payment backend."
+    },
+    {
+      "title": "B omits keyboard and accessible semantics for ordering controls",
+      "target": "http://127.0.0.1:8877/dev-2/site/delivery/delivery-b.html",
+      "expected": "The required bone/boneless choice should be reachable and selectable using the keyboard, with its role and selected state exposed. Cart quantity buttons should have meaningful accessible names.",
+      "observed": "After focusing 메뉴로 돌아가기 and pressing Tab, focus moved directly to the sauce radio 달콤 양념. A complete Tab cycle skipped both part choices. The rendered 순살 control was a DIV without role or tabindex and was plain text in the accessibility snapshot. Pointer selection worked. In the cart, the minus and plus controls were unnamed buttons in the accessibility snapshot. Variant A exposed part radios, supported ArrowRight/Space selection, and named its quantity buttons.",
+      "severity": "medium",
+      "steps": [
+        "Open the half-and-half chicken options.",
+        "Focus 메뉴로 돌아가기 and cycle through the options with Tab.",
+        "Attempt to reach 순살 using the keyboard.",
+        "Select the options with the pointer, add the item and inspect the cart accessibility snapshot."
+      ],
+      "evidence": [
+        "b-mobile-options.png",
+        "b-mobile-cart-one.png",
+        "a-short-keyboard-boneless.png",
+        "accessible-dom-evidence.json"
+      ],
+      "limits": "Keyboard navigation and browser accessibility snapshots were tested. A screen reader was not run. Quantity controls remained pointer-operable and keyboard-focusable, but unnamed."
+    },
+    {
+      "title": "B blocks adding without sauce but provides no actionable error feedback",
+      "target": "http://127.0.0.1:8877/dev-2/site/delivery/delivery-b.html",
+      "expected": "A failed add attempt should identify the omitted required sauce and direct the user to recover without losing selected options.",
+      "observed": "With 순살 and 콜라 selected and sauce omitted, activating 24,500원 담기 left the user on the same screen without a new error message, error outline or focus movement to sauce. In the keyboard trial, focus remained on the add button. Selecting 매운 양념 then allowed adding the item for 25,000원. Variant A displayed 소스를 1개 선택해 주세요, highlighted the sauce group and moved keyboard focus to its first radio. B's later address error did display text and scroll upward, but keyboard focus remained on the payment button.",
+      "severity": "medium",
+      "steps": [
+        "Open half-and-half chicken, select 순살 and 콜라 1.25L.",
+        "Leave sauce unselected and activate the add button.",
+        "Inspect the rendered feedback and active keyboard element.",
+        "Select 매운 양념 and add again."
+      ],
+      "evidence": [
+        "b-mobile-missing-sauce.png",
+        "b-short-missing-sauce.png",
+        "b-desktop-missing-sauce.png",
+        "a-mobile-missing-sauce.png",
+        "accessible-dom-evidence.json"
+      ],
+      "limits": "No claim that invalid items entered the cart. The omission correctly blocked adding; the reproduced failure concerns feedback and recovery guidance."
+    },
+    {
+      "title": "B truncates sauce surcharges and checkout amounts at narrow widths",
+      "target": "http://127.0.0.1:8877/dev-2/site/delivery/delivery-b.html",
+      "expected": "The full option label and surcharge, and the subtotal, delivery fee, discount and total, should be readable at the requested viewport widths.",
+      "observed": "At 384x832 the three-column sauce controls clipped the trailing part of +500원 and +1,000원. At 320x568 the surcharges were substantially truncated. At 320x568 the checkout amount panel was 360 pixels wide and extended beyond the viewport, clipping the right-hand amounts. This was reproduced in a fresh 320-wide context, independently of viewport resizing. Horizontal page scrolling exposed the complete amounts but clipped the left-hand labels. The payment CTA continued to show 48,000원. Desktop sauce labels and amounts were readable.",
+      "severity": "medium",
+      "steps": [
+        "Open the half-and-half chicken options at 384x832 and 320x568; inspect the sauce buttons.",
+        "At 320x568, prepare a two-item order and apply HANKKI5000.",
+        "Scroll vertically to the checkout amount breakdown.",
+        "Inspect the screenshot, then scroll the page 40 pixels horizontally to check recovery."
+      ],
+      "evidence": [
+        "b-mobile-options.png",
+        "b-mobile-selected-options.png",
+        "b-short-selected-options.png",
+        "b-short-totals-fresh.png",
+        "b-short-totals-horizontal-recovery.png",
+        "a-short-selected-options.png",
+        "a-short-checkout-totals.png",
+        "accessible-dom-evidence.json"
+      ],
+      "limits": "This finding combines narrow-width text truncation rather than counting each clipped price separately. Totals were mathematically correct and recoverable with horizontal scrolling. No Figma fidelity claim is made."
+    },
+    {
+      "title": "B's typo coupon error gives an internal code without correction guidance",
+      "target": "http://127.0.0.1:8877/dev-2/site/delivery/delivery-b.html",
+      "expected": "Reject HANKI5000 with a comprehensible reason and a useful correction action while keeping the input editable.",
+      "observed": "The error said 쿠폰을 적용할 수 없습니다. (CPN-4003), without explaining that the code was unknown or suggesting a spelling check. Manually correcting to HANKKI5000 applied the 5,000원 discount and updated the total to 48,000원. Variant A identified the unknown entered code and asked the user to check its spelling.",
+      "severity": "low",
+      "steps": [
+        "At checkout enter HANKI5000 and activate 적용.",
+        "Read the error.",
+        "Replace the code with HANKKI5000 and apply again."
+      ],
+      "evidence": [
+        "b-mobile-coupon-typo.png",
+        "b-short-coupon-typo.png",
+        "b-desktop-coupon-typo.png",
+        "a-mobile-coupon-typo.png",
+        "b-mobile-checkout-totals.png"
+      ],
+      "limits": "Recovery and discount calculation worked. This is an error-message usability finding, not a coupon engine failure."
+    }
+  ],
+  "coverage": [
+    {
+      "variant": "A",
+      "viewport": "384x832",
+      "task": "Complete requested order, omitted-sauce attempt, coupon typo/correction, missing-address recovery and final-value inspection.",
+      "rendered_review": "Reviewed menu, options, errors, cart, totals and final-order screenshots. Checked wrapping, text alignment, fixed header/footer and selected states.",
+      "status": "completed; requested values preserved",
+      "evidence": ["a-mobile-initial.png", "a-mobile-options.png", "a-mobile-missing-sauce.png", "a-mobile-cart-two.png", "a-mobile-coupon-typo.png", "a-mobile-address-error.png", "a-mobile-checkout-totals.png", "a-mobile-final.png"]
+    },
+    {
+      "variant": "B",
+      "viewport": "384x832",
+      "task": "Complete requested order and all recovery attempts; preserve the first failed final state and verify manual note re-entry separately.",
+      "rendered_review": "Reviewed menu, selected/clipped sauce controls, missing-sauce state, cart, coupon error, address error, totals and both final states.",
+      "status": "completed with findings; initial final order lost allergy note; manual re-entry restored it",
+      "evidence": ["b-mobile-initial.png", "b-mobile-selected-options.png", "b-mobile-missing-sauce.png", "b-mobile-cart-two.png", "b-mobile-coupon-typo.png", "b-mobile-address-error.png", "b-mobile-checkout-totals.png", "b-mobile-final.png", "b-mobile-recovery-final.png"]
+    },
+    {
+      "variant": "A",
+      "viewport": "320x568",
+      "task": "Repeat complete flow and inspect short-screen key states, including final details reached by scrolling.",
+      "rendered_review": "Reviewed menu, selected options, missing-sauce feedback, cart, coupon error, address error, totals and final detail wrapping.",
+      "status": "completed; requested values preserved",
+      "evidence": ["a-short-menu.png", "a-short-selected-options.png", "a-short-missing-sauce.png", "a-short-cart-two.png", "a-short-coupon-typo.png", "a-short-address-error.png", "a-short-checkout-totals.png", "a-short-final-bottom.png"]
+    },
+    {
+      "variant": "B",
+      "viewport": "320x568",
+      "task": "Repeat complete flow and independently reproduce amount clipping in a fresh short-screen context.",
+      "rendered_review": "Reviewed menu, clipped sauce controls, silent add rejection, cart, coupon error, address error, lost-note final details and horizontally recoverable clipped totals.",
+      "status": "completed with findings",
+      "evidence": ["b-short-menu.png", "b-short-selected-options.png", "b-short-missing-sauce.png", "b-short-cart-two.png", "b-short-coupon-typo.png", "b-short-address-error.png", "b-short-final-bottom.png", "b-short-totals-fresh.png", "b-short-totals-horizontal-recovery.png"]
+    },
+    {
+      "variant": "A",
+      "viewport": "1440x900",
+      "task": "Repeat complete order and inspect desktop options, errors, cart, checkout amounts and final values.",
+      "rendered_review": "Reviewed desktop menu, option layout, missing-sauce highlight, cart, coupon error, amount breakdown, address error and final order.",
+      "status": "completed; requested values preserved",
+      "evidence": ["a-desktop-menu.png", "a-desktop-options.png", "a-desktop-missing-sauce.png", "a-desktop-cart-two.png", "a-desktop-coupon-typo.png", "a-desktop-checkout-totals.png", "a-desktop-address-error.png", "a-desktop-final.png"]
+    },
+    {
+      "variant": "B",
+      "viewport": "1440x900",
+      "task": "Repeat complete order and inspect desktop recovery and final values.",
+      "rendered_review": "Reviewed desktop menu, readable sauce controls, silent rejection, cart, coupon error, amount breakdown, cleared-note address error and final order.",
+      "status": "completed with findings; narrow-width truncation absent in these desktop captures",
+      "evidence": ["b-desktop-menu.png", "b-desktop-options.png", "b-desktop-missing-sauce.png", "b-desktop-cart-two.png", "b-desktop-coupon-typo.png", "b-desktop-checkout-totals.png", "b-desktop-address-error.png", "b-desktop-final.png"]
+    },
+    {
+      "variant": "A",
+      "viewport": "320x568 and 384x832",
+      "task": "Keyboard Tab sequence, ArrowRight/Space option selection, Enter activation, cart quantity activation and validation focus.",
+      "rendered_review": "Boneless selected with keyboard; screenshot and accessible DOM support the selection. Invalid sauce and address attempts focused the invalid controls.",
+      "status": "targeted keyboard checks completed; not an exhaustive keyboard-only audit",
+      "evidence": ["a-short-keyboard-boneless.png", "a-mobile-recovery-final.png", "accessible-dom-evidence.json"]
+    },
+    {
+      "variant": "B",
+      "viewport": "320x568 and 384x832",
+      "task": "Keyboard Tab sequence, option semantics, cart accessible names, Enter activation and validation focus.",
+      "rendered_review": "Tab skipped the required part choice. Sauce radios supported keyboard selection. Cart quantity buttons had empty accessible names. Missing-field attempts left focus on the submitting button.",
+      "status": "targeted keyboard checks completed with findings; keyboard-only full flow blocked at part choice",
+      "evidence": ["b-mobile-options.png", "b-mobile-cart-one.png", "b-mobile-recovery-final.png", "accessible-dom-evidence.json"]
+    }
+  ],
+  "task_completion": {
+    "status": "QA completed with reproduced findings",
+    "full_flow_runs": "Both variants completed at all three requested viewport sizes. Extra mobile runs verified keyboard activation and the manual lost-note workaround.",
+    "pricing": "Both variants showed one configured item at 25,000원, quantity 2 subtotal 50,000원, delivery 3,000원, coupon discount 5,000원 and final 동네페이 payment 48,000원.",
+    "A_final_values": "반반치킨 (후라이드+양념) 2개; 순살; 매운 양념; 콜라 1.25L; exact allergy note; 문 앞에 두고 벨 눌러주세요; 302동1104호; 동네페이 · 48,000원.",
+    "B_initial_final_values": "All requested item, address, delivery and payment values matched, but 가게 요청 was 없음 after missing-address recovery.",
+    "B_manual_recovery": "At 384x832, entering the allergy note again after the address error produced a final order with the exact note and all other requested values.",
+    "product_modifications": "None.",
+    "build_identity": "66b93b89f5c8bfbd8fc5e485ce55083a23120e88 was provided by the user; independently verifying source or repository identity was outside the allowed inspection scope."
+  },
+  "limitations": [
+    "Figma source was unavailable; visual fidelity is unknown.",
+    "Only the two local synthetic pages were accessed. No external websites, accounts, real payment, source code, product assets as source, prior reports, memory or other operator output were read.",
+    "Used owned headless Chromium 141.0.7390.37 contexts through the existing Playwright package. Viewport dimensions were CSS pixels with device scale factor 1; physical mobile devices, touch-specific behavior, OS virtual keyboard and IME were not tested.",
+    "No screen reader, browser zoom, alternate browser, dark mode, contrast measurement or exhaustive tab-order audit was performed.",
+    "Header/footer scroll-under was not treated as a defect when content could be reached by scrolling. Wide desktop whitespace and synthetic image blocks were not reported as fidelity failures.",
+    "Screenshots were directly inspected using the native image-capable read tool. Extra captures not cited in coverage were not used to claim additional coverage.",
+    "Findings describe rendered behavior. Implementation causes and backend behavior remain unverified.",
+    "Unsupported hypotheses: no additional hypotheses are promoted to findings. Whether the compact desktop amount-panel styling is intended remains unknown; its desktop values were readable."
+  ]
+}

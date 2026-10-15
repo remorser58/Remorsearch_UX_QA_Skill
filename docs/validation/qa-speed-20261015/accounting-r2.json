@@ -1,0 +1,78 @@
+{
+  "new": {
+    "start": "2026-10-14T18:45:50.869Z",
+    "report_seconds": 725.49,
+    "findings_seconds": 786.53,
+    "final_seconds": 796.67,
+    "tokens": {
+      "input": 154285,
+      "output": 20528,
+      "cacheRead": 3754368,
+      "totalTokens": 3929181
+    },
+    "model": [
+      "gpt-6.1-sol"
+    ],
+    "effort": [
+      "high"
+    ],
+    "tool_calls": 39,
+    "errors": [
+      "OpenAI API error (502): {\"type\":\"upstream_error\",\"message\":\"Provider error 502: upstream diagnostic withheld for a non-replayable failure\"}",
+      "OpenAI API error (502): {\"type\":\"upstream_error\",\"message\":\"Provider error 502: upstream diagnostic withheld for a non-replayable failure\"}"
+    ],
+    "denials": 0,
+    "terminal": "agent_idle"
+  },
+  "old": {
+    "start": "2026-10-14T18:45:54.801Z",
+    "report_seconds": 642.78,
+    "findings_seconds": 590.09,
+    "final_seconds": 709.14,
+    "tokens": {
+      "input": 106838,
+      "output": 18167,
+      "cacheRead": 3624448,
+      "totalTokens": 3749453
+    },
+    "model": [
+      "gpt-6.1-sol"
+    ],
+    "effort": [
+      "high"
+    ],
+    "tool_calls": 62,
+    "errors": [
+      "OpenAI API error (502): {\"type\":\"upstream_error\",\"message\":\"Provider error 502: upstream diagnostic withheld for a non-replayable failure\"}",
+      "OpenAI API error (502): {\"type\":\"upstream_error\",\"message\":\"Provider error 502: upstream diagnostic withheld for a non-replayable failure\"}"
+    ],
+    "denials": 0,
+    "terminal": "agent_idle"
+  },
+  "plain": {
+    "start": "2026-10-14T18:45:58.219Z",
+    "report_seconds": 726.21,
+    "findings_seconds": 726.21,
+    "final_seconds": 779.39,
+    "tokens": {
+      "input": 343594,
+      "output": 19674,
+      "cacheRead": 4735744,
+      "totalTokens": 5099012
+    },
+    "model": [
+      "gpt-6.1-sol"
+    ],
+    "effort": [
+      "high"
+    ],
+    "tool_calls": 53,
+    "errors": [
+      "upstream_reset: Upstream stream terminated unexpectedly: codex websocket closed before a Responses terminal event (close 1006 Connection ended) [cause=after-response-started request=3755539B sent=yes ",
+      "OpenAI API error (502): {\"type\":\"upstream_error\",\"message\":\"Provider error 502: upstream diagnostic withheld for a non-replayable failure\"}",
+      "OpenAI API error (502): {\"type\":\"upstream_error\",\"message\":\"Provider error 502: upstream diagnostic withheld for a non-replayable failure\"}"
+    ],
+    "denials": 0,
+    "terminal": "agent_idle"
+  }
+}

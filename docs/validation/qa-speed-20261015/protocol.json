@@ -1,0 +1,31 @@
+{
+  "created_at": "2026-10-14T18:09:02.528722+00:00",
+  "goal": "ReduceQAelapsedwithoutloss of useful findings/visual+keyboard+recoverycoverage",
+  "comparison": "same OMO5.1.28 model/effort/tools/time cap; plain vs oldeb193f1skill vs frozenoptimizedskill",
+  "primary_cases": "unchangeddeliveryA/B384x832full plus320x568/1440x900key states",
+  "repetitions": 2,
+  "quality_floor": "same6supportedissuefamilies knownfrompreviousindependentreview; no newP0/P1miss; no increase unsupportedfindings; exact required coverageandcaptureproof",
+  "speed_target": "prospective at least25percentlower medianreportcompletiontime than matchedoldskill; do notclaimsuccessifqualityfloorfails",
+  "model": "InferHubGLM5.3high requestedfirst; provider502->explicituserauthorizedGPT6.1Solhigh for allarms",
+  "budget_seconds_each": 900,
+  "ordering": "round1 plain/old/new inparallel; round2 reverse launch new/old/plain; no diagnosis/answerkeys tooperators",
+  "cost": "reportedtokencomponents separate; no billedcostclaim or tokenhardcap",
+  "failure_policy": "retains allpartial/failedruns; do not resetbudgets or discardbadcandidate; unavailableprovider noqualityscore",
+  "publication": "claim only measuredcasecount,model,median andrange withrawrecords; no universalpercent orcertification; no newharness",
+  "sha_before": "663387a2d829b1a5d6a34693d9f0851114ae0ebea387c4c1c51222a287e144be",
+  "amendment": {
+    "reason": "userinterruptionterminatedR1serverandplainold;R2missingserverinvalid;C1failedqualityfloor",
+    "newcandidate": "candidate2 frozen beforevalidtrials",
+    "validtrials": "valid-r1-* thenvalid-r2-*",
+    "same_harness_config": "OMO5.1.28 with per-run memory extension disabled equally to prevent unrequested post-task Claude reflection; no core QAtools disabled",
+    "fixture_check": "server-preflight.json HTTP200 exactsourcehash bothbeforelaunch",
+    "failure_retention": "all originalR1/R2 outcomes preserved, no score forinterrupted/environmentruns; candidate1notaccepted",
+    "max_extra_rounds": 2
+  },
+  "timing_clarification_before_valid_outputs": {
+    "at": "2026-10-14T18:35:05.789621+00:00",
+    "primary": "completion through final assistant response and artifact validation; report write latency also shown",
+    "target": "25percent reduction must hold on completed result timing as well as report time; stricter, not looser",
+    "incomplete": "censored at interruption/limit; do not compute speed ratios from missing or fabricated completion time"
+  }
+}
