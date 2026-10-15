@@ -12,16 +12,16 @@ For product improvement, read `references/loop/product-improvement.md`; discover
 | Component | Use it for | Read first |
 | --- | --- | --- |
 | research | User experience and audience questions | `references/research/workflow.md` |
-| persona-qa | Rendered layout/Figma, personas, tasks, recovery and accessibility | `references/persona-qa/workflow.md` |
+| persona-qa | Rendered UI/Figma, component/task/accessibility QA | `references/persona-qa/workflow.md` |
 | ergonomics | Experimental reach, perception, timing and layout checks | `references/ergonomics/workflow.md` |
 | loop | Authorized fixes and same-scenario replay | `references/loop/workflow.md` |
 
 ## Phase 0, every run
 
-1. Select requested components. Improvement: discover product/intent, assess baseline, research task questions, fix when warranted, replay. A baseline assessment is useful alone. Load only the active card; pass records by ID. Research defaults to standard; 간단히 (quick) wins over 깊게/철저히 (deep).
+1. Select components. Improvement: discover product/intent, assess baseline, research task questions, fix when warranted, replay. A baseline is useful alone. Load only the active card; pass records by ID. For UI/reference comparison, use the UI quality card by section. Research defaults to standard; 간단히 (quick) wins over 깊게/철저히 (deep).
 2. A Korean report changes wording only. Korean research channels/users load `references/research/korea/overview.md`; Korean product QA loads `references/persona-qa/kwcag-card.md`. Standalone QA adds research only when requested.
-3. Reuse supplied context and grants. Inspect accessible project decisions and intent records before changes; code alone does not establish intent. State scope, assumptions and finite limits. Ask only for missing material access or an unresolved intent conflict; continue unaffected work.
-4. Record read_only, design_write, test_data_write and code_write with actor, scope and reason. A UX-improvement request grants ordinary reversible in-scope fixes. Record that existing authority explicitly in CLI grants; do not ask again. Research/review alone grants no writes; local fixes grant no deployment or posting.
+3. Reuse supplied context and grants. Inspect project decisions and intent before changes; code alone does not establish intent. State scope, assumptions and limits. Ask only for missing access or unresolved intent conflict; continue unaffected work.
+4. Record read_only, design_write, test_data_write and code_write with actor, scope and reason. UX improvement grants ordinary reversible in-scope fixes; record that authority in CLI grants. Research/review grants no writes; local fixes grant no deployment or posting.
 5. Detect tools before installing. Research reads `references/shared/access-card.md` and `references/shared/evidence-card.md` before its first search; other modes read the access card before the first page outside the product, even mid-run. Every reader, persona and verifier prompt carries its cards. Subagents are optional and inherit this session's model unless chosen (`references/agent-setup.md`).
 
 ## Rules for every mode
@@ -64,6 +64,7 @@ After planning and URL discovery, invoke `references/insane-search/SOURCE.md` an
 | Reader returns, audience | `references/research/audience-pipeline.md` |
 | Cause layers | `references/shared/causal-chain.md` |
 | Scenarios | `references/persona-qa/persona-scenario-design.md`, `references/persona-qa/community-to-test.md` |
+| UI component and screen quality | `references/persona-qa/ui-quality.md` by section |
 | Severity | `references/persona-qa/evidence-and-severity.md` |
 | Korean channels, law, statistics | `references/research/korea/overview.md` |
 | Accessibility items | `references/persona-qa/kwcag-2.2.md` by ID |

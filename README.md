@@ -130,6 +130,14 @@ for the product-to-replay workflow and existing plan/bundle/loop commands.
   preserved-intent checks. If scoped QA finds no reproducible issue, inspection
   can finish without changes; missing required evidence stays incomplete.
 
+UI QA also reviews the component contract and the composed screen: anatomy, token
+roles, state variants, action hierarchy, long content, responsive behavior and
+icon-only discoverability. The [UI quality card](skills/remorsearch-ux-qa/references/persona-qa/ui-quality.md)
+records a component/screen matrix and accepts REA only as an optional, local
+reference-analysis provider. REA is not vendored or required for installation;
+public design-system guidance and authorized observations remain reference
+material, while the local Figma, intent and rendered evidence decide the finding.
+
 Research and QA runs can exchange a machine-readable **evidence bundle**
 (`schemas/ux-evidence-bundle.v1.schema.json`). The offline validator checks IDs,
 cross-references, permission records, synthetic-persona misuse, unsupported

@@ -588,6 +588,15 @@ export function extractSnapshot(args) {
         }
       })(),
       described_by: ids('aria-describedby').slice(0, 8),
+      // A visible label is the primary affordance. Icon-only controls also need a
+      // discoverable hover/focus explanation; record native title or an associated
+      // role=tooltip when it is present in the captured state.
+      tooltip: (() => {
+        const title = (el.getAttribute('title') || '').trim();
+        if (title) return title.slice(0, 200);
+        return ids('aria-describedby').map((id) => byId(el, id)).filter((node) => node && node.getAttribute('role') === 'tooltip')
+          .map((node) => text(node)).filter(Boolean).join(' ').slice(0, 200);
+      })(),
       visible_label: tag === 'textarea' ? '' : visibleInnerText(el),
       // Hidden from assistive technology (aria-hidden or inert on it or an ancestor).
       hidden: !!(el.closest && (el.closest('[aria-hidden="true"]') || el.closest('[inert]'))),

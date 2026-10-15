@@ -30,6 +30,15 @@ class Names(unittest.TestCase):
         self.assertEqual(next(o for o in obs if o.check_id == "SM-01").severity, "P2")
         self.assertEqual(next(o for o in checks.check_semantics(ctx([icon], path_ids=("close",))) if o.check_id == "SM-01").severity, "P1")
 
+    def test_icon_only_action_needs_a_discoverable_explanation(self) -> None:
+        icon = el("menu", "button", (300, 10, 44, 44), name="메뉴 열기", interactive=True, tag="button",
+                  a11y=a11y("aria-label", icon_font=True, tooltip=""))
+        explained = el("help", "button", (240, 10, 44, 44), name="도움말", interactive=True, tag="button",
+                       a11y=a11y("aria-label", icon_font=True, tooltip="도움말 열기"))
+        obs = checks.check_ui_discoverability(ctx([icon, explained]))
+        self.assertEqual(ids(obs, "UI-01"), ["#menu"])
+        self.assertEqual(next(o for o in obs if o.check_id == "UI-01").severity, "P3")
+
     def test_label_in_name(self) -> None:
         mismatch = el("buy", "button", (10, 600, 340, 48), text="구매하기", name="장바구니 결제 진행", interactive=True, tag="button",
                       a11y=a11y("aria-label"))

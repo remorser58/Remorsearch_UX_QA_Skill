@@ -23,6 +23,8 @@ A scoped inspection (named tasks, screens, devices) is a valid report with the s
 
 Include rendered coverage by screen, state and viewport: inspected capture, alignment/wrapping/clipping, component occlusion, and pass/fail/untested with reason. Link the actual Figma node/version for fidelity claims; missing Figma leaves that comparison unverified. Functional success and DOM metrics do not pass missing visual review. Unresolved required-text or control obstruction prevents `ship` even at P2; use `ship after fixes` or the applicable stricter verdict. Show the same failing state and adjacent states after a fix.
 
+When UI quality is in scope, include the component and screen matrices from `references/persona-qa/ui-quality.md`. Separate component-state coverage from task completion. Record any public design-system or REA reference with its URL/build/version, license or terms boundary, observed rule, local adaptation and evidence. A reference comparison cannot convert an unreached local state into a pass.
+
 For Korean reports keep this QA structure. Use 결론, 발견, 수정 전후, 시나리오와 점검 범위, 조사 방법, 부록 and 완료 점검. Verdict labels are 점검 범위 통과 (`ship`), 수정 후 범위 재검증 (`ship after fixes`), 보류 (`hold`), 판단 불가 (`inconclusive`). Use the Korean research template's wording self-check and quoting rules when community evidence was requested.
 
 ## Findings

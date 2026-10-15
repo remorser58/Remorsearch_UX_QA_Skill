@@ -5,7 +5,7 @@ Test completion, input preservation and rendered design. Scenarios define condit
 
 ## Phase 0 recap
 
-Use `SKILL.md` Phase 0: tasks, URL/build, device/viewport/input, constraints/intent, Figma version, grants and fixtures. A prepared audience is unnecessary.
+Use `SKILL.md` Phase 0: task, URL/build, device/input, intent, Figma, grants and fixtures. UI/reference comparison uses the UI card by section.
 
 Chromium emulation leaves Safari/WebKit, real device/grip/occlusion/safe area/screen reader untested. Korean product: `references/persona-qa/kwcag-card.md`; report language changes wording only. Outside-product pages: `references/shared/access-card.md` in operator/verifier prompts. Host browser first; preserve user state.
 
@@ -50,7 +50,9 @@ For each priority task and scoped device:
 
 List reached/missing screens, states and devices. Check Korean clipping/IME where relevant; verify retained values after every step. Author `success.task_checks` for material fields after error/coupon/address/recovery transitions and at completion (`drivers/web/README.md`). Use explicit expected reset/normalized values; `from_step` reuses an authored input, `type.redact:true` protects its recorded text. Failed submit: record the actual focus, invalid state and error association. Automatic first-invalid focus and errors clearing while typing become findings only with blocked navigation or completion, broken error association, an incorrect submission, or explicit spec/standard support; otherwise they stay observations. Success requires final options/quantities/amounts/notes to match. Each row: pass/partial/fail/untested with reason.
 
-Scenario: ID/task/goal/safe data, basis/brief condition, context/constraints/device/input/start, expected decision/integrity/risk, claim IDs and omissions. Audience rows cite audience_id/segment_id/task_id/facet and gate-supported motivations. Without an audience, choose task-changing strata: new/returning, touch/keyboard, interruption, delay, empty/stale/edge data. Do not add demographic decoration or stereotype behavior.
+UI scope: add the `ui-quality.md` matrices; a happy state alone is not coverage.
+
+Scenario: ID/task/goal, safe data, condition, device/input/start, expected result/integrity/risk, claim IDs and omissions. Audience rows cite audience_id/segment_id/task_id/facet and gate-supported motivations. Without an audience, choose task-changing strata: new/returning, touch/keyboard, interruption, delay, empty/stale/edge data. Do not add demographic decoration or stereotypes.
 
 Optional dataset: record source/revision/schema, bounded sample/seed/config, IDs/strata and stop; separate attributes from assumptions. Scenario detail: `references/persona-qa/persona-scenario-design.md` by section.
 
