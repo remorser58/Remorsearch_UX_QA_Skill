@@ -130,6 +130,13 @@ for the product-to-replay workflow and existing plan/bundle/loop commands.
   preserved-intent checks. If scoped QA finds no reproducible issue, inspection
   can finish without changes; missing required evidence stays incomplete.
 
+Every product UI QA opens actual and reference images and records regional
+observations for alignment, spacing, typography, clipping, occlusion and Figma
+fidelity. The existing loop gate rejects missing or contradictory observations;
+its `pixel_diff` method recomputes image differences with the bundled PNG decoder.
+Semantic visual judgment uses the host's image-capable tools. A receipt validates
+record structure, not whether a reviewer made a correct design judgment.
+
 UI QA also reviews the component contract and the composed screen: anatomy, token
 roles, state variants, action hierarchy, long content, responsive behavior and
 icon-only discoverability. The [UI quality card](skills/remorsearch-ux-qa/references/persona-qa/ui-quality.md)
@@ -285,6 +292,14 @@ python3 scripts/check_release.py --output dist/release-check
 ```
 
 ## Limits
+
+The [portfolio visual-QA replay](docs/validation/visual-qa-20261017/report.md)
+found all six registered clipped-text locations in the original supplied image
+and left three readable controls unflagged. A previous-skill reviewer also found
+the same locations when actually viewing the image; no detection gain is claimed.
+A separate review of 30 current web captures and the real Figma export identified
+source differences while keeping clipping, approval uncertainty and untested
+interaction states separate. This remains a single-product regression case.
 
 The [QA performance criterion](PRD.md#91-일반-omo-대비-qa-성능) compares ordinary OMO with the same OMO plus Remorsearch under matched models, tools, tasks and budgets. Required rendered checks cover alignment, clipping and component occlusion. The [OMO pilot and mobile QA](docs/validation/design-qa-20261015/report.md) records a final access-matched Astra medium result: 5 versus 6 supported issue families, 1 versus 0 unsupported suggestions, and report time of 5m07s versus 10m08s. An earlier access-mismatched attempt is retained separately. InferHub GLM 5.3 high failed upstream; no QA score is assigned. This small result does not establish general superiority.
 

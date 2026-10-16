@@ -1,0 +1,39 @@
+{
+  "evaluated_at": "2026-10-16T16:27:07.763292+00:00",
+  "input_sha256": "330b5b8f24a996d6800bc699bfd7024cb0d20d461424d886d4cb4d76272b6ac1",
+  "method": "Supervisor compared returned visible-text findings and anchored regions against the six preregistered locations and source image; grouped findings may cover more than one location.",
+  "baseline": {
+    "report": "baseline-result.json",
+    "finding_cards": 5,
+    "matched_locations": {
+      "PIN": "F-01",
+      "RESULT": "F-02",
+      "PROCESS-02": "F-03",
+      "BODY-HEADING": "F-04",
+      "MORE-CASES-HEADING": "F-05",
+      "OGC-TITLE": "F-05"
+    },
+    "negative_control_flags": []
+  },
+  "candidate": {
+    "report": "candidate-result.json",
+    "finding_cards": 6,
+    "matched_locations": {
+      "PIN": "F-01",
+      "RESULT": "F-02",
+      "PROCESS-02": "F-03",
+      "BODY-HEADING": "F-04",
+      "MORE-CASES-HEADING": "F-05",
+      "OGC-TITLE": "F-06"
+    },
+    "negative_control_flags": []
+  },
+  "supported": "The candidate directly detects all six known clipped locations in one supplied original image when run by a vision-capable host. Baseline also detects these locations when actually viewing the image.",
+  "not_supported": [
+    "General accuracy/speed superiority",
+    "Six independent defects or six independent scenarios",
+    "Autonomous runtime vision without a host",
+    "Browser clipping cause established from this Figma screenshot",
+    "Figma fidelity or full product completion from a screenshot-only run"
+  ]
+}

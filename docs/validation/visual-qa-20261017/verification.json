@@ -1,0 +1,36 @@
+{
+  "focused_loop_tests": 160,
+  "boundary_tests": 33,
+  "reading_budget_tests": 13,
+  "packaging_tests": 32,
+  "skill_frontmatter": "valid using existing cached PyYAML with Python3.12; no dependency installed",
+  "bundle": {
+    "files": 233,
+    "payload_sha256": "b6e0c7b81944fed4f4ddb8294a98dd64ac7aff3b82e29ec5ddb6f1c3b09c1afe",
+    "integrity": "passed",
+    "installed_smoke": "passed; synthetic research and18 loop commands; no live provider run"
+  },
+  "source_capture_sha_verified": 33,
+  "independent_code_review": {
+    "status": "no actionable findings",
+    "files_scoped": 11,
+    "focused_tests": 94,
+    "png_and_boundary_tests": 48,
+    "limits": [
+      "LSP refused temporarycheckout; static types unverified",
+      "PNG color management metadata ignored",
+      "image-tool invocation and semantic truth cannot be authenticated by receipt validator"
+    ]
+  },
+  "notes": [
+    "The earlier full run had one English/Korean README link-parity failure; the missing Korean link was added and all32 packaging tests passed."
+  ],
+  "full_suite": {
+    "run": 1108,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1,
+    "duration_seconds": 59.093,
+    "exit_code": 0
+  }
+}

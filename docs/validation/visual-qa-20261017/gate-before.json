@@ -1,0 +1,17 @@
+{
+  "provenance": "synthetic test, not live UI or model quality",
+  "cases": [
+    {
+      "case": "missing_review",
+      "outcome": "accepted"
+    },
+    {
+      "case": "opposite_pixels",
+      "outcome": "accepted"
+    },
+    {
+      "case": "identical_pixels",
+      "outcome": "accepted"
+    }
+  ]
+}

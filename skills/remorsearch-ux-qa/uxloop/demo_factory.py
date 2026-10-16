@@ -120,11 +120,30 @@ def make_packet(root: Path, case: str = 'happy') -> dict:
                   'actual_artifact_id': actual_art, 'reference_artifact_id': 'artifact-reference',
                   'comparison_artifact_id': 'artifact-' + phase + '-visual', 'status': 'passed',
                   'method': 'review', 'reviewer': 'fixture-author',
-                  'checks': {name: 'passed' for name in ('layout', 'interaction_states', 'typography', 'text_clipping', 'component_occlusion', 'side_accents')}, 'reason': ''}
+                  'checks': {name: 'passed' for name in ('layout', 'interaction_states', 'alignment', 'spacing', 'typography',
+                                                       'text_clipping', 'component_occlusion', 'figma_fidelity', 'side_accents')}, 'reason': ''}
         if phase == 'baseline' or (phase == 'replay' and case == 'failed_visual'):
             visual.update({'status': 'failed', 'reason': 'Synthetic comparison: ambiguous action label.'})
             visual['checks']['interaction_states'] = 'failed'
-        add(visual['comparison_artifact_id'], 'visual_report', {**identity, 'kind': 'visual_report', 'comparison': visual}, capture)
+        # Authored contract examples only; no model/tool inspected these images.
+        observations = [
+            ('alignment', 'The authored text anchor is x=20.', 'The synthetic reference text anchor is x=20.'),
+            ('spacing', 'The authored text baseline is y=40 with no adjacent element.', 'The synthetic reference baseline is y=40.'),
+            ('typography', 'The authored SVG uses the default font; no browser font was checked.', 'The synthetic reference uses the SVG default font.'),
+            ('text_clipping', 'The authored text region is inside the synthetic viewport.', 'The reference text region stays within 390x844 pixels.'),
+            ('component_occlusion', 'The authored SVG contains one visible text element.', 'No other visible element overlaps the synthetic reference text.'),
+            ('figma_fidelity', 'The authored structure is one text node at (20,40); the label difference is recorded in interaction_states.',
+             'The synthetic reference structure is one text node at (20,40); this is not a live Figma comparison.'),
+        ]
+        inspection = {'viewed_artifact_ids': [actual_art, 'artifact-reference'],
+                      'image_tool': 'authored-fixture-no-image-tool-executed',
+                      'observations': [{'region': 'synthetic-text', 'actual_box': [20, 20, 350, 24],
+                                        'reference_box': [20, 20, 350, 24], 'aspect': aspect,
+                                        'status': 'passed', 'observed': observed, 'expected': expected}
+                                       for aspect, observed, expected in observations]}
+        add(visual['comparison_artifact_id'], 'visual_report',
+            {**identity, 'kind': 'visual_report', 'comparison': visual, 'inspection': inspection,
+             'fixture_notice': 'Authored synthetic inspection records; no live image tool, browser or Figma was used.'}, capture)
         packet['browser_runs'].append(run)
         packet['visual_checks'].append(visual)
     patch = ''.join(difflib.unified_diff(original.splitlines(True), fixed.splitlines(True), fromfile='a/index.html', tofile='b/index.html'))

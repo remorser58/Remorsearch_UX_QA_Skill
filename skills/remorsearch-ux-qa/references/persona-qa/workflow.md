@@ -5,11 +5,11 @@ Test completion, input preservation and rendered design. Scenarios define condit
 
 ## Phase 0 recap
 
-Use `SKILL.md` Phase 0: task, URL/build, device/input, intent, Figma, grants and fixtures. UI/reference comparison uses the UI card by section.
+Use `SKILL.md` Phase 0. Every product UI QA uses `references/persona-qa/ui-quality.md` by section; pure research skips it.
 
 Chromium emulation leaves Safari/WebKit, real device/grip/occlusion/safe area/screen reader untested. Korean product: `references/persona-qa/kwcag-card.md`; report language changes wording only. Outside-product pages: `references/shared/access-card.md` in operator/verifier prompts. Host browser first; preserve user state.
 
-Inspect rendered alignment, wrapping, clipping and component occlusion. Use `references/persona-qa/generated-ui-preflight.md` sections 1–4 before verdict; replay after fixes. Inspect screenshots, not just DOM boxes or analyzer counts.
+Follow the UI card's host visual procedure and `references/persona-qa/generated-ui-preflight.md` sections 1–4 before verdict and after fixes. Capturing is not viewing; record inspected regions.
 
 ## Run path
 
@@ -50,7 +50,7 @@ For each priority task and scoped device:
 
 List reached/missing screens, states and devices. Check Korean clipping/IME where relevant; verify retained values after every step. Author `success.task_checks` for material fields after error/coupon/address/recovery transitions and at completion (`drivers/web/README.md`). Use explicit expected reset/normalized values; `from_step` reuses an authored input, `type.redact:true` protects its recorded text. Failed submit: record the actual focus, invalid state and error association. Automatic first-invalid focus and errors clearing while typing become findings only with blocked navigation or completion, broken error association, an incorrect submission, or explicit spec/standard support; otherwise they stay observations. Success requires final options/quantities/amounts/notes to match. Each row: pass/partial/fail/untested with reason.
 
-UI scope: add the `ui-quality.md` matrices; a happy state alone is not coverage.
+Record the UI card's component/screen matrices for every product UI QA.
 
 Scenario: ID/task/goal, safe data, condition, device/input/start, expected result/integrity/risk, claim IDs and omissions. Audience rows cite audience_id/segment_id/task_id/facet and gate-supported motivations. Without an audience, choose task-changing strata: new/returning, touch/keyboard, interruption, delay, empty/stale/edge data. Do not add demographic decoration or stereotypes.
 
@@ -76,7 +76,7 @@ Build ID: commit/version/deploy ID/page-source hash, provider-supplied through `
 
 Task-linked research during improvement, or separately requested research, enters `references/research/workflow.md` with access/evidence cards. Use `references/persona-qa/community-to-test.md` by section; supported_high/medium may motivate P0/P1, single_voice/lead_only stay exploratory. Missing gate leaves community motivation unverified; reproduced product harm keeps impact-based severity. Personas receive scrubbed summaries only.
 
-Inspect Figma/spec entry/journey/hierarchy/content/units/variants/tokens/critical states/responsive/input. Record file/branch/baseline/readback/nodes/time/artifact. Differences need task/comprehension/trust/accessibility/maintainability impact. Separate implementation_defect/design_defect/spec_conflict/approved_deviation; unresolved conflict blocks code acceptance, missing source limits comparison. Proposals: no side accent bars, attached side tabs or decorative rails; existing product bars require task harm.
+Inspect Figma/spec entry/journey/hierarchy/content/units/variants/tokens/critical states/responsive/input. Bind file/branch/version/nodes/readback to the actual build; view both images using the UI card's procedure. Figma can contain defects. Separate implementation_defect/design_defect/spec_conflict/approved_deviation; unresolved conflict blocks code acceptance, missing source limits fidelity. Differences need task or verified design-rule impact. Proposals: no side accent bars, attached side tabs or decorative rails; existing product bars require task harm.
 
 ## 4. Grade, trace and second-pass
 

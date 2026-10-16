@@ -1,0 +1,43 @@
+{
+  "registered_at": "2026-10-16T16:14:40.134916+00:00",
+  "purpose": "Verify host-executed visual QA on previously missed portfolio evidence using current tools, not an end-to-end performance comparison.",
+  "candidate_skill_commit_base": "d93c393",
+  "evaluation_tasks": [
+    {
+      "id": "image-review",
+      "inputs": [
+        "input/screen-a.png",
+        "input/screen-b.png",
+        "input/figma-readback.json",
+        "input/manifest.json"
+      ],
+      "scope": "Inspect both supplied images independently, six visual axes; current Figma identity applies only to screen-b; missing prior source remains unknown.",
+      "answer_key_visible": false
+    },
+    {
+      "id": "web-reference-comparison",
+      "inputs": [
+        "input/web/receipt.json",
+        "input/web/web-390-*.png",
+        "input/web/web-320-*.png",
+        "input/web/web-1440-*.png",
+        "input/screen-b.png",
+        "input/figma-readback.json"
+      ],
+      "scope": "Inspect fixed-viewport captures, compare same components with Figma, document actual image dimensions versus CSS and source-version boundaries.",
+      "answer_key_visible": false
+    }
+  ],
+  "acceptance": [
+    "Find the six preregistered clipped locations in screen-a; grouping repeated locations into one cause is allowed.",
+    "Do not mark known readable OUTPUT/INPUT/INPRO text as clipped.",
+    "Report the confirmed Figma/web font and composition differences as scoped differences, without inventing intent or treating Figma itself as infallible.",
+    "Include observed positions and image evidence for each material finding; unknown states do not pass.",
+    "Existing visual gate rejects bare passed receipts and recomputes actual/reference pixel_diff."
+  ],
+  "limits": [
+    "Known failure regression authored after prior incident; not a held-out sample.",
+    "Single product; no general recall/precision claim.",
+    "Static screenshots do not prove touch flow, current Safari render, physical devices, or accessibility certification."
+  ]
+}

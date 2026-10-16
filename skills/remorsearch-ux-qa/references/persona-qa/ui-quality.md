@@ -1,6 +1,28 @@
 # UI quality and reference analysis
 
-Use this card when the request includes UI quality, component quality, screen polish, a design-system comparison, or a question such as “how do mature products build this control?”. It extends persona QA; it does not replace task, recovery, keyboard, accessibility, or Figma checks.
+Use this card by section for every product UI QA, including task-focused checks. Pure research skips it. It extends task, recovery, keyboard and accessibility checks with direct visual inspection.
+
+## Host visual procedure
+
+Execute with existing image, browser and Figma tools; add no harness or dependencies.
+
+1. Bind the actual URL/current build or source revision, state, viewport/DPR and scroll position to its capture. Bind the reference to its Figma file/branch/version/node/readback and export. Inspect the exact source and current build used by the capture; a stale screenshot cannot establish their state. Missing source identity limits fidelity, not actual-screen inspection.
+2. Open **both actual and reference pixels** with `view_image` for local files, or browser/Figma tools that return images the host can inspect. Capture/export success, paths, DOM dumps and analyzer counts do not mean the images were viewed. View the unlabelled original first. For long images, inspect an overview, then overlapping top/middle/bottom and relevant component regions at readable scale; do not judge tiny fit-to-screen text. Retain original artifact IDs and each crop's origin, scale and coordinates so observations map back to source pixels.
+3. Match component role, variant and state even when copy or frame dimensions differ. Compare local alignment, type roles, spacing relationships and wrapping constraints; state content/dimension differences. Exact `pixel_diff` requires matching state, content and viewport/DPR; verify font/asset readiness and record differences. Use the existing comparator and contract when eligible; unmatched frames get component-level review, never a fabricated exact diff. Color difference measures changed pixels, not good design; matching a defective Figma frame can still reproduce a defect.
+4. Inspect each category below separately. Check browser computed styles and loaded fonts, text/line bounds, container padding/gaps and Figma text bounds/font/resize settings. Trace clipping through every relevant ancestor: overflow, line clamp, masks, transforms and stacking. Confirm candidates against real pixels. Fixed height or intersecting boxes alone do not prove failure. A normal viewport cutoff is not content loss: scroll/reveal and check whether required content remains readable/reachable. Prove lost text or blocked controls in the actual state before grading it.
+5. Validate spacing/hierarchy against repeated local components, tokens, stated intent or an approved design rule. Different content can legitimately change height and gaps; taste alone creates no defect. Inspect Figma itself for clipping, overlap and inconsistent rules. Classify implementation defect, design defect, spec conflict or approved deviation; keep reference fidelity separate from usability.
+6. Write region observations and actual/reference **viewed artifact IDs** using `references/loop/provider-contract.md` section 3 and its current schema. Map the review categories to supported provider aspects; do not invent keys or IDs. Each observation needs region/coordinate space, exact visible text or control, expected rule, observed pixels, supporting geometry/source evidence and pass/fail/unknown with reason. Include failures and unknowns; no passed-only records without observations. Missing/unviewed reference leaves fidelity unknown. Preserve originals and link crops; annotations are aids, never proof that the original was viewed.
+
+| Review category | Evidence to inspect and record |
+| --- | --- |
+| alignment | Component edges/baselines and container/grid rule; quote the affected labels and coordinates. |
+| spacing | Measured padding/gap against a repeated local instance/token/intent; account for wrapped copy and component roles. |
+| typography | Actual loaded font, size/weight/line height, text/line bounds and visible wrapping against the reference role. |
+| clipping | Exact missing glyph/line, text bounds, clipping ancestor chain and pixels after scroll/reveal; map to `text_clipping`. |
+| occlusion | Covering layer/stack, affected text/control and pixels; check opacity, hit testing and reachability; map to `component_occlusion`. |
+| figma_fidelity | Matching node/version/state and viewed actual/reference regions; record source defects and approved deviations separately. |
+
+For forward tests, use neutral task instructions and view the unlabelled original plus a clean control before consulting annotations or prior findings. Record both outcomes. Do not teach the skill named-page defects or assume the control is clean without inspecting it.
 
 ## What mature product teams check
 
@@ -40,7 +62,7 @@ Create one row per meaningful component instance, not per DOM wrapper:
 }
 ```
 
-For screens, add a second matrix with hierarchy, container/grid alignment, repeated spacing, fixed-layer behavior, responsive changes, text geometry, component occlusion and the primary decision. A screenshot count is not coverage. A screen passes UI review only when every required component state and every scoped viewport has a row, with explicit text-clipping and component-occlusion results.
+For screens, record all six review categories with region observations and viewed artifact IDs, plus hierarchy, fixed-layer/responsive behavior and the primary decision. A screenshot count is not coverage. A screen passes only when every required state/viewport has passing observed results; keep text-clipping and component-occlusion results separate. The matrix illustrates review notes, not a replacement provider schema.
 
 ## REA reverse-engineering pass
 
