@@ -1542,6 +1542,16 @@ async function reflowTest(base, tmp) {
     !clippedControl('mirror-label')?.text_overlap && !clippedControl('ink-label')?.text_overlap
       && clippedControl('gradient-b')?.text_overlap?.with === '#gradient-a' && !clippedControl('gradient-a')?.glyph_cover,
     ['mirror-label', 'ink-label', 'gradient-a', 'gradient-b'].map((id) => [id, clippedControl(id)?.text_overlap, clippedControl(id)?.glyph_cover]));
+  check('LY-02 data: text that paints nothing is marked so box sampling skips it',
+    clippedControl('mirror-label')?.ink === false && clippedControl('ink-label')?.ink === undefined,
+    [clippedControl('mirror-label')?.ink, clippedControl('ink-label')?.ink]);
+  const spanCut = clippedControl('span-cut');
+  check('LY-01 data: a control reports a cut label that sits in a span; a fitting one stays clean',
+    spanCut?.clipped?.x === true && spanCut.clipped.by === null && typeof spanCut.clipped.label === 'string'
+      && !!clippedControl('span-clean') && !clippedControl('span-clean').clipped,
+    [spanCut && spanCut.clipped, clippedControl('span-clean')?.clipped]);
+  check('LY-03 data: text drawn over a control label that sits in a span collides',
+    clippedControl('span-over')?.text_overlap?.with === '#span-link', clippedControl('span-over')?.text_overlap);
 }
 
 async function reflowCopyTest(base, tmp) {

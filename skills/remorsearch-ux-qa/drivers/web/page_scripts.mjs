@@ -609,9 +609,8 @@ export function extractSnapshot(args) {
       })(),
       // Visible text drawn by an icon font (ligatures such as "menu"): not a text label.
       icon_font: (() => {
-        const ICON = /icon|material|awesome|symbol|glyph|fontello|ionicon|bootstrap-icons/i;
         const nodes = [el, ...el.querySelectorAll('span, i, em')].slice(0, 6);
-        return nodes.some((n) => n.textContent && n.textContent.trim() && ICON.test(style(n).fontFamily || ''));
+        return nodes.some((n) => n.textContent && n.textContent.trim() && ICON_FONT.test(style(n).fontFamily || ''));
       })(),
       error_message: ids('aria-errormessage')[0] || null,
       required: el.required === true || el.getAttribute('aria-required') === 'true',
@@ -651,8 +650,10 @@ export function extractSnapshot(args) {
     return DESIGNED_TRACK.test(`${n.id || ''} ${typeof n.className === 'string' ? n.className : ''}`);
   };
   // Text that paints nothing (a transparent fill with no stroke, shadow or background
-  // clipped to the glyphs, such as a sizing mirror behind a field) cannot be cut, covered
-  // or drawn over another text.
+  // clipped to the glyphs, such as a sizing mirror behind a field, or text hidden by
+  // visibility or a zero opacity, such as a width-reserving copy of a bold label) cannot
+  // be cut, covered or drawn over another text.
+  const ICON_FONT = /icon|material|awesome|symbol|glyph|fontello|ionicon|bootstrap-icons/i;
   const inkCache = new Map();
   const paintsInk = (el) => {
     if (inkCache.has(el)) return inkCache.get(el);
@@ -665,6 +666,7 @@ export function extractSnapshot(args) {
       const ncs = style(n);
       if (ncs.backgroundClip === 'text' || ncs.webkitBackgroundClip === 'text') ink = true;
     }
+    if (ink && typeof el.checkVisibility === 'function' && !el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) ink = false;
     inkCache.set(el, ink);
     return ink;
   };
@@ -691,7 +693,9 @@ export function extractSnapshot(args) {
   // The padding box on screen, where overflow clips.
   const paddingBoxOf = (n, r, sc) => ({ left: r.left + n.clientLeft * sc.sx, top: r.top + n.clientTop * sc.sy,
     right: r.left + (n.clientLeft + n.clientWidth) * sc.sx, bottom: r.top + (n.clientTop + n.clientHeight) * sc.sy });
-  const clippedOf = (el, cs, directLabel = false) => {
+  // owner: the element reported for the text (a control whose label sits in spans); a cut
+  // by its own box reads as its own (by: null).
+  const clippedOf = (el, cs, directLabel = false, owner = el) => {
     const hide = (v) => v === 'hidden' || v === 'clip';
     if (!paintsInk(el)) return null;
     const sc = screenScale(el);
@@ -806,8 +810,30 @@ export function extractSnapshot(args) {
       }
     }
     return { x, y, ellipsis: ellipsis || !!clamp, line_clamp: !!clamp, animated,
-      by: viewportCut ? 'viewport' : by ? (by.getAttribute('id') ? `#${by.getAttribute('id')}` : by.tagName.toLowerCase()) : null,
+      by: viewportCut ? 'viewport' : by && by !== owner ? (by.getAttribute('id') ? `#${by.getAttribute('id')}` : by.tagName.toLowerCase()) : null,
       act: exemptX && exemptY ? 'passed' : 'failed' };
+  };
+  // The elements that draw a control's words when they sit in spans: each owns a text
+  // node, is not inside a nested control, is not tagged as its own candidate, draws no
+  // icon-font glyphs and paints ink. The control reports for them (LY-01..03).
+  const labelHolders = (el) => {
+    const out = [];
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node && out.length < 12; node = walker.nextNode()) {
+      const holder = node.parentElement;
+      if (!node.nodeValue.trim() || !holder || holder === el || out.includes(holder)) continue;
+      if (holder.closest(INTERACTIVE) !== el || roleMap.has(holder)) continue;
+      if (ICON_FONT.test(style(holder).fontFamily || '') || !paintsInk(holder)) continue;
+      out.push(holder);
+    }
+    return out;
+  };
+  const labelClip = (el) => {
+    for (const holder of labelHolders(el)) {
+      const clip = clippedOf(holder, style(holder), true, el);
+      if (clip) return { ...clip, label: uniqueSelector(holder) };
+    }
+    return null;
   };
   const visibleText = (el) => {
     const tag = el.tagName.toLowerCase();
@@ -1500,8 +1526,10 @@ export function extractSnapshot(args) {
       })(),
       ...(c.interactive || ['input', 'select', 'textarea'].includes(tag) ? { a11y: a11yOf(el) } : {}),
       ...(() => {
-        const clip = hasDirectText(el) ? clippedOf(el, cs, c.interactive) : null;
-        return clip ? { clipped: clip } : {};
+        const direct = hasDirectText(el);
+        const clip = direct ? clippedOf(el, cs, c.interactive) : c.interactive ? labelClip(el) : null;
+        // Text that paints nothing is marked so box-sampled covering skips it (LY-02).
+        return { ...(clip ? { clipped: clip } : {}), ...(direct && !paintsInk(el) ? { ink: false } : {}) };
       })(),
       roles: roleMap.has(el) ? [...roleMap.get(el)].sort() : [],
       // Ids of the nearest ancestors (grouping context such as a toolbar or chip row).
@@ -1580,19 +1608,17 @@ export function extractSnapshot(args) {
     if (hasDirectText(el)) {
       for (const q of ownTextRects(el)) owned.push({ rect: q, holder: el });
     } else if (c.interactive) {
-      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-      for (let node = walker.nextNode(); node && owned.length < 24; node = walker.nextNode()) {
-        if (!node.nodeValue.trim() || !node.parentElement) continue;
-        const range = document.createRange();
-        range.selectNodeContents(node);
-        for (const q of range.getClientRects()) if (q.width > 0 && q.height > 0) owned.push({ rect: q, holder: node.parentElement });
+      for (const holder of labelHolders(el)) {
+        for (const q of ownTextRects(holder)) if (owned.length < 24) owned.push({ rect: q, holder });
       }
     }
     const shown = owned.filter(({ rect, holder }) => rect.width >= 2 && rect.height >= 4
       && rect.bottom > VY0 && rect.top < VY1 && rect.right > VX0 && rect.left < VX1 && paintsInk(holder));
     if (!shown.length) continue;
     const rects = shown.map((o) => o.rect);
-    texts.push({ el, rects, holders: shown.map((o) => o.holder), bands: bandsOf(el, rects), host: fixedHost(el), direct: hasDirectText(el) });
+    // Each line's band follows the font size of the element that draws it.
+    texts.push({ el, rects, holders: shown.map((o) => o.holder), bands: shown.map((o) => bandsOf(o.holder, [o.rect])[0]),
+      host: fixedHost(el), direct: hasDirectText(el) });
   }
   const overlapOf = new Map();
   for (const t of texts) {
@@ -1614,7 +1640,8 @@ export function extractSnapshot(args) {
     for (let j = i + 1; j < texts.length; j++) {
       const a = texts[i];
       const b = texts[j];
-      if (!a.direct || !b.direct || a.host !== b.host || a.el.contains(b.el) || b.el.contains(a.el)) continue;
+      // A control's label spans count as its text (they are not candidates of their own).
+      if (a.host !== b.host || a.el.contains(b.el) || b.el.contains(a.el)) continue;
       let amount = 0;
       let spot = null;
       for (const p of a.bands) {

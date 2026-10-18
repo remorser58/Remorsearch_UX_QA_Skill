@@ -18,6 +18,8 @@
   sizes would read as a cut) and #scaled-cut does not. #mirror-label is transparent
   sizing text over #ink-label (nothing collides); #gradient-b is gradient text clipped
   to its glyphs drawn over #gradient-a (a collision, not a covering box).
+  #span-cut and #span-clean keep their words in a span (the control reports for it);
+  #span-over is drawn over the span label of #span-link.
 -->
 <style>
   body { margin: 0; font-family: sans-serif; }
@@ -55,6 +57,8 @@
     <button id="scaled-clean" style="display:block;width:200px;overflow:hidden;white-space:nowrap;text-align:right">Pay now</button>
     <button id="scaled-cut" style="display:block;width:90px;overflow:hidden;white-space:nowrap">Continue to secure checkout</button>
   </div>
+  <button id="span-cut" style="display:block;width:90px;overflow:hidden;white-space:nowrap"><span>Continue to secure checkout</span></button>
+  <button id="span-clean" style="display:block;width:200px;overflow:hidden;white-space:nowrap"><span>Pay now</span></button>
 </div>
 <div style="position:absolute;top:300px;left:8px;width:300px">
   <p id="ink-label" style="margin:0">배송 메모를 남겨 주세요</p>
@@ -63,6 +67,10 @@
 <div style="position:absolute;top:360px;left:8px;width:300px">
   <p id="gradient-a" style="margin:0">오늘 도착 보장</p>
   <p id="gradient-b" style="position:absolute;top:6px;left:0;margin:0;color:transparent;background:linear-gradient(90deg,#c00,#06c);-webkit-background-clip:text;background-clip:text">오늘 도착 보장 특가</p>
+</div>
+<div style="position:absolute;top:420px;left:8px;width:300px">
+  <a id="span-link" href="#" style="display:block"><span>배송 조회하기</span></a>
+  <p id="span-over" style="position:absolute;top:5px;left:0;margin:0">배송 조회 안내</p>
 </div>
 <div id="step1">
   <div id="fixed-box">수수료 합계 3,000원 (등기 우편 포함)</div>

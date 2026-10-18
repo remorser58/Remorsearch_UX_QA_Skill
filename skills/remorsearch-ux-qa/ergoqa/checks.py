@@ -2331,7 +2331,7 @@ def check_semantics(ctx: Context) -> list[Observation]:
         out.append(Observation(
             "LY-01", *base, [e["id"]], element_key(e),
             {"name": "text_clipped", "value": True, "unit": "flag", "threshold": False, "comparator": "==", "axis": "x" if clip.get("x") else "y", "ellipsis": bool(clip.get("ellipsis")),
-             "clipped_by": by, "act_59br37": clip.get("act")},
+             "clipped_by": by, "act_59br37": clip.get("act"), **({"label": clip["label"]} if clip.get("label") else {})},
             False, "P3" if clip.get("ellipsis") or clean else "P2",
             f"'{(e.get('text') or '')[:30]}' 글자가 {'바깥 상자(' + by + ')' if by else '상자'}에 잘립니다" + how,
             extra={"context_selectors": [by]} if by and by.startswith("#") else {},
@@ -2361,13 +2361,15 @@ def check_layout(ctx: Context) -> list[Observation]:
         box = e.get("box") or {}
         if e.get("source", "dom") != "dom" or not words or not e.get("visible", True) or box.get("w", 0) < 4 or box.get("h", 0) < 4:
             continue
-        # Glyph sampling (three points per visible line) is the sharper measure; the
-        # element-box sample stands in when no line was found under a painted box.
+        # Glyph sampling (five points per visible line) is the sharper measure; the
+        # element-box sample stands in when no line was found under a painted box. Text
+        # that paints nothing (ink false) cannot be seen covered.
         glyph, occ, frac = e.get("glyph_cover"), e.get("occluder"), e.get("occluded_fraction")
         basis = None
         if isinstance(glyph, dict) and glyph.get("lines_covered") and not glyph.get("overlay"):
             occ, frac, basis = glyph, float(glyph.get("fraction") or 0), "glyphs"
-        elif isinstance(occ, dict) and isinstance(frac, (int, float)) and frac >= 0.2 and not occ.get("overlay"):
+        elif (isinstance(occ, dict) and isinstance(frac, (int, float)) and frac >= 0.2 and not occ.get("overlay")
+              and e.get("ink") is not False):
             basis = "box"
         if basis:
             position = occ.get("position")
