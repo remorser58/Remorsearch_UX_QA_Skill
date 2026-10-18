@@ -20,6 +20,10 @@
   to its glyphs drawn over #gradient-a (a collision, not a covering box).
   #span-cut and #span-clean keep their words in a span (the control reports for it);
   #span-over is drawn over the span label of #span-link.
+  #mixed-cut has direct text and a cut span label; #helper-link holds a 1 px visually
+  hidden helper (not a cut); #stack-cut names a symbol font only as a fallback; the label
+  of #contents-cut is display: contents; #inner-tab, a tabindex control inside
+  #outer-link, owns its cut label; #ghost-btn only holds transparent sizing text.
 -->
 <style>
   body { margin: 0; font-family: sans-serif; }
@@ -59,6 +63,12 @@
   </div>
   <button id="span-cut" style="display:block;width:90px;overflow:hidden;white-space:nowrap"><span>Continue to secure checkout</span></button>
   <button id="span-clean" style="display:block;width:200px;overflow:hidden;white-space:nowrap"><span>Pay now</span></button>
+  <button id="mixed-cut" style="display:block;width:90px;overflow:hidden;white-space:nowrap">Go<span> to secure checkout now</span></button>
+  <a id="helper-link" href="#" style="display:block;position:relative">Details<span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">opens the delivery terms in a new window</span></a>
+  <button id="stack-cut" style="display:block;width:90px;overflow:hidden;white-space:nowrap;font-family:Arial, 'Segoe UI Symbol', sans-serif"><span>Continue to secure checkout</span></button>
+  <button id="contents-cut" style="display:block;width:90px;overflow:hidden;white-space:nowrap"><span style="display:contents">Continue to secure checkout</span></button>
+  <a id="outer-link" href="#" style="display:block"><div id="inner-tab" tabindex="0" style="width:90px;overflow:hidden;white-space:nowrap"><span>Continue to secure checkout</span></div></a>
+  <button id="ghost-btn" style="display:block;color:transparent"><span>sizing copy</span></button>
 </div>
 <div style="position:absolute;top:300px;left:8px;width:300px">
   <p id="ink-label" style="margin:0">배송 메모를 남겨 주세요</p>

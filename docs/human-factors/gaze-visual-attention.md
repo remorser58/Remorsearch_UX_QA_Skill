@@ -8,7 +8,7 @@ Date: 2026-09-28. Written for engineers turning findings into (a) automated chec
 
 ## 0. Read this first: access limits and evidence tags
 
-**Access limits at the time of writing.** The egress proxy blocked full-text fetches from dl.acm.org, arxiv.org, nngroup.com, aalto.fi, mit.edu, harvard.edu, stanford.edu, PMC, Wikipedia, huggingface.co and GitHub Pages. Only github.com and raw.githubusercontent.com could be fetched. The shared web-search budget for the session (200 calls) ran out partway through this work. Every claim below therefore comes from one of three places: search-engine result text attributed to the source, source code or READMEs fetched from GitHub, or the author's recall of well-known papers. The tags below say which. Before any number is hard-coded as `[paper]`, someone should open the primary source and check it.
+**Access limits at the time of writing.** The egress proxy blocked full-text fetches from dl.acm.org, arxiv.org, nngroup.com, aalto.fi, mit.edu, harvard.edu, stanford.edu, PMC, Wikipedia, huggingface.co and GitHub Pages. Only github.com and raw.githubusercontent.com could be fetched. Web search was rate-limited partway through this work. Every claim below therefore comes from one of three places: search-engine result text attributed to the source, source code or READMEs fetched from GitHub, or the author's recall of well-known papers. The tags below say which. Before any number is hard-coded as `[paper]`, someone should open the primary source and check it.
 
 Tags (they match the `ergoqa/params.py` scheme):
 

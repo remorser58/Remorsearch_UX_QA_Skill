@@ -610,7 +610,7 @@ export function extractSnapshot(args) {
       // Visible text drawn by an icon font (ligatures such as "menu"): not a text label.
       icon_font: (() => {
         const nodes = [el, ...el.querySelectorAll('span, i, em')].slice(0, 6);
-        return nodes.some((n) => n.textContent && n.textContent.trim() && ICON_FONT.test(style(n).fontFamily || ''));
+        return nodes.some((n) => n.textContent && n.textContent.trim() && iconFont(style(n).fontFamily));
       })(),
       error_message: ids('aria-errormessage')[0] || null,
       required: el.required === true || el.getAttribute('aria-required') === 'true',
@@ -654,6 +654,9 @@ export function extractSnapshot(args) {
   // visibility or a zero opacity, such as a width-reserving copy of a bold label) cannot
   // be cut, covered or drawn over another text.
   const ICON_FONT = /icon|material|awesome|symbol|glyph|fontello|ionicon|bootstrap-icons/i;
+  // An icon font leads its stack; a symbol font later in a system stack (Bootstrap's
+  // "Segoe UI Symbol") only backs up ordinary text.
+  const iconFont = (family) => ICON_FONT.test(String(family || '').split(',')[0].replace(/["']/g, ''));
   const inkCache = new Map();
   const paintsInk = (el) => {
     if (inkCache.has(el)) return inkCache.get(el);
@@ -666,7 +669,12 @@ export function extractSnapshot(args) {
       const ncs = style(n);
       if (ncs.backgroundClip === 'text' || ncs.webkitBackgroundClip === 'text') ink = true;
     }
-    if (ink && typeof el.checkVisibility === 'function' && !el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) ink = false;
+    // display: contents has no box of its own, so the nearest box above it is tested.
+    let probe = el;
+    while (probe && probe.nodeType === 1 && style(probe).display === 'contents') probe = parentOf(probe);
+    if (ink && cs.visibility !== 'visible') ink = false;
+    if (ink && probe && probe.nodeType === 1 && typeof probe.checkVisibility === 'function'
+      && !probe.checkVisibility({ opacityProperty: true, visibilityProperty: true })) ink = false;
     inkCache.set(el, ink);
     return ink;
   };
@@ -813,17 +821,33 @@ export function extractSnapshot(args) {
       by: viewportCut ? 'viewport' : by && by !== owner ? (by.getAttribute('id') ? `#${by.getAttribute('id')}` : by.tagName.toLowerCase()) : null,
       act: exemptX && exemptY ? 'passed' : 'failed' };
   };
+  // The control that reports for a text holder: its nearest interactive ancestor.
+  const ownerControl = (n) => {
+    for (let p = n.parentElement; p; p = p.parentElement) if (isInteractive(p)) return p;
+    return null;
+  };
+  // A holder that is a candidate of its own (tagged, interactive, an alert, or text that
+  // no control contains) reports for itself.
+  const ownCandidate = (n) => {
+    if (roleMap.has(n) || isInteractive(n)) return true;
+    const role = (n.getAttribute('role') || '').trim();
+    if (role === 'alert' || role === 'status') return true;
+    const tag = n.tagName.toLowerCase();
+    return (ALWAYS_TEXT.has(tag) || DIRECT_TEXT.has(tag)) && !(n.parentElement && n.parentElement.closest(INTERACTIVE));
+  };
   // The elements that draw a control's words when they sit in spans: each owns a text
-  // node, is not inside a nested control, is not tagged as its own candidate, draws no
-  // icon-font glyphs and paints ink. The control reports for them (LY-01..03).
+  // node, reports through this control (not a nested one, not a candidate of its own),
+  // is not visually hidden, draws no icon-font glyphs and paints ink (LY-01..03).
   const labelHolders = (el) => {
     const out = [];
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
     for (let node = walker.nextNode(); node && out.length < 12; node = walker.nextNode()) {
       const holder = node.parentElement;
       if (!node.nodeValue.trim() || !holder || holder === el || out.includes(holder)) continue;
-      if (holder.closest(INTERACTIVE) !== el || roleMap.has(holder)) continue;
-      if (ICON_FONT.test(style(holder).fontFamily || '') || !paintsInk(holder)) continue;
+      if (ownCandidate(holder) || ownerControl(holder) !== el) continue;
+      let hidden = false;
+      for (let p = holder; p && p !== el; p = p.parentElement) if (visuallyHidden(p)) { hidden = true; break; }
+      if (hidden || iconFont(style(holder).fontFamily) || !paintsInk(holder)) continue;
       out.push(holder);
     }
     return out;
@@ -834,6 +858,20 @@ export function extractSnapshot(args) {
       if (clip) return { ...clip, label: uniqueSelector(holder) };
     }
     return null;
+  };
+  // Whether an element's text paints anything: its own text or, for a control whose
+  // words sit in spans, any of them (null when it has no text).
+  const textInk = (el, interactive) => {
+    if (hasDirectText(el)) return paintsInk(el);
+    if (!interactive) return null;
+    let seen = false;
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (!node.nodeValue.trim() || !node.parentElement) continue;
+      seen = true;
+      if (paintsInk(node.parentElement)) return true;
+    }
+    return seen ? false : null;
   };
   const visibleText = (el) => {
     const tag = el.tagName.toLowerCase();
@@ -1527,9 +1565,9 @@ export function extractSnapshot(args) {
       ...(c.interactive || ['input', 'select', 'textarea'].includes(tag) ? { a11y: a11yOf(el) } : {}),
       ...(() => {
         const direct = hasDirectText(el);
-        const clip = direct ? clippedOf(el, cs, c.interactive) : c.interactive ? labelClip(el) : null;
+        const clip = (direct ? clippedOf(el, cs, c.interactive) : null) || (c.interactive ? labelClip(el) : null);
         // Text that paints nothing is marked so box-sampled covering skips it (LY-02).
-        return { ...(clip ? { clipped: clip } : {}), ...(direct && !paintsInk(el) ? { ink: false } : {}) };
+        return { ...(clip ? { clipped: clip } : {}), ...(textInk(el, c.interactive) === false ? { ink: false } : {}) };
       })(),
       roles: roleMap.has(el) ? [...roleMap.get(el)].sort() : [],
       // Ids of the nearest ancestors (grouping context such as a toolbar or chip row).
@@ -1601,13 +1639,14 @@ export function extractSnapshot(args) {
     const el = c.el;
     const g = geo(el);
     if (!g.vis || !g.inVp) continue;
-    // The text an element owns; a control without its own text node (a label or button
-    // whose words sit in spans) owns the text of its descendants, which are reported
-    // through the control. Each glyph box keeps the element that paints it.
+    // The text an element owns; a control also owns the words its spans draw
+    // (labelHolders), which are reported through the control. Each glyph box keeps the
+    // element that paints it.
     const owned = [];
     if (hasDirectText(el)) {
       for (const q of ownTextRects(el)) owned.push({ rect: q, holder: el });
-    } else if (c.interactive) {
+    }
+    if (c.interactive) {
       for (const holder of labelHolders(el)) {
         for (const q of ownTextRects(holder)) if (owned.length < 24) owned.push({ rect: q, holder });
       }
