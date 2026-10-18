@@ -15,7 +15,7 @@ Remorsearch UX QA is a skill for Claude Code and Codex that checks and improves 
 
 You do not pick components. Ask for a UI check, a UX improvement, research or an accessibility review, and the skill loads only what that request needs.
 
-On a blind benchmark of 28 rendered defects, 11 decoys and four clean twins ([`visual-layout-20261018.md`](docs/validation/visual-layout-20261018.md)), the scan's measured checks found 19 defects on first contact (3 before these checks) and 25 after follow-up fixes, with no new finding on a decoy or clean page and no change on the earlier suites. In an [agent comparison](docs/validation/agent-comparison-20261018/README.md) on the same pages, the same model at its default effort found all 28 defects with the skill in both rounds and 28 and 27 without it, finishing in seven to eight minutes either way: the skill no longer adds time, and one extra detection in one round is within run-to-run variation. At low reasoning effort it raised detection from 22 to 24 and took about three minutes longer. One suite and one or two runs per condition do not establish general superiority.
+On a blind benchmark of 28 rendered defects, 11 decoys and four clean twins ([`visual-layout-20261018.md`](docs/validation/visual-layout-20261018.md)), the scan's measured checks found 19 defects on first contact (3 before these checks) and 25 after follow-up fixes, with no new finding on a decoy or clean page and no change on the earlier suites. The same recall reproduced on Ubuntu 24.04 after the documented setup. In an [agent comparison](docs/validation/agent-comparison-20261018/README.md) on the same pages, the same model at its default effort found all 28 defects with the skill in both rounds and 28 and 27 without it, finishing in seven to eight minutes either way: the skill no longer adds time, and one extra detection in one round is within run-to-run variation. At low reasoning effort it raised detection from 22 to 24 and took about three minutes longer. One suite and one or two runs per condition do not establish general superiority.
 
 ## Install
 
@@ -99,7 +99,7 @@ docs/                          design notes, research notes and validation recor
 ```sh
 python3 -m unittest discover -s tests -p 'test_*.py'
 python3 skills/remorsearch-ux-qa/scripts/smoke_loop.py
-(cd skills/remorsearch-ux-qa/drivers/web && npm ci && node selftest.mjs)
+(cd skills/remorsearch-ux-qa/drivers/web && npm ci && npx playwright install chromium && node selftest.mjs)
 python3 skills/remorsearch-ux-qa/scripts/ergo_bench.py --suite benchmarks/mobile-commerce --out .ergo-bench/mobile
 python3 scripts/check_release.py --output dist/release-check
 ```

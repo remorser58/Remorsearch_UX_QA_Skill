@@ -15,7 +15,7 @@ Remorsearch(리모서치) UX QA는 이미 만든 제품의 UI와 UX를 점검하
 
 구성 요소는 고르지 않아도 됩니다. UI 점검, UX 개선, 조사, 접근성 검토 가운데 원하는 일을 말하면 그 요청에 필요한 부분만 불러옵니다.
 
-렌더링 결함 28개, 미끼 11개, 결함 없는 쌍 페이지 4개로 만든 블라인드 벤치마크([`visual-layout-20261018.md`](docs/validation/visual-layout-20261018.md))에서 스캔의 측정 검사는 처음 실행에 19개(이 검사들을 넣기 전에는 3개)를 찾았고, 후속 수정 뒤에는 25개를 찾았습니다. 미끼와 결함 없는 페이지에는 새 발견이 없었고 기존 벤치마크 결과도 그대로였습니다. 같은 페이지로 한 [에이전트 비교](docs/validation/agent-comparison-20261018/README.md)에서 기본 추론 강도의 같은 모델은 스킬을 쓰면 두 번 모두 28개를 다 찾았고, 스킬 없이는 28개와 27개를 찾았습니다. 보고서는 양쪽 모두 7~8분 안에 마쳤습니다. 스킬 때문에 시간이 더 들지는 않았고, 한 번 더 찾은 1개는 실행마다 생기는 차이 안에 있습니다. 추론 강도를 낮추면 스킬이 22개를 24개로 늘렸고 3분쯤 더 걸렸습니다. 벤치마크 하나와 조건마다 한두 번 실행한 결과라서 일반적인 우위를 보여 주지는 않습니다.
+렌더링 결함 28개, 미끼 11개, 결함 없는 쌍 페이지 4개로 만든 블라인드 벤치마크([`visual-layout-20261018.md`](docs/validation/visual-layout-20261018.md))에서 스캔의 측정 검사는 처음 실행에 19개(이 검사들을 넣기 전에는 3개)를 찾았고, 후속 수정 뒤에는 25개를 찾았습니다. 미끼와 결함 없는 페이지에는 새 발견이 없었고 기존 벤치마크 결과도 그대로였습니다. 문서대로 설치한 Ubuntu 24.04에서도 같은 재현율이 나왔습니다. 같은 페이지로 한 [에이전트 비교](docs/validation/agent-comparison-20261018/README.md)에서 기본 추론 강도의 같은 모델은 스킬을 쓰면 두 번 모두 28개를 다 찾았고, 스킬 없이는 28개와 27개를 찾았습니다. 보고서는 양쪽 모두 7~8분 안에 마쳤습니다. 스킬 때문에 시간이 더 들지는 않았고, 한 번 더 찾은 1개는 실행마다 생기는 차이 안에 있습니다. 추론 강도를 낮추면 스킬이 22개를 24개로 늘렸고 3분쯤 더 걸렸습니다. 벤치마크 하나와 조건마다 한두 번 실행한 결과라서 일반적인 우위를 보여 주지는 않습니다.
 
 ## 설치
 
@@ -99,7 +99,7 @@ docs/                          design notes, research notes and validation recor
 ```sh
 python3 -m unittest discover -s tests -p 'test_*.py'
 python3 skills/remorsearch-ux-qa/scripts/smoke_loop.py
-(cd skills/remorsearch-ux-qa/drivers/web && npm ci && node selftest.mjs)
+(cd skills/remorsearch-ux-qa/drivers/web && npm ci && npx playwright install chromium && node selftest.mjs)
 python3 skills/remorsearch-ux-qa/scripts/ergo_bench.py --suite benchmarks/mobile-commerce --out .ergo-bench/mobile
 python3 scripts/check_release.py --output dist/release-check
 ```
