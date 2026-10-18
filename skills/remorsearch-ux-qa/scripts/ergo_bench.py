@@ -108,9 +108,9 @@ def evaluate(run_records: list[dict[str, Any]], profiles: list[dict[str, Any]], 
              key: dict[str, Any], mode: str, bases: dict[str, dict[str, Any]]) -> dict[str, Any]:
     analyses = []
     for rec in run_records:
-        run_dir = Path(rec["run_dir"])
-        if not (run_dir / "run.json").is_file():
+        if rec.get("failure"):
             continue
+        run_dir = Path(rec["run_dir"])
         run_doc = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
         scenario = scenarios.get(run_doc["scenario_id"])
         if mode == "swarm":
@@ -158,6 +158,31 @@ def provenance() -> dict[str, Any]:
             "code_sha256": digest.hexdigest(), "driver_sha256": driver.hexdigest()}
 
 
+def check_capture(rec: dict[str, Any]) -> dict[str, Any]:
+    """Mark a run that cannot be scored: no run.json, no snapshot, a blocked recording or a
+    driver exit other than 0 (completed) or 3 (recorded, task unsuccessful). A failed
+    recording would otherwise count as misses and understate the detector."""
+    path = Path(rec["run_dir"]) / "run.json"
+    try:
+        doc = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        doc = None
+    if doc is None:
+        rec["failure"] = "no run.json"
+    elif not doc.get("snapshots"):
+        rec["failure"] = "no snapshot"
+    elif doc.get("status") == "blocked":
+        rec["failure"] = "blocked: " + "; ".join(str(r) for r in doc.get("blocked_reasons") or [])[:200]
+    elif rec.get("exit") not in (0, 3, None):
+        rec["failure"] = f"driver exit {rec.get('exit')}"
+    marker = Path(rec["run_dir"]) / "recorded-by.json"
+    try:
+        rec["driver_sha256"] = json.loads(marker.read_text(encoding="utf-8")).get("driver_sha256")
+    except (OSError, ValueError, AttributeError):
+        rec["driver_sha256"] = None
+    return rec
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--suite", required=True, type=Path)
@@ -201,6 +226,7 @@ def main() -> int:
     (work / "profiles.json").write_text(json.dumps({"profiles": profiles}, ensure_ascii=False, indent=1), encoding="utf-8")
 
     run_records = []
+    prov = provenance()
     with static_server(suite.parent) as base:
         for sid, sc in scenarios.items():
             for device_id in sc["device_ids"]:
@@ -215,7 +241,12 @@ def main() -> int:
                     shutil.rmtree(runs_dir / run_id)
                 rec = record(paths[sid], sc, recorder, runs_dir, base, work)
                 print(f"recorded {run_id}: exit {rec['exit']} in {rec['seconds']}s", flush=True)
+                if (runs_dir / run_id).is_dir():
+                    # Which driver recorded this run, for later --reuse-runs scoring.
+                    (runs_dir / run_id / "recorded-by.json").write_text(json.dumps({"driver_sha256": prov["driver_sha256"]}), encoding="utf-8")
                 run_records.append(rec)
+    for rec in run_records:
+        check_capture(rec)
 
     results = {}
     for mode in ("measured_only", "single_profile", "swarm"):
@@ -227,8 +258,11 @@ def main() -> int:
     swarm_res = results["swarm"]
     (work / "report.md").write_text(report.render(swarm_res["findings"], profiles, swarm_res["analyses"], title=f"벤치마크 {suite.name}"), encoding="utf-8")
 
-    summary = {"suite": suite.name, "provenance": provenance(), "runs": [{k: v for k, v in r.items() if k != "stderr_tail"} for r in run_records],
-               "run_failures": [r for r in run_records if r.get("exit") not in (0, 3, None)]}
+    # driver_sha256 names the checkout; recordings_driver_sha256 names the drivers that made
+    # the scored recordings (null for a reused run recorded before this marker existed).
+    prov["recordings_driver_sha256"] = sorted({r.get("driver_sha256") or "unknown" for r in run_records if not r.get("failure")})
+    summary = {"suite": suite.name, "provenance": prov, "runs": [{k: v for k, v in r.items() if k != "stderr_tail"} for r in run_records],
+               "run_failures": [r for r in run_records if r.get("failure")]}
     for mode, res in results.items():
         sc = res["score"] or {}
         summary[mode] = {k: v for k, v in sc.items() if not isinstance(v, (list, dict))}
@@ -246,8 +280,10 @@ def main() -> int:
     failed = summary["run_failures"]
     if failed:
         # A failed recording scores as a miss, so these numbers understate the detector.
+        first = failed[0]
+        detail = f"{first['run_id']}: {first['failure']}" + (f" ({first['stderr_first']})" if first.get("stderr_first") else "")
         print(f"error: {len(failed)} of {len(run_records)} runs failed, so the scores above are not valid. "
-              f"First error: {failed[0].get('stderr_first') or 'exit ' + str(failed[0].get('exit'))}. "
+              f"First failure: {detail}. "
               f"If the driver is not prepared yet: (cd {ROOT / 'drivers' / 'web'} && npm ci && npx playwright install chromium).",
               file=sys.stderr)
         return 1
