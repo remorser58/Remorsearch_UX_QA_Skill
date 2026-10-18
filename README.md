@@ -29,44 +29,49 @@ and component tests do not establish that result.
 
 ## Install
 
-Install one folder into your skills directory. It includes the original
-insane-search toolkit as reference material for Remorsearch's research stage;
-users do not install a separate search skill. The Python tools need Python 3.10+
-on macOS, Linux or WSL and use the standard library and POSIX file locks. If the
-default `python3` is older (the macOS system Python is 3.9), the host runs
-`python3 scripts/find_runtime.py` from the skill folder. It prints JSON with the
-highest supported Python, a Node.js 22 path and any gaps; it installs nothing.
+Install one folder with one command. It contains every component: research,
+persona-qa, ergonomics and loop with their references and schemas, the bundled
+insane-search toolkit and the portable launcher. The same command prepares
+the pinned web driver and Chromium. All features are included; references load per task. You supply a
+URL or repository, not prepared packets; the bundled examples are maintainer
+fixtures for the shipped self-tests. The Python tools need Python 3.10+ on
+macOS, Linux or WSL. If the default `python3` is older (the macOS system Python
+is 3.9), the host runs `python3 scripts/find_runtime.py` from the skill folder.
+It prints JSON with the highest supported Python, a Node.js 22 path and any
+gaps; it installs nothing.
 
 ```sh
 git clone https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
-# Claude Code (personal); use .claude/skills/ inside a project to share it with a team
-mkdir -p ~/.claude/skills
-cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
-# Codex
-mkdir -p ~/.codex/skills
-cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.codex/skills/
+cd Remorsearch_UX_QA_Skill
+python3 scripts/install.py --target codex
 ```
 
-Copying the folder completes the skill installation. Maintainer-only packaging
-and integrity checks are documented in [build and release checks](docs/release.md).
+`--target claude` installs into `~/.claude/skills/remorsearch-ux-qa`; the
+default is `codex` (`~/.codex/skills/remorsearch-ux-qa`). Pass
+`--destination /path/to/folder` for an explicit path, for isolated testing.
+Maintainer-only packaging and integrity checks are documented in
+[build and release checks](docs/release.md).
 
-The folder contains the Python tools, JSON schemas, demo fixtures, live web
-driver, and original search instructions with their references and provenance.
-
-The live web driver (persona-qa and ergonomics on real web pages) also needs Node.js
-22 and Playwright. The commands below select the Codex installation. For Claude
-Code, set `REMORSEARCH_SKILL_DIR` to `~/.claude/skills/remorsearch-ux-qa`.
-
-```sh
-REMORSEARCH_SKILL_DIR="$HOME/.codex/skills/remorsearch-ux-qa"
-cd "$REMORSEARCH_SKILL_DIR/drivers/web"
-npm ci && npx playwright install chromium
-```
-
-Use Node.js 22. With the pinned Playwright 1.56.1, `npx playwright install` hangs after the
+Python 3.10+, Node.js 22 (>=22 <23) and npm are checked before anything is
+written. The installer runs `npm ci` inside a staged copy's `drivers/web`,
+downloads Chromium through Playwright into its browser cache
+(`~/Library/Caches/ms-playwright` by default on macOS; set
+`PLAYWRIGHT_BROWSERS_PATH` first for another location), and finishes with an
+actual Chromium launch. It changes no global runtime or account. Use Node.js
+22. With the pinned Playwright 1.56.1, `npx playwright install` hangs after the
 download on Node.js 24.16 or later and on Node.js 26
 ([microsoft/playwright#40724](https://github.com/microsoft/playwright/issues/40724);
 Playwright 1.60 works).
+
+Destinations are guarded: symlinked paths, the source repository, unrelated
+existing folders, the filesystem root and the home directory are refused.
+Driver preparation happens on a staged copy, so a failed npm or Chromium
+download leaves an existing installation unchanged; fix Node.js, npm or the
+network and rerun the same command. Updating an owned installation first
+archives the complete previous folder, including run records and symlinks, as
+`remorsearch-ux-qa.backup-<timestamp>.tar.gz` beside the skill. Accounts stay
+user prerequisites: YouTube comments need your own YouTube Data API key
+(`REMORSEARCH_YOUTUBE_API_KEY`), and Figma comparison needs your Figma access.
 
 ## Use
 
@@ -124,6 +129,21 @@ for the product-to-replay workflow and existing plan/bundle/loop commands.
 - Complete improvement requires current-build replay, adjacent regression and
   preserved-intent checks. If scoped QA finds no reproducible issue, inspection
   can finish without changes; missing required evidence stays incomplete.
+
+Every product UI QA opens actual and reference images and records regional
+observations for alignment, spacing, typography, clipping, occlusion and Figma
+fidelity. The existing loop gate rejects missing or contradictory observations;
+its `pixel_diff` method recomputes image differences with the bundled PNG decoder.
+Semantic visual judgment uses the host's image-capable tools. A receipt validates
+record structure, not whether a reviewer made a correct design judgment.
+
+UI QA also reviews the component contract and the composed screen: anatomy, token
+roles, state variants, action hierarchy, long content, responsive behavior and
+icon-only discoverability. The [UI quality card](skills/remorsearch-ux-qa/references/persona-qa/ui-quality.md)
+can use REA to recover a reference feature's state transitions, component
+boundaries and design rationale, then map them into the user's own Figma and
+components for implementation and replay. REA is optional and is not vendored;
+the local Figma, intent and rendered evidence decide the finding.
 
 Research and QA runs can exchange a machine-readable **evidence bundle**
 (`schemas/ux-evidence-bundle.v1.schema.json`). The offline validator checks IDs,
@@ -230,7 +250,7 @@ facts are marked 관찰됨; facts not reached in the primary source remain 미�
 ## Repository layout
 
 ```text
-skills/remorsearch-ux-qa/    the installable skill (copy this folder)
+skills/remorsearch-ux-qa/    the installable skill (installed by scripts/install.py)
   SKILL.md                   entry point: modes, shared rules, tools
   references/                mode workflows and reference material
     research/korea/          Korean research pack (in Korean): platform map, query craft, markers, statistics, legal checklist, report template
@@ -273,6 +293,27 @@ python3 scripts/check_release.py --output dist/release-check
 
 ## Limits
 
+The [portfolio visual-QA replay](docs/validation/visual-qa-20261017/report.md)
+found all six registered clipped-text locations in the original supplied image
+and left three readable controls unflagged. A previous-skill reviewer also found
+the same locations when actually viewing the image; no detection gain is claimed.
+A separate review of 30 current web captures and the real Figma export identified
+source differences while keeping clipping, approval uncertainty and untested
+interaction states separate. This remains a single-product regression case.
+
+The [portfolio Figma-fidelity before/after check](docs/validation/figma-fidelity-20261018/report.md)
+had three blind reviewers apply the skill to one build each. The pre-change build
+was rejected after its reviewer found all six registered Figma difference groups
+and two uncued desktop alignment offsets. The first reconciled build was approved
+with five P3 follow-ups, and the final build was approved with no defects. One
+review per build of one product does not establish a general detection rate.
+
+The [QA performance criterion](PRD.md#91-일반-omo-대비-qa-성능) compares ordinary OMO with the same OMO plus Remorsearch under matched models, tools, tasks and budgets. Required rendered checks cover alignment, clipping and component occlusion. The [OMO pilot and mobile QA](docs/validation/design-qa-20261015/report.md) records a final access-matched Astra medium result: 5 versus 6 supported issue families, 1 versus 0 unsupported suggestions, and report time of 5m07s versus 10m08s. An earlier access-mismatched attempt is retained separately. InferHub GLM 5.3 high failed upstream; no QA score is assigned. This small result does not establish general superiority.
+
+The [skill-on / skill-off pilot](docs/validation/skill-ab-20261014/report.md) compares two repetitions on existing local fixtures with the same model and browser tools. It reports detection, unsupported warnings, task completion, time and tokens separately from installation/self-tests; it does not establish general superiority.
+
+The [QA speed evaluation](docs/validation/qa-speed-20261015/report.md) tested an instruction-only speed revision with GPT-6.1 Sol high. It was rejected: the candidate was 4.1% slower by median report-save time and 1.5% slower by median final response time across two valid repetitions. Its second repetition covered the six core areas, but left the observed omitted-sauce feedback failure in recovery observations instead of giving it a separate finding card. The candidate produced no speed win and was not accepted.
+
 - Live browser research (Aside or another agentic browser), Figma and browser
   collection for the loop mode are provided by you or your agent host; the loop
   CLI imports their receipts and never launches them.
@@ -290,8 +331,9 @@ python3 scripts/check_release.py --output dist/release-check
   missed its confirmatory noise limit (1.75 P0–P2 units per clean scenario;
   limit 0.35) and condition-identification target. Later fixes do not establish
   that those original targets now pass; review findings before acting on them.
-- Only Chromium device emulation is exercised by the web driver; no real iOS
-  Safari, native apps or real devices.
+- The bundled web driver runs Chromium device emulation only. Mobile Safari is
+  checked through a documented host route (safaridriver with an iOS Simulator) and
+  native iOS apps through imported XCUITest evidence; real devices are not exercised.
 
 ## License
 

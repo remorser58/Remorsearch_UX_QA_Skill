@@ -63,7 +63,9 @@ def current_replay(state: dict) -> dict:
     for replay in state["packet"]["replays"]:
         if replay["round_id"] == round_id:
             return replay
-    raise GateStop("blocked", f"No replay receipt for {round_id}; run the same scenarios against the changed build, then append evidence")
+    applied = state["applied_fixes"]
+    start = f", starting after the last applied fix ({applied[-1]['at']})" if applied else ""
+    raise GateStop("blocked", f"No replay receipt for {round_id}; run the same scenarios against the changed build{start}, then append evidence")
 
 
 def revision(state: dict) -> str:

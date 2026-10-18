@@ -1,0 +1,48 @@
+{
+  "astra-access-plain": {
+    "start": "2026-10-14T15:52:00.726Z",
+    "last_assistant_seconds": 408.88,
+    "findings_file_seconds": 387.07,
+    "report_file_seconds": 387.08,
+    "reported_tokens": {
+      "input": 142595,
+      "output": 9936,
+      "cacheRead": 2564096,
+      "cacheWrite": 0,
+      "reasoning": 315,
+      "totalTokens": 2716627
+    },
+    "model": [
+      "gpt-6-astra"
+    ],
+    "effort": [
+      "medium"
+    ],
+    "exit_code": 124,
+    "cost_note": "host catalog estimates excluded; subscription via local proxy, no billed cost measured",
+    "limits": "one repetition,2known development variants; token cache/context counts not equal billedcost"
+  },
+  "astra-access-skill": {
+    "start": "2026-10-14T15:52:04.918Z",
+    "last_assistant_seconds": 754.86,
+    "findings_file_seconds": 627.17,
+    "report_file_seconds": 677.07,
+    "reported_tokens": {
+      "input": 156293,
+      "output": 15912,
+      "cacheRead": 4513536,
+      "cacheWrite": 0,
+      "reasoning": 1306,
+      "totalTokens": 4685741
+    },
+    "model": [
+      "gpt-6-astra"
+    ],
+    "effort": [
+      "medium"
+    ],
+    "exit_code": 0,
+    "cost_note": "host catalog estimates excluded; subscription via local proxy, no billed cost measured",
+    "limits": "one repetition,2known development variants; token cache/context counts not equal billedcost"
+  }
+}

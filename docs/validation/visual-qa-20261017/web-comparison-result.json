@@ -1,0 +1,2723 @@
+{
+  "schema": "remorsearch-scoped-visual-review.v1",
+  "verdict": "REQUEST_CHANGES",
+  "decision_reason": "The supplied 390px screenshots and Figma frame have observed differences in type hierarchy, navigation, summary rhythm and result surface. Intended component rules and source approval remain pending. REQUEST_CHANGES requires resolving that authority decision and reconciling Figma/code accordingly. No persistent text clipping or painted control occlusion is established in the inspected captures.",
+  "actions": [
+    "Confirm intended component rules for F01-F04, then reconcile Figma/code to that decision.",
+    "Confirm process states and content for F05-F06, then reconcile Figma/code while preserving required factual detail.",
+    "Recheck all three widths after any approved change; obtain desktop and interaction authority before claiming full fidelity."
+  ],
+  "created_at": "2026-10-16T16:30:08.057182+00:00",
+  "scope": {
+    "product_area": "Portfolio case detail: ax-workflow-plugins",
+    "mode": "leaf, read-only visual QA of frozen supplied artifacts",
+    "rendered_url": "http://127.0.0.1:4329/cases/ax-workflow-plugins/",
+    "build_commit_from_manifest": "064d9bae628fdf4a1f8f9fb4e8a14c5b22a13748",
+    "short_commit_from_receipt_and_visible_footer": "064d9ba",
+    "browser_version_from_receipt": "141.0.7390.37",
+    "playwright_version_from_receipt": "1.56.1",
+    "capture_tool_from_receipt": "existing Playwright package",
+    "browser_access_in_this_review": false,
+    "network_access_in_this_review": false,
+    "source_diff_inspected": false,
+    "source_diff_limit": "Repository/code/history are explicitly excluded by the caller. Build identity is supplied provenance, not independently verified source content.",
+    "task_completion": "Not exercised; screenshot review does not establish activation, navigation or persisted results.",
+    "platform_limit": "These are supplied browser pixels at CSS viewports and DPR 1. No Safari, WebKit, real mobile device, safe-area or assistive-technology claim is made.",
+    "other_review_assumed": false
+  },
+  "authority_and_permissions": {
+    "read_only": {
+      "actor": "this leaf reviewer",
+      "scope": [
+        "frozen candidate-skill/SKILL.md and its local references",
+        "input/web/*",
+        "input/screen-b.png",
+        "input/figma-readback.json",
+        "input/manifest.json"
+      ],
+      "reason": "Explicit caller-provided QA inputs"
+    },
+    "design_write": false,
+    "code_write": false,
+    "test_data_write": false,
+    "report_write": {
+      "path": "web-comparison-result.json",
+      "reason": "Explicit requested report artifact only"
+    },
+    "redelegation": false,
+    "external_posting_or_messaging": false,
+    "ui_or_user_state_modified": false,
+    "tools_installed": false,
+    "extra_harness_or_tests_created": false,
+    "prohibited_inputs_opened": false
+  },
+  "figma": {
+    "url": "https://www.figma.com/design/ikOHVXrV47diF5hmrympEr?node-id=2-2",
+    "file_key": "ikOHVXrV47diF5hmrympEr",
+    "root_node_id": "2:2",
+    "frame_name": "REA Case Detail / Mobile",
+    "frame_pixels": [
+      390,
+      1818
+    ],
+    "nodes_inspected": [
+      "2:2",
+      "2:3",
+      "2:4",
+      "2:5",
+      "2:6",
+      "2:7",
+      "2:8",
+      "2:9",
+      "2:10",
+      "2:11",
+      "2:12",
+      "2:13",
+      "2:14",
+      "2:15",
+      "2:16",
+      "2:17",
+      "2:18",
+      "2:19",
+      "2:20",
+      "2:21",
+      "2:22",
+      "2:23",
+      "2:24",
+      "2:25",
+      "2:26",
+      "2:27",
+      "2:28",
+      "2:29",
+      "2:30",
+      "2:31",
+      "2:32",
+      "2:33",
+      "2:34",
+      "2:35",
+      "2:36",
+      "2:37",
+      "2:38",
+      "2:39",
+      "2:40",
+      "2:41",
+      "2:42",
+      "2:43",
+      "2:44",
+      "2:45",
+      "2:46",
+      "2:47",
+      "2:48",
+      "2:49",
+      "2:50",
+      "2:51",
+      "2:52",
+      "2:53",
+      "2:54",
+      "2:55",
+      "2:56",
+      "2:57",
+      "2:58",
+      "2:59",
+      "2:60",
+      "2:61",
+      "2:62"
+    ],
+    "source_version": {
+      "immutable_version_id": null,
+      "snapshot_manifest_at": "2026-10-16T16:12:23.638930+00:00",
+      "manifest_description": "current readback; exported png and JSON captured in this turn",
+      "readback_sha256": "c7c9d55b0f356ea135318bae436263c927b975a670cd4432303ab5f398c0f766",
+      "export_sha256": "6c36cf079f1c7395203444d47fa000a1283cc36f85374814d70190e62f51f95d",
+      "hashes_match_manifest": true,
+      "freshness_limit": "Caller-supplied snapshot only. The live file and an immutable Figma version ID were not inspected; no current-live fidelity claim is made."
+    },
+    "readback_path": "input/figma-readback.json",
+    "viewed_export_path": "input/screen-b.png",
+    "export_viewed_with": "view_image, original detail, full 390x1818 image",
+    "coordinate_mapping": "Reference findings use directly inspected export pixels. Readback boxes appear in page coordinates; subtracting (100,100) maps them to the export and is corroborated by title and result edges. Root position is omitted from the readback, so that translation is an inference.",
+    "available_design_authority": "One mobile frame and its text/frame hierarchy. No desktop/320px frames, interactive variant contracts, variable bindings or approval history are supplied.",
+    "reference_design_defects": [],
+    "reference_design_quality_observation": "No clipped/occluded required text or control was established in the viewed Figma export. Wrapped Korean text and unclipped overflow from a child to a non-clipping parent are not promoted to defects."
+  },
+  "coverage": [
+    {
+      "viewport_css_px": [
+        390,
+        844
+      ],
+      "viewed_count": 8,
+      "recorded_scroll_height_css_px": 5034,
+      "covered_document_interval_css_px": [
+        0,
+        5034
+      ],
+      "gaps_css_px": [],
+      "scroll_width_css_px": 390,
+      "horizontal_scroll_width_excess_css_px": 0,
+      "scope": "Supplied static scroll sequence, not every interaction or transient state."
+    },
+    {
+      "viewport_css_px": [
+        1440,
+        900
+      ],
+      "viewed_count": 7,
+      "recorded_scroll_height_css_px": 4412,
+      "covered_document_interval_css_px": [
+        0,
+        4412
+      ],
+      "gaps_css_px": [],
+      "scroll_width_css_px": 1440,
+      "horizontal_scroll_width_excess_css_px": 0,
+      "scope": "Supplied static scroll sequence, not every interaction or transient state."
+    },
+    {
+      "viewport_css_px": [
+        320,
+        568
+      ],
+      "viewed_count": 15,
+      "recorded_scroll_height_css_px": 6042,
+      "covered_document_interval_css_px": [
+        0,
+        6042
+      ],
+      "gaps_css_px": [],
+      "scroll_width_css_px": 320,
+      "horizontal_scroll_width_excess_css_px": 0,
+      "scope": "Supplied static scroll sequence, not every interaction or transient state."
+    }
+  ],
+  "viewed_filenames": [
+    "screen-b.png",
+    "web-390-00.png",
+    "web-390-01.png",
+    "web-390-02.png",
+    "web-390-03.png",
+    "web-390-04.png",
+    "web-390-05.png",
+    "web-390-06.png",
+    "web-390-07.png",
+    "web-1440-00.png",
+    "web-1440-01.png",
+    "web-1440-02.png",
+    "web-1440-03.png",
+    "web-1440-04.png",
+    "web-1440-05.png",
+    "web-1440-06.png",
+    "web-320-00.png",
+    "web-320-01.png",
+    "web-320-02.png",
+    "web-320-03.png",
+    "web-320-04.png",
+    "web-320-05.png",
+    "web-320-06.png",
+    "web-320-07.png",
+    "web-320-08.png",
+    "web-320-09.png",
+    "web-320-10.png",
+    "web-320-11.png",
+    "web-320-12.png",
+    "web-320-13.png",
+    "web-320-14.png"
+  ],
+  "viewed_reference": {
+    "filename": "screen-b.png",
+    "artifact_path": "input/screen-b.png",
+    "tool": "view_image",
+    "detail": "original",
+    "inspected_regions": [
+      {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 745,
+        "content": "Header, navigation, summary and result"
+      },
+      {
+        "x": 0,
+        "y": 745,
+        "width": 390,
+        "height": 541,
+        "content": "Process and transition to body"
+      },
+      {
+        "x": 0,
+        "y": 1186,
+        "width": 390,
+        "height": 632,
+        "content": "Body and related cases; overlap retained"
+      }
+    ],
+    "note": "Original full-frame pixels were viewed. These region coordinates index that same image; no crop artifact was created."
+  },
+  "viewed_web_captures": [
+    {
+      "filename": "web-390-00.png",
+      "artifact_path": "input/web/web-390-00.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "viewport_css_px": [
+        390,
+        844
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 0,
+      "document_interval_css_px": [
+        0,
+        844
+      ],
+      "captured_at": "2026-10-16T16:11:53.492Z",
+      "sha256": "0d3aba6ba9b6521e88adcbd21522cb7a20848e4c54f08b81d2fa7e2ec4bd7bb3",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "조코딩 AX 인재전쟁",
+        "요약",
+        "과정",
+        "본문",
+        "제약 검사 · 충돌 후보 표시 · 공백 확인 · 사람 확정"
+      ],
+      "observation": "Header, navigation, summary; PIN text fully visible. Result starts at the lower viewport edge."
+    },
+    {
+      "filename": "web-390-01.png",
+      "artifact_path": "input/web/web-390-01.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "viewport_css_px": [
+        390,
+        844
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 607,
+      "document_interval_css_px": [
+        607,
+        1451
+      ],
+      "captured_at": "2026-10-16T16:11:53.698Z",
+      "sha256": "1a94f2e32f418dfd62e50ee323b9720ececc78f774a9a1840ef57989934b5cd6",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "RESULT",
+        "Thread 후기 보러 가기 ↗",
+        "풀이과정"
+      ],
+      "observation": "The complete result panel and its Thread control are visible; process entry begins below it."
+    },
+    {
+      "filename": "web-390-02.png",
+      "artifact_path": "input/web/web-390-02.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "viewport_css_px": [
+        390,
+        844
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 1214,
+      "document_interval_css_px": [
+        1214,
+        2058
+      ],
+      "captured_at": "2026-10-16T16:11:53.876Z",
+      "sha256": "3c23d698a2813be8044c5816a51b31ec43d5d8f44e0ff7e4494045db85ab6b36",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "답변의 근거가 되는 지식부터 점검",
+        "등록 전 검사 단계의 공백을 원인으로 정의"
+      ],
+      "observation": "Expanded process step 01 and the entry to 02; title and paragraphs remain separated."
+    },
+    {
+      "filename": "web-390-03.png",
+      "artifact_path": "input/web/web-390-03.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "viewport_css_px": [
+        390,
+        844
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 1821,
+      "document_interval_css_px": [
+        1821,
+        2665
+      ],
+      "captured_at": "2026-10-16T16:11:54.064Z",
+      "sha256": "369e479f7a98c3285f56f553fb1a5bb33e0e34ab21ed716583dea978363da1bc",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "등록 전 검사 단계의 공백을 원인으로 정의",
+        "흩어진 문서 수집부터 감사 리포트까지"
+      ],
+      "observation": "Step 02 body and step 03 entry; top and bottom cutoffs are resolved by adjacent captures."
+    },
+    {
+      "filename": "web-390-04.png",
+      "artifact_path": "input/web/web-390-04.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "viewport_css_px": [
+        390,
+        844
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 2428,
+      "document_interval_css_px": [
+        2428,
+        3272
+      ],
+      "captured_at": "2026-10-16T16:11:54.252Z",
+      "sha256": "cfffebfac9cdb23cc2518f68f9aba6445c723876d560533b2761a555090e9222",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "흩어진 문서 수집부터 감사 리포트까지",
+        "규칙 검사는 자동으로, 마지막 판단은 사람이"
+      ],
+      "observation": "Step 03 body and step 04 entry; left progress rail stays outside the text."
+    },
+    {
+      "filename": "web-390-05.png",
+      "artifact_path": "input/web/web-390-05.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "viewport_css_px": [
+        390,
+        844
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 3035,
+      "document_interval_css_px": [
+        3035,
+        3879
+      ],
+      "captured_at": "2026-10-16T16:11:54.446Z",
+      "sha256": "ab759ede61ede4407983e6e24ffab1672282361478507f065117db695fe62d14",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "마지막 판단은 사람이",
+        "결함 자료와 정상 자료에서 결과 확인"
+      ],
+      "observation": "Step 04 body and step 05 entry; wrapped headings do not collide with body copy."
+    },
+    {
+      "filename": "web-390-06.png",
+      "artifact_path": "input/web/web-390-06.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "viewport_css_px": [
+        390,
+        844
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 3642,
+      "document_interval_css_px": [
+        3642,
+        4486
+      ],
+      "captured_at": "2026-10-16T16:11:54.629Z",
+      "sha256": "42a4f4a558f9a607e3be35fece57a65b5ea4fab8e6662d3130e4f50def7289c1",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "검증 범위",
+        "관련 자료",
+        "Thread 후기 보러 가기"
+      ],
+      "observation": "Step 05 exit, validation scope and related-material link; content cut at the bottom appears in 07."
+    },
+    {
+      "filename": "web-390-07.png",
+      "artifact_path": "input/web/web-390-07.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "viewport_css_px": [
+        390,
+        844
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 4190,
+      "document_interval_css_px": [
+        4190,
+        5034
+      ],
+      "captured_at": "2026-10-16T16:11:54.811Z",
+      "sha256": "3c8c1cdbbea1d7fe29bf706760937941c072d02296d85f5a8599e572c7653b9a",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "같은 문제를 다른 장면에서 풀었습니다",
+        "OGC 2026 Autonomous Research System",
+        "u-SAINT 학사 민원 프로토타입",
+        "INPRO, WHYBIZ 인턴",
+        "064d9ba"
+      ],
+      "observation": "Related-material link, all three related rows and footer; arrows and labels remain visible."
+    },
+    {
+      "filename": "web-1440-00.png",
+      "artifact_path": "input/web/web-1440-00.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 900
+      },
+      "viewport_css_px": [
+        1440,
+        900
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 0,
+      "document_interval_css_px": [
+        0,
+        900
+      ],
+      "captured_at": "2026-10-16T16:12:01.239Z",
+      "sha256": "e38b79a961b461dd5f1043e486912d94e50943deac2c0bf81057c5caf7086c03",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "조코딩 AX 인재전쟁",
+        "OUTPUT",
+        "INPUT",
+        "PIN"
+      ],
+      "observation": "Centered header and repeated two-column summary; result entry is a viewport cutoff."
+    },
+    {
+      "filename": "web-1440-01.png",
+      "artifact_path": "input/web/web-1440-01.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 900
+      },
+      "viewport_css_px": [
+        1440,
+        900
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 648,
+      "document_interval_css_px": [
+        648,
+        1548
+      ],
+      "captured_at": "2026-10-16T16:12:01.437Z",
+      "sha256": "616a8695d07bd81e2b824ad1e6b2741ccf82632b35f281c46a0887c5ec96c585",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "RESULT",
+        "Thread 후기 보러 가기 ↗",
+        "풀이과정"
+      ],
+      "observation": "Complete full-width result band, visible Thread control and process entry."
+    },
+    {
+      "filename": "web-1440-02.png",
+      "artifact_path": "input/web/web-1440-02.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 900
+      },
+      "viewport_css_px": [
+        1440,
+        900
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 1296,
+      "document_interval_css_px": [
+        1296,
+        2196
+      ],
+      "captured_at": "2026-10-16T16:12:01.868Z",
+      "sha256": "17168ca30822e48d1d462753f7b8c30e2743802fbb6c9fc34960336af39dadf7",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "답변의 근거가 되는 지식부터 점검",
+        "등록 전 검사 단계의 공백을 원인으로 정의"
+      ],
+      "observation": "Desktop process rail and expanded first step; step 02 starts below, without overlap."
+    },
+    {
+      "filename": "web-1440-03.png",
+      "artifact_path": "input/web/web-1440-03.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 900
+      },
+      "viewport_css_px": [
+        1440,
+        900
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 1944,
+      "document_interval_css_px": [
+        1944,
+        2844
+      ],
+      "captured_at": "2026-10-16T16:12:02.161Z",
+      "sha256": "eca51e39b2cce6f8badca53eb2289977059321e9c0deaa32d257441b636dbcf2",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "흩어진 문서 수집부터 감사 리포트까지",
+        "규칙 검사는 자동으로, 마지막 판단은 사람이"
+      ],
+      "observation": "Process 02 through 04 entry; two-line step 04 heading has separate body space."
+    },
+    {
+      "filename": "web-1440-04.png",
+      "artifact_path": "input/web/web-1440-04.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 900
+      },
+      "viewport_css_px": [
+        1440,
+        900
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 2592,
+      "document_interval_css_px": [
+        2592,
+        3492
+      ],
+      "captured_at": "2026-10-16T16:12:02.418Z",
+      "sha256": "1be913a2dc352f54732fca02e6361e32d79e3450255220b1706fbcd64fed2bb8",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "규칙 검사는 자동으로, 마지막 판단은 사람이",
+        "결함 자료와 정상 자료에서 결과 확인"
+      ],
+      "observation": "Process 04 and 05; paragraphs, separators and minus glyphs remain distinct."
+    },
+    {
+      "filename": "web-1440-05.png",
+      "artifact_path": "input/web/web-1440-05.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 900
+      },
+      "viewport_css_px": [
+        1440,
+        900
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 3240,
+      "document_interval_css_px": [
+        3240,
+        4140
+      ],
+      "captured_at": "2026-10-16T16:12:02.652Z",
+      "sha256": "2bd424400c9066a0eea66d5a123d23452e70241a1849a72128aacfb2a55ec596",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "검증 범위",
+        "관련 자료",
+        "같은 문제를 다른 장면에서 풀었습니다"
+      ],
+      "observation": "Process exit, scope, related-material link and related-case entry; no fixed layer covers them."
+    },
+    {
+      "filename": "web-1440-06.png",
+      "artifact_path": "input/web/web-1440-06.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 900
+      },
+      "viewport_css_px": [
+        1440,
+        900
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 3512,
+      "document_interval_css_px": [
+        3512,
+        4412
+      ],
+      "captured_at": "2026-10-16T16:12:02.863Z",
+      "sha256": "12f01fc1321bc5b77a753fbb234125c69183d753dbc8bb75482e685fcc827cb4",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "OGC 2026 Autonomous Research System",
+        "u-SAINT 학사 민원 프로토타입",
+        "INPRO, WHYBIZ 인턴",
+        "064d9ba"
+      ],
+      "observation": "All related rows and footer; long first title, metadata and arrows occupy separate space."
+    },
+    {
+      "filename": "web-320-00.png",
+      "artifact_path": "input/web/web-320-00.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 568
+      },
+      "viewport_css_px": [
+        320,
+        568
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 0,
+      "document_interval_css_px": [
+        0,
+        568
+      ],
+      "captured_at": "2026-10-16T16:11:56.714Z",
+      "sha256": "f0a101f0559add07ef2007cde47a2807e3575fd96d718ae5fcf9e6ac09d2d01e",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "조코딩 AX 인재전쟁",
+        "요약",
+        "과정",
+        "본문"
+      ],
+      "observation": "Two-line H1 and three-line metadata reflow; navigation labels remain readable; summary continues in 01."
+    },
+    {
+      "filename": "web-320-01.png",
+      "artifact_path": "input/web/web-320-01.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 568
+      },
+      "viewport_css_px": [
+        320,
+        568
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 408,
+      "document_interval_css_px": [
+        408,
+        976
+      ],
+      "captured_at": "2026-10-16T16:11:56.913Z",
+      "sha256": "8daeeab8d9445015f387c9018a7ca916f99d52c5f50ef351e7aae2d1072b5e76",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "등록 전에 걸러진 ALF 지식",
+        "흩어진 쇼핑몰 지식 문서",
+        "제약 검사 · 충돌 후보 표시 · 공백 확인 · 사람 확정"
+      ],
+      "observation": "OUTPUT, INPUT and complete two-line PIN value; result entry continues in 02."
+    },
+    {
+      "filename": "web-320-02.png",
+      "artifact_path": "input/web/web-320-02.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 568
+      },
+      "viewport_css_px": [
+        320,
+        568
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 816,
+      "document_interval_css_px": [
+        816,
+        1384
+      ],
+      "captured_at": "2026-10-16T16:11:57.092Z",
+      "sha256": "bdfdd84fea7e0c08720ef3dbf422dcf098624ab24c3e6ada5a75222e3a09eda7",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "RESULT",
+        "선정됐습니다.",
+        "Thread 후기 보러 가기 ↗",
+        "풀이과정"
+      ],
+      "observation": "Complete long result copy and Thread control; process entry below the panel."
+    },
+    {
+      "filename": "web-320-03.png",
+      "artifact_path": "input/web/web-320-03.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 568
+      },
+      "viewport_css_px": [
+        320,
+        568
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 1224,
+      "document_interval_css_px": [
+        1224,
+        1792
+      ],
+      "captured_at": "2026-10-16T16:11:57.305Z",
+      "sha256": "3697f2fb7d2b4d7e966313770f8c84d4dc5575cee0fb2ccb0d03175d5f04a8b4",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "답변의 근거가 되는 지식부터 점검"
+      ],
+      "observation": "First process heading takes three lines, followed by separated body text; no permanent glyph loss."
+    },
+    {
+      "filename": "web-320-04.png",
+      "artifact_path": "input/web/web-320-04.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 568
+      },
+      "viewport_css_px": [
+        320,
+        568
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 1632,
+      "document_interval_css_px": [
+        1632,
+        2200
+      ],
+      "captured_at": "2026-10-16T16:11:57.494Z",
+      "sha256": "77f2ddca1767513e2e4b32062174c349b60613a11e2cc059862b5ac24599c857",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "채널톡 공식 문서는 지식을",
+        "등록 전 검사"
+      ],
+      "observation": "First process body and second-step entry; paragraphs continue through the overlap."
+    },
+    {
+      "filename": "web-320-05.png",
+      "artifact_path": "input/web/web-320-05.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 568
+      },
+      "viewport_css_px": [
+        320,
+        568
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 2040,
+      "document_interval_css_px": [
+        2040,
+        2608
+      ],
+      "captured_at": "2026-10-16T16:11:57.677Z",
+      "sha256": "56c9afdfb101415b30b7e1f9b76f0f65e1aa338d1900546ee9c92808c46c2dd2",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "등록 전 검사 단계의 공백을 원인으로 정의"
+      ],
+      "observation": "Second heading and body; narrow wrapping is visible without overlap."
+    },
+    {
+      "filename": "web-320-06.png",
+      "artifact_path": "input/web/web-320-06.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 568
+      },
+      "viewport_css_px": [
+        320,
+        568
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 2448,
+      "document_interval_css_px": [
+        2448,
+        3016
+      ],
+      "captured_at": "2026-10-16T16:11:57.864Z",
+      "sha256": "cf4eb00ca1db65502c25ec7e8ab4f3b8bce5cee728ca05266f4a44787bd3a3b6",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "흩어진 문서 수집부터 감사 리포트까지"
+      ],
+      "observation": "Second-step exit and third heading; the next paragraph is revealed in 07."
+    },
+    {
+      "filename": "web-320-07.png",
+      "artifact_path": "input/web/web-320-07.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 568
+      },
+      "viewport_css_px": [
+        320,
+        568
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 2856,
+      "document_interval_css_px": [
+        2856,
+        3424
+      ],
+      "captured_at": "2026-10-16T16:11:58.048Z",
+      "sha256": "2f356aace053fa2fe53b9494d6ae66c22f0dbb48eb2fff9a94d1ca8bf595069a",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "흩어진 문서 수집부터 감사 리포트까지"
+      ],
+      "observation": "Third-step heading and paragraphs; both viewport edge cutoffs have adjoining coverage."
+    },
+    {
+      "filename": "web-320-08.png",
+      "artifact_path": "input/web/web-320-08.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 568
+      },
+      "viewport_css_px": [
+        320,
+        568
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 3264,
+      "document_interval_css_px": [
+        3264,
+        3832
+      ],
+      "captured_at": "2026-10-16T16:11:58.227Z",
+      "sha256": "bd3c0cd1aff8bc335d17c48d473aec7f4fa834e4135a2030399b28b9e84676e5",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "ALF Knowledge Auditor가",
+        "규칙 검사는 자동으로, 마지막 판단은 사람이"
+      ],
+      "observation": "Third-step exit and fourth heading; the Latin product name wraps into readable lines."
+    },
+    {
+      "filename": "web-320-09.png",
+      "artifact_path": "input/web/web-320-09.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 568
+      },
+      "viewport_css_px": [
+        320,
+        568
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 3672,
+      "document_interval_css_px": [
+        3672,
+        4240
+      ],
+      "captured_at": "2026-10-16T16:11:58.410Z",
+      "sha256": "bc8fb1f357dc59c5961ffda455883fef26c457c673719b02e6bb06501156ce07",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "정책 담당자가 확인할 항목을",
+        "마지막 결정은"
+      ],
+      "observation": "Fourth-step body; separated paragraphs remain readable within the narrow text column."
+    },
+    {
+      "filename": "web-320-10.png",
+      "artifact_path": "input/web/web-320-10.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 568
+      },
+      "viewport_css_px": [
+        320,
+        568
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 4080,
+      "document_interval_css_px": [
+        4080,
+        4648
+      ],
+      "captured_at": "2026-10-16T16:11:58.598Z",
+      "sha256": "23215a8641d4508976d070728000704c1a7e18b28d4e91dc3e0610ffb5569a26",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "결함 자료와 정상 자료에서 결과 확인"
+      ],
+      "observation": "Fourth-step exit and fifth heading/body entry; no text collision at the separator."
+    },
+    {
+      "filename": "web-320-11.png",
+      "artifact_path": "input/web/web-320-11.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 568
+      },
+      "viewport_css_px": [
+        320,
+        568
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 4488,
+      "document_interval_css_px": [
+        4488,
+        5056
+      ],
+      "captured_at": "2026-10-16T16:11:58.793Z",
+      "sha256": "9fb228cd682fcd3d7404415c55e093b5417ed29b42067e5554e4a4440fe9a724",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "3,333자를",
+        "돌렸습니다."
+      ],
+      "observation": "Fifth-step body and exit separator; the final paragraph is readable."
+    },
+    {
+      "filename": "web-320-12.png",
+      "artifact_path": "input/web/web-320-12.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 568
+      },
+      "viewport_css_px": [
+        320,
+        568
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 4896,
+      "document_interval_css_px": [
+        4896,
+        5464
+      ],
+      "captured_at": "2026-10-16T16:11:58.977Z",
+      "sha256": "db882bd2caa26bb9217e97c19ec155b25f653075821ec4ca1e1095819ee66edd",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "검증 범위",
+        "관련 자료",
+        "Thread 후기 보러 가기",
+        "MORE CASES"
+      ],
+      "observation": "Scope, related-material link and related-section label; heading continues in 13."
+    },
+    {
+      "filename": "web-320-13.png",
+      "artifact_path": "input/web/web-320-13.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 568
+      },
+      "viewport_css_px": [
+        320,
+        568
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 5304,
+      "document_interval_css_px": [
+        5304,
+        5872
+      ],
+      "captured_at": "2026-10-16T16:11:59.159Z",
+      "sha256": "75883e57f72b3689ad0e1c33d36834e345779e9fcb4de37d9ce16951d7dc6469",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "같은 문제를 다른 장면에서 풀었습니다",
+        "OGC 2026 Autonomous Research System",
+        "INPRO, WHYBIZ 인턴"
+      ],
+      "observation": "Related heading and all three rows; arrows and metadata remain visible."
+    },
+    {
+      "filename": "web-320-14.png",
+      "artifact_path": "input/web/web-320-14.png",
+      "viewed": true,
+      "tool": "view_image",
+      "detail": "original",
+      "inspected_region": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 568
+      },
+      "viewport_css_px": [
+        320,
+        568
+      ],
+      "dpr": 1,
+      "scrollY_css_px": 5474,
+      "document_interval_css_px": [
+        5474,
+        6042
+      ],
+      "captured_at": "2026-10-16T16:11:59.347Z",
+      "sha256": "97c8f7cb10c156704d238024e6edea2f22fc6e9fb6e1b35c8a1632c7660741c6",
+      "hash_verified": true,
+      "dimensions_verified": true,
+      "visible_text": [
+        "u-SAINT 학사 민원 프로토타입",
+        "INPRO, WHYBIZ 인턴",
+        "GitHub 프로필 ↗",
+        "064d9ba"
+      ],
+      "observation": "Overlapping related rows plus footer; the heading cutoff at top is visible completely in 13."
+    }
+  ],
+  "axes": [
+    {
+      "axis": "alignment",
+      "status": "fail",
+      "reason": "The 390px base margin is a consistent 24px, but process headings start at x94 versus source x52 and the result becomes full-width. Desktop has a consistent local grid with no demonstrated collision.",
+      "finding_ids": [
+        "F02",
+        "F04",
+        "F05"
+      ],
+      "actual_viewed_files": [
+        "web-390-00.png",
+        "web-390-01.png",
+        "web-390-02.png",
+        "web-1440-00.png",
+        "web-1440-02.png",
+        "web-1440-06.png"
+      ],
+      "reference_viewed_file": "screen-b.png",
+      "reference_nodes": [
+        "2:9",
+        "2:26",
+        "2:35"
+      ],
+      "limits": "Desktop and 320px design alignment have no supplied matching Figma frame.",
+      "status_basis": "Observed difference from the supplied reference; its approval and remediation direction are pending an authority decision."
+    },
+    {
+      "axis": "spacing",
+      "status": "fail",
+      "reason": "Identical one-line summary values repeat every 112.828125px versus 80px in Figma; section-link gaps are 22px versus 8px. Longer result and process copy legitimately add height, so whole-page length is not graded as a defect.",
+      "finding_ids": [
+        "F02",
+        "F03",
+        "F04",
+        "F05"
+      ],
+      "actual_viewed_files": [
+        "web-390-00.png",
+        "web-390-01.png",
+        "web-390-02.png",
+        "web-320-02.png",
+        "web-1440-01.png"
+      ],
+      "reference_viewed_file": "screen-b.png",
+      "reference_nodes": [
+        "2:9",
+        "2:18",
+        "2:21",
+        "2:26",
+        "2:34"
+      ],
+      "status_basis": "Observed difference from the supplied reference; its approval and remediation direction are pending an authority decision."
+    },
+    {
+      "axis": "typography",
+      "status": "fail",
+      "reason": "At 390px, H1 is 42px/600 versus Figma 36px/700; the question is 17px/400 gray versus 18px/700 dark. Receipt font-family declarations differ from Noto Sans KR, but actual loaded font identity is not proven. Korean and Latin text remain readable in the inspected captures.",
+      "finding_ids": [
+        "F01",
+        "F05"
+      ],
+      "actual_viewed_files": [
+        "web-390-00.png",
+        "web-390-02.png",
+        "web-320-00.png",
+        "web-320-03.png",
+        "web-320-08.png",
+        "web-1440-03.png"
+      ],
+      "reference_viewed_file": "screen-b.png",
+      "reference_nodes": [
+        "2:5",
+        "2:7",
+        "2:18",
+        "2:35"
+      ],
+      "status_basis": "Observed difference from the supplied reference; its approval and remediation direction are pending an authority decision."
+    },
+    {
+      "axis": "text_clipping",
+      "status": "pass",
+      "scope": "Only the supplied default/expanded static captures at 390x844, 1440x900 and 320x568.",
+      "reason": "All 30 captures were viewed. The overlapping sequences cover each recorded document from top to bottom without gaps. PIN, navigation labels, Thread controls and related-case titles are readable; text cut by viewport edges appears in adjacent captures. No persistent missing line or glyph is evidenced. Equal scrollWidth and viewport width is supporting metadata, not the sole basis.",
+      "finding_ids": [],
+      "normal_ids": [
+        "N01",
+        "N02",
+        "N03",
+        "N04"
+      ],
+      "limits": "No claim for other content, text resize/spacing overrides, transient states, ancestor overflow chains or other engines."
+    },
+    {
+      "axis": "component_occlusion",
+      "status": "pass",
+      "scope": "Painted visibility in the supplied static scroll captures.",
+      "reason": "Process rails and minus glyphs remain beside text; wrapped headings have separate body space. Thread controls and related arrows are visibly unobstructed. No covering overlay is visible in these states.",
+      "finding_ids": [],
+      "normal_ids": [
+        "N01",
+        "N03",
+        "N04",
+        "N05"
+      ],
+      "limits": "Hit testing, focus, open overlays, z-index mechanisms and actual control activation were not available."
+    },
+    {
+      "axis": "figma_fidelity",
+      "status": "fail",
+      "reason": "The supplied export and readback are inspected and hash-bound to node 2:2. Same-role 390px typography, navigation chrome, summary rhythm and result geometry differ; expanded process and copy changes have no supplied approval. Desktop and 320px exact fidelity remain unverified.",
+      "finding_ids": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F06"
+      ],
+      "actual_viewed_files": [
+        "web-390-00.png",
+        "web-390-01.png",
+        "web-390-02.png",
+        "web-390-07.png"
+      ],
+      "reference_viewed_file": "screen-b.png",
+      "reference_nodes": [
+        "2:2",
+        "2:5",
+        "2:7",
+        "2:9",
+        "2:16",
+        "2:26",
+        "2:29",
+        "2:47",
+        "2:51"
+      ],
+      "limits": "Mobile frame only; no immutable Figma version ID, live-source refresh, design variables, interaction specs or matched-content exact pixel diff.",
+      "status_basis": "Observed difference from the supplied reference; its approval and remediation direction are pending an authority decision."
+    }
+  ],
+  "findings": [
+    {
+      "id": "F01",
+      "severity": "MEDIUM",
+      "skill_severity": "P2",
+      "classification": "source_mismatch_pending_authority",
+      "evidence_level": "observed_source_mismatch_with_unverified_approval",
+      "confidence": "high",
+      "title": "Mobile type roles differ from the supplied reference hierarchy.",
+      "axes": [
+        "typography",
+        "figma_fidelity"
+      ],
+      "exact_visible_text": [
+        "조코딩 AX 인재전쟁",
+        "AI 상담이 쓸 지식을 올리기 전에, 어긋난 내용과 빠진 안내는 누가 걸러낼까?",
+        "등록 전에 걸러진 ALF 지식"
+      ],
+      "actual": [
+        {
+          "file": "input/web/web-390-00.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 69.6875,
+            "width": 342,
+            "height": 45.359375
+          }
+        },
+        {
+          "file": "input/web/web-390-00.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 212.421875,
+            "width": 342,
+            "height": 57.78125
+          }
+        },
+        {
+          "file": "input/web/web-390-00.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 487.796875,
+            "width": 342,
+            "height": 31.234375
+          }
+        }
+      ],
+      "reference": [
+        {
+          "file": "input/screen-b.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 57,
+            "width": 294,
+            "height": 43
+          },
+          "figma_node_ids": [
+            "2:5"
+          ]
+        },
+        {
+          "file": "input/screen-b.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 140,
+            "width": 294,
+            "height": 44
+          },
+          "figma_node_ids": [
+            "2:7"
+          ]
+        },
+        {
+          "file": "input/screen-b.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 348,
+            "width": 264,
+            "height": 29
+          },
+          "figma_node_ids": [
+            "2:18"
+          ]
+        }
+      ],
+      "expected": {
+        "source": "figma-readback.json, nodes 2:5, 2:7, 2:18",
+        "font_family": "Noto Sans KR",
+        "h1_font_px": 36,
+        "h1_weight": 700,
+        "problem_font_px": 18,
+        "problem_weight": 700,
+        "summary_value_font_px": 24,
+        "summary_value_weight": 700,
+        "line_height": "AUTO; an exact CSS line-height is not supplied",
+        "problem_text_solid_pixel_color": "#1D1D1F"
+      },
+      "observed": {
+        "source": "web/receipt.json, styles[width=390], corroborated by viewed pixels",
+        "computed_font_family": "\"Pretendard Variable\", Pretendard, -apple-system, \"SF Pro Text\", \"Helvetica Neue\", sans-serif",
+        "h1_font_px": 42,
+        "h1_weight": 600,
+        "h1_line_height_px": 45.36,
+        "problem_font_px": 17,
+        "problem_weight": 400,
+        "problem_line_height_px": 28.9,
+        "summary_value_font_px": 22,
+        "summary_value_weight": 600,
+        "summary_value_line_height_px": 31.24,
+        "problem_text_solid_pixel_color": "#737374",
+        "font_loaded_identity": "unverified; the receipt supplies a computed family stack only"
+      },
+      "impact": "The question is visibly lighter and less emphasized than the source, while the title has a larger relative scale. No reading-task failure is established.",
+      "cause": "The measured computed type roles differ from the Figma readback. The stylesheet and loaded-font mechanism are outside the allowed inputs.",
+      "repair_suggestion": "Confirm the intended mobile type roles and font, then reconcile Figma/code to that decision. Recheck wrapping at 390px and 320px.",
+      "reproduction": "Inspect the captured page at scrollY=0, viewport 390x844, against the supplied 390px Figma frame. This review did not launch a browser.",
+      "authority_decision": {
+        "status": "pending",
+        "reference_approval": "unverified",
+        "expected_values_are": "Supplied reference measurements; approved requirements are not established.",
+        "implementation_fault": "not established by the mismatch alone",
+        "next_decision": "Confirm intended component rules, content and relevant states before selecting which Figma/code changes are warranted."
+      }
+    },
+    {
+      "id": "F02",
+      "severity": "LOW",
+      "skill_severity": "P3",
+      "classification": "source_mismatch_pending_authority",
+      "evidence_level": "observed_source_mismatch_with_unverified_approval",
+      "confidence": "high",
+      "title": "Section-link chrome and spacing differ from the supplied mobile components.",
+      "axes": [
+        "alignment",
+        "spacing",
+        "figma_fidelity"
+      ],
+      "exact_visible_text": [
+        "요약",
+        "과정",
+        "본문"
+      ],
+      "actual": [
+        {
+          "file": "input/web/web-390-00.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 294,
+            "width": 342,
+            "height": 86
+          }
+        }
+      ],
+      "reference": [
+        {
+          "file": "input/screen-b.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 220,
+            "width": 166,
+            "height": 42
+          },
+          "figma_node_ids": [
+            "2:9",
+            "2:10",
+            "2:12",
+            "2:14"
+          ]
+        }
+      ],
+      "expected": {
+        "outlined_components": true,
+        "component_width_px": 50,
+        "component_height_px": 42,
+        "horizontal_gap_px": 8,
+        "component_x_positions_px": [
+          24,
+          82,
+          140
+        ],
+        "border_solid_pixel_color": "#D6D6D9"
+      },
+      "observed": {
+        "outlined_components": false,
+        "appearance": "Three plain labels between full-row horizontal rules.",
+        "anchor_width_px": 46.140625,
+        "anchor_height_px": 56,
+        "anchor_x_positions_px": [
+          24,
+          92.140625,
+          160.28125
+        ],
+        "gap_between_anchor_boxes_px": 22,
+        "anchor_padding": "0px 12px",
+        "anchor_font_px": 13,
+        "anchor_weight": 600
+      },
+      "impact": "This is a component-fidelity difference. All three labels remain fully readable in the inspected 390px, 320px and desktop captures; activation was not tested.",
+      "cause": "The painted navigation and measured anchor boxes differ from the Figma section-link frames; source implementation is unavailable.",
+      "repair_suggestion": "Confirm the intended section-link anatomy, dimensions and spacing, then reconcile Figma/code. Preserve complete labels and verify focus and activation separately.",
+      "authority_decision": {
+        "status": "pending",
+        "reference_approval": "unverified",
+        "expected_values_are": "Supplied reference measurements; approved requirements are not established.",
+        "implementation_fault": "not established by the mismatch alone",
+        "next_decision": "Confirm intended component rules, content and relevant states before selecting which Figma/code changes are warranted."
+      }
+    },
+    {
+      "id": "F03",
+      "severity": "LOW",
+      "skill_severity": "P3",
+      "classification": "source_mismatch_pending_authority",
+      "evidence_level": "observed_source_mismatch_with_unverified_approval",
+      "confidence": "high",
+      "title": "Repeated one-line summary rows use a larger vertical rhythm than the source.",
+      "axes": [
+        "spacing",
+        "figma_fidelity"
+      ],
+      "exact_visible_text": [
+        "OUTPUT",
+        "등록 전에 걸러진 ALF 지식",
+        "INPUT",
+        "흩어진 쇼핑몰 지식 문서"
+      ],
+      "actual": [
+        {
+          "file": "input/web/web-390-00.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 458,
+            "width": 342,
+            "height": 204
+          }
+        }
+      ],
+      "reference": [
+        {
+          "file": "input/screen-b.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 322,
+            "width": 342,
+            "height": 148
+          },
+          "figma_node_ids": [
+            "2:17",
+            "2:18",
+            "2:19",
+            "2:20",
+            "2:21",
+            "2:22"
+          ]
+        }
+      ],
+      "expected": {
+        "unchanged_one_line_value_top_positions_px": [
+          348,
+          428
+        ],
+        "value_top_to_top_stride_px": 80,
+        "row_rule_y_px": [
+          389,
+          469
+        ]
+      },
+      "observed": {
+        "unchanged_one_line_value_top_positions_px": [
+          487.796875,
+          600.625
+        ],
+        "value_top_to_top_stride_px": 112.828125,
+        "stride_difference_px": 32.828125
+      },
+      "impact": "The unchanged rows occupy more vertical space than the repeated source rule. This is a measured fidelity difference, not a claim that generous spacing is inherently defective.",
+      "cause": "Repeated rendered row geometry differs. The overall section displacement also includes header and content differences, so it is not attributed solely to row padding.",
+      "repair_suggestion": "Confirm the intended repeated-row spacing, then reconcile Figma/code for unchanged content. Allow PIN and longer factual content to grow naturally.",
+      "authority_decision": {
+        "status": "pending",
+        "reference_approval": "unverified",
+        "expected_values_are": "Supplied reference measurements; approved requirements are not established.",
+        "implementation_fault": "not established by the mismatch alone",
+        "next_decision": "Confirm intended component rules, content and relevant states before selecting which Figma/code changes are warranted."
+      }
+    },
+    {
+      "id": "F04",
+      "severity": "MEDIUM",
+      "skill_severity": "P2",
+      "classification": "source_mismatch_pending_authority",
+      "evidence_level": "observed_source_mismatch_with_unverified_approval",
+      "confidence": "high",
+      "title": "Mobile result-panel inset and accent color differ from the supplied frame.",
+      "axes": [
+        "alignment",
+        "spacing",
+        "figma_fidelity"
+      ],
+      "exact_visible_text": [
+        "RESULT",
+        "단 6번의 프롬프트로, 예선 5,300여 명 가운데 채널톡 트랙 본선 진출 10명에 이은 본선 예비 후보로, AI 상위 인재에 선정됐습니다.",
+        "Thread 후기 보러 가기 ↗"
+      ],
+      "actual": [
+        {
+          "file": "input/web/web-390-01.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 0,
+            "y": 198,
+            "width": 390,
+            "height": 352
+          }
+        }
+      ],
+      "reference": [
+        {
+          "file": "input/screen-b.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 591,
+            "width": 342,
+            "height": 130
+          },
+          "figma_node_ids": [
+            "2:26",
+            "2:27",
+            "2:28"
+          ]
+        }
+      ],
+      "expected": {
+        "viewport_width_px": 390,
+        "panel_x_px": 24,
+        "panel_width_px": 342,
+        "left_and_right_outer_inset_px": 24,
+        "panel_height_px_for_reference_copy": 130,
+        "solid_fill_pixel_color": "#612EC7",
+        "result_label_x_px": 48,
+        "copy": "단 6번의 프롬프트로 본선 예비 후보에 선정됐습니다."
+      },
+      "observed": {
+        "viewport_width_px": 390,
+        "panel_x_px": 0,
+        "panel_width_px": 390,
+        "left_and_right_outer_inset_px": 0,
+        "panel_height_px_for_actual_copy": 352,
+        "document_y_px": 805,
+        "solid_fill_pixel_color": "#7C4DFF",
+        "result_label_x_px": 24,
+        "result_value_font_px": 22,
+        "result_value_line_height_px": 31.24,
+        "additional_content": "Longer outcome copy and an extra Thread control."
+      },
+      "impact": "The full-width bright panel changes the reference surface hierarchy and horizontal alignment. The longer content explains some height growth and is not evidence of clipping.",
+      "cause": "Panel width, inset and solid color are confirmed by pixels; copy and control drift are recorded separately in F06. CSS token names and source rules are unavailable.",
+      "repair_suggestion": "Confirm the intended panel inset, fill and copy, then reconcile Figma/code to those rules. Keep height content-driven and preserve required factual detail.",
+      "normal_control": "The Thread control is fully visible in web-390-01.png and web-320-02.png; no hidden label or overlapping layer is observed.",
+      "authority_decision": {
+        "status": "pending",
+        "reference_approval": "unverified",
+        "expected_values_are": "Supplied reference measurements; approved requirements are not established.",
+        "implementation_fault": "not established by the mismatch alone",
+        "next_decision": "Confirm intended component rules, content and relevant states before selecting which Figma/code changes are warranted."
+      }
+    },
+    {
+      "id": "F05",
+      "severity": "MEDIUM",
+      "skill_severity": "P2",
+      "classification": "spec_drift",
+      "evidence_level": "observed_design_difference_with_missing_variant_authority",
+      "confidence": "high for the geometry difference; approval and intended state unknown",
+      "title": "The expanded five-step process has no matching supplied Figma composition.",
+      "axes": [
+        "alignment",
+        "spacing",
+        "typography",
+        "figma_fidelity"
+      ],
+      "exact_visible_text": [
+        "답변의 근거가 되는 지식부터 점검",
+        "등록 전 검사 단계의 공백을 원인으로 정의",
+        "흩어진 문서 수집부터 감사 리포트까지",
+        "규칙 검사는 자동으로, 마지막 판단은 사람이",
+        "결함 자료와 정상 자료에서 결과 확인"
+      ],
+      "actual": [
+        {
+          "file": "input/web/web-390-02.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 17,
+            "y": 108,
+            "width": 349,
+            "height": 628
+          }
+        },
+        {
+          "file": "input/web/web-320-03.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 17,
+            "y": 184,
+            "width": 279,
+            "height": 384
+          }
+        },
+        {
+          "file": "input/web/web-1440-02.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 264,
+            "y": 235,
+            "width": 912,
+            "height": 665
+          }
+        }
+      ],
+      "reference": [
+        {
+          "file": "input/screen-b.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 779,
+            "width": 342,
+            "height": 407
+          },
+          "figma_node_ids": [
+            "2:29",
+            "2:32",
+            "2:34",
+            "2:35",
+            "2:37",
+            "2:42"
+          ]
+        }
+      ],
+      "expected": {
+        "source_state": "Three compact process rows with short helper copy; no expanded-state design supplied.",
+        "step_count": 3,
+        "number_x_px_at_390": 24,
+        "first_heading_x_px_at_390": 52,
+        "first_heading_width_px": 280,
+        "first_heading_font_px": 18,
+        "first_heading_weight": 700,
+        "first_heading_height_px": 22,
+        "first_heading_line_count": 1,
+        "helper_copy": "상태와 판단 근거를 다음 단계로 연결합니다."
+      },
+      "observed": {
+        "source_state": "Five long expanded sections, visible minus glyphs and a connected progress rail. Desktop adds a separate step navigation column.",
+        "step_count": 5,
+        "number_x_px_at_390": 46,
+        "first_heading_x_px_at_390": 94,
+        "first_heading_width_px_at_390": 218,
+        "first_heading_font_px_at_390": 21,
+        "first_heading_weight": 600,
+        "first_heading_line_height_px": 28.35,
+        "first_heading_height_px_at_390": 56.6875,
+        "first_heading_line_count_at_390": 2,
+        "first_heading_width_px_at_320": 148,
+        "first_heading_height_px_at_320": 85.03125,
+        "first_heading_line_count_at_320": 3,
+        "first_heading_x_delta_px_at_390": 42
+      },
+      "impact": "The mobile process hierarchy, indentation and wrapping differ from the only supplied composition. The paragraphs remain readable; an intended compact/expanded state contract cannot be inferred.",
+      "cause": "Content count, state and anatomy differ from the reference. Source code and interaction designs are unavailable, so this is not attributed to a faulty accordion implementation.",
+      "repair_suggestion": "Confirm the intended process scope, component rules and states, then reconcile Figma/code while retaining required factual detail. The three compact reference steps do not establish a requirement to shorten the actual five-step content.",
+      "pattern_ban_assessment": "A connected numbered timeline/progress rail is visible. Its semantic navigation role means pixels alone do not establish a decorative card-edge accent or attached side-tab card. No blanket violation is invented. Any revised design must preserve the explicit ban on side accent bars and side-tab cards.",
+      "not_claimed": [
+        "The three-line 320px heading is not by itself a clipping defect.",
+        "The desktop navigation is not proven defective without desktop design authority.",
+        "Expand/collapse, selected-state logic, keyboard access and sticky behavior are unverified."
+      ],
+      "authority_decision": {
+        "status": "pending",
+        "reference_approval": "unverified",
+        "expected_values_are": "Supplied reference measurements; approved requirements are not established.",
+        "implementation_fault": "not established by the mismatch alone",
+        "next_decision": "Confirm intended component rules, content and relevant states before selecting which Figma/code changes are warranted."
+      }
+    },
+    {
+      "id": "F06",
+      "severity": "LOW",
+      "skill_severity": "P3",
+      "classification": "spec_drift",
+      "evidence_level": "observed_content_difference_with_unavailable_approval_history",
+      "confidence": "high for content differences; factual correctness and approval unknown",
+      "title": "Copy and body content differ; the intended version requires confirmation.",
+      "axes": [
+        "figma_fidelity"
+      ],
+      "exact_visible_text": [
+        "2026-08-12 · ax · automation · human-review · 문제 선정·감사 절차 설계·Codex 플러그인 구현",
+        "단 6번의 프롬프트로, 예선 5,300여 명 가운데 채널톡 트랙 본선 진출 10명에 이은 본선 예비 후보로, AI 상위 인재에 선정됐습니다.",
+        "검증 범위",
+        "관련 자료",
+        "Thread 후기 보러 가기",
+        "data-quality · computer-vision · operations"
+      ],
+      "actual": [
+        {
+          "file": "input/web/web-390-00.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 132,
+            "width": 342,
+            "height": 50
+          }
+        },
+        {
+          "file": "input/web/web-390-01.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 292,
+            "width": 342,
+            "height": 192
+          }
+        },
+        {
+          "file": "input/web/web-390-06.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 414,
+            "width": 342,
+            "height": 233
+          }
+        },
+        {
+          "file": "input/web/web-390-07.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 568,
+            "width": 342,
+            "height": 67
+          }
+        }
+      ],
+      "reference": [
+        {
+          "file": "input/screen-b.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 112,
+            "width": 279,
+            "height": 16
+          },
+          "figma_node_ids": [
+            "2:6"
+          ]
+        },
+        {
+          "file": "input/screen-b.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 48,
+            "y": 639,
+            "width": 294,
+            "height": 58
+          },
+          "figma_node_ids": [
+            "2:28"
+          ]
+        },
+        {
+          "file": "input/screen-b.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 1230,
+            "width": 294,
+            "height": 134
+          },
+          "figma_node_ids": [
+            "2:48",
+            "2:49",
+            "2:50"
+          ]
+        },
+        {
+          "file": "input/screen-b.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 1736,
+            "width": 342,
+            "height": 58
+          },
+          "figma_node_ids": [
+            "2:61",
+            "2:62"
+          ]
+        }
+      ],
+      "expected": {
+        "metadata": "2026-08-12 · ax · automation · human-review",
+        "result_copy": "단 6번의 프롬프트로 본선 예비 후보에 선정됐습니다.",
+        "body_heading": "검증 범위와 관련 자료를 읽습니다.",
+        "body_copy": "단계별 근거와 결과를 본문 흐름 안에서 확인합니다.",
+        "third_related_metadata": "data-quality · operations"
+      },
+      "observed": {
+        "metadata_extra": "문제 선정·감사 절차 설계·Codex 플러그인 구현",
+        "result_extra": "예선 5,300여 명, 본선 진출 10명 and AI 상위 인재 wording; additional Thread control.",
+        "body": "Separate 검증 범위 and 관련 자료 sections with substantive copy and a Thread link.",
+        "third_related_metadata": "data-quality · computer-vision · operations"
+      },
+      "impact": "The source and implementation describe different content scopes. The supplied inputs cannot establish which wording is approved or verify the numerical claims.",
+      "cause": "Specification/content drift is observed. No approval record or factual source is in the allowed inputs.",
+      "repair_suggestion": "Confirm the intended copy and factual claims, then reconcile Figma/code to that decision. Preserve useful detail; the supplied snapshot does not establish which version should govern.",
+      "authority_decision": {
+        "status": "pending",
+        "reference_approval": "unverified",
+        "expected_values_are": "Supplied reference measurements; approved requirements are not established.",
+        "implementation_fault": "not established by the mismatch alone",
+        "next_decision": "Confirm intended component rules, content and relevant states before selecting which Figma/code changes are warranted."
+      }
+    }
+  ],
+  "normal_observations": [
+    {
+      "id": "N01",
+      "status": "pass",
+      "axis": [
+        "text_clipping",
+        "component_occlusion"
+      ],
+      "exact_visible_text": [
+        "요약",
+        "과정",
+        "본문"
+      ],
+      "actual": [
+        {
+          "file": "input/web/web-390-00.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 309.203125,
+            "width": 182.421875,
+            "height": 56
+          }
+        },
+        {
+          "file": "input/web/web-320-00.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 376.25,
+            "width": 182.421875,
+            "height": 56
+          }
+        },
+        {
+          "file": "input/web/web-1440-00.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 264,
+            "y": 321.8125,
+            "width": 182.421875,
+            "height": 56
+          }
+        }
+      ],
+      "reference": [
+        {
+          "file": "input/screen-b.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 220,
+            "width": 166,
+            "height": 42
+          },
+          "figma_node_ids": [
+            "2:9"
+          ]
+        }
+      ],
+      "observation": "All three labels are complete and separate. Their appearance differs (F02), but no label clipping or painted obstruction is present. Activation and focus remain untested."
+    },
+    {
+      "id": "N02",
+      "status": "pass",
+      "axis": [
+        "text_clipping"
+      ],
+      "exact_visible_text": [
+        "제약 검사 · 충돌 후보 표시 · 공백 확인 · 사람 확정"
+      ],
+      "actual": [
+        {
+          "file": "input/web/web-390-00.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 713.453125,
+            "width": 342,
+            "height": 62.46875
+          }
+        },
+        {
+          "file": "input/web/web-320-01.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 372.5,
+            "width": 272,
+            "height": 62.46875
+          }
+        }
+      ],
+      "reference": [
+        {
+          "file": "input/screen-b.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 508,
+            "width": 294,
+            "height": 58
+          },
+          "figma_node_ids": [
+            "2:24"
+          ]
+        }
+      ],
+      "observation": "The long PIN value wraps to two readable lines at both mobile widths. This is an inspected clean clipping control."
+    },
+    {
+      "id": "N03",
+      "status": "pass",
+      "axis": [
+        "text_clipping",
+        "component_occlusion"
+      ],
+      "exact_visible_text": [
+        "Thread 후기 보러 가기 ↗"
+      ],
+      "actual": [
+        {
+          "file": "input/web/web-390-01.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 442,
+            "width": 184,
+            "height": 42
+          }
+        },
+        {
+          "file": "input/web/web-320-02.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 323,
+            "width": 184,
+            "height": 42
+          }
+        },
+        {
+          "file": "input/web/web-1440-01.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 344,
+            "y": 499,
+            "width": 177,
+            "height": 42
+          }
+        }
+      ],
+      "reference": null,
+      "observation": "The outline and complete label are visible without overlap in each viewport. Approximate painted button bounds are recorded; the receipt does not supply this control rect. No equivalent reference control or destination trace exists."
+    },
+    {
+      "id": "N04",
+      "status": "pass",
+      "axis": [
+        "alignment",
+        "text_clipping",
+        "component_occlusion"
+      ],
+      "exact_visible_text": [
+        "OGC 2026 Autonomous Research System",
+        "u-SAINT 학사 민원 프로토타입",
+        "INPRO, WHYBIZ 인턴",
+        "↗"
+      ],
+      "actual": [
+        {
+          "file": "input/web/web-390-07.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 370,
+            "width": 342,
+            "height": 265
+          }
+        },
+        {
+          "file": "input/web/web-320-13.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 263,
+            "width": 272,
+            "height": 266
+          }
+        },
+        {
+          "file": "input/web/web-1440-06.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 396,
+            "y": 459,
+            "width": 780,
+            "height": 264
+          }
+        }
+      ],
+      "reference": [
+        {
+          "file": "input/screen-b.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 24,
+            "y": 1532,
+            "width": 342,
+            "height": 262
+          },
+          "figma_node_ids": [
+            "2:54",
+            "2:57",
+            "2:60"
+          ]
+        }
+      ],
+      "observation": "All three rows, descriptions and arrows are visible. The first title wraps on mobile while metadata and adjacent rows remain separate. Only the static visual state is passed."
+    },
+    {
+      "id": "N05",
+      "status": "pass",
+      "axis": [
+        "text_clipping",
+        "component_occlusion"
+      ],
+      "exact_visible_text": [
+        "규칙 검사는 자동으로, 마지막 판단은 사람이"
+      ],
+      "actual": [
+        {
+          "file": "input/web/web-390-04.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 94,
+            "y": 588,
+            "width": 272,
+            "height": 256
+          }
+        },
+        {
+          "file": "input/web/web-320-08.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 94,
+            "y": 390,
+            "width": 202,
+            "height": 178
+          }
+        },
+        {
+          "file": "input/web/web-1440-03.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 633.03125,
+            "y": 742.15625,
+            "width": 480.96875,
+            "height": 81
+          }
+        }
+      ],
+      "reference": null,
+      "observation": "The heading wraps onto two lines at 390px/desktop and three at 320px, with separate following body space in overlapping captures. The extra step has no supplied Figma counterpart; normal wrapping is not called clipping."
+    },
+    {
+      "id": "N06",
+      "status": "pass",
+      "axis": [
+        "text_clipping"
+      ],
+      "exact_visible_text": [
+        "관련 자료",
+        "GitHub 프로필 ↗",
+        "064d9ba"
+      ],
+      "actual": [
+        {
+          "file": "input/web/web-390-07.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844
+          }
+        },
+        {
+          "file": "input/web/web-320-14.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 320,
+            "height": 568
+          }
+        },
+        {
+          "file": "input/web/web-1440-06.png",
+          "coordinate_space": "image_pixels",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900
+          }
+        }
+      ],
+      "reference": null,
+      "observation": "Overlapping captures reveal the preceding text and the document-end footer. The footer is within the final captured page interval at every width. These are scroll-reveal checks, not proof that links work."
+    }
+  ],
+  "component_matrix": [
+    {
+      "component_key": "case.header",
+      "primitive": "H1 plus descriptive text (receipt-supported)",
+      "state": "default",
+      "viewports": [
+        390,
+        320,
+        1440
+      ],
+      "captures": [
+        "web-390-00.png",
+        "web-320-00.png",
+        "web-1440-00.png"
+      ],
+      "source_nodes": [
+        "2:3",
+        "2:5",
+        "2:7"
+      ],
+      "visual_status": "fail",
+      "reason": "F01 typography difference; visible reflow has no proven clipping. Desktop source absent.",
+      "interaction_status": "not_applicable_to_static_text"
+    },
+    {
+      "component_key": "case.section-links",
+      "primitive": "A elements (receipt-supported)",
+      "state": "default",
+      "viewports": [
+        390,
+        320,
+        1440
+      ],
+      "captures": [
+        "web-390-00.png",
+        "web-320-00.png",
+        "web-1440-00.png"
+      ],
+      "source_nodes": [
+        "2:9",
+        "2:10",
+        "2:12",
+        "2:14"
+      ],
+      "visual_status": "fail",
+      "reason": "F02 component treatment differs; N01 labels remain readable.",
+      "interaction_status": "untested"
+    },
+    {
+      "component_key": "case.summary",
+      "primitive": "DD elements (receipt-supported)",
+      "state": "populated; long PIN",
+      "viewports": [
+        390,
+        320,
+        1440
+      ],
+      "captures": [
+        "web-390-00.png",
+        "web-320-01.png",
+        "web-1440-00.png"
+      ],
+      "source_nodes": [
+        "2:16",
+        "2:18",
+        "2:21",
+        "2:24"
+      ],
+      "visual_status": "fail",
+      "reason": "F01 and F03 fidelity differences; N02 long-text control is normal.",
+      "interaction_status": "not_applicable_to_static_text"
+    },
+    {
+      "component_key": "case.result",
+      "primitive": "DD text plus button-looking link; only DD semantics measured",
+      "state": "populated",
+      "viewports": [
+        390,
+        320,
+        1440
+      ],
+      "captures": [
+        "web-390-01.png",
+        "web-320-02.png",
+        "web-1440-01.png"
+      ],
+      "source_nodes": [
+        "2:26",
+        "2:28"
+      ],
+      "visual_status": "fail",
+      "reason": "F04 surface difference and F06 content drift; N03 control visibility passes.",
+      "interaction_status": "untested"
+    },
+    {
+      "component_key": "case.process",
+      "primitive": "STRONG headings, paragraphs and minus glyphs; control semantics unavailable",
+      "state": "five expanded sections, varying highlighted progress marker",
+      "viewports": [
+        390,
+        320,
+        1440
+      ],
+      "captures": [
+        "web-390-02.png",
+        "web-390-03.png",
+        "web-390-04.png",
+        "web-390-05.png",
+        "web-390-06.png",
+        "web-320-03.png",
+        "web-320-04.png",
+        "web-320-05.png",
+        "web-320-06.png",
+        "web-320-07.png",
+        "web-320-08.png",
+        "web-320-09.png",
+        "web-320-10.png",
+        "web-320-11.png",
+        "web-1440-02.png",
+        "web-1440-03.png",
+        "web-1440-04.png",
+        "web-1440-05.png"
+      ],
+      "source_nodes": [
+        "2:29",
+        "2:32",
+        "2:37",
+        "2:42"
+      ],
+      "visual_status": "partial",
+      "reason": "All supplied expanded sections are readable, but composition/state differs from the three-row source (F05).",
+      "interaction_status": "untested; no collapse/activation/focus trace"
+    },
+    {
+      "component_key": "case.body",
+      "primitive": "headings, body and visible link; semantics not supplied",
+      "state": "populated",
+      "viewports": [
+        390,
+        320,
+        1440
+      ],
+      "captures": [
+        "web-390-06.png",
+        "web-320-12.png",
+        "web-1440-05.png"
+      ],
+      "source_nodes": [
+        "2:47",
+        "2:49",
+        "2:50"
+      ],
+      "visual_status": "partial",
+      "reason": "Readable in inspected pixels; intended copy differs (F06).",
+      "interaction_status": "untested"
+    },
+    {
+      "component_key": "case.related",
+      "primitive": "three repeated title/metadata/arrow rows; source reuse not inspected",
+      "state": "default; long first title",
+      "viewports": [
+        390,
+        320,
+        1440
+      ],
+      "captures": [
+        "web-390-07.png",
+        "web-320-13.png",
+        "web-320-14.png",
+        "web-1440-05.png",
+        "web-1440-06.png"
+      ],
+      "source_nodes": [
+        "2:51",
+        "2:54",
+        "2:57",
+        "2:60"
+      ],
+      "visual_status": "partial",
+      "reason": "N04 clipping/occlusion checks pass; metadata and type/source coverage differ.",
+      "interaction_status": "untested"
+    },
+    {
+      "component_key": "case.footer",
+      "primitive": "visible profile link and build label; semantics unavailable",
+      "state": "document end",
+      "viewports": [
+        390,
+        320,
+        1440
+      ],
+      "captures": [
+        "web-390-07.png",
+        "web-320-14.png",
+        "web-1440-06.png"
+      ],
+      "source_nodes": [],
+      "visual_status": "pass",
+      "reason": "Footer text is visible within captured page ends; no counterpart in supplied Figma.",
+      "interaction_status": "untested"
+    }
+  ],
+  "screen_matrix": [
+    {
+      "screen": "case-detail default/expanded scroll sequence",
+      "viewport_css_px": [
+        390,
+        844
+      ],
+      "visual_comparison": "fail",
+      "alignment": "fail: F04/F05",
+      "spacing": "fail: F02/F03",
+      "typography": "fail: F01/F05",
+      "text_clipping": "pass within supplied sequence",
+      "component_occlusion": "pass within supplied sequence",
+      "figma_fidelity": "fail; 390px source inspected",
+      "primary_decision": "Read the case evidence and locate section/related links; completion not exercised.",
+      "hierarchy": "Header and result emphasis differ from source.",
+      "responsive_and_fixed_layers": "24px base content margin; no covering layer observed. Process rail changes marker across scroll captures; its mechanism is unverified."
+    },
+    {
+      "screen": "case-detail default/expanded scroll sequence",
+      "viewport_css_px": [
+        1440,
+        900
+      ],
+      "visual_comparison": "partial",
+      "alignment": "pass observed local grid; intended desktop alignment unverified",
+      "spacing": "no defect established; desktop design absent",
+      "typography": "readable observed; exact desktop tokens unverified",
+      "text_clipping": "pass within supplied sequence",
+      "component_occlusion": "pass within supplied sequence",
+      "figma_fidelity": "unverified desktop geometry; shared content differences observed",
+      "primary_decision": "Read expanded process and locate related cases; activation untested.",
+      "hierarchy": "Header, labeled summary and result are visually distinct. No desktop hierarchy requirement is invented.",
+      "responsive_and_fixed_layers": "912px main header container at x264; process copy at x633.03125 and related rows at x396 form distinct section layouts. Left process rail does not paint over text in these captures."
+    },
+    {
+      "screen": "case-detail default/expanded scroll sequence",
+      "viewport_css_px": [
+        320,
+        568
+      ],
+      "visual_comparison": "partial",
+      "alignment": "consistent base x24; process title x94; dedicated source absent",
+      "spacing": "wrapped copy and separate paragraphs remain visible; dedicated source absent",
+      "typography": "H1 two lines; process titles three lines; no proven glyph loss",
+      "text_clipping": "pass within supplied sequence",
+      "component_occlusion": "pass within supplied sequence",
+      "figma_fidelity": "unverified exact 320px geometry; mobile component/content differences remain observed",
+      "primary_decision": "Read the narrow layout and find links; activation untested.",
+      "hierarchy": "Repeated summary and process labels remain visible.",
+      "responsive_and_fixed_layers": "No horizontal excess in supplied metadata; 15 viewed captures cover the full 6042px page. No visible overlay covers controls."
+    }
+  ],
+  "live_component_assessment": {
+    "status": "partial",
+    "observed_evidence": "The receipt gives distinct H1, A, DD and STRONG text boxes and computed styles at all three widths. H1 height changes from 45.359375px at 390px to 90.71875px at 320px; process headings change from two to three lines, matching viewed pixels. This supports a rendered DOM text layout.",
+    "reusable_component_source": "unverified; source, component definitions and imports are prohibited inputs",
+    "interactive_behavior": "unverified; control-looking labels and computed anchor boxes do not prove event wiring",
+    "raster_substitution": "No positive evidence establishes that the UI is a pasted screenshot. The inputs do not include a complete DOM/asset/background inventory, so the absence of raster stand-ins and live behavior of every element cannot be certified.",
+    "not_a_whole_site_pass": true
+  },
+  "classification_summary": {
+    "implementation_defects": [],
+    "source_mismatches_pending_authority": [
+      "F01",
+      "F02",
+      "F03",
+      "F04"
+    ],
+    "spec_drift": [
+      "F05",
+      "F06"
+    ],
+    "authority_decision_pending_for": [
+      "F01",
+      "F02",
+      "F03",
+      "F04",
+      "F05",
+      "F06"
+    ],
+    "reference_design_defects": [],
+    "approved_deviations": [],
+    "approval_status": "Absent from supplied evidence. Confirm intended component rules and content before attributing fault or choosing a reconciliation direction."
+  },
+  "pattern_constraints": {
+    "figma_first": "Confirm intended component rules and content, then reconcile the actual Figma source and code to that decision. Any chosen UI design change follows Figma-first; no local substitute design was created.",
+    "side_accent_bars_and_side_tab_cards": "No proposal uses them. No attached side-tab card or decorative card-edge strip was positively established. The visible process timeline rail is recorded in F05 without assuming every vertical navigation line is a banned decorative card accent."
+  },
+  "method_and_tool_evidence": {
+    "skill_path": "candidate-skill/SKILL.md",
+    "references_read": [
+      "references/persona-qa/workflow.md",
+      "references/persona-qa/qa-report-template.md",
+      "references/persona-qa/evidence-and-severity.md",
+      "references/persona-qa/ui-quality.md",
+      "references/persona-qa/generated-ui-preflight.md"
+    ],
+    "missing_local_references": [
+      "references/persona-qa/kwcag-card.md",
+      "references/loop/provider-contract.md"
+    ],
+    "missing_reference_effect": "No substitute skill or schema was fetched. No formal KWCAG/WCAG compliance verdict is given; this standalone JSON is a review artifact, not a claimed provider submission.",
+    "view_image_call_count": 31,
+    "image_review": "All 31 original images were opened through actual view_image calls; file enumeration and receipt text were not treated as viewing.",
+    "integrity": "SHA-256 verification passed for all 30 web images, Figma export and Figma readback. Image dimensions match every receipt.",
+    "measurement": "Pillow was used read-only to check dimensions and sample solid pixel colors/edge intervals. Expected font sizes and hierarchy come from supplied Figma JSON; actual styles come from supplied receipt. No image was edited.",
+    "pixel_comparison": "Component/role comparison only. No exact pixel-diff score was computed because the overall page content and states differ.",
+    "self_review": "Measurements, scroll continuation and normal controls were cross-checked by this same reviewer. No independent review is claimed. No CRITICAL/HIGH or P0/P1 finding was assigned.",
+    "capture_window_utc": [
+      "2026-10-16T16:11:53.492Z",
+      "2026-10-16T16:12:02.863Z"
+    ],
+    "review_freshness": "This is a retrospective frozen-input review. Capture-time assertions are from receipts; no fresh runtime replay occurred."
+  },
+  "unverified_areas": [
+    "Current live Figma state, immutable version ID, source branch and approval history.",
+    "Desktop and 320px Figma geometry, design tokens/variable bindings, component instances and responsive rules.",
+    "Changed repository source, reusable component definitions, raster/background inventory and event handlers; explicitly prohibited inputs.",
+    "Actual loaded font identity; computed font-family declaration is available, font-loading receipt is absent.",
+    "Collapsed process, hover, keyboard focus, pressed/selected control semantics, disabled/loading/error/empty states and open overlays.",
+    "Anchor activation, destination contents, external links, back/return, persistence, hit testing and focus return.",
+    "Browser ancestor overflow/line-clamp/mask/stacking mechanisms; only supplied bounds and painted results were available.",
+    "200% text resize, text-spacing overrides, browser zoom and content beyond the supplied case.",
+    "Safari/WebKit, real devices, browser chrome, safe areas, motion/reduced motion, screen-reader behavior and formal accessibility conformance.",
+    "Factual support for changed outcome numbers and wording.",
+    "Post-fix replay and adjacent regression; no UI changes were authorized or made."
+  ],
+  "artifact_paths": {
+    "report": "web-comparison-result.json",
+    "manifest": "input/manifest.json",
+    "web_receipt": "input/web/receipt.json",
+    "figma_export": "input/screen-b.png",
+    "figma_readback": "input/figma-readback.json",
+    "web_capture_paths": [
+      "input/web/web-390-00.png",
+      "input/web/web-390-01.png",
+      "input/web/web-390-02.png",
+      "input/web/web-390-03.png",
+      "input/web/web-390-04.png",
+      "input/web/web-390-05.png",
+      "input/web/web-390-06.png",
+      "input/web/web-390-07.png",
+      "input/web/web-1440-00.png",
+      "input/web/web-1440-01.png",
+      "input/web/web-1440-02.png",
+      "input/web/web-1440-03.png",
+      "input/web/web-1440-04.png",
+      "input/web/web-1440-05.png",
+      "input/web/web-1440-06.png",
+      "input/web/web-320-00.png",
+      "input/web/web-320-01.png",
+      "input/web/web-320-02.png",
+      "input/web/web-320-03.png",
+      "input/web/web-320-04.png",
+      "input/web/web-320-05.png",
+      "input/web/web-320-06.png",
+      "input/web/web-320-07.png",
+      "input/web/web-320-08.png",
+      "input/web/web-320-09.png",
+      "input/web/web-320-10.png",
+      "input/web/web-320-11.png",
+      "input/web/web-320-12.png",
+      "input/web/web-320-13.png",
+      "input/web/web-320-14.png"
+    ]
+  },
+  "completion": {
+    "scoped_capture_review_completed": true,
+    "ui_changed": false,
+    "report_only_output": "web-comparison-result.json",
+    "replay_performed": false,
+    "whole_site_approval": false,
+    "unresolved_severity_counts": {
+      "CRITICAL": 0,
+      "HIGH": 0,
+      "MEDIUM": 3,
+      "LOW": 3
+    },
+    "limitations_prevent_full_fidelity_claim": true,
+    "authority_decision_pending": true,
+    "confirmed_implementation_defect_count": 0
+  },
+  "comparison_authority": {
+    "status": "pending_authority_decision",
+    "supplied_frame_approval": "unverified",
+    "expected_field_interpretation": "Expected values describe the supplied Figma comparison frame. They are measured reference values, not confirmed approved implementation requirements.",
+    "classification_rule": "An observed source mismatch establishes a difference. Its status as an implementation defect, reference design defect or approved deviation requires confirmation of the intended component rules and content.",
+    "remediation_rule": "Confirm the intended rules, then reconcile Figma/code to that decision. Preserve Figma-first workflow for any chosen UI change and retain required factual detail.",
+    "severity_interpretation": "Retained severities rank the observed comparison issues for review. They do not establish code fault or approved remediation direction.",
+    "source_history": "No source approval, chronology or superseding revision is inferred."
+  }
+}

@@ -1,0 +1,260 @@
+{
+  "cases": [
+    {
+      "case_id": "case-3",
+      "task_completed": true,
+      "findings": [
+        {
+          "title": "Closed slots are distinguishable by color only (마감 cannot be read without color)",
+          "target": "시간 grid (#time-slots) and legend",
+          "state": "Initial booking screen (S-case-3-000)",
+          "steps": [
+            "Open the booking page",
+            "Compare closed slots 11:00 / 13:00 / 15:00 with available slots 10:30 / 13:30 / 14:00 / 15:30"
+          ],
+          "expected": "Closed slots carry a non-color cue so 마감 is understandable without color (the case-4 variant adds '마감' text)",
+          "observed": "Closed slots render only the time text (e.g. '11:00', enabled:false) with red styling; the legend '예약 가능 / 마감' uses color dots only; no text cue on the slots themselves",
+          "severity": "P2",
+          "basis": "observed",
+          "evidence": [
+            "local-evidence/C/runs/case-3/S-case-3-000.json",
+            "local-evidence/C/runs/case-3/S-case-3-000.png"
+          ],
+          "confidence": "high"
+        },
+        {
+          "title": "Validation error is not tied to the phone field (AT users get no field-level error context)",
+          "target": "#phone, #form-error",
+          "state": "After submitting with the phone number omitted",
+          "steps": [
+            "Type 테스트 into 이름",
+            "Check 개인정보 수집·이용 동의",
+            "Tap 예약 신청하기 without 휴대폰 번호",
+            "Inspect field metadata"
+          ],
+          "expected": "The invalid field is programmatically flagged (aria-invalid / described-by) and receives focus",
+          "observed": "Error text appears only in the top alert banner ('입력 내용을 확인해 주세요. 휴대폰 번호를 정확히 입력해 주세요.'); #phone keeps invalid:false with no aria-describedby and no error association; focus stays on the 예약 신청하기 button",
+          "severity": "P2",
+          "basis": "observed",
+          "evidence": [
+            "local-evidence/C/runs/case-3/I-case-3-000.json",
+            "local-evidence/C/runs/case-3/S-case-3-007.json",
+            "local-evidence/C/runs/case-3/S-case-3-007.png"
+          ],
+          "confidence": "high"
+        },
+        {
+          "title": "Error banner persists after the phone number is corrected (looks like the fix was not accepted)",
+          "target": "#form-error banner",
+          "state": "After correcting the phone number, before resubmit",
+          "steps": [
+            "Submit without phone (banner appears)",
+            "Type 010-0000-0000 into 휴대폰 번호"
+          ],
+          "expected": "The error indication clears or updates when the field is corrected",
+          "observed": "The banner stays visible with the same message while the corrected value is in the field; it is hidden only in the completion state after a successful resubmit",
+          "severity": "P3",
+          "basis": "observed",
+          "evidence": [
+            "local-evidence/C/runs/case-3/S-case-3-008.json",
+            "local-evidence/C/runs/case-3/S-case-3-008.png",
+            "local-evidence/C/runs/case-3/S-case-3-010.json"
+          ],
+          "confidence": "high"
+        },
+        {
+          "title": "Closed slots are reported focusable although disabled (keyboard dead stops)",
+          "target": "#time-slots closed buttons",
+          "state": "Initial booking screen",
+          "steps": [
+            "Compare a11y metadata of closed slots between variants"
+          ],
+          "expected": "Disabled slots are not in the keyboard tab order",
+          "observed": "Closed slots are enabled:false but reported focusable:true (case-4 reports focusable:false); keyboard walk was not run (--no-focus-walk), so tab behavior is inferred from metadata",
+          "severity": "P3",
+          "basis": "observed",
+          "evidence": [
+            "local-evidence/C/runs/case-3/S-case-3-000.json",
+            "local-evidence/C/runs/case-4/S-case-4-000.json"
+          ],
+          "confidence": "medium"
+        }
+      ],
+      "limitations": [
+        "Single run; tap on a closed slot was not exercised in this case (exercised in case-4: no feedback, no selection).",
+        "Keyboard tab order not walked (--no-focus-walk); closed-slot focusability rests on recorded metadata.",
+        "Blur-triggered error clearing not tested; clearing observed only across resubmit."
+      ]
+    },
+    {
+      "case_id": "case-2",
+      "task_completed": true,
+      "findings": [
+        {
+          "title": "Completion screen does not take focus (keyboard users stay on covered content)",
+          "target": "#order-done result sheet",
+          "state": "After payment completes",
+          "steps": [
+            "Close the coupon banner (×)",
+            "Tap 143,900원 결제하기 with 토스페이 selected",
+            "Check focus and layers in the completion snapshot"
+          ],
+          "expected": "Focus moves into the completion state, or the covered page becomes inert",
+          "observed": "The full-screen result sheet (role=status) shows 주문번호 and 결제 수단, but contains_focus:false and focus stays on the page body; focus is not directed to the result state",
+          "severity": "P3",
+          "basis": "observed",
+          "evidence": [
+            "local-evidence/C/runs/case-2/S-case-2-003.json",
+            "local-evidence/C/runs/case-2/S-case-2-003.png"
+          ],
+          "confidence": "medium"
+        }
+      ],
+      "limitations": [
+        "Single run; focus behavior read from snapshot fields only (no keyboard walk).",
+        "Coupon 받기 flow was not exercised (task only required closing the banner)."
+      ]
+    },
+    {
+      "case_id": "case-4",
+      "task_completed": true,
+      "findings": [
+        {
+          "title": "Error state stays red/aria-invalid after correction (user may think the value is still wrong)",
+          "target": "#phone, #err-phone, #form-error",
+          "state": "After correcting the phone number, before resubmit",
+          "steps": [
+            "Submit without phone (inline error + bottom banner appear)",
+            "Type 010-0000-0000 into 휴대폰 번호"
+          ],
+          "expected": "The error state clears or updates when the field becomes valid",
+          "observed": "Red border (#b3261e), inline '⚠ 휴대폰 번호를 정확히 입력해 주세요. 예: 010-1234-5678', the bottom banner, and aria-invalid=\"true\" all persist on the corrected field; they clear only after a successful resubmit",
+          "severity": "P2",
+          "basis": "observed",
+          "evidence": [
+            "local-evidence/C/runs/case-4/S-case-4-008.json",
+            "local-evidence/C/runs/case-4/S-case-4-008.png",
+            "local-evidence/C/runs/case-4/I-case-4-001.json"
+          ],
+          "confidence": "high"
+        },
+        {
+          "title": "Focus stays on submit after a failed submit (keyboard users must navigate back to the error)",
+          "target": "#submit → first invalid field",
+          "state": "After failed submit",
+          "steps": [
+            "Submit without phone"
+          ],
+          "expected": "Focus moves to the first invalid field (휴대폰 번호)",
+          "observed": "Focus remains on 예약 신청하기 (#submit)",
+          "severity": "P3",
+          "basis": "observed",
+          "evidence": [
+            "local-evidence/C/runs/case-4/S-case-4-007.json"
+          ],
+          "confidence": "medium"
+        }
+      ],
+      "limitations": [
+        "Single run; error clearing on blur or on input event not tested — only the resubmit path was observed.",
+        "Keyboard tab order not walked (--no-focus-walk)."
+      ]
+    },
+    {
+      "case_id": "case-1",
+      "task_completed": true,
+      "findings": [
+        {
+          "title": "Banner close target is 16×16 px (hard to tap; mis-tap risk near 받기)",
+          "target": "#promo-close",
+          "state": "Initial cart screen",
+          "steps": [
+            "Open the cart with the coupon banner",
+            "Measure the close control"
+          ],
+          "expected": "Touch target at least 24×24 CSS px (ideally 44×44)",
+          "observed": "#promo-close is 16×16 CSS px at the banner corner (x=318, y=86); the equivalent control in the case-2 variant is 44×44",
+          "severity": "P2",
+          "basis": "observed",
+          "evidence": [
+            "local-evidence/C/runs/case-1/S-case-1-000.json",
+            "local-evidence/C/runs/case-1/S-case-1-000.png"
+          ],
+          "confidence": "high"
+        },
+        {
+          "title": "Payment tap shows no acknowledgment for ~2.6 s (repeat-tap risk)",
+          "target": "#pay",
+          "state": "After tapping 결제하기",
+          "steps": [
+            "Select 토스페이",
+            "Tap 143,900원 결제하기",
+            "Read the first feedback latency from run.json"
+          ],
+          "expected": "Immediate visible acknowledgment (e.g. a '결제 처리 중…' state) after the tap",
+          "observed": "First feedback recorded at 2615.4 ms (the completion sheet); the button text stayed '143,900원 결제하기' with no processing or disabled state; the case-2 variant shows '결제 처리 중…' with ~12 ms feedback",
+          "severity": "P2",
+          "basis": "observed",
+          "evidence": [
+            "local-evidence/C/runs/case-1/run.json",
+            "local-evidence/C/runs/case-1/S-case-1-003.json",
+            "local-evidence/C/runs/case-2/S-case-2-002.json",
+            "local-evidence/C/runs/case-2/run.json"
+          ],
+          "confidence": "medium"
+        },
+        {
+          "title": "전체삭제 sits next to the payment CTA (fat-finger cart loss risk)",
+          "target": "#btn-clear next to #pay",
+          "state": "Sticky footer",
+          "steps": [
+            "View the sticky footer on the cart screen"
+          ],
+          "expected": "Destructive actions are separated from the primary payment action",
+          "observed": "'전체삭제' (84×52 px) sits directly left of '143,900원 결제하기' (240×52 px) in the same footer row; the case-2 variant places 전체 삭제 in the header instead; no mis-tap was reproduced and confirmation behavior was not tested",
+          "severity": "P2",
+          "basis": "observed",
+          "evidence": [
+            "local-evidence/C/runs/case-1/S-case-1-000.json",
+            "local-evidence/C/runs/case-1/S-case-1-000.png"
+          ],
+          "confidence": "medium"
+        },
+        {
+          "title": "Completion screen does not take focus (keyboard users stay on covered content)",
+          "target": "#order-done result sheet",
+          "state": "After payment completes",
+          "steps": [
+            "Tap 143,900원 결제하기",
+            "Check focus and layers"
+          ],
+          "expected": "Focus moves into the completion state",
+          "observed": "Result sheet shown while focus remains on the covered #pay button (contains_focus:false)",
+          "severity": "P3",
+          "basis": "observed",
+          "evidence": [
+            "local-evidence/C/runs/case-1/S-case-1-003.json",
+            "local-evidence/C/runs/case-1/S-case-1-004.json",
+            "local-evidence/C/runs/case-1/S-case-1-004.png"
+          ],
+          "confidence": "medium"
+        }
+      ],
+      "limitations": [
+        "Single run; double-tap during the ~2.6 s no-feedback window was not tested.",
+        "전체삭제 confirmation behavior was not exercised.",
+        "Focus behavior read from snapshot fields only (no keyboard walk)."
+      ]
+    }
+  ],
+  "overall_limitations": [
+    "Single controlled run per case (operator C); no repeats and no other operators' data.",
+    "Transport options --no-focus-walk and --no-reflow: keyboard tab-order walks and 320px reflow were not measured; keyboard items rest on recorded a11y metadata and focus fields.",
+    "Chromium emulation of galaxy-s24 (360x780 CSS, DPR 3, touch) only; no real device, WebKit, screen reader, or on-screen keyboard.",
+    "Per the brief, page source/JS, scenario JSON, and other operators' outputs were not read; state was observed only through the provided snapshot/inspect interface and screenshots.",
+    "All pages are offline synthetic fixtures; local submit/pay actions are synthetic; task success is the driver-measured criterion (completion selector visible), not real-world booking or payment.",
+    "An initial sandbox-blocked Chromium launch for case-3 was rerun with elevated permissions; no case was marked failed for environment reasons.",
+    "Run order: case-3, case-2, case-4, case-1. Timing values are driver-measured feedback latencies from run.json.",
+    "Budget closeout: the 25-minute execution budget expired after all four cases had finished; this file uses only evidence obtained during the runs."
+  ]
+}

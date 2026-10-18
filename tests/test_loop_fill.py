@@ -148,6 +148,18 @@ class FillTests(unittest.TestCase):
                 artifact['sha256'] = '@auto' if field == 'unexpected_errors' else sha(path.read_bytes())
                 self.refuse()
 
+    def test_fill_does_not_manufacture_inspection(self):
+        artifact = next(a for a in self.fixture.packet['artifacts'] if a['kind'] == 'visual_report')
+        path = self.fixture.evidence / artifact['path']
+        original = json.loads(path.read_bytes())
+        for key in ('image_tool', 'observations', 'viewed_artifact_ids'):
+            with self.subTest(key=key):
+                payload = copy.deepcopy(original)
+                payload['inspection'][key] = '@auto'
+                write_json(path, payload)
+                artifact['sha256'] = '@auto'
+                self.refuse()
+
     def test_ambiguous_missing_and_malformed_owners_refuse(self):
         self.prepare()
         original = copy.deepcopy(self.fixture.packet)

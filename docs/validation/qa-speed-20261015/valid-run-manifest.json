@@ -1,0 +1,19 @@
+{
+  "files": [
+    "valid-r1-plain-findings.json",
+    "valid-r1-plain-report.md",
+    "valid-r2-plain-findings.json",
+    "valid-r2-plain-report.md",
+    "valid-r1-old-findings.json",
+    "valid-r1-old-report.md",
+    "valid-r2-old-findings.json",
+    "valid-r2-old-report.md",
+    "valid-r1-new-findings.json",
+    "valid-r1-new-report.md",
+    "valid-r2-new-findings.json",
+    "valid-r2-new-report.md"
+  ],
+  "note": "Raw model event streams excluded; full local run folders remain in task archive. Results are quality-reviewed separately.",
+  "model": "gpt-6.1-sol",
+  "effort": "high"
+}

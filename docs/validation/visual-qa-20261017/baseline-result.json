@@ -1,0 +1,187 @@
+{
+  "verdict": "REQUEST_CHANGES",
+  "verdict_reason": "The supplied screenshot contains visibly clipped text in five regions. This verdict applies to the pictured visual state only; product behavior and Figma fidelity remain unknown.",
+  "scope": "Independent visual review of one supplied static screenshot. No redesign, copy changes, browser work, source inspection, or interaction testing.",
+  "viewed_image": {
+    "path": "input/screen-a.png",
+    "tool_call": "functions.exec invoked tools.view_image({path: \"input/screen-a.png\", detail: \"original\"})",
+    "returned_detail": "original",
+    "successful_view_calls": 2,
+    "evidence": "Both calls returned the displayed image, which was visually inspected; the second was a capture-only self-review.",
+    "width_px": 689,
+    "height_px": 1317,
+    "sha256": "330b5b8f24a996d6800bc699bfd7024cb0d20d461424d886d4cb4d76272b6ac1",
+    "coordinates": "Approximate image-pixel bounds [x, y, width, height], with the origin at the top-left. These are not CSS pixels."
+  },
+  "axes": [
+    {
+      "aspect": "alignment",
+      "status": "pass",
+      "reason": "In the visible capture, section labels, main headings, separators and the result panel share a left edge near x=176. Process titles and descriptions consistently start near x=202. No independent alignment defect is evident."
+    },
+    {
+      "aspect": "spacing",
+      "status": "pass",
+      "reason": "Process rows repeat at approximately 118-pixel vertical intervals. Labels, headings and descriptions remain separated. Larger gaps between sections do not establish a defect without intended-layout evidence."
+    },
+    {
+      "aspect": "typography",
+      "status": "pass",
+      "reason": "Visible text uses distinguishable section-label, heading and supporting-text roles with consistent treatment within repeated rows. No separate type collision or baseline defect is evident. Truncation is recorded under text_clipping; intended fonts and tokens are unknown."
+    },
+    {
+      "aspect": "component_occlusion",
+      "status": "pass",
+      "reason": "No visible component or overlay covers another component or its text in this static state. The hard right-edge text cutoffs are clipping observations, not proven overlapping layers."
+    },
+    {
+      "aspect": "text_clipping",
+      "status": "fail",
+      "reason": "Text ends abruptly at approximately x=476 in the PIN, RESULT, body and related-case sections, and near x=467 in process step 02. Several terminal glyphs are visibly cut. See F-01 through F-05."
+    },
+    {
+      "aspect": "source_fidelity",
+      "status": "unknown",
+      "reason": "No authoritative Figma file, nodes, version/readback, specification or changed source was supplied or inspected."
+    },
+    {
+      "aspect": "responsive_behavior",
+      "status": "unknown",
+      "reason": "One raster capture cannot establish behavior at other widths, text sizes or orientations. Its CSS viewport and pixel ratio are unknown."
+    },
+    {
+      "aspect": "interaction_states",
+      "status": "unknown",
+      "reason": "Navigation, scrolling, hidden-text recovery, focus, activation and alternate states cannot be exercised from this input."
+    }
+  ],
+  "findings": [
+    {
+      "id": "F-01",
+      "aspect": "text_clipping",
+      "region_px": [
+        176,
+        190,
+        300,
+        25
+      ],
+      "visible_text": [
+        "PIN",
+        "제약 검사 · 충돌 후보 표시 ·"
+      ],
+      "observation": "The PIN summary reaches a hard right cutoff near x=476 and ends with an incomplete glyph. White page space continues to approximately x=520. The summary cannot be read in full from this image. Quoted text is a readable prefix only.",
+      "severity": "MEDIUM",
+      "confidence": "high",
+      "repair_suggestion": "Preserve the existing wording and correct the summary text bounds or wrapping so its full content fits the visible column. Confirm with another capture at the same width."
+    },
+    {
+      "id": "F-02",
+      "aspect": "text_clipping",
+      "region_px": [
+        198,
+        284,
+        278,
+        28
+      ],
+      "visible_text": [
+        "RESULT",
+        "단 6번의 프롬프트로 본선"
+      ],
+      "observation": "The bold white result sentence runs into the purple panel right edge at approximately x=476 and is cut mid-text. No continuation line or truncation marker is visible, leaving the outcome statement incomplete. Quoted text is a readable prefix only.",
+      "severity": "MEDIUM",
+      "confidence": "high",
+      "repair_suggestion": "Keep the complete result wording visible within the panel by correcting its text bounds and wrapping. Retain room for the full text without clipping."
+    },
+    {
+      "id": "F-03",
+      "aspect": "text_clipping",
+      "region_px": [
+        202,
+        620,
+        266,
+        22
+      ],
+      "visible_text": [
+        "02",
+        "등록 전 검사 단계의 공백을"
+      ],
+      "observation": "The second process title terminates at approximately x=467 with a visibly incomplete character. Its number and supporting line remain visible, but the title cannot be read in full. Quoted text is a readable prefix only.",
+      "severity": "MEDIUM",
+      "confidence": "high",
+      "repair_suggestion": "Allow the full existing step title to fit or wrap within its text column, with sufficient row height to keep the supporting sentence separate."
+    },
+    {
+      "id": "F-04",
+      "aspect": "text_clipping",
+      "region_px": [
+        176,
+        916,
+        300,
+        56
+      ],
+      "visible_text": [
+        "검증 범위와 관련 자료를",
+        "단계별 근거와 결과를 본문 흐름 안에서"
+      ],
+      "observation": "Both the body-section heading and its supporting sentence stop at the same hard right edge near x=476. Their terminal characters are cut while the surrounding white page continues. Both lines lose readable content. Quoted strings are readable prefixes only.",
+      "severity": "MEDIUM",
+      "confidence": "high",
+      "repair_suggestion": "Preserve both strings and correct their text-container bounds or wrapping. Verify that complete lines remain visible and retain separation after wrapping."
+    },
+    {
+      "id": "F-05",
+      "aspect": "text_clipping",
+      "region_px": [
+        176,
+        1062,
+        300,
+        74
+      ],
+      "visible_text": [
+        "MORE CASES",
+        "같은 문제를 다른 장면에서",
+        "OGC 2026 Autonomous Research"
+      ],
+      "observation": "The related-cases heading and first case title both end abruptly at approximately x=476, with clipped terminal glyphs. The case title is incomplete, limiting identification of that item. Quoted strings are readable prefixes only.",
+      "severity": "MEDIUM",
+      "confidence": "high",
+      "repair_suggestion": "Keep the full existing heading and case title visible through appropriate text bounds or wrapping, then check the following metadata for collisions."
+    }
+  ],
+  "unknowns": [
+    "Figma URL, relevant node IDs, source version/readback, expected layout, complete source strings and design-token fidelity are unknown. No external design source was accessed.",
+    "Rendered URL, build ID, changed source, browser engine, device, CSS viewport, pixel ratio and original capture time are unknown.",
+    "Whether live reusable components or a raster substitute form the interface is unknown; a supplied screenshot alone cannot establish implementation.",
+    "The clipping mechanism and whether omitted text becomes available through an interaction are unknown. No DOM, layer hierarchy, source or interaction evidence was available.",
+    "Other widths, zoom/text resizing, focus, hover, pressed, loading, error, navigation and scrolling states were not inspected.",
+    "Content outside the supplied crop is unknown. The image top/bottom boundaries and gray outer gutters are not treated as product clipping defects.",
+    "Quoted finding text contains only fully readable visible fragments. Missing suffixes were not reconstructed. Screenshot dimensions and the file hash identify the inspected artifact, not its capture-time provenance.",
+    "No other review coverage or product-readiness result is assumed."
+  ],
+  "source_and_surface": {
+    "figma_url": null,
+    "figma_node_ids": [],
+    "figma_version_readback": null,
+    "rendered_url": null,
+    "changed_source": null
+  },
+  "artifact_paths": {
+    "input": "input/screen-a.png",
+    "report": "baseline-result.json",
+    "frozen_skill": "baseline-skill/SKILL.md",
+    "read_references": [
+      "baseline-skill/references/persona-qa/workflow.md",
+      "baseline-skill/references/persona-qa/ui-quality.md",
+      "baseline-skill/references/persona-qa/evidence-and-severity.md",
+      "baseline-skill/references/persona-qa/generated-ui-preflight.md"
+    ]
+  },
+  "authority": {
+    "actor": "leaf reviewer",
+    "read_only": "Supplied screenshot and frozen skill references only; current findings derive solely from the screenshot.",
+    "report_write": "baseline-result.json",
+    "design_write": false,
+    "test_data_write": false,
+    "code_write": false
+  }
+}

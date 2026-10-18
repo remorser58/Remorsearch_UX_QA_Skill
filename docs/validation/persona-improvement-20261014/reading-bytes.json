@@ -1,0 +1,32 @@
+{
+  "ba090fe": {
+    "files": {
+      "SKILL.md": 8190,
+      "references/loop/product-improvement.md": 8551,
+      "references/loop/workflow.md": 4891,
+      "references/persona-qa/workflow.md": 14333,
+      "references/shared/access-card.md": 6018
+    },
+    "total": 41983
+  },
+  "5f3c04e": {
+    "files": {
+      "SKILL.md": 8226,
+      "references/loop/product-improvement.md": 8551,
+      "references/loop/workflow.md": 4891,
+      "references/persona-qa/workflow.md": 17716,
+      "references/shared/access-card.md": 6018
+    },
+    "total": 45402
+  },
+  "working": {
+    "files": {
+      "SKILL.md": 8044,
+      "references/loop/product-improvement.md": 8551,
+      "references/loop/workflow.md": 4891,
+      "references/persona-qa/workflow.md": 14204,
+      "references/shared/access-card.md": 6018
+    },
+    "total": 41708
+  }
+}

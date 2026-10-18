@@ -1,0 +1,431 @@
+{
+ "scenario_digest": "e9f3fcc071bd726d09d2545854012778004818d71e409f9024106f88575f5c04",
+ "code_revision": "09fa14e360dcfcfa9db51f5112514b8ea0a131e3",
+ "run_id": "portfolio-390-top-A",
+ "kind": "visual_report",
+ "comparison": {
+  "id": "portfolio-390-top-A",
+  "run_id": "portfolio-390-top-A",
+  "figma_id": "portfolio-figma-v2",
+  "file_key": "ikOHVXrV47diF5hmrympEr",
+  "branch_key": "main",
+  "baseline_version": "sha256:6d650d82f65d279693651a76dcb3ce08390d797724b280367136c7dd69fd81b7",
+  "readback_version": "sha256:6d650d82f65d279693651a76dcb3ce08390d797724b280367136c7dd69fd81b7",
+  "node_ids": [
+   "14:2"
+  ],
+  "route": "/cases/ax-workflow-plugins/",
+  "viewport": {
+   "width": 390,
+   "height": 844,
+   "device_scale_factor": 1
+  },
+  "actual_artifact_id": "actual-390-top",
+  "reference_artifact_id": "reference-390-top",
+  "comparison_artifact_id": "visual-report",
+  "status": "unknown",
+  "method": "review",
+  "reviewer": "independent reviewer A (blind to build identity)",
+  "checks": {
+   "layout": "passed",
+   "interaction_states": "unknown",
+   "alignment": "passed",
+   "spacing": "passed",
+   "typography": "passed",
+   "text_clipping": "passed",
+   "component_occlusion": "passed",
+   "figma_fidelity": "passed",
+   "side_accents": "passed"
+  },
+  "reason": "Eight static aspects pass for this pair, but interaction_states cannot be established from static images, so the comparison cannot be reported as passed."
+ },
+ "inspection": {
+  "viewed_artifact_ids": [
+   "actual-390-top",
+   "reference-390-top"
+  ],
+  "image_tool": "view_image",
+  "observations": [
+   {
+    "region": "Page column from '\u2190 \uc804\uccb4 \uc0ac\ub840' to the RESULT card",
+    "actual_box": [
+     24,
+     29,
+     342,
+     815
+    ],
+    "reference_box": [
+     24,
+     30,
+     342,
+     814
+    ],
+    "aspect": "layout",
+    "status": "passed",
+    "observed": "Same single-column order: back link (y29), H1 (y61), two-line meta (y115), two-line question (y165), three section links (y242), OUTPUT/INPUT/PIN rows with hairlines at y413/494/603, purple RESULT card from y616.",
+    "expected": "Frame 14:2 order: Header 14:3, Section navigation 14:8, Summary 14:16 with hairlines at y415/495/604 and Result emphasis 14:26 from y617."
+   },
+   {
+    "region": "Left edge of all text rows and hairlines (back link to PIN value)",
+    "actual_box": [
+     24,
+     29,
+     342,
+     575
+    ],
+    "reference_box": [
+     24,
+     30,
+     342,
+     575
+    ],
+    "aspect": "alignment",
+    "status": "passed",
+    "observed": "Ink x_min is 24-25 for every row from y29 to y586; hairlines span x24-365 at y413, y494 and y603.",
+    "expected": "Text nodes 14:4-14:24 at x=24, w=342; hairlines 14:19/14:22/14:25 at x=24, w=342 (end x=365)."
+   },
+   {
+    "region": "Section links '\uc694\uc57d' '\uacfc\uc815' '\ubcf8\ubb38'",
+    "actual_box": [
+     24,
+     242,
+     161,
+     44
+    ],
+    "reference_box": [
+     24,
+     244,
+     166,
+     44
+    ],
+    "aspect": "alignment",
+    "status": "passed",
+    "observed": "Three bordered links start at x=24, 80.5 and 137 with 8 px gaps, ink rows y242-285 (44 px tall).",
+    "expected": "14:10/14:12/14:14 at x=24/82/140, w=50, h=44, gap 8 in 14:9; width difference comes from the approved font substitution."
+   },
+   {
+    "region": "RESULT card edges and inner text inset",
+    "actual_box": [
+     24,
+     616,
+     342,
+     228
+    ],
+    "reference_box": [
+     24,
+     617,
+     342,
+     227
+    ],
+    "aspect": "alignment",
+    "status": "passed",
+    "observed": "Purple fill spans x24-365; RESULT label and copy start at x=48-49; corner pixel (24,616) is #7C4DFF, so corners are square.",
+    "expected": "14:26 at x=24, w=342, padding 24, fill #7C4DFF, no radius in the readback; 14:27/14:28 at x=48."
+   },
+   {
+    "region": "Question to section links to OUTPUT label",
+    "actual_box": [
+     24,
+     165,
+     342,
+     192
+    ],
+    "reference_box": [
+     24,
+     166,
+     342,
+     194
+    ],
+    "aspect": "spacing",
+    "status": "passed",
+    "observed": "Ink gaps: question end y203 to links y242 (38 px); links end y285 to OUTPUT y348 (62 px). Computed margins 36 px and 60 px.",
+    "expected": "Figma: question end y205 to links y244 (38 px); links end y287 to OUTPUT y351 (63 px), from header padding 24 + nav padding 12 and nav padding 24 + summary padding 36."
+   },
+   {
+    "region": "Summary rows OUTPUT / INPUT / PIN",
+    "actual_box": [
+     24,
+     348,
+     342,
+     256
+    ],
+    "reference_box": [
+     24,
+     351,
+     342,
+     254
+    ],
+    "aspect": "spacing",
+    "status": "passed",
+    "observed": "Label-to-value gaps 18/18/17 px, value-to-hairline 15/16/16 px, hairline-to-next-label 14/14 px.",
+    "expected": "Figma gaps 17/17/17 px, 14/14/14 px and 15/15 px (14:16 gap 12 between text and hairlines); within 2 px."
+   },
+   {
+    "region": "RESULT card padding and line pitch",
+    "actual_box": [
+     24,
+     616,
+     342,
+     228
+    ],
+    "reference_box": [
+     24,
+     617,
+     342,
+     227
+    ],
+    "aspect": "spacing",
+    "status": "passed",
+    "observed": "Card top y616 to RESULT ink y642 (26 px); five value lines at y666/695/724/752/781 (29 px pitch); last line ends y802, link border at y824.",
+    "expected": "Card top y617 to RESULT y644 (27 px); lines at y669/698/727/756/785; last line ends y806, link border at y826 (14:26 padding 24, 14:63 gap 10, 14:26 gap 16)."
+   },
+   {
+    "region": "H1 '\uc870\ucf54\ub529 AX \uc778\uc7ac\uc804\uc7c1'",
+    "actual_box": [
+     24,
+     61,
+     283,
+     34
+    ],
+    "reference_box": [
+     25,
+     62,
+     290,
+     35
+    ],
+    "aspect": "typography",
+    "status": "passed",
+    "observed": "Bold single line, ink 34 px tall; computed 36px / 700 / 43.2px, color rgb(29,29,31).",
+    "expected": "14:5 Noto Sans KR Bold 36, line height 120% (43.2 px), #1D1D1F; glyph width differs through the approved Pretendard substitution."
+   },
+   {
+    "region": "Meta line '2026-08-12 \u00b7 ax \u00b7 automation \u00b7 human-review \u00b7 \ubb38\uc81c \uc120\uc815\u00b7\uac10\uc0ac \uc808\ucc28 \uc124\uacc4\u00b7Codex \ud50c\ub7ec\uadf8\uc778 \uad6c\ud604'",
+    "actual_box": [
+     24,
+     115,
+     324,
+     31
+    ],
+    "reference_box": [
+     24,
+     116,
+     315,
+     32
+    ],
+    "aspect": "typography",
+    "status": "passed",
+    "observed": "13px regular, darkest pixel (92,92,97), two lines at 19.5 px; breaks after '\uc120\uc815\u00b7'.",
+    "expected": "14:6 Noto Sans KR Regular 13, line height 150%, #5C5C61, two lines (h 40); Figma breaks after '\ubb38\uc81c' (approved font deviation)."
+   },
+   {
+    "region": "Question 'AI \uc0c1\ub2f4\uc774 \uc4f8 \uc9c0\uc2dd\uc744 \uc62c\ub9ac\uae30 \uc804\uc5d0, \uc5b4\uae0b\ub09c \ub0b4\uc6a9\uacfc \ube60\uc9c4 \uc548\ub0b4\ub294 \ub204\uac00 \uac78\ub7ec\ub0bc\uae4c?'",
+    "actual_box": [
+     24,
+     165,
+     332,
+     39
+    ],
+    "reference_box": [
+     24,
+     166,
+     296,
+     40
+    ],
+    "aspect": "typography",
+    "status": "passed",
+    "observed": "18px bold, darkest pixel (29,29,31), two lines at 21.6 px; breaks after '\ub0b4\uc6a9\uacfc'.",
+    "expected": "14:7 Noto Sans KR Bold 18, line height 120%, #1D1D1F, two lines; Figma breaks after '\uc5b4\uae0b\ub09c' (approved font deviation)."
+   },
+   {
+    "region": "Summary labels 'OUTPUT' 'INPUT' 'PIN' and values",
+    "actual_box": [
+     24,
+     348,
+     300,
+     239
+    ],
+    "reference_box": [
+     24,
+     351,
+     330,
+     239
+    ],
+    "aspect": "typography",
+    "status": "passed",
+    "observed": "Labels 12px bold #7C4DFF; values 24px bold #1D1D1F at 28.8 px; PIN value wraps after '\uacf5\ubc31' like Figma.",
+    "expected": "14:17/14:20/14:23 Bold 12 #7C4DFF; 14:18/14:21/14:24 Bold 24, line height 120%, #1D1D1F; 14:24 two lines (h 58)."
+   },
+   {
+    "region": "RESULT value '\ub2e8 6\ubc88\uc758 \ud504\ub86c\ud504\ud2b8\ub85c, \u2026 \uc778\uc7ac\uc5d0 \uc120\uc815\ub410\uc2b5\ub2c8\ub2e4.'",
+    "actual_box": [
+     48,
+     666,
+     256,
+     137
+    ],
+    "reference_box": [
+     49,
+     669,
+     269,
+     138
+    ],
+    "aspect": "text_clipping",
+    "status": "passed",
+    "observed": "All five lines are fully painted with the same breaks as Figma; dd height 204 = 5 x 28.8 + 16 gap + 44 link, so no ancestor cuts the copy.",
+    "expected": "14:28 five lines (h 145) inside 14:63 (clip true, h 169 = 14 + 10 + 145) with no clipped glyph."
+   },
+   {
+    "region": "PIN value '\uc81c\uc57d \uac80\uc0ac \u00b7 \ucda9\ub3cc \ud6c4\ubcf4 \ud45c\uc2dc \u00b7 \uacf5\ubc31 / \ud655\uc778 \u00b7 \uc0ac\ub78c \ud655\uc815'",
+    "actual_box": [
+     24,
+     535,
+     300,
+     52
+    ],
+    "reference_box": [
+     24,
+     537,
+     330,
+     53
+    ],
+    "aspect": "text_clipping",
+    "status": "passed",
+    "observed": "Both lines complete; no glyph cut at the right edge (ink ends x=323 inside x=365).",
+    "expected": "14:24 two complete lines inside the 342 px column."
+   },
+   {
+    "region": "Link 'Thread \ud6c4\uae30 \ubcf4\ub7ec \uac00\uae30 \u2197' at the viewport bottom",
+    "actual_box": [
+     48,
+     824,
+     161,
+     20
+    ],
+    "reference_box": [
+     48,
+     826,
+     168,
+     18
+    ],
+    "aspect": "text_clipping",
+    "status": "passed",
+    "observed": "Pill and label are cut by the 844 px viewport edge; web-390-01 shows the whole pill (y217-260) with the full label, so this is a normal viewport cutoff.",
+    "expected": "14:64 (frame y826-870) also extends past the 844 px crop of the reference."
+   },
+   {
+    "region": "Whole top viewport",
+    "actual_box": [
+     0,
+     0,
+     390,
+     844
+    ],
+    "reference_box": [
+     0,
+     0,
+     390,
+     844
+    ],
+    "aspect": "component_occlusion",
+    "status": "passed",
+    "observed": "No fixed, sticky or overlay layer; back link, section links and card text are unobstructed; the mobile track element is 0 x 0 in computed styles.",
+    "expected": "The Figma frame has no overlay layer in this region."
+   },
+   {
+    "region": "Header and section links",
+    "actual_box": [
+     24,
+     29,
+     342,
+     257
+    ],
+    "reference_box": [
+     24,
+     30,
+     342,
+     258
+    ],
+    "aspect": "figma_fidelity",
+    "status": "passed",
+    "observed": "Back link y29 vs 30, H1 y61 vs 62, meta y115 vs 116, question y165 vs 166, links y242 vs 244; colors #5C5C61/#1D1D1F and link border #D6D6D9 match.",
+    "expected": "Readback boxes for 14:4-14:15 in node 14:2 (export sha256 1d7321d5\u2026d93e)."
+   },
+   {
+    "region": "Summary rows and RESULT card",
+    "actual_box": [
+     24,
+     348,
+     342,
+     496
+    ],
+    "reference_box": [
+     24,
+     351,
+     342,
+     493
+    ],
+    "aspect": "figma_fidelity",
+    "status": "passed",
+    "observed": "Rows within 2-3 px, hairlines #D6D6D9, square #7C4DFF card, identical five-line RESULT copy, link pill with a semi-transparent white border.",
+    "expected": "14:16-14:28 and 14:64 (stroke #FFFFFF at 55%, radius 6)."
+   },
+   {
+    "region": "Question line break (font substitution)",
+    "actual_box": [
+     24,
+     165,
+     332,
+     39
+    ],
+    "reference_box": [
+     24,
+     166,
+     296,
+     40
+    ],
+    "aspect": "figma_fidelity",
+    "status": "passed",
+    "observed": "Break position differs ('\ub0b4\uc6a9\uacfc' vs '\uc5b4\uae0b\ub09c') while size, weight, line height and color match.",
+    "expected": "Reference notes record Pretendard vs Noto Sans KR as an approved deviation that may move line breaks."
+   },
+   {
+    "region": "Section links and RESULT link states",
+    "actual_box": [
+     24,
+     242,
+     161,
+     44
+    ],
+    "reference_box": [
+     24,
+     244,
+     166,
+     44
+    ],
+    "aspect": "interaction_states",
+    "status": "unknown",
+    "observed": "Only the default state is visible; hover, focus, pressed and the anchor jump are not shown in a static capture.",
+    "expected": "The frame shows default link states only; interaction behavior needs a live trace."
+   },
+   {
+    "region": "Summary rows and RESULT card edges",
+    "actual_box": [
+     24,
+     348,
+     342,
+     496
+    ],
+    "reference_box": [
+     24,
+     351,
+     342,
+     493
+    ],
+    "aspect": "side_accents",
+    "status": "passed",
+    "observed": "No vertical edge strip or attached side tab in either image: rows use full-width 1 px hairlines and the card is a uniform fill with square edges.",
+    "expected": "No side accent bars or side-tab cards."
+   }
+  ]
+ }
+}

@@ -1,0 +1,340 @@
+{
+  "code_hash": "003d1d351b7ce5d94d20ad305c98f4ceaec82bf7bffe0bba930f52cf95965c74",
+  "instruction_hashes": {
+    "SKILL.md": "663387a2d829b1a5d6a34693d9f0851114ae0ebea387c4c1c51222a287e144be",
+    "references/persona-qa/workflow.md": "fca1b585455fb56c0fb308666a43c0484aa8308a4f13da65241646bacc16a18c",
+    "references/persona-qa/generated-ui-preflight.md": "b1b6115a948d1ae8055f36bd80170d9ac92447baea0a99ad2efb6195cb9c277d",
+    "references/persona-qa/qa-report-template.md": "0093a65b3853ebe7a2acaa62751b2de4b9c9b81fe7e6f30eff79759c709d8aba"
+  },
+  "python": {
+    "tests": 1088,
+    "failures": 0,
+    "skipped": 1
+  },
+  "web_final": {
+    "passed": 629,
+    "failed": 0,
+    "skips": [
+      "SKIP shared browser clients and version handshake -- set REMORSEARCH_BROWSER_WS to a loopback launchServer endpoint",
+      "SKIP typography: Python captured-font analysis -- ERGOQA_PYTHON not configured"
+    ]
+  },
+  "web_previous": {
+    "passed": 626,
+    "failed": 1,
+    "reason": "existing automatic analysis subprocess exceeded30s duringconcurrentwork; reasonnotisolated; retained"
+  },
+  "analysis_unchanged_limit_rerun": {
+    "passed": 65,
+    "failed": 0
+  },
+  "reading_budget": {
+    "passed": 13,
+    "limits_unchanged": true
+  },
+  "semantics": {
+    "passed": 44
+  },
+  "reflow": {
+    "passed": 14,
+    "failed": 0
+  },
+  "install": {
+    "node": "22.23.3",
+    "playwright": "1.56.1",
+    "files": 232,
+    "payload_sha256": "ee58b34a415486def2274f09218b2ff28f0592b401eb0db77ea458ef1f1e7c76",
+    "changed_files_equal_installed": true
+  },
+  "runs": [
+    {
+      "run_id": "delivery-a-mobile",
+      "status": "completed",
+      "success": true,
+      "success_basis": "measured",
+      "device": {
+        "id": "galaxy-s24",
+        "viewport_css": [
+          360,
+          780
+        ],
+        "dpr": 3,
+        "orientation": "portrait",
+        "input": "touch",
+        "form_factor": "phone"
+      },
+      "steps": 40,
+      "success_detail": {
+        "criteria": [
+          {
+            "kind": "selector_visible",
+            "value": "#scr-track",
+            "passed": true
+          }
+        ],
+        "unevaluable": []
+      }
+    },
+    {
+      "run_id": "delivery-b-desktop",
+      "status": "completed",
+      "success": true,
+      "success_basis": "measured",
+      "device": {
+        "id": "laptop-1440",
+        "viewport_css": [
+          1440,
+          900
+        ],
+        "dpr": 2,
+        "orientation": "landscape",
+        "input": "mouse",
+        "form_factor": "laptop"
+      },
+      "steps": 40,
+      "success_detail": {
+        "criteria": [
+          {
+            "kind": "selector_visible",
+            "value": "#scr-track",
+            "passed": true
+          }
+        ],
+        "unevaluable": []
+      }
+    },
+    {
+      "run_id": "delivery-b-mobile",
+      "status": "completed",
+      "success": true,
+      "success_basis": "measured",
+      "device": {
+        "id": "galaxy-s24",
+        "viewport_css": [
+          360,
+          780
+        ],
+        "dpr": 3,
+        "orientation": "portrait",
+        "input": "touch",
+        "form_factor": "phone"
+      },
+      "steps": 40,
+      "success_detail": {
+        "criteria": [
+          {
+            "kind": "selector_visible",
+            "value": "#scr-track",
+            "passed": true
+          }
+        ],
+        "unevaluable": []
+      }
+    },
+    {
+      "run_id": "civil-a-mobile",
+      "status": "failed",
+      "success": false,
+      "success_basis": "measured",
+      "device": {
+        "id": "galaxy-s24",
+        "viewport_css": [
+          360,
+          780
+        ],
+        "dpr": 3,
+        "orientation": "portrait",
+        "input": "touch",
+        "form_factor": "phone"
+      },
+      "steps": 65,
+      "success_detail": {
+        "criteria": [
+          {
+            "kind": "selector_visible",
+            "value": "#done",
+            "passed": false
+          }
+        ],
+        "unevaluable": []
+      }
+    },
+    {
+      "run_id": "civil-a-mobile-mac",
+      "status": "completed",
+      "success": true,
+      "success_basis": "measured",
+      "device": {
+        "id": "galaxy-s24",
+        "viewport_css": [
+          360,
+          780
+        ],
+        "dpr": 3,
+        "orientation": "portrait",
+        "input": "touch",
+        "form_factor": "phone"
+      },
+      "steps": 65,
+      "success_detail": {
+        "criteria": [
+          {
+            "kind": "selector_visible",
+            "value": "#done",
+            "passed": true
+          }
+        ],
+        "unevaluable": []
+      }
+    },
+    {
+      "run_id": "civil-b-mobile",
+      "status": "failed",
+      "success": false,
+      "success_basis": "measured",
+      "device": {
+        "id": "galaxy-s24",
+        "viewport_css": [
+          360,
+          780
+        ],
+        "dpr": 3,
+        "orientation": "portrait",
+        "input": "touch",
+        "form_factor": "phone"
+      },
+      "steps": 65,
+      "success_detail": {
+        "criteria": [
+          {
+            "kind": "selector_visible",
+            "value": "#done",
+            "passed": false
+          }
+        ],
+        "unevaluable": []
+      }
+    },
+    {
+      "run_id": "civil-b-mobile-mac",
+      "status": "completed",
+      "success": true,
+      "success_basis": "measured",
+      "device": {
+        "id": "galaxy-s24",
+        "viewport_css": [
+          360,
+          780
+        ],
+        "dpr": 3,
+        "orientation": "portrait",
+        "input": "touch",
+        "form_factor": "phone"
+      },
+      "steps": 65,
+      "success_detail": {
+        "criteria": [
+          {
+            "kind": "selector_visible",
+            "value": "#done",
+            "passed": true
+          }
+        ],
+        "unevaluable": []
+      }
+    },
+    {
+      "run_id": "lms-a-mobile",
+      "status": "completed",
+      "success": true,
+      "success_basis": "measured",
+      "device": {
+        "id": "galaxy-s24",
+        "viewport_css": [
+          360,
+          780
+        ],
+        "dpr": 3,
+        "orientation": "portrait",
+        "input": "touch",
+        "form_factor": "phone"
+      },
+      "steps": 35,
+      "success_detail": {
+        "criteria": [
+          {
+            "kind": "selector_visible",
+            "value": "#result-score",
+            "passed": true
+          }
+        ],
+        "unevaluable": []
+      }
+    },
+    {
+      "run_id": "lms-b-mobile",
+      "status": "completed",
+      "success": true,
+      "success_basis": "measured",
+      "device": {
+        "id": "galaxy-s24",
+        "viewport_css": [
+          360,
+          780
+        ],
+        "dpr": 3,
+        "orientation": "portrait",
+        "input": "touch",
+        "form_factor": "phone"
+      },
+      "steps": 35,
+      "success_detail": {
+        "criteria": [
+          {
+            "kind": "selector_visible",
+            "value": "#result-score",
+            "passed": true
+          }
+        ],
+        "unevaluable": []
+      }
+    }
+  ],
+  "limits": [
+    "Known synthetic fixtures; not heldoutproducts orhumanstudy",
+    "Simulator directnative options/cart/checkout only, not fullSafariorder",
+    "Figmafidelityunverified",
+    "OMOcomparedinstructionuse; noanalyzerinvocationseen; laterRangerepairnotcausallyevaluatedbyOMO"
+  ],
+  "skill_quick_validate": {
+    "status": "unavailable",
+    "reason": "system Python has no PyYAML; no dependency installed for this helper",
+    "other_checks": "existing reading/packaging/install checks passed; frontmatter retained and manually checked"
+  },
+  "code_commit": "a0171d229528f782e248bed93591331348a49fb6",
+  "comparison_access_correction": "FinalAstrapair allowsordinaryOMOreferencesbotharms;0permissiondenials. Prioraccess-mismatchedpilotexcludedfromacceptance.",
+  "ci_code_commit": {
+    "sha": "a0171d229528f782e248bed93591331348a49fb6",
+    "run": "https://github.com/remorser58/Remorsearch_UX_QA_Skill/actions/runs/38608559895",
+    "status": "in_progress at last read; not claimedpassed"
+  },
+  "final_comparison": {
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "plain": {
+      "raw_cards": 6,
+      "supported_families": 5,
+      "unsupported": 1,
+      "report_seconds": 307.28
+    },
+    "skill": {
+      "raw_cards": 5,
+      "supported_families": 6,
+      "unsupported": 0,
+      "report_seconds": 608.3
+    },
+    "scope": "onepairknownfixtures;no general superiority",
+    "glm": "requestedInferHubGLM5.3high;bothupstreamfailed;noqualityscore",
+    "blind_copy_correction": "P83originalinteraction-evidence.mdrestoredbyteidenticalbeforejudgment"
+  }
+}

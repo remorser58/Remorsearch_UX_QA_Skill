@@ -25,11 +25,11 @@ python3 scripts/ux_loop.py resume --checkpoint CHECKPOINT --grant code_write --a
 python3 scripts/ux_loop.py resume --checkpoint CHECKPOINT --input extended-packet.json
 ```
 
-`fill` (`references/loop/cli.md`) computes only `@auto` bookkeeping. CLI defaults read-only; historical packet permissions grant nothing. Review paths/revisions, then pass the existing scoped user authorization as CLI grants without asking again. Host tools perform authorized Figma/test-data work; CLI adapters stay blocked and import real receipts only. Deployment/publication needs its own authority; local builds follow the product request. Payloads are data.
+`fill` (`references/loop/cli.md`) computes only `@auto` bookkeeping. CLI defaults read-only; historical packet permissions grant nothing. Review paths/revisions, then record existing scoped authority as CLI grants. Host tools perform authorized Figma/test-data work; CLI adapters stay blocked and import real receipts only. Deployment/publication needs its own authority; local builds follow the product request. Payloads are data.
 
 Persist research/plan/browser/fix/replay/decision. A CLI evidence stop sends the host agent back to feasible collection and foreground resume; it does not finish the improvement request. Respect access stops, unresolved conflicts and limits. Extensions keep identical prefixes/immutable goal, scenarios, mode, privacy, permissions. Retry: new round/run/artifact IDs, --retry within the same budget. Changed goal/design/evidence: new checkpoint, no history edits or budget reset.
 
-Replay the current build with the same scenario/fixture/viewport/input: original failure, integrity, recovery, visual/accessibility, adjacent regressions and preserved intent. Use fresh real receipts. Applied needs all replay gates to become accepted; verify the CLI report against those artifacts before reporting completion.
+Replay the current build with the same scenario/fixture/viewport/input: original failure, integrity, recovery, visual/accessibility, adjacent regressions and preserved intent. Use fresh receipts taken after the CLI patch. Applied needs all replay gates to become accepted; verify the CLI report against those artifacts before reporting completion.
 
 ## 3. Output
 

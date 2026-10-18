@@ -1,0 +1,1054 @@
+{
+  "aggregate": {
+    "anonymous_reports": 2,
+    "shared_cases": 1,
+    "raw_findings": 9,
+    "seeded_unique_matches_sum_per_report": 9,
+    "distinct_seed_families_in_shared_case": 5,
+    "distinct_seed_ids": [
+      "D-delivery-02",
+      "D-delivery-03",
+      "D-delivery-04",
+      "D-delivery-06",
+      "D-delivery-08"
+    ],
+    "unique_supported_extras_sum_per_report": 0,
+    "unsupported_core_findings": 0,
+    "false_positive_core_findings": 0,
+    "within_report_duplicate_findings": 0,
+    "cross_report_shared_seed_ids": [
+      "D-delivery-02",
+      "D-delivery-04",
+      "D-delivery-06",
+      "D-delivery-08"
+    ],
+    "withheld_hypotheses_excluded": 11,
+    "missing_cited_files_unique": 0,
+    "case_specific_additional_family_reported": [
+      "D-delivery-03"
+    ],
+    "count_limit": "Nine per-report credits cover five distinct seed families in one case; they are not nine independent discoveries/cases or a live-skill effectiveness score."
+  },
+  "reports": [
+    {
+      "label": "T73",
+      "counts": {
+        "raw_findings": 4,
+        "seeded_unique_matches": 4,
+        "raw_supported_seed_matches": 4,
+        "unique_supported_extras": 0,
+        "unsupported_core_findings": 0,
+        "false_positive_core_findings": 0,
+        "duplicate_findings": 0,
+        "withheld_hypotheses_excluded_from_findings": 4,
+        "missing_cited_files_unique": 0,
+        "reported_severity_below_key_minimum": 1,
+        "severity_elevations_not_established_by_recording": 0
+      },
+      "seeded_unique_ids": [
+        "D-delivery-02",
+        "D-delivery-04",
+        "D-delivery-06",
+        "D-delivery-08"
+      ],
+      "reported_task_completion": "verified",
+      "reported_integrity": "pass",
+      "adjudicated_task_completion": "The one shared recording is verified complete; this is not a second live completion for each review.",
+      "adjudicated_integrity": "Shared artifact hashes, captures and final values verify.",
+      "withheld_hypotheses": {
+        "count": 4,
+        "excluded_from_findings": true,
+        "false_positive_penalty": false,
+        "scope": "Reach, gaze, motor models, untested AT conditions and dismissed detector candidates explicitly withheld by the reviewer are not promoted or counted as findings."
+      },
+      "review_scope": "One completed artifact case, one shared profile and user-declared 15-minute inspection limit. No live-persona or full-skill performance inference.",
+      "findings": [
+        {
+          "finding_id": "T73:F1",
+          "reported_title": "Required 부위 선택 option has no operable control (non-semantic div chips)",
+          "reported_basis": "measured",
+          "reported_severity": "P1",
+          "classification": "seed_match",
+          "seed_match": [
+            "D-delivery-02"
+          ],
+          "valid_extra": false,
+          "unsupported": false,
+          "false_positive": false,
+          "duplicate": false,
+          "duplicate_of": null,
+          "issue_family": "required-part-choice-semantics-and-keyboard-contract",
+          "dedup_key": [
+            "T73",
+            "required-part-choice-semantics-and-keyboard-contract"
+          ],
+          "credited_unique_seed": true,
+          "core_observation_supported": true,
+          "evidence_basis": "Raw shared captures/action log plus frozen source; auxiliary detector/model output is not independent proof.",
+          "evidence_reason": "Snapshots 002/003/004/007 contain bone/boneless DIV nodes with role generic, interactive=false and a11y=null; visible text/content names are present. Step 2 changes the selected div styling through a pointer click, with no native radio-state feedback. The full final snapshot has no part INPUT nodes. Frozen source 280-287 and 591-597 provides only DIV chips and click handlers, without radio semantics, tabindex or part keyboard handlers. This establishes the seeded semantic/keyboard contract defect, not an observed assistive-device session.",
+          "support_refs": [
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-002.json",
+              "locator": "elements #grp-part-bone/#grp-part-boneless"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-003.json",
+              "locator": "part nodes; boneless font_weight=700"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-007.json",
+              "locator": "part DIV elements"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-023.json",
+              "locator": "no part INPUT elements"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/run.json",
+              "locator": "step 2"
+            }
+          ],
+          "source_refs": [
+            {
+              "file": "<repo-root>/benchmarks/dev-2/site/delivery/delivery-b.html",
+              "lines": [
+                280,
+                281,
+                283,
+                284,
+                285,
+                591,
+                592,
+                594,
+                595,
+                596,
+                475,
+                476,
+                897,
+                898
+              ]
+            }
+          ],
+          "cited_files": [
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-007.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-004.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-023.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/run.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-007.png",
+              "present": true
+            }
+          ],
+          "missing_cited_files": [],
+          "key_ref": {
+            "file": "<repo-root>/benchmarks/dev-2/keys/delivery.json",
+            "defect_id": "D-delivery-02"
+          },
+          "key_severity_minimum": "P1",
+          "severity_assessment": "P1 matches the key minimum for a required choice without the primary keyboard/control contract. This is source-supported blocking logic, not a recorded AT session.",
+          "factual_subclaim_flags": [
+            {
+              "claim": "No role/name for the part options.",
+              "status": "precision_correction",
+              "reason": "Raw nodes have role generic and content names. Missing features are a selectable-control role, programmatic selection state and keyboard path; the core seed is valid.",
+              "support_refs": [
+                {
+                  "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-002.json",
+                  "locator": "part role/name/a11y"
+                },
+                {
+                  "file": "<repo-root>/benchmarks/dev-2/site/delivery/delivery-b.html",
+                  "lines": [
+                    284,
+                    285
+                  ]
+                }
+              ]
+            }
+          ],
+          "limits": [
+            "No keyboard walk, screen-reader speech, switch or voice-control trial exists. Keyboard failure is source-supported; real AT behavior is unobserved.",
+            "Pointer activation works; absence of native/control semantics must not be rewritten as absence of visible text or all pointer operability."
+          ],
+          "reported_limits": [
+            "No keyboard walk or screen-reader session was recorded (run.json focus_walks is empty), so the conclusion rests on DOM state showing no control element and no focusable node for this group rather than on observed Tab/TalkBack behavior."
+          ]
+        },
+        {
+          "finding_id": "T73:F2",
+          "reported_title": "Cart quantity stepper buttons have no accessible name",
+          "reported_basis": "measured",
+          "reported_severity": "P2",
+          "classification": "seed_match",
+          "seed_match": [
+            "D-delivery-06"
+          ],
+          "valid_extra": false,
+          "unsupported": false,
+          "false_positive": false,
+          "duplicate": false,
+          "duplicate_of": null,
+          "issue_family": "unnamed-cart-quantity-controls",
+          "dedup_key": [
+            "T73",
+            "unnamed-cart-quantity-controls"
+          ],
+          "credited_unique_seed": true,
+          "core_observation_supported": true,
+          "evidence_basis": "Raw shared captures/action log plus frozen source; auxiliary detector/model output is not independent proof.",
+          "evidence_reason": "Snapshot 010 records minus/plus buttons with empty name and name_source=none; minus is disabled at quantity 1. Snapshot 011 after step 10 has quantity 2 and both buttons enabled, still unnamed. Source 643-650 renders only aria-hidden SVG glyphs in the buttons without aria-label, title or text. The two buttons and quantity states form one D-delivery-06 family.",
+          "support_refs": [
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-010.json",
+              "locator": "qty-1-dec/inc name and disabled state"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-011.json",
+              "locator": "both buttons enabled, name empty; qty-1-val=2"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/run.json",
+              "locator": "step 10"
+            }
+          ],
+          "source_refs": [
+            {
+              "file": "<repo-root>/benchmarks/dev-2/site/delivery/delivery-b.html",
+              "lines": [
+                643,
+                644,
+                647,
+                648,
+                649,
+                650
+              ]
+            }
+          ],
+          "cited_files": [
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-011.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-010.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-023.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/run.json",
+              "present": true
+            }
+          ],
+          "missing_cited_files": [],
+          "key_ref": {
+            "file": "<repo-root>/benchmarks/dev-2/keys/delivery.json",
+            "defect_id": "D-delivery-06"
+          },
+          "key_severity_minimum": "P2",
+          "severity_assessment": "P2 matches the key minimum; exact speech remains unverified.",
+          "factual_subclaim_flags": [],
+          "limits": [
+            "Accessible-name absence is raw DOM evidence. Exact speech or assistive task blockage is not recorded.",
+            "SVG glyph geometry is separate from the 48x48 button hit area. Do not credit a second family for the second button."
+          ],
+          "reported_limits": [
+            "Names are as computed by the harness accessibility data; no live screen-reader announcement was captured."
+          ]
+        },
+        {
+          "finding_id": "T73:F3",
+          "reported_title": "추가 선택 row text is not tappable; only the 18x18 checkbox responds",
+          "reported_basis": "measured",
+          "reported_severity": "P2",
+          "classification": "seed_match",
+          "seed_match": [
+            "D-delivery-04"
+          ],
+          "valid_extra": false,
+          "unsupported": false,
+          "false_positive": false,
+          "duplicate": false,
+          "duplicate_of": null,
+          "issue_family": "extra-option-label-activation-and-small-hit-area",
+          "dedup_key": [
+            "T73",
+            "extra-option-label-activation-and-small-hit-area"
+          ],
+          "credited_unique_seed": true,
+          "core_observation_supported": true,
+          "evidence_basis": "Raw shared captures/action log plus frozen source; auxiliary detector/model output is not independent proof.",
+          "evidence_reason": "Step 5 hits the exposed cola name at the recorded point and has no feedback during 3000 ms. Snapshot 005/006 element arrays are identical and their PNG hashes are equal; focus separately moves to body, so the entire snapshot state is not identical. Step 6 hits the 18x18 input and records native false-to-true checkbox activation; viewed PNG 007 shows the check and 25,000 CTA. Source 187/301/606 defines the small input, non-LABEL row and input-only change handler. Accessible naming through aria-labelledby exists but does not activate the name span.",
+          "support_refs": [
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/run.json",
+              "locator": "steps 5-6"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-005.json",
+              "locator": "element array; checkbox geometry"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-006.json",
+              "locator": "same elements; checkbox geometry"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-006.css.png"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-007.json",
+              "locator": "post-toggle CTA"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-007.png"
+            }
+          ],
+          "source_refs": [
+            {
+              "file": "<repo-root>/benchmarks/dev-2/site/delivery/delivery-b.html",
+              "lines": [
+                186,
+                187,
+                301,
+                605,
+                606,
+                607,
+                610
+              ]
+            }
+          ],
+          "cited_files": [
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/run.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-005.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-006.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-007.png",
+              "present": true
+            }
+          ],
+          "missing_cited_files": [],
+          "key_ref": {
+            "file": "<repo-root>/benchmarks/dev-2/keys/delivery.json",
+            "defect_id": "D-delivery-04"
+          },
+          "key_severity_minimum": "P2",
+          "severity_assessment": "P2 matches the key minimum; no physical tremor/grip hit-rate is established.",
+          "factual_subclaim_flags": [
+            {
+              "claim": "The recorded persona note supports the extra-row finding.",
+              "status": "not_independent_proof",
+              "reason": "The note content repeats the issue but its anchor is step 22/#pay-btn. Use the actual step-5/6 evidence, not that note as a corroborating measurement.",
+              "support_refs": [
+                {
+                  "file": "local-evidence/operators/old/runs/P1-page1/run.json",
+                  "locator": "persona_notes[0] and steps 5-6"
+                }
+              ]
+            }
+          ],
+          "limits": [
+            "18x18 CSS px and label no-op are observed. Millimetres, miss probabilities and physical one-hand effort are not measurements from this recording.",
+            "The key notes the spacing exception for these 48px-pitch rows; no unconditional WCAG 2.5.8 size failure is credited.",
+            "The late persona note is anchored to step 22/#pay-btn, not the earlier row tap. It is not independent evidence; steps 5-6 and raw captures establish the core issue."
+          ],
+          "reported_limits": [
+            "No physical-hand test was run. The option rows are 48 px apart, so a target-size spacing exception likely applies; no target-size standards violation is asserted here, only the observed tap behavior and the 18x18 measured interactive box."
+          ]
+        },
+        {
+          "finding_id": "T73:F4",
+          "reported_title": "Coupon rejection message gives only an error code, no cause or recovery hint",
+          "reported_basis": "judgment",
+          "reported_severity": "P3",
+          "classification": "seed_match",
+          "seed_match": [
+            "D-delivery-08"
+          ],
+          "valid_extra": false,
+          "unsupported": false,
+          "false_positive": false,
+          "duplicate": false,
+          "duplicate_of": null,
+          "issue_family": "coupon-error-without-actionable-cause",
+          "dedup_key": [
+            "T73",
+            "coupon-error-without-actionable-cause"
+          ],
+          "credited_unique_seed": true,
+          "core_observation_supported": true,
+          "evidence_basis": "Raw shared captures/action log plus frozen source; auxiliary detector/model output is not independent proof.",
+          "evidence_reason": "Viewed raw PNG 018 and its JSON show preserved HANKI5000, the generic CPN-4003 rejection and a 53,000 CTA. JSON 020 shows success after HANKKI5000 correction and 48,000. Steps 16-19 record entry/application/correction/application. The input has aria-invalid and a described-by message. Source 819/825-835 chooses different reasons but always returns the same generic failure text, confirming the guidance defect.",
+          "support_refs": [
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/run.json",
+              "locator": "steps 16-19"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-018.json",
+              "locator": "coupon-code a11y and coupon-msg"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-018.png"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-020.json",
+              "locator": "success message and totals"
+            }
+          ],
+          "source_refs": [
+            {
+              "file": "<repo-root>/benchmarks/dev-2/site/delivery/delivery-b.html",
+              "lines": [
+                815,
+                817,
+                819,
+                825,
+                826,
+                827,
+                828,
+                829,
+                832,
+                835
+              ]
+            }
+          ],
+          "cited_files": [
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/run.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-018.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-018.png",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-020.json",
+              "present": true
+            }
+          ],
+          "missing_cited_files": [],
+          "key_ref": {
+            "file": "<repo-root>/benchmarks/dev-2/keys/delivery.json",
+            "defect_id": "D-delivery-08"
+          },
+          "key_severity_minimum": "P2",
+          "severity_assessment": "Reported P3 is below the key minimum P2. The guidance judgment is supported, but human unaided recovery is not measured.",
+          "factual_subclaim_flags": [
+            {
+              "claim": "Recovery depended on the user noticing the typo unaided.",
+              "status": "unsupported_factual_inference",
+              "reason": "The agent replaces the text with the correct code supplied in the task/brief. That does not record a human noticing a typo or recovering unaided.",
+              "support_refs": [
+                {
+                  "file": "local-evidence/operators/old/runs/P1-page1/run.json",
+                  "locator": "steps 16-19"
+                }
+              ]
+            }
+          ],
+          "limits": [
+            "Only typo/correction was exercised; expiry and minimum-order failure states were not captured.",
+            "Message strings and replacement actions are measured. Human understanding, unaided typo recognition or reduced support contact is not measured.",
+            "CPN-4003 is an observed error identifier; its internal purpose or sensitive-information exposure is not established."
+          ],
+          "reported_limits": [
+            "Message wording is the fixture's; no production data on how often coupon rejection occurs was available. The error is otherwise well wired: the input carries aria-invalid=true and is described by the status region."
+          ]
+        }
+      ]
+    },
+    {
+      "label": "T14",
+      "counts": {
+        "raw_findings": 5,
+        "seeded_unique_matches": 5,
+        "raw_supported_seed_matches": 5,
+        "unique_supported_extras": 0,
+        "unsupported_core_findings": 0,
+        "false_positive_core_findings": 0,
+        "duplicate_findings": 0,
+        "withheld_hypotheses_excluded_from_findings": 7,
+        "missing_cited_files_unique": 0,
+        "reported_severity_below_key_minimum": 1,
+        "severity_elevations_not_established_by_recording": 2
+      },
+      "seeded_unique_ids": [
+        "D-delivery-02",
+        "D-delivery-03",
+        "D-delivery-04",
+        "D-delivery-06",
+        "D-delivery-08"
+      ],
+      "reported_task_completion": "verified",
+      "reported_integrity": "pass",
+      "adjudicated_task_completion": "The one shared recording is verified complete; this is not a second live completion for each review.",
+      "adjudicated_integrity": "Shared artifact hashes, captures and final values verify.",
+      "withheld_hypotheses": {
+        "count": 7,
+        "excluded_from_findings": true,
+        "false_positive_penalty": false,
+        "scope": "Reach, gaze, motor models, untested AT conditions and dismissed detector candidates explicitly withheld by the reviewer are not promoted or counted as findings."
+      },
+      "review_scope": "One completed artifact case, one shared profile and user-declared 15-minute inspection limit. No live-persona or full-skill performance inference.",
+      "findings": [
+        {
+          "finding_id": "T14:F1",
+          "reported_title": "Additional-option rows are not tappable; only the 18x18 px checkbox responds",
+          "reported_basis": "measured",
+          "reported_severity": "P1",
+          "classification": "seed_match",
+          "seed_match": [
+            "D-delivery-04"
+          ],
+          "valid_extra": false,
+          "unsupported": false,
+          "false_positive": false,
+          "duplicate": false,
+          "duplicate_of": null,
+          "issue_family": "extra-option-label-activation-and-small-hit-area",
+          "dedup_key": [
+            "T14",
+            "extra-option-label-activation-and-small-hit-area"
+          ],
+          "credited_unique_seed": true,
+          "core_observation_supported": true,
+          "evidence_basis": "Raw shared captures/action log plus frozen source; auxiliary detector/model output is not independent proof.",
+          "evidence_reason": "Step 5 hits the exposed cola name at the recorded point and has no feedback during 3000 ms. Snapshot 005/006 element arrays are identical and their PNG hashes are equal; focus separately moves to body, so the entire snapshot state is not identical. Step 6 hits the 18x18 input and records native false-to-true checkbox activation; viewed PNG 007 shows the check and 25,000 CTA. Source 187/301/606 defines the small input, non-LABEL row and input-only change handler. Accessible naming through aria-labelledby exists but does not activate the name span.",
+          "support_refs": [
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/run.json",
+              "locator": "steps 5-6"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-005.json",
+              "locator": "element array; checkbox geometry"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-006.json",
+              "locator": "same elements; checkbox geometry"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-006.css.png"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-007.json",
+              "locator": "post-toggle CTA"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-007.png"
+            }
+          ],
+          "source_refs": [
+            {
+              "file": "<repo-root>/benchmarks/dev-2/site/delivery/delivery-b.html",
+              "lines": [
+                186,
+                187,
+                301,
+                605,
+                606,
+                607,
+                610
+              ]
+            }
+          ],
+          "cited_files": [
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/run.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-005.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-006.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-007.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-006.css.png",
+              "present": true
+            }
+          ],
+          "missing_cited_files": [],
+          "key_ref": {
+            "file": "<repo-root>/benchmarks/dev-2/keys/delivery.json",
+            "defect_id": "D-delivery-04"
+          },
+          "key_severity_minimum": "P2",
+          "severity_assessment": "Reported P1 is above key minimum P2 without measured task blockage or physical impact. The valid 18px/label-activation issue does not establish that severity elevation; model miss probabilities remain withheld.",
+          "factual_subclaim_flags": [
+            {
+              "claim": "18 CSS px converts to about 3.3 mm on the recorded device.",
+              "status": "unverified_derived_estimate_not_raw_measurement",
+              "reason": "Raw captures establish CSS size and DPR, not measured display millimetres. The report identifies a catalog-derived value; retain it as an estimate, not independent physical proof or a reason for P1 severity.",
+              "support_refs": [
+                {
+                  "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-006.json",
+                  "locator": "device and checkbox box"
+                },
+                {
+                  "file": "same-trace/profiles.json",
+                  "locator": "AP-01 synthetic motor/context attributes"
+                }
+              ]
+            }
+          ],
+          "limits": [
+            "18x18 CSS px and label no-op are observed. Millimetres, miss probabilities and physical one-hand effort are not measurements from this recording.",
+            "The key notes the spacing exception for these 48px-pitch rows; no unconditional WCAG 2.5.8 size failure is credited.",
+            "The late persona note is anchored to step 22/#pay-btn, not the earlier row tap. It is not independent evidence; steps 5-6 and raw captures establish the core issue."
+          ],
+          "reported_limits": [
+            "The mm value is derived from the catalog device density, not an exact pt/dp conversion.",
+            "WCAG 2.5.8 Target Size (Minimum) is 24x24 CSS px with a spacing exception; neighbouring extras are spaced well over 24 px apart, so the spacing exception may apply and this is reported as an ergonomic/platform-guidance issue rather than a WCAG 2.5.8 failure.",
+            "One simulated profile on one device; no physical hand test was performed."
+          ]
+        },
+        {
+          "finding_id": "T14:F2",
+          "reported_title": "Part option (부위 선택) exposes no control semantics and no keyboard path",
+          "reported_basis": "measured",
+          "reported_severity": "P1",
+          "classification": "seed_match",
+          "seed_match": [
+            "D-delivery-02"
+          ],
+          "valid_extra": false,
+          "unsupported": false,
+          "false_positive": false,
+          "duplicate": false,
+          "duplicate_of": null,
+          "issue_family": "required-part-choice-semantics-and-keyboard-contract",
+          "dedup_key": [
+            "T14",
+            "required-part-choice-semantics-and-keyboard-contract"
+          ],
+          "credited_unique_seed": true,
+          "core_observation_supported": true,
+          "evidence_basis": "Raw shared captures/action log plus frozen source; auxiliary detector/model output is not independent proof.",
+          "evidence_reason": "Snapshots 002/003/004/007 contain bone/boneless DIV nodes with role generic, interactive=false and a11y=null; visible text/content names are present. Step 2 changes the selected div styling through a pointer click, with no native radio-state feedback. The full final snapshot has no part INPUT nodes. Frozen source 280-287 and 591-597 provides only DIV chips and click handlers, without radio semantics, tabindex or part keyboard handlers. This establishes the seeded semantic/keyboard contract defect, not an observed assistive-device session.",
+          "support_refs": [
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-002.json",
+              "locator": "elements #grp-part-bone/#grp-part-boneless"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-003.json",
+              "locator": "part nodes; boneless font_weight=700"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-007.json",
+              "locator": "part DIV elements"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-023.json",
+              "locator": "no part INPUT elements"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/run.json",
+              "locator": "step 2"
+            }
+          ],
+          "source_refs": [
+            {
+              "file": "<repo-root>/benchmarks/dev-2/site/delivery/delivery-b.html",
+              "lines": [
+                280,
+                281,
+                283,
+                284,
+                285,
+                591,
+                592,
+                594,
+                595,
+                596,
+                475,
+                476,
+                897,
+                898
+              ]
+            }
+          ],
+          "cited_files": [
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/run.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-002.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-003.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-006.json",
+              "present": true
+            }
+          ],
+          "missing_cited_files": [],
+          "key_ref": {
+            "file": "<repo-root>/benchmarks/dev-2/keys/delivery.json",
+            "defect_id": "D-delivery-02"
+          },
+          "key_severity_minimum": "P1",
+          "severity_assessment": "P1 matches the key minimum for the required non-keyboard control contract. Observed AT behavior is still untested.",
+          "factual_subclaim_flags": [
+            {
+              "claim": "Selected state is conveyed only by color and border change.",
+              "status": "precision_correction",
+              "reason": "Snapshot 003 and source 63 also show font weight changing 400-to-700. These remain visual-only cues; no radio state is exposed. No separate color-only defect is credited.",
+              "support_refs": [
+                {
+                  "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-002.json",
+                  "locator": "boneless font_weight=400"
+                },
+                {
+                  "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-003.json",
+                  "locator": "boneless font_weight=700"
+                },
+                {
+                  "file": "<repo-root>/benchmarks/dev-2/site/delivery/delivery-b.html",
+                  "lines": [
+                    63
+                  ]
+                }
+              ]
+            }
+          ],
+          "limits": [
+            "No keyboard walk, screen-reader speech, switch or voice-control trial exists. Keyboard failure is source-supported; real AT behavior is unobserved.",
+            "Pointer activation works; absence of native/control semantics must not be rewritten as absence of visible text or all pointer operability."
+          ],
+          "reported_limits": [
+            "Focusability was read from the captured DOM state; keyboard tab order was not exercised.",
+            "No screen reader was run, so the announcement a real AT makes is not verified."
+          ]
+        },
+        {
+          "finding_id": "T14:F3",
+          "reported_title": "Cart quantity buttons have empty accessible names",
+          "reported_basis": "measured",
+          "reported_severity": "P1",
+          "classification": "seed_match",
+          "seed_match": [
+            "D-delivery-06"
+          ],
+          "valid_extra": false,
+          "unsupported": false,
+          "false_positive": false,
+          "duplicate": false,
+          "duplicate_of": null,
+          "issue_family": "unnamed-cart-quantity-controls",
+          "dedup_key": [
+            "T14",
+            "unnamed-cart-quantity-controls"
+          ],
+          "credited_unique_seed": true,
+          "core_observation_supported": true,
+          "evidence_basis": "Raw shared captures/action log plus frozen source; auxiliary detector/model output is not independent proof.",
+          "evidence_reason": "Snapshot 010 records minus/plus buttons with empty name and name_source=none; minus is disabled at quantity 1. Snapshot 011 after step 10 has quantity 2 and both buttons enabled, still unnamed. Source 643-650 renders only aria-hidden SVG glyphs in the buttons without aria-label, title or text. The two buttons and quantity states form one D-delivery-06 family.",
+          "support_refs": [
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-010.json",
+              "locator": "qty-1-dec/inc name and disabled state"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-011.json",
+              "locator": "both buttons enabled, name empty; qty-1-val=2"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/run.json",
+              "locator": "step 10"
+            }
+          ],
+          "source_refs": [
+            {
+              "file": "<repo-root>/benchmarks/dev-2/site/delivery/delivery-b.html",
+              "lines": [
+                643,
+                644,
+                647,
+                648,
+                649,
+                650
+              ]
+            }
+          ],
+          "cited_files": [
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/run.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-011.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-011.css.png",
+              "present": true
+            }
+          ],
+          "missing_cited_files": [],
+          "key_ref": {
+            "file": "<repo-root>/benchmarks/dev-2/keys/delivery.json",
+            "defect_id": "D-delivery-06"
+          },
+          "key_severity_minimum": "P2",
+          "severity_assessment": "Reported P1 is above key minimum P2 without a recorded assistive task block. Name absence is verified; the elevated severity is not established by this touch recording.",
+          "factual_subclaim_flags": [
+            {
+              "claim": "The minus glyph is measured at 10x10.",
+              "status": "unsupported_geometry_subclaim",
+              "reason": "Snapshot 011 reports a 10x10 plus paint box, but no minus paint part. The source minus is a horizontal M5 10h10 path in a 20x20 SVG; a 10x10 minus paint measurement is not established. The actual button boxes are 48x48, and empty names remain supported.",
+              "support_refs": [
+                {
+                  "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-011.json",
+                  "locator": "qty buttons paint and box"
+                },
+                {
+                  "file": "<repo-root>/benchmarks/dev-2/site/delivery/delivery-b.html",
+                  "lines": [
+                    643,
+                    644,
+                    648,
+                    650
+                  ]
+                }
+              ]
+            }
+          ],
+          "limits": [
+            "Accessible-name absence is raw DOM evidence. Exact speech or assistive task blockage is not recorded.",
+            "SVG glyph geometry is separate from the 48x48 button hit area. Do not credit a second family for the second button."
+          ],
+          "reported_limits": [
+            "The accessible name comes from the DOM capture; no screen reader or voice-control session was run."
+          ]
+        },
+        {
+          "finding_id": "T14:F4",
+          "reported_title": "Sauce option labels are clipped, hiding part of the price",
+          "reported_basis": "measured",
+          "reported_severity": "P2",
+          "classification": "seed_match",
+          "seed_match": [
+            "D-delivery-03"
+          ],
+          "valid_extra": false,
+          "unsupported": false,
+          "false_positive": false,
+          "duplicate": false,
+          "duplicate_of": null,
+          "issue_family": "sauce-option-price-text-clipping",
+          "dedup_key": [
+            "T14",
+            "sauce-option-price-text-clipping"
+          ],
+          "credited_unique_seed": true,
+          "core_observation_supported": true,
+          "evidence_basis": "Raw shared captures/action log plus frozen source; auxiliary detector/model output is not independent proof.",
+          "evidence_reason": "Raw snapshot 006 records hot text full/visible width 111.77/88.98 and garlic 115.72/89.98, with horizontal clipping by their label containers and no ellipsis. Viewed raw CSS PNGs 004/006 show incomplete surcharge suffixes. Snapshot 002 shows clipping before hot selection (hot 109.53/89.98), so selection changes the extent but is not required for the defect. Source 183-185 fixes three narrow, nowrap, overflow-hidden chips with the full priced labels at 293-294.",
+          "support_refs": [
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-002.json",
+              "locator": "hot/garlic span clipped.x"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-006.json",
+              "locator": "hot/garlic span box/visible_box"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-004.css.png"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-006.css.png"
+            }
+          ],
+          "source_refs": [
+            {
+              "file": "<repo-root>/benchmarks/dev-2/site/delivery/delivery-b.html",
+              "lines": [
+                183,
+                184,
+                185,
+                293,
+                294
+              ]
+            }
+          ],
+          "cited_files": [
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-006.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-004.css.png",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-006.css.png",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-002.json",
+              "present": true
+            }
+          ],
+          "missing_cited_files": [],
+          "key_ref": {
+            "file": "<repo-root>/benchmarks/dev-2/keys/delivery.json",
+            "defect_id": "D-delivery-03"
+          },
+          "key_severity_minimum": "P3",
+          "severity_assessment": "Reported P2 is more urgent than key minimum P3. Clipping is measured; extra priority is a judgment, with no observed price misunderstanding or financial harm.",
+          "factual_subclaim_flags": [],
+          "limits": [
+            "Character suffixes depend on the captured font/rendering; no real-device font test, alternate width, zoom or text-spacing pass exists.",
+            "Clipping occurs inside chips; it is not proof of whole-page overflow. Multiple labels/states count once."
+          ],
+          "reported_limits": [
+            "Font fallback in the headless capture is unverified, so the exact number of hidden characters may differ on a device; the container clipping itself is present in the captured layout and in the rendered screenshot at 360 px."
+          ]
+        },
+        {
+          "finding_id": "T14:F5",
+          "reported_title": "Coupon rejection message gives no reason and no recovery hint",
+          "reported_basis": "judgment",
+          "reported_severity": "P3",
+          "classification": "seed_match",
+          "seed_match": [
+            "D-delivery-08"
+          ],
+          "valid_extra": false,
+          "unsupported": false,
+          "false_positive": false,
+          "duplicate": false,
+          "duplicate_of": null,
+          "issue_family": "coupon-error-without-actionable-cause",
+          "dedup_key": [
+            "T14",
+            "coupon-error-without-actionable-cause"
+          ],
+          "credited_unique_seed": true,
+          "core_observation_supported": true,
+          "evidence_basis": "Raw shared captures/action log plus frozen source; auxiliary detector/model output is not independent proof.",
+          "evidence_reason": "Viewed raw PNG 018 and its JSON show preserved HANKI5000, the generic CPN-4003 rejection and a 53,000 CTA. JSON 020 shows success after HANKKI5000 correction and 48,000. Steps 16-19 record entry/application/correction/application. The input has aria-invalid and a described-by message. Source 819/825-835 chooses different reasons but always returns the same generic failure text, confirming the guidance defect.",
+          "support_refs": [
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/run.json",
+              "locator": "steps 16-19"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-018.json",
+              "locator": "coupon-code a11y and coupon-msg"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-018.png"
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-020.json",
+              "locator": "success message and totals"
+            }
+          ],
+          "source_refs": [
+            {
+              "file": "<repo-root>/benchmarks/dev-2/site/delivery/delivery-b.html",
+              "lines": [
+                815,
+                817,
+                819,
+                825,
+                826,
+                827,
+                828,
+                829,
+                832,
+                835
+              ]
+            }
+          ],
+          "cited_files": [
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/run.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-018.json",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-018.css.png",
+              "present": true
+            },
+            {
+              "file": "local-evidence/operators/old/runs/P1-page1/S-P1-page1-020.json",
+              "present": true
+            },
+            {
+              "file": "evidence/product-brief.md",
+              "present": true
+            }
+          ],
+          "missing_cited_files": [],
+          "key_ref": {
+            "file": "<repo-root>/benchmarks/dev-2/keys/delivery.json",
+            "defect_id": "D-delivery-08"
+          },
+          "key_severity_minimum": "P2",
+          "severity_assessment": "Reported P3 is below key minimum P2. Cause-specific guidance is missing; the success/recovery does not measure confusion or support-contact effects.",
+          "factual_subclaim_flags": [],
+          "limits": [
+            "Only typo/correction was exercised; expiry and minimum-order failure states were not captured.",
+            "Message strings and replacement actions are measured. Human understanding, unaided typo recognition or reduced support contact is not measured.",
+            "CPN-4003 is an observed error identifier; its internal purpose or sensitive-information exposure is not established."
+          ],
+          "reported_limits": [
+            "Whether a more specific message changes completion or support contact rate was not tested.",
+            "Single synthetic run and fixture; the field-case list comes from the product brief, not from observed field data."
+          ]
+        }
+      ]
+    }
+  ],
+  "global_limits": [
+    "All source matches are paired with raw captured evidence; no auxiliary output is used as an independent measurement.",
+    "Physical reach, gaze, motor dispersion/miss probability, real-device display millimetres, speech and human recovery behavior are untested.",
+    "The recording selected required options and entered address before payment; missing-option feedback and address-error/request-loss paths were not exercised.",
+    "No other page/profile or repeated trial was inspected. No overall benchmark recall, condition assignment or method-causal claim is made."
+  ]
+}

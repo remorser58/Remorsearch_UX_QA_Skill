@@ -1,0 +1,10 @@
+{
+  "page-1.html": {
+    "source": "benchmarks/dev-2/site/delivery/delivery-b.html",
+    "sha256": "ac149e3562c821182a3e9c73de43be52da922121acd2c5cf146a5c9091928eb5"
+  },
+  "page-2.html": {
+    "source": "benchmarks/dev-2/site/delivery/delivery-a.html",
+    "sha256": "76e2d9bd73fe15d4162a7ebb9352a164f4607ffaae82a9c93a90cfd80c1a44e5"
+  }
+}

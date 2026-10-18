@@ -588,6 +588,15 @@ export function extractSnapshot(args) {
         }
       })(),
       described_by: ids('aria-describedby').slice(0, 8),
+      // A visible label is the primary affordance. Icon-only controls also need a
+      // discoverable hover/focus explanation; record native title or an associated
+      // role=tooltip when it is present in the captured state.
+      tooltip: (() => {
+        const title = (el.getAttribute('title') || '').trim();
+        if (title) return title.slice(0, 200);
+        return ids('aria-describedby').map((id) => byId(el, id)).filter((node) => node && node.getAttribute('role') === 'tooltip')
+          .map((node) => text(node)).filter(Boolean).join(' ').slice(0, 200);
+      })(),
       visible_label: tag === 'textarea' ? '' : visibleInnerText(el),
       // Hidden from assistive technology (aria-hidden or inert on it or an ancestor).
       hidden: !!(el.closest && (el.closest('[aria-hidden="true"]') || el.closest('[inert]'))),
@@ -611,10 +620,28 @@ export function extractSnapshot(args) {
     };
   };
   // Text cut off by its own box (XCTest textClipped; WCAG 1.4.4/1.4.12 symptoms).
-  const clippedOf = (el, cs) => {
+  const clippedOf = (el, cs, directLabel = false) => {
     const hide = (v) => v === 'hidden' || v === 'clip';
-    let x = hide(cs.overflowX) && el.scrollWidth > el.clientWidth + 1;
-    let y = hide(cs.overflowY) && el.scrollHeight > el.clientHeight + 1;
+    // A control's scroll size includes decoration and nested labels. Measure only
+    // the text this candidate owns; tagged descendants are captured separately.
+    const rects = [];
+    if (directLabel) {
+      for (const node of el.childNodes) {
+        if (node.nodeType !== 3 || !node.nodeValue.trim()) continue;
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        rects.push(...[...range.getClientRects()].filter((r) => r.width > 0 && r.height > 0));
+      }
+      if (!rects.length) return null;
+    }
+    const cuts = (a, axis) => rects.some((r) => axis === 'x'
+      ? r.right > a.right + 1 || r.left < a.left - 1
+      : r.bottom > a.bottom + 1 || r.top < a.top - 1);
+    const own = el.getBoundingClientRect();
+    const inner = { left: own.left + el.clientLeft, top: own.top + el.clientTop,
+      right: own.left + el.clientLeft + el.clientWidth, bottom: own.top + el.clientTop + el.clientHeight };
+    let x = hide(cs.overflowX) && (directLabel ? cuts(inner, 'x') : el.scrollWidth > el.clientWidth + 1);
+    let y = hide(cs.overflowY) && (directLabel ? cuts(inner, 'y') : el.scrollHeight > el.clientHeight + 1);
     let by = null;
     let ellipsis = cs.textOverflow === 'ellipsis';
     if (!x && !y) {
@@ -629,8 +656,8 @@ export function extractSnapshot(args) {
         if (ax === 'auto' || ax === 'scroll' || ay === 'auto' || ay === 'scroll') break;
         if (!hide(ax) && !hide(ay)) continue;
         const a = n.getBoundingClientRect();
-        const cutX = hide(ax) && (r.right > a.right + 1 || r.left < a.left - 1) && r.left < a.right && r.right > a.left;
-        const cutY = hide(ay) && (r.bottom > a.bottom + 1 || r.top < a.top - 1) && r.top < a.bottom && r.bottom > a.top;
+        const cutX = hide(ax) && (directLabel ? cuts(a, 'x') : r.right > a.right + 1 || r.left < a.left - 1) && r.left < a.right && r.right > a.left;
+        const cutY = hide(ay) && (directLabel ? cuts(a, 'y') : r.bottom > a.bottom + 1 || r.top < a.top - 1) && r.top < a.bottom && r.bottom > a.top;
         if (cutX || cutY) {
           x = cutX;
           y = cutY;
@@ -1331,7 +1358,7 @@ export function extractSnapshot(args) {
       })(),
       ...(c.interactive || ['input', 'select', 'textarea'].includes(tag) ? { a11y: a11yOf(el) } : {}),
       ...(() => {
-        const clip = !c.interactive && hasDirectText(el) ? clippedOf(el, cs) : null;
+        const clip = hasDirectText(el) ? clippedOf(el, cs, c.interactive) : null;
         return clip ? { clipped: clip } : {};
       })(),
       roles: roleMap.has(el) ? [...roleMap.get(el)].sort() : [],

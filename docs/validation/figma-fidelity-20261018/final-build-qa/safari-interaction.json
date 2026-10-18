@@ -1,0 +1,183 @@
+{
+  "engine": "iOS 27.0 Simulator Mobile Safari via safaridriver",
+  "steps": [
+    {
+      "action": "touch 과정 link at scrollY 0",
+      "point": {
+        "x": 105,
+        "y": 264,
+        "box": [
+          80,
+          242,
+          48,
+          44
+        ]
+      },
+      "hash": "#case-process",
+      "scrollY": 960,
+      "open": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "current": "stage-choice",
+      "events": [
+        "touchstart:과정",
+        "touchstart:과정",
+        "touchend:과정",
+        "touchend:과정",
+        "click:과정",
+        "click:과정"
+      ]
+    },
+    {
+      "action": "touch 본문 link at scrollY 0",
+      "point": {
+        "x": 161,
+        "y": 264,
+        "box": [
+          137,
+          242,
+          48,
+          44
+        ]
+      },
+      "hash": "#case-document-body",
+      "scrollY": 2738,
+      "open": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "current": "stage-validate",
+      "events": [
+        "touchend:본문",
+        "touchend:본문",
+        "touchend:본문",
+        "click:본문",
+        "click:본문",
+        "click:본문"
+      ]
+    },
+    {
+      "action": "touch 요약 link at scrollY 0",
+      "point": {
+        "x": 48,
+        "y": 264,
+        "box": [
+          24,
+          242,
+          48,
+          44
+        ]
+      },
+      "hash": "#case-summary",
+      "scrollY": 346,
+      "open": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "current": "stage-choice",
+      "events": [
+        "touchstart:요약",
+        "touchstart:요약",
+        "click:요약",
+        "click:요약",
+        "click:요약",
+        "click:요약"
+      ]
+    }
+  ],
+  "hit_test": [
+    {
+      "summary_box_css": [
+        24,
+        334,
+        354,
+        45
+      ],
+      "below_title": "case-process-path__body",
+      "above_title": "summary",
+      "title": "summary",
+      "step": 1,
+      "toggle": "summary"
+    },
+    {
+      "summary_box_css": [
+        24,
+        334,
+        354,
+        45
+      ],
+      "below_title": "case-process-path__body",
+      "above_title": "summary",
+      "title": "summary",
+      "step": 2,
+      "toggle": "summary"
+    },
+    {
+      "summary_box_css": [
+        24,
+        334,
+        354,
+        45
+      ],
+      "below_title": "case-process-path__body",
+      "above_title": "summary",
+      "title": "summary",
+      "step": 3,
+      "toggle": "summary"
+    },
+    {
+      "summary_box_css": [
+        24,
+        323,
+        354,
+        66
+      ],
+      "below_title": "case-process-path__body",
+      "above_title": "summary",
+      "title": "summary",
+      "step": 4,
+      "toggle": "summary"
+    },
+    {
+      "summary_box_css": [
+        24,
+        334,
+        354,
+        45
+      ],
+      "below_title": "case-process-path__body",
+      "above_title": "summary",
+      "title": "summary",
+      "step": 5,
+      "toggle": "summary"
+    }
+  ],
+  "scrolled_touch": {
+    "note": "Tool check: on iOS 27.0, touch actions after the page is scrolled produced no page event in this session; recorded as unknown, not as a product result.",
+    "point": {
+      "x": 72,
+      "y": 361
+    },
+    "hash": "#case-summary",
+    "scrollY": 1034,
+    "open": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "current": "stage-choice",
+    "events": []
+  }
+}

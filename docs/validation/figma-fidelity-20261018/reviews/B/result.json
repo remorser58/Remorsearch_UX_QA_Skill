@@ -1,0 +1,1075 @@
+{
+ "review": "build-B visual QA against Figma 14:2",
+ "reviewed_on": "2026-10-18",
+ "reviewer": "claude-opus-5-5, single session, no subagents, files only",
+ "skill": "eval/skill/SKILL.md; ui-quality.md Host visual procedure and category table; generated-ui-preflight.md 1-4; provider-contract.md section 3; evidence-and-severity.md severity scale",
+ "build": {
+  "commit_shown_in_captures": "064d9ba",
+  "shown_at": [
+   {
+    "image": "build-B/chromium/web-390-07.png",
+    "rect": [
+     313,
+     776,
+     53,
+     10
+    ]
+   },
+   {
+    "image": "build-B/chromium/web-320-14.png",
+    "rect": [
+     243,
+     500,
+     53,
+     10
+    ]
+   },
+   {
+    "image": "build-B/chromium/web-1440-06.png",
+    "rect": [
+     1124,
+     833,
+     51,
+     9
+    ]
+   },
+   {
+    "image": "build-B/safari/safari-09.png",
+    "rect": [
+     976,
+     2128,
+     155,
+     29
+    ]
+   }
+  ],
+  "matches_receipts": true,
+  "url": "http://127.0.0.1:4331/cases/ax-workflow-plugins/",
+  "capture_hashes_match_receipts": true
+ },
+ "reference": {
+  "figma_file_key": "ikOHVXrV47diF5hmrympEr",
+  "node_id": "14:2",
+  "name": "REA Case Detail / Mobile v2 — 2026-10-18",
+  "read_at": "2026-10-18",
+  "export": "figma-14-2.png",
+  "export_sha256": "1d7321d506575f0b02437235d39370509da158569fed64364d08afd6c809d93e",
+  "approved_scope": "mobile case detail at CSS widths up to 820px",
+  "approved_deviation": "Noto Sans KR in Figma versus Pretendard in the build, including line-break differences"
+ },
+ "viewed_images": [
+  "reference/figma-14-2-top-390x844.png",
+  "reference/segments/figma-390-01.png",
+  "reference/segments/figma-390-02.png",
+  "reference/segments/figma-390-03.png",
+  "reference/segments/figma-390-04.png",
+  "reference/segments/figma-390-05.png",
+  "build-B/chromium/web-390-00.png",
+  "build-B/chromium/web-390-01.png",
+  "build-B/chromium/web-390-02.png",
+  "build-B/chromium/web-390-03.png",
+  "build-B/chromium/web-390-04.png",
+  "build-B/chromium/web-390-05.png",
+  "build-B/chromium/web-390-06.png",
+  "build-B/chromium/web-390-07.png",
+  "build-B/chromium/web-320-00.png",
+  "build-B/chromium/web-320-01.png",
+  "build-B/chromium/web-320-02.png",
+  "build-B/chromium/web-320-03.png",
+  "build-B/chromium/web-320-04.png",
+  "build-B/chromium/web-320-05.png",
+  "build-B/chromium/web-320-06.png",
+  "build-B/chromium/web-320-07.png",
+  "build-B/chromium/web-320-08.png",
+  "build-B/chromium/web-320-09.png",
+  "build-B/chromium/web-320-10.png",
+  "build-B/chromium/web-320-11.png",
+  "build-B/chromium/web-320-12.png",
+  "build-B/chromium/web-320-13.png",
+  "build-B/chromium/web-320-14.png",
+  "build-B/chromium/web-1440-00.png",
+  "build-B/chromium/web-1440-01.png",
+  "build-B/chromium/web-1440-02.png",
+  "build-B/chromium/web-1440-03.png",
+  "build-B/chromium/web-1440-04.png",
+  "build-B/chromium/web-1440-05.png",
+  "build-B/chromium/web-1440-06.png",
+  "build-B/safari/safari-00.png",
+  "build-B/safari/safari-01.png",
+  "build-B/safari/safari-02.png",
+  "build-B/safari/safari-03.png",
+  "build-B/safari/safari-04.png",
+  "build-B/safari/safari-05.png",
+  "build-B/safari/safari-06.png",
+  "build-B/safari/safari-07.png",
+  "build-B/safari/safari-08.png",
+  "build-B/safari/safari-09.png",
+  "build-B/safari/device-00.png",
+  "build-B/safari/device-01.png",
+  "build-B/safari/device-05.png",
+  "build-B/safari/device-09.png"
+ ],
+ "viewed_crops": [
+  {
+   "crop": "crops/crop-web-390-00-nav.png",
+   "source": "build-B/chromium/web-390-00.png",
+   "origin_xywh": [
+    0,
+    200,
+    390,
+    250
+   ],
+   "scale": 2,
+   "viewed": true
+  },
+  {
+   "crop": "crops/crop-ref-top-nav.png",
+   "source": "reference/figma-14-2-top-390x844.png",
+   "origin_xywh": [
+    0,
+    150,
+    390,
+    220
+   ],
+   "scale": 2,
+   "viewed": true
+  },
+  {
+   "crop": "crops/crop-web-390-05-break.png",
+   "source": "build-B/chromium/web-390-05.png",
+   "origin_xywh": [
+    80,
+    720,
+    300,
+    100
+   ],
+   "scale": 3,
+   "viewed": true
+  },
+  {
+   "crop": "crops/crop-safari-06-break.png",
+   "source": "build-B/safari/safari-06.png",
+   "origin_xywh": [
+    250,
+    2180,
+    956,
+    260
+   ],
+   "scale": 1,
+   "viewed": true
+  },
+  {
+   "crop": "crops/crop-web-390-06-body.png",
+   "source": "build-B/chromium/web-390-06.png",
+   "origin_xywh": [
+    0,
+    400,
+    390,
+    260
+   ],
+   "scale": 2,
+   "viewed": true
+  },
+  {
+   "crop": "crops/crop-ref-seg05-body.png",
+   "source": "reference/segments/figma-390-05.png",
+   "origin_xywh": [
+    0,
+    130,
+    390,
+    270
+   ],
+   "scale": 2,
+   "viewed": true
+  },
+  {
+   "crop": "crops/crop-web-1440-01-result.png",
+   "source": "build-B/chromium/web-1440-01.png",
+   "origin_xywh": [
+    150,
+    60,
+    1060,
+    500
+   ],
+   "scale": 1,
+   "viewed": true
+  },
+  {
+   "crop": "crops/crop-web-1440-05-related.png",
+   "source": "build-B/chromium/web-1440-05.png",
+   "origin_xywh": [
+    200,
+    220,
+    1000,
+    500
+   ],
+   "scale": 1,
+   "viewed": true
+  }
+ ],
+ "not_viewed": {
+  "reference/figma-14-2.png": "not opened directly; covered by the six 390x844 segments (offsets 0-2684)",
+  "reference/segments/figma-390-00.png": "byte-identical to figma-14-2-top-390x844.png (same sha256), which was viewed",
+  "build-B/safari/device-02..04, 06..08": "not opened; the matching safari-*.png captures were viewed and nothing here relies on them"
+ },
+ "viewport_groups": {
+  "chromium-390": {
+   "captures": [
+    "web-390-00.png",
+    "web-390-01.png",
+    "web-390-02.png",
+    "web-390-03.png",
+    "web-390-04.png",
+    "web-390-05.png",
+    "web-390-06.png",
+    "web-390-07.png"
+   ],
+   "viewport": "390x844 CSS px, DPR 1, Chromium 141.0.7390.37 (Playwright 1.56.1), scrollY 0-4190",
+   "reference": "Figma 14:2 export segments 00-05",
+   "categories": {
+    "alignment": {
+     "status": "passed",
+     "reason": "Every section shares the x=24 content edge and x=366 right edge in web-390-00..07, and the five process steps repeat one internal grid (rail x=24, number x=47, copy x=94, toggle x=322-366). Process x positions differ from Figma; that is graded under figma_fidelity (F-04)."
+    },
+    "spacing": {
+     "status": "failed",
+     "reason": "Body headings do not group with their content (30px versus 28px gaps; Figma 20px versus 42px), F-06. The ruled navigation strip adds a 54px empty band before OUTPUT, F-02."
+    },
+    "typography": {
+     "status": "failed",
+     "reason": "Problem statement renders as 17px regular gray instead of the 18px bold #1D1D1F role (F-01); a line begins with a middle dot in web-390-05 (F-07); the type scale differs from 14:2 (F-10)."
+    },
+    "text_clipping": {
+     "status": "passed",
+     "reason": "Every line in the eight captures is fully painted; text cut only by a capture edge (top of web-390-04) is whole in the adjacent capture; receipt scrollWidth is 390 in every state."
+    },
+    "component_occlusion": {
+     "status": "passed",
+     "reason": "No fixed, sticky or overlay layer at 390. Rail dots (x 18-29) stay clear of the step numbers (x>=47), and titles end before the 44px toggle box."
+    },
+    "figma_fidelity": {
+     "status": "failed",
+     "reason": "Against node 14:2: F-01 to F-05, F-10 and F-11 (header type, section chips, result card, process grid and rail, missing 본문 eyebrow, type scale, related-list anatomy)."
+    }
+   }
+  },
+  "chromium-320": {
+   "captures": [
+    "web-320-00.png",
+    "web-320-01.png",
+    "web-320-02.png",
+    "web-320-03.png",
+    "web-320-04.png",
+    "web-320-05.png",
+    "web-320-06.png",
+    "web-320-07.png",
+    "web-320-08.png",
+    "web-320-09.png",
+    "web-320-10.png",
+    "web-320-11.png",
+    "web-320-12.png",
+    "web-320-13.png",
+    "web-320-14.png"
+   ],
+   "viewport": "320x568 CSS px, DPR 1, Chromium 141.0.7390.37, scrollY 0-5474",
+   "reference": "Figma 14:2 (390 frame, approved up to 820px; compared by component role)",
+   "categories": {
+    "alignment": {
+     "status": "passed",
+     "reason": "Content edge x=24 and right edge x=296 across web-320-00..14; the process grid repeats in every step."
+    },
+    "spacing": {
+     "status": "failed",
+     "reason": "Same body-heading grouping problem in web-320-12 (29px versus 28px), F-06; the empty band below the section strip repeats, F-02."
+    },
+    "typography": {
+     "status": "failed",
+     "reason": "Problem statement role mismatch (F-01) and the type scale (F-10). The meta tag breaking as human- / review is a standard break at an existing hyphen and is not counted."
+    },
+    "text_clipping": {
+     "status": "passed",
+     "reason": "Three-line step titles and the 202px body column wrap with every glyph whole; receipt scrollWidth is 320."
+    },
+    "component_occlusion": {
+     "status": "passed",
+     "reason": "No layer covers text or controls; titles wrap before the toggle box in every step."
+    },
+    "figma_fidelity": {
+     "status": "failed",
+     "reason": "The 14:2 component differences at 390 repeat (F-02 to F-05, F-10, F-11), and the deeper process indent narrows the copy column further (F-04)."
+    }
+   }
+  },
+  "chromium-1440": {
+   "captures": [
+    "web-1440-00.png",
+    "web-1440-01.png",
+    "web-1440-02.png",
+    "web-1440-03.png",
+    "web-1440-04.png",
+    "web-1440-05.png",
+    "web-1440-06.png"
+   ],
+   "viewport": "1440x900 CSS px, DPR 1, Chromium 141.0.7390.37, scrollY 0-3512",
+   "reference": "none (no desktop frame; internal consistency only)",
+   "categories": {
+    "alignment": {
+     "status": "failed",
+     "reason": "RESULT row is 80px left of the summary grid (F-08); MORE CASES starts 132px right of the content edge (F-09)."
+    },
+    "spacing": {
+     "status": "failed",
+     "reason": "The same-role body headings get 54px and 18px top margins, leaving 32px versus 28px glyph gaps (F-06); a 73px empty band sits between the section strip (rule y=392) and the summary rule (y=465), F-02."
+    },
+    "typography": {
+     "status": "passed",
+     "reason": "Type roles are consistent across sections and the sticky step list; no split words or line-start punctuation seen; \"위반·후보·공백이\" stays intact in web-1440-04."
+    },
+    "text_clipping": {
+     "status": "passed",
+     "reason": "All lines whole in the seven captures; receipt scrollWidth is 1440."
+    },
+    "component_occlusion": {
+     "status": "passed",
+     "reason": "The sticky step navigator (x 264-450) never overlaps the right column (x>=567) or the body headings at the captured scroll positions; positions between captures are unknown."
+    },
+    "figma_fidelity": {
+     "status": "unknown",
+     "reason": "No desktop frame exists (owner note); desktop is reviewed for internal consistency only."
+    }
+   }
+  },
+  "safari-402": {
+   "captures": [
+    "safari-00.png",
+    "safari-01.png",
+    "safari-02.png",
+    "safari-03.png",
+    "safari-04.png",
+    "safari-05.png",
+    "safari-06.png",
+    "safari-07.png",
+    "safari-08.png",
+    "safari-09.png",
+    "device-00.png",
+    "device-01.png",
+    "device-05.png",
+    "device-09.png"
+   ],
+   "viewport": "402x714 CSS px, DPR 3, iOS 27.0 Simulator Mobile Safari (iPhone 17); safari-*.png content starts about 186 device px below the image top",
+   "reference": "Figma 14:2 (390 frame, approved up to 820px)",
+   "categories": {
+    "alignment": {
+     "status": "passed",
+     "reason": "Same grid as Chromium at 3x: content edge 72-75 px (24 CSS px), process copy at 284 px, right edge 1134 px."
+    },
+    "spacing": {
+     "status": "failed",
+     "reason": "Body headings in safari-07: 89 versus 88 device px between glyphs (F-06); navigation strip band repeats (F-02)."
+    },
+    "typography": {
+     "status": "failed",
+     "reason": "Problem statement 17px regular gray (F-01, receipt row case-header__problem) and type scale (F-10). Safari breaks after \"위반·\" with the dot at the line end, which is not counted."
+    },
+    "text_clipping": {
+     "status": "passed",
+     "reason": "All lines whole; the blur at the top edge is the Safari status-bar scroll-edge effect over content shown whole in the previous capture; receipt sw=402."
+    },
+    "component_occlusion": {
+     "status": "passed",
+     "reason": "The floating Safari toolbar and status bar cover content only while scrolled (device-00, -01, -05); at the page end (device-09) the footer sits fully above the toolbar. No page-owned layer covers text or controls."
+    },
+    "figma_fidelity": {
+     "status": "failed",
+     "reason": "F-01 to F-06, F-10 and F-11 repeat; Pretendard is loaded per the receipt."
+    }
+   }
+  }
+ },
+ "findings": [
+  {
+   "id": "F-01",
+   "severity": "P3",
+   "categories": [
+    "typography",
+    "figma_fidelity"
+   ],
+   "classification": "implementation_defect",
+   "visible_text": "AI 상담이 쓸 지식을 올리기 전에, 어긋난 내용과 빠진 안내는 누가 걸러낼까?",
+   "image": "build-B/chromium/web-390-00.png",
+   "rect": [
+    24,
+    218,
+    309,
+    45
+   ],
+   "more_evidence": [
+    {
+     "image": "reference/figma-14-2-top-390x844.png",
+     "rect": [
+      24,
+      166,
+      296,
+      40
+     ]
+    },
+    {
+     "image": "build-B/safari/safari-00.png",
+     "rect": [
+      73,
+      844,
+      925,
+      131
+     ]
+    },
+    {
+     "image": "build-B/chromium/web-1440-00.png",
+     "rect": [
+      264,
+      250,
+      493,
+      17
+     ]
+    }
+   ],
+   "expected": "Figma 14:7: Noto Sans KR Bold 18px, line height 120%, fill #1D1D1F (only the font family swap is approved).",
+   "observed": "Rendered as body copy: 17px, weight 400, line height 28.9px, color rgba(29,29,31,0.62) (computed-styles-390.json .case-header__problem; Safari receipt row case-header__problem is the same). Darkest painted pixel rgb(115,115,116) versus rgb(29,29,31) in the reference.",
+   "impact": "The case question the design leads with reads as muted secondary text, so the header hierarchy changes. It stays readable (about 4.7:1 computed from the painted color).",
+   "evidence_level": "observed",
+   "viewports": [
+    "chromium-390",
+    "chromium-320",
+    "safari-402"
+   ],
+   "fix": "Apply the 14:7 role (18px bold, #1D1D1F) to .case-header__problem at widths up to 820px."
+  },
+  {
+   "id": "F-02",
+   "severity": "P3",
+   "categories": [
+    "figma_fidelity",
+    "spacing"
+   ],
+   "classification": "implementation_defect",
+   "visible_text": "요약 / 과정 / 본문 (section links)",
+   "image": "build-B/chromium/web-390-00.png",
+   "rect": [
+    24,
+    294,
+    342,
+    141
+   ],
+   "more_evidence": [
+    {
+     "image": "reference/figma-14-2-top-390x844.png",
+     "rect": [
+      24,
+      244,
+      166,
+      44
+     ]
+    },
+    {
+     "image": "build-B/safari/safari-00.png",
+     "rect": [
+      72,
+      1069,
+      1062,
+      423
+     ]
+    },
+    {
+     "image": "build-B/chromium/web-1440-00.png",
+     "rect": [
+      264,
+      307,
+      912,
+      159
+     ]
+    }
+   ],
+   "expected": "Figma 14:9-14:15: three bordered chips 50x44 (1px #D6D6D9 stroke, radius 6, 8px gap) at y=244, then 60px of white space to OUTPUT (14:8 bottom padding 24 + 14:16 top padding 36), with no rules.",
+   "observed": "The labels are plain bold text with no border or fill (glyph boxes [36,330,22,12], [104,330,22,12], [172,331,22,11]) inside an 86px strip between 1px rgb(228,228,228) rules at y=294 and y=379, followed by a 54px empty band and a 1px rgb(29,29,31) rule at y=434. Link boxes are 46x56 with 22px gaps (computed). Same structure at 320, Safari 402 and 1440.",
+   "impact": "The links lose the outlined chip that marks them as tappable in the design (inferred), and the empty ruled band adds about 110px before the summary. Link behavior was not exercised.",
+   "evidence_level": "observed",
+   "viewports": [
+    "chromium-390",
+    "chromium-320",
+    "safari-402",
+    "chromium-1440"
+   ],
+   "fix": "Render the links as the 14:10 chip component and remove the extra strip rules and empty band above OUTPUT."
+  },
+  {
+   "id": "F-03",
+   "severity": "P3",
+   "categories": [
+    "figma_fidelity",
+    "spacing"
+   ],
+   "classification": "implementation_defect",
+   "visible_text": "RESULT / 단 6번의 프롬프트로, 예선 5,300여 명 가운데 채널톡 트랙 본선 진출 10명에 이은 본선 예비 후보로, AI 상위 인재에 선정됐습니다. / Thread 후기 보러 가기 ↗",
+   "image": "build-B/chromium/web-390-01.png",
+   "rect": [
+    0,
+    197,
+    390,
+    355
+   ],
+   "more_evidence": [
+    {
+     "image": "reference/segments/figma-390-01.png",
+     "rect": [
+      24,
+      10,
+      342,
+      277
+     ]
+    },
+    {
+     "image": "build-B/chromium/web-390-01.png",
+     "rect": [
+      24,
+      442,
+      184,
+      41
+     ]
+    },
+    {
+     "image": "reference/segments/figma-390-01.png",
+     "rect": [
+      48,
+      219,
+      168,
+      44
+     ]
+    },
+    {
+     "image": "build-B/safari/safari-01.png",
+     "rect": [
+      0,
+      1059,
+      1206,
+      1022
+     ]
+    }
+   ],
+   "expected": "Figma 14:26 Result emphasis: inset card x=24, w=342, fill #7C4DFF, padding 24, gap 16; 14:28 copy 24px Bold; 14:64 button 168x44 with a 1px white 55% stroke and radius 6.",
+   "observed": "Full-bleed band x=0-390 (y 197-551 in web-390-01) with 64px vertical padding (computed), copy 22px weight 600 in four lines, and a pill-shaped 184x41 button at [24,442,184,41].",
+   "impact": "The result block is wider and heavier than designed and the button shape changes; no content is lost.",
+   "evidence_level": "observed",
+   "viewports": [
+    "chromium-390",
+    "chromium-320",
+    "safari-402"
+   ],
+   "fix": "Restore the 24px side inset, 24px padding and 6px button radius from 14:26/14:64."
+  },
+  {
+   "id": "F-04",
+   "severity": "P3",
+   "categories": [
+    "figma_fidelity",
+    "spacing",
+    "typography"
+   ],
+   "classification": "implementation_defect",
+   "visible_text": "01 / 답변의 근거가 되는 지식부터 점검 / disclosure control shown as —",
+   "image": "build-B/chromium/web-390-02.png",
+   "rect": [
+    18,
+    108,
+    348,
+    80
+   ],
+   "more_evidence": [
+    {
+     "image": "reference/segments/figma-390-01.png",
+     "rect": [
+      24,
+      445,
+      342,
+      22
+     ]
+    },
+    {
+     "image": "build-B/chromium/web-320-03.png",
+     "rect": [
+      24,
+      184,
+      272,
+      105
+     ]
+    },
+    {
+     "image": "build-B/safari/safari-02.png",
+     "rect": [
+      52,
+      1032,
+      1082,
+      229
+     ]
+    }
+   ],
+   "expected": "Figma 15:2-15:8 (repeated in 15:9-15:36): number at x=24, 13px Bold (01 #7C4DFF, 02-05 #5C5C61); copy column x=52, w=280; title 18px Bold on one line; body 14px/160% #5C5C61; disclosure minus 18x1 at x=348; no rail, dots or rules between steps.",
+   "observed": "A 1px track at x=24 (rgb 228) with a purple scroll-progress fill (y 139-351 in web-390-02) and filled or hollow step dots; numbers at x=47, all #7C4DFF; copy column x=94 (w 272); title 21px weight 600 wrapping to two lines; body 17px/28.9px; a dark 1px rule above step 01 (y=108) and light rules between steps; toggle glyph at x=335.",
+   "impact": "The copy starts 70px in from the content edge instead of 28px. At 320 the title column shrinks to about 150px and titles wrap to three lines (web-320-03: 답변의 근거가 / 되는 지식부터 / 점검). Readable, with a longer page. Whether the purple 01 and gray 02-05 in Figma encode an active-step state is unknown.",
+   "evidence_level": "observed",
+   "viewports": [
+    "chromium-390",
+    "chromium-320",
+    "safari-402"
+   ],
+   "fix": "Follow the 15:2 grid (number x=24, copy x=52) and type roles, or record the rail layout as an approved deviation in Figma."
+  },
+  {
+   "id": "F-05",
+   "severity": "P3",
+   "categories": [
+    "figma_fidelity"
+   ],
+   "classification": "implementation_defect",
+   "visible_text": "본문 (eyebrow absent above 검증 범위)",
+   "image": "build-B/chromium/web-390-06.png",
+   "rect": [
+    24,
+    337,
+    342,
+    106
+   ],
+   "more_evidence": [
+    {
+     "image": "reference/segments/figma-390-05.png",
+     "rect": [
+      24,
+      148,
+      342,
+      50
+     ]
+    },
+    {
+     "image": "build-B/chromium/web-320-12.png",
+     "rect": [
+      24,
+      92,
+      272,
+      106
+     ]
+    },
+    {
+     "image": "build-B/safari/safari-07.png",
+     "rect": [
+      73,
+      1295,
+      1061,
+      320
+     ]
+    },
+    {
+     "image": "build-B/chromium/web-1440-05.png",
+     "rect": [
+      264,
+      157,
+      912,
+      117
+     ]
+    }
+   ],
+   "expected": "Figma 14:48: eyebrow \"본문\", Noto Sans KR Bold 12px #7C4DFF, 12px above heading 15:39 \"검증 범위\".",
+   "observed": "No eyebrow at 390, 320, Safari 402 or 1440; the section begins directly with the heading \"검증 범위\". The PROCESS and MORE CASES eyebrows are present.",
+   "impact": "The section link \"본문\" leads to a section with no matching visible label (inferred; link behavior not exercised).",
+   "evidence_level": "observed",
+   "viewports": [
+    "chromium-390",
+    "chromium-320",
+    "safari-402",
+    "chromium-1440"
+   ],
+   "fix": "Render the \"본문\" eyebrow above the body content as in 14:48."
+  },
+  {
+   "id": "F-06",
+   "severity": "P3",
+   "categories": [
+    "spacing"
+   ],
+   "classification": "implementation_defect",
+   "visible_text": "검증 범위 / 관련 자료",
+   "image": "build-B/chromium/web-390-06.png",
+   "rect": [
+    24,
+    421,
+    342,
+    176
+   ],
+   "more_evidence": [
+    {
+     "image": "reference/segments/figma-390-05.png",
+     "rect": [
+      24,
+      176,
+      342,
+      173
+     ]
+    },
+    {
+     "image": "build-B/chromium/web-320-12.png",
+     "rect": [
+      24,
+      176,
+      272,
+      175
+     ]
+    },
+    {
+     "image": "build-B/safari/safari-07.png",
+     "rect": [
+      73,
+      1551,
+      984,
+      524
+     ]
+    },
+    {
+     "image": "build-B/chromium/web-1440-05.png",
+     "rect": [
+      264,
+      243,
+      746,
+      140
+     ]
+    }
+   ],
+   "expected": "Figma 15:37 puts 32px between blocks and 15:38/15:41 put 12px inside a block; painted gaps in figma-390-05 are 20px heading-to-paragraph and 42px paragraph-to-next-heading. Locally, both headings are the same heading-2 role.",
+   "observed": "Blank rows between painted glyphs: 30px heading-to-paragraph and 28px paragraph-to-\"관련 자료\" at 390; 29/28 at 320; 89/88 device px (about 30/29 CSS px) in Safari; 32/28 at 1440. The first heading block has a 54px top margin, the second same-role heading 18px (computed).",
+   "impact": "\"관련 자료\" sits as close to the previous paragraph as to its own link, so the two blocks do not group. Low task impact.",
+   "evidence_level": "observed",
+   "viewports": [
+    "chromium-390",
+    "chromium-320",
+    "safari-402",
+    "chromium-1440"
+   ],
+   "fix": "Give every body heading block the same larger top margin and a smaller gap to its own content, matching 15:37/15:38."
+  },
+  {
+   "id": "F-07",
+   "severity": "P3",
+   "categories": [
+    "typography"
+   ],
+   "classification": "implementation_defect",
+   "visible_text": "·후보·공백이 0건이었습니다.",
+   "image": "build-B/chromium/web-390-05.png",
+   "rect": [
+    95,
+    789,
+    184,
+    15
+   ],
+   "more_evidence": [
+    {
+     "image": "build-B/chromium/web-390-06.png",
+     "rect": [
+      95,
+      182,
+      184,
+      15
+     ]
+    },
+    {
+     "image": "build-B/safari/safari-06.png",
+     "rect": [
+      284,
+      2286,
+      822,
+      131
+     ]
+    },
+    {
+     "image": "reference/segments/figma-390-04.png",
+     "rect": [
+      53,
+      215,
+      196,
+      25
+     ]
+    }
+   ],
+   "expected": "Reference notes: Figma uses word-level breaks so Korean words are not split; Figma 15:34 keeps \"위반·후보·공백이 0건이었습니다.\" on one line.",
+   "observed": "In Chromium at 390 the compound breaks after \"위반\" and the next line begins with the middle dot. Safari 402 breaks after \"위반·\" with the dot at the line end, and 320 and 1440 keep the compound intact.",
+   "impact": "A line opening with punctuation inside a split compound reads awkwardly; cosmetic.",
+   "evidence_level": "observed",
+   "cause": "inferred: Chromium allows a break before U+00B7 under the page line-break settings; not verified in source.",
+   "viewports": [
+    "chromium-390"
+   ],
+   "fix": "Keep middle-dot compounds together (for example a no-break joiner or line-break rule) and replay at 390."
+  },
+  {
+   "id": "F-08",
+   "severity": "P3",
+   "categories": [
+    "alignment"
+   ],
+   "classification": "implementation_defect",
+   "visible_text": "RESULT (row label) against PIN (row label)",
+   "image": "build-B/chromium/web-1440-01.png",
+   "rect": [
+    185,
+    95,
+    922,
+    445
+   ],
+   "more_evidence": [
+    {
+     "image": "build-B/chromium/web-1440-00.png",
+     "rect": [
+      265,
+      506,
+      541,
+      33
+     ]
+    }
+   ],
+   "expected": "Local rule (no desktop Figma): the rows above use a label column at x=265 and a value column at x=425, labels top-aligned to the first value line (OUTPUT label [265,508,52,9], value [425,506,381,33]; PIN label [265,98,19,9], value [425,95,688,34]).",
+   "observed": "The RESULT label sits at x=185 and is centered in the band (y=421) while its copy starts at y=313; copy and button start at x=345. Both columns are 80px left of the grid above.",
+   "impact": "The emphasized row breaks the summary grid on desktop; cosmetic.",
+   "evidence_level": "observed",
+   "cause": "unknown",
+   "viewports": [
+    "chromium-1440"
+   ],
+   "fix": "Place the RESULT label and copy on the same 265/425 columns and top-align the label."
+  },
+  {
+   "id": "F-09",
+   "severity": "P3",
+   "categories": [
+    "alignment"
+   ],
+   "classification": "implementation_defect",
+   "visible_text": "MORE CASES / 같은 문제를 다른 장면에서 풀었습니다",
+   "image": "build-B/chromium/web-1440-05.png",
+   "rect": [
+    265,
+    244,
+    911,
+    544
+   ],
+   "more_evidence": [
+    {
+     "image": "build-B/chromium/web-1440-06.png",
+     "rect": [
+      265,
+      297,
+      911,
+      548
+     ]
+    }
+   ],
+   "expected": "Local rule (no desktop Figma): other sections and the footer start at the content edge x=264/265 (heading \"검증 범위\" [265,244,118,30]; footer \"GitHub 프로필\" [265,832,88,11] in web-1440-06).",
+   "observed": "The MORE CASES label [397,616,93,9], heading [397,645,685,43], first title [397,760,495,24] and the section rule (x 396-1176, y=569) start 132px right of the content edge.",
+   "impact": "On desktop the related list looks detached from the article column; intent unknown.",
+   "evidence_level": "observed",
+   "cause": "unknown",
+   "viewports": [
+    "chromium-1440"
+   ],
+   "fix": "Align the related section to the content edge, or document the indent as intended."
+  },
+  {
+   "id": "F-10",
+   "severity": "P3",
+   "categories": [
+    "typography",
+    "figma_fidelity"
+   ],
+   "classification": "implementation_defect",
+   "visible_text": "조코딩 AX 인재전쟁 / 2026-08-12 · ax · automation · human-review · 문제 선정·감사 절차 설계·Codex 플러그인 구현 / 등록 전에 걸러진 ALF 지식",
+   "image": "build-B/chromium/web-390-00.png",
+   "rect": [
+    24,
+    73,
+    342,
+    100
+   ],
+   "more_evidence": [
+    {
+     "image": "reference/figma-14-2-top-390x844.png",
+     "rect": [
+      24,
+      63,
+      342,
+      85
+     ]
+    },
+    {
+     "image": "build-B/chromium/web-390-00.png",
+     "rect": [
+      24,
+      493,
+      221,
+      20
+     ]
+    },
+    {
+     "image": "reference/figma-14-2-top-390x844.png",
+     "rect": [
+      25,
+      378,
+      260,
+      22
+     ]
+    }
+   ],
+   "expected": "Figma sizes, weights and colors (family swap approved): 14:5 title 36px Bold; 14:6 meta 13px #5C5C61; 14:18/14:21/14:24 values 24px Bold; 15:5 step titles 18px Bold; 15:6 step body 14px/160% #5C5C61; 15:40 body 16px #5C5C61; 14:53 heading 26px Bold; 14:56 meta #5C5C61.",
+   "observed": "Title 42px weight 600; meta 14px rgb(29,29,31) (darkest painted 29,29,31 versus 92,92,97 in the reference); values 22px/600; step titles 21px/600; step body 17px/28.9px; body paragraph 17px rgb(29,29,31); related heading 28px/600; related meta rgb(29,29,31). Page height 5034px versus the 3528px frame at 390.",
+   "impact": "The type scale and secondary-text color follow a different system than the approved frame; hierarchy stays legible. Whether weight 600 is a deliberate Pretendard mapping for Bold is unknown.",
+   "evidence_level": "observed",
+   "viewports": [
+    "chromium-390",
+    "chromium-320",
+    "safari-402"
+   ],
+   "fix": "Map the case-detail type tokens to the 14:2 roles for widths up to 820px."
+  },
+  {
+   "id": "F-11",
+   "severity": "P3",
+   "categories": [
+    "figma_fidelity"
+   ],
+   "classification": "implementation_defect",
+   "visible_text": "OGC 2026 Autonomous Research System / u-SAINT 학사 민원 프로토타입 / INPRO, WHYBIZ 인턴 / ↗",
+   "image": "build-B/chromium/web-390-07.png",
+   "rect": [
+    24,
+    369,
+    342,
+    266
+   ],
+   "more_evidence": [
+    {
+     "image": "reference/segments/figma-390-05.png",
+     "rect": [
+      24,
+      572,
+      342,
+      234
+     ]
+    },
+    {
+     "image": "build-B/chromium/web-390-07.png",
+     "rect": [
+      352,
+      414,
+      11,
+      183
+     ]
+    }
+   ],
+   "expected": "Figma 14:54-14:62: arrow inline at the end of each title in #1D1D1F (\"System ↗\"), meta #5C5C61, no separators; 14:51 has no top rule.",
+   "observed": "Arrows sit in a separate right column in #7C4DFF (glyphs x 352-363), meta is rgb(29,29,31), 1px separators run between items, and a dark 1px rule sits above the section.",
+   "impact": "Cosmetic; the links read as list rows instead of inline title links.",
+   "evidence_level": "observed",
+   "viewports": [
+    "chromium-390",
+    "chromium-320",
+    "safari-402"
+   ],
+   "fix": "Use the 14:54 row anatomy or update Figma if the list-row style is preferred."
+  },
+  {
+   "id": "F-12",
+   "severity": "P3",
+   "categories": [
+    "typography"
+   ],
+   "classification": "approved_deviation",
+   "visible_text": "All text (font family)",
+   "image": "build-B/chromium/web-390-00.png",
+   "rect": [
+    25,
+    73,
+    317,
+    38
+   ],
+   "more_evidence": [
+    {
+     "image": "reference/figma-14-2-top-390x844.png",
+     "rect": [
+      25,
+      63,
+      290,
+      34
+     ]
+    }
+   ],
+   "expected": "Reference notes: Figma uses Noto Sans KR because Pretendard is unavailable; the build uses Pretendard; line breaks may differ.",
+   "observed": "Glyph shapes and break positions differ (meta breaks after \"문제 선정·\" versus after \"문제\"; RESULT copy is four lines versus five). Safari receipt reports Pretendard loaded.",
+   "impact": "None; no change requested.",
+   "evidence_level": "observed",
+   "viewports": [
+    "chromium-390",
+    "chromium-320",
+    "safari-402",
+    "chromium-1440"
+   ]
+  },
+  {
+   "id": "F-13",
+   "severity": "P3",
+   "categories": [
+    "component_occlusion"
+   ],
+   "classification": "tool_limit",
+   "visible_text": "Disclosure control (—), section links 요약/과정/본문, process progress rail",
+   "image": "build-B/chromium/web-390-02.png",
+   "rect": [
+    322,
+    125,
+    44,
+    44
+   ],
+   "more_evidence": [
+    {
+     "image": "reference/segments/figma-390-01.png",
+     "rect": [
+      344,
+      445,
+      22,
+      22
+     ]
+    }
+   ],
+   "expected": "Figma 15:7 draws only the expanded disclosure state; other states are not drawn.",
+   "observed": "Static captures show only the expanded state at fixed scroll positions. Collapsed, focus, hover and pressed states, section-link jumps and rail behavior between captures were not exercised.",
+   "impact": "Unknown.",
+   "evidence_level": "unknown",
+   "viewports": [
+    "chromium-390",
+    "chromium-320",
+    "safari-402",
+    "chromium-1440"
+   ]
+  }
+ ],
+ "second_pass": "Not required: no P0 or P1 findings.",
+ "policy_notes": [
+  "Side accents: the process rail (1px neutral track, purple scroll-progress fill, step dots) is a vertical rail at the left of the step list and is absent from Figma (F-04). The contract reports bars in existing-product QA only when a task trace shows harm; static captures show none, so it is recorded as a Figma difference and not as a side-accent violation.",
+  "Analyzer output in the Safari receipt (overflow, clipped and collisions all empty) was not used as proof; every pass above rests on viewed pixels."
+ ],
+ "unknowns": [
+  "Interaction states: collapsed disclosure, focus, hover, pressed, section-link jumps and rail behavior between captures (F-13).",
+  "Whether the purple 01 and gray 02-05 step numbers in Figma encode an active-step state.",
+  "Whether weight 600 is an intended Pretendard mapping for Figma Bold.",
+  "Desktop Figma fidelity (no frame).",
+  "200% text resize, text-spacing overrides and short-height states were not captured."
+ ],
+ "verdict": {
+  "decision": "REQUEST_CHANGES",
+  "reason": "At 320, 390 and Safari 402 the build departs from the approved Figma 14:2 on compared properties: type roles and colors, spacing, section chips, the result card, the process grid, a missing 본문 eyebrow and the related-list anatomy. Desktop has two internal alignment breaks. No text clipping, occlusion or task-blocking problem was seen, every finding is P3, and interaction states remain unknown."
+ },
+ "inspection_record": "inspection-390-top.json"
+}

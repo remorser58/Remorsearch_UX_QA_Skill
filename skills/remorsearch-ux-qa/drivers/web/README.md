@@ -299,9 +299,45 @@ node drivers/web/selftest.mjs [--keep] [--only GROUPS]
 Exit codes: **0** run completed and `success` is true; **3** run.json written but not
 successful (success false or unknown, or a scripted step failed); **2** usage/input
 error (nothing is run; an existing non-empty run directory is never overwritten);
-**4** driver/browser failure or a `blocked` run (run.json is still written when the
+**4** driver/browser failure, a `blocked` run or requested analysis failure (run.json is still written when the
 run directory exists). `run` and `serve` print one JSON line per event on stdout
 (`ready`, `finished`).
+
+Add `--analyze` to `run` or `serve` with `--profile P.json` to screen that exact
+recording once during finish:
+
+```sh
+node drivers/web/ergo_drive.mjs serve --scenario sc.json --profile p.json --agent-json agent.json --out runs/ --port 9477 --analyze --python python3
+```
+
+`--python` selects the interpreter; otherwise use `$ERGOQA_PYTHON` or `python3`.
+At startup, `analyze-profiles.json` retains the complete selected profile and
+`analyze-scenario.json` freezes sanitized identity, target roles and timing-window
+metadata, including an explicitly authored boolean `has_action`. The allowlisted
+source context stays immutable in memory; its sanitized copy and owned capture/
+inspection JSON are refreshed at finish for later private input. Sensitive locators
+become stable analysis bindings, with a warning that they cannot be replayed.
+Run/scenario/profile/capture IDs stay intact. Timing text comes from the redacted run.
+The context uses an inert local URL, empty steps and no success expectations;
+the recorded run supplies the actual URL, steps and task-integrity evidence.
+Private typed values, task-check expectations and arbitrary scenario extras are
+omitted. Original source files are preserved, and later source edits do not alter
+these analysis inputs.
+
+After `run.json` is saved and the browser closes, the existing
+`scripts/ergo_qa.py swarm` runs for at most 30 s within a shared 110 s finish budget;
+the client retains its 120 s timeout. Browser work is capped at 75 s, and optional
+probes stopped or skipped at the limit record warnings/gaps. Cancelled probes are
+awaited before recording or analysis. The analyzer gets only the remaining budget;
+an exhausted budget fails explicitly without starting it. An existing `swarm/` directory
+is rejected. Only an exit 0 with valid `analyses.json`, `findings.json` and
+`report.md` completes analysis. The `finished` event and `/finish` reply add
+`analysis` with status, report paths, screening counts and any failure reason;
+timeouts and other signals are identified separately. These counts are screening
+data and require capture review. They do not establish a QA pass. Active
+screenshot-only replies retain their channel limits. Analysis failure exits 4
+while the measured product `status` and `success` remain in `run.json` and the
+receipt. Commands without `--analyze` keep their existing behavior.
 
 `drive_client.mjs` accepts `health`, `act`, `note`, `finish`, `inspect`, and
 `observe` / `screenshot` / `snapshot` (three names for the existing snapshot
@@ -661,7 +697,7 @@ after the initial snapshot. `--port 0` picks a free port.
 | `GET /inspect` | | redacted form state: `{inspection, fields, invalid_fields, focus, reading_order, step_index, last_snapshot_id, observed_at}`; requires an accessibility channel |
 | `POST /act` | one action object (table above) | same plus `result` (`ok`/`no_target`/`error`), `error`, `point`, `target_element_id`, `target_hit`, `feedback_latency_ms`, `feedback_source`, `before`, `auto_scrolled` |
 | `POST /note` | `{intent, expected, observed, confusion: bool, step_index?, severity?}` | `{ok, note_index, step_index}`; stored as `persona_notes` with `basis: "judgment"` |
-| `POST /finish` | `{success?: bool}` | writes run.json, replies `{run, status, success, success_basis, exit_code}`, then exits |
+| `POST /finish` | `{success?: bool}` | writes run.json, replies `{run, status, success, success_basis, exit_code, analysis?}`, then exits |
 
 Requests run one at a time in arrival order. A `no_target` action does not end the
 session; the persona can try something else. `status` is `completed` after

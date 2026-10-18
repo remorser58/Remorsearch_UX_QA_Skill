@@ -1,0 +1,8 @@
+{
+  "benchmarks/dev-2/site/civil/civil-a.html": "9f3f3383e4d97e5f211f9ade14cf8c799115284dbe2b32030da3ad7db031accd",
+  "benchmarks/dev-2/site/civil/civil-b.html": "56972d714ef90e3c4abc541c3d27d8cefdf35faac63c3052a466305e0fe6b481",
+  "benchmarks/dev-2/site/delivery/delivery-a.html": "76e2d9bd73fe15d4162a7ebb9352a164f4607ffaae82a9c93a90cfd80c1a44e5",
+  "benchmarks/dev-2/site/delivery/delivery-b.html": "ac149e3562c821182a3e9c73de43be52da922121acd2c5cf146a5c9091928eb5",
+  "benchmarks/dev-2/site/lms/lms-a.html": "c7a9659321ff7b9557d0516650c6f0103295d310cc2ce55e5a60255798bf220f",
+  "benchmarks/dev-2/site/lms/lms-b.html": "3b8a8b73f45ce02d1d39653fcfc76bdc72c23be35928efdbdc3578d184af4c2d"
+}

@@ -1,0 +1,67 @@
+{
+  "registered_at": "2026-10-16T16:12:23.638645+00:00",
+  "kind": "known-failure regression, not held-out general benchmark",
+  "image": "screen-a.png",
+  "positive_locations": [
+    {
+      "id": "PIN",
+      "region": [
+        176,
+        185,
+        300,
+        32
+      ]
+    },
+    {
+      "id": "RESULT",
+      "region": [
+        198,
+        280,
+        278,
+        38
+      ]
+    },
+    {
+      "id": "PROCESS-02",
+      "region": [
+        201,
+        616,
+        266,
+        28
+      ]
+    },
+    {
+      "id": "BODY-HEADING",
+      "region": [
+        176,
+        912,
+        300,
+        33
+      ]
+    },
+    {
+      "id": "MORE-CASES-HEADING",
+      "region": [
+        176,
+        1058,
+        300,
+        34
+      ]
+    },
+    {
+      "id": "OGC-TITLE",
+      "region": [
+        176,
+        1113,
+        300,
+        25
+      ]
+    }
+  ],
+  "negative_controls": [
+    "screen-a OUTPUT title fully legible",
+    "screen-a INPUT title fully legible",
+    "screen-a INPRO title fully legible"
+  ],
+  "scoring": "Evaluate text-location matches; repeated clipped lines can be grouped. These are six locations in one known artifact, not six independent scenarios. Separate visual findings from causes and do not require invented overlap. Figma current snapshot vs browser: family Noto Sans KR vs Pretendard; process3 vs5; summary/result sizing differs. Missing prior version/viewport stays unknown."
+}

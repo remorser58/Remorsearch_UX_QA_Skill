@@ -1,0 +1,107 @@
+{
+  "mode": "live",
+  "policy": {
+    "retention_days": 7
+  },
+  "artifacts": [
+    {
+      "id": "actual-top",
+      "path": "actual-top.png",
+      "kind": "screenshot",
+      "sha256": "0d3aba6ba9b6521e88adcbd21522cb7a20848e4c54f08b81d2fa7e2ec4bd7bb3",
+      "created_at": "2026-10-16T16:11:53.492Z",
+      "provenance": "live"
+    },
+    {
+      "id": "reference-top",
+      "path": "reference-top.png",
+      "kind": "screenshot",
+      "sha256": "48ac574cafc6f976d33c62d827182851b4de11e85e03cf4606bd20f5e26e1f59",
+      "created_at": "2026-10-16T16:34:40.338927+00:00",
+      "provenance": "live"
+    },
+    {
+      "id": "figma-readback",
+      "path": "figma-readback.json",
+      "kind": "figma_readback",
+      "sha256": "03bd3461ae388800fb6d57c24442baf8d813d6b213787b55cc1f15bf753f0310",
+      "created_at": "2026-10-16T16:34:40.338927+00:00",
+      "provenance": "live"
+    },
+    {
+      "id": "visual-report",
+      "path": "visual-report.json",
+      "kind": "visual_report",
+      "sha256": "aa439c1323387cde8bc6e2e816a04d001a55ec8a1f57d2ad13ac34230bd70fcc",
+      "created_at": "2026-10-16T16:34:40.338927+00:00",
+      "provenance": "live"
+    }
+  ],
+  "browser_runs": [
+    {
+      "id": "portfolio-visual-top",
+      "scenario_digest": "94d457e5914e3021db695fe6b3857b9d151cc8dc8c09d2e6256dd8dca34b3396",
+      "code_revision": "064d9bae628fdf4a1f8f9fb4e8a14c5b22a13748",
+      "started_at": "2026-10-16T16:11:53.492Z",
+      "ended_at": "2026-10-16T16:11:53.492Z"
+    }
+  ],
+  "scenarios": [],
+  "visual_checks": [
+    {
+      "id": "portfolio-top-comparison",
+      "run_id": "portfolio-visual-top",
+      "figma_id": "portfolio-figma",
+      "file_key": "ikOHVXrV47diF5hmrympEr",
+      "branch_key": "main",
+      "baseline_version": "sha256:c7c9d55b0f356ea135318bae436263c927b975a670cd4432303ab5f398c0f766",
+      "readback_version": "sha256:c7c9d55b0f356ea135318bae436263c927b975a670cd4432303ab5f398c0f766",
+      "node_ids": [
+        "2:2"
+      ],
+      "route": "/cases/ax-workflow-plugins/",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "device_scale_factor": 1
+      },
+      "actual_artifact_id": "actual-top",
+      "reference_artifact_id": "reference-top",
+      "comparison_artifact_id": "visual-report",
+      "status": "failed",
+      "method": "review",
+      "reviewer": "supervisor after independent multimodal review",
+      "checks": {
+        "layout": "failed",
+        "interaction_states": "unknown",
+        "alignment": "passed",
+        "spacing": "failed",
+        "typography": "failed",
+        "text_clipping": "passed",
+        "component_occlusion": "passed",
+        "figma_fidelity": "failed",
+        "side_accents": "passed"
+      },
+      "reason": "Observed mobile header/navigation differs from supplied Figma; approval and remedy remain unresolved."
+    }
+  ],
+  "bundle": {
+    "records": {
+      "figma": [
+        {
+          "id": "portfolio-figma",
+          "file_key": "ikOHVXrV47diF5hmrympEr",
+          "branch_key": "main",
+          "baseline_version": "sha256:c7c9d55b0f356ea135318bae436263c927b975a670cd4432303ab5f398c0f766",
+          "readback_version": "sha256:c7c9d55b0f356ea135318bae436263c927b975a670cd4432303ab5f398c0f766",
+          "node_ids": [
+            "2:2"
+          ],
+          "read_at": "2026-10-16T16:34:40.338927+00:00",
+          "design_status": "comparison_ready",
+          "readback_artifact_ref": "figma-readback"
+        }
+      ]
+    }
+  }
+}

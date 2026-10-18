@@ -1,0 +1,157 @@
+{
+  "verdict": "REQUEST_CHANGES",
+  "viewed_image": {
+    "path": "input/screen-a.png",
+    "viewed": true,
+    "dimensions_px": [
+      689,
+      1317
+    ],
+    "coordinate_space": "Original image pixels, origin at top left; finding rectangles are approximate.",
+    "tool_call_evidence": "Twice invoked tools.view_image({path: \"input/screen-a.png\", detail: \"original\"}) through functions.exec and displayed each returned image using image(result.image_url, \"original\"). Both returned pixel images were visually inspected, including the top summary, process rows, body introduction and case list."
+  },
+  "axes": [
+    {
+      "aspect": "alignment",
+      "status": "pass",
+      "reason": "Within this image, main labels, headings, rules and case titles share the left edge near x=176. Process numbers align near x=176 and their text near x=202. No inconsistent edge or baseline alignment is visibly established."
+    },
+    {
+      "aspect": "spacing",
+      "status": "pass",
+      "reason": "Process rows repeat at approximately 117-118 px vertical intervals, and case entries at approximately 80 px intervals. Descriptions remain separated from headings. Larger section gaps alone do not establish a defect without an expected spacing rule."
+    },
+    {
+      "aspect": "typography",
+      "status": "pass",
+      "reason": "Visible labels, bold headings and smaller gray descriptions use consistent roles and remain distinguishable at original resolution. No separate type inconsistency is established; the observed reading problems are recorded under text_clipping. Font identity and token fidelity remain unknown."
+    },
+    {
+      "aspect": "component_occlusion",
+      "status": "pass",
+      "reason": "No visible overlay or neighboring component covers another component or its text. Abrupt text endings are recorded as clipping, without inventing a covering layer. Hit targets and invisible layers cannot be checked from this image."
+    },
+    {
+      "aspect": "text_clipping",
+      "status": "fail",
+      "reason": "Six regions contain text cut at an internal right boundary, including partial glyphs or an incomplete word. These boundaries sit inside the captured white page, rather than at the image edge. Findings F-01 through F-06 identify the regions."
+    },
+    {
+      "aspect": "figma_fidelity",
+      "status": "unknown",
+      "reason": "No authoritative Figma image, URL, node IDs, version or readback was supplied. Expected layout, hierarchy, tokens, colors and approved deviations cannot be compared."
+    },
+    {
+      "aspect": "responsive_behavior",
+      "status": "unknown",
+      "reason": "Only one raster image is allowed. Other widths, actual device viewport, DPR, scroll position and whether clipped content can be revealed are unknown."
+    },
+    {
+      "aspect": "interaction_states",
+      "status": "unknown",
+      "reason": "No rendered URL or interaction evidence is supplied. Navigation, keyboard focus, selected, loading, error and other states were not exercised."
+    },
+    {
+      "aspect": "live_reusable_components",
+      "status": "unknown",
+      "reason": "The screenshot cannot establish DOM structure, reusable components or whether a live interface uses a raster substitute. No source or runtime inspection is permitted."
+    }
+  ],
+  "findings": [
+    {
+      "id": "F-01",
+      "aspect": "text_clipping",
+      "region_px": [
+        176,
+        190,
+        300,
+        25
+      ],
+      "visible_text": "제약 검사 · 충돌 후보 표시 ·",
+      "observation": "Observed: the PIN heading continues beyond this fully readable prefix, with its final visible glyph cut at the internal right edge near x=476. There is white page space to its right and no visible continuation line or ellipsis. The remaining text is unknown. Repair suggestion: make the existing heading fully readable at this width while preserving its copy, then verify a fresh capture.",
+      "severity": "MEDIUM",
+      "confidence": "high"
+    },
+    {
+      "id": "F-02",
+      "aspect": "text_clipping",
+      "region_px": [
+        199,
+        285,
+        277,
+        27
+      ],
+      "visible_text": "단 6번의 프롬프트로 본선",
+      "observation": "Observed: the large white result line continues after this prefix and is cut through a trailing glyph at the purple rectangle's right edge near x=476. The complete result statement is not readable in the capture. Repair suggestion: keep the existing statement fully visible inside its container at this width without changing the copy.",
+      "severity": "MEDIUM",
+      "confidence": "high"
+    },
+    {
+      "id": "F-03",
+      "aspect": "text_clipping",
+      "region_px": [
+        202,
+        620,
+        274,
+        22
+      ],
+      "visible_text": "등록 전 검사 단계의 공백을 원인으로",
+      "observation": "Observed: process row 02 continues after this readable prefix but ends in a partially visible glyph near x=467. Its description is unobstructed below, and the heading has no visible continuation line. This prevents reading the complete step heading in the supplied state. Repair suggestion: expose the complete existing heading within the row and confirm it remains separated from its description.",
+      "severity": "MEDIUM",
+      "confidence": "high"
+    },
+    {
+      "id": "F-04",
+      "aspect": "text_clipping",
+      "region_px": [
+        176,
+        916,
+        300,
+        56
+      ],
+      "visible_text": [
+        "검증 범위와 관련 자료를",
+        "단계별 근거와 결과를 본문 흐름 안에서"
+      ],
+      "observation": "Observed: both the body introduction heading and its smaller description continue after these prefixes and terminate at the same internal right edge near x=476, with clipped trailing characters. Neither complete sentence is visible. Repair suggestion: preserve both strings and make their full contents readable in this section at the supplied width.",
+      "severity": "MEDIUM",
+      "confidence": "high"
+    },
+    {
+      "id": "F-05",
+      "aspect": "text_clipping",
+      "region_px": [
+        176,
+        1062,
+        300,
+        28
+      ],
+      "visible_text": "같은 문제를 다른 장면에서",
+      "observation": "Observed: the heading under MORE CASES continues after this prefix, then cuts through a trailing glyph near x=476. No continuation or ellipsis is visible. Repair suggestion: make the complete existing heading readable at this width while retaining its wording.",
+      "severity": "MEDIUM",
+      "confidence": "high"
+    },
+    {
+      "id": "F-06",
+      "aspect": "text_clipping",
+      "region_px": [
+        176,
+        1115,
+        300,
+        23
+      ],
+      "visible_text": "OGC 2026 Autonomous Research",
+      "observation": "Observed: the first case title continues into an English word beginning with Sys and cuts off at the internal right edge near x=476. Its full title cannot be read; the titles of the next two entries fit visibly. Repair suggestion: make the full existing case title readable at this width and verify it remains clear of its subtitle.",
+      "severity": "MEDIUM",
+      "confidence": "high"
+    }
+  ],
+  "unknowns": [
+    "Authoritative Figma URL, relevant node IDs, branch, source version/readback and reference pixels: unknown; no full fidelity claim is made.",
+    "Rendered URL, changed source, build revision, capture timestamp, actual CSS viewport, DPR and scroll position: unknown. The 689 by 1317 dimensions describe the supplied raster only.",
+    "Loaded fonts, exact typography/color/spacing tokens, layer hierarchy, clipping ancestor chains and implementation causes: unknown. No CSS mechanism is asserted.",
+    "Complete original strings and intentional truncation rules: unknown. Quoted strings are readable visible prefixes, not reconstructions of hidden text.",
+    "Navigation, interaction states, keyboard behavior, hit testing, scrolling or other ways to reveal clipped text: unknown. The findings establish visible clipping in this capture, not permanent loss or task failure.",
+    "Other screen sizes, content outside the capture, live component reuse and raster replacement in the implementation: unknown. No browser, network, account, source, history or other input was inspected."
+  ]
+}

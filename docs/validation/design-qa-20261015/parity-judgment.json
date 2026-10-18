@@ -1,0 +1,202 @@
+{
+  "verdict": "PARTIAL",
+  "verdict_scope": "P83 has one unsupported defect claim and qualified coverage; P24 has fully supported reported families with scoped coverage. Product B fails required note preservation.",
+  "input_basis": "Authoritative findings.json plus saved PNGs and rendered DOM/interaction traces only; restored P83 trace read. Narrative reports unnecessary.",
+  "normalization": "One family per distinct failed user operation or component property. Merge repeats across options/viewports and consequences of the same loss. Split unrelated component failures even when bundled in one card. No source-level root cause inferred.",
+  "counts": {
+    "P83": {
+      "raw_finding_cards": 6,
+      "normalized_reported_issue_families": 6,
+      "supported_cards": 5,
+      "supported_unique_issue_families": 5,
+      "unsupported_cards": 1,
+      "unsupported_unique_issue_families": 1,
+      "missing_proof_families": 0
+    },
+    "P24": {
+      "raw_finding_cards": 5,
+      "normalized_reported_issue_families": 6,
+      "supported_cards": 5,
+      "supported_unique_issue_families": 6,
+      "unsupported_cards": 0,
+      "unsupported_unique_issue_families": 0,
+      "missing_proof_families": 0
+    }
+  },
+  "pair_union": {
+    "reported_unique_issue_families": 7,
+    "supported_unique_issue_families": 6,
+    "unsupported_unique_issue_families": 1
+  },
+  "findings": [
+    {
+      "card": "P83 #1",
+      "families": [
+        "allergy_note_loss"
+      ],
+      "status": "supported",
+      "evidence": [
+        "P83/b-mobile-coupon-error.png",
+        "P83/b-mobile-address-error.png",
+        "P83/b-mobile-final.png",
+        "P83/b-short-final.png",
+        "P83/b-desktop-final.png",
+        "P83/interaction-evidence.md"
+      ],
+      "note": "Entered note becomes empty after missing-address validation and remains absent in final order."
+    },
+    {
+      "card": "P83 #2",
+      "families": [
+        "part_selection_keyboard_block"
+      ],
+      "status": "supported",
+      "evidence": [
+        "P83/interaction-evidence.md",
+        "P83/b-desktop-keyboard-sauce.png"
+      ],
+      "note": "Restored trace records skipped part choices and plain-text accessibility exposure; desktop bounded probe after pointer selection, not full keyboard checkout."
+    },
+    {
+      "card": "P83 #3",
+      "families": [
+        "missing_sauce_feedback"
+      ],
+      "status": "supported",
+      "evidence": [
+        "P83/interaction-evidence.md",
+        "P83/b-mobile-missing-sauce.png",
+        "P83/b-mobile-added.png"
+      ],
+      "note": "Failed add provides no explanatory feedback; manually choosing sauce recovers."
+    },
+    {
+      "card": "P83 #4",
+      "families": [
+        "sauce_surcharge_clipping"
+      ],
+      "status": "supported",
+      "evidence": [
+        "P83/b-mobile-missing-sauce.png",
+        "P83/b-short-sauce-error.png",
+        "P83/b-desktop-sauce-error.png"
+      ],
+      "note": "Mobile and short PNGs visibly lose surcharge endings; desktop labels fit."
+    },
+    {
+      "card": "P83 #5",
+      "families": [
+        "quantity_accessible_names"
+      ],
+      "status": "supported",
+      "evidence": [
+        "P83/interaction-evidence.md",
+        "P83/b-mobile-cart2.png"
+      ],
+      "note": "Accessibility snapshot transcription reports two unnamed buttons; pointer quantity and arithmetic work."
+    },
+    {
+      "card": "P83 #6",
+      "families": [
+        "coupon_typo_diagnosis"
+      ],
+      "status": "unsupported_requirement",
+      "evidence": [
+        "P83/b-mobile-coupon-error.png",
+        "P83/b-short-coupon-error.png",
+        "P83/b-short-payment.png",
+        "P83/interaction-evidence.md"
+      ],
+      "note": "Generic rejection with CPN-4003 is real; requiring a spelling diagnosis is unsupported. Correct coupon succeeds; no task failure or measured confusion shown."
+    },
+    {
+      "card": "P24 F01",
+      "families": [
+        "allergy_note_loss"
+      ],
+      "status": "supported",
+      "evidence": [
+        "P24/b-note-before-validation.png",
+        "P24/b-note-after-validation.png",
+        "P24/b-mobile-final.png",
+        "P24/b-short-final-bottom.png",
+        "P24/b-desktop-final.png",
+        "P24/observations.json#input_preservation"
+      ],
+      "note": "Before/after values and final order confirm note loss; other final values persist."
+    },
+    {
+      "card": "P24 F02",
+      "families": [
+        "part_selection_keyboard_block"
+      ],
+      "status": "supported",
+      "evidence": [
+        "P24/observations.json#keyboard_trace",
+        "P24/observations.json#boneless_b",
+        "P24/b-keyboard-blocked.png"
+      ],
+      "note": "Complete options Tab cycle skips required DIV choices; keyboard add remains blocked at 23000."
+    },
+    {
+      "card": "P24 F03",
+      "families": [
+        "sauce_surcharge_clipping",
+        "payment_summary_reflow"
+      ],
+      "status": "supported",
+      "evidence": [
+        "P24/b-mobile-sauce-error.png",
+        "P24/b-short-selected.png",
+        "P24/b-short-payment-summary.png",
+        "P24/b-short-payment-horizontal-end.png",
+        "P24/observations.json#payment_summary_b_short"
+      ],
+      "note": "Two distinct failures. Payment PNG loses amount endings; horizontal-scroll PNG restores amounts while losing label beginnings. Geometry only corroborates."
+    },
+    {
+      "card": "P24 F04",
+      "families": [
+        "missing_sauce_feedback"
+      ],
+      "status": "supported",
+      "evidence": [
+        "P24/b-mobile-sauce-error.png",
+        "P24/b-mobile-selected.png",
+        "P24/capture-receipts.json"
+      ],
+      "note": "Post-attempt PNG and rendered-text capture contain no explanatory sauce error; selection recovers to 25000."
+    },
+    {
+      "card": "P24 F05",
+      "families": [
+        "quantity_accessible_names"
+      ],
+      "status": "supported",
+      "evidence": [
+        "P24/observations.json#quantity_controls_b",
+        "P24/b-mobile-cart.png"
+      ],
+      "note": "Both controls have empty text and absent aria-label, aria-labelledby and title; quantity 2 and 50000 remain correct."
+    }
+  ],
+  "task_verdicts": {
+    "A": "PASS for evidenced requested values and exercised recoveries; broader coverage qualified",
+    "B": "FAIL: allergy note lost; keyboard part selection also fails in tested conditions",
+    "arithmetic": "25000 * 2 = 50000; 50000 - 5000 + 3000 = 48000. Both final summaries retain quantity/options, delivery request, corrected address and payment; B loses allergy note."
+  },
+  "coverage_qualifications": [
+    "P83 trace supports reported three-viewport pointer outcomes. Short final PNGs are full-page captures, not proof of simultaneous visibility or every scroll position.",
+    "P83 desktop keyboard probe is bounded and follows pointer part selection. P24 mobile trace exercises A checkout and B keyboard blockage; desktop/short evidence comes from resized key-state replay, not an independent desktop full flow.",
+    "P83 omits the supported 320px payment-summary failure. Its short payment PNG shows coupon/payment selection, not the summary; broad usable/readable wording cannot settle summary visibility. Desktop centered-summary hypothesis concerns a different viewport.",
+    "P24 records B address-error focus remaining on pay-btn with absent invalid/describedby attributes. Neither report promotes this recovery/association gap separately; impact is not independently established, so it is not added to counts.",
+    "P83 trace discloses an accidental script-text serialization excluded from findings. Complete source-blind method compliance cannot be claimed; model/timing/access audits are outside this adjudication."
+  ],
+  "limits": [
+    "Saved synthetic Chromium evidence only; no new product measurements, tests, implementation inspection or fixes.",
+    "No Figma alignment/fidelity baseline, physical device, software-keyboard occlusion, screen-reader speech or real fulfillment/payment proof.",
+    "No immutable build identity established. Reported snapshot values and behavior do not prove all possible states.",
+    "One pair and known fixture cannot establish general causal superiority of a model, condition or method; no identity inference."
+  ],
+  "stop_condition": "All reported claims adjudicated; restored trace resolved prior proof gap. No further broad investigation needed."
+}

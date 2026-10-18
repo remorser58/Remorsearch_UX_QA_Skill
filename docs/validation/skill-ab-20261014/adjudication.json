@@ -1,0 +1,982 @@
+{
+  "schema_version": "blind-adjudication.v1",
+  "status": "completed_bounded_pass",
+  "input_path": "judgment-input.json",
+  "conditions": "Anonymous report labels retained; no condition labels inferred or inspected.",
+  "method": {
+    "seed_matching": "Same case, target/state, and causal problem supported by evidence. A keyed ergonomic mechanism can match without claiming a reproduced human error. Broad advice receives no seed credit.",
+    "unseeded_findings": "valid_extra requires a substantiated defect beyond the key; false_positive requires contradiction or clear inapplicability; unsupported preserves true observations whose defect or impact is not established.",
+    "deduplication": "Unique seed IDs per report and case. Repetition across independent reports is not a duplicate. Multiple observations describing one keyed causal issue receive one seed credit. The two completion-layer extras are distinct case occurrences of one additional issue family.",
+    "comparison": "No precision, recall, overall quality score, condition ranking, or model/style judgment computed."
+  },
+  "findings": [
+    {
+      "finding_id": "R17-case-1-F1",
+      "report": "R17",
+      "case_id": "case-1",
+      "classification": "seed_match",
+      "seed_id": "D-02",
+      "reason": "The same banner close control is 16 by 16 CSS px at x318/y86; the neighboring claim button ends at x316. This matches the keyed small, closely spaced touch target. A successful center tap does not measure the risk of missing it.",
+      "evidence_checked": [
+        "local-evidence/D/runs/case-1/S-case-1-001.json",
+        "local-evidence/D/runs/case-1/S-case-1-001.png"
+      ],
+      "severity_note": "P2 is consistent with the keyed target-size defect; touch-error frequency is unmeasured.",
+      "observations": [
+        "Measured close box: 16 by 16 CSS px; adjacent target gap: 2 px."
+      ],
+      "inferred_user_impact": "Difficulty hitting the close control and accidental coupon activation are inferred; no near-miss was reproduced."
+    },
+    {
+      "finding_id": "R17-case-1-F2",
+      "report": "R17",
+      "case_id": "case-1",
+      "classification": "seed_match",
+      "seed_id": "D-01",
+      "reason": "The snapshot and PNG place clear-all at x16-100 and pay at x104-344 in the same bottom row, matching the keyed 4 px separation. Fixture source also shows immediate cart hiding and total reset without a confirmation branch. Accidental deletion was not exercised.",
+      "evidence_checked": [
+        "local-evidence/D/runs/case-1/S-case-1-002.json",
+        "local-evidence/D/runs/case-1/S-case-1-002.png",
+        "../../../benchmarks/mobile-commerce/site/checkout.html"
+      ],
+      "severity_note": "P2 is consistent with the keyed destructive-action placement; no mistap or real data loss was observed.",
+      "observations": [
+        "Clear-all and pay are separated by 4 CSS px.",
+        "The source clear handler immediately hides the cart and resets the total."
+      ],
+      "inferred_user_impact": "A misplaced payment tap causing cart loss is an ergonomic risk, not an observed operator error.",
+      "source_locations": [
+        "page-1.html:62",
+        "page-1.html:182"
+      ]
+    },
+    {
+      "finding_id": "R17-case-3-F1",
+      "report": "R17",
+      "case_id": "case-3",
+      "classification": "seed_match",
+      "seed_id": "D-15",
+      "reason": "After the omitted-phone submit, the error is at y64-126.59 while the submit control remains at y716-768; the phone field has no inline error, no invalid marker, and no message association. This is the same remote, nonlocal error-feedback problem as D-15. Programmatic association is supporting evidence, not a second seed credit.",
+      "evidence_checked": [
+        "local-evidence/D/runs/case-3/S-case-3-008.json",
+        "local-evidence/D/runs/case-3/S-case-3-008.png",
+        "local-evidence/D/runs/case-3/I-case-3-001.json"
+      ],
+      "severity_note": "P2 is consistent with the keyed remote error-feedback issue; complete failure to announce the role=alert message was not demonstrated.",
+      "observations": [
+        "Error appears near the top of the form; focus stays on submit.",
+        "Phone retains its normal border and has no associated error."
+      ],
+      "inferred_user_impact": "Missed error feedback and extra search or assistive-technology effort are inferred; no gaze or screen-reader trial was supplied."
+    },
+    {
+      "finding_id": "R17-case-3-F2",
+      "report": "R17",
+      "case_id": "case-3",
+      "classification": "unsupported",
+      "seed_id": null,
+      "reason": "The PNG confirms the corrected number remains alongside the earlier summary error. Page 3 validates and clears this summary on submit, with no input or blur validation handler; the number satisfies its validation predicate. No live-validation contract or failed recovery is established, so persistence is observed but the proposed immediate-clearing requirement and resulting confusion remain unproved.",
+      "evidence_checked": [
+        "local-evidence/D/runs/case-3/S-case-3-009.json",
+        "local-evidence/D/runs/case-3/S-case-3-009.png",
+        "../../../benchmarks/mobile-commerce/site/booking.html"
+      ],
+      "severity_note": "Reported P3 remains an improvement hypothesis; a defect severity is not established.",
+      "observations": [
+        "Corrected phone value and previous summary error coexist.",
+        "Source validates the phone and clears the error on a valid submit."
+      ],
+      "inferred_user_impact": "The user thinking the correction was rejected is plausible but untested.",
+      "source_locations": [
+        "page-3.html:173",
+        "page-3.html:178",
+        "page-3.html:185"
+      ]
+    },
+    {
+      "finding_id": "R17-case-4-F1",
+      "report": "R17",
+      "case_id": "case-4",
+      "classification": "unsupported",
+      "seed_id": null,
+      "reason": "The PNG and snapshot confirm a format-valid corrected value coexists with the inline error and footer alert. Page 4 updates error state in its submit handler and provides no live or blur revalidation contract; the submit remains enabled. Lingering feedback, including last-submit invalid state, merits scrutiny, but this evidence does not establish failed correction or user confusion.",
+      "evidence_checked": [
+        "local-evidence/D/runs/case-4/S-case-4-008.json",
+        "local-evidence/D/runs/case-4/S-case-4-008.png",
+        "../../../benchmarks/mobile-commerce/site/booking-clean.html"
+      ],
+      "severity_note": "Reported P3 is not confirmed as a defect; retain for a validation-timing or accessibility contract decision.",
+      "observations": [
+        "The corrected number is visible while inline and footer errors remain.",
+        "The source accepts this format on the next submit and resets field error state then."
+      ],
+      "inferred_user_impact": "Misinterpretation of the retained error state is inferred; assistive-technology impact was not tested.",
+      "source_locations": [
+        "page-4.html:174",
+        "page-4.html:179",
+        "page-4.html:182",
+        "page-4.html:183"
+      ]
+    },
+    {
+      "finding_id": "R17-case-4-F2",
+      "report": "R17",
+      "case_id": "case-4",
+      "classification": "unsupported",
+      "seed_id": null,
+      "reason": "Focus remaining on submit is confirmed. The same state has a role=alert summary immediately above submit, a visible inline phone error, aria-invalid=true, and a phone-to-error association. The source retains ordinary access to the field; a mandatory first-invalid focus rule or an unusable keyboard recovery path has not been established.",
+      "evidence_checked": [
+        "local-evidence/D/runs/case-4/I-case-4-000.json",
+        "local-evidence/D/runs/case-4/S-case-4-007.png",
+        "../../../benchmarks/mobile-commerce/site/booking-clean.html"
+      ],
+      "severity_note": "P3 can describe optional focus assistance; the available evidence does not establish a control defect.",
+      "observations": [
+        "Focus is on submit after the failed attempt.",
+        "Local alert and associated inline phone error are present."
+      ],
+      "inferred_user_impact": "Extra keyboard navigation is inferred; excessive searching, lost error context, or failed recovery was not observed.",
+      "source_locations": [
+        "page-4.html:112",
+        "page-4.html:120",
+        "page-4.html:179"
+      ]
+    },
+    {
+      "finding_id": "R42-case-1-F1",
+      "report": "R42",
+      "case_id": "case-1",
+      "classification": "seed_match",
+      "seed_id": "D-02",
+      "reason": "The recorded close target is 16 by 16 CSS px, with a 2 px gap to the claim button; the initial PNG shows the same target and the next JSON shows the banner dismissed. This matches D-02 on target, state, and small-target cause. The physical millimeter conversion is not an independently calibrated measurement.",
+      "evidence_checked": [
+        "local-evidence/B/runs/case-1/S-case-1-001.json",
+        "local-evidence/B/runs/case-1/S-case-1-001.png",
+        "local-evidence/B/runs/case-1/S-case-1-002.json",
+        "local-evidence/B/runs/case-2/S-case-2-001.json"
+      ],
+      "severity_note": "P2 agrees with the keyed target-size defect; empirical touch accuracy and physical size are unmeasured.",
+      "observations": [
+        "Close geometry is 16 by 16 CSS px with a 2 px adjacent gap.",
+        "The control comparison in case 2 measures 44 by 44 CSS px."
+      ],
+      "inferred_user_impact": "Missed or neighboring taps are inferred; only a centered successful tap is supported."
+    },
+    {
+      "finding_id": "R42-case-4-F1",
+      "report": "R42",
+      "case_id": "case-4",
+      "classification": "unsupported",
+      "seed_id": null,
+      "reason": "The inspect JSON and PNG confirm focus stays on submit. The field is visibly marked and associated with its inline error, and a role=alert summary is immediately above submit. No keyboard or screen-reader recovery failure is evidenced, and this report itself identifies focus movement as best practice rather than a mandatory rule.",
+      "evidence_checked": [
+        "local-evidence/B/runs/case-4/I-case-4-000.json",
+        "local-evidence/B/runs/case-4/S-case-4-008.json",
+        "local-evidence/B/runs/case-4/S-case-4-008.png",
+        "../../../benchmarks/mobile-commerce/site/booking-clean.html"
+      ],
+      "severity_note": "Reported P3 is an optional improvement candidate; defect severity is not established.",
+      "observations": [
+        "Submit retains focus.",
+        "Local alert, inline phone guidance, and error association are present."
+      ],
+      "inferred_user_impact": "Potential keyboard-navigation inconvenience is inferred; a loss of discoverability or announcement was not tested.",
+      "source_locations": [
+        "page-4.html:112",
+        "page-4.html:120",
+        "page-4.html:179"
+      ]
+    },
+    {
+      "finding_id": "R42-case-3-F1",
+      "report": "R42",
+      "case_id": "case-3",
+      "classification": "seed_match",
+      "seed_id": "D-14",
+      "reason": "The snapshot and PNG show identical time-only labels and shapes for open and closed slots, with green versus red backgrounds and borders, plus a color-keyed legend. The source uses aria-disabled for closed slots but adds no visible non-color availability cue. This is D-14; ARIA status is not a replacement for a visual cue.",
+      "evidence_checked": [
+        "local-evidence/B/runs/case-3/S-case-3-001.json",
+        "local-evidence/B/runs/case-3/S-case-3-001.png",
+        "local-evidence/B/runs/case-4/S-case-4-001.json",
+        "../../../benchmarks/mobile-commerce/site/booking.html"
+      ],
+      "severity_note": "P2 is consistent with the keyed color-only availability defect; the key's simulated color difference was not remeasured.",
+      "observations": [
+        "Closed slots lack a visible closed-state word or shape change.",
+        "Open and closed slots use the keyed green/red colors."
+      ],
+      "inferred_user_impact": "Difficulty distinguishing availability without color is supported as a design risk; this reviewer did not run a color-vision simulation or a user trial.",
+      "source_locations": [
+        "page-3.html:34",
+        "page-3.html:96",
+        "page-3.html:104"
+      ]
+    },
+    {
+      "finding_id": "R42-case-3-F2",
+      "report": "R42",
+      "case_id": "case-3",
+      "classification": "seed_match",
+      "seed_id": "D-15",
+      "reason": "The failed omitted-phone state shows only a top summary at y64-126.59, an unmarked phone field without an associated error, and focus on submit at the bottom. That combination matches the remote, nonlocal feedback cause of D-15. The field-association observations do not create another seed match.",
+      "evidence_checked": [
+        "local-evidence/B/runs/case-3/I-case-3-000.json",
+        "local-evidence/B/runs/case-3/S-case-3-008.json",
+        "local-evidence/B/runs/case-3/S-case-3-008.png",
+        "local-evidence/B/runs/case-4/I-case-4-000.json"
+      ],
+      "severity_note": "P2 is consistent with the keyed error-locality problem; assistive-technology failure extent is unknown.",
+      "observations": [
+        "Top-of-form error is far from the submit control.",
+        "Phone has no inline error, invalid marker, or associated message."
+      ],
+      "inferred_user_impact": "The user missing or searching for the error is inferred; no screen-reader announcement failure was directly tested."
+    },
+    {
+      "finding_id": "R63-case-1-F1",
+      "report": "R63",
+      "case_id": "case-1",
+      "classification": "seed_match",
+      "seed_id": "D-02",
+      "reason": "The initial snapshot and PNG confirm the 16 by 16 CSS px close target in the same banner, and the adjacent claim geometry confirms the 2 px gap. This matches D-02. Case 2's 44 px control supports the comparison without supplying evidence of an actual miss.",
+      "evidence_checked": [
+        "local-evidence/A/runs/case-1/S-case-1-001.json",
+        "local-evidence/A/runs/case-1/S-case-1-001.png",
+        "local-evidence/A/runs/case-2/S-case-2-001.json"
+      ],
+      "severity_note": "P2 is consistent with the keyed small-target defect.",
+      "observations": [
+        "Close box is 16 by 16 CSS px; claim button ends 2 px to its left."
+      ],
+      "inferred_user_impact": "Reduced touch reliability is inferred; no miss rate or neighboring tap was observed."
+    },
+    {
+      "finding_id": "R63-case-1-F2",
+      "report": "R63",
+      "case_id": "case-1",
+      "classification": "seed_match",
+      "seed_id": "D-01",
+      "reason": "The same sticky-footer clear-all control is 4 px from pay, matching D-01 even though the report labels its cart-loss consequence as inferred. The absence of dialog nodes alone would not prove absence of a runtime confirmation; the permitted source handler independently confirms immediate clearing without a guard.",
+      "evidence_checked": [
+        "local-evidence/A/runs/case-1/S-case-1-001.json",
+        "local-evidence/A/runs/case-1/S-case-1-001.png",
+        "local-evidence/A/runs/case-2/S-case-2-001.json",
+        "../../../benchmarks/mobile-commerce/site/checkout.html"
+      ],
+      "severity_note": "P2 is consistent with the keyed destructive placement; the source corroboration is a static check, not an operator deletion trial.",
+      "observations": [
+        "Clear-all sits at x16-100 and pay begins at x104.",
+        "Source clear handler has immediate cart/total changes and no confirmation branch."
+      ],
+      "inferred_user_impact": "Mistap-induced cart loss is inferred and was not exercised.",
+      "source_locations": [
+        "page-1.html:182"
+      ]
+    },
+    {
+      "finding_id": "R63-case-4-F1",
+      "report": "R63",
+      "case_id": "case-4",
+      "classification": "unsupported",
+      "seed_id": null,
+      "reason": "The corrected value is recorded as 010-0000-0000 while aria-invalid=true and both error messages remain. It satisfies page 4's regex, but the source updates those messages only during submit validation. No live-validation requirement or failed resubmission is evidenced; the potentially misleading stale invalid state is retained as an unresolved concern, not declared benign.",
+      "evidence_checked": [
+        "local-evidence/A/runs/case-4/S-case-4-007.png",
+        "local-evidence/A/runs/case-4/S-case-4-008.png",
+        "local-evidence/A/runs/case-4/I-case-4-001.json",
+        "../../../benchmarks/mobile-commerce/site/booking-clean.html"
+      ],
+      "severity_note": "Reported P3 is not established as a defect without a validation-feedback contract or observed impact.",
+      "observations": [
+        "The corrected number and retained invalid/message state coexist.",
+        "Validation state changes only in the submit handler."
+      ],
+      "inferred_user_impact": "Confusion or misleading assistive-technology feedback is plausible and untested.",
+      "source_locations": [
+        "page-4.html:174",
+        "page-4.html:179",
+        "page-4.html:182",
+        "page-4.html:183"
+      ]
+    },
+    {
+      "finding_id": "R88-case-3-F1",
+      "report": "R88",
+      "case_id": "case-3",
+      "classification": "seed_match",
+      "seed_id": "D-14",
+      "reason": "The initial PNG and JSON show time-only labels, green/red state styling, and a legend whose mapping depends on dot color. There is no visible non-color closed-state cue on the slots. This is the same availability-perception issue as D-14.",
+      "evidence_checked": [
+        "local-evidence/C/runs/case-3/S-case-3-000.json",
+        "local-evidence/C/runs/case-3/S-case-3-000.png"
+      ],
+      "severity_note": "P2 agrees with the keyed color-only state issue.",
+      "observations": [
+        "Time slots have no visible closed-state label or alternate shape cue.",
+        "Closed versus open status uses the keyed color pair."
+      ],
+      "inferred_user_impact": "Availability ambiguity for users who cannot distinguish the colors is inferred; no user or color-vision simulation trial was supplied."
+    },
+    {
+      "finding_id": "R88-case-3-F2",
+      "report": "R88",
+      "case_id": "case-3",
+      "classification": "seed_match",
+      "seed_id": "D-15",
+      "reason": "The omitted-phone error state has a summary at the top, a normal unmarked phone input without an error association, and focus left on submit. This matches D-15's nonlocal error-feedback cause. The role=alert summary prevents interpreting the title as proof that assistive technology announces no error at all.",
+      "evidence_checked": [
+        "local-evidence/C/runs/case-3/I-case-3-000.json",
+        "local-evidence/C/runs/case-3/S-case-3-007.json",
+        "local-evidence/C/runs/case-3/S-case-3-007.png"
+      ],
+      "severity_note": "P2 is consistent with D-15; the title's broad assistive-technology impact is narrower than proven.",
+      "observations": [
+        "Top summary is separated from the submit action.",
+        "Phone has neither an invalid state nor a message association."
+      ],
+      "inferred_user_impact": "Extra effort to locate the field is inferred; absence of every assistive-technology error announcement is not established."
+    },
+    {
+      "finding_id": "R88-case-3-F3",
+      "report": "R88",
+      "case_id": "case-3",
+      "classification": "unsupported",
+      "seed_id": null,
+      "reason": "The PNG shows the corrected value with the earlier summary still visible, and the completion JSON shows the form hidden after recovery. Page 3 clears its summary on a valid submit and provides no input/blur validation contract. Persistence is verified, but mandatory immediate clearing and the claim that the user thinks the fix failed are not established.",
+      "evidence_checked": [
+        "local-evidence/C/runs/case-3/S-case-3-008.json",
+        "local-evidence/C/runs/case-3/S-case-3-008.png",
+        "local-evidence/C/runs/case-3/S-case-3-010.json",
+        "../../../benchmarks/mobile-commerce/site/booking.html"
+      ],
+      "severity_note": "Reported P3 remains an optional validation-timing hypothesis.",
+      "observations": [
+        "Earlier summary remains after typing the corrected phone number.",
+        "The completion snapshot no longer displays that summary."
+      ],
+      "inferred_user_impact": "Confusion about whether the correction succeeded is inferred.",
+      "source_locations": [
+        "page-3.html:173",
+        "page-3.html:178",
+        "page-3.html:185"
+      ]
+    },
+    {
+      "finding_id": "R88-case-3-F4",
+      "report": "R88",
+      "case_id": "case-3",
+      "classification": "unsupported",
+      "seed_id": null,
+      "reason": "Metadata records aria-disabled slots as focusable, while native-disabled slots in case 4 are not focusable. Source confirms page 3 uses aria-disabled rather than native disabled and ignores activation, which explains the difference. Neither the existence of a tab stop nor a universal requirement to remove ARIA-disabled controls from the tab order establishes a keyboard defect; no keyboard traversal or resulting recovery problem was tested.",
+      "evidence_checked": [
+        "local-evidence/C/runs/case-3/S-case-3-000.json",
+        "local-evidence/C/runs/case-4/S-case-4-000.json",
+        "../../../benchmarks/mobile-commerce/site/booking.html",
+        "../../../benchmarks/mobile-commerce/site/booking-clean.html"
+      ],
+      "severity_note": "Reported P3 is unsupported; this is not a tested keyboard failure or a duplicate of the visual color-only problem.",
+      "observations": [
+        "Closed slots have enabled=false and focusable=true in metadata.",
+        "Source uses aria-disabled=true and ignores activation for those slots."
+      ],
+      "inferred_user_impact": "Unhelpful keyboard stops and navigation cost remain inferred.",
+      "source_locations": [
+        "page-3.html:96",
+        "page-3.html:154",
+        "page-4.html:94"
+      ]
+    },
+    {
+      "finding_id": "R88-case-2-F1",
+      "report": "R88",
+      "case_id": "case-2",
+      "classification": "valid_extra",
+      "seed_id": null,
+      "reason": "The completion PNG and JSON show an opaque full-viewport result sheet with focus on body. Source confirms that the sheet is merely unhidden while the previous checkout, including native enabled buttons, remains displayed and is not made inert. The additional issue is concealed interactive background content after completion; role=status alone does not prove failure to announce success or require a particular focus target.",
+      "evidence_checked": [
+        "local-evidence/C/runs/case-2/S-case-2-003.json",
+        "local-evidence/C/runs/case-2/S-case-2-003.png",
+        "../../../benchmarks/mobile-commerce/site/checkout-clean.html"
+      ],
+      "severity_note": "P3 is reasonable for the source-supported background/focus defect; live keyboard behavior and screen-reader announcement remain unverified.",
+      "observations": [
+        "Opaque result sheet occupies the complete 360 by 780 viewport; focus is on body.",
+        "Source retains enabled checkout buttons outside the sheet with no background hiding or inert state."
+      ],
+      "inferred_user_impact": "Subsequent keyboard focus can reach visually covered checkout controls by native-button behavior; no keyboard walk or unintended activation was performed.",
+      "source_locations": [
+        "page-2.html:82",
+        "page-2.html:102",
+        "page-2.html:135",
+        "page-2.html:174",
+        "page-2.html:230"
+      ],
+      "issue_family": "checkout_completion_background_remains_interactive"
+    },
+    {
+      "finding_id": "R88-case-4-F1",
+      "report": "R88",
+      "case_id": "case-4",
+      "classification": "unsupported",
+      "seed_id": null,
+      "reason": "The corrected format-valid number, visible errors, and retained aria-invalid=true state are confirmed. Page 4 validates and updates these states on submit, and the source permits the valid correction to succeed without requiring live error clearing. This may mislead users, but no live-validation contract, rejected correction, or observed confusion establishes the reported defect.",
+      "evidence_checked": [
+        "local-evidence/C/runs/case-4/S-case-4-008.json",
+        "local-evidence/C/runs/case-4/S-case-4-008.png",
+        "local-evidence/C/runs/case-4/I-case-4-001.json",
+        "../../../benchmarks/mobile-commerce/site/booking-clean.html"
+      ],
+      "severity_note": "Reported P2 is not supported by a demonstrated failure or measured impact; classify consistently with the equivalent P3 reports.",
+      "observations": [
+        "Corrected number coexists with inline and footer errors and aria-invalid=true.",
+        "Submit-only validation updates or clears the error on the next attempt."
+      ],
+      "inferred_user_impact": "The user concluding the number is still wrong is plausible but untested.",
+      "source_locations": [
+        "page-4.html:174",
+        "page-4.html:179",
+        "page-4.html:182",
+        "page-4.html:183"
+      ]
+    },
+    {
+      "finding_id": "R88-case-4-F2",
+      "report": "R88",
+      "case_id": "case-4",
+      "classification": "unsupported",
+      "seed_id": null,
+      "reason": "The snapshot confirms focus remains on submit, but also shows a local role=alert summary and an associated inline error on the marked phone field. Source does not move focus and leaves the field ordinarily accessible. No required focus-transfer contract or keyboard recovery failure has been shown.",
+      "evidence_checked": [
+        "local-evidence/C/runs/case-4/S-case-4-007.json",
+        "../../../benchmarks/mobile-commerce/site/booking-clean.html"
+      ],
+      "severity_note": "Reported P3 is an optional assistance suggestion, not an established defect.",
+      "observations": [
+        "Submit retains focus after the error.",
+        "Phone is identified by inline feedback and aria-describedby; summary is beside the action."
+      ],
+      "inferred_user_impact": "Additional reverse navigation is inferred; failed discovery or recovery was not observed.",
+      "source_locations": [
+        "page-4.html:112",
+        "page-4.html:120",
+        "page-4.html:179"
+      ]
+    },
+    {
+      "finding_id": "R88-case-1-F1",
+      "report": "R88",
+      "case_id": "case-1",
+      "classification": "seed_match",
+      "seed_id": "D-02",
+      "reason": "The initial PNG and JSON confirm the banner close at x318/y86 with a 16 by 16 CSS px box, next to the claim button ending at x316. This is the same small, closely spaced touch target as D-02.",
+      "evidence_checked": [
+        "local-evidence/C/runs/case-1/S-case-1-000.json",
+        "local-evidence/C/runs/case-1/S-case-1-000.png"
+      ],
+      "severity_note": "P2 agrees with the keyed target-size issue.",
+      "observations": [
+        "Close target is 16 by 16 CSS px; adjacent edge gap is 2 px."
+      ],
+      "inferred_user_impact": "A difficult or misdirected tap is inferred; no near-miss was tested."
+    },
+    {
+      "finding_id": "R88-case-1-F2",
+      "report": "R88",
+      "case_id": "case-1",
+      "classification": "seed_match",
+      "seed_id": "D-05",
+      "reason": "The payment step records first DOM feedback at 2615.4 ms and first visual feedback at 2599.1 ms. The resulting snapshot retains the original enabled button, and page 1's handler changes no UI until its 2600 ms timer completes; case 2 records 12.4 ms feedback and a processing state. This is D-05's absent payment acknowledgment.",
+      "evidence_checked": [
+        "local-evidence/C/runs/case-1/run.json",
+        "local-evidence/C/runs/case-1/S-case-1-003.json",
+        "local-evidence/C/runs/case-2/S-case-2-002.json",
+        "local-evidence/C/runs/case-2/run.json",
+        "../../../benchmarks/mobile-commerce/site/checkout.html",
+        "../../../benchmarks/mobile-commerce/site/checkout-clean.html"
+      ],
+      "severity_note": "P2 is consistent with the keyed delay-without-feedback issue; a duplicate-charge risk is not established.",
+      "observations": [
+        "Payment first feedback is approximately 2.6 seconds.",
+        "Case 1 has no processing label or disabled state; the case 2 snapshot does."
+      ],
+      "inferred_user_impact": "Repeated taps or abandonment are inferred; no repeat-tap trial or duplicate payment was observed.",
+      "source_locations": [
+        "page-1.html:190",
+        "page-2.html:230"
+      ]
+    },
+    {
+      "finding_id": "R88-case-1-F3",
+      "report": "R88",
+      "case_id": "case-1",
+      "classification": "seed_match",
+      "seed_id": "D-01",
+      "reason": "The initial evidence places clear-all and pay in the same sticky row with the keyed 4 px gap. The report appropriately does not claim a reproduced mistap or a tested confirmation flow; fixture source independently shows the immediate unguarded clear handler. This matches D-01's destructive placement cause.",
+      "evidence_checked": [
+        "local-evidence/C/runs/case-1/S-case-1-000.json",
+        "local-evidence/C/runs/case-1/S-case-1-000.png",
+        "../../../benchmarks/mobile-commerce/site/checkout.html"
+      ],
+      "severity_note": "P2 is consistent with the keyed ergonomic risk; no deletion or mistap was executed.",
+      "observations": [
+        "Clear-all is 84 by 52 CSS px and pay is 240 by 52; edge gap is 4 px.",
+        "Source clear handler immediately resets the cart state."
+      ],
+      "inferred_user_impact": "An accidental leftward payment tap causing cart loss is inferred.",
+      "source_locations": [
+        "page-1.html:62",
+        "page-1.html:182"
+      ]
+    },
+    {
+      "finding_id": "R88-case-1-F4",
+      "report": "R88",
+      "case_id": "case-1",
+      "classification": "valid_extra",
+      "seed_id": null,
+      "reason": "Both completion snapshots retain focus on pay while the opaque full-viewport sheet entirely covers it; the PNG confirms the result screen. Source shows the handler simply unhides the sheet without hiding or making the previous checkout inert. This establishes concealed focused and interactive background content, beyond merely observing contains_focus=false.",
+      "evidence_checked": [
+        "local-evidence/C/runs/case-1/S-case-1-003.json",
+        "local-evidence/C/runs/case-1/S-case-1-004.json",
+        "local-evidence/C/runs/case-1/S-case-1-004.png",
+        "../../../benchmarks/mobile-commerce/site/checkout.html"
+      ],
+      "severity_note": "P3 is reasonable for the source-supported covered-focus/background defect; the extent of user harm is unmeasured.",
+      "observations": [
+        "Pay remains the active element and is recorded fully occluded by the completion sheet.",
+        "Source retains the checkout and its enabled native controls beneath the sheet."
+      ],
+      "inferred_user_impact": "Keyboard users can retain or move focus among visually covered controls; no live keyboard activation or screen-reader failure was tested.",
+      "source_locations": [
+        "page-1.html:66",
+        "page-1.html:144",
+        "page-1.html:148",
+        "page-1.html:190"
+      ],
+      "issue_family": "checkout_completion_background_remains_interactive"
+    }
+  ],
+  "reports": [
+    {
+      "report": "R17",
+      "matched_unique_seed_ids_by_case": {
+        "case-1": [
+          "D-01",
+          "D-02"
+        ],
+        "case-2": [],
+        "case-3": [
+          "D-15"
+        ],
+        "case-4": []
+      },
+      "matched_unique_seed_ids": [
+        "D-01",
+        "D-02",
+        "D-15"
+      ],
+      "seed_ids_not_matched_by_case": {
+        "case-1": [
+          "D-03",
+          "D-04",
+          "D-05"
+        ],
+        "case-2": [],
+        "case-3": [
+          "D-13",
+          "D-14",
+          "D-16",
+          "D-17"
+        ],
+        "case-4": []
+      },
+      "classification_counts": {
+        "seed_match": 3,
+        "valid_extra": 0,
+        "false_positive": 0,
+        "unsupported": 3,
+        "duplicate": 0
+      },
+      "case_observation_status": {
+        "case-1": "reported_exercised; no independent full-flow replay",
+        "case-2": "reported_exercised; no independent full-flow replay",
+        "case-3": "reported_exercised; no independent full-flow replay",
+        "case-4": "reported_exercised; no independent full-flow replay"
+      },
+      "unresolved_disagreement_notes": [
+        {
+          "finding_ids": [
+            "R17-case-3-F2",
+            "R17-case-4-F1"
+          ],
+          "note": "Persistence after typing is confirmed in both cases. The fixtures validate on submit, and no contract for immediate or blur revalidation is supplied. Whether last-submit errors, especially retained aria-invalid in case 4, merit valid_extra remains open; this judgment does not declare the behavior harmless."
+        },
+        {
+          "finding_ids": [
+            "R17-case-4-F2"
+          ],
+          "note": "First-invalid focus would be assistance, but the local alert and associated inline error are already present. Keyboard or screen-reader recovery needs direct evidence before calling this a defect."
+        },
+        {
+          "finding_ids": [
+            "R17-case-1-F2",
+            "R17-case-3-F1"
+          ],
+          "note": "Mistap/cart-loss and missed-gaze consequences are inferred, although their keyed placement and error-locality mechanisms are supported."
+        }
+      ]
+    },
+    {
+      "report": "R42",
+      "matched_unique_seed_ids_by_case": {
+        "case-1": [
+          "D-02"
+        ],
+        "case-2": [],
+        "case-3": [
+          "D-14",
+          "D-15"
+        ],
+        "case-4": []
+      },
+      "matched_unique_seed_ids": [
+        "D-02",
+        "D-14",
+        "D-15"
+      ],
+      "seed_ids_not_matched_by_case": {
+        "case-1": [
+          "D-01",
+          "D-03",
+          "D-04",
+          "D-05"
+        ],
+        "case-2": [],
+        "case-3": [
+          "D-13",
+          "D-16",
+          "D-17"
+        ],
+        "case-4": []
+      },
+      "classification_counts": {
+        "seed_match": 3,
+        "valid_extra": 0,
+        "false_positive": 0,
+        "unsupported": 1,
+        "duplicate": 0
+      },
+      "case_observation_status": {
+        "case-1": "reported_exercised; no independent full-flow replay",
+        "case-2": "reported_exercised; no independent full-flow replay",
+        "case-3": "reported_exercised; no independent full-flow replay",
+        "case-4": "reported_exercised; no independent full-flow replay"
+      },
+      "unresolved_disagreement_notes": [
+        {
+          "finding_ids": [
+            "R42-case-4-F1"
+          ],
+          "note": "Retained submit focus is accurate, but the supplied state also provides a nearby role=alert and associated inline guidance. A first-invalid focus requirement or actual recovery failure remains unproved."
+        },
+        {
+          "finding_ids": [
+            "R42-case-3-F2"
+          ],
+          "note": "Match to D-15 rests on the same top-only, nonlocal phone error; it does not establish that role=alert is never announced by assistive technology."
+        },
+        {
+          "finding_ids": [
+            "R42-case-1-F1"
+          ],
+          "note": "CSS geometry is measured. The millimeter conversion and predicted touch accuracy were not independently calibrated or tested."
+        }
+      ]
+    },
+    {
+      "report": "R63",
+      "matched_unique_seed_ids_by_case": {
+        "case-1": [
+          "D-01",
+          "D-02"
+        ],
+        "case-2": [],
+        "case-3": [],
+        "case-4": []
+      },
+      "matched_unique_seed_ids": [
+        "D-01",
+        "D-02"
+      ],
+      "seed_ids_not_matched_by_case": {
+        "case-1": [
+          "D-03",
+          "D-04",
+          "D-05"
+        ],
+        "case-2": [],
+        "case-3": [
+          "D-13",
+          "D-14",
+          "D-15",
+          "D-16",
+          "D-17"
+        ],
+        "case-4": []
+      },
+      "classification_counts": {
+        "seed_match": 2,
+        "valid_extra": 0,
+        "false_positive": 0,
+        "unsupported": 1,
+        "duplicate": 0
+      },
+      "case_observation_status": {
+        "case-1": "reported_exercised; no independent full-flow replay",
+        "case-2": "reported_exercised; no independent full-flow replay",
+        "case-3": "not_started_per_operator_limitation",
+        "case-4": "reported_exercised; no independent full-flow replay"
+      },
+      "unresolved_disagreement_notes": [
+        {
+          "case_id": "case-3",
+          "finding_ids": [],
+          "note": "The input records task_completed=null, and the limitation explicitly says case 3 was not started because the operator budget expired. Treat this case as unobserved, not a demonstrated clean run or verified completion."
+        },
+        {
+          "finding_ids": [
+            "R63-case-4-F1"
+          ],
+          "note": "The corrected value matches the source predicate while the previous invalid state remains. Submit-only validation explains the observation; the acceptable lifecycle of aria-invalid and potential user confusion remain open without a contract or accessibility trial."
+        },
+        {
+          "finding_ids": [
+            "R63-case-1-F2"
+          ],
+          "note": "No dialog nodes would not by itself establish absence of a runtime confirmation. The fixture source independently confirms the unguarded clear handler; accidental deletion was not exercised."
+        }
+      ]
+    },
+    {
+      "report": "R88",
+      "matched_unique_seed_ids_by_case": {
+        "case-1": [
+          "D-01",
+          "D-02",
+          "D-05"
+        ],
+        "case-2": [],
+        "case-3": [
+          "D-14",
+          "D-15"
+        ],
+        "case-4": []
+      },
+      "matched_unique_seed_ids": [
+        "D-01",
+        "D-02",
+        "D-05",
+        "D-14",
+        "D-15"
+      ],
+      "seed_ids_not_matched_by_case": {
+        "case-1": [
+          "D-03",
+          "D-04"
+        ],
+        "case-2": [],
+        "case-3": [
+          "D-13",
+          "D-16",
+          "D-17"
+        ],
+        "case-4": []
+      },
+      "classification_counts": {
+        "seed_match": 5,
+        "valid_extra": 2,
+        "false_positive": 0,
+        "unsupported": 4,
+        "duplicate": 0
+      },
+      "case_observation_status": {
+        "case-1": "reported_exercised; no independent full-flow replay",
+        "case-2": "reported_exercised; no independent full-flow replay",
+        "case-3": "reported_exercised; no independent full-flow replay",
+        "case-4": "reported_exercised; no independent full-flow replay"
+      },
+      "unresolved_disagreement_notes": [
+        {
+          "finding_ids": [
+            "R88-case-3-F3",
+            "R88-case-4-F1"
+          ],
+          "note": "Use the same persistence criterion as R17 and R63. The observation is real; immediate clearing and a P2 impact are not established by corrected-value snapshots alone."
+        },
+        {
+          "finding_ids": [
+            "R88-case-4-F2"
+          ],
+          "note": "Use the same focus criterion as R17 and R42: a local alert plus associated inline phone guidance is present; no keyboard recovery failure is demonstrated."
+        },
+        {
+          "finding_ids": [
+            "R88-case-3-F4"
+          ],
+          "note": "The ARIA-disabled/native-disabled distinction explains the metadata. Keyboard traversal was not performed, and focusable ARIA-disabled controls are not automatically a defect."
+        },
+        {
+          "finding_ids": [
+            "R88-case-1-F4",
+            "R88-case-2-F1"
+          ],
+          "note": "Accepted as valid_extra only for the opaque completion layer retaining interactive checkout content below it, established by source and snapshots. It is one issue family across two case-specific occurrences; keyboard activation and screen-reader announcement remain untested."
+        }
+      ]
+    }
+  ],
+  "consistency_groups": [
+    {
+      "topic": "small close target",
+      "finding_ids": [
+        "R17-case-1-F1",
+        "R42-case-1-F1",
+        "R63-case-1-F1",
+        "R88-case-1-F1"
+      ],
+      "classification": "seed_match",
+      "seed_id": "D-02"
+    },
+    {
+      "topic": "clear-all adjacent to pay",
+      "finding_ids": [
+        "R17-case-1-F2",
+        "R63-case-1-F2",
+        "R88-case-1-F3"
+      ],
+      "classification": "seed_match",
+      "seed_id": "D-01"
+    },
+    {
+      "topic": "top-only nonlocal phone error",
+      "finding_ids": [
+        "R17-case-3-F1",
+        "R42-case-3-F2",
+        "R88-case-3-F2"
+      ],
+      "classification": "seed_match",
+      "seed_id": "D-15"
+    },
+    {
+      "topic": "color-only availability",
+      "finding_ids": [
+        "R42-case-3-F1",
+        "R88-case-3-F1"
+      ],
+      "classification": "seed_match",
+      "seed_id": "D-14"
+    },
+    {
+      "topic": "payment delay without feedback",
+      "finding_ids": [
+        "R88-case-1-F2"
+      ],
+      "classification": "seed_match",
+      "seed_id": "D-05"
+    },
+    {
+      "topic": "summary persists after correction in case 3",
+      "finding_ids": [
+        "R17-case-3-F2",
+        "R88-case-3-F3"
+      ],
+      "classification": "unsupported",
+      "seed_id": null
+    },
+    {
+      "topic": "inline/summary invalid state persists after correction in case 4",
+      "finding_ids": [
+        "R17-case-4-F1",
+        "R63-case-4-F1",
+        "R88-case-4-F1"
+      ],
+      "classification": "unsupported",
+      "seed_id": null
+    },
+    {
+      "topic": "first-invalid focus does not move in case 4",
+      "finding_ids": [
+        "R17-case-4-F2",
+        "R42-case-4-F1",
+        "R88-case-4-F2"
+      ],
+      "classification": "unsupported",
+      "seed_id": null
+    },
+    {
+      "topic": "completion layer retains covered checkout controls",
+      "finding_ids": [
+        "R88-case-1-F4",
+        "R88-case-2-F1"
+      ],
+      "classification": "valid_extra",
+      "seed_id": null
+    },
+    {
+      "topic": "disabled-slot focusability metadata",
+      "finding_ids": [
+        "R88-case-3-F4"
+      ],
+      "classification": "unsupported",
+      "seed_id": null
+    }
+  ],
+  "summary": {
+    "reports": 4,
+    "findings": 24,
+    "classification_counts": {
+      "seed_match": 13,
+      "valid_extra": 2,
+      "false_positive": 0,
+      "unsupported": 9,
+      "duplicate": 0
+    },
+    "matched_seed_ids_across_reports": [
+      "D-01",
+      "D-02",
+      "D-05",
+      "D-14",
+      "D-15"
+    ],
+    "seed_ids_not_matched_by_any_report": [
+      "D-03",
+      "D-04",
+      "D-13",
+      "D-16",
+      "D-17"
+    ],
+    "additional_issue_families": [
+      {
+        "issue_family": "checkout_completion_background_remains_interactive",
+        "finding_ids": [
+          "R88-case-1-F4",
+          "R88-case-2-F1"
+        ],
+        "case_ids": [
+          "case-1",
+          "case-2"
+        ]
+      }
+    ],
+    "no_false_positive_assertion": "No finding is contradicted or clearly inapplicable enough to classify as false_positive. Unsupported findings are not included as proved errors."
+  },
+  "reviewer_limitations": [
+    "One static bounded evidence pass; no browser, keyboard traversal, screen-reader trial, color-vision simulation, physical-device calibration, new test, or execution framework was used.",
+    "All 35 referenced JSON files and all 20 referenced PNG files were inspected; unchanged page-1 through page-4 fixture source was read to scrutinize causal and unseeded claims.",
+    "Source corroboration establishes mechanisms without converting them into operator-tested or human-measured outcomes. Mistap rates, gaze failures, confusion, abandonment, and duplicate payments remain unmeasured.",
+    "The benchmark key was accepted as the supplied matching reference; its literature, physical-unit conversions, simulated color differences, and ergonomic effect sizes were not independently validated.",
+    "Submit-only validation was established from source. No additional product requirement for live validation or first-invalid focus was supplied; stale aria-invalid semantics and actual assistive-technology impact remain open concerns.",
+    "Reported task completion is not independently certified for all cases. R63 case 3 is explicitly unobserved, and its input task_completed field is null.",
+    "No operators directory, sealed directory, parent session, condition protocol, skill source, README, or other workspace history was read. Fixture and evidence files were not changed."
+  ]
+}

@@ -1,0 +1,107 @@
+{
+ "mode": "live",
+ "policy": {
+  "retention_days": 7
+ },
+ "artifacts": [
+  {
+   "id": "actual-390-top",
+   "path": "actual-390-top.png",
+   "kind": "screenshot",
+   "sha256": "0d3aba6ba9b6521e88adcbd21522cb7a20848e4c54f08b81d2fa7e2ec4bd7bb3",
+   "created_at": "2026-10-18T01:09:07.813Z",
+   "provenance": "live"
+  },
+  {
+   "id": "reference-390-top",
+   "path": "reference-390-top.png",
+   "kind": "screenshot",
+   "sha256": "b6585cceb06e858691d0fe7a5a3b1b865e58664d08f3cad6ec8d8ae7f2e90b4a",
+   "created_at": "2026-10-18T02:03:56.130433+00:00",
+   "provenance": "live"
+  },
+  {
+   "id": "figma-readback",
+   "path": "figma-readback.json",
+   "kind": "figma_readback",
+   "sha256": "654be93eb2f5a97dcfaf5f2845d57902cd5c4077e8087e3d58803317ca1b2a80",
+   "created_at": "2026-10-18T02:03:56.130433+00:00",
+   "provenance": "live"
+  },
+  {
+   "id": "visual-report",
+   "path": "visual-report.json",
+   "kind": "visual_report",
+   "sha256": "101c7cc14272bb099e34041171b6d039be3dec5239dbfd46054961c7f4acbf3b",
+   "created_at": "2026-10-18T02:03:56.130433+00:00",
+   "provenance": "live"
+  }
+ ],
+ "browser_runs": [
+  {
+   "id": "portfolio-390-top-B",
+   "scenario_digest": "e9f3fcc071bd726d09d2545854012778004818d71e409f9024106f88575f5c04",
+   "code_revision": "064d9bae628fdf4a1f8f9fb4e8a14c5b22a13748",
+   "started_at": "2026-10-18T01:09:07.813Z",
+   "ended_at": "2026-10-18T01:09:07.813Z"
+  }
+ ],
+ "scenarios": [],
+ "visual_checks": [
+  {
+   "id": "portfolio-390-top-B",
+   "run_id": "portfolio-390-top-B",
+   "figma_id": "portfolio-figma-v2",
+   "file_key": "ikOHVXrV47diF5hmrympEr",
+   "branch_key": "main",
+   "baseline_version": "sha256:6d650d82f65d279693651a76dcb3ce08390d797724b280367136c7dd69fd81b7",
+   "readback_version": "sha256:6d650d82f65d279693651a76dcb3ce08390d797724b280367136c7dd69fd81b7",
+   "node_ids": [
+    "14:2"
+   ],
+   "route": "/cases/ax-workflow-plugins/",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "device_scale_factor": 1
+   },
+   "actual_artifact_id": "actual-390-top",
+   "reference_artifact_id": "reference-390-top",
+   "comparison_artifact_id": "visual-report",
+   "status": "failed",
+   "method": "review",
+   "reviewer": "independent reviewer B (blind to build identity)",
+   "checks": {
+    "layout": "failed",
+    "interaction_states": "unknown",
+    "alignment": "passed",
+    "spacing": "failed",
+    "typography": "failed",
+    "text_clipping": "passed",
+    "component_occlusion": "passed",
+    "figma_fidelity": "failed",
+    "side_accents": "passed"
+   },
+   "reason": "Typography, spacing, layout and Figma fidelity fail against node 14:2 (problem statement role, type sizes and colors, summary rhythm, section chips, result card). Alignment, text clipping, component occlusion and side accents pass; interaction states are unknown."
+  }
+ ],
+ "bundle": {
+  "records": {
+   "figma": [
+    {
+     "id": "portfolio-figma-v2",
+     "file_key": "ikOHVXrV47diF5hmrympEr",
+     "branch_key": "main",
+     "baseline_version": "sha256:6d650d82f65d279693651a76dcb3ce08390d797724b280367136c7dd69fd81b7",
+     "readback_version": "sha256:6d650d82f65d279693651a76dcb3ce08390d797724b280367136c7dd69fd81b7",
+     "node_ids": [
+      "14:2"
+     ],
+     "read_at": "2026-10-18T02:03:56.130433+00:00",
+     "design_status": "approved",
+     "readback_artifact_ref": "figma-readback"
+    }
+   ]
+  }
+ }
+}

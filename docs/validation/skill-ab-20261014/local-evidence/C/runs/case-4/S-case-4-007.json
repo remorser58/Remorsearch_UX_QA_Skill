@@ -1,0 +1,2861 @@
+{
+  "schema_version": "ergo-snapshot.v1",
+  "snapshot_id": "S-case-4-007",
+  "run_id": "case-4",
+  "step_index": 7,
+  "captured_at": "2026-10-14T02:36:48Z",
+  "surface": {
+    "kind": "web",
+    "url": "http://127.0.0.1:8876/page-4.html",
+    "title": "예약하기 | 헤어살롱 봄",
+    "app_id": null,
+    "scroll": {
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 780
+    },
+    "visual": {
+      "offset_x": 0,
+      "offset_y": 0,
+      "width": 360,
+      "height": 780,
+      "scale": 1
+    },
+    "build_id": "bda38f67f8ff4b5f56588d487430c282d1483be1",
+    "build_id_basis": "operator_supplied",
+    "build_id_source": "--build-id"
+  },
+  "device": {
+    "id": "galaxy-s24",
+    "viewport_css": [
+      360,
+      780
+    ],
+    "dpr": 3,
+    "orientation": "portrait",
+    "input": "touch",
+    "form_factor": "phone"
+  },
+  "screenshot": {
+    "path": "S-case-4-007.png",
+    "sha256": "416503443515e9a18f42316198db176fb0578118b7cfdc36cbee3963b119f608",
+    "width_px": 1080,
+    "height_px": 2340,
+    "css": {
+      "path": "S-case-4-007.css.png",
+      "sha256": "eddc404ae6331d20316abeabf3788682a1bebf9ad637f58cd3e256480a533b9e",
+      "width_px": 360,
+      "height_px": 780,
+      "factor": 3
+    }
+  },
+  "elements": [
+    {
+      "id": "el-1",
+      "role": "button",
+      "name": "뒤로 가기",
+      "text": "‹",
+      "tag": "button",
+      "selector": "#back",
+      "dom_id": "back",
+      "box": {
+        "x": 4,
+        "y": 3.5,
+        "w": 44,
+        "h": 44
+      },
+      "visible_box": {
+        "x": 4,
+        "y": 3.5,
+        "w": 44,
+        "h": 44
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 28,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 11.484375,
+        "probes": {
+          "cap_H_px": 19.728515625,
+          "x_height_px": 14.21875,
+          "body_Hg_px": 24.787109375,
+          "hangul_px": 23.688003540039062
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 4,
+              "y": 3.5,
+              "w": 44,
+              "h": 44
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "aria-label",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "‹",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-2",
+      "role": "heading",
+      "name": "예약하기",
+      "text": "예약하기",
+      "tag": "h1",
+      "selector": "h1",
+      "dom_id": null,
+      "box": {
+        "x": 48,
+        "y": 13.17,
+        "w": 264,
+        "h": 24.64
+      },
+      "visible_box": {
+        "x": 48,
+        "y": 13.17,
+        "w": 264,
+        "h": 24.64
+      },
+      "visible_geometry": "measured",
+      "interactive": false,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 17,
+      "font_weight": 700,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 15.164000511169434,
+        "probes": {
+          "cap_H_px": 11.97802734375,
+          "x_height_px": 9.13916015625,
+          "body_Hg_px": 15.1904296875,
+          "hangul_px": 14.790000915527344
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 48,
+              "y": 13.17,
+              "w": 264,
+              "h": 24.64
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [],
+      "ancestor_ids": [],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-3",
+      "role": "button",
+      "name": "화 29",
+      "text": "화29",
+      "tag": "button",
+      "selector": "#dates > button:nth-of-type(1)",
+      "dom_id": null,
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "mixed_font_or_style",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#d1d6db",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "화 29",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "dates",
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-4",
+      "role": "button",
+      "name": "수 30",
+      "text": "수30",
+      "tag": "button",
+      "selector": "#dates > button:nth-of-type(2)",
+      "dom_id": null,
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "mixed_font_or_style",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#ffffff",
+      "color_bg": "#191f28",
+      "container_bg": "#ffffff",
+      "border_color": "#191f28",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "수 30",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "dates",
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-5",
+      "role": "button",
+      "name": "목 1",
+      "text": "목1",
+      "tag": "button",
+      "selector": "#dates > button:nth-of-type(3)",
+      "dom_id": null,
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "mixed_font_or_style",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#d1d6db",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "목 1",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "dates",
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-6",
+      "role": "button",
+      "name": "금 2",
+      "text": "금2",
+      "tag": "button",
+      "selector": "#dates > button:nth-of-type(4)",
+      "dom_id": null,
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "mixed_font_or_style",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#d1d6db",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "금 2",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "dates",
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-7",
+      "role": "button",
+      "name": "토 3",
+      "text": "토3",
+      "tag": "button",
+      "selector": "#dates > button:nth-of-type(5)",
+      "dom_id": null,
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "mixed_font_or_style",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#d1d6db",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "토 3",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "dates",
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-8",
+      "role": "button",
+      "name": "일 4",
+      "text": "일4",
+      "tag": "button",
+      "selector": "#dates > button:nth-of-type(6)",
+      "dom_id": null,
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "mixed_font_or_style",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#d1d6db",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "일 4",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "dates",
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-9",
+      "role": "button",
+      "name": "월 5",
+      "text": "월5",
+      "tag": "button",
+      "selector": "#dates > button:nth-of-type(7)",
+      "dom_id": null,
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "mixed_font_or_style",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#d1d6db",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "월 5",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "dates",
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-10",
+      "role": "button",
+      "name": "인원 줄이기",
+      "text": "−",
+      "tag": "button",
+      "selector": "#people-minus",
+      "dom_id": "people-minus",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 20,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 1.58203125,
+        "probes": {
+          "cap_H_px": 14.091796875,
+          "x_height_px": 10.439605712890625,
+          "body_Hg_px": 17.779693603515625,
+          "hangul_px": 16.920001983642578
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "aria-label",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "−",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-11",
+      "role": "button",
+      "name": "인원 늘리기",
+      "text": "+",
+      "tag": "button",
+      "selector": "#people-plus",
+      "dom_id": "people-plus",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 20,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 10.324249267578125,
+        "probes": {
+          "cap_H_px": 14.091796875,
+          "x_height_px": 10.439605712890625,
+          "body_Hg_px": 17.779693603515625,
+          "hangul_px": 16.920001983642578
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "aria-label",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "+",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-12",
+      "role": "button",
+      "name": "10:30",
+      "text": "10:30",
+      "tag": "button",
+      "selector": "#time-slots > button:nth-of-type(1)",
+      "dom_id": null,
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 15,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 11.09619140625,
+        "probes": {
+          "cap_H_px": 10.56884765625,
+          "x_height_px": 8.007774353027344,
+          "body_Hg_px": 13.386268615722656,
+          "hangul_px": 13.005000114440918
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#6b7684",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "10:30",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "time-slots",
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-13",
+      "role": "button",
+      "name": "11:00 마감",
+      "text": "11:00마감",
+      "tag": "button",
+      "selector": "#time-slots > button:nth-of-type(2)",
+      "dom_id": null,
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": false,
+      "in_viewport": false,
+      "font_size_px": 15,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "mixed_font_or_style",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#4e5968",
+      "color_bg": "#f2f4f6",
+      "container_bg": "#ffffff",
+      "border_color": "#b0b8c1",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "11:00 마감",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": false,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "time-slots",
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-14",
+      "role": "button",
+      "name": "13:00 마감",
+      "text": "13:00마감",
+      "tag": "button",
+      "selector": "#time-slots > button:nth-of-type(3)",
+      "dom_id": null,
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": false,
+      "in_viewport": false,
+      "font_size_px": 15,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "mixed_font_or_style",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#4e5968",
+      "color_bg": "#f2f4f6",
+      "container_bg": "#ffffff",
+      "border_color": "#b0b8c1",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "13:00 마감",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": false,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "time-slots",
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-15",
+      "role": "button",
+      "name": "13:30",
+      "text": "13:30",
+      "tag": "button",
+      "selector": "#time-slots > button:nth-of-type(4)",
+      "dom_id": null,
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 15,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 11.09619140625,
+        "probes": {
+          "cap_H_px": 10.56884765625,
+          "x_height_px": 8.007774353027344,
+          "body_Hg_px": 13.386268615722656,
+          "hangul_px": 13.005000114440918
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#6b7684",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "13:30",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "time-slots",
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-16",
+      "role": "button",
+      "name": "14:00",
+      "text": "14:00",
+      "tag": "button",
+      "selector": "#time-slots > button:nth-of-type(5)",
+      "dom_id": null,
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 15,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 11.09619140625,
+        "probes": {
+          "cap_H_px": 10.56884765625,
+          "x_height_px": 8.007774353027344,
+          "body_Hg_px": 13.386268615722656,
+          "hangul_px": 13.005000114440918
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#6b7684",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "14:00",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "time-slots",
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-17",
+      "role": "button",
+      "name": "15:00 마감",
+      "text": "15:00마감",
+      "tag": "button",
+      "selector": "#time-slots > button:nth-of-type(6)",
+      "dom_id": null,
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": false,
+      "in_viewport": false,
+      "font_size_px": 15,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "mixed_font_or_style",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#4e5968",
+      "color_bg": "#f2f4f6",
+      "container_bg": "#ffffff",
+      "border_color": "#b0b8c1",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "15:00 마감",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": false,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "time-slots",
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-18",
+      "role": "button",
+      "name": "15:30",
+      "text": "15:30",
+      "tag": "button",
+      "selector": "#time-slots > button:nth-of-type(7)",
+      "dom_id": null,
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 15,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "pseudo_text"
+        ]
+      },
+      "color_fg": "#ffffff",
+      "color_bg": "#1b64da",
+      "container_bg": "#ffffff",
+      "border_color": "#1b64da",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "15:30",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "time-slots",
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-19",
+      "role": "button",
+      "name": "16:00 마감",
+      "text": "16:00마감",
+      "tag": "button",
+      "selector": "button:nth-of-type(8)",
+      "dom_id": null,
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": false,
+      "in_viewport": false,
+      "font_size_px": 15,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "mixed_font_or_style",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#4e5968",
+      "color_bg": "#f2f4f6",
+      "container_bg": "#ffffff",
+      "border_color": "#b0b8c1",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "16:00 마감",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": false,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "time-slots",
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-20",
+      "role": "button",
+      "name": "다음",
+      "text": "다음",
+      "tag": "button",
+      "selector": "#next",
+      "dom_id": "next",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": true,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 16,
+      "font_weight": 700,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 14.256000518798828,
+        "probes": {
+          "cap_H_px": 11.2734375,
+          "x_height_px": 8.6015625,
+          "body_Hg_px": 14.296875,
+          "hangul_px": 13.920001029968262
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#ffffff",
+      "color_bg": "#1b64da",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "다음",
+        "hidden": false,
+        "rendered": false,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [
+        "primary"
+      ],
+      "ancestor_ids": [
+        "step-1"
+      ],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-21",
+      "role": "paragraph",
+      "name": "9월 30일(수) 15:30 · 1명",
+      "text": "9월 30일(수) 15:30 · 1명",
+      "tag": "p",
+      "selector": "#picked",
+      "dom_id": "picked",
+      "box": {
+        "x": 16,
+        "y": 64,
+        "w": 328,
+        "h": 21.75
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 64,
+        "w": 328,
+        "h": 21.75
+      },
+      "visible_geometry": "measured",
+      "interactive": false,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 15,
+      "font_weight": 700,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 14.853339195251465,
+        "probes": {
+          "cap_H_px": 10.56884765625,
+          "x_height_px": 8.06396484375,
+          "body_Hg_px": 13.4033203125,
+          "hangul_px": 13.050000190734863
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 64,
+              "w": 328,
+              "h": 21.75
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [],
+      "ancestor_ids": [
+        "step-2"
+      ],
+      "sibling_scope_id": "#step-2",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-22",
+      "role": "generic",
+      "name": "이름",
+      "text": "이름",
+      "tag": "span",
+      "selector": "label:nth-of-type(1) > span",
+      "dom_id": null,
+      "box": {
+        "x": 16,
+        "y": 97.75,
+        "w": 328,
+        "h": 20.3
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 97.75,
+        "w": 328,
+        "h": 20.3
+      },
+      "visible_geometry": "measured",
+      "interactive": false,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 12.236001014709473,
+        "probes": {
+          "cap_H_px": 9.8642578125,
+          "x_height_px": 7.369140625,
+          "body_Hg_px": 12.4619140625,
+          "hangul_px": 11.844001770019531
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#4e5968",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#4e5968",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 97.75,
+              "w": 328,
+              "h": 20.3
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [],
+      "ancestor_ids": [
+        "step-2"
+      ],
+      "sibling_scope_id": "#step-2 > div:nth-of-type(1)",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-23",
+      "role": "textbox",
+      "name": "이름",
+      "text": "",
+      "tag": "input",
+      "selector": "#name",
+      "dom_id": "name",
+      "box": {
+        "x": 16,
+        "y": 122.05,
+        "w": 328,
+        "h": 48
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 122.05,
+        "w": 328,
+        "h": 48
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 16,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "private_control"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#6b7684",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:fill",
+            "kind": "boundary",
+            "color": "#ffffff",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 122.05,
+              "w": 328,
+              "h": 48
+            }
+          },
+          {
+            "key": "self:border",
+            "kind": "boundary",
+            "color": "#6b7684",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 122.05,
+              "w": 328,
+              "h": 48
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "hit_boxes": [
+        {
+          "x": 16,
+          "y": 97.75,
+          "w": 328,
+          "h": 72.3
+        }
+      ],
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "label",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [
+          "err-name"
+        ],
+        "visible_label": "",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "step-2"
+      ],
+      "sibling_scope_id": "#step-2 > div:nth-of-type(1)",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-24",
+      "role": "generic",
+      "name": "휴대폰 번호",
+      "text": "휴대폰 번호",
+      "tag": "span",
+      "selector": "label:nth-of-type(2) > span",
+      "dom_id": null,
+      "box": {
+        "x": 16,
+        "y": 182.05,
+        "w": 328,
+        "h": 20.3
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 182.05,
+        "w": 328,
+        "h": 20.3
+      },
+      "visible_geometry": "measured",
+      "interactive": false,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 12.236001968383789,
+        "probes": {
+          "cap_H_px": 9.8642578125,
+          "x_height_px": 7.369140625,
+          "body_Hg_px": 12.4619140625,
+          "hangul_px": 11.844001770019531
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#4e5968",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#4e5968",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 182.05,
+              "w": 328,
+              "h": 20.3
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [],
+      "ancestor_ids": [
+        "step-2"
+      ],
+      "sibling_scope_id": "#step-2 > div:nth-of-type(1)",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-25",
+      "role": "textbox",
+      "name": "휴대폰 번호",
+      "text": "",
+      "tag": "input",
+      "selector": "#phone",
+      "dom_id": "phone",
+      "box": {
+        "x": 16,
+        "y": 206.34,
+        "w": 328,
+        "h": 48
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 206.34,
+        "w": 328,
+        "h": 48
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 16,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "private_control"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#b3261e",
+      "border_width_px": 2,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:fill",
+            "kind": "boundary",
+            "color": "#ffffff",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 206.34,
+              "w": 328,
+              "h": 48
+            }
+          },
+          {
+            "key": "self:border",
+            "kind": "boundary",
+            "color": "#b3261e",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 206.34,
+              "w": 328,
+              "h": 48
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "hit_boxes": [
+        {
+          "x": 16,
+          "y": 182.05,
+          "w": 328,
+          "h": 72.3
+        }
+      ],
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "label",
+        "invalid": true,
+        "user_invalid": false,
+        "described_by": [
+          "err-phone"
+        ],
+        "visible_label": "",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "step-2"
+      ],
+      "sibling_scope_id": "#step-2 > div:nth-of-type(1)",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-26",
+      "role": "paragraph",
+      "name": "⚠ 휴대폰 번호를 정확히 입력해 주세요. 예: 010-1234-5678",
+      "text": "⚠ 휴대폰 번호를 정확히 입력해 주세요. 예: 010-1234-5678",
+      "tag": "p",
+      "selector": "#err-phone",
+      "dom_id": "err-phone",
+      "box": {
+        "x": 16,
+        "y": 258.34,
+        "w": 328,
+        "h": 40.59
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 258.34,
+        "w": 328,
+        "h": 40.59
+      },
+      "visible_geometry": "measured",
+      "interactive": false,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 14,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 12.516000747680664,
+        "probes": {
+          "cap_H_px": 9.8642578125,
+          "x_height_px": 7.4739227294921875,
+          "body_Hg_px": 12.493850708007812,
+          "hangul_px": 12.138001441955566
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#b3261e",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#b3261e",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 258.34,
+              "w": 328,
+              "h": 40.59
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [],
+      "ancestor_ids": [
+        "step-2"
+      ],
+      "sibling_scope_id": "#step-2 > div:nth-of-type(1)",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-27",
+      "role": "generic",
+      "name": "요청사항 (선택)",
+      "text": "요청사항 (선택)",
+      "tag": "span",
+      "selector": "label:nth-of-type(3) > span",
+      "dom_id": null,
+      "box": {
+        "x": 16,
+        "y": 310.94,
+        "w": 328,
+        "h": 20.3
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 310.94,
+        "w": 328,
+        "h": 20.3
+      },
+      "visible_geometry": "measured",
+      "interactive": false,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 13.716938018798828,
+        "probes": {
+          "cap_H_px": 9.8642578125,
+          "x_height_px": 7.369140625,
+          "body_Hg_px": 12.4619140625,
+          "hangul_px": 11.844001770019531
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#4e5968",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#4e5968",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 310.94,
+              "w": 328,
+              "h": 20.3
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [],
+      "ancestor_ids": [
+        "step-2"
+      ],
+      "sibling_scope_id": "#step-2 > div:nth-of-type(1)",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-28",
+      "role": "textbox",
+      "name": "요청사항 (선택)",
+      "text": "",
+      "tag": "textarea",
+      "selector": "#memo",
+      "dom_id": "memo",
+      "box": {
+        "x": 16,
+        "y": 335.23,
+        "w": 328,
+        "h": 64
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 335.23,
+        "w": 328,
+        "h": 64
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 16,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "private_control"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": "#6b7684",
+      "border_width_px": 1,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:fill",
+            "kind": "boundary",
+            "color": "#ffffff",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 335.23,
+              "w": 328,
+              "h": 64
+            }
+          },
+          {
+            "key": "self:border",
+            "kind": "boundary",
+            "color": "#6b7684",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 335.23,
+              "w": 328,
+              "h": 64
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "hit_boxes": [
+        {
+          "x": 16,
+          "y": 310.94,
+          "w": 328,
+          "h": 94.05
+        }
+      ],
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "label",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "step-2"
+      ],
+      "sibling_scope_id": "#step-2 > div:nth-of-type(1)",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-29",
+      "role": "paragraph",
+      "name": "예약 시간보다 10분 이상 늦으시면 다음 고객을 위해 예약이 취소될 수 있어요.",
+      "text": "예약 시간보다 10분 이상 늦으시면 다음 고객을 위해 예약이 취소될 수 있어요.",
+      "tag": "p",
+      "selector": "#notice",
+      "dom_id": "notice",
+      "box": {
+        "x": 16,
+        "y": 416.98,
+        "w": 328,
+        "h": 42
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 416.98,
+        "w": 328,
+        "h": 42
+      },
+      "visible_geometry": "measured",
+      "interactive": false,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 14,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "matched_font",
+        "body_height_px": 12.432001113891602,
+        "probes": {
+          "cap_H_px": 9.8642578125,
+          "x_height_px": 7.369140625,
+          "body_Hg_px": 12.4619140625,
+          "hangul_px": 11.844001770019531
+        },
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified"
+        ]
+      },
+      "color_fg": "#6b6b6b",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#6b6b6b",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 416.98,
+              "w": 328,
+              "h": 42
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [],
+      "ancestor_ids": [
+        "step-2"
+      ],
+      "sibling_scope_id": "#step-2 > div:nth-of-type(1)",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-30",
+      "role": "generic",
+      "name": "개인정보 수집·이용 동의 (필수)",
+      "text": "개인정보 수집·이용 동의 (필수)",
+      "tag": "label",
+      "selector": "label:nth-of-type(4)",
+      "dom_id": null,
+      "box": {
+        "x": 16,
+        "y": 466.98,
+        "w": 328,
+        "h": 48
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 466.98,
+        "w": 328,
+        "h": 48
+      },
+      "visible_geometry": "measured",
+      "interactive": false,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 15,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "private_control"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#191f28",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 466.98,
+              "w": 328,
+              "h": 48
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [],
+      "ancestor_ids": [
+        "step-2"
+      ],
+      "sibling_scope_id": "#step-2 > div:nth-of-type(1)",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-31",
+      "role": "checkbox",
+      "name": "개인정보 수집·이용 동의 (필수)",
+      "text": "",
+      "tag": "input",
+      "selector": "#agree",
+      "dom_id": "agree",
+      "box": {
+        "x": 16,
+        "y": 480.98,
+        "w": 20,
+        "h": 20
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 480.98,
+        "w": 20,
+        "h": 20
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 15,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "private_control"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [
+          "native_appearance"
+        ],
+        "decorative": false
+      },
+      "hit_boxes": [
+        {
+          "x": 16,
+          "y": 466.98,
+          "w": 328,
+          "h": 48
+        }
+      ],
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "label",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [
+          "err-agree"
+        ],
+        "visible_label": "",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [],
+      "ancestor_ids": [
+        "step-2"
+      ],
+      "sibling_scope_id": "#step-2 > div:nth-of-type(1)",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-32",
+      "role": "alert",
+      "name": "⚠ 휴대폰 번호를 확인해 주세요.",
+      "text": "⚠ 휴대폰 번호를 확인해 주세요.",
+      "tag": "div",
+      "selector": "#form-error",
+      "dom_id": "form-error",
+      "box": {
+        "x": 16,
+        "y": 670.25,
+        "w": 328,
+        "h": 37.75
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 670.25,
+        "w": 328,
+        "h": 37.75
+      },
+      "visible_geometry": "measured",
+      "interactive": false,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 15,
+      "font_weight": 600,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "transform_or_zoom"
+        ]
+      },
+      "color_fg": "#b3261e",
+      "color_bg": "#fdecec",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:fill",
+            "kind": "boundary",
+            "color": "#fdecec",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 670.25,
+              "w": 328,
+              "h": 37.75
+            }
+          },
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#b3261e",
+            "background": "#fdecec",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 670.25,
+              "w": 328,
+              "h": 37.75
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [
+        "error_message"
+      ],
+      "ancestor_ids": [
+        "step-2"
+      ],
+      "sibling_scope_id": "#step-2",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-33",
+      "role": "button",
+      "name": "예약 신청하기",
+      "text": "예약 신청하기",
+      "tag": "button",
+      "selector": "#submit",
+      "dom_id": "submit",
+      "box": {
+        "x": 16,
+        "y": 716,
+        "w": 328,
+        "h": 52
+      },
+      "visible_box": {
+        "x": 16,
+        "y": 716,
+        "w": 328,
+        "h": 52
+      },
+      "visible_geometry": "measured",
+      "interactive": true,
+      "visible": true,
+      "enabled": true,
+      "in_viewport": true,
+      "font_size_px": 16,
+      "font_weight": 700,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "transform_or_zoom"
+        ]
+      },
+      "color_fg": "#ffffff",
+      "color_bg": "#1b64da",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [
+          {
+            "key": "self:fill",
+            "kind": "boundary",
+            "color": "#1b64da",
+            "background": "#ffffff",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 716,
+              "w": 328,
+              "h": 52
+            }
+          },
+          {
+            "key": "self:text",
+            "kind": "text",
+            "color": "#ffffff",
+            "background": "#1b64da",
+            "shape": null,
+            "box": {
+              "x": 16,
+              "y": 716,
+              "w": 328,
+              "h": 52
+            }
+          }
+        ],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": 0,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "a11y": {
+        "name_source": "content",
+        "invalid": false,
+        "user_invalid": false,
+        "described_by": [],
+        "visible_label": "예약 신청하기",
+        "hidden": false,
+        "rendered": true,
+        "icon_font": false,
+        "error_message": null,
+        "required": false,
+        "focusable": true,
+        "tabindex": null
+      },
+      "roles": [
+        "primary"
+      ],
+      "ancestor_ids": [
+        "step-2"
+      ],
+      "sibling_scope_id": "#step-2",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-34",
+      "role": "status",
+      "name": "예약 신청 완료 매장에서 확인한 뒤 예약 확정 여부를 카카오 알림톡으로 30분 안에 보내드릴게요.",
+      "text": "✓ 예약 신청 완료 매장에서 확인한 뒤 예약 확정 여부를 카카오 알림톡으로 30분 안에 보내드릴게요.",
+      "tag": "div",
+      "selector": "#booking-done",
+      "dom_id": "booking-done",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": false,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 15,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#191f28",
+      "color_bg": "#ffffff",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [
+        "status"
+      ],
+      "ancestor_ids": [],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    },
+    {
+      "id": "el-35",
+      "role": "status",
+      "name": "",
+      "text": "",
+      "tag": "div",
+      "selector": "#toast",
+      "dom_id": "toast",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "visible_box": null,
+      "visible_geometry": "empty",
+      "interactive": false,
+      "visible": false,
+      "enabled": true,
+      "in_viewport": false,
+      "font_size_px": 15,
+      "font_weight": 400,
+      "font_metrics": {
+        "method": "canvas-textmetrics-v1",
+        "unit": "css_px",
+        "status": "unavailable",
+        "body_height_px": null,
+        "probes": null,
+        "limitations": [
+          "dom_ink_unmeasured",
+          "font_fallback_unverified",
+          "text_mismatch"
+        ]
+      },
+      "color_fg": "#ffffff",
+      "color_bg": "#333d4b",
+      "container_bg": "#ffffff",
+      "border_color": null,
+      "border_width_px": 0,
+      "opacity": 1,
+      "paint": {
+        "source": "dom-solid-v1",
+        "parts": [],
+        "gaps": [],
+        "decorative": false
+      },
+      "occluded_fraction": null,
+      "occluded_by": null,
+      "inert_by_modal": false,
+      "roles": [
+        "status",
+        "timed"
+      ],
+      "ancestor_ids": [],
+      "sibling_scope_id": "body > div",
+      "sibling_scope_status": "measured",
+      "source": "dom"
+    }
+  ],
+  "focus_point": {
+    "x": 180,
+    "y": 742
+  },
+  "focus": {
+    "on_body": false,
+    "tag": "button",
+    "dom_id": "submit",
+    "expanded": false,
+    "controls": []
+  },
+  "layers": [],
+  "console_errors": [],
+  "notes": []
+}

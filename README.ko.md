@@ -19,38 +19,39 @@ Remorsearch(리모서치, *ree-mor-search*) UX QA는 어느 정도 완성된 제
 
 ## 설치
 
-폴더 하나를 스킬 폴더에 복사합니다. 사용자 리서치에서 쓰는 insane-search 원문과
-참조 자료가 안에 들어 있으므로 검색 스킬을 따로 설치할 필요가 없습니다.
-Python 도구는 Python 3.10 이상에서 표준 라이브러리와 POSIX 파일 잠금을 사용합니다.
-macOS, Linux, Windows의 WSL에서 실행할 수 있습니다. 기본 `python3`가 더 낮으면(macOS 기본 Python은 3.9입니다) 호스트가 스킬 폴더에서 `python3 scripts/find_runtime.py`를 실행합니다. 지원되는 가장 높은 Python, Node.js 22 경로와 공백을 JSON으로 출력하며 아무것도 설치하지 않습니다.
+명령 하나로 스킬 전체를 설치합니다. research, persona-qa, ergonomics, loop 네 구성 요소와
+참조 문서·스키마, 번들로 포함된 insane-search 원문, 명령 실행기, 고정된 웹 드라이버와
+Chromium이 모두 담깁니다. 기능을 골라 설치하는 방식은 없고, 참조 문서는 작업마다 필요할 때
+불러 읽습니다. 사용자는 테스트 패킷이 아니라 URL이나 저장소를 넘겨 주면 되고, 번들 예제는
+스킬 자체 점검용 유지보수 자료일 뿐입니다. Python 도구는 macOS, Linux, Windows의 WSL에서
+Python 3.10 이상과 표준 라이브러리, POSIX 파일 잠금을 사용합니다. 기본 `python3`가 더 낮으면(macOS 기본 Python은 3.9입니다) 호스트가 스킬 폴더에서 `python3 scripts/find_runtime.py`를 실행합니다. 지원되는 가장 높은 Python, Node.js 22 경로와 공백을 JSON으로 출력하며 아무것도 설치하지 않습니다.
 
 ```sh
 git clone https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
-# Claude Code(개인용). 팀과 나누려면 프로젝트 안의 .claude/skills/에 복사합니다
-mkdir -p ~/.claude/skills
-cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
-# Codex
-mkdir -p ~/.codex/skills
-cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.codex/skills/
+cd Remorsearch_UX_QA_Skill
+python3 scripts/install.py --target codex
 ```
 
-폴더를 복사하면 스킬 설치가 끝납니다. 유지보수용 패키징과 무결성 검사는
+`--target claude`는 `~/.claude/skills/remorsearch-ux-qa`에, 기본값 `codex`는
+`~/.codex/skills/remorsearch-ux-qa`에 설치합니다. 격리해서 시험해 보려면
+`--destination /path/to/folder`로 경로를 직접 정하세요. 유지보수용 패키징과 무결성 검사는
 [빌드와 배포 전 검사](docs/release.md)에 정리했습니다.
 
-폴더에는 Python 도구, JSON 스키마, 시연용 예제, 실시간 웹 드라이버와 검색 원문,
-참조 자료, 출처 기록이 들어 있습니다.
+Python 3.10 이상, Node.js 22(>=22 <23), npm을 먼저 확인한 뒤에야 파일을 씁니다. 설치 스크립트는
+임시 복사본의 `drivers/web`에서 `npm ci`를 실행하고, Playwright가 쓰는 브라우저 캐시(macOS
+기본 `~/Library/Caches/ms-playwright`, `PLAYWRIGHT_BROWSERS_PATH`를 먼저 정하면 위치를 바꿀 수
+있습니다)로 Chromium을 내려받고, 마지막에 실제 Chromium 실행을 확인한 뒤 설치를 마칩니다.
+전역 런타임이나 계정은 건드리지 않습니다. Node.js 22를 쓰십시오. 고정된 Playwright 1.56.1에서는
+Node.js 24.16 이상과 Node.js 26에서 `npx playwright install`이 다운로드 뒤 멈춥니다
+([microsoft/playwright#40724](https://github.com/microsoft/playwright/issues/40724), Playwright 1.60에서는 됩니다).
 
-실제 웹 페이지에서 persona-qa와 ergonomics를 돌리는 웹 드라이버에는 Node.js 22와 Playwright도 필요합니다.
-아래 명령은 Codex 설치 경로를 선택합니다. Claude Code에서는 `REMORSEARCH_SKILL_DIR`를
-`~/.claude/skills/remorsearch-ux-qa`로 지정하세요.
-
-```sh
-REMORSEARCH_SKILL_DIR="$HOME/.codex/skills/remorsearch-ux-qa"
-cd "$REMORSEARCH_SKILL_DIR/drivers/web"
-npm ci && npx playwright install chromium
-```
-
-Node.js 22를 쓰십시오. 고정된 Playwright 1.56.1에서는 Node.js 24.16 이상과 Node.js 26에서 `npx playwright install`이 다운로드 뒤 멈춥니다([microsoft/playwright#40724](https://github.com/microsoft/playwright/issues/40724), Playwright 1.60에서는 됩니다).
+심볼릭 링크 경로, 원본 저장소, 관련 없는 기존 폴더, 파일 시스템 루트, 홈 디렉터리는 설치
+대상으로 거절합니다. 드라이버 준비는 임시 복사본에서 먼저 끝내고, 의존성을 설치한 뒤에는
+다시 검사합니다. npm이나 Chromium 내려받기가 실패해도 기존 설치는 그대로입니다.
+Node.js, npm, 네트워크를 고친 뒤 같은 명령을 다시 실행하면 됩니다. 이미 설치된 스킬을
+갱신할 때는 실행 기록과 심볼릭 링크까지 통째로 `remorsearch-ux-qa.backup-<timestamp>.tar.gz`로
+보관한 뒤 새 설치를 넣습니다. 계정은 사용자가 준비합니다. 유튜브 댓글은 본인의 YouTube Data
+API 키(`REMORSEARCH_YOUTUBE_API_KEY`)가 필요하고, Figma 비교에는 Figma 접근 권한이 필요합니다.
 
 ## 사용법
 
@@ -76,12 +77,16 @@ Node.js 22를 쓰십시오. 고정된 Playwright 1.56.1에서는 Node.js 24.16 �
 
 ## 근거 규칙
 
+제품 UI QA는 실제 화면과 Figma 이미지를 열어 정렬·여백·타이포그래피·잘림·가림·디자인 일치 여부를 영역별로 기록합니다. 기존 loop 검사기는 관찰 근거가 없거나 통과 판정과 모순되면 거부하며, `pixel_diff`는 번들 PNG 디코더로 이미지 차이를 직접 계산합니다. 화면의 의미와 품질은 호스트의 이미지 판독 도구를 사용하는 검토자가 판단합니다. 기록 검증만으로 그 판단의 정확성까지 보장하지는 않습니다.
+
 - 모든 진술에 `observed`(관찰됨), `inferred`(추론), `unknown`(미확인) 가운데 하나를 붙입니다. 같은 말이 반복된다고 추론이 사실이 되지는 않습니다.
 - 합성 페르소나와 시뮬레이션한 프로필은 테스트 상황을 만듭니다. 실제 사용자의 선호, 비율, 불편을 보여 주지 않습니다.
 - 커뮤니티 신호는 실제 제품에서 그 행동을 확인하기 전까지 가설입니다.
 - 조사·리뷰 요청은 읽기 전용입니다. 개선 요청에는 지정 범위의 통상적이고 되돌릴 수 있는 수정 권한이 포함됩니다. 에이전트는 이 권한을 CLI에 기록하며 같은 승인을 다시 묻지 않습니다. 배포, 외부 게시, 실제 계정 변경에는 별도 권한이 필요합니다.
 - 화면 구성과 UX 변경은 Figma에서 먼저 만들고 실제 파일, 노드, 버전과 읽어 확인한 내용을 기록합니다. 접근할 수 없으면 해당 변경을 보류하고 가능한 조사와 QA를 계속합니다.
 - 개선 완료에는 현재 빌드의 재실행, 인접 과업의 회귀 검사와 의도 보존 확인이 필요합니다. 정한 QA에서 재현 가능한 문제가 없으면 변경 없이 점검을 마칠 수 있습니다. 필수 근거가 없으면 미완료로 남깁니다.
+
+UI QA는 과업 완료 여부와 별도로 컴포넌트 계약과 화면 구성을 확인합니다. 해부·토큰 역할·상태 변형·동작 위계·긴 문구·반응형 변화·아이콘 전용 조작의 발견 가능성을 컴포넌트·화면 매트릭스로 기록합니다. [UI 품질 카드](skills/remorsearch-ux-qa/references/persona-qa/ui-quality.md)는 REA로 참고 기능의 상태 전이·컴포넌트 경계·설계 이유를 역추적한 뒤 사용자의 Figma와 컴포넌트에 맞춰 구현하고 다시 실행하는 흐름을 제공합니다. REA는 선택형이며 설치본에 포함하지 않습니다. 결함 판정은 현지 Figma·의도·실제 화면 근거로 합니다.
 
 조사와 QA 실행은 기계가 읽을 수 있는 **증거 번들**(evidence bundle, `schemas/ux-evidence-bundle.v1.schema.json`)을 주고받을 수 있습니다. 오프라인 검증기가 ID, 상호 참조, 권한 기록, 합성 페르소나 오용, 근거 없는 "검증됨" 발견, 지난 보관 기한을 확인합니다. 스킬에 작은 유효 번들 예시가 들어 있어 검증기를 바로 시험해 볼 수 있습니다.
 
@@ -130,7 +135,7 @@ research와 persona-qa는 계정 없이 누구나 읽을 수 있는 것만 읽�
 ## 저장소 구성
 
 ```text
-skills/remorsearch-ux-qa/    설치하는 스킬(이 폴더를 복사함)
+skills/remorsearch-ux-qa/    설치하는 스킬(scripts/install.py가 설치함)
   SKILL.md                   진입점: 모드, 공통 규칙, 도구
   references/                모드별 흐름과 참고 문서
     research/korea/          한국 리서치 팩(한국어): 플랫폼 지도, 검색어, 표지, 통계, 법령 점검표, 보고서 틀
@@ -170,12 +175,22 @@ python3 scripts/check_release.py --output dist/release-check
 
 ## 한계
 
+[포트폴리오 비주얼 QA 재검증](docs/validation/visual-qa-20261017/report.md)에서 수정된 스킬은 원본 이미지의 잘림 6곳을 찾았고, 정상 대조 제목 3곳은 잘림으로 지적하지 않았습니다. 기존 스킬도 이미지를 실제로 본 실행에서는 같은 6곳을 찾았으므로 탐지율 향상으로 주장하지 않습니다. 별도 검토에서는 현재 웹 캡처 30장과 실제 Figma 내보내기를 대조해 디자인 차이를 찾고, 잘림·승인 여부·미실행 상호작용을 구분했습니다. 한 제품의 알려진 실패 사례를 재검증한 결과입니다.
+
+[포트폴리오 Figma 일치 전후 검증](docs/validation/figma-fidelity-20261018/report.md)에서는 어느 빌드가 수정본인지 모르는 검토자 세 명이 같은 스킬로 빌드를 하나씩 검토했습니다. 수정 전 빌드에서는 미리 고정한 Figma 차이 여섯 묶음을 모두 찾았고, 알려 주지 않은 데스크톱 정렬 결함 두 곳도 지적해 수정 요청을 냈습니다. 1차 수정 빌드는 P3 후속 과제 다섯 건과 함께 승인됐고, 이를 고친 최종 빌드는 결함 없이 승인됐습니다. 한 제품을 빌드마다 한 번씩 검토한 결과라 일반적인 탐지율로 주장하지 않습니다.
+
+[QA 성능 기준](PRD.md#91-일반-omo-대비-qa-성능)은 같은 모델·도구·과업·예산에서 일반 OMO와 Remorsearch를 적용한 OMO를 비교하는 것입니다. 모바일·데스크톱의 정렬·잘림·컴포넌트 가림을 필수로 확인합니다. [실제 OMO 비교와 모바일 QA](docs/validation/design-qa-20261015/report.md)에서 같은 접근 권한의 Astra medium은 유효 결함 5건·6건, 근거 부족 지적 1건·0건을 기록했습니다. 보고서 저장까지는 5분 7초·10분 8초였습니다. 앞선 접근 차이 실험은 별도로 보존했습니다. InferHub GLM 5.3 high는 공급자 오류로 QA 점수를 매기지 않았습니다. 소규모 결과로 일반적인 우위를 단정하지 않습니다.
+
+[스킬 사용·미사용 비교](docs/validation/skill-ab-20261014/report.md)는 Codex에서 같은 모델과 브라우저 도구로 기존 로컬 평가 화면을 조건별 두 번씩 점검한 결과입니다. 탐지, 근거가 부족한 지적, 과업 완료, 시간과 토큰을 설치·자체 검사와 구분해 기록했습니다. 이 소규모 결과로 일반적인 성능 우위를 단정하지 않습니다.
+
+[QA 속도 평가](docs/validation/qa-speed-20261015/report.md)에서는 GPT-6.1 Sol high로 기존 스킬과 지침 개선안을 두 번씩 비교했습니다. 개선안은 보고서 저장 중앙값이 4.1%, 최종 응답 중앙값이 1.5% 더 느렸습니다. 두 번째 반복은 핵심 6개 영역을 증거화했지만, 누락 소스 피드백 결함을 별도 발견 카드로 분류하지 않고 복구 관찰에 남겼습니다. 속도 향상과 분류 명확성을 얻지 못해 개선안은 채택하지 않았습니다.
+
 - 실시간 브라우저 조사(Aside 같은 에이전트 브라우저), Figma, loop 모드의 브라우저 수집은 사용자나 에이전트 호스트가 제공합니다. loop CLI는 그 기록을 가져올 뿐 직접 실행하지 않습니다.
 - reader는 robots.txt와 AI·TDM 거부 표시를 따르고 봇 차단과 브라우저 확인 화면에서 멈추므로 일부 사이트는 수집 공백으로 끝납니다. 렌더는 클릭하지 않으므로 긴 댓글 목록과 "리뷰 더 보기"는 일부만 읽습니다.
 - 한국 플랫폼 상당수가 자동 수집을 제한하므로, 디시인사이드, 네이버, 쿠팡, X는 서면 허락과 함께 항목별 약관 확인을 기록하지 않으면 수집 공백으로 끝납니다. 유튜브는 본인의 키를 쓰는 API로만 읽습니다. 한국 팩은 법률 자문이 아닙니다.
 - ergonomics 모드의 엄지 도달 모델은 보정되지 않았고, 벤치마크 세트는 작으며 에이전트가 만들었습니다. 결과는 인증이 아니라 선별용으로 봅니다. `docs/validation/`을 보십시오.
   [기존 별도 평가](docs/validation/experiments/heldout-2-results.md)에서는 정상 시나리오당 P0–P2 문제 단위가 1.75건으로 사전 기준 0.35건을 넘었고, 조건 식별 목표도 충족하지 못했습니다. 이후 수정만으로 이 목표를 통과했다고 볼 수 없습니다. 발견 항목은 실제 수정 전에 검토해야 합니다.
-- 웹 드라이버가 다루는 것은 Chromium 기기 에뮬레이션뿐입니다. 실제 iOS Safari, 네이티브 앱, 실제 기기는 다루지 않습니다.
+- 번들 웹 드라이버는 Chromium 기기 에뮬레이션만 실행합니다. Mobile Safari는 문서에 적힌 호스트 경로(iOS 시뮬레이터와 safaridriver)로 확인하고, iOS 네이티브 앱은 가져온 XCUITest 결과로 확인합니다. 실제 기기는 다루지 않습니다.
 
 ## 라이선스
 

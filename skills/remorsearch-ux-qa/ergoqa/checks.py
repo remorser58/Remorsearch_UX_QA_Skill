@@ -293,6 +293,12 @@ LY01 = _register(CheckSpec(
     ("REF-xctest-textclipped", "REF-wcag22-144", "REF-wcag22-1412"), ("web", "desktop"), "visual",
     "고정 높이·너비와 overflow:hidden을 풀어 글자가 늘어나도 다 보이게 하세요.",
 ))
+UI01 = _register(CheckSpec(
+    "UI-01", "visual", "measured", "아이콘 전용 조작 요소에 시각적 설명이 없음",
+    "Icon-only action has no visible tooltip or equivalent hover/focus explanation",
+    (), ("web", "desktop", "android", "ios"), "visual",
+    "아이콘만 있는 조작 요소에 짧은 툴팁이나 포커스 시 설명을 제공하고, 같은 기능의 컨트롤은 같은 이름과 표현을 쓰세요.",
+))
 PJ01 = _register(CheckSpec(
     "PJ-01", "heuristic", "judgment", "페르소나 에이전트가 기대와 다른 결과/혼란을 기록",
     "Persona agent recorded an expectation mismatch or confusion",
@@ -2284,7 +2290,7 @@ def check_semantics(ctx: Context) -> list[Observation]:
     for e in dom:
         clip = e.get("clipped")
         box = e.get("box") or {}
-        if not isinstance(clip, dict) or e.get("interactive") or box.get("w", 0) < 4 or box.get("h", 0) < 4 or not (e.get("text") or "").strip():
+        if not isinstance(clip, dict) or box.get("w", 0) < 4 or box.get("h", 0) < 4 or not (e.get("text") or "").strip():
             continue
         if clip.get("animated"):
             continue  # tickers and marquees clip by design
@@ -2305,6 +2311,35 @@ def check_semantics(ctx: Context) -> list[Observation]:
             False, "P3" if clip.get("ellipsis") or clean else "P2",
             f"'{(e.get('text') or '')[:30]}' 글자가 {'바깥 상자(' + by + ')' if by else '상자'}에 잘립니다" + how,
             extra={"context_selectors": [by]} if by and by.startswith("#") else {},
+        ))
+    return out
+
+
+def check_ui_discoverability(ctx: Context) -> list[Observation]:
+    """UI-01: sighted users need an explanation for icon-only actions.
+
+    An accessible name alone serves assistive technology but does not prove that a
+    sighted pointer or keyboard user can discover an icon-only action. This stays P3:
+    the component may have a product-specific explanation outside the captured state.
+    """
+    out: list[Observation] = []
+    base = (ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"))
+    controls = [e for e in ctx.elements if e.get("source", "dom") == "dom" and _present(e)
+                and e.get("interactive") and e.get("role") in ("button", "link", "menuitem", "tab")]
+    for e in controls:
+        a = e.get("a11y") or {}
+        visible = (a.get("visible_label") if a.get("visible_label") is not None else e.get("text") or "").strip()
+        if visible or not (a.get("icon_font") or e.get("tag") in ("button", "a")):
+            continue
+        if (a.get("tooltip") or "").strip():
+            continue
+        critical = _critical(ctx, e)
+        out.append(Observation(
+            "UI-01", *base, [e["id"]], element_key(e),
+            {"name": "icon_only_explanation", "value": False, "unit": "flag", "threshold": True, "comparator": "==",
+             "accessible_name": (e.get("name") or "")[:120], "icon_font": bool(a.get("icon_font")), "tooltip": None},
+            False, "P2" if critical else "P3",
+            f"아이콘만 보이는 '{e.get('name') or e.get('selector')}'에 툴팁이나 포커스 설명이 없습니다. 접근 가능한 이름은 있어도 시각적 발견 가능성은 확인되지 않습니다.",
         ))
     return out
 
@@ -2737,6 +2772,7 @@ SNAPSHOT_CHECKS: tuple[Callable[[Context], list[Observation]], ...] = (
     check_text_size,
     check_choice_overload,
     check_semantics,
+    check_ui_discoverability,
     check_focus_management,
 )
 
@@ -2755,7 +2791,7 @@ HYPOTHESIS_CHECKS = frozenset({"GZ-01", "GZ-04", "PC-05", "PT-05", "GM-06"})
 # Checks that read no profile attribute: one verdict per snapshot, reported as
 # "profile-independent" instead of a k/n coverage (STF-08).
 PROFILE_INVARIANT_CHECKS = frozenset({"TI-01", "PT-01", "PT-05", "PT-06", "PC-01", "PC-02", "CG-01", "CG-03", "GZ-03", "GM-05", "GM-06",
-                                      "SM-01", "SM-02", "SM-03", "SM-04", "SM-05", "SM-06", "SM-07", "SM-08", "LY-01", "RF-01", "RF-02", "RF-03",
+                                      "SM-01", "SM-02", "SM-03", "SM-04", "SM-05", "SM-06", "SM-07", "SM-08", "LY-01", "UI-01", "RF-01", "RF-02", "RF-03",
                                       "FM-02"})
 
 
