@@ -133,10 +133,10 @@
       ],
       "properties": {
         "figma_first": {
-          "const": true
+          "type": "boolean"
         },
         "allow_side_accents": {
-          "const": false
+          "type": "boolean"
         },
         "raw_community_storage": {
           "const": false
@@ -785,7 +785,10 @@
           "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
         },
         "figma_id": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
         },
         "node_ids": {
@@ -794,27 +797,39 @@
             "type": "string",
             "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
           },
-          "minItems": 1,
+          "minItems": 0,
           "maxItems": 500,
           "uniqueItems": true
         },
         "file_key": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "minLength": 1,
           "maxLength": 2000
         },
         "branch_key": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "minLength": 1,
           "maxLength": 2000
         },
         "baseline_version": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "minLength": 1,
           "maxLength": 2000
         },
         "readback_version": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "minLength": 1,
           "maxLength": 2000
         },
@@ -1020,7 +1035,10 @@
           "pattern": "^[a-f0-9]{64}$"
         },
         "figma_id": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
         },
         "rationale": {

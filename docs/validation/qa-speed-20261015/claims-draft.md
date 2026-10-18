@@ -1,5 +1,0 @@
-# Public performance claims — pending measurement
-Proposed positioning: Remorsearch helps coding agents produce actionable mobile and desktop QA with screenshots, reproduction steps, data-preservation checks and explicit gaps. It runs inside the user's existing agent host with one install and four bundled components.
-Evidence target: speedoptimizedinstructions vsoldskill andplainOMO, sameSol6.1high, tworepetitions percondition,2knownsyntheticvariants. Reportmedian+range and supporteduniqueissuefamilies/unsupported/coverage. Do notpresent reportcards as unique bugs.
-Use afterapproval: a concise measured sentence with exactseconds/percent, model/effort, fixturecount andrepetitioncount; linkprotocolandrawjudgment. Keep providerGLMhighfailureseparate. Include detector regression and six mobileflows as engineeringevidence, notmodelQAquality orrealuserROI.
-Avoid claims: universal2xfaster/20%better, enterpriseproductionvalidated, MiroFish predictsrealusers, formalaccessibilitycertification, tokenestimatesasbilledcost, fullSafari/realdevicevalidation.

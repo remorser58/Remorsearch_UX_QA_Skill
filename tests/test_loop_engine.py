@@ -53,6 +53,16 @@ class LoopTests(unittest.TestCase):
         self.assertFalse(report(state)['live_execution_performed_by_cli'])
         self.assertEqual(load(self.checkpoint)['run_id'], state['run_id'])
 
+    def test_code_first_project_completes_without_figma(self):
+        self.packet = make_packet(self.evidence_root, 'code_first')
+        self.assertEqual(validate_packet(self.packet), [])
+        state = self.go()
+        self.assertEqual(state['status'], 'complete', state['reason'])
+        self.assertEqual(state['accepted_fix_ids'], ['fix-1'])
+        figma_first = copy.deepcopy(self.packet)
+        figma_first['policy']['figma_first'] = True
+        self.assertTrue(any('Figma-first policy' in x for x in validate_packet(figma_first)))
+
     def test_blocked_permission_never_modifies_code(self):
         self.packet = make_packet(self.evidence_root, 'blocked_permission')
         state = self.go(grants=[])

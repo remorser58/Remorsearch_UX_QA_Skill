@@ -95,7 +95,7 @@ one exact capture UUID, scenario/profile, route and fixture identity; the import
 identity, device model, point/pixel geometry, capture intervals and UUID-named attachments. The source
 XCTest result is provenance only: the selected capture is a separate completed observation with unknown UX
 task success. An optional producer image_source value of device_screen marks an actual XCUIScreen PNG;
-omitting it keeps the historical application-screenshot meaning, and pixels are never rescaled. UniClub
+omitting it keeps the historical application-screenshot meaning, and pixels are never rescaled. App
 validation fixtures use --fixture-kind synthetic_app_data even when execution is real. XCUI cells remain
 non-actionable rows, visual visibility is unsupported, and accessibility, fonts, colours and intent remain
 unknown unless separately measured.
@@ -116,7 +116,7 @@ EVIDENCE/
 ```
 
 There must be exactly one actual built application Info.plist matching the selected capture's application_id;
-for UniClub, that example identity is com.uniclub.preview. Package the actual build Info.plist even when
+for example com.example.preview. Package the actual build Info.plist even when
 DerivedData is reused; a source path or historical build directory does not satisfy the importer. Preserve the
 frozen native evidence unchanged and always write imports to a fresh output directory.
 

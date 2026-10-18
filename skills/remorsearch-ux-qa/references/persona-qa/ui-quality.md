@@ -76,7 +76,7 @@ For each feature or screen:
 2. Inspect the target's static structure and runtime behavior where the provider supports it: entry point, modules/routes, component boundaries, state variables, event handlers, network or storage relationships, responsive branches, error and recovery transitions.
 3. Replay the important states and record the causal chain: input → state change → render/update → feedback → persistence or recovery. Mark every item `observed`, `inferred` or `unknown`.
 4. Explain why the reference likely uses the pattern: task priority, error prevention, information hierarchy, latency, responsive constraint, accessibility or maintainability. Keep this as a hypothesis until the evidence supports it.
-5. Create a local transfer record: reference mechanism, local component/screen, Figma node, adaptation, implementation path, trade-off, replay state and acceptance evidence. Apply the change through the existing Figma-first and loop workflow, then rerun the original and adjacent states.
+5. Create a local transfer record: reference mechanism, local component/screen, Figma node, adaptation, implementation path, trade-off, replay state and acceptance evidence. Apply the change through the project's design source (Figma first when design lives there) and the loop workflow, then rerun the original and adjacent states.
 
 Inspect only the feature slice needed to answer the question. Record the target URL/build, REA version/provider, evidence hashes, access boundary and unresolved questions. Transfer the mechanism and rationale; use the user's project components, tokens, assets and content for implementation.
 

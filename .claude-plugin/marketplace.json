@@ -2,7 +2,7 @@
   "name": "remorsearch",
   "description": "Evidence-first UX research and UX QA for coding agents.",
   "owner": {
-    "name": "SeongJu Kim (remorser58)",
+    "name": "remorser58",
     "url": "https://github.com/remorser58"
   },
   "plugins": [
@@ -12,11 +12,11 @@
       "description": "Evidence-first UX research and UX QA: audience research from real communities, persona-driven usability testing on live web pages, ergonomics and accessibility checks (KWCAG/WCAG), and fix-and-replay loops.",
       "version": "1.0.0",
       "author": {
-        "name": "SeongJu Kim (remorser58)",
+        "name": "remorser58",
         "url": "https://github.com/remorser58"
       },
-      "homepage": "https://github.com/remorser58/Remorsearch_UX_QA_Skill",
-      "repository": "https://github.com/remorser58/Remorsearch_UX_QA_Skill",
+      "homepage": "https://github.com/remorser58/remorsearch_UX_QA",
+      "repository": "https://github.com/remorser58/remorsearch_UX_QA",
       "license": "MIT",
       "keywords": [
         "ux-research",

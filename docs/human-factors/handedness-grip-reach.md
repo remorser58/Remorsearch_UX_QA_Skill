@@ -6,12 +6,12 @@ SLUG: `handedness-grip-reach` · Date: 2026-09-28 · Scope: phones (5–7"), tab
 
 **Evidence-access tags** (every number carries one):
 
-- **[FT]**: full text was read in this session.
+- **[FT]**: full text was read at the time of writing.
 - **[AB]**: only the abstract or search-engine snippet was available.
 - **[2nd]**: taken from a secondary summary (blog, news, magazine) and less reliable.
 - **UNCONFIRMED**: could not be verified. Do not hard-code it as fact.
 
-Most publisher hosts (ACM DL, ScienceDirect, UXmatters, PMC, arXiv, NN/g, W3C, sizekorea.kr) were blocked by the egress proxy in this session. Only microsoft.com (Parhi 2006 PDF), developer.apple.com (HIG JSON), developer.android.com and github.com could be fetched. Many values are therefore [AB] or [2nd]. The Bergstrom-Lehtovirta & Oulasvirta (2014) model coefficients, which are the most important missing piece, could **not** be read.
+Most publisher hosts (ACM DL, ScienceDirect, UXmatters, PMC, arXiv, NN/g, W3C, sizekorea.kr) were blocked by the egress proxy at the time of writing. Only microsoft.com (Parhi 2006 PDF), developer.apple.com (HIG JSON), developer.android.com and github.com could be fetched. Many values are therefore [AB] or [2nd]. The Bergstrom-Lehtovirta & Oulasvirta (2014) model coefficients, which are the most important missing piece, could **not** be read.
 
 **Evidence rule for the QA system.** Every reach or grip finding in this domain is **inferred** from geometry plus a persona profile. It is never *observed*: an automation driver taps pixel-perfectly and has no thumb. The findings that count as **observed** are trace events such as mis-taps, repeated attempts, accidental system-gesture exits and unintended activations. Synthetic personas give coverage, not prevalence. The base rates below are literature context and must not be recomputed from persona counts.
 

@@ -39,6 +39,8 @@ def make_packet(root: Path, case: str = 'happy') -> dict:
     original = (SKILL / 'examples/loop/site/index.html').read_text(encoding='utf-8')
     fixed = original.replace('>다음</a>', '>상품 상세 보기</a>')
     before, after = digest({'index.html': original}), digest({'index.html': fixed})
+    # code_first: a project without Figma; visual checks compare with a baseline capture.
+    code_first = case == 'code_first'
     bundle = json.loads(BASE_BUNDLE.read_text(encoding='utf-8'))
     bundle['bundle_id'] = 'bundle-loop-fixture-1'
     records = bundle['records']
@@ -69,7 +71,7 @@ def make_packet(root: Path, case: str = 'happy') -> dict:
                        'scenario_ids': ['scenario-1'], 'evidence_ids': ['evidence-1'], 'max_iterations': 2,
                        'code_paths': ['index.html'], 'stop_conditions': {x: True for x in [
                            'all_scenarios_pass', 'all_findings_replayed', 'visual_pass', 'accessibility_pass', 'regression_pass', 'no_unknowns']}},
-              'policy': {'figma_first': True, 'allow_side_accents': False, 'raw_community_storage': False, 'retention_days': 7},
+              'policy': {'figma_first': not code_first, 'allow_side_accents': False, 'raw_community_storage': False, 'retention_days': 7},
               'bundle': bundle, 'scenarios': [scenario], 'artifacts': [], 'browser_runs': [], 'visual_checks': [],
               'fixes': [], 'rounds': [], 'replays': []}
 
@@ -122,6 +124,9 @@ def make_packet(root: Path, case: str = 'happy') -> dict:
                   'method': 'review', 'reviewer': 'fixture-author',
                   'checks': {name: 'passed' for name in ('layout', 'interaction_states', 'alignment', 'spacing', 'typography',
                                                        'text_clipping', 'component_occlusion', 'figma_fidelity', 'side_accents')}, 'reason': ''}
+        if code_first:
+            visual.update({'figma_id': None, 'node_ids': [], 'file_key': None, 'branch_key': None,
+                           'baseline_version': None, 'readback_version': None})
         if phase == 'baseline' or (phase == 'replay' and case == 'failed_visual'):
             visual.update({'status': 'failed', 'reason': 'Synthetic comparison: ambiguous action label.'})
             visual['checks']['interaction_states'] = 'failed'
@@ -150,7 +155,7 @@ def make_packet(root: Path, case: str = 'happy') -> dict:
     patch_id = add('artifact-patch', 'code_patch', patch, START, 'patch')
     packet['fixes'] = [{'id': 'fix-1', 'proposal_id': 'proposal-1', 'finding_ids': ['finding-1'], 'kind': 'code_write',
                         'changed_paths': ['index.html'], 'patch_artifact_id': patch_id, 'before_revision': before,
-                        'after_revision': after, 'figma_id': 'figma-1', 'rationale': 'Clarify the destination of the next action.',
+                        'after_revision': after, 'figma_id': None if code_first else 'figma-1', 'rationale': 'Clarify the destination of the next action.',
                         'expected_effect': 'The fixture label names the product-detail action; real-user benefit remains unmeasured.'}]
     packet['rounds'] = [{'id': 'round-1', 'number': 1, 'baseline_run_ids': ['baseline-1'], 'fix_ids': ['fix-1']}]
     regression_status = 'failed' if case == 'regression_failure' else 'passed'
@@ -169,7 +174,7 @@ def make_packet(root: Path, case: str = 'happy') -> dict:
         # Deliberately claims historical code permission: never an operational grant.
         bundle['permissions']['requested'].append('code_write')
         bundle['permissions']['granted'].append('code_write')
-    elif case not in {'happy', 'failed_visual', 'regression_failure', 'interrupted'}:
+    elif case not in {'happy', 'failed_visual', 'regression_failure', 'interrupted', 'code_first'}:
         raise ValueError('Unknown fixture case: ' + case)
     write_json(root / 'packet.json', packet)
     return packet

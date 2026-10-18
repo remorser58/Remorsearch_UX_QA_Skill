@@ -203,7 +203,7 @@ the recorded evidence and are not assigned to any of these profiles.
 Drives a real Chromium page with Playwright, emulating one catalogued device, and
 writes the evidence that `ergoqa analyze` consumes: `ergo-snapshot.v1` files
 (screenshot + measured element geometry/colour) and one `ergo-run.v1` per run.
-The contract is [repository documentation: `docs/ergonomic-swarm-spec.md`](https://github.com/remorser58/Remorsearch_UX_QA_Skill/blob/main/docs/ergonomic-swarm-spec.md)
+The contract is [repository documentation: `docs/ergonomic-swarm-spec.md`](https://github.com/remorser58/remorsearch_UX_QA/blob/main/docs/ergonomic-swarm-spec.md)
 sections 3, 5 and 10. The driver measures; it never scores ergonomics and never
 role-plays a user.
 
@@ -213,6 +213,7 @@ Requirements: Node.js 22 and `playwright@1.56.1` with its Chromium. Install once
 cd drivers/web
 npm ci                      # pinned packages from package-lock.json
 npx playwright install chromium
+npx playwright install-deps chromium   # Linux only: system libraries, asks for sudo
 node selftest.mjs           # a few minutes; expects 0 failed
 ```
 
@@ -222,6 +223,18 @@ or a global install both work), then each `NODE_PATH` entry, then
 The driver itself never installs anything.
 
 ## Hosts that sandbox commands (Codex)
+
+A sandbox that blocks Chromium's helper processes but allows local files (Codex
+on macOS) can launch it in one process, which is enough for captures and the
+layout scan of a `file://` page:
+
+```sh
+REMORSEARCH_CHROMIUM_ARGS=--single-process python3 scripts/ergo_qa.py scan --url file:///path/to/page.html --out work/scan
+```
+
+`REMORSEARCH_CHROMIUM_ARGS` takes space-separated Chromium switches for a local
+launch; anything that is not a `--switch` or `--switch=value` fails the run. Pages
+on the network still need network permission from the host.
 
 When a host's command sandbox cannot launch Chromium, start the browser server in
 a terminal outside that sandbox, using the same pinned Playwright package:

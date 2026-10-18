@@ -1534,6 +1534,36 @@ async function reflowTest(base, tmp) {
   const chip = first.elements.find((e) => e.dom_id === 'chip-t');
   check('LY-01 data: text cut by a clipping ancestor records the ancestor', !!chip && chip.clipped && chip.clipped.x === true && chip.clipped.by === '#chip-l',
     chip && chip.clipped);
+  const scaledClean = clippedControl('scaled-clean');
+  check('LY-01 data: a scaled control is measured on screen (a fitting label is clean, a long one is cut)',
+    !!scaledClean && !scaledClean.clipped && clippedControl('scaled-cut')?.clipped?.x === true,
+    [scaledClean && scaledClean.clipped, clippedControl('scaled-cut')?.clipped]);
+  check('LY-03 data: transparent sizing text never collides; gradient text drawn over text does',
+    !clippedControl('mirror-label')?.text_overlap && !clippedControl('ink-label')?.text_overlap
+      && clippedControl('gradient-b')?.text_overlap?.with === '#gradient-a' && !clippedControl('gradient-a')?.glyph_cover,
+    ['mirror-label', 'ink-label', 'gradient-a', 'gradient-b'].map((id) => [id, clippedControl(id)?.text_overlap, clippedControl(id)?.glyph_cover]));
+  check('LY-02 data: text that paints nothing is marked so box sampling skips it',
+    clippedControl('mirror-label')?.ink === false && clippedControl('ink-label')?.ink === undefined,
+    [clippedControl('mirror-label')?.ink, clippedControl('ink-label')?.ink]);
+  const spanCut = clippedControl('span-cut');
+  check('LY-01 data: a control reports a cut label that sits in a span; a fitting one stays clean',
+    spanCut?.clipped?.x === true && spanCut.clipped.by === null && typeof spanCut.clipped.label === 'string'
+      && !!clippedControl('span-clean') && !clippedControl('span-clean').clipped,
+    [spanCut && spanCut.clipped, clippedControl('span-clean')?.clipped]);
+  check('LY-03 data: text drawn over a control label that sits in a span collides',
+    clippedControl('span-over')?.text_overlap?.with === '#span-link', clippedControl('span-over')?.text_overlap);
+  const rec = clippedControl;
+  check('LY-01 data: a control with direct text still reports a cut span label; a hidden 1 px helper is not a cut',
+    rec('mixed-cut')?.clipped?.x === true && typeof rec('mixed-cut').clipped.label === 'string'
+      && !!rec('helper-link') && !rec('helper-link').clipped,
+    [rec('mixed-cut')?.clipped, rec('helper-link')?.clipped]);
+  check('LY-01 data: a fallback symbol font and a display: contents label are still measured',
+    rec('stack-cut')?.clipped?.x === true && rec('contents-cut')?.clipped?.x === true,
+    [rec('stack-cut')?.clipped, rec('contents-cut')?.clipped]);
+  check('LY-01 data: a nested tabindex control owns its cut label; the outer link does not',
+    rec('inner-tab')?.clipped?.x === true && !!rec('outer-link') && !rec('outer-link').clipped,
+    [rec('inner-tab')?.clipped, rec('outer-link')?.clipped]);
+  check('LY-02 data: a control whose only text paints nothing is marked', rec('ghost-btn')?.ink === false, rec('ghost-btn')?.ink);
 }
 
 async function reflowCopyTest(base, tmp) {

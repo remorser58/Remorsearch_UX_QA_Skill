@@ -173,9 +173,8 @@ Content hashes bind the declared `code_paths`, not every file in the product or 
 remote deployed build. Include every relevant source/configuration path and
 use an external provider that binds its running build to that exact scope. There
 is no broad shell-command runner, automatic deployment, UX aggregate score, raw
-community archive, or implicit claim of WCAG conformance. Editable Figma governs design; skill-authored proposals use no side accent bars/side-tab cards. Existing product QA needs task-trace harm to flag a bar. Community signals and
+community archive, or implicit claim of WCAG conformance. Editable Figma governs design under a Figma-first policy, and `policy.allow_side_accents` decides side accents in skill-authored proposals. Existing product QA needs task-trace harm to flag a bar. Community signals and
 synthetic personas cannot establish population prevalence or user preference.
 
 See [references/loop/provider-contract.md](provider-contract.md) for exact boundaries, and the repository
-documents `docs/architecture.md`, `docs/omo-reference-review.md` and
-`docs/history/IMPLEMENTATION_REPORT.md` (not installed with the skill) for the rest.
+document `docs/architecture.md` (not installed with the skill) for the rest.
