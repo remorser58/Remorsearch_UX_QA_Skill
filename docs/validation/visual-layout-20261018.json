@@ -1,0 +1,257 @@
+{
+ "schema": "remorsearch-validation-scores.v1",
+ "scorer": "ergoqa.bench.score(exact_viewport=True)",
+ "date": "2026-10-18",
+ "detector_before": "61d0fd9 (before the layout checks)",
+ "detector_first_blind": "first score of benchmarks/visual-layout before any change made after seeing it",
+ "detector_final": "branch head after the second review",
+ "before": {
+  "mobile-commerce/measured_only": {
+   "detected": 6,
+   "defects": 17,
+   "recall_strict": 0.353,
+   "decoys_flagged": 0,
+   "clean_control_findings": 7,
+   "unlabeled_findings_in_defect_variants": 11,
+   "findings": 27
+  },
+  "mobile-commerce/single_profile": {
+   "detected": 11,
+   "defects": 17,
+   "recall_strict": 0.647,
+   "decoys_flagged": 0,
+   "clean_control_findings": 14,
+   "unlabeled_findings_in_defect_variants": 22,
+   "findings": 62
+  },
+  "mobile-commerce/swarm": {
+   "detected": 14,
+   "defects": 17,
+   "recall_strict": 0.824,
+   "decoys_flagged": 1,
+   "clean_control_findings": 23,
+   "unlabeled_findings_in_defect_variants": 24,
+   "findings": 81
+  },
+  "game-desktop/measured_only": {
+   "detected": 6,
+   "defects": 16,
+   "recall_strict": 0.375,
+   "decoys_flagged": 0,
+   "clean_control_findings": 19,
+   "unlabeled_findings_in_defect_variants": 21,
+   "findings": 54
+  },
+  "game-desktop/single_profile": {
+   "detected": 11,
+   "defects": 16,
+   "recall_strict": 0.688,
+   "decoys_flagged": 0,
+   "clean_control_findings": 28,
+   "unlabeled_findings_in_defect_variants": 34,
+   "findings": 83
+  },
+  "game-desktop/swarm": {
+   "detected": 15,
+   "defects": 16,
+   "recall_strict": 0.938,
+   "decoys_flagged": 0,
+   "clean_control_findings": 28,
+   "unlabeled_findings_in_defect_variants": 31,
+   "findings": 84
+  },
+  "heldout-mixed/measured_only": {
+   "detected": 3,
+   "defects": 20,
+   "recall_strict": 0.15,
+   "decoys_flagged": 0,
+   "clean_control_findings": 31,
+   "unlabeled_findings_in_defect_variants": 46,
+   "findings": 84
+  },
+  "heldout-mixed/single_profile": {
+   "detected": 8,
+   "defects": 20,
+   "recall_strict": 0.4,
+   "decoys_flagged": 1,
+   "clean_control_findings": 41,
+   "unlabeled_findings_in_defect_variants": 66,
+   "findings": 137
+  },
+  "heldout-mixed/swarm": {
+   "detected": 18,
+   "defects": 20,
+   "recall_strict": 0.9,
+   "decoys_flagged": 1,
+   "clean_control_findings": 50,
+   "unlabeled_findings_in_defect_variants": 64,
+   "findings": 162
+  },
+  "visual-layout/measured_only": {
+   "detected": 3,
+   "defects": 28,
+   "recall_strict": 0.107,
+   "decoys_flagged": 3,
+   "clean_control_findings": 6,
+   "unlabeled_findings_in_defect_variants": 7,
+   "findings": 16
+  },
+  "visual-layout/single_profile": {
+   "detected": 6,
+   "defects": 28,
+   "recall_strict": 0.214,
+   "decoys_flagged": 4,
+   "clean_control_findings": 18,
+   "unlabeled_findings_in_defect_variants": 13,
+   "findings": 51
+  },
+  "visual-layout/swarm": {
+   "detected": 6,
+   "defects": 28,
+   "recall_strict": 0.214,
+   "decoys_flagged": 4,
+   "clean_control_findings": 40,
+   "unlabeled_findings_in_defect_variants": 25,
+   "findings": 92
+  }
+ },
+ "first_blind": {
+  "visual-layout/measured_only": {
+   "detected": 19,
+   "defects": 28,
+   "recall_strict": 0.679,
+   "decoys_flagged": 3,
+   "clean_control_findings": 6,
+   "unlabeled_findings_in_defect_variants": 7,
+   "findings": 33
+  },
+  "visual-layout/single_profile": {
+   "detected": 22,
+   "defects": 28,
+   "recall_strict": 0.786,
+   "decoys_flagged": 4,
+   "clean_control_findings": 18,
+   "unlabeled_findings_in_defect_variants": 19,
+   "findings": 68
+  },
+  "visual-layout/swarm": {
+   "detected": 22,
+   "defects": 28,
+   "recall_strict": 0.786,
+   "decoys_flagged": 4,
+   "clean_control_findings": 40,
+   "unlabeled_findings_in_defect_variants": 35,
+   "findings": 109
+  }
+ },
+ "final": {
+  "visual-layout/measured_only": {
+   "detected": 25,
+   "defects": 28,
+   "recall_strict": 0.893,
+   "decoys_flagged": 3,
+   "clean_control_findings": 6,
+   "unlabeled_findings_in_defect_variants": 7,
+   "findings": 44
+  },
+  "visual-layout/single_profile": {
+   "detected": 28,
+   "defects": 28,
+   "recall_strict": 1.0,
+   "decoys_flagged": 4,
+   "clean_control_findings": 18,
+   "unlabeled_findings_in_defect_variants": 19,
+   "findings": 79
+  },
+  "visual-layout/swarm": {
+   "detected": 28,
+   "defects": 28,
+   "recall_strict": 1.0,
+   "decoys_flagged": 4,
+   "clean_control_findings": 40,
+   "unlabeled_findings_in_defect_variants": 38,
+   "findings": 120
+  },
+  "mobile-commerce/measured_only": {
+   "detected": 6,
+   "defects": 17,
+   "recall_strict": 0.353,
+   "decoys_flagged": 0,
+   "clean_control_findings": 7,
+   "unlabeled_findings_in_defect_variants": 11,
+   "findings": 27
+  },
+  "mobile-commerce/single_profile": {
+   "detected": 11,
+   "defects": 17,
+   "recall_strict": 0.647,
+   "decoys_flagged": 0,
+   "clean_control_findings": 14,
+   "unlabeled_findings_in_defect_variants": 22,
+   "findings": 62
+  },
+  "mobile-commerce/swarm": {
+   "detected": 14,
+   "defects": 17,
+   "recall_strict": 0.824,
+   "decoys_flagged": 1,
+   "clean_control_findings": 23,
+   "unlabeled_findings_in_defect_variants": 24,
+   "findings": 81
+  },
+  "game-desktop/measured_only": {
+   "detected": 6,
+   "defects": 16,
+   "recall_strict": 0.375,
+   "decoys_flagged": 0,
+   "clean_control_findings": 19,
+   "unlabeled_findings_in_defect_variants": 21,
+   "findings": 54
+  },
+  "game-desktop/single_profile": {
+   "detected": 11,
+   "defects": 16,
+   "recall_strict": 0.688,
+   "decoys_flagged": 0,
+   "clean_control_findings": 28,
+   "unlabeled_findings_in_defect_variants": 34,
+   "findings": 83
+  },
+  "game-desktop/swarm": {
+   "detected": 15,
+   "defects": 16,
+   "recall_strict": 0.938,
+   "decoys_flagged": 0,
+   "clean_control_findings": 28,
+   "unlabeled_findings_in_defect_variants": 31,
+   "findings": 84
+  },
+  "heldout-mixed/measured_only": {
+   "detected": 3,
+   "defects": 20,
+   "recall_strict": 0.15,
+   "decoys_flagged": 0,
+   "clean_control_findings": 31,
+   "unlabeled_findings_in_defect_variants": 46,
+   "findings": 84
+  },
+  "heldout-mixed/single_profile": {
+   "detected": 8,
+   "defects": 20,
+   "recall_strict": 0.4,
+   "decoys_flagged": 1,
+   "clean_control_findings": 41,
+   "unlabeled_findings_in_defect_variants": 66,
+   "findings": 137
+  },
+  "heldout-mixed/swarm": {
+   "detected": 18,
+   "defects": 20,
+   "recall_strict": 0.9,
+   "decoys_flagged": 1,
+   "clean_control_findings": 50,
+   "unlabeled_findings_in_defect_variants": 64,
+   "findings": 162
+  }
+ }
+}

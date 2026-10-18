@@ -12,7 +12,7 @@ Strict scoring (`bench.score` with exact page-level matching): a finding counts 
 | First blind score | 19 / 28 | 22 / 28 | 3 / 4 | 6 / 18 |
 | After fixes made on seeing the misses | 25 / 28 | 28 / 28 | 3 / 4 | 6 / 18 |
 
-The suite has 11 decoys and four clean twins. The decoy and clean-twin counts did not change: the new checks added no finding on a decoy or a clean page. The first blind score is the held-out number. The last row is a development fit; four fixes followed the misses (an `overflow-x: hidden` wrapper read as a scroll container, a cell whose text had already run past the edge, a ribbon over one word, a list too long for one screen).
+The suite has 11 decoys and four clean twins. The decoy and clean-twin counts did not change: the new checks added no finding on a decoy or a clean page. The first blind score is the held-out number. The last row is a development fit; four fixes followed the misses (an `overflow-x: hidden` wrapper read as a scroll container, a cell whose text had already run past the edge, a ribbon over one word, a list too long for one screen). Changes made after the second review (floating fixed elements, row alignment by the container's alignment, squeezed gaps only) left every score unchanged. Every number on this page is in [`visual-layout-20261018.json`](visual-layout-20261018.json).
 
 By family at the final score, measured checks find all of cut text (own box, clipping ancestor, past the screen edge), text under fixed bars, badge and margin overlap, overlapping heading lines, near-miss alignment and uneven list spacing. Text below 11 px is found only by the profile-based reading-size check (PC-04), since whether small print matters (a coupon condition versus a legal footer) needs judgment.
 
