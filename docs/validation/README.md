@@ -6,8 +6,8 @@ Each record names the suite, the detector or skill version it measured, and the 
 
 | Record | What it measures | Reproduce |
 | --- | --- | --- |
-| Visual-layout benchmark | Measured scan checks (LY-01 to LY-05 with contrast, target size and reflow) on a suite of seeded rendered defects, clean twins and decoys written blind to the detector | `python3 skills/remorsearch-ux-qa/scripts/ergo_bench.py --suite benchmarks/visual-layout --out .ergo-bench/visual-layout` |
-| Regression on the earlier suites | Recall and clean-control findings of the same suites before and after the layout checks | `python3 skills/remorsearch-ux-qa/scripts/ergo_bench.py --suite benchmarks/<suite> --out .ergo-bench/<suite>` for `mobile-commerce`, `game-desktop` and `heldout-mixed` |
+| [`visual-layout-20261018.md`](visual-layout-20261018.md) | Measured scan checks (LY-01 to LY-05 with contrast, target size and reflow) on 28 seeded rendered defects, 11 decoys and four clean twins written blind to the detector, and the earlier suites before and after | `python3 skills/remorsearch-ux-qa/scripts/ergo_bench.py --suite benchmarks/visual-layout --out .ergo-bench/visual-layout` |
+| [`agent-comparison-20261018/`](agent-comparison-20261018/README.md) | The same agent with and without the skill on the same pages, tools and budget: defects found, false alarms and time | Prompts, raw findings and the scoring rule are in the folder |
 
 ## Ergonomics engine
 

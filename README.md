@@ -15,6 +15,8 @@ Remorsearch UX QA is a skill for Claude Code and Codex that checks and improves 
 
 You do not pick components. Ask for a UI check, a UX improvement, research or an accessibility review, and the skill loads only what that request needs.
 
+On a blind benchmark of 28 rendered defects, 11 decoys and four clean twins ([`visual-layout-20261018.md`](docs/validation/visual-layout-20261018.md)), the scan's measured checks found 19 defects on first contact (3 before these checks) and 25 after follow-up fixes, with no new finding on a decoy or clean page and no change on the earlier suites. In an agent comparison on the same pages ([agent comparison](docs/validation/agent-comparison-20261018/README.md)), the same model found 28 of 28 with the skill and 27 of 28 without it, finishing its report in 7m04s and 7m25s; at low reasoning effort the skill raised detection from 22 to 24 and took about three minutes longer. These are one suite and one or two runs per condition.
+
 ## Install
 
 ```sh
