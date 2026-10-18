@@ -17,7 +17,7 @@ Execute with existing image, browser and Figma tools; add no harness or dependen
 | --- | --- |
 | alignment | Component edges/baselines and container/grid rule; quote the affected labels and coordinates. |
 | spacing | Measured padding/gap against a repeated local instance/token/intent; account for wrapped copy and component roles. |
-| typography | Actual loaded font, size/weight/line height, text/line bounds and visible wrapping against the reference role. |
+| typography | Actual loaded font, size/weight/line height, text/line bounds and visible wrapping against the reference role. Korean lines must not split a word or start with `·` or closing punctuation; check each engine and width. |
 | clipping | Exact missing glyph/line, text bounds, clipping ancestor chain and pixels after scroll/reveal; map to `text_clipping`. |
 | occlusion | Covering layer/stack, affected text/control and pixels; check opacity, hit testing and reachability; map to `component_occlusion`. |
 | figma_fidelity | Matching node/version/state and viewed actual/reference regions; record source defects and approved deviations separately. |

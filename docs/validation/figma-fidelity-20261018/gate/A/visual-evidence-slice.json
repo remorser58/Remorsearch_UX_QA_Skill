@@ -1,0 +1,107 @@
+{
+ "mode": "live",
+ "policy": {
+  "retention_days": 7
+ },
+ "artifacts": [
+  {
+   "id": "actual-390-top",
+   "path": "actual-390-top.png",
+   "kind": "screenshot",
+   "sha256": "691cb62e3433a79d6ff017abed8eb8ace6e3df27caaff3373ef88c958cb60a16",
+   "created_at": "2026-10-18T01:14:39.818Z",
+   "provenance": "live"
+  },
+  {
+   "id": "reference-390-top",
+   "path": "reference-390-top.png",
+   "kind": "screenshot",
+   "sha256": "b6585cceb06e858691d0fe7a5a3b1b865e58664d08f3cad6ec8d8ae7f2e90b4a",
+   "created_at": "2026-10-18T02:03:56.083938+00:00",
+   "provenance": "live"
+  },
+  {
+   "id": "figma-readback",
+   "path": "figma-readback.json",
+   "kind": "figma_readback",
+   "sha256": "385d8a80083911e8a65b1f01308baa8b4965114fc89f24a7164b42abfc2cc399",
+   "created_at": "2026-10-18T02:03:56.083938+00:00",
+   "provenance": "live"
+  },
+  {
+   "id": "visual-report",
+   "path": "visual-report.json",
+   "kind": "visual_report",
+   "sha256": "8217aca68acbf175d571e7ab33930645e1a75b0e77fde8ccb6457afd3285b433",
+   "created_at": "2026-10-18T02:03:56.083938+00:00",
+   "provenance": "live"
+  }
+ ],
+ "browser_runs": [
+  {
+   "id": "portfolio-390-top-A",
+   "scenario_digest": "e9f3fcc071bd726d09d2545854012778004818d71e409f9024106f88575f5c04",
+   "code_revision": "09fa14e360dcfcfa9db51f5112514b8ea0a131e3",
+   "started_at": "2026-10-18T01:14:39.818Z",
+   "ended_at": "2026-10-18T01:14:39.818Z"
+  }
+ ],
+ "scenarios": [],
+ "visual_checks": [
+  {
+   "id": "portfolio-390-top-A",
+   "run_id": "portfolio-390-top-A",
+   "figma_id": "portfolio-figma-v2",
+   "file_key": "ikOHVXrV47diF5hmrympEr",
+   "branch_key": "main",
+   "baseline_version": "sha256:6d650d82f65d279693651a76dcb3ce08390d797724b280367136c7dd69fd81b7",
+   "readback_version": "sha256:6d650d82f65d279693651a76dcb3ce08390d797724b280367136c7dd69fd81b7",
+   "node_ids": [
+    "14:2"
+   ],
+   "route": "/cases/ax-workflow-plugins/",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "device_scale_factor": 1
+   },
+   "actual_artifact_id": "actual-390-top",
+   "reference_artifact_id": "reference-390-top",
+   "comparison_artifact_id": "visual-report",
+   "status": "unknown",
+   "method": "review",
+   "reviewer": "independent reviewer A (blind to build identity)",
+   "checks": {
+    "layout": "passed",
+    "interaction_states": "unknown",
+    "alignment": "passed",
+    "spacing": "passed",
+    "typography": "passed",
+    "text_clipping": "passed",
+    "component_occlusion": "passed",
+    "figma_fidelity": "passed",
+    "side_accents": "passed"
+   },
+   "reason": "Eight static aspects pass for this pair, but interaction_states cannot be established from static images, so the comparison cannot be reported as passed."
+  }
+ ],
+ "bundle": {
+  "records": {
+   "figma": [
+    {
+     "id": "portfolio-figma-v2",
+     "file_key": "ikOHVXrV47diF5hmrympEr",
+     "branch_key": "main",
+     "baseline_version": "sha256:6d650d82f65d279693651a76dcb3ce08390d797724b280367136c7dd69fd81b7",
+     "readback_version": "sha256:6d650d82f65d279693651a76dcb3ce08390d797724b280367136c7dd69fd81b7",
+     "node_ids": [
+      "14:2"
+     ],
+     "read_at": "2026-10-18T02:03:56.083938+00:00",
+     "design_status": "approved",
+     "readback_artifact_ref": "figma-readback"
+    }
+   ]
+  }
+ }
+}

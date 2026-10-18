@@ -1,0 +1,1967 @@
+{
+ "file_key": "ikOHVXrV47diF5hmrympEr",
+ "node_id": "14:2",
+ "name": "REA Case Detail / Mobile v2 — 2026-10-18",
+ "source_frame_preserved": "2:2",
+ "frame": {
+  "width": 390,
+  "height": 3528,
+  "fill": "#FFFFFF"
+ },
+ "read_at": "2026-10-18",
+ "font_note": "Pretendard is not available in this Figma catalog; Noto Sans KR Bold/Regular is used. Line breaks in Figma are explicit per word to avoid mid-word Korean wrapping.",
+ "export_png_sha256": "1d7321d506575f0b02437235d39370509da158569fed64364d08afd6c809d93e",
+ "nodes": [
+  {
+   "id": "14:3",
+   "name": "Header",
+   "type": "FRAME",
+   "parent": "14:2",
+   "box": [
+    0,
+    0,
+    390,
+    232
+   ],
+   "fills": [
+    "#FFFFFF"
+   ],
+   "lm": "VERTICAL",
+   "gap": 12,
+   "pad": [
+    28,
+    24,
+    24,
+    24
+   ],
+   "clip": false
+  },
+  {
+   "id": "14:4",
+   "name": "← 전체 사례",
+   "type": "TEXT",
+   "parent": "14:3",
+   "box": [
+    24,
+    28,
+    342,
+    17
+   ],
+   "fills": [
+    "#5C5C61"
+   ],
+   "text": "← 전체 사례",
+   "chars": 7,
+   "font": "Noto Sans KR Regular",
+   "fs": 14,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:5",
+   "name": "조코딩 AX 인재전쟁",
+   "type": "TEXT",
+   "parent": "14:3",
+   "box": [
+    24,
+    57,
+    342,
+    43
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "조코딩 AX 인재전쟁",
+   "chars": 11,
+   "font": "Noto Sans KR Bold",
+   "fs": 36,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:6",
+   "name": "2026-08-12 · ax · automation · human-rev",
+   "type": "TEXT",
+   "parent": "14:3",
+   "box": [
+    24,
+    112,
+    342,
+    40
+   ],
+   "fills": [
+    "#5C5C61"
+   ],
+   "text": "2026-08-12 · ax · automation · human-review · 문제 선정·감사 절차 설계",
+   "chars": 74,
+   "font": "Noto Sans KR Regular",
+   "fs": 13,
+   "lh": "150%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:7",
+   "name": "AI 상담이 쓸 지식을 올리기 전에, 어긋난 내용과 빠진 안내는 누가 걸",
+   "type": "TEXT",
+   "parent": "14:3",
+   "box": [
+    24,
+    164,
+    342,
+    44
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "AI 상담이 쓸 지식을 올리기 전에, 어긋난 내용과 빠진 안내는 누가 걸러낼까?",
+   "chars": 44,
+   "font": "Noto Sans KR Bold",
+   "fs": 18,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:8",
+   "name": "Section navigation",
+   "type": "FRAME",
+   "parent": "14:2",
+   "box": [
+    0,
+    232,
+    390,
+    80
+   ],
+   "fills": [
+    "#FFFFFF"
+   ],
+   "lm": "VERTICAL",
+   "gap": 8,
+   "pad": [
+    12,
+    24,
+    24,
+    24
+   ],
+   "clip": true
+  },
+  {
+   "id": "14:9",
+   "name": "Section links",
+   "type": "FRAME",
+   "parent": "14:8",
+   "box": [
+    24,
+    244,
+    166,
+    44
+   ],
+   "fills": [
+    "#FFFFFF"
+   ],
+   "lm": "HORIZONTAL",
+   "gap": 8,
+   "pad": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "clip": true
+  },
+  {
+   "id": "14:10",
+   "name": "Section link / 요약",
+   "type": "FRAME",
+   "parent": "14:9",
+   "box": [
+    24,
+    244,
+    50,
+    44
+   ],
+   "fills": [
+    "#FFFFFF"
+   ],
+   "strokes": [
+    "#D6D6D9"
+   ],
+   "sw": 1,
+   "radius": 6,
+   "lm": "HORIZONTAL",
+   "gap": 0,
+   "pad": [
+    13,
+    12,
+    13,
+    12
+   ],
+   "clip": true
+  },
+  {
+   "id": "14:11",
+   "name": "요약",
+   "type": "TEXT",
+   "parent": "14:10",
+   "box": [
+    37,
+    258,
+    24,
+    16
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "요약",
+   "chars": 2,
+   "font": "Noto Sans KR Bold",
+   "fs": 13,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:12",
+   "name": "Section link / 과정",
+   "type": "FRAME",
+   "parent": "14:9",
+   "box": [
+    82,
+    244,
+    50,
+    44
+   ],
+   "fills": [
+    "#FFFFFF"
+   ],
+   "strokes": [
+    "#D6D6D9"
+   ],
+   "sw": 1,
+   "radius": 6,
+   "lm": "HORIZONTAL",
+   "gap": 0,
+   "pad": [
+    13,
+    12,
+    13,
+    12
+   ],
+   "clip": true
+  },
+  {
+   "id": "14:13",
+   "name": "과정",
+   "type": "TEXT",
+   "parent": "14:12",
+   "box": [
+    95,
+    258,
+    24,
+    16
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "과정",
+   "chars": 2,
+   "font": "Noto Sans KR Bold",
+   "fs": 13,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:14",
+   "name": "Section link / 본문",
+   "type": "FRAME",
+   "parent": "14:9",
+   "box": [
+    140,
+    244,
+    50,
+    44
+   ],
+   "fills": [
+    "#FFFFFF"
+   ],
+   "strokes": [
+    "#D6D6D9"
+   ],
+   "sw": 1,
+   "radius": 6,
+   "lm": "HORIZONTAL",
+   "gap": 0,
+   "pad": [
+    13,
+    12,
+    13,
+    12
+   ],
+   "clip": true
+  },
+  {
+   "id": "14:15",
+   "name": "본문",
+   "type": "TEXT",
+   "parent": "14:14",
+   "box": [
+    153,
+    258,
+    24,
+    16
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "본문",
+   "chars": 2,
+   "font": "Noto Sans KR Bold",
+   "fs": 13,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:16",
+   "name": "Summary",
+   "type": "FRAME",
+   "parent": "14:2",
+   "box": [
+    0,
+    312,
+    390,
+    606
+   ],
+   "fills": [
+    "#FFFFFF"
+   ],
+   "lm": "VERTICAL",
+   "gap": 12,
+   "pad": [
+    36,
+    24,
+    24,
+    24
+   ],
+   "clip": false
+  },
+  {
+   "id": "14:17",
+   "name": "OUTPUT",
+   "type": "TEXT",
+   "parent": "14:16",
+   "box": [
+    24,
+    348,
+    342,
+    14
+   ],
+   "fills": [
+    "#7C4DFF"
+   ],
+   "text": "OUTPUT",
+   "chars": 6,
+   "font": "Noto Sans KR Bold",
+   "fs": 12,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:18",
+   "name": "등록 전에 걸러진 ALF 지식",
+   "type": "TEXT",
+   "parent": "14:16",
+   "box": [
+    24,
+    374,
+    342,
+    29
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "등록 전에 걸러진 ALF 지식",
+   "chars": 16,
+   "font": "Noto Sans KR Bold",
+   "fs": 24,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:19",
+   "name": "Hairline",
+   "type": "RECTANGLE",
+   "parent": "14:16",
+   "box": [
+    24,
+    415,
+    342,
+    1
+   ],
+   "fills": [
+    "#D6D6D9"
+   ]
+  },
+  {
+   "id": "14:20",
+   "name": "INPUT",
+   "type": "TEXT",
+   "parent": "14:16",
+   "box": [
+    24,
+    428,
+    342,
+    14
+   ],
+   "fills": [
+    "#7C4DFF"
+   ],
+   "text": "INPUT",
+   "chars": 5,
+   "font": "Noto Sans KR Bold",
+   "fs": 12,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:21",
+   "name": "흩어진 쇼핑몰 지식 문서",
+   "type": "TEXT",
+   "parent": "14:16",
+   "box": [
+    24,
+    454,
+    342,
+    29
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "흩어진 쇼핑몰 지식 문서",
+   "chars": 13,
+   "font": "Noto Sans KR Bold",
+   "fs": 24,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:22",
+   "name": "Hairline",
+   "type": "RECTANGLE",
+   "parent": "14:16",
+   "box": [
+    24,
+    495,
+    342,
+    1
+   ],
+   "fills": [
+    "#D6D6D9"
+   ]
+  },
+  {
+   "id": "14:23",
+   "name": "PIN",
+   "type": "TEXT",
+   "parent": "14:16",
+   "box": [
+    24,
+    508,
+    342,
+    14
+   ],
+   "fills": [
+    "#7C4DFF"
+   ],
+   "text": "PIN",
+   "chars": 3,
+   "font": "Noto Sans KR Bold",
+   "fs": 12,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:24",
+   "name": "제약 검사 · 충돌 후보 표시 · 공백 확인 · 사람 확정",
+   "type": "TEXT",
+   "parent": "14:16",
+   "box": [
+    24,
+    534,
+    342,
+    58
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "제약 검사 · 충돌 후보 표시 · 공백 확인 · 사람 확정",
+   "chars": 32,
+   "font": "Noto Sans KR Bold",
+   "fs": 24,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:25",
+   "name": "Hairline",
+   "type": "RECTANGLE",
+   "parent": "14:16",
+   "box": [
+    24,
+    604,
+    342,
+    1
+   ],
+   "fills": [
+    "#D6D6D9"
+   ]
+  },
+  {
+   "id": "14:26",
+   "name": "Result emphasis",
+   "type": "FRAME",
+   "parent": "14:16",
+   "box": [
+    24,
+    617,
+    342,
+    277
+   ],
+   "fills": [
+    "#7C4DFF"
+   ],
+   "lm": "VERTICAL",
+   "gap": 16,
+   "pad": [
+    24,
+    24,
+    24,
+    24
+   ],
+   "clip": false
+  },
+  {
+   "id": "14:63",
+   "name": "Result copy",
+   "type": "FRAME",
+   "parent": "14:26",
+   "box": [
+    48,
+    641,
+    294,
+    169
+   ],
+   "lm": "VERTICAL",
+   "gap": 10,
+   "pad": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "clip": true
+  },
+  {
+   "id": "14:27",
+   "name": "RESULT",
+   "type": "TEXT",
+   "parent": "14:63",
+   "box": [
+    48,
+    641,
+    294,
+    14
+   ],
+   "fills": [
+    "#FFFFFF"
+   ],
+   "text": "RESULT",
+   "chars": 6,
+   "font": "Noto Sans KR Bold",
+   "fs": 12,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:28",
+   "name": "단 6번의 프롬프트로, 예선 5,300여 명 가운데 채널톡 트랙 본선 진",
+   "type": "TEXT",
+   "parent": "14:63",
+   "box": [
+    48,
+    665,
+    294,
+    145
+   ],
+   "fills": [
+    "#FFFFFF"
+   ],
+   "text": "단 6번의 프롬프트로, 예선 5,300여 명 가운데 채널톡 트랙 본선 진출 10명에 이은 본선 예비 후보로,",
+   "chars": 78,
+   "font": "Noto Sans KR Bold",
+   "fs": 24,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:64",
+   "name": "Result link / Thread 후기",
+   "type": "FRAME",
+   "parent": "14:26",
+   "box": [
+    48,
+    826,
+    168,
+    44
+   ],
+   "strokes": [
+    "#FFFFFF@0.55"
+   ],
+   "sw": 1,
+   "radius": 6,
+   "lm": "HORIZONTAL",
+   "gap": 0,
+   "pad": [
+    13,
+    12,
+    13,
+    12
+   ],
+   "clip": true
+  },
+  {
+   "id": "14:65",
+   "name": "Thread 후기 보러 가기 ↗",
+   "type": "TEXT",
+   "parent": "14:64",
+   "box": [
+    61,
+    840,
+    142,
+    16
+   ],
+   "fills": [
+    "#FFFFFF"
+   ],
+   "text": "Thread 후기 보러 가기 ↗",
+   "chars": 17,
+   "font": "Noto Sans KR Bold",
+   "fs": 13,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "WIDTH_AND_HEIGHT"
+  },
+  {
+   "id": "14:29",
+   "name": "Process",
+   "type": "FRAME",
+   "parent": "14:2",
+   "box": [
+    0,
+    918,
+    390,
+    1868
+   ],
+   "fills": [
+    "#FFFFFF"
+   ],
+   "lm": "VERTICAL",
+   "gap": 12,
+   "pad": [
+    44,
+    24,
+    24,
+    24
+   ],
+   "clip": false
+  },
+  {
+   "id": "14:30",
+   "name": "PROCESS",
+   "type": "TEXT",
+   "parent": "14:29",
+   "box": [
+    24,
+    962,
+    342,
+    14
+   ],
+   "fills": [
+    "#7C4DFF"
+   ],
+   "text": "PROCESS",
+   "chars": 7,
+   "font": "Noto Sans KR Bold",
+   "fs": 12,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:31",
+   "name": "풀이과정",
+   "type": "TEXT",
+   "parent": "14:29",
+   "box": [
+    24,
+    988,
+    342,
+    36
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "풀이과정",
+   "chars": 4,
+   "font": "Noto Sans KR Bold",
+   "fs": 30,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "15:2",
+   "name": "Process step 01",
+   "type": "FRAME",
+   "parent": "14:29",
+   "box": [
+    24,
+    1036,
+    342,
+    340
+   ],
+   "lm": "HORIZONTAL",
+   "gap": 12,
+   "pad": [
+    16,
+    0,
+    16,
+    0
+   ],
+   "clip": true
+  },
+  {
+   "id": "15:3",
+   "name": "Step number / current",
+   "type": "TEXT",
+   "parent": "15:2",
+   "box": [
+    24,
+    1052,
+    16,
+    16
+   ],
+   "fills": [
+    "#7C4DFF"
+   ],
+   "text": "01",
+   "chars": 2,
+   "font": "Noto Sans KR Bold",
+   "fs": 13,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "WIDTH_AND_HEIGHT"
+  },
+  {
+   "id": "15:4",
+   "name": "Process copy 01",
+   "type": "FRAME",
+   "parent": "15:2",
+   "box": [
+    52,
+    1052,
+    280,
+    308
+   ],
+   "lm": "VERTICAL",
+   "gap": 6,
+   "pad": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "clip": true
+  },
+  {
+   "id": "15:5",
+   "name": "답변의 근거가 되는 지식부터 점검",
+   "type": "TEXT",
+   "parent": "15:4",
+   "box": [
+    52,
+    1052,
+    280,
+    22
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "답변의 근거가 되는 지식부터 점검",
+   "chars": 18,
+   "font": "Noto Sans KR Bold",
+   "fs": 18,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "15:6",
+   "name": "ALF는 등록된 지식을 근거로 답합니다. 지식이 정리되어 있어야 답변도 ",
+   "type": "TEXT",
+   "parent": "15:4",
+   "box": [
+    52,
+    1080,
+    280,
+    280
+   ],
+   "fills": [
+    "#5C5C61"
+   ],
+   "text": "ALF는 등록된 지식을 근거로 답합니다. 지식이 정리되어 있어야 답변도 정확해집니다. / 채널톡 공식 문서는",
+   "chars": 289,
+   "font": "Noto Sans KR Regular",
+   "fs": 14,
+   "lh": "160.0000023841858%",
+   "ps": 8,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "15:7",
+   "name": "Disclosure / expanded",
+   "type": "FRAME",
+   "parent": "15:2",
+   "box": [
+    344,
+    1052,
+    22,
+    22
+   ],
+   "lm": "NONE",
+   "gap": 0,
+   "pad": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "clip": false
+  },
+  {
+   "id": "15:8",
+   "name": "Minus",
+   "type": "RECTANGLE",
+   "parent": "15:7",
+   "box": [
+    348,
+    1063,
+    18,
+    1
+   ],
+   "fills": [
+    "#5C5C61"
+   ]
+  },
+  {
+   "id": "15:9",
+   "name": "Process step 02",
+   "type": "FRAME",
+   "parent": "14:29",
+   "box": [
+    24,
+    1388,
+    342,
+    318
+   ],
+   "lm": "HORIZONTAL",
+   "gap": 12,
+   "pad": [
+    16,
+    0,
+    16,
+    0
+   ],
+   "clip": true
+  },
+  {
+   "id": "15:10",
+   "name": "Step number",
+   "type": "TEXT",
+   "parent": "15:9",
+   "box": [
+    24,
+    1404,
+    16,
+    16
+   ],
+   "fills": [
+    "#5C5C61"
+   ],
+   "text": "02",
+   "chars": 2,
+   "font": "Noto Sans KR Bold",
+   "fs": 13,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "WIDTH_AND_HEIGHT"
+  },
+  {
+   "id": "15:11",
+   "name": "Process copy 02",
+   "type": "FRAME",
+   "parent": "15:9",
+   "box": [
+    52,
+    1404,
+    280,
+    286
+   ],
+   "lm": "VERTICAL",
+   "gap": 6,
+   "pad": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "clip": true
+  },
+  {
+   "id": "15:12",
+   "name": "등록 전 검사 단계의 공백을 원인으로 정의",
+   "type": "TEXT",
+   "parent": "15:11",
+   "box": [
+    52,
+    1404,
+    280,
+    44
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "등록 전 검사 단계의 공백을 원인으로 정의",
+   "chars": 23,
+   "font": "Noto Sans KR Bold",
+   "fs": 18,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "15:13",
+   "name": "흩어진 문서를 등록 전에 한 기준으로 검사하는 단계가 없었습니다. 반품 ",
+   "type": "TEXT",
+   "parent": "15:11",
+   "box": [
+    52,
+    1454,
+    280,
+    236
+   ],
+   "fills": [
+    "#5C5C61"
+   ],
+   "text": "흩어진 문서를 등록 전에 한 기준으로 검사하는 단계가 없었습니다. 반품 기한을 7일로 적은 문서와 14일로 ",
+   "chars": 248,
+   "font": "Noto Sans KR Regular",
+   "fs": 14,
+   "lh": "160.0000023841858%",
+   "ps": 8,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "15:14",
+   "name": "Disclosure / expanded",
+   "type": "FRAME",
+   "parent": "15:9",
+   "box": [
+    344,
+    1404,
+    22,
+    22
+   ],
+   "lm": "NONE",
+   "gap": 0,
+   "pad": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "clip": false
+  },
+  {
+   "id": "15:15",
+   "name": "Minus",
+   "type": "RECTANGLE",
+   "parent": "15:14",
+   "box": [
+    348,
+    1415,
+    18,
+    1
+   ],
+   "fills": [
+    "#5C5C61"
+   ]
+  },
+  {
+   "id": "15:16",
+   "name": "Process step 03",
+   "type": "FRAME",
+   "parent": "14:29",
+   "box": [
+    24,
+    1718,
+    342,
+    384
+   ],
+   "lm": "HORIZONTAL",
+   "gap": 12,
+   "pad": [
+    16,
+    0,
+    16,
+    0
+   ],
+   "clip": true
+  },
+  {
+   "id": "15:17",
+   "name": "Step number",
+   "type": "TEXT",
+   "parent": "15:16",
+   "box": [
+    24,
+    1734,
+    16,
+    16
+   ],
+   "fills": [
+    "#5C5C61"
+   ],
+   "text": "03",
+   "chars": 2,
+   "font": "Noto Sans KR Bold",
+   "fs": 13,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "WIDTH_AND_HEIGHT"
+  },
+  {
+   "id": "15:18",
+   "name": "Process copy 03",
+   "type": "FRAME",
+   "parent": "15:16",
+   "box": [
+    52,
+    1734,
+    280,
+    352
+   ],
+   "lm": "VERTICAL",
+   "gap": 6,
+   "pad": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "clip": true
+  },
+  {
+   "id": "15:19",
+   "name": "흩어진 문서 수집부터 감사 리포트까지",
+   "type": "TEXT",
+   "parent": "15:18",
+   "box": [
+    52,
+    1734,
+    280,
+    44
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "흩어진 문서 수집부터 감사 리포트까지",
+   "chars": 20,
+   "font": "Noto Sans KR Bold",
+   "fs": 18,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "15:20",
+   "name": "문서 전체를 올리기 전에 검사하려면 흩어진 소스를 먼저 모아야 했습니다.",
+   "type": "TEXT",
+   "parent": "15:18",
+   "box": [
+    52,
+    1784,
+    280,
+    302
+   ],
+   "fills": [
+    "#5C5C61"
+   ],
+   "text": "문서 전체를 올리기 전에 검사하려면 흩어진 소스를 먼저 모아야 했습니다. URL과 로컬 문서를 모아 같은 주",
+   "chars": 308,
+   "font": "Noto Sans KR Regular",
+   "fs": 14,
+   "lh": "160.0000023841858%",
+   "ps": 8,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "15:21",
+   "name": "Disclosure / expanded",
+   "type": "FRAME",
+   "parent": "15:16",
+   "box": [
+    344,
+    1734,
+    22,
+    22
+   ],
+   "lm": "NONE",
+   "gap": 0,
+   "pad": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "clip": false
+  },
+  {
+   "id": "15:22",
+   "name": "Minus",
+   "type": "RECTANGLE",
+   "parent": "15:21",
+   "box": [
+    348,
+    1745,
+    18,
+    1
+   ],
+   "fills": [
+    "#5C5C61"
+   ]
+  },
+  {
+   "id": "15:23",
+   "name": "Process step 04",
+   "type": "FRAME",
+   "parent": "14:29",
+   "box": [
+    24,
+    2114,
+    342,
+    362
+   ],
+   "lm": "HORIZONTAL",
+   "gap": 12,
+   "pad": [
+    16,
+    0,
+    16,
+    0
+   ],
+   "clip": true
+  },
+  {
+   "id": "15:24",
+   "name": "Step number",
+   "type": "TEXT",
+   "parent": "15:23",
+   "box": [
+    24,
+    2130,
+    16,
+    16
+   ],
+   "fills": [
+    "#5C5C61"
+   ],
+   "text": "04",
+   "chars": 2,
+   "font": "Noto Sans KR Bold",
+   "fs": 13,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "WIDTH_AND_HEIGHT"
+  },
+  {
+   "id": "15:25",
+   "name": "Process copy 04",
+   "type": "FRAME",
+   "parent": "15:23",
+   "box": [
+    52,
+    2130,
+    280,
+    330
+   ],
+   "lm": "VERTICAL",
+   "gap": 6,
+   "pad": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "clip": true
+  },
+  {
+   "id": "15:26",
+   "name": "규칙 검사는 자동으로, 마지막 판단은 사람이",
+   "type": "TEXT",
+   "parent": "15:25",
+   "box": [
+    52,
+    2130,
+    280,
+    44
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "규칙 검사는 자동으로, 마지막 판단은 사람이",
+   "chars": 24,
+   "font": "Noto Sans KR Bold",
+   "fs": 18,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "15:27",
+   "name": "정책 담당자가 확인할 항목을 구분할 수 있도록 찾은 문제를 성격에 따라 ",
+   "type": "TEXT",
+   "parent": "15:25",
+   "box": [
+    52,
+    2180,
+    280,
+    280
+   ],
+   "fills": [
+    "#5C5C61"
+   ],
+   "text": "정책 담당자가 확인할 항목을 구분할 수 있도록 찾은 문제를 성격에 따라 나눴습니다. 공개된 제약을 넘긴 항목",
+   "chars": 288,
+   "font": "Noto Sans KR Regular",
+   "fs": 14,
+   "lh": "160.0000023841858%",
+   "ps": 8,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "15:28",
+   "name": "Disclosure / expanded",
+   "type": "FRAME",
+   "parent": "15:23",
+   "box": [
+    344,
+    2130,
+    22,
+    22
+   ],
+   "lm": "NONE",
+   "gap": 0,
+   "pad": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "clip": false
+  },
+  {
+   "id": "15:29",
+   "name": "Minus",
+   "type": "RECTANGLE",
+   "parent": "15:28",
+   "box": [
+    348,
+    2141,
+    18,
+    1
+   ],
+   "fills": [
+    "#5C5C61"
+   ]
+  },
+  {
+   "id": "15:30",
+   "name": "Process step 05",
+   "type": "FRAME",
+   "parent": "14:29",
+   "box": [
+    24,
+    2488,
+    342,
+    274
+   ],
+   "lm": "HORIZONTAL",
+   "gap": 12,
+   "pad": [
+    16,
+    0,
+    16,
+    0
+   ],
+   "clip": true
+  },
+  {
+   "id": "15:31",
+   "name": "Step number",
+   "type": "TEXT",
+   "parent": "15:30",
+   "box": [
+    24,
+    2504,
+    16,
+    16
+   ],
+   "fills": [
+    "#5C5C61"
+   ],
+   "text": "05",
+   "chars": 2,
+   "font": "Noto Sans KR Bold",
+   "fs": 13,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "WIDTH_AND_HEIGHT"
+  },
+  {
+   "id": "15:32",
+   "name": "Process copy 05",
+   "type": "FRAME",
+   "parent": "15:30",
+   "box": [
+    52,
+    2504,
+    280,
+    242
+   ],
+   "lm": "VERTICAL",
+   "gap": 6,
+   "pad": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "clip": true
+  },
+  {
+   "id": "15:33",
+   "name": "결함 자료와 정상 자료에서 결과 확인",
+   "type": "TEXT",
+   "parent": "15:32",
+   "box": [
+    52,
+    2504,
+    280,
+    22
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "결함 자료와 정상 자료에서 결과 확인",
+   "chars": 20,
+   "font": "Noto Sans KR Bold",
+   "fs": 18,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "15:34",
+   "name": "만든 감사 절차가 자료에서 어떤 항목을 찾는지 확인하려고 결함을 심어 둔",
+   "type": "TEXT",
+   "parent": "15:32",
+   "box": [
+    52,
+    2532,
+    280,
+    214
+   ],
+   "fills": [
+    "#5C5C61"
+   ],
+   "text": "만든 감사 절차가 자료에서 어떤 항목을 찾는지 확인하려고 결함을 심어 둔 자료와 결함 없는 자료를 나눠 검증",
+   "chars": 190,
+   "font": "Noto Sans KR Regular",
+   "fs": 14,
+   "lh": "160.0000023841858%",
+   "ps": 8,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "15:35",
+   "name": "Disclosure / expanded",
+   "type": "FRAME",
+   "parent": "15:30",
+   "box": [
+    344,
+    2504,
+    22,
+    22
+   ],
+   "lm": "NONE",
+   "gap": 0,
+   "pad": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "clip": false
+  },
+  {
+   "id": "15:36",
+   "name": "Minus",
+   "type": "RECTANGLE",
+   "parent": "15:35",
+   "box": [
+    348,
+    2515,
+    18,
+    1
+   ],
+   "fills": [
+    "#5C5C61"
+   ]
+  },
+  {
+   "id": "14:47",
+   "name": "Body",
+   "type": "FRAME",
+   "parent": "14:2",
+   "box": [
+    0,
+    2786,
+    390,
+    312
+   ],
+   "fills": [
+    "#FFFFFF"
+   ],
+   "lm": "VERTICAL",
+   "gap": 12,
+   "pad": [
+    44,
+    24,
+    24,
+    24
+   ],
+   "clip": false
+  },
+  {
+   "id": "14:48",
+   "name": "본문",
+   "type": "TEXT",
+   "parent": "14:47",
+   "box": [
+    24,
+    2830,
+    342,
+    14
+   ],
+   "fills": [
+    "#7C4DFF"
+   ],
+   "text": "본문",
+   "chars": 2,
+   "font": "Noto Sans KR Bold",
+   "fs": 12,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "15:37",
+   "name": "Body content",
+   "type": "FRAME",
+   "parent": "14:47",
+   "box": [
+    24,
+    2856,
+    342,
+    218
+   ],
+   "lm": "VERTICAL",
+   "gap": 32,
+   "pad": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "clip": true
+  },
+  {
+   "id": "15:38",
+   "name": "Body block / 검증 범위",
+   "type": "FRAME",
+   "parent": "15:37",
+   "box": [
+    24,
+    2856,
+    342,
+    119
+   ],
+   "lm": "VERTICAL",
+   "gap": 12,
+   "pad": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "clip": true
+  },
+  {
+   "id": "15:39",
+   "name": "검증 범위",
+   "type": "TEXT",
+   "parent": "15:38",
+   "box": [
+    24,
+    2856,
+    342,
+    29
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "검증 범위",
+   "chars": 5,
+   "font": "Noto Sans KR Bold",
+   "fs": 24,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "15:40",
+   "name": "검증 범위는 결함을 심어 둔 자료, 결함 없는 자료, 채널톡 공개 도입 ",
+   "type": "TEXT",
+   "parent": "15:38",
+   "box": [
+    24,
+    2897,
+    342,
+    78
+   ],
+   "fills": [
+    "#5C5C61"
+   ],
+   "text": "검증 범위는 결함을 심어 둔 자료, 결함 없는 자료, 채널톡 공개 도입 사례로 소개된 쇼핑몰의 이용안내 페이",
+   "chars": 65,
+   "font": "Noto Sans KR Regular",
+   "fs": 16,
+   "lh": "160.0000023841858%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "15:41",
+   "name": "Body block / 관련 자료",
+   "type": "FRAME",
+   "parent": "15:37",
+   "box": [
+    24,
+    3007,
+    342,
+    67
+   ],
+   "lm": "VERTICAL",
+   "gap": 12,
+   "pad": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "clip": true
+  },
+  {
+   "id": "15:42",
+   "name": "관련 자료",
+   "type": "TEXT",
+   "parent": "15:41",
+   "box": [
+    24,
+    3007,
+    342,
+    29
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "관련 자료",
+   "chars": 5,
+   "font": "Noto Sans KR Bold",
+   "fs": 24,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "15:43",
+   "name": "Bullet link / Thread 후기 보러 가기",
+   "type": "FRAME",
+   "parent": "15:41",
+   "box": [
+    24,
+    3048,
+    342,
+    26
+   ],
+   "lm": "HORIZONTAL",
+   "gap": 0,
+   "pad": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "clip": true
+  },
+  {
+   "id": "15:44",
+   "name": "•",
+   "type": "TEXT",
+   "parent": "15:43",
+   "box": [
+    24,
+    3048,
+    26,
+    26
+   ],
+   "fills": [
+    "#7C4DFF"
+   ],
+   "text": "•",
+   "chars": 1,
+   "font": "Noto Sans KR Regular",
+   "fs": 16,
+   "lh": "160.0000023841858%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "15:45",
+   "name": "Thread 후기 보러 가기",
+   "type": "TEXT",
+   "parent": "15:43",
+   "box": [
+    50,
+    3048,
+    316,
+    26
+   ],
+   "fills": [
+    "#7C4DFF"
+   ],
+   "text": "Thread 후기 보러 가기",
+   "chars": 15,
+   "font": "Noto Sans KR Regular",
+   "fs": 16,
+   "lh": "160.0000023841858%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:51",
+   "name": "Related cases",
+   "type": "FRAME",
+   "parent": "14:2",
+   "box": [
+    0,
+    3098,
+    390,
+    430
+   ],
+   "fills": [
+    "#FFFFFF"
+   ],
+   "lm": "VERTICAL",
+   "gap": 12,
+   "pad": [
+    44,
+    24,
+    24,
+    24
+   ],
+   "clip": false
+  },
+  {
+   "id": "14:52",
+   "name": "MORE CASES",
+   "type": "TEXT",
+   "parent": "14:51",
+   "box": [
+    24,
+    3142,
+    342,
+    14
+   ],
+   "fills": [
+    "#7C4DFF"
+   ],
+   "text": "MORE CASES",
+   "chars": 10,
+   "font": "Noto Sans KR Bold",
+   "fs": 12,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:53",
+   "name": "같은 문제를 다른 장면에서 풀었습니다",
+   "type": "TEXT",
+   "parent": "14:51",
+   "box": [
+    24,
+    3168,
+    342,
+    62
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "같은 문제를 다른 장면에서 풀었습니다",
+   "chars": 20,
+   "font": "Noto Sans KR Bold",
+   "fs": 26,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:54",
+   "name": "Related case / OGC 2026 Autonomous Resea",
+   "type": "FRAME",
+   "parent": "14:51",
+   "box": [
+    24,
+    3242,
+    342,
+    94
+   ],
+   "fills": [
+    "#FFFFFF"
+   ],
+   "lm": "VERTICAL",
+   "gap": 6,
+   "pad": [
+    14,
+    0,
+    14,
+    0
+   ],
+   "clip": false
+  },
+  {
+   "id": "14:55",
+   "name": "OGC 2026 Autonomous Research System ↗",
+   "type": "TEXT",
+   "parent": "14:54",
+   "box": [
+    24,
+    3256,
+    342,
+    44
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "OGC 2026 Autonomous Research System ↗",
+   "chars": 37,
+   "font": "Noto Sans KR Bold",
+   "fs": 18,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:56",
+   "name": "optimization · automation · testing",
+   "type": "TEXT",
+   "parent": "14:54",
+   "box": [
+    24,
+    3306,
+    342,
+    16
+   ],
+   "fills": [
+    "#5C5C61"
+   ],
+   "text": "optimization · automation · testing",
+   "chars": 35,
+   "font": "Noto Sans KR Regular",
+   "fs": 13,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:57",
+   "name": "Related case / u-SAINT 학사 민원 프로토타입",
+   "type": "FRAME",
+   "parent": "14:51",
+   "box": [
+    24,
+    3348,
+    342,
+    72
+   ],
+   "fills": [
+    "#FFFFFF"
+   ],
+   "lm": "VERTICAL",
+   "gap": 6,
+   "pad": [
+    14,
+    0,
+    14,
+    0
+   ],
+   "clip": false
+  },
+  {
+   "id": "14:58",
+   "name": "u-SAINT 학사 민원 프로토타입 ↗",
+   "type": "TEXT",
+   "parent": "14:57",
+   "box": [
+    24,
+    3362,
+    342,
+    22
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "u-SAINT 학사 민원 프로토타입 ↗",
+   "chars": 21,
+   "font": "Noto Sans KR Bold",
+   "fs": 18,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:59",
+   "name": "ax · public-service · prototype",
+   "type": "TEXT",
+   "parent": "14:57",
+   "box": [
+    24,
+    3390,
+    342,
+    16
+   ],
+   "fills": [
+    "#5C5C61"
+   ],
+   "text": "ax · public-service · prototype",
+   "chars": 31,
+   "font": "Noto Sans KR Regular",
+   "fs": 13,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:60",
+   "name": "Related case / INPRO, WHYBIZ 인턴",
+   "type": "FRAME",
+   "parent": "14:51",
+   "box": [
+    24,
+    3432,
+    342,
+    72
+   ],
+   "fills": [
+    "#FFFFFF"
+   ],
+   "lm": "VERTICAL",
+   "gap": 6,
+   "pad": [
+    14,
+    0,
+    14,
+    0
+   ],
+   "clip": false
+  },
+  {
+   "id": "14:61",
+   "name": "INPRO, WHYBIZ 인턴 ↗",
+   "type": "TEXT",
+   "parent": "14:60",
+   "box": [
+    24,
+    3446,
+    342,
+    22
+   ],
+   "fills": [
+    "#1D1D1F"
+   ],
+   "text": "INPRO, WHYBIZ 인턴 ↗",
+   "chars": 18,
+   "font": "Noto Sans KR Bold",
+   "fs": 18,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  },
+  {
+   "id": "14:62",
+   "name": "data-quality · computer-vision · operati",
+   "type": "TEXT",
+   "parent": "14:60",
+   "box": [
+    24,
+    3474,
+    342,
+    16
+   ],
+   "fills": [
+    "#5C5C61"
+   ],
+   "text": "data-quality · computer-vision · operations",
+   "chars": 43,
+   "font": "Noto Sans KR Regular",
+   "fs": 13,
+   "lh": "120.00000476837158%",
+   "ps": 0,
+   "auto": "HEIGHT"
+  }
+ ]
+}

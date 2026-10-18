@@ -1,0 +1,31 @@
+{
+ "label": "A",
+ "code_revision": "09fa14e360dcfcfa9db51f5112514b8ea0a131e3",
+ "reviewer_status": "unknown",
+ "reviewer_checks": {
+  "layout": "passed",
+  "interaction_states": "unknown",
+  "alignment": "passed",
+  "spacing": "passed",
+  "typography": "passed",
+  "text_clipping": "passed",
+  "component_occlusion": "passed",
+  "figma_fidelity": "passed",
+  "side_accents": "passed"
+ },
+ "observations": 20,
+ "results": [
+  {
+   "requires_pass": false,
+   "accepted": false,
+   "status": "unknown",
+   "reason": "Visual comparison portfolio-390-top-A: Eight static aspects pass for this pair, but interaction_states cannot be established from static images, so the comparison cannot be reported as passed."
+  },
+  {
+   "requires_pass": true,
+   "accepted": false,
+   "status": "unknown",
+   "reason": "Visual comparison portfolio-390-top-A: Eight static aspects pass for this pair, but interaction_states cannot be established from static images, so the comparison cannot be reported as passed."
+  }
+ ]
+}

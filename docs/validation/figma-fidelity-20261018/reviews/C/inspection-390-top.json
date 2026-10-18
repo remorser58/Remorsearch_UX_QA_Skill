@@ -1,0 +1,437 @@
+{
+ "actual_artifact_id": "actual-390-top",
+ "reference_artifact_id": "reference-390-top",
+ "actual_capture": {
+  "path": "build-C/chromium/web-390-00.png",
+  "sha256": "691cb62e3433a79d6ff017abed8eb8ace6e3df27caaff3373ef88c958cb60a16",
+  "captured_at": "2026-10-18T02:05:17.755Z",
+  "surface_url": "http://127.0.0.1:4332/cases/ax-workflow-plugins/",
+  "build_id": "a6ec654",
+  "engine": "Chromium 141.0.7390.37 (Playwright 1.56.1)",
+  "viewport": "390x844 CSS px",
+  "device_scale": 1,
+  "scrollY": 0
+ },
+ "reference_export": {
+  "path": "reference/figma-14-2-top-390x844.png",
+  "sha256": "b6585cceb06e858691d0fe7a5a3b1b865e58664d08f3cad6ec8d8ae7f2e90b4a",
+  "derived_from": "reference/figma-14-2.png (sha256 1d7321d506575f0b02437235d39370509da158569fed64364d08afd6c809d93e), crop [0,0,390,844], export scale 1"
+ },
+ "figma": {
+  "file_key": "ikOHVXrV47diF5hmrympEr",
+  "node_ids": [
+   "14:2"
+  ],
+  "read_at": "2026-10-18",
+  "readback_artifact_ref": "reference/figma-14-2-readback.json",
+  "branch_key": null,
+  "baseline_version": null,
+  "readback_version": null,
+  "editable": null
+ },
+ "coordinate_space": "screenshot pixels; both images 390x844 at device scale 1",
+ "method": "review",
+ "reviewer": "claude-opus-5-5 (independent self review)",
+ "checks": {
+  "layout": "passed",
+  "interaction_states": "unknown",
+  "alignment": "passed",
+  "spacing": "passed",
+  "typography": "passed",
+  "text_clipping": "passed",
+  "component_occlusion": "passed",
+  "figma_fidelity": "passed",
+  "side_accents": "passed"
+ },
+ "status": "unknown",
+ "reason": "Every static aspect passed with viewed pixels; differences are the approved Pretendard/Noto Sans KR substitution and 1-3px drift. interaction_states cannot be established from static images, so the overall comparison stays unknown rather than passed.",
+ "inspection": {
+  "viewed_artifact_ids": [
+   "actual-390-top",
+   "reference-390-top"
+  ],
+  "image_tool": "view_image",
+  "observations": [
+   {
+    "region": "Top viewport structure: '← 전체 사례', H1, meta, problem, section links, OUTPUT/INPUT/PIN rows, RESULT card",
+    "actual_box": [
+     0,
+     0,
+     390,
+     844
+    ],
+    "reference_box": [
+     0,
+     0,
+     390,
+     844
+    ],
+    "aspect": "layout",
+    "status": "passed",
+    "observed": "Same blocks in the same order. Ink tops (actual/reference): back link 30/31, H1 62/63, meta 116/117, problem 165/167, links 242/244, OUTPUT label 348/351, RESULT card 616/617.",
+    "expected": "Node 14:2 children 14:3 Header, 14:8 Section navigation and 14:16 Summary in vertical order at the readback boxes."
+   },
+   {
+    "region": "Left text column: '← 전체 사례', '조코딩 AX 인재전쟁', meta line, 'AI 상담이 쓸 지식을 올리기 전에, …'",
+    "actual_box": [
+     24,
+     30,
+     331,
+     174
+    ],
+    "reference_box": [
+     24,
+     31,
+     312,
+     175
+    ],
+    "aspect": "alignment",
+    "status": "passed",
+    "observed": "All four blocks start at x=24-25 in both images (ink left edges 25, 25, 25, 24 in each).",
+    "expected": "Header frame 14:3 left padding 24; text nodes 14:4-14:7 at x=24."
+   },
+   {
+    "region": "Section links '요약' '과정' '본문'",
+    "actual_box": [
+     24,
+     242,
+     161,
+     44
+    ],
+    "reference_box": [
+     24,
+     244,
+     166,
+     44
+    ],
+    "aspect": "alignment",
+    "status": "passed",
+    "observed": "Row starts at x=24 with 8px gaps (computed x=24, 80.5, 137); boxes are 48.5px wide vs 50 because Pretendard glyphs are narrower (approved font deviation).",
+    "expected": "14:9 horizontal row, gap 8; 14:10/14:12/14:14 at x=24/82/140, 50x44."
+   },
+   {
+    "region": "RESULT card edges and inner start of 'RESULT' and copy",
+    "actual_box": [
+     24,
+     616,
+     342,
+     228
+    ],
+    "reference_box": [
+     24,
+     617,
+     342,
+     227
+    ],
+    "aspect": "alignment",
+    "status": "passed",
+    "observed": "Purple fill spans x=24-365 at y=700 in both images; 'RESULT' label and copy ink start at x=49 in both.",
+    "expected": "14:26 at [24,617,342,277] with 24px padding, so copy starts at x=48."
+   },
+   {
+    "region": "Summary rows OUTPUT, INPUT, PIN with hairlines",
+    "actual_box": [
+     24,
+     346,
+     342,
+     258
+    ],
+    "reference_box": [
+     24,
+     348,
+     342,
+     257
+    ],
+    "aspect": "spacing",
+    "status": "passed",
+    "observed": "Hairlines at y=413, 494, 603 vs 415, 495, 604; label-to-value and value-to-hairline gaps match within 2px.",
+    "expected": "14:16 vertical gap 12; hairlines 14:19, 14:22, 14:25 at y=415, 495, 604."
+   },
+   {
+    "region": "Gap from problem statement to section links to OUTPUT label",
+    "actual_box": [
+     24,
+     204,
+     342,
+     144
+    ],
+    "reference_box": [
+     24,
+     206,
+     342,
+     145
+    ],
+    "aspect": "spacing",
+    "status": "passed",
+    "observed": "Problem ink bottom to link top 38px in both (204 to 242, 206 to 244); link bottom to OUTPUT ink 62px vs 63px.",
+    "expected": "14:3 bottom padding 24 plus 14:8 top padding 12; 14:8 bottom padding 24 plus 14:16 top padding 36."
+   },
+   {
+    "region": "PIN hairline to RESULT card",
+    "actual_box": [
+     24,
+     603,
+     342,
+     14
+    ],
+    "reference_box": [
+     24,
+     604,
+     342,
+     14
+    ],
+    "aspect": "spacing",
+    "status": "passed",
+    "observed": "12px of white between the 1px hairline and the card top in both images (604 to 616, 605 to 617).",
+    "expected": "14:16 gap 12 between hairline 14:25 and Result emphasis 14:26."
+   },
+   {
+    "region": "H1 '조코딩 AX 인재전쟁'",
+    "actual_box": [
+     25,
+     62,
+     282,
+     32
+    ],
+    "reference_box": [
+     25,
+     63,
+     289,
+     33
+    ],
+    "aspect": "typography",
+    "status": "passed",
+    "observed": "Computed 36px, weight 700, line height 43.2px, rgb(29,29,31); ink 282x32 vs 289x33, narrower because the build uses Pretendard.",
+    "expected": "14:5 Noto Sans KR Bold 36, line height 120%, #1D1D1F; the font substitution is an approved deviation."
+   },
+   {
+    "region": "Meta '2026-08-12 · ax · automation · human-review · 문제 선정·감사 절차 설계·Codex 플러그인 구현' and problem 'AI 상담이 쓸 지식을 올리기 전에, 어긋난 내용과 빠진 안내는 누가 걸러낼까?'",
+    "actual_box": [
+     24,
+     116,
+     331,
+     88
+    ],
+    "reference_box": [
+     24,
+     117,
+     312,
+     89
+    ],
+    "aspect": "typography",
+    "status": "passed",
+    "observed": "Meta 13/400/19.5 rgb(92,92,97) and problem 18/700/21.6 rgb(29,29,31) as computed; both wrap to two lines, breaking at '선정· / 감사' and '내용과 / 빠진' instead of '문제 / 선정·' and '어긋난 / 내용과'.",
+    "expected": "14:6 Regular 13/150% #5C5C61 and 14:7 Bold 18/120% #1D1D1F; line-break differences from the approved Pretendard/Noto Sans KR substitution are accepted."
+   },
+   {
+    "region": "OUTPUT label and value '등록 전에 걸러진 ALF 지식'",
+    "actual_box": [
+     25,
+     348,
+     250,
+     49
+    ],
+    "reference_box": [
+     25,
+     351,
+     260,
+     49
+    ],
+    "aspect": "typography",
+    "status": "passed",
+    "observed": "Label 12/700 rgb(124,77,255) and value 24/700/28.8 rgb(29,29,31) as computed; value ink 250x21 vs 260x22.",
+    "expected": "14:17 Bold 12 #7C4DFF; 14:18 Bold 24/120% #1D1D1F."
+   },
+   {
+    "region": "RESULT copy '단 6번의 프롬프트로, 예선 … 인재에 선정됐습니다.'",
+    "actual_box": [
+     49,
+     667,
+     255,
+     136
+    ],
+    "reference_box": [
+     49,
+     669,
+     268,
+     138
+    ],
+    "aspect": "typography",
+    "status": "passed",
+    "observed": "White 24/700/28.8 in five lines with identical break positions ('예선 / 5,300여', '채널톡 / 트랙', '이은 / 본선', '상위 / 인재에').",
+    "expected": "14:28 Bold 24/120% #FFFFFF in five lines within 294px."
+   },
+   {
+    "region": "PIN value '제약 검사 · 충돌 후보 표시 · 공백 / 확인 · 사람 확정'",
+    "actual_box": [
+     24,
+     536,
+     300,
+     50
+    ],
+    "reference_box": [
+     25,
+     538,
+     328,
+     51
+    ],
+    "aspect": "text_clipping",
+    "status": "passed",
+    "observed": "Both lines fully painted; no glyph cut at the row or container edges.",
+    "expected": "14:24 auto-height text, two lines, no clipping."
+   },
+   {
+    "region": "RESULT copy inside the card",
+    "actual_box": [
+     49,
+     667,
+     255,
+     136
+    ],
+    "reference_box": [
+     49,
+     669,
+     268,
+     138
+    ],
+    "aspect": "text_clipping",
+    "status": "passed",
+    "observed": "All five lines including the final '.' are painted inside the card with 24px clearance on each side.",
+    "expected": "14:63 Result copy clips at 294x169; the copy fits."
+   },
+   {
+    "region": "'Thread 후기 보러 가기 ↗' button at the viewport bottom",
+    "actual_box": [
+     48,
+     824,
+     162,
+     20
+    ],
+    "reference_box": [
+     48,
+     826,
+     168,
+     18
+    ],
+    "aspect": "text_clipping",
+    "status": "passed",
+    "observed": "The button is cut by the 844px viewport edge in both images; web-390-01 shows the full 161x44 button and label, so no content is lost.",
+    "expected": "14:64 at y=826, 168x44, below the fold; a normal viewport cutoff is not clipping."
+   },
+   {
+    "region": "Whole top viewport",
+    "actual_box": [
+     0,
+     0,
+     390,
+     844
+    ],
+    "reference_box": [
+     0,
+     0,
+     390,
+     844
+    ],
+    "aspect": "component_occlusion",
+    "status": "passed",
+    "observed": "No fixed, sticky or overlay layer; no text or control is covered.",
+    "expected": "Frame 14:2 has no overlapping layers in this region."
+   },
+   {
+    "region": "Section link targets '요약' '과정' '본문'",
+    "actual_box": [
+     24,
+     242,
+     161,
+     44
+    ],
+    "reference_box": [
+     24,
+     244,
+     166,
+     44
+    ],
+    "aspect": "component_occlusion",
+    "status": "passed",
+    "observed": "Three 44px-tall bordered boxes with 8px gaps and nothing drawn over them.",
+    "expected": "14:10, 14:12 and 14:14 unobstructed 44px targets."
+   },
+   {
+    "region": "Fills and strokes: RESULT card, hairlines, link borders, eyebrow labels",
+    "actual_box": [
+     24,
+     616,
+     342,
+     228
+    ],
+    "reference_box": [
+     24,
+     617,
+     342,
+     227
+    ],
+    "aspect": "figma_fidelity",
+    "status": "passed",
+    "observed": "Card fill sampled rgb(124,77,255) in both; hairlines light gray (computed #D6D6D9); link stroke rgb(214,214,217); labels rgb(124,77,255).",
+    "expected": "14:26 fill #7C4DFF; 14:19/14:22/14:25 #D6D6D9; 14:10 stroke #D6D6D9; 14:17 #7C4DFF."
+   },
+   {
+    "region": "Top viewport against node 14:2",
+    "actual_box": [
+     0,
+     0,
+     390,
+     844
+    ],
+    "reference_box": [
+     0,
+     0,
+     390,
+     844
+    ],
+    "aspect": "figma_fidelity",
+    "status": "passed",
+    "observed": "Same components, copy, default states and hierarchy; differences are limited to the approved font substitution (glyph widths, two line-break positions) and 1-3px vertical drift.",
+    "expected": "Node 14:2 'REA Case Detail / Mobile v2 — 2026-10-18', approved for widths up to 820px."
+   },
+   {
+    "region": "RESULT card and summary rows",
+    "actual_box": [
+     24,
+     346,
+     342,
+     498
+    ],
+    "reference_box": [
+     24,
+     348,
+     342,
+     496
+    ],
+    "aspect": "side_accents",
+    "status": "passed",
+    "observed": "No vertical edge strip or attached side tab; the card is a uniform fill and rows use full-width hairlines.",
+    "expected": "No side accent bars, side-tab cards or equivalent decorative rails."
+   },
+   {
+    "region": "Interactive controls: '요약' '과정' '본문'",
+    "actual_box": [
+     24,
+     242,
+     161,
+     44
+    ],
+    "reference_box": [
+     24,
+     244,
+     166,
+     44
+    ],
+    "aspect": "interaction_states",
+    "status": "unknown",
+    "observed": "Only the default state is captured; hover, focus and pressed states were not reached.",
+    "expected": "Frame 14:2 shows default states only; no hover or focus variants are supplied."
+   }
+  ]
+ }
+}

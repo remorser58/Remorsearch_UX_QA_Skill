@@ -9,7 +9,7 @@ These are repository documents, not installed with the skill.
 | Surface | Path | What is real | What is not exercised here |
 | --- | --- | --- | --- |
 | Web, mobile web, browser games (canvas/WebGL) | `drivers/web/ergo_drive.mjs` (Node 22 + Playwright/Chromium) | Real touch/mouse/keyboard input (CDP), device-emulated viewport/DPR/touch, screenshots, DOM geometry and composited colours, feedback latency, 16 ms timing-window polling, flash sampling, off-origin network blocking | WebKit/Safari, real phones, on-screen keyboards, browser chrome, iframes/closed shadow roots |
-| iOS Safari (mobile web) | Host route: `safaridriver` with a task-owned iOS Simulator (W3C WebDriver, `safari:useSimulator`) | Mobile Safari/WebKit layout and media queries, touch actions dispatched by Safari automation, exact URL/scroll/DOM state, web-view and `simctl io` device screenshots | Real devices, VoiceOver, ergo snapshots; on iOS 27.0, touch actions on a page scrolled by a hash jump reached no page event |
+| iOS Safari (mobile web) | Host route: `safaridriver` with a task-owned iOS Simulator (W3C WebDriver, `safari:useSimulator`) | Mobile Safari/WebKit layout and media queries, touch actions dispatched by Safari automation, exact URL/scroll/DOM state, web-view and `simctl io` device screenshots | Real devices, VoiceOver, ergo snapshots; on iOS 27.0, touch actions and Element Click on a scrolled page reached no page event |
 | Android apps | `adb exec-out uiautomator dump` + `adb exec-out screencap -p` → `scripts/ergo_qa.py android-snapshot`; inputs via `ergoqa/drivers/android.py` argv builders | Real device geometry (bounds in px → dp) and screenshots when run against a device/emulator | Live device execution is not exercised in this repository (fixture-tested only) |
 | iOS apps | Exported XCUITest attachments + typed `xcuitest-capture.v1` JSON → `scripts/ergo_qa.py ios-import` | Actual XCUIElement point frames, label/identifier/value/enabled, PNG dimensions/hash, xcresult attachment/test summary join, built app bundle identity | VoiceOver/accessibility order, fonts, colours, intent, action/task outcome, and independent screenshot authenticity; device geometries absent from `ergoqa/devices.py` are rejected rather than nearest-mapped |
 | Desktop apps, engine-rendered games | Platform screenshot + vision/human annotation → `ergoqa/drivers/annotation.py` | Screenshots from the real device | Geometry is estimated (`source: vision`), so every geometry-based observation is `inferred` |
@@ -79,8 +79,10 @@ xcrun simctl shutdown "$UDID" && xcrun simctl delete "$UDID"
   capabilities. Compare Safari runs with each other; their captures differ from Chromium
   profiles in size and browser chrome.
 - Confirm that each tap produced page events, a URL change or a state change before judging
-  the product. On iOS 27.0, element- and viewport-origin taps on a page scrolled by a hash
-  jump produced no page event; report such steps unknown.
+  the product. On iOS 27.0, touch actions and Element Click produced no page event once the
+  page had been scrolled by a hash jump or script; taps at scrollY 0 worked. Report such steps
+  unknown. Read `elementFromPoint` to check hit areas, and label any toggle check run in
+  another engine with that engine.
 - Use script only to read state. A touch claim needs a touch action.
 - These receipts are not ergo snapshots; report them as a separate WebKit check.
 

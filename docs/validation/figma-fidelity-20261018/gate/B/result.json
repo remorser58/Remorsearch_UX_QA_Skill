@@ -1,0 +1,29 @@
+{
+ "label": "B",
+ "code_revision": "064d9bae628fdf4a1f8f9fb4e8a14c5b22a13748",
+ "reviewer_status": "failed",
+ "reviewer_checks": {
+  "layout": "failed",
+  "interaction_states": "unknown",
+  "alignment": "passed",
+  "spacing": "failed",
+  "typography": "failed",
+  "text_clipping": "passed",
+  "component_occlusion": "passed",
+  "figma_fidelity": "failed",
+  "side_accents": "passed"
+ },
+ "observations": 21,
+ "results": [
+  {
+   "requires_pass": false,
+   "accepted": true
+  },
+  {
+   "requires_pass": true,
+   "accepted": false,
+   "status": "failed",
+   "reason": "Visual comparison failed: portfolio-390-top-B: Typography, spacing, layout and Figma fidelity fail against node 14:2 (problem statement role, type sizes and colors, summary rhythm, section chips, result card). Alignment, text clipping, component occlusion and side accents pass; interaction states are unknown."
+  }
+ ]
+}
