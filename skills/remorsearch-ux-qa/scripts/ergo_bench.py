@@ -132,7 +132,10 @@ def evaluate(run_records: list[dict[str, Any]], profiles: list[dict[str, Any]], 
 
 
 def provenance() -> dict[str, Any]:
-    """Detector/scorer identity: commit, dirty flag and a hash of the code that scored."""
+    """Detector/scorer identity: commit, dirty flag, a hash of the analysis code that scored
+    (also the analysis-cache key) and a hash of the browser driver that recorded, with its
+    pinned Playwright lockfile. The hashes identify the code where a commit SHA cannot, such
+    as in a copied or re-published tree."""
     import hashlib
 
     def git(*args: str) -> str:
@@ -145,8 +148,13 @@ def provenance() -> dict[str, Any]:
     for path in sorted((ROOT / "ergoqa").rglob("*.py")) + [ROOT / "scripts" / "ergo_bench.py"]:
         digest.update(path.relative_to(ROOT).as_posix().encode())
         digest.update(path.read_bytes())
+    driver = hashlib.sha256()
+    web = ROOT / "drivers" / "web"
+    for path in sorted(p for p in web.glob("*.mjs") if p.name != "selftest.mjs") + [web / "package-lock.json"]:
+        driver.update(path.relative_to(ROOT).as_posix().encode())
+        driver.update(path.read_bytes())
     return {"commit": git("rev-parse", "HEAD"), "dirty": bool(git("status", "--porcelain", "--", "ergoqa", "scripts", "drivers")),
-            "code_sha256": digest.hexdigest()}
+            "code_sha256": digest.hexdigest(), "driver_sha256": driver.hexdigest()}
 
 
 def main() -> int:
