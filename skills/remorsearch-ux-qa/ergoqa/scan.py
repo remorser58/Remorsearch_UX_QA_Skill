@@ -49,6 +49,21 @@ def default_profile(device_id: str) -> dict[str, Any]:
     return _finalise(profile, device)
 
 
+def driver_fix(stderr: str) -> str | None:
+    """The one-time command that prepares the browser driver, when a run failed for want of
+    it. A plugin copy or a copied skill folder skips the installer's driver setup."""
+    web = DRIVER.parent
+    if "cannot load the playwright package" in stderr or "Executable doesn't exist" in stderr:
+        return f"prepare the browser driver once: (cd {web} && npm ci && npx playwright install chromium)"
+    if "missing dependencies" in stderr or "error while loading shared libraries" in stderr:
+        try:
+            version = json.loads((web / "package.json").read_text(encoding="utf-8"))["dependencies"]["playwright"]
+        except (OSError, ValueError, KeyError):
+            version = "1.56.1"
+        return f"install Chromium's system libraries once: npx -y playwright@{version} install-deps chromium"
+    return None
+
+
 def scenario_for(url: str, device_id: str, tiles: int) -> dict[str, Any]:
     """Top of the page, overlapping screens of 80 % height, then the very end (End key).
 
@@ -131,8 +146,14 @@ def run_scan(url: str, out: Path, devices: tuple[str, ...] = DEFAULT_DEVICES, ti
                  "recorded": bool(run_doc) and run_doc.get("status") != "blocked"}
         if not entry["recorded"]:
             # A run that never reached the page (refused connection, blocked navigation)
-            # is a coverage gap, never an empty result.
-            entry["error"] = "; ".join(run_doc.get("blocked_reasons") or []) or (proc.stderr or proc.stdout)[-600:]
+            # is a coverage gap, never an empty result. The first line of the driver's error
+            # names the cause; the stack below it does not.
+            stderr = proc.stderr or proc.stdout or ""
+            first = next((line.strip() for line in stderr.splitlines() if line.strip()), "")
+            entry["error"] = "; ".join(run_doc.get("blocked_reasons") or []) or first[:300] or stderr[-600:]
+            fix = driver_fix(stderr)
+            if fix:
+                entry["fix"] = fix
             coverage.append(entry)
             continue
         profiles.append(profile)
@@ -212,7 +233,8 @@ def render_markdown(result: dict[str, Any]) -> str:
              "Measured candidates. Open each crop and the full screenshot before reporting one; dismiss what the pixels do not show.", ""]
     for c in result["coverage"]:
         if not c.get("recorded"):
-            lines.append(f"- {c['device']}: not recorded (driver exit {c['driver_exit']}): {c.get('error', '')[:200]}")
+            lines.append(f"- {c['device']}: not recorded (driver exit {c['driver_exit']}): {c.get('error', '')[:300]}"
+                         + (f" To fix: {c['fix']}." if c.get("fix") else ""))
         else:
             lines.append(f"- {c['device']}: {c.get('screens', 0)} screens, page height {c.get('page_height_css')} CSS px, "
                          f"deepest scroll {c.get('deepest_scroll_css')} CSS px, {c['seconds']} s.")

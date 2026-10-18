@@ -29,6 +29,8 @@ python3 scripts/install.py --target codex
 
 The installer needs Python 3.10+, Node.js 22 (>=22 <23) and npm on macOS, Linux or WSL, and checks them before writing anything. It prepares the pinned Playwright driver and Chromium in a staged copy, launches Chromium once, and only then activates the folder. A failed download leaves an existing installation untouched; an update first keeps the previous folder as `remorsearch-ux-qa.backup-<timestamp>.tar.gz`. Node.js 22 is required because the pinned Playwright 1.56.1 browser download hangs on Node.js 24.16 and later ([microsoft/playwright#40724](https://github.com/microsoft/playwright/issues/40724)). If your default `python3` is older than 3.10, run `python3 scripts/find_runtime.py` inside the skill folder; it lists usable Python and Node.js paths and installs nothing. On Linux, Chromium also needs system libraries: if the launch check fails, run `npx -y playwright@1.56.1 install-deps chromium` once (Debian or Ubuntu; it asks for sudo) and run the installer again.
 
+In Claude Code you can also add this repository as a plugin marketplace and install the plugin: `/plugin marketplace add remorser58/remorsearch_UX_QA`, then `/plugin install remorsearch-ux-qa@remorsearch`. A plugin copy skips the installer's browser setup, so its first scan stops and prints the one-time command that prepares it (`npm ci` and `npx playwright install chromium` in the plugin's `drivers/web`).
+
 Accounts stay yours: YouTube comments need your YouTube Data API key and Figma comparison needs your Figma access. Packaging and integrity checks for maintainers are in [build and release checks](docs/release.md).
 
 ## Use
