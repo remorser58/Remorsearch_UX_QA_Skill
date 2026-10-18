@@ -28,7 +28,7 @@ give a formula from memory, the text says so.
 `validation-and-limits.md` (added during this session);
 `docs/ergonomic-swarm-spec.md` (§0, §2 profile, §6 observation, §7 finding,
 §12 and the new §12.1); the top-level summary of
-`docs/validation/heldout-mixed-frozen-8c1de02.json`; `COORDINATION.md`;
+`docs/validation/heldout-mixed-frozen-8c1de02.json`;
 `scripts/ergo_bench.py`; `scripts/ergo_experiments.py` (header and
 structure); `ergoqa/bench.py`; `ergoqa/swarm.py`; the strata in
 `ergoqa/profiles.py`; and the frozen held-out tool outputs

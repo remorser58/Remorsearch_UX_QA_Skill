@@ -282,8 +282,8 @@ class ReadmeParityTests(unittest.TestCase):
     def test_each_readme_links_to_the_other_under_its_title(self):
         first_en = next(line for line in self.en.split("\n")[1:] if line.strip())
         first_ko = next(line for line in self.ko.split("\n")[1:] if line.strip())
-        self.assertEqual(first_en, "English | [한국어](README.ko.md) | [PRD · 제품 요구사항](PRD.md)")
-        self.assertEqual(first_ko, "[English](README.md) | 한국어 | [PRD · 제품 요구사항](PRD.md)")
+        self.assertEqual(first_en, "English | [한국어](README.ko.md)")
+        self.assertEqual(first_ko, "[English](README.md) | 한국어")
 
     def test_shell_commands_are_the_same_in_both_languages(self):
         self.assertTrue(shell_commands(self.en))
@@ -306,7 +306,7 @@ class ReadmeParityTests(unittest.TestCase):
 
     def test_the_project_is_named_by_its_current_repository(self):
         for text in (self.en, self.ko):
-            self.assertIn("github.com/remorser58/Remorsearch_UX_QA_Skill", text)
+            self.assertIn("github.com/remorser58/remorsearch_UX_QA", text)
             self.assertNotIn("ux-research-qa-skills", text)
 
     def test_the_korean_readme_uses_one_word_for_a_user(self):
@@ -447,7 +447,7 @@ class InstalledFolderPathTests(unittest.TestCase):
         self.assertEqual(leaving_links(relative, bad), ["link ../../../../docs/architecture.md leaves the skill folder"])
         self.assertEqual(bare_repo_paths(bad), ["`tests/loop_factory.py` is not marked as a repository document "
                                                 "that is not installed"])
-        good = ("See the repository document `docs/architecture.md` and `docs/history/DELIVERY.md` "
+        good = ("See the repository document `docs/architecture.md` and `docs/release.md` "
                 "(not installed with the skill), and [provider contract](provider-contract.md).\n")
         self.assertEqual(leaving_links(relative, good), [])
         self.assertEqual(bare_repo_paths(good), [])

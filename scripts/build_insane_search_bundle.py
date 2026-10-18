@@ -243,7 +243,7 @@ def build_payload(base: Path | None = None) -> tuple[dict[str, bytes], dict]:
                     "redistribution_note": license_note,
                     "entrypoint_remap": {"SKILL.md": "SOURCE.md"}},
         "engine": {"name": SKILL_NAME, "directory": ".", "license": "MIT",
-                   "repository": "remorser58/Remorsearch_UX_QA_Skill",
+                   "repository": "remorser58/remorsearch_UX_QA",
                    "input_sha256": shared["payload_digest"](engine_receipts),
                    "files": engine_receipts, "entrypoint": "SKILL.md",
                    "agents_metadata": "preserved"},

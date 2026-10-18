@@ -146,7 +146,6 @@ this one.
   `docs/validation/heldout-mixed-frozen-8c1de02.json`; the `configs` block of
   `ablation-dev-8707b70.json`; `experiments/heldout-2-preregistration.md` (commit
   `b913831`).
-- **Coordination.** `COORDINATION.md` on both branches.
 - **Sibling briefs, to avoid duplicating their candidates.**
   `docs/human-factors/llm-persona-simulation-validity.md` (summary),
   `docs/qa-discipline/usability-evaluation-methods.md` (UEM-xx) and
