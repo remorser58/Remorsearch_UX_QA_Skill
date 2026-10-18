@@ -1,6 +1,6 @@
 # Validation records
 
-Each record names the suite, the detector or skill version it measured, and the command that produces it. Benchmark answer keys live in `benchmarks/`; they are read only by the scorer.
+Each record names the suite, the detector or skill version it measured, and the command that produces it. Prepare the browser driver once before any benchmark command: `(cd skills/remorsearch-ux-qa/drivers/web && npm ci && npx playwright install chromium)`, plus `npx playwright install-deps chromium` on Linux. A benchmark whose recordings fail exits with an error instead of reporting a score. Benchmark answer keys live in `benchmarks/`; they are read only by the scorer.
 
 ## Rendered-layout detector
 

@@ -99,8 +99,9 @@ def record(scenario_path: Path, scenario: dict[str, Any], profile: dict[str, Any
         cmd += ["--flash-sample-ms", "1500"]
     started = time.time()
     proc = subprocess.run(cmd, capture_output=True, text=True, timeout=1200)
+    first_line = next((line.strip() for line in proc.stderr.splitlines() if line.strip()), "")
     return {"run_id": run_id, "scenario_id": scenario["scenario_id"], "exit": proc.returncode, "seconds": round(time.time() - started, 1),
-            "stderr_tail": proc.stderr[-600:], "run_dir": str(runs_dir / run_id)}
+            "stderr_first": first_line[:300], "stderr_tail": proc.stderr[-600:], "run_dir": str(runs_dir / run_id)}
 
 
 def evaluate(run_records: list[dict[str, Any]], profiles: list[dict[str, Any]], scenarios: dict[str, dict[str, Any]],
@@ -242,6 +243,14 @@ def main() -> int:
         summary["missed_by_swarm"] = sorted({d["id"] for d in results["swarm"]["score"]["per_defect"]} - swarm_detected)
     (work / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8")
     print(json.dumps({k: v for k, v in summary.items() if k != "runs"}, ensure_ascii=False, indent=1))
+    failed = summary["run_failures"]
+    if failed:
+        # A failed recording scores as a miss, so these numbers understate the detector.
+        print(f"error: {len(failed)} of {len(run_records)} runs failed, so the scores above are not valid. "
+              f"First error: {failed[0].get('stderr_first') or 'exit ' + str(failed[0].get('exit'))}. "
+              f"If the driver is not prepared yet: (cd {ROOT / 'drivers' / 'web'} && npm ci && npx playwright install chromium).",
+              file=sys.stderr)
+        return 1
     return 0
 
 

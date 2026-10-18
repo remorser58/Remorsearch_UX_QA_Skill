@@ -29,6 +29,7 @@ Same command, same scorer, before and after:
 ## Reproduce
 
 ```sh
+(cd skills/remorsearch-ux-qa/drivers/web && npm ci && npx playwright install chromium)
 python3 skills/remorsearch-ux-qa/scripts/ergo_bench.py --suite benchmarks/visual-layout --out .ergo-bench/visual-layout
 ```
 
