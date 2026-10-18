@@ -10,7 +10,7 @@ the end, with the reason, and the original analysis must still be reported.
 - The suite was written by four blind Opus agents from product briefs and public
   taxonomies, using the format in spec §12.1. Their completion messages were
   restricted to counts and file lists.
-- The tool author (this session) does not open `benchmarks/heldout-2/keys/`,
+- The tool author does not open `benchmarks/heldout-2/keys/`,
   `site/` or `scenarios/` content. Scripts read them for recording and scoring.
 - Scoring output shown to the author is limited to aggregate metrics. Per-defect
   results are written to a file and opened only after the aggregate report is

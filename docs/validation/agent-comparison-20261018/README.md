@@ -13,7 +13,7 @@ Question: does an agent find more rendered UI defects, with fewer false alarms a
 | low-1 | low | without the skill | 22 / 28 | 0 | 1 (P2) | 1m11s |
 | low-1 | low | with the skill | 24 / 28 | 1 (P3) | 0 | 4m03s |
 
-No run reported anything on the four clean twins. The decoy alarms were the carousel's first card touching the screen edge (reported on both product1 pages) and the 10 px legal footer, both at P3. The one other false finding (low-1 without the skill) took a fixed pay bar drawn mid-page in a stitched full-page screenshot for content covering a coupon header.
+Apart from decoy alarms, no run reported anything on the four clean twins; the carousel alarm below also fell on the clean product1 page. The decoy alarms were the carousel's first card touching the screen edge (reported on both product1 pages) and the 10 px legal footer, both at P3. The one other false finding (low-1 without the skill) took a fixed pay bar drawn mid-page in a stitched full-page screenshot for content covering a coupon header.
 
 In default-1 the skill arm's scan could not launch Chromium in its sandbox, because the installed build predated `REMORSEARCH_CHROMIUM_ARGS`; it measured with Playwright directly, so that row shows the instructions without the scan. Misses: default-2 without the skill missed one near-miss alignment (D-21); low-1 without the skill missed a ribbon over an option name, a callout over a paragraph's last line, two list-spacing outliers and two rows under bottom bars (D-03, D-04, D-06, D-09, D-14, D-15); low-1 with the skill missed the two rows under bottom bars and two spacing outliers (D-03, D-06, D-14, D-15).
 
