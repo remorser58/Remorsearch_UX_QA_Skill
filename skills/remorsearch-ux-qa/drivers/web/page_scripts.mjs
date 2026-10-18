@@ -650,8 +650,52 @@ export function extractSnapshot(args) {
     }
     return DESIGNED_TRACK.test(`${n.id || ''} ${typeof n.className === 'string' ? n.className : ''}`);
   };
+  // Text that paints nothing (a transparent fill with no stroke, shadow or background
+  // clipped to the glyphs, such as a sizing mirror behind a field) cannot be cut, covered
+  // or drawn over another text.
+  const inkCache = new Map();
+  const paintsInk = (el) => {
+    if (inkCache.has(el)) return inkCache.get(el);
+    const cs = style(el);
+    const fill = parseColor(cs.webkitTextFillColor || cs.color);
+    const stroke = parseColor(cs.webkitTextStrokeColor);
+    let ink = !fill || fill.a > 0 || (!!cs.textShadow && cs.textShadow !== 'none')
+      || ((parseFloat(cs.webkitTextStrokeWidth) || 0) > 0 && (!stroke || stroke.a > 0));
+    for (let n = el; !ink && n && n.nodeType === 1; n = parentOf(n)) {
+      const ncs = style(n);
+      if (ncs.backgroundClip === 'text' || ncs.webkitBackgroundClip === 'text') ink = true;
+    }
+    inkCache.set(el, ink);
+    return ink;
+  };
+  // Rectangles and glyph boxes are on screen while client sizes are in the element's own
+  // units; their ratio is the scale on screen. Under rotation, skew or a 3D transform a
+  // rectangle is only a bounding box, so such text is left unmeasured (null).
+  const screenScale = (el) => {
+    for (let p = el; p && p.nodeType === 1; p = p.assignedSlot || parentOf(p)) {
+      const pcs = style(p);
+      if (pcs.rotate && pcs.rotate !== 'none') return null;
+      if (pcs.transform && pcs.transform !== 'none') {
+        let m = null;
+        try {
+          m = new DOMMatrixReadOnly(pcs.transform);
+        } catch (e) {
+          return null;
+        }
+        if (!m.is2D || Math.abs(m.b) > 1e-6 || Math.abs(m.c) > 1e-6) return null;
+      }
+    }
+    const r = el.getBoundingClientRect();
+    return { sx: el.offsetWidth ? r.width / el.offsetWidth : 1, sy: el.offsetHeight ? r.height / el.offsetHeight : 1 };
+  };
+  // The padding box on screen, where overflow clips.
+  const paddingBoxOf = (n, r, sc) => ({ left: r.left + n.clientLeft * sc.sx, top: r.top + n.clientTop * sc.sy,
+    right: r.left + (n.clientLeft + n.clientWidth) * sc.sx, bottom: r.top + (n.clientTop + n.clientHeight) * sc.sy });
   const clippedOf = (el, cs, directLabel = false) => {
     const hide = (v) => v === 'hidden' || v === 'clip';
+    if (!paintsInk(el)) return null;
+    const sc = screenScale(el);
+    if (!sc) return null;
     // A control's scroll size includes decoration and nested labels. Measure only
     // the text this candidate owns; tagged descendants are captured separately.
     const rects = ownTextRects(el);
@@ -659,11 +703,11 @@ export function extractSnapshot(args) {
     const cuts = (a, axis) => rects.some((r) => axis === 'x'
       ? r.right > a.right + 1 || r.left < a.left - 1
       : r.bottom > a.bottom + 1 || r.top < a.top - 1);
-    const own = el.getBoundingClientRect();
-    const inner = { left: own.left + el.clientLeft, top: own.top + el.clientTop,
-      right: own.left + el.clientLeft + el.clientWidth, bottom: own.top + el.clientTop + el.clientHeight };
-    let x = hide(cs.overflowX) && (directLabel ? cuts(inner, 'x') : el.scrollWidth > el.clientWidth + 1);
-    let y = hide(cs.overflowY) && (directLabel ? cuts(inner, 'y') : el.scrollHeight > el.clientHeight + 1);
+    // Overflow does not apply to an inline box.
+    const clipsSelf = cs.display !== 'inline' && cs.display !== 'contents';
+    const inner = paddingBoxOf(el, el.getBoundingClientRect(), sc);
+    let x = clipsSelf && hide(cs.overflowX) && (directLabel ? cuts(inner, 'x') : el.scrollWidth > el.clientWidth + 1);
+    let y = clipsSelf && hide(cs.overflowY) && (directLabel ? cuts(inner, 'y') : el.scrollHeight > el.clientHeight + 1);
     let by = null;
     let viewportCut = false;
     let ellipsis = cs.textOverflow === 'ellipsis';
@@ -689,8 +733,10 @@ export function extractSnapshot(args) {
         const ax = ncs.overflowX;
         const ay = ncs.overflowY;
         if (!hide(ax) && !hide(ay) && !scrolls(ax) && !scrolls(ay)) continue;
-        const a = n.getBoundingClientRect();
-        if (a.width < 4 || a.height < 4) return null;
+        const nb = n.getBoundingClientRect();
+        if (nb.width < 4 || nb.height < 4) return null;
+        const a = n.offsetWidth && n.offsetHeight
+          ? paddingBoxOf(n, nb, { sx: nb.width / n.offsetWidth, sy: nb.height / n.offsetHeight }) : nb;
         // Judge each axis on its own: overflow-x hidden makes overflow-y compute to auto,
         // which scrolls only text that runs out vertically.
         const overX = past(a, 'x');
@@ -739,12 +785,13 @@ export function extractSnapshot(args) {
         const rg = document.createRange();
         rg.selectNodeContents(el);
         const first = rg.getClientRects()[0];
-        if (first && first.height > 0) lineH = first.height;
+        if (first && first.height > 0) lineH = first.height / sc.sy;
       } catch (e) { /* keep the estimate */ }
     }
+    // In the box's own units, like the line height and font size.
     const boxH = bcs.overflowY === 'clip'
       ? cb.clientHeight - (parseFloat(bcs.paddingTop) || 0) - (parseFloat(bcs.paddingBottom) || 0)
-      : cb.getBoundingClientRect().height;
+      : cb.offsetHeight || cb.getBoundingClientRect().height / sc.sy;
     const exemptY = !y || (lineH >= boxH - 0.5 && fontPx <= boxH + 0.5);
     if (by && !markerShown) ellipsis = false; // declared but not drawn
     // Tickers and marquees clip by design: text that moves (CSS animation on the element
@@ -1113,6 +1160,8 @@ export function extractSnapshot(args) {
       if ((parseFloat(cs.opacity) || 0) <= 0.01 || cs.visibility !== 'visible') continue;
       if (tag === 'dialog' || n.getAttribute('aria-modal') === 'true') return true;
       if (MEDIA.has(tag)) return true;
+      // A background clipped to the text paints the glyphs, not a box.
+      if (cs.backgroundClip === 'text' || cs.webkitBackgroundClip === 'text') continue;
       if (cs.backgroundImage && cs.backgroundImage !== 'none') return true;
       const bg = parseColor(cs.backgroundColor);
       if (bg && bg.a > 0.05) return true;
@@ -1539,8 +1588,8 @@ export function extractSnapshot(args) {
         for (const q of range.getClientRects()) if (q.width > 0 && q.height > 0) owned.push({ rect: q, holder: node.parentElement });
       }
     }
-    const shown = owned.filter(({ rect }) => rect.width >= 2 && rect.height >= 4
-      && rect.bottom > VY0 && rect.top < VY1 && rect.right > VX0 && rect.left < VX1);
+    const shown = owned.filter(({ rect, holder }) => rect.width >= 2 && rect.height >= 4
+      && rect.bottom > VY0 && rect.top < VY1 && rect.right > VX0 && rect.left < VX1 && paintsInk(holder));
     if (!shown.length) continue;
     const rects = shown.map((o) => o.rect);
     texts.push({ el, rects, holders: shown.map((o) => o.holder), bands: bandsOf(el, rects), host: fixedHost(el), direct: hasDirectText(el) });

@@ -27,7 +27,7 @@ python3 scripts/install.py --target codex
 
 `--target claude`는 `~/.claude/skills/remorsearch-ux-qa`에, 기본값 `codex`는 `~/.codex/skills/remorsearch-ux-qa`에 설치합니다. 원하는 폴더에 넣으려면 `--destination /path/to/folder`를 쓰세요.
 
-설치 스크립트는 macOS, Linux, WSL에서 Python 3.10 이상, Node.js 22(>=22 <23), npm이 있는지 먼저 확인하고 나서 파일을 씁니다. 고정 버전 Playwright 드라이버와 Chromium을 임시 복사본에서 준비하고 Chromium을 한 번 실행해 본 다음에야 설치 폴더로 옮깁니다. 내려받기가 실패하면 기존 설치는 그대로 남고, 갱신할 때는 이전 폴더를 `remorsearch-ux-qa.backup-<timestamp>.tar.gz`로 먼저 보관합니다. 고정 버전인 Playwright 1.56.1의 브라우저 내려받기가 Node.js 24.16 이상에서 멈추기 때문에 Node.js 22가 필요합니다([microsoft/playwright#40724](https://github.com/microsoft/playwright/issues/40724)). 기본 `python3`가 3.10보다 낮으면 스킬 폴더에서 `python3 scripts/find_runtime.py`를 실행하세요. 쓸 수 있는 Python과 Node.js 경로를 알려 주며 아무것도 설치하지 않습니다.
+설치 스크립트는 macOS, Linux, WSL에서 Python 3.10 이상, Node.js 22(>=22 <23), npm이 있는지 먼저 확인하고 나서 파일을 씁니다. 고정 버전 Playwright 드라이버와 Chromium을 임시 복사본에서 준비하고 Chromium을 한 번 실행해 본 다음에야 설치 폴더로 옮깁니다. 내려받기가 실패하면 기존 설치는 그대로 남고, 갱신할 때는 이전 폴더를 `remorsearch-ux-qa.backup-<timestamp>.tar.gz`로 먼저 보관합니다. 고정 버전인 Playwright 1.56.1의 브라우저 내려받기가 Node.js 24.16 이상에서 멈추기 때문에 Node.js 22가 필요합니다([microsoft/playwright#40724](https://github.com/microsoft/playwright/issues/40724)). 기본 `python3`가 3.10보다 낮으면 스킬 폴더에서 `python3 scripts/find_runtime.py`를 실행하세요. 쓸 수 있는 Python과 Node.js 경로를 알려 주며 아무것도 설치하지 않습니다. Linux에서는 Chromium에 시스템 라이브러리가 더 필요합니다. 실행 확인이 실패하면 `npx -y playwright@1.56.1 install-deps chromium`을 한 번 실행하고(Debian, Ubuntu 기준이며 sudo 암호를 묻습니다) 설치 스크립트를 다시 실행하세요.
 
 계정은 사용자가 준비합니다. 유튜브 댓글에는 YouTube Data API 키가, Figma 비교에는 Figma 접근 권한이 필요합니다. 유지보수용 패키징과 무결성 검사는 [빌드와 배포 전 검사](docs/release.md)에 있습니다.
 

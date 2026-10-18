@@ -324,7 +324,15 @@ def prepare_driver(skill_root: Path, node: str, npm_cli: str, *, runner=None,
         "const v=require('./node_modules/playwright/package.json').version;"
         "console.log(v); if(v!==p.dependencies.playwright) process.exit(2)"])
     check("Chromium install", [node, PLAYWRIGHT_CLI, "install", "chromium"])
-    chromium = check("Chromium launch check (about:blank)", [node, "-e", LAUNCH_CHECK])
+    try:
+        chromium = check("Chromium launch check (about:blank)", [node, "-e", LAUNCH_CHECK])
+    except DriverError as error:
+        if not sys.platform.startswith("linux"):
+            raise
+        raise DriverError(f"{error}\nOn Linux, Chromium also needs system libraries. Run "
+                          f"'npx -y playwright@{version} install-deps chromium' once (Debian or "
+                          "Ubuntu; it asks for sudo) or install the equivalent packages, then run "
+                          "the installer again.") from error
     result = {"node": node, "playwright": version,
               "chromium": chromium.splitlines()[0] if chromium else None}
     progress({"step": "driver", **result})

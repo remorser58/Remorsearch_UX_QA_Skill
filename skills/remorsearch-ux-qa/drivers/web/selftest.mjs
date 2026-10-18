@@ -1534,6 +1534,14 @@ async function reflowTest(base, tmp) {
   const chip = first.elements.find((e) => e.dom_id === 'chip-t');
   check('LY-01 data: text cut by a clipping ancestor records the ancestor', !!chip && chip.clipped && chip.clipped.x === true && chip.clipped.by === '#chip-l',
     chip && chip.clipped);
+  const scaledClean = clippedControl('scaled-clean');
+  check('LY-01 data: a scaled control is measured on screen (a fitting label is clean, a long one is cut)',
+    !!scaledClean && !scaledClean.clipped && clippedControl('scaled-cut')?.clipped?.x === true,
+    [scaledClean && scaledClean.clipped, clippedControl('scaled-cut')?.clipped]);
+  check('LY-03 data: transparent sizing text never collides; gradient text drawn over text does',
+    !clippedControl('mirror-label')?.text_overlap && !clippedControl('ink-label')?.text_overlap
+      && clippedControl('gradient-b')?.text_overlap?.with === '#gradient-a' && !clippedControl('gradient-a')?.glyph_cover,
+    ['mirror-label', 'ink-label', 'gradient-a', 'gradient-b'].map((id) => [id, clippedControl(id)?.text_overlap, clippedControl(id)?.glyph_cover]));
 }
 
 async function reflowCopyTest(base, tmp) {

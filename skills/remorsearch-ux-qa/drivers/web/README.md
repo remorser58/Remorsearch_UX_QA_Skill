@@ -213,6 +213,7 @@ Requirements: Node.js 22 and `playwright@1.56.1` with its Chromium. Install once
 cd drivers/web
 npm ci                      # pinned packages from package-lock.json
 npx playwright install chromium
+npx playwright install-deps chromium   # Linux only: system libraries, asks for sudo
 node selftest.mjs           # a few minutes; expects 0 failed
 ```
 
