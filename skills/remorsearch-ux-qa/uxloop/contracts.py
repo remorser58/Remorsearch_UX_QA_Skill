@@ -200,7 +200,17 @@ def validate_packet(packet: Any) -> list[str]:
                 errors.append(f"finding {finding['id']}: unexecuted run cannot verify finding")
     for visual in maps["visual_checks"].values():
         run = need(visual["run_id"], maps["browser_runs"], "visual run")
-        figma = need(visual["figma_id"], records["figma"], "visual figma")
+        if visual["figma_id"] is None:
+            # A code-first project compares the capture with its approved baseline capture.
+            figma = {}
+            if packet["policy"]["figma_first"]:
+                errors.append(f"visual {visual['id']}: the Figma-first policy requires a Figma reference")
+            if visual["node_ids"] or any(visual[k] is not None for k in ("file_key", "branch_key", "baseline_version", "readback_version")):
+                errors.append(f"visual {visual['id']}: Figma fields need a Figma record")
+        else:
+            figma = need(visual["figma_id"], records["figma"], "visual figma")
+            if not visual["node_ids"]:
+                errors.append(f"visual {visual['id']}: a Figma reference needs its nodes")
         if run and any(visual[k] != run["environment"][k] for k in ("route", "viewport")):
             errors.append(f"visual {visual['id']}: capture route/viewport mismatch")
         if figma:

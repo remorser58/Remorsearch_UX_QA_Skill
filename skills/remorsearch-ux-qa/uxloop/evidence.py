@@ -191,7 +191,8 @@ class Evidence:
         for check in checks:
             if check["status"] in {"unknown", "blocked"}:
                 raise GateStop(check["status"], f"Visual comparison {check['id']}: {check['reason']}")
-            self.figma(check["figma_id"])
+            if check["figma_id"] is not None:
+                self.figma(check["figma_id"])
             self.screenshot(check["actual_artifact_id"], check["viewport"])
             self.screenshot(check["reference_artifact_id"], check["viewport"])
             self.capture_time(check["actual_artifact_id"], run)

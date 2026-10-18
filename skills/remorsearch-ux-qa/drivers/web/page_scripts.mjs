@@ -1711,7 +1711,12 @@ export function extractSnapshot(args) {
       const column = rs.every((r, i) => i === 0 || r.top >= rs[i - 1].bottom - 1);
       const row = !column && rs.every((r, i) => i === 0 || (r.left >= rs[i - 1].right - 1 && r.top < rs[i - 1].bottom && r.bottom > rs[i - 1].top));
       if (!column && !row) continue;
-      const values = column ? group.map(contentLeft) : rs.map((r) => r.top);
+      // A row lines up on the edge its container aligns: centres for align-items
+      // center, bottoms for end; baseline rows depend on text and are skipped.
+      const align = style(box).alignItems;
+      if (row && align === 'baseline') continue;
+      const values = column ? group.map(contentLeft) : rs.map((r) => (align === 'center' ? (r.top + r.bottom) / 2
+        : ['flex-end', 'end'].includes(align) ? r.bottom : r.top));
       const mode = modeOf(values, 0.75);
       if (mode && mode.agree >= group.length - 1 && mode.agree >= 2) {
         const off = group.map((k, i) => ({ k, d: values[i] - mode.value })).filter((o) => Math.abs(o.d) > 0.75);
@@ -1726,11 +1731,10 @@ export function extractSnapshot(args) {
         const typical = modeOf(gaps, 1);
         if (typical && typical.agree >= gaps.length - 1 && typical.agree >= 2) {
           const odd = gaps.map((v, i) => ({ v, i })).filter((o) => Math.abs(o.v - typical.value) > 1);
-          // A squeezed gap, or one up to twice the usual: a much wider gap separates groups
-          // on purpose (a divider between sections of a menu or form).
+          // Only a squeezed gap: a wider one often separates groups on purpose (a divider
+          // between sections of a menu or form), which needs the design rule to judge.
           const off = odd.length === 1 ? odd[0].v - typical.value : 0;
-          const uneven = off < 0 ? -off >= 4 && -off >= 0.25 * typical.value
-            : off >= 4 && typical.value >= 8 && odd.length === 1 && odd[0].v <= 2 * typical.value;
+          const uneven = off < 0 && -off >= 4 && -off >= 0.25 * typical.value;
           if (odd.length === 1 && uneven) {
             const before = group[odd[0].i];
             const after = group[odd[0].i + 1];

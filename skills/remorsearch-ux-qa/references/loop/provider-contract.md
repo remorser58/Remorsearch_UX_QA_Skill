@@ -102,7 +102,11 @@ Comparison-ready/approved/implemented are eligible statuses; unresolved
 `spec_conflict` or `design_defect` blocks implementation.
 
 Each visual check links the run, route, viewport, Figma record and exact versions
-and nodes, actual capture, reference export, comparison report, method
+and nodes when the packet's policy is Figma-first. A code-first packet
+(`policy.figma_first: false`) leaves `figma_id`, the version and key fields null
+and `node_ids` empty; its reference is a capture of the approved baseline, and
+`figma_fidelity` then records fidelity to that reference. A check always links
+the actual capture, reference export, comparison report, method
 (`review` or `pixel_diff`), reviewer, explicit overall status and reason. Required
 aspect keys: `layout`, `interaction_states`, `alignment`, `spacing`, `typography`,
 `text_clipping`, `component_occlusion`, `figma_fidelity`, `side_accents`.

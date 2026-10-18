@@ -293,7 +293,8 @@ def cmd_scan(args: argparse.Namespace) -> int:
     devices = tuple(args.device or scan.DEFAULT_DEVICES)
     for device_id in devices:
         get_device(device_id)
-    result = scan.run_scan(args.url, out, devices=devices, tiles=args.tiles, node=args.node)
+    result = scan.run_scan(args.url, out, devices=devices, tiles=args.tiles, node=args.node,
+                           allow_origins=tuple(args.allow_origin or ()))
     print((out / "scan.md").read_text(encoding="utf-8"))
     print(f"scan: {len(result['candidates'])} candidates -> {out / 'scan.json'}")
     if not all(c.get("recorded") for c in result["coverage"]):
@@ -498,6 +499,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--device", action="append", help="device id (repeatable; default galaxy-s24 and laptop-1440)")
     p.add_argument("--tiles", type=int, default=8, help="scroll screens after the top one, before jumping to the end (default 8)")
     p.add_argument("--node", default="node", help="Node.js 22 executable for the web driver")
+    p.add_argument("--allow-origin", action="append", help="another origin the page loads assets from, such as a font or image CDN (repeatable)")
     p.add_argument("--out", required=True, help="new or empty directory")
     p.set_defaults(func=cmd_scan)
 

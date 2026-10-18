@@ -102,7 +102,7 @@ def write_crop(run_dir: Path, observation: dict[str, Any], target: Path, margin:
 
 
 def run_scan(url: str, out: Path, devices: tuple[str, ...] = DEFAULT_DEVICES, tiles: int = 8, node: str = "node",
-             timeout: int = 900) -> dict[str, Any]:
+             timeout: int = 900, allow_origins: tuple[str, ...] = ()) -> dict[str, Any]:
     out = Path(out)
     runs, crops = out / "runs", out / "crops"
     crops.mkdir(parents=True, exist_ok=True)
@@ -120,9 +120,11 @@ def run_scan(url: str, out: Path, devices: tuple[str, ...] = DEFAULT_DEVICES, ti
             path.write_text(json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8")
         run_id = f"SCAN-{device_id}"
         started = time.time()
-        proc = subprocess.run([node, str(DRIVER), "run", "--scenario", str(scenario_path), "--profile", str(profile_path),
-                               "--out", str(runs), "--run-id", run_id, "--continue-on-error"],
-                              capture_output=True, text=True, timeout=timeout)
+        command = [node, str(DRIVER), "run", "--scenario", str(scenario_path), "--profile", str(profile_path),
+                   "--out", str(runs), "--run-id", run_id, "--continue-on-error"]
+        for origin in allow_origins:
+            command += ["--allow-origin", origin]
+        proc = subprocess.run(command, capture_output=True, text=True, timeout=timeout)
         run_dir = runs / run_id
         run_doc = json.loads((run_dir / "run.json").read_text(encoding="utf-8")) if (run_dir / "run.json").is_file() else {}
         entry = {"device": device_id, "seconds": round(time.time() - started, 1), "driver_exit": proc.returncode,
@@ -138,6 +140,18 @@ def run_scan(url: str, out: Path, devices: tuple[str, ...] = DEFAULT_DEVICES, ti
         result = analyze.analyze_run(run_dir, [profile], scenario, cross_profile=True, gaze_enabled=False)
         result["observations"] = [o for o in result["observations"] if o.get("basis") == "measured"]
         analyses.append(result)
+        # The driver loads only the page's own origin unless told otherwise: blocked fonts,
+        # styles or images change the layout, so the count is part of the coverage.
+        policy = (run_doc.get("driver") or {}).get("network_policy") or {}
+        entry["blocked_requests"] = policy.get("blocked_requests") or 0
+        origins = []
+        for item in policy.get("blocked_sample") or []:
+            url_text = item.get("url") if isinstance(item, dict) else item
+            if isinstance(url_text, str) and "://" in url_text:
+                origin = "/".join(url_text.split("/", 3)[:3])
+                if origin not in origins:
+                    origins.append(origin)
+        entry["blocked_origins"] = origins[:5]
         scrolls = []
         for snap_path in sorted(run_dir.glob("*.json")):
             if snap_path.name == "run.json":
@@ -148,7 +162,16 @@ def run_scan(url: str, out: Path, devices: tuple[str, ...] = DEFAULT_DEVICES, ti
                 scrolls.append((sc["y"], sc.get("height")))
         if scrolls:
             height = max((h for _, h in scrolls if isinstance(h, (int, float))), default=None)
-            entry.update({"screens": len(scrolls), "page_height_css": height, "deepest_scroll_css": max(y for y, _ in scrolls)})
+            screen = get_device(device_id).viewport_css[1]
+            seen, gaps, edge = sorted({y for y, _ in scrolls}), [], 0.0
+            for y in seen:
+                if y > edge + 1:
+                    gaps.append([round(edge), round(y)])
+                edge = max(edge, y + screen)
+            if isinstance(height, (int, float)) and height > edge + 1:
+                gaps.append([round(edge), round(height)])
+            entry.update({"screens": len(scrolls), "page_height_css": height, "deepest_scroll_css": max(seen),
+                          "uncaptured_css": gaps})
         coverage.append(entry)
     findings = swarm.aggregate(analyses, profiles) if analyses else []
     observations = {o["id"]: (o, run_dirs.get(o["run_id"])) for a in analyses for o in a["observations"]}
@@ -193,6 +216,13 @@ def render_markdown(result: dict[str, Any]) -> str:
         else:
             lines.append(f"- {c['device']}: {c.get('screens', 0)} screens, page height {c.get('page_height_css')} CSS px, "
                          f"deepest scroll {c.get('deepest_scroll_css')} CSS px, {c['seconds']} s.")
+            if c.get("uncaptured_css"):
+                spans = ", ".join(f"{a}-{b}" for a, b in c["uncaptured_css"])
+                lines.append(f"  Not captured: {spans} CSS px from the top; rerun with a larger --tiles.")
+            if c.get("blocked_requests"):
+                lines.append(f"  Blocked {c['blocked_requests']} requests to other origins ("
+                             f"{', '.join(c.get('blocked_origins') or []) or 'see run.json'}); fonts, styles or images may be missing. "
+                             "Pass --allow-origin for origins the page needs.")
     lines += ["", "| # | Severity | Check | Device | Element | What was measured | Crop |", "| --- | --- | --- | --- | --- | --- | --- |"]
     for c in result["candidates"]:
         element = c["element"].split("|", 1)

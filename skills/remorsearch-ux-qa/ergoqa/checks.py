@@ -2374,8 +2374,13 @@ def check_layout(ctx: Context) -> list[Observation]:
             if position in ("fixed", "sticky"):
                 bar = occ.get("box") or {}
                 top_bar = bar.get("y", 0) + bar.get("h", 0) / 2 < vh / 2
+                # Only a bar attached to the screen edge keeps covering: content can scroll
+                # past a floating fixed element (a helper or chat bubble) to either side.
+                attached = bar.get("y", 0) <= 1 if top_bar else bar.get("y", 0) + bar.get("h", 0) >= vh - 1
                 reach = occ.get("scroller")
-                if isinstance(reach, dict) and isinstance(reach.get("top"), (int, float)) and isinstance(reach.get("max"), (int, float)):
+                if not attached:
+                    permanent = False
+                elif isinstance(reach, dict) and isinstance(reach.get("top"), (int, float)) and isinstance(reach.get("max"), (int, float)):
                     # The box that scrolls the covered text decides whether it can move out.
                     permanent = reach["top"] <= 1 if top_bar else reach["top"] >= reach["max"] - 1
                 else:

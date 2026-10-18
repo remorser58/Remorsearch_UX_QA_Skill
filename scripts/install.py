@@ -43,7 +43,8 @@ TARGETS = ("codex", "claude")
 LAUNCH_CHECK = (
     "(async()=>{const pw=require('playwright');"
     "console.log(pw.chromium.executablePath());"
-    "const b=await pw.chromium.launch({headless:true});"
+    "const args=(process.env.REMORSEARCH_CHROMIUM_ARGS||'').split(/\\s+/).filter(Boolean);"
+    "const b=await pw.chromium.launch({headless:true,args});"
     "const p=await b.newPage();await p.goto('about:blank');await b.close();})()"
     ".catch(e=>{console.error(String(e&&e.message||e));process.exit(2);})"
 )

@@ -15,7 +15,7 @@ Remorsearch UX QA is a skill for Claude Code and Codex that checks and improves 
 
 You do not pick components. Ask for a UI check, a UX improvement, research or an accessibility review, and the skill loads only what that request needs.
 
-On a blind benchmark of 28 rendered defects, 11 decoys and four clean twins ([`visual-layout-20261018.md`](docs/validation/visual-layout-20261018.md)), the scan's measured checks found 19 defects on first contact (3 before these checks) and 25 after follow-up fixes, with no new finding on a decoy or clean page and no change on the earlier suites. In an agent comparison on the same pages ([agent comparison](docs/validation/agent-comparison-20261018/README.md)), the same model found 28 of 28 with the skill and 27 of 28 without it, finishing its report in 7m04s and 7m25s; at low reasoning effort the skill raised detection from 22 to 24 and took about three minutes longer. These are one suite and one or two runs per condition.
+On a blind benchmark of 28 rendered defects, 11 decoys and four clean twins ([`visual-layout-20261018.md`](docs/validation/visual-layout-20261018.md)), the scan's measured checks found 19 defects on first contact (3 before these checks) and 25 after follow-up fixes, with no new finding on a decoy or clean page and no change on the earlier suites. In an [agent comparison](docs/validation/agent-comparison-20261018/README.md) on the same pages, the same model at its default effort found 27 or 28 of the 28 defects in each of two rounds with or without the skill and finished in seven to eight minutes either way: the skill no longer adds time, and it added no detections there. At low reasoning effort it raised detection from 22 to 24 and took about three minutes longer. One suite and one or two runs per condition do not establish general superiority.
 
 ## Install
 
@@ -109,6 +109,7 @@ The tests never reach the network; reader tests serve their pages from 127.0.0.1
 ## Limits
 
 - The scan emulates devices in Chromium. Safari/WebKit and real devices need their own runs; Mobile Safari is checked through a documented host route (safaridriver with an iOS Simulator), and native iOS apps through imported XCUITest evidence.
+- The scan loads only the page's own origin unless `--allow-origin` names more (a font or image CDN), and it lists blocked requests and any page interval it did not capture.
 - Measured candidates cover geometry, contrast, target size and names. Hierarchy, wording, brand fit and Figma fidelity are judged by the agent from viewed pixels and a reference.
 - Alignment and spacing checks compare sibling blocks of the same kind and report P3 candidates; an intended offset can appear and is dismissed after viewing.
 - The ergonomics model is uncalibrated and its suites are small and agent-authored. Treat its findings as screening.
