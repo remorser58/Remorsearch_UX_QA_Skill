@@ -293,6 +293,30 @@ LY01 = _register(CheckSpec(
     ("REF-xctest-textclipped", "REF-wcag22-144", "REF-wcag22-1412"), ("web", "desktop"), "visual",
     "고정 높이·너비와 overflow:hidden을 풀어 글자가 늘어나도 다 보이게 하세요.",
 ))
+LY02 = _register(CheckSpec(
+    "LY-02", "layout", "measured", "다른 요소에 계속 가려지는 텍스트",
+    "Text stays covered by a fixed bar or another box",
+    (), ("web", "desktop"), "visual",
+    "고정 헤더와 하단 바의 높이만큼 본문에 여백(padding, scroll-padding)을 주고, 겹쳐 놓은 배지나 라벨은 글자를 피해 배치하세요.",
+))
+LY03 = _register(CheckSpec(
+    "LY-03", "layout", "measured", "글자끼리 겹침",
+    "Text drawn over other text",
+    (), ("web", "desktop"), "visual",
+    "줄 간격(line-height)을 글자 크기 이상으로 두고, 음수 여백이나 절대 위치 때문에 글자가 겹치지 않게 하세요.",
+))
+LY04 = _register(CheckSpec(
+    "LY-04", "layout", "measured", "같은 열·행에서 몇 px 어긋난 블록",
+    "One block is a few pixels off the edge its siblings share",
+    (), ("web", "desktop"), "visual",
+    "같은 열이나 행의 블록이 같은 여백 값을 쓰게 해 시작선을 맞추세요.",
+))
+LY05 = _register(CheckSpec(
+    "LY-05", "layout", "measured", "반복 목록에서 간격 하나만 다름",
+    "One gap in a repeated list differs from the others",
+    (), ("web", "desktop"), "visual",
+    "반복 항목 사이 간격을 같은 값(gap 또는 같은 margin)으로 통일하세요.",
+))
 UI01 = _register(CheckSpec(
     "UI-01", "visual", "measured", "아이콘 전용 조작 요소에 시각적 설명이 없음",
     "Icon-only action has no visible tooltip or equivalent hover/focus explanation",
@@ -2315,6 +2339,98 @@ def check_semantics(ctx: Context) -> list[Observation]:
     return out
 
 
+def check_layout(ctx: Context) -> list[Observation]:
+    """Covered text, overlapping text, near-miss alignment and uneven spacing (LY-02..05).
+
+    Measured from rendered geometry and profile-independent. Covered text counts only
+    when no scroll position reveals it: a fixed or sticky bar at the top while the page
+    is at its top, one at the bottom while the page is at its end, or a box in the normal
+    layout. Dialogs, popups and large overlays cover content on purpose and are skipped.
+    Alignment and spacing outliers are polish (P3) and are reported with the selectors
+    the driver recorded, since the misplaced block is often a card with no text of its own.
+    """
+    out: list[Observation] = []
+    base = (ctx.run["run_id"], ctx.profile["profile_id"], ctx.snapshot.get("snapshot_id"), ctx.snapshot.get("step_index"))
+    scroll = ctx.snapshot.get("surface", {}).get("scroll") or {}
+    _, vh = ctx.viewport
+    sy, sh = scroll.get("y"), scroll.get("height")
+    at_top = isinstance(sy, (int, float)) and sy <= 1
+    at_end = isinstance(sy, (int, float)) and isinstance(sh, (int, float)) and sy + vh >= sh - 1
+    for e in ctx.elements:
+        words = (e.get("text") or "").strip()
+        box = e.get("box") or {}
+        if e.get("source", "dom") != "dom" or not words or not e.get("visible", True) or box.get("w", 0) < 4 or box.get("h", 0) < 4:
+            continue
+        occ, frac = e.get("occluder"), e.get("occluded_fraction")
+        if isinstance(occ, dict) and isinstance(frac, (int, float)) and frac >= 0.2 and not occ.get("overlay"):
+            position = occ.get("position")
+            if position in ("fixed", "sticky"):
+                bar = occ.get("box") or {}
+                top_bar = bar.get("y", 0) + bar.get("h", 0) / 2 < vh / 2
+                reach = occ.get("scroller")
+                if isinstance(reach, dict) and isinstance(reach.get("top"), (int, float)) and isinstance(reach.get("max"), (int, float)):
+                    # The box that scrolls the covered text decides whether it can move out.
+                    permanent = reach["top"] <= 1 if top_bar else reach["top"] >= reach["max"] - 1
+                else:
+                    permanent = at_top if top_bar else at_end
+                where = ("상단 고정 바" if top_bar else "하단 고정 바") + ("(페이지 맨 위)" if top_bar else "(페이지 맨 끝)")
+            else:
+                permanent = True
+                where = "겹쳐 놓인 요소"
+            if permanent:
+                cover = occ.get("selector") or e.get("occluded_by")
+                out.append(Observation(
+                    "LY-02", *base, [e["id"]], element_key(e),
+                    {"name": "text_covered", "value": frac, "unit": "fraction", "threshold": 0.2, "comparator": ">=",
+                     "covered_by": cover, "position": position, "scroll_y": sy},
+                    False, "P2" if frac >= 0.4 else "P3",
+                    f"'{words[:30]}' 글자의 {round(frac * 100)}%가 {where} {cover}에 가려지고, 스크롤해도 드러나지 않습니다.",
+                    extra={"context_selectors": [cover]} if isinstance(cover, str) and cover.startswith("#") else {},
+                ))
+        overlap = e.get("text_overlap")
+        if isinstance(overlap, dict) and overlap.get("kind") in ("lines", "element"):
+            other = overlap.get("with")
+            out.append(Observation(
+                "LY-03", *base, [e["id"]], element_key(e),
+                {"name": "text_overlap", "value": overlap.get("overlap_px"), "unit": "css_px", "threshold": 1, "comparator": ">=",
+                 "kind": overlap["kind"], "with": other},
+                False, "P2",
+                f"'{words[:30]}' " + ("줄끼리 글자가 겹칩니다(줄 간격이 글자 크기보다 작음)." if overlap["kind"] == "lines"
+                                      else f"글자가 {other}의 글자와 겹칩니다."),
+                extra={"context_selectors": [other]} if isinstance(other, str) and other.startswith("#") else {},
+            ))
+    for o in ctx.snapshot.get("layout_outliers") or []:
+        if not isinstance(o, dict) or o.get("kind") not in ("alignment", "spacing"):
+            continue
+        selectors = [s for s in o.get("selectors") or [] if isinstance(s, str) and s]
+        if not selectors:
+            continue
+        label = (o.get("text") or "").strip()[:40]
+        container = o.get("container")
+        context = {"context_selectors": [container]} if isinstance(container, str) and container.startswith("#") else {}
+        if o["kind"] == "alignment":
+            offset = o.get("offset_px")
+            axis = "시작선" if o.get("axis") == "x" else "윗선"
+            out.append(Observation(
+                "LY-04", *base, [], f"{selectors[0]}|{label}",
+                {"name": "alignment_offset", "value": offset, "unit": "css_px", "threshold": 1.5, "comparator": ">=",
+                 "axis": o.get("axis"), "group_size": o.get("group_size"), "container": container},
+                False, "P3",
+                f"'{label[:30]}' 블록이 같은 묶음 {o.get('group_size')}개의 {axis}에서 {offset}px 어긋납니다.",
+                extra={"anchor_selectors": selectors, **context},
+            ))
+        else:
+            out.append(Observation(
+                "LY-05", *base, [], f"{selectors[-1]}|{label}",
+                {"name": "spacing_outlier", "value": o.get("gap_px"), "unit": "css_px", "typical": o.get("typical_px"),
+                 "threshold": 4, "comparator": ">=", "group_size": o.get("group_size"), "container": container},
+                False, "P3",
+                f"'{label[:30]}' 앞 간격이 {o.get('gap_px')}px로, 같은 목록의 다른 간격 {o.get('typical_px')}px와 다릅니다.",
+                extra={"anchor_selectors": selectors, **context},
+            ))
+    return out
+
+
 def check_ui_discoverability(ctx: Context) -> list[Observation]:
     """UI-01: sighted users need an explanation for icon-only actions.
 
@@ -2772,6 +2888,7 @@ SNAPSHOT_CHECKS: tuple[Callable[[Context], list[Observation]], ...] = (
     check_text_size,
     check_choice_overload,
     check_semantics,
+    check_layout,
     check_ui_discoverability,
     check_focus_management,
 )
@@ -2791,7 +2908,8 @@ HYPOTHESIS_CHECKS = frozenset({"GZ-01", "GZ-04", "PC-05", "PT-05", "GM-06"})
 # Checks that read no profile attribute: one verdict per snapshot, reported as
 # "profile-independent" instead of a k/n coverage (STF-08).
 PROFILE_INVARIANT_CHECKS = frozenset({"TI-01", "PT-01", "PT-05", "PT-06", "PC-01", "PC-02", "CG-01", "CG-03", "GZ-03", "GM-05", "GM-06",
-                                      "SM-01", "SM-02", "SM-03", "SM-04", "SM-05", "SM-06", "SM-07", "SM-08", "LY-01", "UI-01", "RF-01", "RF-02", "RF-03",
+                                      "SM-01", "SM-02", "SM-03", "SM-04", "SM-05", "SM-06", "SM-07", "SM-08", "LY-01", "LY-02", "LY-03",
+                                      "LY-04", "LY-05", "UI-01", "RF-01", "RF-02", "RF-03",
                                       "FM-02"})
 
 

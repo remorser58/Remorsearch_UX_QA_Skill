@@ -125,7 +125,9 @@ def evaluate(run_records: list[dict[str, Any]], profiles: list[dict[str, Any]], 
             analyses.append(result)
     used = profiles if mode == "swarm" else list(bases.values())
     findings = swarm.aggregate(analyses, used)
-    scored = bench.score(key, findings, used) if key else None
+    # Exact page-level matching (as ergo_eval.py scores): a page-level finding matches
+    # only a page-level key, never an arbitrary element.
+    scored = bench.score(key, findings, used, exact_viewport=True) if key else None
     return {"analyses": analyses, "findings": findings, "score": scored, "profiles": used}
 
 

@@ -620,20 +620,42 @@ export function extractSnapshot(args) {
     };
   };
   // Text cut off by its own box (XCTest textClipped; WCAG 1.4.4/1.4.12 symptoms).
+  // Glyph boxes of the text an element owns. A block's box and its text differ: a
+  // nowrap line can run past the edge of a block that itself stays inside its column.
+  const ownTextRects = (el) => {
+    const rects = [];
+    for (const node of el.childNodes) {
+      if (node.nodeType !== 3 || !node.nodeValue.trim()) continue;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      rects.push(...[...range.getClientRects()].filter((r) => r.width > 0 && r.height > 0));
+    }
+    return rects;
+  };
+  const unionRect = (rects) => rects.reduce((u, r) => ({ left: Math.min(u.left, r.left), top: Math.min(u.top, r.top),
+    right: Math.max(u.right, r.right), bottom: Math.max(u.bottom, r.bottom) }),
+  { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity });
+  // Boxes that clip on purpose: carousels, sliders and scroll-snap rows show part of the
+  // next item, and a disclosure (named by a control's aria-controls) shows a preview.
+  const DESIGNED_TRACK = /carousel|swiper|slick|splide|flickity|glide|embla|marquee|ticker|slider/i;
+  const designedClip = (n) => {
+    const rd = (n.getAttribute('aria-roledescription') || '').toLowerCase();
+    if (rd.includes('carousel') || rd.includes('slide')) return true;
+    const snap = style(n).scrollSnapType;
+    if (snap && snap !== 'none') return true;
+    if (n.id) {
+      try {
+        if (n.getRootNode().querySelector(`[aria-controls~="${CSS.escape(n.id)}"]`)) return true;
+      } catch (e) { /* an unusual id never hides a cut */ }
+    }
+    return DESIGNED_TRACK.test(`${n.id || ''} ${typeof n.className === 'string' ? n.className : ''}`);
+  };
   const clippedOf = (el, cs, directLabel = false) => {
     const hide = (v) => v === 'hidden' || v === 'clip';
     // A control's scroll size includes decoration and nested labels. Measure only
     // the text this candidate owns; tagged descendants are captured separately.
-    const rects = [];
-    if (directLabel) {
-      for (const node of el.childNodes) {
-        if (node.nodeType !== 3 || !node.nodeValue.trim()) continue;
-        const range = document.createRange();
-        range.selectNodeContents(node);
-        rects.push(...[...range.getClientRects()].filter((r) => r.width > 0 && r.height > 0));
-      }
-      if (!rects.length) return null;
-    }
+    const rects = ownTextRects(el);
+    if (directLabel && !rects.length) return null;
     const cuts = (a, axis) => rects.some((r) => axis === 'x'
       ? r.right > a.right + 1 || r.left < a.left - 1
       : r.bottom > a.bottom + 1 || r.top < a.top - 1);
@@ -643,27 +665,45 @@ export function extractSnapshot(args) {
     let x = hide(cs.overflowX) && (directLabel ? cuts(inner, 'x') : el.scrollWidth > el.clientWidth + 1);
     let y = hide(cs.overflowY) && (directLabel ? cuts(inner, 'y') : el.scrollHeight > el.clientHeight + 1);
     let by = null;
+    let viewportCut = false;
     let ellipsis = cs.textOverflow === 'ellipsis';
     if (!x && !y) {
-      // ACT 59br37: text cut by an ancestor that clips (a fixed-width chip or label),
-      // within three levels. The text must be partly visible: a slide that is wholly
-      // outside its carousel is not cut text. A scroll container is reachable.
-      const r = el.getBoundingClientRect();
-      for (let n = el.parentElement, i = 0; n && n.nodeType === 1 && i < 3 && n !== document.body; n = n.parentElement, i++) {
+      // ACT 59br37: text cut by an ancestor that clips (a fixed-width chip or label, a
+      // card, a page column). Measured on the glyph boxes the element owns, so a nowrap
+      // line that runs out of its block is found at any depth. The text must be partly
+      // visible: a slide wholly outside its carousel is not cut text. A scroll container
+      // is reachable, a designed clip is intended, and a box under 4 px holds visually
+      // hidden text.
+      const r = rects.length ? unionRect(rects) : el.getBoundingClientRect();
+      const past = (a, axis) => (rects.length ? cuts(a, axis) : axis === 'x'
+        ? r.right > a.right + 1 || r.left < a.left - 1 : r.bottom > a.bottom + 1 || r.top < a.top - 1);
+      for (let n = parentOf(el); n && n.nodeType === 1 && n !== document.body && n !== document.documentElement; n = parentOf(n)) {
+        if (designedClip(n)) return null;
         const ncs = style(n);
         const ax = ncs.overflowX;
         const ay = ncs.overflowY;
-        if (ax === 'auto' || ax === 'scroll' || ay === 'auto' || ay === 'scroll') break;
+        if (ax === 'auto' || ax === 'scroll' || ay === 'auto' || ay === 'scroll') return null;
         if (!hide(ax) && !hide(ay)) continue;
         const a = n.getBoundingClientRect();
-        const cutX = hide(ax) && (directLabel ? cuts(a, 'x') : r.right > a.right + 1 || r.left < a.left - 1) && r.left < a.right && r.right > a.left;
-        const cutY = hide(ay) && (directLabel ? cuts(a, 'y') : r.bottom > a.bottom + 1 || r.top < a.top - 1) && r.top < a.bottom && r.bottom > a.top;
+        if (a.width < 4 || a.height < 4) return null;
+        const cutX = hide(ax) && past(a, 'x') && r.left < a.right && r.right > a.left;
+        const cutY = hide(ay) && past(a, 'y') && r.top < a.bottom && r.bottom > a.top;
         if (cutX || cutY) {
           x = cutX;
           y = cutY;
           by = n;
           ellipsis = ellipsis || ncs.textOverflow === 'ellipsis';
           break;
+        }
+      }
+      if (!x && !y && rects.length) {
+        // The screen edge cuts sideways when the page hides horizontal overflow: text past
+        // it can never be scrolled into view.
+        const rootHides = [document.documentElement, document.body].some((n) => n && hide(style(n).overflowX));
+        if (rootHides && cuts({ left: VX0, right: VX1, top: VY0, bottom: VY1 }, 'x') && r.left < VX1 && r.right > VX0) {
+          x = true;
+          by = document.documentElement;
+          viewportCut = true;
         }
       }
       if (!x && !y) return null;
@@ -707,7 +747,8 @@ export function extractSnapshot(args) {
         break;
       }
     }
-    return { x, y, ellipsis: ellipsis || !!clamp, line_clamp: !!clamp, animated, by: by ? (by.getAttribute('id') ? `#${by.getAttribute('id')}` : by.tagName.toLowerCase()) : null,
+    return { x, y, ellipsis: ellipsis || !!clamp, line_clamp: !!clamp, animated,
+      by: viewportCut ? 'viewport' : by ? (by.getAttribute('id') ? `#${by.getAttribute('id')}` : by.tagName.toLowerCase()) : null,
       act: exemptX && exemptY ? 'passed' : 'failed' };
   };
   const visibleText = (el) => {
@@ -1069,6 +1110,43 @@ export function extractSnapshot(args) {
   };
 
   // Bounded solid-paint evidence, not a general rendering model. CSS `color` is
+  // What covers an element: the nearest fixed or sticky layer (scrolling moves content
+  // under it) or a box in the normal layout (nothing moves it away), and whether it is
+  // a dialog, popup or large overlay that covers content on purpose.
+  const OVERLAY_ROLES = new Set(['dialog', 'alertdialog', 'tooltip', 'menu', 'listbox', 'status', 'alert']);
+  const occluderOf = (top, el) => {
+    let layer = top;
+    let position = 'flow';
+    let overlay = false;
+    for (let n = top; n && n.nodeType === 1 && !n.contains(el); n = parentOf(n)) {
+      const tag = n.tagName.toLowerCase();
+      if (tag === 'dialog' || n.getAttribute('aria-modal') === 'true' || OVERLAY_ROLES.has((n.getAttribute('role') || '').trim())) overlay = true;
+      const p = style(n).position;
+      if (position === 'flow' && (p === 'fixed' || p === 'sticky')) {
+        position = p;
+        layer = n;
+      }
+    }
+    const b = layer.getBoundingClientRect();
+    if (b.width * b.height >= 0.4 * vw * vh) overlay = true;
+    // Scrolling can move the covered text out from under a fixed or sticky bar only in
+    // the box that scrolls it: an inner scroll container, or else the page.
+    let scroller = null;
+    for (let n = parentOf(el); n && n.nodeType === 1 && n !== document.body && n !== document.documentElement; n = parentOf(n)) {
+      const oy = style(n).overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && n.scrollHeight > n.clientHeight + 1) {
+        scroller = { top: round2(n.scrollTop), max: round2(n.scrollHeight - n.clientHeight), inner: true };
+        break;
+      }
+    }
+    if (!scroller) {
+      const se = document.scrollingElement || document.documentElement;
+      scroller = { top: round2(window.scrollY), max: round2(Math.max(0, se.scrollHeight - window.innerHeight)), inner: false };
+    }
+    return { position, overlay, selector: uniqueSelector(layer), scroller,
+      box: { x: round2(b.left), y: round2(b.top), w: round2(b.width), h: round2(b.height) } };
+  };
+
   // included only when a text node actually occupies a rendered glyph box.
   const paintFor = (el) => {
     const parts = [];
@@ -1288,12 +1366,15 @@ export function extractSnapshot(args) {
     if (s) for (const r of roles) if (known.has(r)) s.roles.add(r);
   }
 
-  candidates.sort((a, b) => a.group - b.group || a.visRank - b.visRank || a.order - b.order);
+  // What is on screen comes first: a long page's off-screen controls must not crowd
+  // visible text out of the cap (truncation is reported with the snapshot).
+  candidates.sort((a, b) => a.visRank - b.visRank || a.group - b.group || a.order - b.order);
   const cap = Math.max(0, (args.cap || 400) - spots.size);
   const kept = candidates.slice(0, cap).sort((a, b) => a.order - b.order);
 
   const ids = new WeakMap();
   const elements = [];
+  const recordOf = new Map();
   let n = 0;
   for (const c of kept) {
     const el = c.el;
@@ -1353,6 +1434,7 @@ export function extractSnapshot(args) {
         return {
           occluded_fraction: o.fraction,
           occluded_by: o.by ? uniqueSelector(o.by) : null,
+          ...(o.by && o.fraction > 0 ? { occluder: occluderOf(o.by, el) } : {}),
           inert_by_modal: inertByModal(el),
         };
       })(),
@@ -1373,6 +1455,7 @@ export function extractSnapshot(args) {
       ...siblingScope(el),
       source: 'dom',
     });
+    recordOf.set(el, elements[elements.length - 1]);
   }
   for (const s of spots.values()) {
     const b = s.box;
@@ -1399,6 +1482,195 @@ export function extractSnapshot(args) {
       hotspot_origin: s.origin,
     });
   }
+  // ---------- rendered layout: overlapping text, near-miss alignment, uneven spacing
+  // Text drawn over other text: lines of one element whose glyph bands cross (a line
+  // height far below the font size) or two elements whose glyph bands cross (a negative
+  // margin, an absolutely placed label). The band is the middle 0.8 em of each line box,
+  // so ordinary tight headings do not count. Pairs in different fixed or sticky layers
+  // are left to the covered-text record, which knows whether scrolling moves them apart.
+  const fixedHost = (el) => {
+    for (let n = el; n && n.nodeType === 1; n = parentOf(n)) {
+      const p = style(n).position;
+      if (p === 'fixed' || p === 'sticky') return n;
+    }
+    return null;
+  };
+  const bandsOf = (el, rects) => {
+    const fs = parseFloat(style(el).fontSize) || 16;
+    return rects.map((r) => {
+      const h = Math.min(r.height, 0.8 * fs);
+      const top = r.top + (r.height - h) / 2;
+      return { left: r.left, right: r.right, top, bottom: top + h };
+    });
+  };
+  const crossing = (a, b) => {
+    const ix = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+    const iy = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+    return ix >= 6 && iy >= 1 ? iy : 0;
+  };
+  const texts = [];
+  for (const c of kept) {
+    const el = c.el;
+    if (!hasDirectText(el)) continue;
+    const g = geo(el);
+    if (!g.vis || !g.inVp) continue;
+    const rects = ownTextRects(el).filter((r) => r.width >= 2 && r.height >= 4
+      && r.bottom > VY0 && r.top < VY1 && r.right > VX0 && r.left < VX1);
+    if (rects.length) texts.push({ el, rects, bands: bandsOf(el, rects), host: fixedHost(el) });
+  }
+  const overlapOf = new Map();
+  for (const t of texts) {
+    const lines = t.bands.map((b, i) => ({ b, top: t.rects[i].top })).sort((p, q) => p.top - q.top);
+    for (let i = 1; i < lines.length; i++) {
+      if (Math.abs(lines[i].top - lines[i - 1].top) < 1) continue; // same line
+      const amount = crossing(lines[i - 1].b, lines[i].b);
+      if (amount) {
+        overlapOf.set(t.el, { kind: 'lines', with: null, overlap_px: round2(amount) });
+        break;
+      }
+    }
+  }
+  // Two texts collide only when both stay visible: where the upper one sits on a painted
+  // box (a sheet, toast, keypad or card background), the lower text is covered instead,
+  // which the covered-text record judges with its reach and overlay rules.
+  for (let i = 0; i < texts.length; i++) {
+    for (let j = i + 1; j < texts.length; j++) {
+      const a = texts[i];
+      const b = texts[j];
+      if (a.host !== b.host || a.el.contains(b.el) || b.el.contains(a.el)) continue;
+      let amount = 0;
+      let spot = null;
+      for (const p of a.bands) {
+        for (const q of b.bands) {
+          const v = crossing(p, q);
+          if (v > amount) {
+            amount = v;
+            spot = { x: (Math.max(p.left, q.left) + Math.min(p.right, q.right)) / 2, y: (Math.max(p.top, q.top) + Math.min(p.bottom, q.bottom)) / 2 };
+          }
+        }
+      }
+      if (!amount || spot.x < VX0 || spot.y < VY0 || spot.x >= VX1 || spot.y >= VY1) continue;
+      let top = null;
+      try {
+        top = document.elementFromPoint(spot.x, spot.y);
+      } catch (e) {
+        top = null;
+      }
+      const upper = top && (a.el === top || a.el.contains(top)) ? a : top && (b.el === top || b.el.contains(top)) ? b : null;
+      if (!upper) continue; // a third layer is on top: covered, not colliding
+      const lower = upper === a ? b : a;
+      if (paintsOver(top, lower.el)) continue;
+      const later = a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? b : a;
+      const other = later === a ? b : a;
+      if (!overlapOf.has(later.el)) overlapOf.set(later.el, { kind: 'element', with: uniqueSelector(other.el), overlap_px: round2(amount) });
+    }
+  }
+  for (const [el, v] of overlapOf) {
+    const rec = recordOf.get(el);
+    if (rec) rec.text_overlap = v;
+  }
+
+  // Siblings meant to line up: three or more same-kind blocks stacked in a column (where
+  // their text starts) or set side by side in a row (their top edges). One block 1.5-8
+  // px off while the rest agree is a near-miss; in a column of four or more, one gap
+  // that differs from the others by at least 4 px and 25 % is uneven rhythm. Recorded
+  // as candidates with the outlier's selector; the analyser rates them P3.
+  const layoutOutliers = [];
+  const firstGlyphLeft = (el) => {
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (!node.nodeValue.trim()) continue;
+      const host = node.parentElement;
+      if (!host || !geo(host).vis) continue;
+      if (['center', 'right', 'end', 'justify'].includes(style(host).textAlign)) return null;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const r = [...range.getClientRects()].find((q) => q.width > 0 && q.height > 0);
+      return r ? r.left : null;
+    }
+    return null;
+  };
+  const contentLeft = (el) => {
+    const glyph = firstGlyphLeft(el);
+    if (glyph !== null) return glyph;
+    const cs = style(el);
+    return el.getBoundingClientRect().left + (parseFloat(cs.borderLeftWidth) || 0) + (parseFloat(cs.paddingLeft) || 0);
+  };
+  const sameKind = (a, b) => {
+    if (a.tagName !== b.tagName) return false;
+    const ca = [...a.classList];
+    const cb = new Set(b.classList);
+    return (!ca.length && !cb.size) || ca.some((c) => cb.has(c));
+  };
+  const modeOf = (values, tolerance) => {
+    let best = null;
+    for (const v of values) {
+      const agree = values.filter((w) => Math.abs(w - v) <= tolerance).length;
+      if (!best || agree > best.agree) best = { value: v, agree };
+    }
+    return best;
+  };
+  const textOf = (el) => (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+  const boxOf = (el) => {
+    const b = el.getBoundingClientRect();
+    return { x: round2(b.left), y: round2(b.top), w: round2(b.width), h: round2(b.height) };
+  };
+  const containers = new Set();
+  for (const c of kept) {
+    for (let n = parentOf(c.el), i = 0; n && n.nodeType === 1 && i < 4; n = parentOf(n), i++) containers.add(n);
+  }
+  for (const box of containers) {
+    const kids = [...box.children].filter((k) => {
+      if (['script', 'style', 'template', 'br', 'hr'].includes(k.tagName.toLowerCase())) return false;
+      const cs = style(k);
+      if (!['static', 'relative'].includes(cs.position) || cs.display === 'contents' || cs.float !== 'none') return false;
+      const g = geo(k);
+      return g.vis && g.inVp && g.r.height > 2 && g.r.width > 2;
+    });
+    if (kids.length < 3) continue;
+    const groups = [];
+    for (const k of kids) {
+      const g = groups.find((list) => sameKind(list[0], k));
+      if (g) g.push(k); else groups.push([k]);
+    }
+    for (const group of groups) {
+      if (group.length < 3) continue;
+      const rs = group.map((k) => geo(k).r);
+      const column = rs.every((r, i) => i === 0 || r.top >= rs[i - 1].bottom - 1);
+      const row = !column && rs.every((r, i) => i === 0 || (r.left >= rs[i - 1].right - 1 && r.top < rs[i - 1].bottom && r.bottom > rs[i - 1].top));
+      if (!column && !row) continue;
+      const values = column ? group.map(contentLeft) : rs.map((r) => r.top);
+      const mode = modeOf(values, 0.75);
+      if (mode && mode.agree >= group.length - 1 && mode.agree >= 2) {
+        const off = group.map((k, i) => ({ k, d: values[i] - mode.value })).filter((o) => Math.abs(o.d) > 0.75);
+        if (off.length === 1 && Math.abs(off[0].d) >= 1.5 && Math.abs(off[0].d) <= 8) {
+          layoutOutliers.push({ kind: 'alignment', axis: column ? 'x' : 'y', selectors: [uniqueSelector(off[0].k)],
+            container: uniqueSelector(box), offset_px: round2(off[0].d), group_size: group.length,
+            text: textOf(off[0].k), box: boxOf(off[0].k) });
+        }
+      }
+      if (column && group.length >= 4) {
+        const gaps = rs.slice(1).map((r, i) => r.top - rs[i].bottom);
+        const typical = modeOf(gaps, 1);
+        if (typical && typical.agree >= gaps.length - 1 && typical.agree >= 2) {
+          const odd = gaps.map((v, i) => ({ v, i })).filter((o) => Math.abs(o.v - typical.value) > 1);
+          // A squeezed gap, or one up to twice the usual: a much wider gap separates groups
+          // on purpose (a divider between sections of a menu or form).
+          const off = odd.length === 1 ? odd[0].v - typical.value : 0;
+          const uneven = off < 0 ? -off >= 4 && -off >= 0.25 * typical.value
+            : off >= 4 && typical.value >= 8 && odd.length === 1 && odd[0].v <= 2 * typical.value;
+          if (odd.length === 1 && uneven) {
+            const before = group[odd[0].i];
+            const after = group[odd[0].i + 1];
+            layoutOutliers.push({ kind: 'spacing', axis: 'y', selectors: [uniqueSelector(before), uniqueSelector(after)],
+              container: uniqueSelector(box), gap_px: round2(odd[0].v), typical_px: round2(typical.value), group_size: group.length,
+              text: textOf(after), box: boxOf(after) });
+          }
+        }
+      }
+    }
+  }
+
   state.ids = ids;
   state.hotspots = [...spots.values()].map((s) => ({ id: s.id, box: s.box, elementId: `hs-${s.id.replace(/[^A-Za-z0-9._-]/g, '_')}` }));
 
@@ -1511,6 +1783,7 @@ export function extractSnapshot(args) {
       shift(e.visible_box);
       for (const hb of e.hit_boxes || []) shift(hb);
       for (const p of e.paint?.parts || []) shift(p.box);
+      if (e.occluder) shift(e.occluder.box);
     }
     if (active) { active.x = round2(active.x - VX0); active.y = round2(active.y - VY0); }
     for (const l of layerOut) shift(l.box);
@@ -1530,6 +1803,10 @@ export function extractSnapshot(args) {
       controls: focusOnBody ? [] : (deep.getAttribute('aria-controls') || '').split(/\s+/).filter(Boolean).slice(0, 8),
     },
     layers: layerOut,
+    layout_outliers: (() => {
+      if (panned && (VX0 || VY0)) for (const o of layoutOutliers) { o.box.x = round2(o.box.x - VX0); o.box.y = round2(o.box.y - VY0); }
+      return layoutOutliers;
+    })(),
     pageHotspotError,
     unknownRoles: [...unknownRoles],
   };

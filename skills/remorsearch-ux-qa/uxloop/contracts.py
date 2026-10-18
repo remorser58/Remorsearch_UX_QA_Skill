@@ -217,7 +217,12 @@ def validate_packet(packet: Any) -> list[str]:
             errors.append(f"visual {visual['id']}: non-pass requires a reason")
     for fix in maps["fixes"].values():
         proposal = need(fix["proposal_id"], records["proposals"], "fix proposal")
-        need(fix["figma_id"], records["figma"], "fix Figma-first baseline")
+        # A project that keeps design in Figma (policy.figma_first) changes it there first;
+        # a code-first project's fix carries no design baseline and is judged by its replay.
+        if fix["figma_id"] is not None:
+            need(fix["figma_id"], records["figma"], "fix Figma baseline")
+        elif packet["policy"]["figma_first"]:
+            errors.append(f"fix {fix['id']}: the Figma-first policy requires a Figma baseline")
         if proposal and not set(fix["finding_ids"]) <= set(proposal["finding_ids"]):
             errors.append(f"fix {fix['id']}: findings do not belong to proposal")
         for finding_id in fix["finding_ids"]:

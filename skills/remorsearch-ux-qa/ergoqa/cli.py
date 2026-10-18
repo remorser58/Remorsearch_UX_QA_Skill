@@ -276,11 +276,29 @@ def cmd_bench(args: argparse.Namespace) -> int:
     key = load_json(args.key)
     findings_doc = load_json(args.findings)
     profiles = _load_profiles(args.profiles)
-    result = bench.score(key, findings_doc["findings"], profiles)
+    result = bench.score(key, findings_doc["findings"], profiles, exact_viewport=True)
     if args.out:
         _write_json(Path(args.out), result)
     print(json.dumps({k: v for k, v in result.items() if not isinstance(v, list)}, ensure_ascii=False, indent=2))
     return EXIT_OK
+
+
+def cmd_scan(args: argparse.Namespace) -> int:
+    from . import scan
+
+    out = Path(args.out)
+    if out.exists() and any(out.iterdir()):
+        print(f"--out must be a new or empty directory: {out}", file=sys.stderr)
+        return EXIT_USAGE
+    devices = tuple(args.device or scan.DEFAULT_DEVICES)
+    for device_id in devices:
+        get_device(device_id)
+    result = scan.run_scan(args.url, out, devices=devices, tiles=args.tiles, node=args.node)
+    print((out / "scan.md").read_text(encoding="utf-8"))
+    print(f"scan: {len(result['candidates'])} candidates -> {out / 'scan.json'}")
+    if not all(c.get("recorded") for c in result["coverage"]):
+        return EXIT_DEGRADED
+    return EXIT_FINDINGS if result["candidates"] else EXIT_OK
 
 
 def cmd_catalog(args: argparse.Namespace) -> int:
@@ -474,6 +492,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("catalog", help="print the check catalog")
     p.set_defaults(func=cmd_catalog)
+
+    p = sub.add_parser("scan", help="rendered layout scan of one URL: phone and laptop, top to end, measured candidates with outlined crops")
+    p.add_argument("--url", required=True, help="http(s) URL of the page as users see it")
+    p.add_argument("--device", action="append", help="device id (repeatable; default galaxy-s24 and laptop-1440)")
+    p.add_argument("--tiles", type=int, default=8, help="scroll screens after the top one, before jumping to the end (default 8)")
+    p.add_argument("--node", default="node", help="Node.js 22 executable for the web driver")
+    p.add_argument("--out", required=True, help="new or empty directory")
+    p.set_defaults(func=cmd_scan)
 
     p = sub.add_parser("android-snapshot", help="build a snapshot from a uiautomator dump and screenshot")
     p.add_argument("--xml", required=True)

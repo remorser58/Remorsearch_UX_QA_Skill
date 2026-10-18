@@ -107,9 +107,11 @@ and nodes, actual capture, reference export, comparison report, method
 aspect keys: `layout`, `interaction_states`, `alignment`, `spacing`, `typography`,
 `text_clipping`, `component_occlusion`, `figma_fidelity`, `side_accents`.
 `text_clipping` and `component_occlusion` are separate gates; `layout: passed`
-cannot stand in for either one. For a skill-authored proposal, a passed
-`side_accents` check means **no side accent bars, attached side-tab cards or
-equivalent decorative rails**. Existing-product QA reports a bar only when the
+cannot stand in for either one. `side_accents` applies the packet's
+`policy.allow_side_accents`: when it is false, a passed check means the
+skill-authored proposal adds no side accent bars, attached side-tab cards or
+equivalent decorative rails; when it is true, a passed check means the change
+follows the project's own rule. Existing-product QA reports a bar only when the
 task trace shows harm. If the CLI requires an absence receipt that the current
 product cannot supply, report a policy-gate limitation; never invent a pass.
 

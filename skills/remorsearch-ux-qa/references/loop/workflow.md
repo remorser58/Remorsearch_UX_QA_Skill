@@ -11,7 +11,7 @@ The host agent investigates, operates browser/Figma tools, builds and replays. C
 
 Load only the active provider card. Product improvement starts with `references/persona-qa/workflow.md`, uses `references/research/workflow.md` for discovered questions, then returns to relevant QA. Narrow requests keep their scope. Label serial/self checks. Research supplies scrubbed hypotheses; actual product traces establish findings.
 
-Lookup `references/loop/provider-contract.md` by section. ux-loop.v1 intake: minimized summaries; receipts bind build/route/scenario/device/viewport/input/tool versions, steps/errors/keyboard/focus/semantics/accessibility, current actual/reference captures/comparisons. URL/image alone is insufficient. Editable Figma file/branch/version/nodes/readback; unresolved conflict blocks acceptance. Proposals use no side accent bars, attached side tabs or decorative rails.
+Lookup `references/loop/provider-contract.md` by section. ux-loop.v1 intake: minimized summaries; receipts bind build/route/scenario/device/viewport/input/tool versions, steps/errors/keyboard/focus/semantics/accessibility, current actual/reference captures/comparisons. URL/image alone is insufficient. Figma-first policy: editable Figma file/branch/version/nodes/readback; unresolved conflict blocks acceptance. Proposals follow `policy.allow_side_accents`.
 
 ## 2. Validate, run, fix and replay
 

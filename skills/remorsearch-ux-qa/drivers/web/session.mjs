@@ -2339,6 +2339,7 @@ export class WebSession {
       focus_point: this.focusPoint,
       focus: ex.focus,
       layers: ex.layers,
+      layout_outliers: ex.layout_outliers || [],
       console_errors: this.consolePending.splice(0),
       notes: allNotes,
     };

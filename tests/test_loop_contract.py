@@ -82,6 +82,12 @@ class ContractTests(unittest.TestCase):
         self.packet['visual_checks'][1]['checks']['side_accents'] = 'failed'
         self.assertTrue(validate_packet(self.packet))
 
+    def test_figma_baseline_is_required_only_by_a_figma_first_policy(self):
+        self.packet['fixes'][0]['figma_id'] = None
+        self.assertTrue(any('Figma-first policy' in x for x in validate_packet(self.packet)))
+        self.packet['policy']['figma_first'] = False
+        self.assertEqual(validate_packet(self.packet), [])
+
     def test_visual_pass_requires_all_six_semantic_checks(self):
         for field in ('alignment', 'spacing', 'typography', 'text_clipping', 'component_occlusion', 'figma_fidelity'):
             packet = copy.deepcopy(self.packet)

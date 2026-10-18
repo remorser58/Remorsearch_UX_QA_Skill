@@ -133,10 +133,10 @@
       ],
       "properties": {
         "figma_first": {
-          "const": true
+          "type": "boolean"
         },
         "allow_side_accents": {
-          "const": false
+          "type": "boolean"
         },
         "raw_community_storage": {
           "const": false
@@ -1020,7 +1020,10 @@
           "pattern": "^[a-f0-9]{64}$"
         },
         "figma_id": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
         },
         "rationale": {
