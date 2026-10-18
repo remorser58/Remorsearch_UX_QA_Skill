@@ -223,6 +223,18 @@ The driver itself never installs anything.
 
 ## Hosts that sandbox commands (Codex)
 
+A sandbox that blocks Chromium's helper processes but allows local files (Codex
+on macOS) can launch it in one process, which is enough for captures and the
+layout scan of a `file://` page:
+
+```sh
+REMORSEARCH_CHROMIUM_ARGS=--single-process python3 scripts/ergo_qa.py scan --url file:///path/to/page.html --out work/scan
+```
+
+`REMORSEARCH_CHROMIUM_ARGS` takes space-separated Chromium switches for a local
+launch; anything that is not a `--switch` or `--switch=value` fails the run. Pages
+on the network still need network permission from the host.
+
 When a host's command sandbox cannot launch Chromium, start the browser server in
 a terminal outside that sandbox, using the same pinned Playwright package:
 

@@ -2361,8 +2361,15 @@ def check_layout(ctx: Context) -> list[Observation]:
         box = e.get("box") or {}
         if e.get("source", "dom") != "dom" or not words or not e.get("visible", True) or box.get("w", 0) < 4 or box.get("h", 0) < 4:
             continue
-        occ, frac = e.get("occluder"), e.get("occluded_fraction")
-        if isinstance(occ, dict) and isinstance(frac, (int, float)) and frac >= 0.2 and not occ.get("overlay"):
+        # Glyph sampling (three points per visible line) is the sharper measure; the
+        # element-box sample stands in when no line was found under a painted box.
+        glyph, occ, frac = e.get("glyph_cover"), e.get("occluder"), e.get("occluded_fraction")
+        basis = None
+        if isinstance(glyph, dict) and glyph.get("lines_covered") and not glyph.get("overlay"):
+            occ, frac, basis = glyph, float(glyph.get("fraction") or 0), "glyphs"
+        elif isinstance(occ, dict) and isinstance(frac, (int, float)) and frac >= 0.2 and not occ.get("overlay"):
+            basis = "box"
+        if basis:
             position = occ.get("position")
             if position in ("fixed", "sticky"):
                 bar = occ.get("box") or {}
@@ -2379,12 +2386,14 @@ def check_layout(ctx: Context) -> list[Observation]:
                 where = "겹쳐 놓인 요소"
             if permanent:
                 cover = occ.get("selector") or e.get("occluded_by")
+                share = (f"줄 {glyph.get('lines_covered')}/{glyph.get('lines')}개" if basis == "glyphs"
+                         else f"{round(frac * 100)}%")
                 out.append(Observation(
                     "LY-02", *base, [e["id"]], element_key(e),
                     {"name": "text_covered", "value": frac, "unit": "fraction", "threshold": 0.2, "comparator": ">=",
-                     "covered_by": cover, "position": position, "scroll_y": sy},
-                    False, "P2" if frac >= 0.4 else "P3",
-                    f"'{words[:30]}' 글자의 {round(frac * 100)}%가 {where} {cover}에 가려지고, 스크롤해도 드러나지 않습니다.",
+                     "covered_by": cover, "position": position, "scroll_y": sy, "basis": basis},
+                    False, "P2" if basis == "glyphs" or frac >= 0.4 else "P3",
+                    f"'{words[:30]}' 글자 {share}가 {where} {cover}에 가려지고, 스크롤해도 드러나지 않습니다.",
                     extra={"context_selectors": [cover]} if isinstance(cover, str) and cover.startswith("#") else {},
                 ))
         overlap = e.get("text_overlap")
