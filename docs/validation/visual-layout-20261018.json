@@ -7,12 +7,12 @@
  "detector_first_blind": "first score of benchmarks/visual-layout before any change made after seeing it",
  "detector_final": "release candidate after the third review",
  "final_provenance": {
-  "code_sha256": "fd1e2f8ec6ff8835354325d4d82a0686fb2d79713138853650c026a5acb620ce",
+  "code_sha256": "7b261f8e0a88b38d736af9b8f81ba9466136a7283a62b9a529585edd933d182a",
   "driver_sha256": "5c2d0518816dd65e94dd1ea034adb59154dce180f1fa093f2d79af78e07cfd5e",
   "platform": "macOS 27.2 arm64, Chromium 141.0.7390.37, Playwright 1.56.1, Node.js 22.23.3"
  },
  "final_linux_provenance": {
-  "code_sha256": "fd1e2f8ec6ff8835354325d4d82a0686fb2d79713138853650c026a5acb620ce",
+  "code_sha256": "7b261f8e0a88b38d736af9b8f81ba9466136a7283a62b9a529585edd933d182a",
   "driver_sha256": "5c2d0518816dd65e94dd1ea034adb59154dce180f1fa093f2d79af78e07cfd5e",
   "platform": "Ubuntu 24.04.4 arm64 VM, Chromium 141.0.7390.37, Playwright 1.56.1, Node.js 22.23.3, Korean font WenQuanYi Zen Hei"
  },
