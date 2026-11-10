@@ -35,7 +35,8 @@
     "plan",
     "persona-starter",
     "export-personas",
-    "persona-intake"
+    "persona-intake",
+    "prepare-imports"
   ],
   "korean_switches": {
     "report_language": {

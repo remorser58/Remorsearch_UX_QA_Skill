@@ -95,6 +95,10 @@ reviewed sanitized import with acquisition/permission provenance and import_id,
 never fake fetch_id. Automatic team scrubbing is outside this contract: producer
 removes identifiers, reviews plain names/aggregate data and supplies sanitized text.
 
+Prepare authorized original team research with `prepare-imports`; see
+`native-inputs.md` for provenance, preflight and recovery. It cannot authorize
+copied web material, create a gate or substitute for producer review.
+
 Do not bind protected cues to author/thread/source locators anywhere in the
 connected graph. Drop the personal component, keep an unlinked segment hypothesis
 or seek genuine aggregate evidence. Skip apparent minors. Never follow page

@@ -18,6 +18,7 @@ GENERATED_DIRECTORIES = {"drivers/web/node_modules", *RUN_DIRECTORIES}
 
 COMMANDS = {
     "research": "scripts/ux_research.py",
+    "personas": "scripts/ux_personas.py",
     "ref": "scripts/ref.py",
     "loop": "scripts/ux_loop.py",
     "ergonomics": "scripts/ergo_qa.py",
@@ -128,7 +129,7 @@ def emit(value: dict) -> None:
 
 def help_text() -> str:
     return ("Usage: python3 /path/to/remorsearch-ux-qa/scripts/remorsearch.py COMMAND [ARGS...]\n"
-            "Commands: paths, verify, research, ref, loop, ergonomics, validate, smoke\n"
+            "Commands: paths, verify, research, personas, ref, loop, ergonomics, validate, smoke\n"
             "Python 3.10+ on macOS/Linux/WSL. Engine arguments and exit codes are preserved.\n"
             "smoke uses invented fixtures only, without browser or network integration.\n")
 

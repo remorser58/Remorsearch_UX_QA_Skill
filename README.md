@@ -29,16 +29,22 @@ and component tests do not establish that result.
 
 ## Install
 
+The reusable-persona update is on `rem/persona-ux-qa-20261110`, not yet merged
+into `main`. The commands below select this reviewed branch. The repository remains
+private. See [validation and remaining limits](docs/validation/persona-upgrade-summary-20261110.md)
+and the [persona library/task contract](skills/remorsearch-ux-qa/references/persona-qa/persona-library-swarm.md).
+Do not overwrite a locally edited installation without preserving it first.
+
 Install one folder into your skills directory. It includes the original
 insane-search toolkit as reference material for Remorsearch's research stage;
 users do not install a separate search skill. The Python tools need Python 3.10+
-on macOS, Linux or WSL and use the standard library and POSIX file locks.
-
-The current candidate is on `codex/release-candidate-20261002`; use that branch
-until the skill is merged into `main`.
+on macOS, Linux or WSL and use the standard library and POSIX file locks. If the
+default `python3` is older (the macOS system Python is 3.9), the host runs
+`python3 scripts/find_runtime.py` from the skill folder. It prints JSON with the
+highest supported Python, a Node.js 22 path and any gaps; it installs nothing.
 
 ```sh
-git clone --branch codex/release-candidate-20261002 https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
+git clone --branch rem/persona-ux-qa-20261110 --single-branch https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
 # Claude Code (personal); use .claude/skills/ inside a project to share it with a team
 mkdir -p ~/.claude/skills
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
@@ -84,8 +90,20 @@ Ask in plain words, or call it by name:
 The agent derives tasks, questions and scenarios from the product, inspects
 relevant project documents and accessible intent memory, and preserves confirmed
 decisions through replay. It asks only for material missing access or unresolved
-decisions and continues unaffected work. Subagents are optional; existing host
-settings apply without a mandatory model-selection setup.
+decisions and continues unaffected work. Subagents are optional and inherit the
+current session's model; you are asked only if you want to choose one.
+
+One request is enough: a URL or repository, optionally a task. The agent first
+writes a scoped baseline assessment of the tasks it actually reached, which is
+useful on its own, then researches only the questions that assessment raised. It
+makes a fix only when one is warranted and replays it. A missing optional source
+or tool limits only the affected result. When it prepares a loop packet, the
+host writes the observed facts and marks mechanical fields `@auto`;
+`python3 scripts/ux_loop.py fill DRAFT.json --evidence-root EVIDENCE [--workspace PRODUCT] --out packet.json`
+computes only hashes, digests, run links and fix revisions. It never fills
+context, intent, grants, outcomes or severity, and a refused or invalid result is
+not acceptance. A passed task shows that task only; it is not whole-product
+readiness or measured user benefit.
 
 Default research candidates are 당근 (Karrot), 디시인사이드 (DC Inside), 유튜브 댓글
 (YouTube comments), X, 인스타그램 (Instagram) and Threads(쓰레드). The agent selects
