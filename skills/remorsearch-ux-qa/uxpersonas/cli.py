@@ -16,12 +16,12 @@ def parser():
     root = argparse.ArgumentParser(description=__doc__)
     commands = root.add_subparsers(dest="command", required=True)
     default = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "remorsearch-ux-qa/personas"
-    for name in ("import", "list", "retire", "reuse", "prune", "plan", "claim", "record", "report", "retry"):
+    for name in ("import", "list", "retire", "reuse", "prune", "plan", "claim", "record", "report", "retry", "settle"):
         sub = commands.add_parser(name)
         sub.add_argument("--library", type=Path, default=default, help="private persistent persona directory")
         if name in {"import", "plan", "record"}:
             sub.add_argument("--input", type=Path, required=True)
-        if name in {"plan", "claim", "record", "report", "retry"}:
+        if name in {"plan", "claim", "record", "report", "retry", "settle"}:
             sub.add_argument("--run", type=Path, required=True)
         if name in {"retire", "reuse"}:
             sub.add_argument("--product", required=True)
@@ -39,6 +39,10 @@ def parser():
             sub.add_argument("--task", required=True)
             sub.add_argument("--reconciliation", type=Path,
                              help="explicit host inspection attestation for an uncertain fixture-write outcome")
+        if name == "settle":
+            sub.add_argument("--task", required=True)
+            sub.add_argument("--inspection", type=Path, required=True,
+                             help="actual stopped-worker and fixture-state inspection; close without retry")
     return root
 
 
@@ -67,6 +71,8 @@ def main(argv=None):
                 elif args.command == "retry":
                     result = swarm.retry(library, args.run, args.task,
                                          reconciliation=read_json(args.reconciliation) if args.reconciliation else None)
+                elif args.command == "settle":
+                    result = swarm.settle(library, args.run, args.task, read_json(args.inspection))
                 else:
                     result = swarm.report(library, args.run)
         print(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False))

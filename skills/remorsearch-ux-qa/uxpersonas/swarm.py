@@ -153,7 +153,9 @@ def _coverage(task):
 
 
 def _save(root, state):
-    raw = canonical(dict(schema_version="ux-persona-swarm-state.v1",
+    # Older readers must not silently ignore a terminal settlement and retry it.
+    version = "ux-persona-swarm-state.v2" if any("settlement" in e for e in state["tasks"]) else "ux-persona-swarm-state.v1"
+    raw = canonical(dict(schema_version=version,
                          payload=state, sha256=digest(state)))
     if len(raw) > 16 * 1024 * 1024:
         fail("Run state exceeds its bounded size.")
@@ -191,8 +193,10 @@ def _load(root, library, *, historical_blockers=None):
     if not isinstance(envelope, dict):
         fail("Run state must be an object.", "swarm_integrity")
     state = envelope.get("payload")
-    if envelope.get("schema_version") != "ux-persona-swarm-state.v1" or digest(state) != envelope.get("sha256"):
+    if envelope.get("schema_version") not in {"ux-persona-swarm-state.v1", "ux-persona-swarm-state.v2"} or digest(state) != envelope.get("sha256"):
         fail("Run state integrity check failed.", "swarm_integrity")
+    if envelope["schema_version"] == "ux-persona-swarm-state.v1" and any("settlement" in e for e in state["tasks"]):
+        fail("Terminal settlements require the v2 state contract.", "swarm_integrity")
     _build(state["build"])
     for entry in state["tasks"]:
         try:
@@ -206,6 +210,8 @@ def _load(root, library, *, historical_blockers=None):
                 reason="A newer validated persona revision exists. These are historical results, not current coverage.",
                 next_step="Review the current revision; preserve original attempts and inspect or resolve uncertain prior effects before planning separately authorized work. This report does not authorize retry.")
         _coverage(entry["task"])
+        if "settlement" in entry:
+            _settlement(entry)
     changed = False
     for entry in state["tasks"]:
         if entry["status"] == "running" and entry["lease"]["expires_at"] <= time.time():
@@ -291,8 +297,7 @@ def claim(library, run_path, worker_id, task_id=None):
         # Unknown writes quarantine their resource even after the lease expires.
         # Expiry cannot prove that a remote worker stopped or its effects vanished.
         busy = {e["task"]["resource_id"] for e in state["tasks"]
-                if e["status"] == "running" or (
-                    e["status"] == "inconclusive" and e["task"]["side_effects"] == "owned_fixture_write")}
+                if e["status"] == "running" or _quarantined(e)}
         candidates = [_entry(state, task_id)] if task_id is not None else state["tasks"]
         for entry in candidates:
             if entry["status"] != "pending" or entry["task"]["resource_id"] in busy:
@@ -462,6 +467,9 @@ def retry(library, run_path, task_id, reconciliation=None):
     with Store(root):
         state = _load(root, library)
         entry = _entry(state, task_id)
+        if "settlement" in entry:
+            fail("This task was closed without retry; its attempts and inconclusive outcome remain final.",
+                 "task_settled")
         if entry["status"] not in {"failed", "blocked", "inconclusive"}:
             fail("Only failed, blocked or inconclusive tasks can be explicitly retried.")
         if entry["attempts"] >= state["max_attempts"]:
@@ -490,6 +498,74 @@ def retry(library, run_path, task_id, reconciliation=None):
         entry["status"] = "pending"
         _save(root, state)
         return dict(task_id=task_id, status="pending", attempts=entry["attempts"])
+
+
+def _inspection(entry, inspection):
+    expected = entry.get("operation_id", entry["lease"]["lease_token"])
+    if (not isinstance(inspection, dict)
+            or set(inspection) != {"operation_id", "attempt", "outcome", "note", "worker_stopped"}
+            or inspection["operation_id"] != expected
+            or type(inspection["attempt"]) is not int or inspection["attempt"] != entry["attempts"]
+            or not isinstance(inspection["outcome"], str)
+            or inspection["outcome"] not in {"not_executed", "effects_inspected_safe_for_other_tasks"}
+            or inspection["worker_stopped"] is not True):
+        fail("Closing an uncertain fixture write requires its current operation and attempt, stopped worker and actual state inspection.",
+             "settlement_inspection_required")
+    text(inspection["note"])
+    if clean(inspection["note"]) != inspection["note"]:
+        fail("Inspection note contains personal identifiers.")
+
+
+def _settlement(entry):
+    """Validate a terminal, auditable host statement, never an execution pass."""
+    value = entry["settlement"]
+    if (entry["status"] != "inconclusive" or entry["task"]["side_effects"] != "owned_fixture_write"
+            or not isinstance(value, dict)
+            or set(value) != {"inspection", "basis", "closed_at"}
+            or value["basis"] != "host_attestation_not_independent_verification"
+            or type(value["closed_at"]) not in {int, float}
+            or not 0 < value["closed_at"] < float("inf")):
+        fail("Invalid terminal fixture-write settlement.", "settlement_integrity")
+    _inspection(entry, value["inspection"])
+    return value
+
+
+def _quarantined(entry):
+    return (entry["status"] == "inconclusive"
+            and entry["task"]["side_effects"] == "owned_fixture_write"
+            and "settlement" not in entry)
+
+
+def settle(library, run_path, task_id, inspection):
+    """Close an uncertain task without retry, pass or new action permission.
+
+    Only after the host stops its worker and inspects actual fixture state may
+    other already-authorized tasks use the resource. Budgets and evidence stay.
+    """
+    root = safe_path(run_path)
+    with Store(root):
+        state = _load(root, library)
+        entry = _entry(state, task_id)
+        if entry["status"] != "inconclusive" or entry["task"]["side_effects"] != "owned_fixture_write":
+            fail("Only inconclusive owned-fixture writes can be closed without retry.")
+        _inspection(entry, inspection)
+        for attempt in entry["history"] + [entry]:
+            if "receipt" in attempt:
+                _receipt(root, dict(task=entry["task"], attempts=attempt["attempts"]), attempt["receipt"])
+        changed = "settlement" not in entry
+        if not changed:
+            if entry["settlement"]["inspection"] != inspection:
+                fail("A different settlement is already recorded; preserve the original inspection.",
+                     "settlement_conflict")
+        else:
+            entry["settlement"] = dict(inspection=copy.deepcopy(inspection),
+                                      basis="host_attestation_not_independent_verification",
+                                      closed_at=time.time())
+            _settlement(entry)
+            _save(root, state)
+        return dict(task_id=task_id, status=entry["status"], attempts=entry["attempts"],
+                    changed=changed, retry_allowed=False, settlement=copy.deepcopy(entry["settlement"]),
+                    limits="Other tasks still require current grants, safe starting state and exclusive claims; this is not a pass or retry permission.")
 
 
 def _requirement_results(entry):
@@ -558,6 +634,8 @@ def report(library, run_path):
         state = _load(root, library, historical_blockers=blockers)
         counts = {x: 0 for x in ("pending", "running", "passed", "failed", "blocked", "inconclusive", "skipped")}
         historical_counts = dict(counts)
+        quarantined_resources = {entry["task"]["resource_id"] for entry in state["tasks"]
+                                 if _quarantined(entry)}
         tasks = []
         for entry in state["tasks"]:
             for attempt in entry["history"] + [entry]:
@@ -579,6 +657,10 @@ def report(library, run_path):
             row = tasks[-1]
             row["current_binding_valid"] = entry["task"]["id"] not in blockers
             row["recorded_status"] = entry["status"]
+            row["resource_quarantined"] = entry["task"]["resource_id"] in quarantined_resources
+            if "settlement" in entry:
+                row["settlement"] = copy.deepcopy(entry["settlement"])
+                row["retry_allowed"] = False
             if not row["current_binding_valid"]:
                 row.update(status="blocked", blocker=blockers[row["task_id"]],
                            historical_result=row["result"], historical_reason=row["reason"],

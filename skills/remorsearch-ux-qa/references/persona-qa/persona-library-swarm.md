@@ -102,6 +102,8 @@ python3 scripts/ux_personas.py report --library LIBRARY --run NEW_RUN
 python3 scripts/ux_personas.py retry --library LIBRARY --run NEW_RUN --task TASK_ID
 # An uncertain fixture-write outcome needs actual inspection and an explicit attestation.
 python3 scripts/ux_personas.py retry --library LIBRARY --run NEW_RUN --task TASK_ID --reconciliation inspected-outcome.json
+# Close an uncertain write without another attempt, after actual host inspection.
+python3 scripts/ux_personas.py settle --library LIBRARY --run NEW_RUN --task TASK_ID --inspection inspected-final-attempt.json
 python3 scripts/ux_personas.py retire --library LIBRARY --product PRODUCT_ID --persona PERSONA_ID --reason 'Source withdrawn; block reuse'
 python3 scripts/ux_personas.py prune --library LIBRARY
 ```
@@ -228,7 +230,13 @@ Assign one `resource_id` to every task sharing a browser/account/data fixture or
 
 Each task has a stable `operation_id` persisted before dispatch and kept across retries. It is not automatic idempotency at the application. An inconclusive `owned_fixture_write` quarantines its resource so other tasks cannot reuse uncertain state. Before retry, stop the old worker, inspect actual fixture state and provide a reconciliation object with exactly `operation_id`, `outcome` (`not_executed` or `effects_inspected_safe_to_retry`), `note`, and `worker_stopped: true`. Legacy state without an operation ID uses its recorded lease token as the identifier. Keep tokens private. Reconciliation is an auditable host attestation, not independently verified proof. A timeout or lost acknowledgement never establishes that nothing happened. The scheduler cannot terminate a host worker, enforce UI-action/time budgets or authorize a denied action.
 
-The task ID is a correlation namespace, not a universal API idempotency key. Different mutations need distinct stable per-action keys in the target tool's required format; reuse a key only for the identical action retry. If an inconclusive write has exhausted `max_attempts`, its resource remains quarantined for that run: there is no separate settle command. Do not raise the budget or create a new run to evade uncertain effects. Stop, inspect and report the remaining blocked scope.
+The task ID is a correlation namespace, not a universal API idempotency key. Different mutations need distinct stable per-action keys in the target tool's required format; reuse a key only for the identical action retry. Never raise the budget or create a new run to evade uncertain effects.
+
+For an inconclusive owned-fixture write, `settle` closes that task permanently without retry, including after `max_attempts` is exhausted. First stop the current attempt's worker and inspect actual fixture state. Supply exactly `operation_id`, integer `attempt` from its claim, `worker_stopped: true`, `outcome` (`not_executed` or `effects_inspected_safe_for_other_tasks`), and a concrete `note`. An old attempt's inspection is invalid. This host attestation is not independently verified or permission for a denied action; never manufacture one to unblock work.
+
+Settlement preserves the inconclusive outcome, attempts, receipts and history; later receipts and retries remain blocked. Exact repeats are idempotent; conflicting inspections are rejected. Other tasks can claim the resource only if no other uncertain write or active lease blocks it, their starting state is safe and their existing authorization still applies. Current PRD/research/build and receipt-integrity checks remain required. Reports show the settlement separately, `retry_allowed: false`, and shared-resource `resource_quarantined`; none is a QA pass.
+
+Only a settled run uses state envelope `ux-persona-swarm-state.v2`, deliberately rejected by older readers that could otherwise ignore settlement and retry. Current code reads legacy v1 runs; do not downgrade a v2 envelope or reopen it with old code.
 
 ## 10. Receipt and cleanup contract
 
