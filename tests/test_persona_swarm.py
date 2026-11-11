@@ -194,7 +194,7 @@ class SwarmTests(unittest.TestCase):
         with self.assertRaises(EngineError):
             swarm.retry(self.lib, self.run, "T1")
         swarm.retry(self.lib, self.run, "T1", reconciliation=dict(
-            operation_id=claim["operation_id"], outcome="not_executed",
+            operation_id=claim["operation_id"], attempt=claim["attempt"], outcome="not_executed",
             note="Inspected isolated fixture and stopped worker.", worker_stopped=True))
         claim2 = swarm.claim(self.lib, self.run, "w2")
         self.assertEqual(claim["operation_id"], claim2["operation_id"])
@@ -363,7 +363,7 @@ class SwarmTests(unittest.TestCase):
         for operation_id, stopped in (("wrong", True), (claim["operation_id"], False)):
             with self.assertRaises(EngineError):
                 swarm.retry(self.lib, self.run, "T1", reconciliation=dict(
-                    operation_id=operation_id, outcome="not_executed", note="Host attestation.", worker_stopped=stopped))
+                    operation_id=operation_id, attempt=claim["attempt"], outcome="not_executed", note="Host attestation.", worker_stopped=stopped))
         self.assertEqual(swarm.report(self.lib, self.run)["counts"]["inconclusive"], 1)
 
     def coverage(self, excluded=False):
@@ -490,7 +490,7 @@ class SwarmTests(unittest.TestCase):
                 with self.assertRaises(EngineError):
                     swarm.retry(self.lib, self.run, task_id)
                 swarm.retry(self.lib, self.run, task_id, reconciliation=dict(
-                    operation_id=uncertain["operation_id"], outcome="not_executed",
+                    operation_id=uncertain["operation_id"], attempt=uncertain["attempts"], outcome="not_executed",
                     note="All fixture child processes joined; no fixture action was invoked.", worker_stopped=True))
                 resumed = swarm.claim(self.lib, self.run, "resumed", task_id)
                 self.assertEqual(resumed["attempt"], 2)

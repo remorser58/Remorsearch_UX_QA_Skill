@@ -153,9 +153,8 @@ def _coverage(task):
 
 
 def _save(root, state):
-    # Older readers must not silently ignore a terminal settlement and retry it.
-    version = "ux-persona-swarm-state.v2" if any("settlement" in e for e in state["tasks"]) else "ux-persona-swarm-state.v1"
-    raw = canonical(dict(schema_version=version,
+    # Older readers cannot enforce current-attempt reconciliation or settlement.
+    raw = canonical(dict(schema_version="ux-persona-swarm-state.v3",
                          payload=state, sha256=digest(state)))
     if len(raw) > 16 * 1024 * 1024:
         fail("Run state exceeds its bounded size.")
@@ -193,7 +192,7 @@ def _load(root, library, *, historical_blockers=None):
     if not isinstance(envelope, dict):
         fail("Run state must be an object.", "swarm_integrity")
     state = envelope.get("payload")
-    if envelope.get("schema_version") not in {"ux-persona-swarm-state.v1", "ux-persona-swarm-state.v2"} or digest(state) != envelope.get("sha256"):
+    if envelope.get("schema_version") not in {"ux-persona-swarm-state.v1", "ux-persona-swarm-state.v2", "ux-persona-swarm-state.v3"} or digest(state) != envelope.get("sha256"):
         fail("Run state integrity check failed.", "swarm_integrity")
     if envelope["schema_version"] == "ux-persona-swarm-state.v1" and any("settlement" in e for e in state["tasks"]):
         fail("Terminal settlements require the v2 state contract.", "swarm_integrity")
@@ -300,7 +299,8 @@ def claim(library, run_path, worker_id, task_id=None):
                 if e["status"] == "running" or _quarantined(e)}
         candidates = [_entry(state, task_id)] if task_id is not None else state["tasks"]
         for entry in candidates:
-            if entry["status"] != "pending" or entry["task"]["resource_id"] in busy:
+            if (entry["status"] != "pending" or entry["task"]["resource_id"] in busy
+                    or entry["attempts"] >= state["max_attempts"]):
                 continue
             entry["attempts"] += 1
             entry["status"] = "running"
@@ -461,6 +461,49 @@ def record(library, run_path, receipt):
         return dict(task_id=entry["task"]["id"], status=entry["status"], attempt=entry["attempts"])
 
 
+def _retry_inspection(entry, reconciliation, origin=None):
+    origin = entry if origin is None else origin
+    expected = entry.get("operation_id", origin["lease"]["lease_token"])
+    if (not isinstance(reconciliation, dict)
+            or set(reconciliation) != {"operation_id", "attempt", "outcome", "note", "worker_stopped"}
+            or reconciliation["operation_id"] != expected
+            or type(reconciliation["attempt"]) is not int
+            or reconciliation["attempt"] != entry["attempts"]
+            or reconciliation["attempt"] != origin["attempts"]
+            or not isinstance(reconciliation["outcome"], str)
+            or reconciliation["outcome"] not in {"not_executed", "effects_inspected_safe_to_retry"}
+            or reconciliation["worker_stopped"] is not True):
+        fail("Unknown fixture effects require fresh inspection and stopped-worker reconciliation bound to the current operation and attempt.",
+             "reconciliation_required")
+    text(reconciliation["note"])
+    if clean(reconciliation["note"]) != reconciliation["note"]:
+        fail("Reconciliation note contains personal identifiers.")
+
+
+def _pending_retry_origin(entry):
+    if (entry["status"] == "pending" and entry["task"]["side_effects"] == "owned_fixture_write"
+            and entry["history"] and entry["history"][-1]["status"] == "inconclusive"):
+        return entry["history"][-1]
+    return None
+
+
+def _pending_retry_blocker(entry):
+    """Legacy pending does not prove that the last write was safely inspected."""
+    origin = _pending_retry_origin(entry)
+    if origin is None:
+        return None
+    try:
+        if ("reconciliation_review" in origin
+                and origin.get("reconciliation_review_basis") != "host_attestation_not_independent_verification"):
+            fail("Invalid reconciliation review basis.")
+        _retry_inspection(entry, origin.get("reconciliation_review", origin.get("reconciliation")), origin)
+    except EngineError:
+        return dict(code="pending_retry_inspection_required",
+                    reason="The pending retry lacks an inspection bound to its latest uncertain attempt.",
+                    next_step="Stop that attempt's worker and inspect actual fixture state, then retry with a fresh current-attempt reconciliation. Do not relabel an old inspection.")
+    return None
+
+
 def retry(library, run_path, task_id, reconciliation=None):
     """Explicit retry with recorded host attestation, not proof of inspection."""
     root = safe_path(run_path)
@@ -470,22 +513,36 @@ def retry(library, run_path, task_id, reconciliation=None):
         if "settlement" in entry:
             fail("This task was closed without retry; its attempts and inconclusive outcome remain final.",
                  "task_settled")
-        if entry["status"] not in {"failed", "blocked", "inconclusive"}:
+        previous_origin = _pending_retry_origin(entry)
+        if previous_origin is not None and "reconciliation_review" in previous_origin:
+            if entry["attempts"] >= state["max_attempts"]:
+                fail("Task reached its attempt limit.")
+            _retry_inspection(entry, reconciliation, previous_origin)
+            if _pending_retry_blocker(entry):
+                fail("An invalid existing retry review requires investigation; no review overwritten.",
+                     "swarm_integrity")
+            if reconciliation != previous_origin["reconciliation_review"]:
+                fail("A different retry review is already recorded; preserve the original inspection.",
+                     "reconciliation_conflict")
+            return dict(task_id=task_id, status="pending", attempts=entry["attempts"],
+                        revalidated_legacy_retry=True, changed=False)
+        pending_origin = _pending_retry_origin(entry) if _pending_retry_blocker(entry) else None
+        if entry["status"] not in {"failed", "blocked", "inconclusive"} and pending_origin is None:
             fail("Only failed, blocked or inconclusive tasks can be explicitly retried.")
         if entry["attempts"] >= state["max_attempts"]:
             fail("Task reached its attempt limit.")
+        if pending_origin is not None:
+            _retry_inspection(entry, reconciliation, pending_origin)
+            if "reconciliation_review" in pending_origin:
+                fail("An invalid existing retry review requires investigation; no review overwritten.",
+                     "swarm_integrity")
+            pending_origin["reconciliation_review"] = copy.deepcopy(reconciliation)
+            pending_origin["reconciliation_review_basis"] = "host_attestation_not_independent_verification"
+            _save(root, state)
+            return dict(task_id=task_id, status="pending", attempts=entry["attempts"],
+                        revalidated_legacy_retry=True, changed=True)
         if entry["task"]["side_effects"] == "owned_fixture_write" and entry["status"] == "inconclusive":
-            expected = entry.get("operation_id", entry["lease"]["lease_token"])
-            if (not isinstance(reconciliation, dict)
-                    or set(reconciliation) != {"operation_id", "outcome", "note", "worker_stopped"}
-                    or reconciliation["operation_id"] != expected
-                    or reconciliation["outcome"] not in {"not_executed", "effects_inspected_safe_to_retry"}
-                    or reconciliation["worker_stopped"] is not True):
-                fail("Unknown fixture effects require explicit inspection and stopped-worker reconciliation.",
-                     "reconciliation_required")
-            text(reconciliation["note"])
-            if clean(reconciliation["note"]) != reconciliation["note"]:
-                fail("Reconciliation note contains personal identifiers.")
+            _retry_inspection(entry, reconciliation)
         elif reconciliation is not None:
             fail("Reconciliation applies only to inconclusive fixture-write attempts.")
         entry["history"].append({k: copy.deepcopy(entry[k]) for k in
@@ -531,7 +588,7 @@ def _settlement(entry):
 
 
 def _quarantined(entry):
-    return (entry["status"] == "inconclusive"
+    return bool(_pending_retry_blocker(entry)) or (entry["status"] == "inconclusive"
             and entry["task"]["side_effects"] == "owned_fixture_write"
             and "settlement" not in entry)
 
@@ -658,6 +715,8 @@ def report(library, run_path):
             row["current_binding_valid"] = entry["task"]["id"] not in blockers
             row["recorded_status"] = entry["status"]
             row["resource_quarantined"] = entry["task"]["resource_id"] in quarantined_resources
+            if _pending_retry_blocker(entry):
+                row["retry_blocker"] = _pending_retry_blocker(entry)
             if "settlement" in entry:
                 row["settlement"] = copy.deepcopy(entry["settlement"])
                 row["retry_allowed"] = False

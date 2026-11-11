@@ -62,7 +62,7 @@ class SettlementTests(unittest.TestCase):
         self.assertTrue(swarm.claim(self.lib, self.run, "worker2", "T2")["claimed"])
         with self.assertRaises(EngineError) as ctx:
             swarm.retry(self.lib, self.run, "T1", reconciliation=dict(
-                operation_id=self.claim["operation_id"], outcome="not_executed",
+                operation_id=self.claim["operation_id"], attempt=self.claim["attempt"], outcome="not_executed",
                 worker_stopped=True, note="Stopped and inspected."))
         self.assertEqual(ctx.exception.issue["code"], "task_settled")
 
@@ -240,11 +240,11 @@ class SettlementTests(unittest.TestCase):
                               before_other_claim=False, after_other_claim=True,
                               task_passes=0, synthetic_fixture_only=True)))
 
-    def test_only_settled_runs_require_v2_and_downgrade_is_rejected(self):
-        self.assertEqual(read_json(self.run / "swarm-state.json")["schema_version"], "ux-persona-swarm-state.v1")
+    def test_new_runs_require_v3_and_invalid_settlement_downgrade_is_rejected(self):
+        self.assertEqual(read_json(self.run / "swarm-state.json")["schema_version"], "ux-persona-swarm-state.v3")
         self.settle()
         envelope = read_json(self.run / "swarm-state.json")
-        self.assertEqual(envelope["schema_version"], "ux-persona-swarm-state.v2")
+        self.assertEqual(envelope["schema_version"], "ux-persona-swarm-state.v3")
         envelope["schema_version"] = "ux-persona-swarm-state.v1"
         atomic(self.run / "swarm-state.json", json.dumps(envelope).encode())
         with self.assertRaises(EngineError):
@@ -255,7 +255,7 @@ class SettlementTests(unittest.TestCase):
         state["max_attempts"] = 2
         swarm._save(self.run, state)
         swarm.retry(self.lib, self.run, "T1", reconciliation=dict(
-            operation_id=self.claim["operation_id"], outcome="not_executed",
+            operation_id=self.claim["operation_id"], attempt=self.claim["attempt"], outcome="not_executed",
             worker_stopped=True, note="First attempt inspected before retry."))
         second = swarm.claim(self.lib, self.run, "second-worker", "T1")
         receipt = self.fixture.receipt(second, "inconclusive")
