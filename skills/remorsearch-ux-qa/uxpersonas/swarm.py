@@ -161,8 +161,14 @@ def _state_bytes(state):
     return raw
 
 
-def _save(root, state):
-    atomic(root / "swarm-state.json", _state_bytes(state))
+def _save(root, state, *, lease_deadline=None):
+    raw = _state_bytes(state)
+    # Receipt validation and serialization can consume the rest of a lease.
+    # Fence the handoff to atomic storage, not completion of an admitted write.
+    if lease_deadline is not None and lease_deadline <= time.time():
+        raise EngineError("lease_expired", "Worker lease expired before receipt publication.",
+                          next_step="Preserve the original evidence and inspect the worker and possible effects. Read the run report, then use the existing explicit retry or settlement rules; do not renew or replay automatically.")
+    atomic(root / "swarm-state.json", raw)
 
 
 def _historical_binding(library, product, entry):
@@ -540,6 +546,8 @@ def record(library, run_path, receipt):
         state = _load(root, library)
         if not isinstance(receipt, dict):
             fail("Receipt must be an object.")
+        # Validate and publish one detached snapshot, including its identity.
+        receipt = copy.deepcopy(receipt)
         entry = _entry(state, receipt.get("task_id"))
         if entry["status"] != "running":
             fail("Task does not have an active lease.", "lease_mismatch")
@@ -551,9 +559,9 @@ def record(library, run_path, receipt):
                 or receipt.get("profile_sha256") != entry["binding"]["profile_sha256"]):
             fail("Receipt binding does not match the assigned build/persona.")
         _receipt(root, entry, receipt)
-        entry["receipt"] = copy.deepcopy(receipt)
+        entry["receipt"] = receipt
         entry["status"], entry["reason"] = receipt["outcome"], receipt["reason"]
-        _save(root, state)
+        _save(root, state, lease_deadline=entry["lease"]["expires_at"])
         return dict(task_id=entry["task"]["id"], status=entry["status"], attempt=entry["attempts"])
 
 

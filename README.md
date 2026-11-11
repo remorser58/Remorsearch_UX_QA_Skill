@@ -143,6 +143,14 @@ remain in its original execution/inspection flow. See the
 [replay contract](skills/remorsearch-ux-qa/references/persona-qa/persona-library-swarm.md#12-prepare-the-next-build-without-rewriting-the-journey-plan)
 for privacy, isolation, restart and evidence limits.
 
+Journey receipts now validate and save one detached input snapshot and recheck
+the original lease after evidence validation and serialization, immediately
+before atomic storage. Late results preserve the run and evidence for explicit
+inspection and recovery. The [Peekly discovery and admission verification](docs/validation/peekly-pilot-20261111.md)
+records the reproduced defects and checks separately from product effects:
+no authorized Peekly target or fixture was found, so actual Peekly journeys and
+user benefit remain unverified.
+
 ## Evidence rules
 
 - Every statement is `observed`, `inferred` or `unknown`; repetition does not make

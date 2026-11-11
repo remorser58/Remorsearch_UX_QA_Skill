@@ -94,6 +94,8 @@ python3 scripts/ux_personas.py replay --library LIBRARY --baseline BEFORE_RUN --
 
 출력에는 격리 자료의 배정과 다음 claim·관찰 초안·record·report·compare 명령이 나옵니다. 현재 근거와 정확한 페르소나 버전·검토된 여정을 유지하면서 내용이 바뀐 빌드의 미실행 과업을 준비합니다. 과거 결과나 권한을 복사하거나 작업자를 실행하지 않습니다. 실제 행동과 새 관찰은 호스트가 수행합니다. 같은 기준 실행·후보 빌드의 재호출은 기존 목적지를 유지하며 진행 중·불확실한 기준 작업은 원래 실행·점검 절차를 따라야 합니다. 격리·재시작·근거의 범위는 [재실행 계약](skills/remorsearch-ux-qa/references/persona-qa/persona-library-swarm.md#12-prepare-the-next-build-without-rewriting-the-journey-plan)에 정리했습니다.
 
+여정 결과는 분리한 같은 입력 사본을 검증·저장하고, 근거 검사와 직렬화가 끝난 뒤 원자적 저장 직전에 원래 lease를 다시 확인합니다. 늦은 결과는 실행 상태·근거를 보존하여 명시적 점검·복구로 연결합니다. [Peekly 탐색과 결과 수용 검증](docs/validation/peekly-pilot-20261111.md)에 재현 결함과 검증 결과를 기록했습니다. 승인된 Peekly 대상·fixture가 없어 실제 Peekly 여정과 사용자 효과는 아직 검증하지 않았습니다.
+
 ## 근거 규칙
 
 - 모든 진술에 `observed`(관찰됨), `inferred`(추론), `unknown`(미확인) 가운데 하나를 붙입니다. 같은 말이 반복된다고 추론이 사실이 되지는 않습니다.
