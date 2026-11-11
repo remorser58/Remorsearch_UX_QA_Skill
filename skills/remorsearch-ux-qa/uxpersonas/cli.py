@@ -15,6 +15,13 @@ from .library import Library
 def parser():
     root = argparse.ArgumentParser(description=__doc__)
     commands = root.add_subparsers(dest="command", required=True)
+    for name in ("start", "status"):
+        entry = commands.add_parser(name, help="Prepare reviewed source and explain existing QA results" if name == "start" else "Recheck a prepared workspace without rerunning tasks")
+        entry.add_argument("--work", type=Path, required=True, help="Independent workspace; new or empty for first use")
+        if name == "start":
+            entry.add_argument("--source", type=Path, required=True, help="Approved source folder or saved owned pilot folder")
+            entry.add_argument("--include", action="append", help="Exact relative file already reviewed by the host; repeat for each file, no glob or automatic discovery")
+        entry.add_argument("--format", choices=("text", "json"), default="text")
     default = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "remorsearch-ux-qa/personas"
     for name in ("import", "import-research", "list", "retire", "reuse", "prune", "plan", "claim", "record", "report", "retry", "settle", "receipt-starter", "compare", "replay"):
         sub = commands.add_parser(name)
@@ -66,6 +73,20 @@ def parser():
 
 def main(argv=None):
     args = parser().parse_args(argv)
+    if args.command in {"start", "status"}:
+        from . import workspace
+        try:
+            result = (workspace.prepare(args.source, args.work, reviewed_files=args.include,
+                      progress=(lambda message: print(message, file=sys.stderr)) if args.format == "text" else None)
+                      if args.command == "start" else workspace.status(args.work))
+            print(json.dumps(result, ensure_ascii=False, indent=2) if args.format == "json"
+                  else workspace.render(result) + "\n보고서: " + result["report_path"])
+            return 0
+        except (EngineError, OSError, ValueError, TypeError, KeyError, AttributeError) as exc:
+            result = workspace.error_result(exc)
+            print(json.dumps(result, ensure_ascii=False) if args.format == "json"
+                  else result["issue"]["reason"] + "\n다음 단계: " + result["issue"].get("next_step", "호스트가 기존 근거와 범위를 확인합니다."), file=sys.stderr)
+            return 2
     try:
         if args.command == "import-research":
             from .research_intake import validate_paths

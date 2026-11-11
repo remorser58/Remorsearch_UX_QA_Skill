@@ -278,10 +278,27 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--work', type=Path, required=True)
     parser.add_argument('--skill', type=Path, default=HERE.parents[1] / 'skills/remorsearch-ux-qa')
+    parser.add_argument('--source', type=Path, help='Approved frozen source or saved pilot folder; prepare copies only reviewed files')
     parser.add_argument('command', choices=['prepare', 'plan', 'task', 'report', 'verify-copy'])
     parser.add_argument('--task', choices=['T-SAMPLE', 'T-RECOVER', 'T-LARGE', 'T-STORAGE', 'T-FOLDER'])
     parser.add_argument('--retry', action='store_true')
     args = parser.parse_args()
+    # Preparation must precede Pilot's ready-copy validation. The installed
+    # product entry owns safe copying and prior-result review, not this harness.
+    if args.command == 'prepare':
+        sys.path.insert(0, str(args.skill))
+        from uxpersonas.cli import main as personas_main
+        if args.source is None:
+            parser.error('준비할 대상 폴더를 --source로 지정하세요. 수동 복사나 매니페스트 작성은 필요하지 않습니다.')
+        return personas_main(['start', '--source', str(args.source), '--work', str(args.work)])
+    if (args.work / 'workspace.json').is_file():
+        sys.path.insert(0, str(args.skill))
+        from uxpersonas.cli import main as personas_main
+        if args.command in {'report', 'verify-copy'}:
+            return personas_main(['status', '--work', str(args.work)])
+        parser.error('이 작업공간은 준비와 기존 근거 검토용입니다. 기존 과제를 중복 실행하거나 시도 한도를 초기화하지 않습니다.')
+    if not (args.work / 'product/.remorsearch-owned-copy.json').is_file():
+        parser.error('아직 준비한 복사본이 없습니다. prepare --source 대상폴더로 먼저 준비하세요.')
     pilot = Pilot(args.work, args.skill)
     if args.command == 'prepare':
         pilot.prepare()
@@ -299,4 +316,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    raise SystemExit(main())

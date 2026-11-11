@@ -7,6 +7,8 @@ description: Improve existing product UX from a URL or repository. Inspect PRD a
 
 Inspect PRD audience/needs/tasks and actual use. Read `references/loop/product-improvement.md`. No prepared brief or personas required. Research/review is read-only. Separate observations, inferences and unknowns.
 
+Local preparation/reuse: read `references/persona-qa/start.md`.
+
 ## Components
 
 | Component | Use it for | Read first |
@@ -36,7 +38,7 @@ Inspect PRD audience/needs/tasks and actual use. Read `references/loop/product-i
 - Read public pages as an anonymous visitor, pre-reading before any render. An authorized membership gives summaries only. `lift_requires` decides terms lifts; `status` records evidence. A stop is final for the site and the run; record it as a gap.
 - Never bypass: no stealth or patched browsers; no solving or outsourcing human checks; no moving cookies or clearance tokens; no fake Referer, crawler identity or script user agent; no proxies or IP rotation to hide or multiply clients; no parallel requests to one host; no undocumented endpoints; no search-page harvesting; no waiting out a check; nothing after a stop, on any host of that site; no archive, cache or proxy copies; no person's post history or identification; no software to pass blocks. No setting lifts these rules.
 - Keep no names, handles, profile links, IP addresses, contacts, or government, payment or account IDs. Protected cues stay at segment level; skip minors. Quotes stay under 300 characters, five per source.
-- Create screen composition and UX changes in Figma first; preserve existing design and record actual file URL, version, nodes and readback. No side accent bars or side-tab cards. Missing Figma blocks the affected design/implementation; continue possible QA.
+- For screen/UX changes, use Figma first; preserve design and record URL, version, nodes and readback. No side accent bars or side-tab cards. Without Figma, block affected design/implementation; continue QA.
 - Missing access, tools or replay blocks only the affected result; optional gaps never become blanket blockers or invented passes. Fixtures never prove live completion. Complete improvement requires current replay, adjacent regression and preserved-intent checks; exhausted limits mean partial work. A task result is neither product readiness nor measured user benefit.
 
 ## Deliverables
@@ -48,7 +50,7 @@ Inspect PRD audience/needs/tasks and actual use. Read `references/loop/product-i
 
 ## Tools
 
-Python 3.10+, standard library. Detect runtimes with `python3 scripts/find_runtime.py`. Prefer host browser, then automation browser, then Node 22 drivers: `drivers/web/ergo_drive.mjs` for products, `drivers/web/read_page.mjs` after pre-read. Sandbox guidance: `drivers/web/README.md`. Denied launch is a gap.
+Python 3.10+ (stdlib); detect with `python3 scripts/find_runtime.py`. Prefer host/automation browsers, then Node 22: `drivers/web/ergo_drive.mjs` for products, `drivers/web/read_page.mjs` after pre-read. Sandbox: `drivers/web/README.md`. Denied launch remains a gap.
 
 `python3 scripts/ref.py <file> <section-id>` reads one section; omit ID to list sections. Large references are lookup-only.
 
