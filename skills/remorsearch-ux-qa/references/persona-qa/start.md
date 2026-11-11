@@ -22,7 +22,9 @@ Library commands, calculate hashes or explain internal task IDs.
    when saved evidence is present, reuses the exact validated persona revisions
    and produces MD/JSON. No product, browser, dependency install or model runs.
 4. For a new source-only workspace with a reviewed owned Python adapter and
-   current PRD personas, continue with `local-run.md` sections 1–4. The host fixes
+   current saved personas, continue with `local-run.md` sections 1–4. For research
+   motivation, also follow section 6: explicitly review its exact local research
+   directory before connecting it. The host fixes
    goals/criteria and runs the adapter; the user need not learn receipt plumbing.
    Preserve prior experiments; do not start a new run to reset their limits.
 5. Explain the result in terms of user goals: preparation, existing findings,

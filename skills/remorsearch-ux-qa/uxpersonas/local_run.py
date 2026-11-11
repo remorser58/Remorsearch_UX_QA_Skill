@@ -20,6 +20,7 @@ import time
 from uxresearch.canonical import EngineError, byte_digest, canonical, digest, loads
 from uxresearch.storage import Store, atomic, safe_path
 from .library import Library, SCHEMA as LIBRARY_SCHEMA
+from .research_access import ReferenceScope, roots_for
 from . import swarm, workspace
 
 PLAN = "ux-journey-local-plan.v1"
@@ -87,7 +88,7 @@ def _plan(path, prepared):
     return plan
 
 
-def _selection(library_path, prepared, plan):
+def _selection(library_path, prepared, plan, research_runs=()):
     library_path = _private(library_path)
     _private(library_path / "library.json")
     raw = workspace.read_file(library_path, "library.json", sensitive_check=True)
@@ -96,26 +97,25 @@ def _selection(library_path, prepared, plan):
     if not isinstance(state, dict) or state.get("schema_version") != LIBRARY_SCHEMA or digest(state) != envelope.get("sha256"):
         stop("persona_integrity", "기존 페르소나 저장소 무결성을 확인할 수 없습니다.")
     selected = dict(schema_version=LIBRARY_SCHEMA, entries={})
+    guard = ReferenceScope(prepared, research_runs)
     for task in plan["tasks"]:
         key = Library._key(plan["product_id"], task["persona_id"])
+        if key in selected["entries"]:
+            continue
         history = state["entries"].get(key, [])
         if not history:
             stop("persona_missing", "목표에 맞게 검토된 기존 페르소나가 없습니다. 자동 생성하지 않았습니다.")
         record = history[-1]
-        # Check scope BEFORE Library validators can open PRD/research references.
-        if (record.get("basis") != "synthetic" or record.get("provenance") != {"mode": "prd_hypothesis", "claim_ids": []}
-                or "research_scenarios" in record.get("profile", {})):
-            stop("persona_scope", "이 로컬 실행 경로는 검토한 PRD 가설만 재사용합니다. 외부 연구 근거를 자동으로 따라가지 않습니다.")
-        prd = safe_path(record["context"]["prd_path"])
-        source = safe_path(prepared["source"])
-        if not prd.is_relative_to(source) or str(prd.relative_to(source)) not in prepared["inputs"]:
-            stop("persona_scope", "페르소나 PRD가 검토한 입력 범위 밖에 있습니다.")
+        # Refuse unreviewed references BEFORE existing validators can open them.
+        guard(record)
         if record.get("product_id") != plan["product_id"] or record.get("persona_id") != task["persona_id"]:
             stop("persona_integrity", "페르소나 식별자가 저장소 연결과 다릅니다.")
-        Library(library_path)._validate(record)
+        Library(library_path, reference_guard=guard)._validate(record)
         if swarm.clean(record["profile"]) != record["profile"]:
             stop("persona_privacy", "페르소나에 개인 식별 형식이 있습니다.")
         selected["entries"][key] = [copy.deepcopy(record)]
+    if guard.used != set(research_runs):
+        stop("research_scope", "선택한 페르소나가 사용하지 않는 연구 위치를 추가할 수 없습니다.")
     return byte_digest(raw), dict(state=selected, sha256=digest(selected))
 
 
@@ -158,7 +158,8 @@ def _verify(work, prepared, state):
     workspace._verify(work, prepared)
     if byte_digest(workspace.read_file(work, "workspace.json")) != state["workspace_sha256"]:
         stop("execution_build", "실행에 연결된 준비 상태가 달라졌습니다.")
-    current_hash, selected = _selection(Path(state["library"]), prepared, state["plan"])
+    research_runs = roots_for(state.get("research_runs"), work=work, source=prepared["source"], library=state["library"])
+    current_hash, selected = _selection(Path(state["library"]), prepared, state["plan"], research_runs)
     if current_hash != state["library_sha256"] or selected != state["personas"]:
         stop("execution_persona_changed", "실행을 고정한 뒤 기존 페르소나 저장소가 변경됐습니다.")
     if state["phase"] == "ready":
@@ -168,7 +169,7 @@ def _verify(work, prepared, state):
             stop("execution_persona_changed", "복사한 페르소나 버전이 변경됐습니다.")
 
 
-def _initialize(work, prepared, library_path, input_path, approved):
+def _initialize(work, prepared, library_path, input_path, approved, reviewed_research_runs):
     if not approved:
         stop("runner_approval", "호스트의 정확한 코드·범위 검토 확인이 없어 실행하지 않았습니다.")
     if library_path is None or input_path is None:
@@ -179,7 +180,8 @@ def _initialize(work, prepared, library_path, input_path, approved):
     library_path = safe_path(library_path)
     if library_path.is_relative_to(work) or work.is_relative_to(library_path):
         stop("execution_overlap", "기존 페르소나 저장소와 실행 작업공간은 분리되어야 합니다.")
-    library_hash, personas = _selection(library_path, prepared, plan)
+    research_runs = roots_for(reviewed_research_runs, work=work, source=prepared["source"], library=library_path)
+    library_hash, personas = _selection(library_path, prepared, plan, research_runs)
     build_hash = byte_digest(workspace.read_file(work, "workspace.json"))
     spec = dict(schema_version=swarm.SCHEMA, product_id=plan["product_id"],
                 build=dict(id="reviewed-" + build_hash[:16], artifact_path=str(work / "workspace.json"), sha256=build_hash),
@@ -187,7 +189,7 @@ def _initialize(work, prepared, library_path, input_path, approved):
     seed = swarm._prepare_plan(_SelectedLibrary(personas), spec)
     if (work / DIRECTORY).exists():
         stop("execution_conflict", "기존 파일이 있는 실행 폴더를 사용하지 않았습니다.")
-    state = dict(plan=plan, library=str(library_path), library_sha256=library_hash, personas=personas,
+    state = dict(plan=plan, library=str(library_path), library_sha256=library_hash, personas=personas, research_runs=research_runs,
                  workspace_sha256=build_hash, seed=seed, phase="preparing", dispatches={})
     _save(work, state)  # Durable ownership and fixed criteria before any run files.
     return state
@@ -215,7 +217,7 @@ def _finish_preparation(work, state):
         with Store(run):
             swarm._save(run, state["seed"])
     else:
-        with Library(base / "personas") as library:
+        with Library(base / "personas", reference_guard=ReferenceScope(workspace._state(work), state.get("research_runs", []))) as library:
             with Store(run):
                 if swarm._load(run, library, expire_leases=False) != state["seed"]:
                     stop("execution_conflict", "준비가 끝나기 전에 실행 상태가 바뀌었습니다.")
@@ -396,7 +398,7 @@ def _reconcile(state, current):
     return changed
 
 
-def execute(work, *, library_path=None, input_path=None, approved=False, fault=None):
+def execute(work, *, library_path=None, input_path=None, approved=False, reviewed_research_runs=None, fault=None):
     work = safe_path(work)
     if not (work / "workspace.json").is_file():
         stop("workspace_missing", "대상 코드를 먼저 안전하게 준비해야 합니다.")
@@ -408,15 +410,18 @@ def execute(work, *, library_path=None, input_path=None, approved=False, fault=N
             stop("preparation_interrupted", "입력 준비가 끝나지 않았습니다. 같은 start로 먼저 준비를 이어갑니다.")
         _copy_scope(work, prepared)
         workspace._verify(work, prepared)
-        state = _read(work) if (work / MARKER).exists() else _initialize(work, prepared, library_path, input_path, approved)
+        state = (_read(work) if (work / MARKER).exists() else
+                 _initialize(work, prepared, library_path, input_path, approved, reviewed_research_runs))
         if input_path is not None and _plan(input_path, prepared) != state["plan"]:
             stop("execution_contract", "실행을 고정한 뒤 목표·기준·어댑터를 바꿀 수 없습니다.")
         if library_path is not None and str(safe_path(library_path)) != state["library"]:
             stop("execution_contract", "기존 실행과 다른 페르소나 저장소입니다.")
+        if reviewed_research_runs is not None and roots_for(reviewed_research_runs, work=work, source=prepared["source"], library=state["library"]) != state.get("research_runs", []):
+            stop("execution_contract", "고정한 연구 범위를 바꿔 기존 실행을 이어갈 수 없습니다.")
         _verify(work, prepared, state)
         if state["phase"] == "preparing":
             _finish_preparation(work, state)
-        with Library(work / DIRECTORY / "personas") as library:
+        with Library(work / DIRECTORY / "personas", reference_guard=ReferenceScope(prepared, state.get("research_runs", []))) as library:
             run = work / DIRECTORY / "run"
             current = swarm.report(library, run)
             if _reconcile(state, current):
@@ -445,6 +450,7 @@ def execute(work, *, library_path=None, input_path=None, approved=False, fault=N
                 def spawned():
                     dispatch["spawned"] = True
                     _save(work, state)
+                _verify(work, prepared, state)
                 raw, diagnostic = _invoke(work / "product" / state["plan"]["runner"], cwd, request, state["plan"]["timeout_seconds"], spawned)
                 if not diagnostic["cleanup_confirmed"]:
                     stop("execution_cleanup", "소유 실행 프로세스의 종료를 확인하지 못했습니다. 결과를 확정하거나 다음 과제를 시작하지 않았습니다.")
@@ -464,7 +470,7 @@ def report_locked(work, prepared, state=None, current=None):
     state = state or _read(work)
     _verify(work, prepared, state)
     if current is None and state["phase"] == "ready":
-        with Library(work / DIRECTORY / "personas") as library:
+        with Library(work / DIRECTORY / "personas", reference_guard=ReferenceScope(prepared, state.get("research_runs", []))) as library:
             current = swarm.report(library, work / DIRECTORY / "run")
     tasks = []
     for task in state["plan"]["tasks"]:
@@ -477,6 +483,16 @@ def report_locked(work, prepared, state=None, current=None):
     personas = [{k: record[k] for k in ("persona_id", "revision", "profile_sha256", "basis")} |
                 {"label": record["profile"]["label"], "provenance_mode": record["provenance"]["mode"], "prd_sha256": record["context"]["prd_sha256"]}
                 for history in state["personas"]["state"]["entries"].values() for record in history]
+    for row in personas:
+        record = state["personas"]["state"]["entries"][Library._key(state["plan"]["product_id"], row["persona_id"])][-1]
+        if row["provenance_mode"] == "gated_research":
+            binding = record["provenance"]["research"]
+            row["research"] = {key: copy.deepcopy(binding[key]) for key in
+                               ("source_bundle_id", "bundle_input_sha256", "process_input_sha256", "valid_until", "claims")}
+            if "research_export" in record["provenance"]:
+                origin = record["provenance"]["research_export"]
+                row["research"]["export"] = {key: copy.deepcopy(origin[key]) for key in
+                    ("source_persona_id", "scenario_ids", "packet_sha256", "projection_sha256")}
     counts = current["counts"] if current else {k: len(tasks) if k == "pending" else 0 for k in ("pending", "running", "passed", "failed", "blocked", "inconclusive", "skipped")}
     summary = dict(schema_version="ux-journey-run-report.v1", preparation_complete=True,
         execution_performed=True if any(row["spawned"] for row in state["dispatches"].values()) else (None if uncertain else False),
@@ -489,7 +505,8 @@ def report_locked(work, prepared, state=None, current=None):
                      "쓰기 결과가 불확실한 자원이 격리되어 있습니다. 호스트가 실제 상태를 검사하고 기존 settle 규칙을 적용하기 전에는 같은 자원을 재사용하지 않습니다." if quarantined else
                      "남은 과제가 있습니다. 실행 장애를 확인한 뒤 같은 run으로 아직 시작하지 않은 과제만 이어갑니다." if counts["pending"] else
                      "관측된 실패를 재현하고 수정 후보를 별도 검토합니다. 실제 UI·사용자 검증이 남아 있습니다."),
-        limitations=["재사용한 페르소나는 PRD 기반 합성 가설이며 실제 참가자가 아닙니다.",
+        limitations=["재사용한 페르소나는 PRD 또는 검토된 연구를 바탕으로 한 합성 가설이며 실제 참가자가 아닙니다.",
+                     "연구 연결은 로컬 저장본의 현재 게이트·철회·보존 상태를 검사합니다. 출처 진위·원격 변경·사용자 수요나 효과를 독립적으로 입증하지 않습니다.",
                      "관측은 명시적으로 검토한 로컬 어댑터의 코어 실행 범위입니다. UI·서비스 수용·실사용자 효과를 검증하지 않았습니다.",
                      "어댑터 실행은 OS·네트워크 샌드박스가 아닙니다. 호스트의 코드·소유 입력 검토가 필수입니다.",
                      "검토한 단일 Python 프로세스만 지원합니다. 별도 자식·백그라운드 작업을 실행하는 어댑터는 지원하지 않습니다.",
@@ -506,7 +523,13 @@ def render(summary):
     lines = ["# 사용자 목표별 로컬 QA 결과", "", f"실패 {c['failed']} · 판정 보류 {c['inconclusive']} · 대기 {c['pending']} · 통과 {c['passed']}.",
              "실제 UI와 사용자 효과는 미검증입니다. 코어 실행 완료와 제품 통과를 구분합니다.", "", "## 재사용한 페르소나", ""]
     for persona in summary["personas_reused"]:
-        lines.append(f"- {text(persona['label'])} — {persona['persona_id']} v{persona['revision']}, PRD 합성 가설, profile `{persona['profile_sha256']}`")
+        basis = "연구 근거를 연결한 합성 가설" if persona["provenance_mode"] == "gated_research" else "PRD 합성 가설"
+        lines.append(f"- {text(persona['label'])} — {persona['persona_id']} v{persona['revision']}, {basis}, profile `{persona['profile_sha256']}`")
+        if "research" in persona:
+            research = persona["research"]
+            lines.append(f"  - 연구 bundle `{text(research['source_bundle_id'])}`, gate input `{research['bundle_input_sha256']}`, 유효 기한: {text(research['valid_until'] or '기록된 기한 없음; 현재 상태는 매번 재검증')}")
+            for claim in research["claims"]:
+                lines.append(f"  - 주장 `{text(claim['claim_id'])}` · 상태 {text(claim['gate_status'])} · 출처 {text(', '.join(claim['source_ids']))} · 지지 근거 {text(', '.join(claim['counting_evidence_ids']) or '없음')} · 맥락 근거 {text(', '.join(claim['context_evidence_ids']) or '없음')}")
     for task in summary["tasks"]:
         lines += ["", "## " + text(task["goal"]), "", f"결과: {labels[task['status']]} · 시도 {task['attempts']} · {task['task_id']} / {task['persona_id']}",
                   "시작 상태: " + text(task["starting_state"]), "판정 근거: " + text(task["reason"])]

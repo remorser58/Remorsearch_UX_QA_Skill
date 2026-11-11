@@ -84,16 +84,22 @@ def digest_bytes(raw):
     return hashlib.sha256(raw).hexdigest()
 
 
-def _research_binding(research, claim_ids):
+def _research_binding(research, claim_ids, *, inspection=False):
     """Use the existing committed research gate, never an author-supplied status."""
     from uxresearch.engine import fresh
-    from uxresearch.ledger import Run
+    from uxresearch.ledger import Run, RunError
     exact_keys(research, {"run", "bundle", "gate"})
     run_path = safe_path(research["run"])
-    run = Run(run_path)
-    with Store(run_path) as store:
-        # This ordinary-import entry point owns its matching Store by construction.
-        bundle, gate = fresh(run, store, Path(research["bundle"]), Path(research["gate"]))
+    if inspection:
+        from .research_access import ResearchView
+        Run = ResearchView
+    with Store(run_path, read_only=inspection) as store:
+        try:
+            run = Run(run_path)
+            # This ordinary-import entry point owns its matching Store by construction.
+            bundle, gate = fresh(run, store, Path(research["bundle"]), Path(research["gate"]))
+        except RunError as exc:
+            raise EngineError("research_policy", "The existing research policy or run metadata requires review.") from exc
         return _research_binding_record(research, claim_ids, bundle, gate)
 
 
@@ -150,7 +156,7 @@ def _retention_markers(source):
     }
 
 
-def retention_reason(record, now):
+def retention_reason(record, now, *, inspection=False):
     """Only authoritative local deadlines/tombstones justify derivative removal."""
     provenance = record.get("provenance", {})
     if provenance.get("mode") != "gated_research":
@@ -162,7 +168,7 @@ def retention_reason(record, now):
     source_ids = {sid for claim in binding.get("claims", []) for sid in claim["source_ids"]}
     if not source_ids:
         return None
-    with Store(safe_path(binding["run"])) as store:
+    with Store(safe_path(binding["run"]), read_only=inspection) as store:
         bundle = store.committed("bundle.json")
         sources = {source["id"]: source for source in bundle["records"]["sources"]}
         for source_id in sorted(source_ids & sources.keys()):
@@ -197,12 +203,13 @@ def retention_reason(record, now):
 class Library:
     """Hold this context while importing, consuming or scheduling its personas."""
 
-    def __init__(self, root, *, clock=None):
+    def __init__(self, root, *, clock=None, reference_guard=None):
         self.root = safe_path(root)
         if self.root.is_relative_to(Path(__file__).resolve().parents[1]):
             fail("persona_path", "Persona state must stay outside the installed skill tree.")
         self.clock = clock or time.time
         self.lock = None
+        self.reference_guard = reference_guard
 
     def __enter__(self):
         self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -309,6 +316,8 @@ class Library:
                 "limits": "Stored test hypotheses, not real participants, prevalence or product results."}
 
     def _validate(self, record):
+        if self.reference_guard is not None:
+            self.reference_guard(record)
         if record.get("status") != "active":
             fail("persona_retired", "The persona was retired; re-author and import before reuse.")
         body = {key: record[key] for key in ("product_id", "persona_id", "basis", "review_days", "profile", "context", "provenance")}
@@ -322,11 +331,12 @@ class Library:
             from .research_intake import validate_projection
             validate_projection(record)
         if provenance["mode"] == "gated_research":
-            reason = retention_reason(record, self.clock())
+            reason = retention_reason(record, self.clock(), inspection=self.reference_guard is not None)
             if reason:
                 fail("persona_retention_due", reason + " Run prune to remove saved derived profiles.")
             previous = provenance["research"]
-            current = _research_binding({k: previous[k] for k in ("run", "bundle", "gate")}, provenance["claim_ids"])
+            current = _research_binding({k: previous[k] for k in ("run", "bundle", "gate")}, provenance["claim_ids"],
+                                        inspection=self.reference_guard is not None)
             if current != previous:
                 fail("stale_research", "Research changed since this persona revision; re-author against the current gate.")
 

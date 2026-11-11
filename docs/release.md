@@ -74,6 +74,14 @@ verdicts are one failed and one inconclusive; the diagnostic passes only when
 those known synthetic outcomes are reported honestly. It is not a browser or
 real-user check. Existing diagnostic output is never overwritten.
 
+The same extracted launcher also runs the `--research` variant in a separate
+new directory. It exercises the existing offline research input, real merge,
+gate, authored export, persistent Library import, reviewed research scope,
+current adapter execution and report/readback. Original research bytes, modes
+and modification times remain unchanged. Its live-mode contract fields and
+source grades belong to invented diagnostic inputs, not actual acquisition or
+user evidence. Both original and research diagnostics retain zero product passes.
+
 The output must be a new directory. Failed checks return nonzero. `--skip-web`
 produces a partial report with `ready: false`. Synthetic tests establish local
 behavior and packaging; live community access, real-user preferences, Figma access

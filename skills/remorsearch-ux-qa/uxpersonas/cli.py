@@ -27,6 +27,7 @@ def parser():
     run.add_argument("--library", type=Path, help="Explicit existing reviewed persona library; never the implicit global library")
     run.add_argument("--input", type=Path, help="Host-reviewed fixed goals, criteria and copied Python adapter")
     run.add_argument("--allow-reviewed-local-runner", action="store_true", help="Host attests review of exact owned code/input; this is not an OS sandbox")
+    run.add_argument("--reviewed-research-run", action="append", type=Path, help="Exact existing research directory already reviewed by the host; repeat up to four; no discovery or collection")
     run.add_argument("--format", choices=("text", "json"), default="text")
     default = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "remorsearch-ux-qa/personas"
     for name in ("import", "import-research", "list", "retire", "reuse", "prune", "plan", "claim", "record", "report", "retry", "settle", "receipt-starter", "compare", "replay"):
@@ -85,7 +86,8 @@ def main(argv=None):
             if args.command == "run":
                 from . import local_run
                 result = local_run.execute(args.work, library_path=args.library, input_path=args.input,
-                                           approved=args.allow_reviewed_local_runner)
+                                           approved=args.allow_reviewed_local_runner,
+                                           reviewed_research_runs=args.reviewed_research_run)
             else:
                 result = (workspace.prepare(args.source, args.work, reviewed_files=args.include,
                       progress=(lambda message: print(message, file=sys.stderr)) if args.format == "text" else None)

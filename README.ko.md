@@ -25,7 +25,7 @@ Python 도구는 Python 3.10 이상에서 표준 라이브러리와 POSIX 파일
 macOS, Linux, Windows의 WSL에서 실행할 수 있습니다. 기본 `python3`가 더 낮으면(macOS 기본 Python은 3.9입니다) 호스트가 스킬 폴더에서 `python3 scripts/find_runtime.py`를 실행합니다. 지원되는 가장 높은 Python, Node.js 22 경로와 공백을 JSON으로 출력하며 아무것도 설치하지 않습니다.
 
 ```sh
-git clone --branch rem/journey-run-report-20261112 --single-branch https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
+git clone --branch rem/research-journey-20261112 --single-branch https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
 # Claude Code(개인용). 팀과 나누려면 프로젝트 안의 .claude/skills/에 복사합니다
 mkdir -p ~/.claude/skills
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
@@ -54,7 +54,7 @@ Node.js 22를 쓰십시오. 고정된 Playwright 1.56.1에서는 Node.js 24.16 �
 
 ## 사용법
 
-현재 로컬 여정 실행까지 포함한 누적 개선은 `rem/journey-run-report-20261112` 브랜치에 있으며 아직 `main`에 병합하지 않았습니다.
+현재 연구 페르소나의 로컬 여정 실행까지 포함한 누적 개선은 `rem/research-journey-20261112` 브랜치에 있으며 아직 `main`에 병합하지 않았습니다.
 앞의 설치 명령은 이 브랜치를 선택합니다. 기존 설치본을 직접 수정했다면 먼저 보존합니다.
 
 저장소는 비공개로 유지합니다. [재실행 검증 결과·남은 제한](docs/validation/persona-journey-replay-20261111.md)과
@@ -84,11 +84,13 @@ Node.js 22를 쓰십시오. 고정된 Playwright 1.56.1에서는 Node.js 24.16 �
 
 대상 폴더와 확인할 사용자 목표를 평소 말투로 전달합니다. 호스트가 필요한 코드·기존 페르소나·실행 경로를 검토하므로 사용자가 복사 목록, JSON, 해시, lease를 작성할 필요가 없습니다. `start`로 준비한 새 작업공간에서 검토된 소유 단일 Python 어댑터가 있으면 `run`이 실제 코어 과제를 실행하고 관측을 기존 receipt 검증과 MD/JSON 보고서에 연결합니다. 이후 `status` 또는 같은 `start`로 목표별 실패, 미실행 조건, 정확한 페르소나 버전, 근거와 다음 행동을 확인합니다.
 
-지원 범위는 현재 PRD에 연결된 기존 합성 가설과 검토한 로컬 어댑터입니다. 범용 브라우저·서비스 연결이나 OS·네트워크 샌드박스가 아닙니다. 페르소나를 자동 생성하거나 연구 근거를 낮춰 재사용하지 않습니다. 원본·Library가 바뀌면 재사용을 막고, 중단된 실행 여부가 불확실하면 자동 재실행하지 않으며, 저장된 결과는 새 시도 없이 읽어 복구합니다. 코어 관측만으로 전체 통과, 실제 UI 관측 또는 실사용자 효과를 만들지 않습니다. 과거 Peekly 실험은 재실행하거나 수정하지 않습니다.
+지원 범위는 현재 PRD에 연결된 기존 가설 또는 검토한 연구 기반 합성 페르소나와 소유 로컬 어댑터입니다. 호스트가 정확한 연구 위치를 확인하면 현재 게이트·출처/캡처 보존·동기 근거 검증을 거쳐 같은 실행과 보고에 연결합니다. 원본 연구는 정리·복사·권한 변경 없이 읽습니다. 범용 브라우저·서비스 연결이나 OS·네트워크 샌드박스가 아닙니다. 페르소나를 자동 생성하거나 차단된 연구를 PRD 가설로 낮춰 재사용하지 않습니다. 원본·Library가 바뀌면 재사용을 막고, 중단된 실행 여부가 불확실하면 자동 재실행하지 않으며, 저장된 결과는 새 시도 없이 읽어 복구합니다. 코어 관측만으로 전체 통과, 실제 UI 관측 또는 실사용자 효과를 만들지 않습니다. 과거 Peekly 실험은 재실행하거나 수정하지 않습니다.
 
 [진입 안내](skills/remorsearch-ux-qa/references/persona-qa/start.md), [호스트 실행 계약](skills/remorsearch-ux-qa/references/persona-qa/local-run.md), [사전 기준](docs/validation/journey-run-protocol-20261112.md), [검증 결과](docs/validation/journey-run-results-20261112.md)에 범위와 복구 절차를 기록합니다. 설치물의 `examples/journey/run_fixture.py`는 알려진 결함이 있는 합성 진단이며 실제 사용자 연구가 아닙니다. 추출 배포물 검사에서도 실행하고, 진단 소프트웨어 검사 성공과 대상 과제의 실패·보류 판정을 구분합니다.
 
 ### 조사 페르소나를 다음 QA에 보관
+
+현재 실행 보고서에는 주장·출처 ID, 게이트 상태, 정확한 페르소나 버전·내보내기 지문이 실제 제품 관측과 구분되어 연결됩니다. [연구 재사용 사전 기준](docs/validation/research-journey-protocol-20261112.md)과 [연구 재사용 검증](docs/validation/research-journey-results-20261112.md)을 참고합니다. 추출본의 `--research` 진단은 소유한 가상 자료로 로컬 계약을 검증하며, 기존 공개 파일럿의 재수집이나 출처 진위 검증이 아닙니다.
 
 호스트는 `ux_personas.py import-research`로 현재 검증된 연구 내보내기를 영속 라이브러리에 직접 연결합니다. PRD 인용과 페르소나 ID 연결을 준비하면 행동·예상 결정·반증 기준·가정·미확인을 다시 작성하지 않고 보존합니다. 동일 재시도는 버전을 늘리지 않고, 기존 내용을 바꾸려면 확인한 현재 버전을 명시합니다. 과업이나 실행 결과를 자동으로 만들지는 않습니다. [가져오기 계약](skills/remorsearch-ux-qa/references/persona-qa/persona-library-swarm.md#13-import-a-current-research-export-into-the-library)과 [공개 근거 파일럿](docs/validation/public-evidence-pilot-20261111.md)에 실제 수집·합성 가설·CLI 검증·실사용자 UX 근거의 차이를 기록했습니다.
 

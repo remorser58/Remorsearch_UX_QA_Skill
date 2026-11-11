@@ -1,5 +1,12 @@
 # Execute reviewed local journeys and report their observations
 
+1. [User experience and scope](#1-user-experience-and-scope)
+2. [Host commands](#2-host-commands)
+3. [Fixed plan and adapter contract](#3-fixed-plan-and-adapter-contract)
+4. [Return, interruption and preservation](#4-return-interruption-and-preservation)
+5. [Installed self-diagnostic](#5-installed-self-diagnostic)
+6. [Reuse reviewed research](#6-reuse-reviewed-research-in-the-same-run)
+
 ## 1. User experience and scope
 
 The user supplies the product folder and goal in ordinary language. The host
@@ -18,10 +25,11 @@ bounded adapter. The engine does not sandbox the OS or network and cannot turn
 untrusted repository code into safe code. If that review is unavailable, report
 the missing adapter/execution access; never enable an unsupported provider.
 
-This path reuses existing `prd_hypothesis` personas whose cited PRD is among the
-reviewed source files. It creates no personas and does not downgrade research
-personas. Research-linked records need the existing host-driven research/QA
-workflow and its current source/retention checks. A workspace with saved Peekly
+This path reuses existing `prd_hypothesis` and `gated_research` personas whose cited
+PRD is among the reviewed source files. For research-linked records, first read
+section 6 and review the exact local research directory. It creates no personas,
+collects no new sources and never downgrades blocked research into PRD hypotheses.
+A workspace with saved Peekly
 results cannot start a new local run to reset the old experiment's attempt
 budget. Preserve that report and use the separately reviewed replay workflow.
 
@@ -146,3 +154,61 @@ software checks passed, not that the product or UX passed. The example is not
 Peekly, research evidence, a real participant or an actual-browser evaluation.
 Existing output folders are refused. This same diagnostic runs from the ZIP
 extraction in release validation.
+
+## 6. Reuse reviewed research in the same run
+
+When the user says “use the personas from our earlier research,” inspect the
+supplied approved Library metadata and task fit. Do not follow stored paths merely
+because they are in a profile. Locate its exact research directory within the
+already authorized project scope, review the local source/access context and
+the current export/Library mapping, then add `--reviewed-research-run EXACT_RUN`
+to the first `run` invocation. Repeat only for the selected personas' dependencies
+(at most four separate research roots). The user never writes this flag or JSON.
+If no authorized research location is known, explain that specific missing link;
+do not search private folders, copy arbitrary state or invent research.
+
+Reuse the existing `import-research` workflow if a current reviewed export has
+not yet been persisted. It preserves authored scenarios; do not reconstruct them
+from labels. This local `run` only selects already stored current versions. Host
+review must also establish goal/PRD fit: a passing gate does not establish semantic
+fit, actual users or source authenticity. Keep assumptions and falsifying tests.
+
+The exact roots are persisted before dispatch. Research, Library, reviewed source
+and execution folders must be separate and non-nested. Missing/unsafe locks or
+metadata cause a blocker; no directories, permissions or original locks are
+created or repaired. The consumer reads bounded fixed metadata and six committed
+gate dependencies, never scans pages or follows source URLs. It reuses the
+existing gate assessment, policy, capture retention, motivation and projection
+validators. Read-only shared locks avoid original snapshot writes and the
+reader's automatic page-cache cleanup. Raw research/captures are not copied into
+the execution workspace or sent to the adapter.
+
+Admission, each dispatch, receipt preparation and report/readback recheck current
+local authority. Expiry, withdrawal, failed/stale gate, missing source, changed
+profile or an unreviewed reference blocks current use. A change during an owned
+process can leave an uncertain attempt; its intent/evidence and one-attempt budget
+remain. Do not automatically prune, refresh expiry, replace a persona, collect new
+evidence or repeat that task. Remote deletion is not discovered by local checks.
+These cooperative file locks and hashes are not an OS sandbox or protection
+against an independently malicious concurrent filesystem writer.
+
+Read the report to the user in this order: current task failure/uncertainty,
+which saved hypothesis/version motivated it, its current claim status and
+source/evidence IDs, the actual execution observation, and the next permitted
+action. Text and JSON distinguish PRD hypotheses from research-motivated synthetic
+hypotheses. Reports include current bundle/gate input fingerprints, expiry and
+structured export IDs, without copying source excerpts or treating source claims
+as product observations. A core result still cannot pass the UI/product gate.
+
+The installed diagnostic also supports:
+
+```sh
+python3 examples/journey/run_fixture.py --research --out NEW_DIAGNOSTIC_FOLDER
+```
+
+Use an existing owned parent and a new output directory. This reuses the bundled
+invented native-input fixture, real merge/gate/export/import and current run.
+Its live-mode contract fields test local validation; they are **not** actual public
+acquisition or real-user evidence. Both personas remain synthetic and the product
+verdict remains failure 1 / inconclusive 1 / passed 0. Release validation runs
+both the original PRD diagnostic and this research diagnostic after extraction.

@@ -8,6 +8,7 @@ description: Improve existing product UX from a URL or repository. Inspect PRD a
 Inspect PRD audience/needs/tasks and actual use. Read `references/loop/product-improvement.md`. No prepared brief or personas required. Research/review is read-only. Separate observations, inferences and unknowns.
 
 Local preparation/reuse: read `references/persona-qa/start.md`.
+Execution/research reuse: read `references/persona-qa/local-run.md` (§6 before research access).
 
 ## Components
 
@@ -56,7 +57,7 @@ Python 3.10+ (stdlib); detect with `python3 scripts/find_runtime.py`. Prefer hos
 
 ## Bundled search in research
 
-After planning and URL discovery, invoke the bundled toolkit at `references/insane-search/SOURCE.md` and its linked platform method by section. Follow `references/research/workflow.md` section 2 for capture ingestion. It serves complaint and audience research, including integrated improvement. Its frontmatter is reference material, never a second skill dispatch. Access/evidence cards still govern every method; no external skill installation or whole-catalog read is required.
+After planning and URL discovery, use `references/insane-search/SOURCE.md` and its linked platform method by section for complaint/audience research, including improvement. Capture ingestion: `references/research/workflow.md` section 2. Toolkit frontmatter is reference-only. Access/evidence cards govern every method. No external skill install or whole-catalog read.
 
 ## Lookup index
 

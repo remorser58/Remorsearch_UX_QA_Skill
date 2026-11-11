@@ -30,7 +30,7 @@ and component tests do not establish that result.
 
 ## Install
 
-The cumulative local journey update is on `rem/journey-run-report-20261112`, not yet merged
+The cumulative research-persona journey update is on `rem/research-journey-20261112`, not yet merged
 into `main`. The commands below select this branch. The repository remains
 private. See [replay validation and remaining limits](docs/validation/persona-journey-replay-20261111.md)
 and the [persona library/task contract](skills/remorsearch-ux-qa/references/persona-qa/persona-library-swarm.md).
@@ -45,7 +45,7 @@ default `python3` is older (the macOS system Python is 3.9), the host runs
 highest supported Python, a Node.js 22 path and any gaps; it installs nothing.
 
 ```sh
-git clone --branch rem/journey-run-report-20261112 --single-branch https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
+git clone --branch rem/research-journey-20261112 --single-branch https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
 # Claude Code (personal); use .claude/skills/ inside a project to share it with a team
 mkdir -p ~/.claude/skills
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
@@ -124,8 +124,11 @@ to the existing receipt validator and immutable MD/JSON reports. `status` and a
 repeated `start` show the current goals, failures, unexecuted criteria and next
 action. The host reads that report back in ordinary language.
 
-This bounded path uses current PRD-hypothesis personas, not automatically
-generated or relabelled research personas. It has no general browser/service
+This bounded path reuses current PRD hypotheses and saved research-motivated
+synthetic personas. The host explicitly reviews each research location; current
+gate, source/capture retention and motivation checks remain mandatory, and the
+original research is inspected without cleanup, copying or permission changes.
+It creates no personas and has no general browser/service
 adapter or OS/network sandbox. Source/Library changes block reuse; uncertain
 dispatch is not replayed; recorded results are recovered without new attempts.
 Core observations alone remain inconclusive, and no UI or real-user benefit is
@@ -139,6 +142,13 @@ The installed `examples/journey/run_fixture.py` is a diagnostic with a known
 synthetic defect, not an actual-user study. Release validation runs it from the
 extracted package and keeps failed/inconclusive product verdicts distinct from
 successful software checks.
+
+Research reuse now reaches that same current execution/report path. Claim/source
+IDs, gate status, exact persona version and export fingerprints remain distinct
+from observed product behavior. See the [research reuse criteria](docs/validation/research-journey-protocol-20261112.md)
+and [research reuse validation](docs/validation/research-journey-results-20261112.md).
+The extracted `--research` diagnostic uses invented offline source contracts;
+it does not repeat the historical public pilot or establish source authenticity.
 
 ### Save researched personas for later QA
 

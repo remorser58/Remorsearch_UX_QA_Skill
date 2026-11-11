@@ -222,6 +222,8 @@ def main(argv=None):
                                           "smoke"], cwd=output)
                 check("extracted-local-journey", [python, extracted_skill / "examples/journey/run_fixture.py",
                       "--out", output / "local-journey-result"], cwd=output)
+                check("extracted-research-journey", [python, extracted_skill / "examples/journey/run_fixture.py",
+                      "--research", "--out", output / "research-journey-result"], cwd=output)
         except (OSError, ValueError, zipfile.BadZipFile) as error:
             checks.append({"name": "extract", "passed": False, "error": str(error)})
     if args.skip_web:
