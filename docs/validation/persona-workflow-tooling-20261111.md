@@ -1,5 +1,7 @@
 # Persona workflow tooling validation, 2026-11-11
 
+**Post-publication correction:** the recorded checker run passed before a final English README edit. That edit was not followed by the bilingual README checks, so these numbers did not certify the complete published `328bc20` tree. The next full suite detected three README parity failures. Both README versions are corrected in the PE-2 follow-up, with fresh validation recorded separately. The original run results and failed follow-up are retained; runtime/browser outcomes and the frozen PE-1 comparison are unchanged.
+
 Base: `544615d`; this record accompanies the subsequent commit containing the
 changes. Exact tested file digests and measurements are in the
 [structured record](persona-workflow-tooling-20261111.json).

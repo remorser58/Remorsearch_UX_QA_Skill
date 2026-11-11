@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
 import shutil
+import stat
 import subprocess
 import sys
 import time
@@ -16,6 +18,121 @@ from build_insane_search_bundle import ARCHIVE_NAME, SKILL_NAME, SOURCE_COPY, bu
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / "skills/remorsearch-ux-qa"
+
+
+# Explicit repository source scope; no Git dependency or personal-directory walk.
+VALIDATION_ROOT_FILES = ("README.md", "README.ko.md", "PRD.md", "AGENTS.md", "LICENSE",
+                         "COPYING", "NOTICE", "requirements.txt", "pyproject.toml")
+VALIDATION_ROOT_DIRS = ("tests", "scripts", "skills/remorsearch-ux-qa",
+                        "integrations/insane-search", "examples", "benchmarks", "docs")
+VALIDATION_IGNORED = frozenset({"dist", "node_modules", "__pycache__", "venv", "env",
+                              "secrets", "credentials", "credentials.json"})
+
+
+def snapshot_validation_inputs(root, *, exclude_output=None):
+    """Hash bounded source inputs without reading links, hidden state or secrets.
+
+    Directory-relative O_NOFOLLOW opens also reject a link swapped in during the
+    walk. Only relative names and digests (never contents or link targets) escape.
+    """
+    files, errors = {}, []
+    excluded = None
+    if exclude_output is not None:
+        try:
+            # Lexical normalization only: never follow a link to decide scope.
+            relative_output = Path(os.path.abspath(exclude_output)).relative_to(Path(os.path.abspath(root)))
+            if relative_output.parts:
+                excluded = relative_output.as_posix()
+        except ValueError:
+            pass
+    total = 0
+    def ignored(name):
+        return (name.startswith(".") or name in VALIDATION_IGNORED
+                or name.endswith((".pyc", ".pyo", ".pem", ".key")))
+    def error(relative, reason):
+        errors.append({"path": relative, "reason": reason})
+    def visit(parent_fd, name, relative):
+        nonlocal total
+        if ignored(name) or relative == excluded:
+            return
+        try:
+            info = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+            if stat.S_ISLNK(info.st_mode):
+                error(relative, "Symlink input is not followed")
+            elif stat.S_ISDIR(info.st_mode):
+                fd = os.open(name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent_fd)
+                try:
+                    for child in sorted(os.listdir(fd)):
+                        visit(fd, child, relative + "/" + child)
+                finally:
+                    os.close(fd)
+            elif stat.S_ISREG(info.st_mode):
+                if len(files) >= 20000 or info.st_size > 64 * 1024 * 1024 or total + info.st_size > 512 * 1024 * 1024:
+                    error(relative, "Source snapshot size limit exceeded")
+                    return
+                fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent_fd)
+                try:
+                    if not stat.S_ISREG(os.fstat(fd).st_mode):
+                        error(relative, "Source changed to a non-regular file")
+                        return
+                    digest, read_size = hashlib.sha256(), 0
+                    while chunk := os.read(fd, 1024 * 1024):
+                        read_size += len(chunk)
+                        if read_size > 64 * 1024 * 1024 or total + read_size > 512 * 1024 * 1024:
+                            error(relative, "Source snapshot size limit exceeded")
+                            return
+                        digest.update(chunk)
+                    total += read_size
+                    files[relative] = digest.hexdigest()
+                finally:
+                    os.close(fd)
+            else:
+                error(relative, "Source input is not a regular file or directory")
+        except OSError:
+            error(relative, "Source input could not be read safely")
+    try:
+        root_fd = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    except OSError:
+        return {"files": {}, "errors": [{"path": ".", "reason": "Source root could not be read safely"}],
+                "excluded_output": excluded}
+    try:
+        for relative in VALIDATION_ROOT_FILES + VALIDATION_ROOT_DIRS:
+            parts = relative.split("/")
+            parent_fd, opened = root_fd, []
+            try:
+                for part in parts[:-1]:
+                    parent_fd = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent_fd)
+                    opened.append(parent_fd)
+                # Missing optional paths are represented by absence; later creation
+                # is detected by the final inventory comparison.
+                try:
+                    os.stat(parts[-1], dir_fd=parent_fd, follow_symlinks=False)
+                except FileNotFoundError:
+                    continue
+                visit(parent_fd, parts[-1], relative)
+            except FileNotFoundError:
+                continue
+            except OSError:
+                error(relative, "Source parent could not be read safely")
+            finally:
+                for fd in reversed(opened):
+                    os.close(fd)
+    finally:
+        os.close(root_fd)
+    return {"files": dict(sorted(files.items())), "errors": errors,
+            "excluded_output": excluded}
+
+
+def validation_inputs_check(before, after):
+    old, new = before["files"], after["files"]
+    added = sorted(new.keys() - old.keys())
+    removed = sorted(old.keys() - new.keys())
+    changed = sorted(key for key in old.keys() & new.keys() if old[key] != new[key])
+    passed = not (added or removed or changed or before["errors"] or after["errors"])
+    return {"name": "validation-inputs-stable", "passed": passed,
+            "reason": "Validation source inputs remained unchanged" if passed else
+                      "Validation source inputs changed or could not be safely fingerprinted; rerun all checks",
+            "added": added, "removed": removed, "changed": changed}
 
 
 def main(argv=None):
@@ -66,6 +183,7 @@ def main(argv=None):
         print(json.dumps(record), flush=True)
         return code == 0
 
+    input_snapshot_before = snapshot_validation_inputs(ROOT, exclude_output=output)
     python = sys.executable
     check("unit-tests", [python, "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py"])
     check("release-files", [python, ROOT / "scripts/release_files.py"])
@@ -142,8 +260,12 @@ def main(argv=None):
                            "Inputs changed during validation; rebuild and recheck"})
         except (OSError, ValueError) as error:
             checks.append({"name": "current-source-match", "passed": False, "error": str(error)})
+    input_snapshot_after = snapshot_validation_inputs(ROOT, exclude_output=output)
+    checks.append(validation_inputs_check(input_snapshot_before, input_snapshot_after))
     report = {"schema_version": "remorsearch-release-check.v1",
               "ready": all(item["passed"] for item in checks),
+              "validation_inputs": {"root_files": VALIDATION_ROOT_FILES, "root_directories": VALIDATION_ROOT_DIRS,
+                                    "before": input_snapshot_before, "after": input_snapshot_after},
               "published": False, "python": sys.version.split()[0], "checks": checks,
               "scope": "Package integrity and local synthetic regression tests; not live research or certification"}
     (output / "validation.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

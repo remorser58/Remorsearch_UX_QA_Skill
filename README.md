@@ -277,8 +277,6 @@ extracted ZIP from another working directory. See [release checks](docs/release.
 python3 scripts/check_release.py --output dist/release-check
 ```
 
-## Persona workflow evidence
-
 The [2026-11-11 controlled UX comparison](docs/validation/experiments/persona-workflow-20261111/README.md)
 found three supported seeded defects in both conditions, but the persona condition
 was incomplete after a connection loss. It does not establish a completed tie or
@@ -286,6 +284,10 @@ superiority. The saved/reused persona workflow, shortcomings and minimized
 execution evidence are recorded. The [post-trial benchmark launcher](benchmarks/persona-effectiveness/RUNNING.md)
 provides a portable local reproduction path; published cases are development fixtures,
 not fresh held-out validation.
+The [precommitted PE-2 comparison](docs/validation/experiments/persona-workflow-pe2-20261111/README.md)
+completed all six cases under both budgets with the same three supported defects
+and no clean-control false alarms. This bounded tie does not establish superiority,
+real-user benefit or equal coverage.
 
 ## Limits
 

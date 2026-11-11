@@ -174,6 +174,10 @@ Python 3.10 이상과 고정된 웹 드라이버 의존성을 준비한 뒤 배�
 python3 scripts/check_release.py --output dist/release-check
 ```
 
+[2026-11-11 통제 UX 비교](docs/validation/experiments/persona-workflow-20261111/README.md)에서는 두 조건 모두 같은 결함 3개를 찾았지만, 페르소나 조건의 연결이 끊겨 비교가 미완료로 끝났습니다. 완전한 동률이나 우위를 입증한 결과가 아닙니다. 저장·재사용 과정과 공백, 최소화한 실행 근거를 기록했습니다. [후속 벤치마크 실행기](benchmarks/persona-effectiveness/RUNNING.md)로 로컬 재현을 준비할 수 있습니다. 공개된 사례는 개발용이며 새 비공개 평가 근거가 아닙니다.
+
+[사전 고정한 PE-2 비교](docs/validation/experiments/persona-workflow-pe2-20261111/README.md)는 두 조건 모두 예산 안에 6개 사례를 완료했고, 같은 결함 3개와 정상 대조군 오탐 0개를 확인했습니다. 이 제한된 동률은 우위·실제 사용자 효과·동일 검사 범위를 뜻하지 않습니다.
+
 ## 한계
 
 - 실시간 브라우저 조사(Aside 같은 에이전트 브라우저), Figma, loop 모드의 브라우저 수집은 사용자나 에이전트 호스트가 제공합니다. loop CLI는 그 기록을 가져올 뿐 직접 실행하지 않습니다.
