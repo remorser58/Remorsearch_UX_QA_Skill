@@ -21,10 +21,14 @@ Library commands, calculate hashes or explain internal task IDs.
    announces the bounded copy, verifies file bytes, prepares the workspace and,
    when saved evidence is present, reuses the exact validated persona revisions
    and produces MD/JSON. No product, browser, dependency install or model runs.
-4. Explain the result in terms of user goals: preparation, existing findings,
+4. For a new source-only workspace with a reviewed owned Python adapter and
+   current PRD personas, continue with `local-run.md` sections 1–4. The host fixes
+   goals/criteria and runs the adapter; the user need not learn receipt plumbing.
+   Preserve prior experiments; do not start a new run to reset their limits.
+5. Explain the result in terms of user goals: preparation, existing findings,
    untested obligations and the next permitted action. Read the generated report;
    do not equate process exit zero with a passed product task.
-5. On return, run `status` or the identical `start`. Both recheck source/evidence
+6. On return, run `status` or the identical `start`. Both recheck source/evidence
    and current persona validity. Do not rerun old tasks, renew deadlines, replace
    failed evidence or create another run to escape attempt limits.
 
@@ -58,10 +62,11 @@ that no QA result/persona was supplied; it does not invent either.
 The saved-evidence adapter is intentionally bounded. Do not relabel a changed
 product as the frozen Peekly run. Generic source preparation uses the host's
 reviewed `--include` selection and never automatically ingests saved metadata.
-It reports source preparation only. Continue product understanding, scenarios
-and the normal Library/claim/receipt flow using current host observations.
-No universal product runner, automatic persona generation or native/browser
-execution is claimed here.
+It initially reports source preparation only. The bounded `run` integration in
+`local-run.md` connects reviewed Python core execution to current observations
+and reports. Other execution routes still use the normal host Library/claim/
+receipt flow. No universal runner, automatic persona generation or native/browser
+execution is claimed.
 
 ## Recovery and boundaries
 
@@ -92,7 +97,9 @@ access controls merely to make preparation succeed.
 
 ## Evidence meaning
 
-A workspace report says `execution_performed: false`. Existing synthetic core
+A preparation-only workspace report says `execution_performed: false`. After an
+authorized local run, start/status show its current report; uncertain dispatch
+is explicit and never replayed. Existing synthetic core
 results remain prior evidence. A failed import is still failed; core successes
 without required UI evidence remain inconclusive. Source copying, receipt
 validation and exact persona reuse do not demonstrate a new journey, UI

@@ -66,6 +66,14 @@ installation and performs no downloads or install hooks. It verifies package
 integrity again after the browser test and compares the candidate with current
 inputs. `validation.json` records each check and its log.
 
+The extracted installation also runs `examples/journey/run_fixture.py`. This
+starts from an empty directory, prepares three reviewed sample files, reuses two
+pre-authored PRD hypotheses, invokes actual local Python adapters and verifies
+current report/readback with the original Library preserved. Expected product
+verdicts are one failed and one inconclusive; the diagnostic passes only when
+those known synthetic outcomes are reported honestly. It is not a browser or
+real-user check. Existing diagnostic output is never overwritten.
+
 The output must be a new directory. Failed checks return nonzero. `--skip-web`
 produces a partial report with `ready: false`. Synthetic tests establish local
 behavior and packaging; live community access, real-user preferences, Figma access

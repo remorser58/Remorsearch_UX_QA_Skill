@@ -22,6 +22,12 @@ def parser():
             entry.add_argument("--source", type=Path, required=True, help="Approved source folder or saved owned pilot folder")
             entry.add_argument("--include", action="append", help="Exact relative file already reviewed by the host; repeat for each file, no glob or automatic discovery")
         entry.add_argument("--format", choices=("text", "json"), default="text")
+    run = commands.add_parser("run", help="Execute an explicitly reviewed owned local adapter and report current observations")
+    run.add_argument("--work", type=Path, required=True)
+    run.add_argument("--library", type=Path, help="Explicit existing reviewed persona library; never the implicit global library")
+    run.add_argument("--input", type=Path, help="Host-reviewed fixed goals, criteria and copied Python adapter")
+    run.add_argument("--allow-reviewed-local-runner", action="store_true", help="Host attests review of exact owned code/input; this is not an OS sandbox")
+    run.add_argument("--format", choices=("text", "json"), default="text")
     default = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "remorsearch-ux-qa/personas"
     for name in ("import", "import-research", "list", "retire", "reuse", "prune", "plan", "claim", "record", "report", "retry", "settle", "receipt-starter", "compare", "replay"):
         sub = commands.add_parser(name)
@@ -73,15 +79,21 @@ def parser():
 
 def main(argv=None):
     args = parser().parse_args(argv)
-    if args.command in {"start", "status"}:
+    if args.command in {"start", "status", "run"}:
         from . import workspace
         try:
-            result = (workspace.prepare(args.source, args.work, reviewed_files=args.include,
+            if args.command == "run":
+                from . import local_run
+                result = local_run.execute(args.work, library_path=args.library, input_path=args.input,
+                                           approved=args.allow_reviewed_local_runner)
+            else:
+                result = (workspace.prepare(args.source, args.work, reviewed_files=args.include,
                       progress=(lambda message: print(message, file=sys.stderr)) if args.format == "text" else None)
                       if args.command == "start" else workspace.status(args.work))
             print(json.dumps(result, ensure_ascii=False, indent=2) if args.format == "json"
                   else workspace.render(result) + "\n보고서: " + result["report_path"])
-            return 0
+            # Core-only observations cannot satisfy the existing full QA gate.
+            return 1 if args.command == "run" else 0
         except (EngineError, OSError, ValueError, TypeError, KeyError, AttributeError) as exc:
             result = workspace.error_result(exc)
             print(json.dumps(result, ensure_ascii=False) if args.format == "json"

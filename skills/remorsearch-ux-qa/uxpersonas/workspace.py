@@ -201,6 +201,9 @@ def _verify(work, state):
 
 def _report(work, state):
     _verify(work, state)
+    if (work / "local-execution.json").exists():
+        from .local_run import report_locked
+        return report_locked(work, state)
     personas, prior, goals, findings = [], None, {}, []
     if state["saved"]:
         saved_state = _json(read_file(work, "prior/persona-run/swarm-state.json"))["payload"]
@@ -237,7 +240,11 @@ def _report(work, state):
                    limitations=[("기존 코어 관측을 다시 검증한 결과이며 새로운 제품 실행이 아닙니다." if prior else "코드 준비만 완료했으며 제품 동작이나 과제 결과를 관측하지 않았습니다."),
                                 "UI·실제 사용자 효과·제품 전체 준비 완료를 증명하지 않습니다.",
                                 "의존성을 복사하거나 실행하지 않았으며 실제 계정과 외부 서비스에 접속하지 않았습니다."])
-    text = render(summary)
+    return publish_report(work, summary, render(summary))
+
+
+def publish_report(work, summary, text):
+    """Publish immutable paired MD/JSON; shared by entry and current execution."""
     reports = safe_path(work / "reports", work)
     reports.mkdir(mode=0o700, exist_ok=True)
     stem = digest(summary)[:16]
@@ -252,6 +259,9 @@ def _report(work, state):
 
 
 def render(summary):
+    if summary.get("schema_version") == "ux-journey-run-report.v1":
+        from .local_run import render as render_run
+        return render_run(summary)
     lines = ["# 준비와 기존 결과 확인", "",
              f"검토한 코드 {summary['source_files']}개를 독립 작업공간에서 확인했습니다.",
              "새 제품 과제는 실행하지 않았습니다.\n"]

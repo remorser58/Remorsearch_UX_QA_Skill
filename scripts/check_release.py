@@ -220,6 +220,8 @@ def main(argv=None):
                                "reason": "A linked platform method body, including its command, is readable"})
                 check("extracted-smoke", [python, extracted_skill / "scripts/remorsearch.py",
                                           "smoke"], cwd=output)
+                check("extracted-local-journey", [python, extracted_skill / "examples/journey/run_fixture.py",
+                      "--out", output / "local-journey-result"], cwd=output)
         except (OSError, ValueError, zipfile.BadZipFile) as error:
             checks.append({"name": "extract", "passed": False, "error": str(error)})
     if args.skip_web:

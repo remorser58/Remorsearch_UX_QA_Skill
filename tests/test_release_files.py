@@ -39,6 +39,10 @@ RUN_TIME_FILES = (
     "drivers/web/package-lock.json",
     "examples/loop/packet.json",
     "uxloop/io.py",
+    "uxpersonas/local_run.py",
+    "examples/journey/fixture.py",
+    "examples/journey/run_fixture.py",
+    "references/persona-qa/local-run.md",
     "drivers/web/fixtures/inspect.html",
     "drivers/web/selftest.mjs",
 )

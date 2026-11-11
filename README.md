@@ -22,14 +22,15 @@ artifacts between them. A research-only or review-only request keeps its scope.
 | **loop** | Records bounded fixes, current-build replay, regression and preserved-intent checks. | Host browser/Figma tools and actual receipts. Existing improvement authority is recorded explicitly for scoped local patches. |
 
 The host-agent instructions implement this integrated entry path. The CLI validates
-imported evidence and applies bounded local text patches; the host performs
+imported evidence, applies bounded local text patches and can execute owned core
+tasks through an explicitly reviewed single Python adapter; the host performs
 browser actions, Figma work and builds. Whole-product execution from request to
 verified improvement still needs a separate live acceptance run. Existing fixture
 and component tests do not establish that result.
 
 ## Install
 
-The cumulative persona/replay update is on `rem/persona-journey-replay-20261111`, not yet merged
+The cumulative local journey update is on `rem/journey-run-report-20261112`, not yet merged
 into `main`. The commands below select this branch. The repository remains
 private. See [replay validation and remaining limits](docs/validation/persona-journey-replay-20261111.md)
 and the [persona library/task contract](skills/remorsearch-ux-qa/references/persona-qa/persona-library-swarm.md).
@@ -44,7 +45,7 @@ default `python3` is older (the macOS system Python is 3.9), the host runs
 highest supported Python, a Node.js 22 path and any gaps; it installs nothing.
 
 ```sh
-git clone --branch rem/persona-journey-replay-20261111 --single-branch https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
+git clone --branch rem/journey-run-report-20261112 --single-branch https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
 # Claude Code (personal); use .claude/skills/ inside a project to share it with a team
 mkdir -p ~/.claude/skills
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
@@ -112,6 +113,33 @@ After URL discovery, the bundled insane-search methods remain subject to the
 existing access/evidence rules. See the [operational checklist](skills/remorsearch-ux-qa/references/loop/product-improvement.md)
 for the product-to-replay workflow and existing plan/bundle/loop commands.
 
+### From an ordinary request to a current local QA report
+
+Tell the host the approved product folder and user goal. The host reviews the
+minimal source, existing personas and permitted execution path; you do not need
+to write JSON, copy a repository, manage leases or decide whether exit zero means
+success. `start` prepares the reviewed files. For a reviewed owned single Python
+adapter, `run` now executes the actual core tasks and joins their observations
+to the existing receipt validator and immutable MD/JSON reports. `status` and a
+repeated `start` show the current goals, failures, unexecuted criteria and next
+action. The host reads that report back in ordinary language.
+
+This bounded path uses current PRD-hypothesis personas, not automatically
+generated or relabelled research personas. It has no general browser/service
+adapter or OS/network sandbox. Source/Library changes block reuse; uncertain
+dispatch is not replayed; recorded results are recovered without new attempts.
+Core observations alone remain inconclusive, and no UI or real-user benefit is
+claimed. A saved Peekly experiment cannot be reset through this entry.
+
+Host details: [start](skills/remorsearch-ux-qa/references/persona-qa/start.md),
+[local execution contract](skills/remorsearch-ux-qa/references/persona-qa/local-run.md),
+[fixed criteria](docs/validation/journey-run-protocol-20261112.md) and
+[validation results](docs/validation/journey-run-results-20261112.md).
+The installed `examples/journey/run_fixture.py` is a diagnostic with a known
+synthetic defect, not an actual-user study. Release validation runs it from the
+extracted package and keeps failed/inconclusive product verdicts distinct from
+successful software checks.
+
 ### Save researched personas for later QA
 
 The host can import the current validated research export directly into the
@@ -147,9 +175,11 @@ Journey receipts now validate and save one detached input snapshot and recheck
 the original lease after evidence validation and serialization, immediately
 before atomic storage. Late results preserve the run and evidence for explicit
 inspection and recovery. The [Peekly discovery and admission verification](docs/validation/peekly-pilot-20261111.md)
-records the reproduced defects and checks separately from product effects:
-no authorized Peekly target or fixture was found, so actual Peekly journeys and
-user benefit remain unverified.
+records the reproduced admission defects at the earlier target-discovery stage.
+The later [Peekly results](docs/validation/peekly-journey-results-20261112.md)
+preserve the owned synthetic-core experiment: one failure, four inconclusive
+tasks and no passes. That evidence is not a browser observation or real-user
+benefit; the new local entry does not rerun or modify Peekly.
 
 ## Evidence rules
 
