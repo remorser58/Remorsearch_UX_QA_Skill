@@ -1,0 +1,233 @@
+{
+  "scope": "actual_product_core_owned_adapter",
+  "ui_observed": false,
+  "real_user_evidence": false,
+  "counts": {
+    "pending": 0,
+    "running": 0,
+    "passed": 0,
+    "failed": 1,
+    "blocked": 0,
+    "inconclusive": 4,
+    "skipped": 0
+  },
+  "product_ready": false,
+  "tasks": [
+    {
+      "id": "T-SAMPLE",
+      "status": "inconclusive",
+      "reason": "Core criteria met; UI execution and screenshot evidence are unavailable."
+    },
+    {
+      "id": "T-RECOVER",
+      "status": "inconclusive",
+      "reason": "Core criteria met; UI execution and screenshot evidence are unavailable."
+    },
+    {
+      "id": "T-LARGE",
+      "status": "failed",
+      "reason": "A frozen actual-product core criterion failed; no UI result is asserted."
+    },
+    {
+      "id": "T-STORAGE",
+      "status": "inconclusive",
+      "reason": "Core criteria met; UI execution and screenshot evidence are unavailable."
+    },
+    {
+      "id": "T-FOLDER",
+      "status": "inconclusive",
+      "reason": "Core criteria met; UI execution and screenshot evidence are unavailable."
+    }
+  ],
+  "large_input": {
+    "rows_per_list": 150000,
+    "archive_bytes": 816720,
+    "largest_file_bytes": 11850029,
+    "total_file_bytes": 23712900,
+    "archive_sha256": "73be1ee5cb4a50f65975b17d227fc60063325df98a3317f6375a4aaee8874398",
+    "within_documented_limits": true,
+    "zip_error": {
+      "name": "InstagramExportFormatError",
+      "message": "followers_1.json 파일 형식이 맞지 않아요",
+      "file": "followers_1.json"
+    },
+    "json_error": {
+      "name": "InstagramExportFormatError",
+      "message": "followers_1.json 파일 형식이 맞지 않아요",
+      "file": "followers_1.json"
+    },
+    "standalone_followers_rows": 150000
+  },
+  "stored_bytes_preserved": true,
+  "measurements": {
+    "journey-T-RECOVER-1": {
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "pilot/peeklyJourneys.test.ts",
+        "--maxWorkers=1",
+        "--minWorkers=1"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 0.501773,
+      "time_real_seconds": 0.48,
+      "max_rss_bytes": 126124032,
+      "measurement": "macOS /usr/bin/time -lp; RSS is not a process-tree sum",
+      "process_finished": true
+    },
+    "peekly-typecheck": {
+      "command": [
+        "node",
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 1.288168,
+      "time_real_seconds": 1.24,
+      "max_rss_bytes": 424411136,
+      "measurement": "macOS /usr/bin/time -lp; RSS is not a process-tree sum",
+      "process_finished": true
+    },
+    "journey-T-LARGE-1": {
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "pilot/peeklyJourneys.test.ts",
+        "--maxWorkers=1",
+        "--minWorkers=1"
+      ],
+      "exit_code": 1,
+      "timed_out": false,
+      "wall_seconds": 0.977736,
+      "time_real_seconds": 0.92,
+      "max_rss_bytes": 407240704,
+      "measurement": "macOS /usr/bin/time -lp; RSS is not a process-tree sum",
+      "process_finished": true
+    },
+    "journey-T-FOLDER-1": {
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "pilot/peeklyJourneys.test.ts",
+        "--maxWorkers=1",
+        "--minWorkers=1"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 0.445706,
+      "time_real_seconds": 0.4,
+      "max_rss_bytes": 127860736,
+      "measurement": "macOS /usr/bin/time -lp; RSS is not a process-tree sum",
+      "process_finished": true
+    },
+    "peekly-build-tsc": {
+      "command": [
+        "node",
+        "node_modules/typescript/bin/tsc",
+        "-b"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 1.213658,
+      "time_real_seconds": 1.16,
+      "max_rss_bytes": 420560896,
+      "measurement": "macOS /usr/bin/time -lp; RSS is not a process-tree sum",
+      "process_finished": true
+    },
+    "journey-T-LARGE-2": {
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "pilot/peeklyJourneys.test.ts",
+        "--maxWorkers=1",
+        "--minWorkers=1"
+      ],
+      "exit_code": 1,
+      "timed_out": false,
+      "wall_seconds": 1.027663,
+      "time_real_seconds": 1.0,
+      "max_rss_bytes": 404586496,
+      "measurement": "macOS /usr/bin/time -lp; RSS is not a process-tree sum",
+      "process_finished": true
+    },
+    "journey-T-STORAGE-1": {
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "pilot/peeklyJourneys.test.ts",
+        "--maxWorkers=1",
+        "--minWorkers=1"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 0.403527,
+      "time_real_seconds": 0.38,
+      "max_rss_bytes": 125714432,
+      "measurement": "macOS /usr/bin/time -lp; RSS is not a process-tree sum",
+      "process_finished": true
+    },
+    "journey-T-SAMPLE-1": {
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "pilot/peeklyJourneys.test.ts",
+        "--maxWorkers=1",
+        "--minWorkers=1"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 0.446145,
+      "time_real_seconds": 0.42,
+      "max_rss_bytes": 124862464,
+      "measurement": "macOS /usr/bin/time -lp; RSS is not a process-tree sum",
+      "process_finished": true
+    },
+    "peekly-existing-tests": {
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "tests",
+        "--maxWorkers=1",
+        "--minWorkers=1"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 3.44408,
+      "time_real_seconds": 3.39,
+      "max_rss_bytes": 374358016,
+      "measurement": "macOS /usr/bin/time -lp; RSS is not a process-tree sum",
+      "process_finished": true
+    },
+    "peekly-build-vite": {
+      "command": [
+        "node",
+        "node_modules/vite/bin/vite.js",
+        "build"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "wall_seconds": 1.03689,
+      "time_real_seconds": 0.98,
+      "max_rss_bytes": 398589952,
+      "measurement": "macOS /usr/bin/time -lp; RSS is not a process-tree sum",
+      "process_finished": true
+    }
+  },
+  "source_binding": "dd057f188c7f222d879956506dc314bfbff373d7bd4331d628d2dbebee62c838",
+  "files": {
+    "measure.py": "155c96a5fb623047ef37c279d19ff93236789ba52ec2c170f597b683919f7bbd",
+    "peeklyJourneys.test.ts": "8bd6ea186ae3b76eaa318af078f19ce5b393d395b9482792c3b54e8de5e216ca",
+    "network_guard.cjs": "f40816071485b4527263e6d16bedcd3e57cb6688d85dae158cab2fcb0b3dd1b7",
+    "protocol.json": "ba8e48453f7ecdedba1c9aaef3f68462b7e6013bff87873a16dce9114d8b95d9",
+    "run_pilot.py": "62051b00f8cbcdb0da3be78431bc4931fea78a97141e1ea51a5671b8aa349006"
+  }
+}
