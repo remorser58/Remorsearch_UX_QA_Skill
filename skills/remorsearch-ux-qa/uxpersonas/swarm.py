@@ -375,6 +375,36 @@ def _artifacts(root, entry, receipt):
     return result
 
 
+def _receipt_value(validator, value, location):
+    """Add fixed-schema locations without echoing rejected values or keys."""
+    try:
+        return validator(value)
+    except EngineError as exc:
+        raise EngineError(exc.issue["code"], exc.issue["reason"], location=location,
+                          next_step="Correct this field using actual observations. Describe an observed blank page explicitly; do not invent execution or a pass.") from exc
+
+
+def _receipt_privacy_location(receipt):
+    # Called only after the bounded, exact-key receipt shape is validated.
+    # Keep the same clean() rejection semantics; locations use trusted labels
+    # and bounded numeric indexes, never input keys, identifiers or values.
+    if clean(receipt["reason"]) != receipt["reason"]:
+        return "receipt.reason"
+    for group, fields in (("steps", ("action", "observation", "evidence_ids")),
+                          ("criteria", ("kind", "status", "observation", "evidence_ids"))):
+        for index, row in enumerate(receipt[group]):
+            for field in fields:
+                value = row[field]
+                if clean(value) != value:
+                    location = f"receipt.{group}[{index}].{field}"
+                    if field == "evidence_ids":
+                        for ref_index, ref in enumerate(value):
+                            if clean(ref) != ref:
+                                return f"{location}[{ref_index}]"
+                    return location
+    return "receipt"
+
+
 def _receipt(root, entry, receipt):
     if not isinstance(receipt, dict) or receipt.get("schema_version") != "ux-persona-swarm-receipt.v1":
         fail("Unknown receipt schema.")
@@ -386,11 +416,11 @@ def _receipt(root, entry, receipt):
     outcome = receipt["outcome"]
     if outcome not in {"passed", "failed", "blocked", "inconclusive", "skipped"}:
         fail("Receipt outcome is invalid.")
-    text(receipt["reason"])
+    _receipt_value(text, receipt["reason"], "receipt.reason")
     artifacts = _artifacts(root, entry, receipt)
-    def observation(item):
-        text(item.get("observation"))
-        refs = strings(item.get("evidence_ids"))
+    def observation(item, location):
+        _receipt_value(text, item.get("observation"), location + ".observation")
+        refs = _receipt_value(strings, item.get("evidence_ids"), location + ".evidence_ids")
         if not set(refs) <= artifacts.keys():
             fail("Observation refers to missing evidence.")
         return set(refs)
@@ -398,16 +428,17 @@ def _receipt(root, entry, receipt):
     if not isinstance(steps, list) or len(steps) > 256:
         fail("Steps must be a bounded list.")
     refs = set()
-    for step in steps:
+    for step_index, step in enumerate(steps):
         if not isinstance(step, dict) or set(step) != {"action", "observation", "evidence_ids"}:
             fail("Step fields are invalid.")
-        text(step["action"])
-        refs |= observation(step)
+        location = f"receipt.steps[{step_index}]"
+        _receipt_value(text, step["action"], location + ".action")
+        refs |= observation(step, location)
     criteria = receipt["criteria"]
     if not isinstance(criteria, list) or len(criteria) > 128:
         fail("Criteria must be a bounded list.")
     seen = set()
-    for item in criteria:
+    for criterion_index, item in enumerate(criteria):
         if not isinstance(item, dict) or set(item) != {"kind", "index", "status", "observation", "evidence_ids"}:
             fail("Criterion fields are invalid.")
         kind, index = item["kind"], item["index"]
@@ -418,12 +449,13 @@ def _receipt(root, entry, receipt):
         if key in seen or item["status"] not in {"passed", "failed", "not_run"}:
             fail("Criterion is repeated or has invalid status.")
         seen.add(key)
+        location = f"receipt.criteria[{criterion_index}]"
         if item["status"] == "not_run":
-            text(item["observation"])
+            _receipt_value(text, item["observation"], location + ".observation")
             if item["evidence_ids"] != []:
                 fail("Not-run criteria cannot claim evidence.")
         else:
-            refs |= observation(item)
+            refs |= observation(item, location)
     if outcome == "passed":
         expected = {(kind, i) for kind in ("success", "recovery")
                     for i in range(len(entry["task"][kind + "_criteria"]))}
@@ -434,7 +466,9 @@ def _receipt(root, entry, receipt):
     if outcome == "failed" and (not steps or not any(item["status"] == "failed" for item in criteria)):
         fail("A failed task requires observed steps and an evidence-backed failed criterion; otherwise use blocked or inconclusive.")
     if clean({k: receipt[k] for k in ("reason", "steps", "criteria")}) != {k: receipt[k] for k in ("reason", "steps", "criteria")}:
-        fail("Receipt text contains personal identifiers.")
+        raise EngineError("swarm_input", "Receipt text contains personal identifiers.",
+                          location=_receipt_privacy_location(receipt),
+                          next_step="Use concise privacy-safe observations, not raw tool output or local paths. Use descriptive evidence IDs and update matching artifact references; retain original evidence. Do not bypass the privacy check.")
     return receipt
 
 
