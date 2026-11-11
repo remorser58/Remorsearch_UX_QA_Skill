@@ -29,9 +29,9 @@ and component tests do not establish that result.
 
 ## Install
 
-The reusable-persona update is on `rem/persona-ux-qa-20261110`, not yet merged
-into `main`. The commands below select this reviewed branch. The repository remains
-private. See [validation and remaining limits](docs/validation/persona-upgrade-summary-20261110.md)
+The cumulative persona/replay update is on `rem/persona-journey-replay-20261111`, not yet merged
+into `main`. The commands below select this branch. The repository remains
+private. See [replay validation and remaining limits](docs/validation/persona-journey-replay-20261111.md)
 and the [persona library/task contract](skills/remorsearch-ux-qa/references/persona-qa/persona-library-swarm.md).
 Do not overwrite a locally edited installation without preserving it first.
 
@@ -44,7 +44,7 @@ default `python3` is older (the macOS system Python is 3.9), the host runs
 highest supported Python, a Node.js 22 path and any gaps; it installs nothing.
 
 ```sh
-git clone --branch rem/persona-ux-qa-20261110 --single-branch https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
+git clone --branch rem/persona-journey-replay-20261111 --single-branch https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
 # Claude Code (personal); use .claude/skills/ inside a project to share it with a team
 mkdir -p ~/.claude/skills
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
@@ -111,6 +111,25 @@ those relevant to observed tasks; availability and collection are not guaranteed
 After URL discovery, the bundled insane-search methods remain subject to the
 existing access/evidence rules. See the [operational checklist](skills/remorsearch-ux-qa/references/loop/product-improvement.md)
 for the product-to-replay workflow and existing plan/bundle/loop commands.
+
+### Reuse completed journeys on the next build
+
+From the skill folder, the host can prepare the next run without rewriting the
+persona/task/criterion/PRD mapping JSON:
+
+```sh
+python3 scripts/ux_personas.py replay --library LIBRARY --baseline BEFORE_RUN --run AFTER_RUN --build-id build-2 --artifact build-2.bin --isolation-id fixture-v2 --confirm-starting-state --confirm-isolation
+```
+
+The output supplies fixture assignments and the next claim, receipt, report and
+comparison commands. It retains exact current persona versions and reviewed
+journeys, verifies existing evidence and prepares pending work on changed build
+bytes. It copies no results or execution permissions and does not run workers.
+The host still performs the journeys and records new observations. Same-pair
+retries reuse the reserved destination; active or uncertain baseline work must
+remain in its original execution/inspection flow. See the
+[replay contract](skills/remorsearch-ux-qa/references/persona-qa/persona-library-swarm.md#12-prepare-the-next-build-without-rewriting-the-journey-plan)
+for privacy, isolation, restart and evidence limits.
 
 ## Evidence rules
 

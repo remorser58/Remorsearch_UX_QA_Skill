@@ -65,7 +65,7 @@ After planning and URL discovery, invoke the bundled toolkit at `references/insa
 | Reader returns, audience | `references/research/audience-pipeline.md` |
 | Cause layers | `references/shared/causal-chain.md` |
 | Scenarios | `references/persona-qa/persona-scenario-design.md`, `references/persona-qa/community-to-test.md` |
-| Persona library/workers | `references/persona-qa/persona-library-swarm.md` by section |
+| Persona library/replay | `references/persona-qa/persona-library-swarm.md` §12 replay |
 | Severity | `references/persona-qa/evidence-and-severity.md` |
 | Korean channels, law, statistics | `references/research/korea/overview.md` |
 | Accessibility items | `references/persona-qa/kwcag-2.2.md` by ID |

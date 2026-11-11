@@ -152,13 +152,17 @@ def _coverage(task):
     return "declared_host_review_required"
 
 
-def _save(root, state):
+def _state_bytes(state):
     # Older readers cannot enforce current-attempt reconciliation or settlement.
     raw = canonical(dict(schema_version="ux-persona-swarm-state.v3",
                          payload=state, sha256=digest(state)))
     if len(raw) > 16 * 1024 * 1024:
         fail("Run state exceeds its bounded size.")
-    atomic(root / "swarm-state.json", raw)
+    return raw
+
+
+def _save(root, state):
+    atomic(root / "swarm-state.json", _state_bytes(state))
 
 
 def _historical_binding(library, product, entry):
@@ -211,6 +215,9 @@ def _load(root, library, *, historical_blockers=None, expire_leases=True):
         _coverage(entry["task"])
         if "settlement" in entry:
             _settlement(entry)
+    if "replay_origin" in state:
+        from .replay import validate_origin
+        validate_origin(state)
     changed = False
     for entry in state["tasks"]:
         if expire_leases and entry["status"] == "running" and entry["lease"]["expires_at"] <= time.time():
@@ -222,8 +229,8 @@ def _load(root, library, *, historical_blockers=None, expire_leases=True):
     return state
 
 
-def create_plan(library, run_path, spec):
-    """Create a new private run; no existing folder may be reused."""
+def _prepare_plan(library, spec):
+    """Validate the complete plan before reserving or creating any run files."""
     if not isinstance(spec, dict) or spec.get("schema_version") != SCHEMA:
         fail("Unknown swarm input schema.")
     if set(spec) - {"schema_version", "product_id", "build", "max_parallel", "lease_seconds", "max_attempts", "tasks"}:
@@ -262,8 +269,13 @@ def create_plan(library, run_path, spec):
         if clean(task) != task:
             fail("Task text contains personal identifiers; supply synthetic fixture values.")
         entries.append(dict(task=task, binding=binding, status="pending", attempts=0, history=[]))
-    state = dict(product_id=product, build=build, max_parallel=parallel, lease_seconds=lease,
-                 max_attempts=attempts, tasks=entries, created_at=time.time())
+    return dict(product_id=product, build=build, max_parallel=parallel, lease_seconds=lease,
+                max_attempts=attempts, tasks=entries, created_at=time.time())
+
+
+def _create_plan(run_path, state):
+    """Publish validated initial state once, including optional replay lineage."""
+    _state_bytes(state)
     root = safe_path(run_path)
     if root.exists():
         fail("Run folder already exists; choose a new path.", "run_exists")
@@ -271,8 +283,13 @@ def create_plan(library, run_path, spec):
     (root / "evidence").mkdir(mode=0o700)
     with Store(root):
         _save(root, state)
-    return dict(run_path=str(root), task_count=len(entries), max_parallel=parallel,
+    return dict(run_path=str(root), task_count=len(state["tasks"]), max_parallel=state["max_parallel"],
                 schema_version="ux-persona-swarm-plan.v1", limitations=LIMITATIONS)
+
+
+def create_plan(library, run_path, spec):
+    """Create a new private run; no existing folder may be reused."""
+    return _create_plan(run_path, _prepare_plan(library, spec))
 
 
 def _entry(state, task_id):
@@ -333,7 +350,8 @@ def claim(library, run_path, worker_id, task_id=None):
                         profile=clean(profile["profile"]), provenance_mode=profile["provenance"]["mode"],
                         requirement_context=clean(requirements), research_claims=clean(research_claims),
                         build=state["build"], attempt=entry["attempts"], evidence_path=str(evidence),
-                        lease=entry["lease"], guardrails=GUARDRAILS, limitations=LIMITATIONS)
+                        lease=entry["lease"], guardrails=GUARDRAILS, limitations=LIMITATIONS,
+                        **({"replay_origin": copy.deepcopy(state["replay_origin"])} if "replay_origin" in state else {}))
         return dict(claimed=False, reason="no_available_task")
 
 
@@ -817,4 +835,5 @@ def _report_state(root, state, blockers):
                 coverage_summary=_coverage_summary(tasks),
                 historical_counts=historical_counts,
                 max_parallel=state["max_parallel"], max_attempts=state["max_attempts"],
-                lease_seconds=state["lease_seconds"], limitations=LIMITATIONS)
+                lease_seconds=state["lease_seconds"], limitations=LIMITATIONS,
+                **({"replay_origin": copy.deepcopy(state["replay_origin"])} if "replay_origin" in state else {}))

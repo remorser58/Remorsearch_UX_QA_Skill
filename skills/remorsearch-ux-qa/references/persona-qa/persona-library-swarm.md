@@ -124,6 +124,7 @@ python3 scripts/ux_personas.py claim --library LIBRARY --run NEW_RUN --worker WO
 # Host worker performs the real assigned task before authoring a receipt.
 python3 scripts/ux_personas.py record --library LIBRARY --run NEW_RUN --input receipt.json
 python3 scripts/ux_personas.py report --library LIBRARY --run NEW_RUN
+python3 scripts/ux_personas.py replay --library LIBRARY --baseline BEFORE_RUN --run AFTER_RUN --build-id build-2 --artifact build-2.bin --isolation-id fixture-v2 --confirm-starting-state --confirm-isolation
 python3 scripts/ux_personas.py compare --library LIBRARY --baseline BEFORE_RUN --run AFTER_RUN
 # Only retry eligible incomplete work within the original budget.
 python3 scripts/ux_personas.py retry --library LIBRARY --run NEW_RUN --task TASK_ID
@@ -337,6 +338,74 @@ codes (normally exit 2). Both product readiness and measured UX improvement
 remain false. Separately saved comparison exports need their own retention
 review.
 
+
+## 12. Prepare the next build without rewriting the journey plan
+
+When every baseline task has a current validated `passed` or `failed` receipt,
+the host can prepare the same journeys on a different build. Keep both build
+artifacts and the original baseline; supply only the new build and reviewed
+fixture context instead of authoring a second full swarm input:
+
+```sh
+python3 scripts/ux_personas.py replay --library LIBRARY --baseline BEFORE_RUN --run AFTER_RUN --build-id build-2 --artifact build-2.bin --isolation-id fixture-v2 --confirm-starting-state --confirm-isolation
+# Packaged launcher: python3 scripts/remorsearch.py personas replay ...
+# Add --format json for ux-persona-replay.v1 structured output.
+```
+
+The default text output gives the assigned namespaces/resources and runnable
+`claim`, `receipt-starter`, `record`, `report` and original-baseline `compare`
+commands. Claim/receipt filenames in those instructions are placeholders. Save
+them privately with `umask 077`; they contain active lease credentials. The host
+performs each real assigned journey and fills the draft with fresh observations.
+No command here invokes a model, browser, worker, account or external service.
+
+Replay preserves exact persona revision/fingerprint, PRD bindings, task IDs,
+goals, starting-state descriptions, actions, decisions, success/recovery criteria,
+stop conditions, requirement coverage and limits. It generates a fresh namespace
+per task and resource per original sharing group. Tasks that previously shared
+one resource still share one new resource, so their serial execution constraint
+remains. Legacy coverage stays unassessed; excluded obligations remain excluded.
+The candidate artifact's ID and content hash must both differ from the baseline.
+
+`--confirm-starting-state` records the host's review of starting data, device
+and input equivalence. `--confirm-isolation` records its review of owned isolated
+fixtures. These attestations neither grant permissions nor prove real isolation,
+deployment identity or equivalent data. The generated IDs do not create/reset
+fixtures: inspect the returned assignments and materialize or verify their owned
+resources before claiming. Existing access and side-effect boundaries still apply.
+
+Every new task starts pending with zero attempts and empty history. Previous
+receipts, observations, artifacts, leases, operation IDs, settlements and grants
+are not copied. Current PRD, source/gate/capture eligibility, withdrawal/retention,
+persona revision, build and all existing receipt artifacts are revalidated.
+Missing, historical-only, pending, active, blocked, skipped or uncertain baseline
+work is rejected without expiring its leases or changing its state. Continue or
+inspect that original run under its existing retry/settlement rules. A PRD-only
+persona remains a hypothesis; a sourced synthetic persona is never a real user.
+
+A private `replay-index.json` in the existing library reserves one destination
+for each normalized baseline path and candidate content hash. The Library lock
+serializes competing preparations. Different build names, isolation IDs or
+destination paths cannot create a second budget for that pair. An identical
+request at its original destination returns `status: existing`, preserving
+attempts, running/expired leases, receipts and history. A reservation written
+before a process stops can finish on the same still-absent destination with the
+same inputs. If any partial destination exists, replay stops and preserves it
+for inspection; it does not overwrite or delete it. Preserve the index with the
+library. This guarantee covers replay preparation in that library, not manual
+plans, copied libraries or the behavior of external workers.
+
+The initial run state contains `ux-persona-replay-origin.v1` provenance, retained
+in claim/report and comparison output after restart. It records the original
+baseline state/build, candidate hash, exact journey fingerprint and host
+attestations, with no result or authority. Comparing this candidate requires the
+recorded baseline path and snapshot; a subsequently changed baseline is not
+silently substituted. Readable comparison still distinguishes incomplete work
+and observed transitions, and always leaves `product_ready` and
+`measured_ux_improvement` false. Authenticity, actual execution and human benefit
+need independent evidence. Older readers may display ordinary v3 task state but
+do not enforce this new replay preparation/provenance contract; use this revision
+for replay and its paired comparison.
 
 ## Deliverable
 

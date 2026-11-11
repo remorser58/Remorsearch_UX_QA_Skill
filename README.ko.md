@@ -25,7 +25,7 @@ Python 도구는 Python 3.10 이상에서 표준 라이브러리와 POSIX 파일
 macOS, Linux, Windows의 WSL에서 실행할 수 있습니다. 기본 `python3`가 더 낮으면(macOS 기본 Python은 3.9입니다) 호스트가 스킬 폴더에서 `python3 scripts/find_runtime.py`를 실행합니다. 지원되는 가장 높은 Python, Node.js 22 경로와 공백을 JSON으로 출력하며 아무것도 설치하지 않습니다.
 
 ```sh
-git clone --branch rem/persona-ux-qa-20261110 --single-branch https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
+git clone --branch rem/persona-journey-replay-20261111 --single-branch https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
 # Claude Code(개인용). 팀과 나누려면 프로젝트 안의 .claude/skills/에 복사합니다
 mkdir -p ~/.claude/skills
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
@@ -54,10 +54,10 @@ Node.js 22를 쓰십시오. 고정된 Playwright 1.56.1에서는 Node.js 24.16 �
 
 ## 사용법
 
-재사용 페르소나 기능의 최신 검증본은 `rem/persona-ux-qa-20261110` 브랜치에 있으며 아직 `main`에 병합하지 않았습니다.
+페르소나·여정 재사용의 누적 개선은 `rem/persona-journey-replay-20261111` 브랜치에 있으며 아직 `main`에 병합하지 않았습니다.
 앞의 설치 명령은 이 브랜치를 선택합니다. 기존 설치본을 직접 수정했다면 먼저 보존합니다.
 
-저장소는 비공개로 유지합니다. [검증 결과·남은 제한](docs/validation/persona-upgrade-summary-20261110.md)과
+저장소는 비공개로 유지합니다. [재실행 검증 결과·남은 제한](docs/validation/persona-journey-replay-20261111.md)과
 [페르소나 저장·재사용·과업 실행 계약](skills/remorsearch-ux-qa/references/persona-qa/persona-library-swarm.md)을 확인할 수 있습니다.
 
 처음이어도 괜찮습니다. 평소 말투로 요청하거나, 스킬 이름을 불러서 시작하시면 됩니다.
@@ -79,6 +79,16 @@ Node.js 22를 쓰십시오. 고정된 Playwright 1.56.1에서는 Node.js 24.16 �
 요청은 URL이나 저장소 하나로 충분합니다. 에이전트는 먼저 실제로 도달한 과업의 범위를 정한 기준 평가를 작성합니다. 이 평가만으로도 쓸모가 있습니다. 그다음 평가에서 나온 질문만 조사하고, 수정이 정당할 때만 고쳐서 다시 실행합니다. 선택 출처나 도구가 없으면 해당 결과만 제한됩니다. loop 패킷을 만들 때는 호스트가 관찰한 사실을 쓰고 기계적인 필드를 `@auto`로 표시합니다. `python3 scripts/ux_loop.py fill DRAFT.json --evidence-root EVIDENCE [--workspace PRODUCT] --out packet.json`는 해시, 다이제스트, 실행 연결과 수정 리비전만 계산합니다. 맥락, 의도, 권한, 결과, 심각도는 채우지 않으며 거부되거나 유효하지 않은 결과는 승인이 아닙니다. 통과한 과업은 그 과업만 보여 주며 제품 전체 준비 상태나 실제 사용자 이점의 측정이 아닙니다.
 
 기본 조사 후보는 당근, 디시인사이드, 유튜브 댓글, X, 인스타그램, Threads(쓰레드)입니다. 관찰한 과업에 맞는 곳을 선택하며 매번 모두 수집하지는 않습니다. 현재 접근 가능성이나 수집 성공도 보장하지 않습니다. 후보 URL을 찾은 뒤 포함된 insane-search 방법을 사용하되 기존 접근·근거 규칙을 따릅니다. [실행 안내](skills/remorsearch-ux-qa/references/loop/product-improvement.md)에 제품 탐색부터 재검증까지의 절차와 plan·bundle·loop 명령을 정리했습니다.
+
+### 다음 빌드에서 같은 여정 재사용
+
+기준 실행의 모든 과업에 유효한 통과·실패 관찰이 있으면 호스트가 스킬 폴더에서 다음 실행을 준비합니다. 페르소나·과업·판정 기준·PRD 의무 연결 JSON을 다시 작성할 필요가 없습니다.
+
+```sh
+python3 scripts/ux_personas.py replay --library LIBRARY --baseline BEFORE_RUN --run AFTER_RUN --build-id build-2 --artifact build-2.bin --isolation-id fixture-v2 --confirm-starting-state --confirm-isolation
+```
+
+출력에는 격리 자료의 배정과 다음 claim·관찰 초안·record·report·compare 명령이 나옵니다. 현재 근거와 정확한 페르소나 버전·검토된 여정을 유지하면서 내용이 바뀐 빌드의 미실행 과업을 준비합니다. 과거 결과나 권한을 복사하거나 작업자를 실행하지 않습니다. 실제 행동과 새 관찰은 호스트가 수행합니다. 같은 기준 실행·후보 빌드의 재호출은 기존 목적지를 유지하며 진행 중·불확실한 기준 작업은 원래 실행·점검 절차를 따라야 합니다. 격리·재시작·근거의 범위는 [재실행 계약](skills/remorsearch-ux-qa/references/persona-qa/persona-library-swarm.md#12-prepare-the-next-build-without-rewriting-the-journey-plan)에 정리했습니다.
 
 ## 근거 규칙
 

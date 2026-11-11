@@ -16,17 +16,25 @@ def parser():
     root = argparse.ArgumentParser(description=__doc__)
     commands = root.add_subparsers(dest="command", required=True)
     default = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "remorsearch-ux-qa/personas"
-    for name in ("import", "list", "retire", "reuse", "prune", "plan", "claim", "record", "report", "retry", "settle", "receipt-starter", "compare"):
+    for name in ("import", "list", "retire", "reuse", "prune", "plan", "claim", "record", "report", "retry", "settle", "receipt-starter", "compare", "replay"):
         sub = commands.add_parser(name)
         sub.add_argument("--library", type=Path, default=default, help="private persistent persona directory")
         if name in {"import", "plan", "record"}:
             sub.add_argument("--input", type=Path, required=True)
-        if name in {"plan", "claim", "record", "report", "retry", "settle", "receipt-starter", "compare"}:
+        if name in {"plan", "claim", "record", "report", "retry", "settle", "receipt-starter", "compare", "replay"}:
             sub.add_argument("--run", type=Path, required=True)
-        if name == "compare":
-            sub.add_argument("--baseline", type=Path, required=True, help="existing baseline run to compare with --run")
+        if name in {"compare", "replay"}:
+            sub.add_argument("--baseline", type=Path, required=True, help="existing baseline run")
             sub.add_argument("--format", choices=("text", "json"), default="text",
-                             help="readable paired report by default; JSON for host integrations")
+                             help="readable output by default; JSON for host integrations")
+        if name == "replay":
+            sub.add_argument("--build-id", required=True, help="new candidate build identifier")
+            sub.add_argument("--artifact", type=Path, required=True, help="local candidate artifact with changed bytes")
+            sub.add_argument("--isolation-id", required=True, help="host-reviewed isolated fixture context")
+            sub.add_argument("--confirm-starting-state", action="store_true",
+                             help="attest equivalent starting data, device and input conditions; not independent proof")
+            sub.add_argument("--confirm-isolation", action="store_true",
+                             help="attest owned isolated fixtures; verify the returned assignments before claim, no new permission")
         if name in {"retire", "reuse"}:
             sub.add_argument("--product", required=True)
             sub.add_argument("--persona", required=True)
@@ -56,16 +64,18 @@ def parser():
 def main(argv=None):
     args = parser().parse_args(argv)
     try:
-        if args.command in {"receipt-starter", "compare"}:
-            # Do not initialize a missing library through this read-only command.
+        if args.command in {"receipt-starter", "compare", "replay"}:
+            # These commands consume existing personas; never initialize a missing library.
             from uxresearch.storage import read_bytes, safe_path
             if not all(safe_path(args.library / name).is_file() for name in ("library.json", "engine.lock")):
                 reason = ("An existing persona library and current claim are required." if args.command == "receipt-starter"
                           else "An existing persona library is required.")
                 raise EngineError("persona_missing", reason)
-            if args.command == "compare":
+            if args.command in {"compare", "replay"}:
                 for name in ("library.json", "engine.lock"):
                     read_bytes(args.library / name, private=True)
+                if args.command == "replay" and safe_path(args.library).stat().st_mode & 0o077:
+                    raise EngineError("unsafe_mode", "Replay requires a private existing persona library directory.")
         with Library(args.library) as library:
             if args.command == "import":
                 result = library.import_profiles(read_json(args.input))
@@ -81,6 +91,12 @@ def main(argv=None):
                 from . import swarm
                 if args.command == "plan":
                     result = swarm.create_plan(library, args.run, read_json(args.input))
+                elif args.command == "replay":
+                    from .replay import prepare
+                    result = prepare(library, args.baseline, args.run, build_id=args.build_id,
+                                     artifact_path=args.artifact, isolation_id=args.isolation_id,
+                                     confirm_starting_state=args.confirm_starting_state,
+                                     confirm_isolation=args.confirm_isolation)
                 elif args.command == "claim":
                     result = swarm.claim(library, args.run, args.worker, args.task)
                 elif args.command == "receipt-starter":
@@ -97,8 +113,11 @@ def main(argv=None):
                     result = compare(library, args.baseline, args.run)
                 else:
                     result = swarm.report(library, args.run)
-        if args.command == "compare" and args.format == "text":
-            from .comparison import render_text
+        if args.command in {"compare", "replay"} and args.format == "text":
+            if args.command == "compare":
+                from .comparison import render_text
+            else:
+                from .replay import render_text
             print(render_text(result))
         else:
             print(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False))

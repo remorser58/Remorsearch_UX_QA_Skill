@@ -157,6 +157,12 @@ def compare(library, baseline_path, candidate_path):
         for root in sorted((baseline, candidate)):
             stack.enter_context(Store(root))
         before, after = _snapshot(baseline, library), _snapshot(candidate, library)
+        origin = after["state"].get("replay_origin")
+        if origin and (origin["baseline_run"] != str(baseline)
+                       or origin["baseline_state_sha256"] != digest(before["state"])):
+            raise EngineError("replay_baseline_mismatch",
+                              "This candidate was prepared from a different baseline snapshot.",
+                              next_step="Use the recorded original baseline. If that run changed, preserve both histories and review the recorded comparison scope; do not rewrite provenance.")
         if before["state"]["product_id"] != after["state"]["product_id"]:
             raise EngineError("comparison_product_mismatch", "Different products cannot form a paired journey comparison.")
         changed_limits = [key for key in LIMIT_FIELDS if before["state"][key] != after["state"][key]]
@@ -177,6 +183,8 @@ def compare(library, baseline_path, candidate_path):
                 build=snapshot["state"]["build"], counts=snapshot["report"]["counts"],
                 coverage_summary=snapshot["report"]["coverage_summary"],
                 limits={key: snapshot["state"][key] for key in LIMIT_FIELDS},
+                **({"replay_origin": snapshot["state"]["replay_origin"]}
+                   if "replay_origin" in snapshot["state"] else {}),
             )
         return dict(
             schema_version="ux-persona-swarm-comparison.v1", product_id=before["state"]["product_id"],
