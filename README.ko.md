@@ -80,6 +80,10 @@ Node.js 22를 쓰십시오. 고정된 Playwright 1.56.1에서는 Node.js 24.16 �
 
 기본 조사 후보는 당근, 디시인사이드, 유튜브 댓글, X, 인스타그램, Threads(쓰레드)입니다. 관찰한 과업에 맞는 곳을 선택하며 매번 모두 수집하지는 않습니다. 현재 접근 가능성이나 수집 성공도 보장하지 않습니다. 후보 URL을 찾은 뒤 포함된 insane-search 방법을 사용하되 기존 접근·근거 규칙을 따릅니다. [실행 안내](skills/remorsearch-ux-qa/references/loop/product-improvement.md)에 제품 탐색부터 재검증까지의 절차와 plan·bundle·loop 명령을 정리했습니다.
 
+### 조사 페르소나를 다음 QA에 보관
+
+호스트는 `ux_personas.py import-research`로 현재 검증된 연구 내보내기를 영속 라이브러리에 직접 연결합니다. PRD 인용과 페르소나 ID 연결을 준비하면 행동·예상 결정·반증 기준·가정·미확인을 다시 작성하지 않고 보존합니다. 동일 재시도는 버전을 늘리지 않고, 기존 내용을 바꾸려면 확인한 현재 버전을 명시합니다. 과업이나 실행 결과를 자동으로 만들지는 않습니다. [가져오기 계약](skills/remorsearch-ux-qa/references/persona-qa/persona-library-swarm.md#13-import-a-current-research-export-into-the-library)과 [공개 근거 파일럿](docs/validation/public-evidence-pilot-20261111.md)에 실제 수집·합성 가설·CLI 검증·실사용자 UX 근거의 차이를 기록했습니다.
+
 ### 다음 빌드에서 같은 여정 재사용
 
 기준 실행의 모든 과업에 유효한 통과·실패 관찰이 있으면 호스트가 스킬 폴더에서 다음 실행을 준비합니다. 페르소나·과업·판정 기준·PRD 의무 연결 JSON을 다시 작성할 필요가 없습니다.

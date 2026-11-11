@@ -16,11 +16,14 @@ def parser():
     root = argparse.ArgumentParser(description=__doc__)
     commands = root.add_subparsers(dest="command", required=True)
     default = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "remorsearch-ux-qa/personas"
-    for name in ("import", "list", "retire", "reuse", "prune", "plan", "claim", "record", "report", "retry", "settle", "receipt-starter", "compare", "replay"):
+    for name in ("import", "import-research", "list", "retire", "reuse", "prune", "plan", "claim", "record", "report", "retry", "settle", "receipt-starter", "compare", "replay"):
         sub = commands.add_parser(name)
         sub.add_argument("--library", type=Path, default=default, help="private persistent persona directory")
-        if name in {"import", "plan", "record"}:
+        if name in {"import", "import-research", "plan", "record"}:
             sub.add_argument("--input", type=Path, required=True)
+        if name == "import-research":
+            sub.add_argument("--research-run", type=Path, required=True,
+                             help="existing private research run with a current committed persona export")
         if name in {"plan", "claim", "record", "report", "retry", "settle", "receipt-starter", "compare", "replay"}:
             sub.add_argument("--run", type=Path, required=True)
         if name in {"compare", "replay"}:
@@ -64,6 +67,10 @@ def parser():
 def main(argv=None):
     args = parser().parse_args(argv)
     try:
+        if args.command == "import-research":
+            from .research_intake import validate_paths
+            validate_paths(args.library, args.research_run)
+            intake_mapping = read_json(args.input, private=True)
         if args.command in {"receipt-starter", "compare", "replay"}:
             # These commands consume existing personas; never initialize a missing library.
             from uxresearch.storage import read_bytes, safe_path
@@ -79,6 +86,9 @@ def main(argv=None):
         with Library(args.library) as library:
             if args.command == "import":
                 result = library.import_profiles(read_json(args.input))
+            elif args.command == "import-research":
+                from .research_intake import import_research
+                result = import_research(library, args.research_run, intake_mapping)
             elif args.command == "list":
                 result = library.list(args.product)
             elif args.command == "retire":

@@ -88,34 +88,52 @@ def _research_binding(research, claim_ids):
     """Use the existing committed research gate, never an author-supplied status."""
     from uxresearch.engine import fresh
     from uxresearch.ledger import Run
-    from uxresearch.personas import claim_cards
     exact_keys(research, {"run", "bundle", "gate"})
     run_path = safe_path(research["run"])
     run = Run(run_path)
     with Store(run_path) as store:
+        # This ordinary-import entry point owns its matching Store by construction.
         bundle, gate = fresh(run, store, Path(research["bundle"]), Path(research["gate"]))
-        if gate.get("mode") != "live" or gate.get("result") != "pass":
-            fail("research_not_live", "Only a current passing live research gate can motivate research personas.")
-        cards = {row["claim_id"]: row for row in claim_cards(bundle, gate)}
-        if not claim_ids or any(cid not in cards or not cards[cid]["exportable"] for cid in claim_ids):
-            raise EngineError(
-                "unsafe_motivation",
-                "Selected research claims are missing, unsafe or lack observed non-counter motivation.",
-                next_step="Inspect the current persona-starter claim cards. Preserve contrary evidence; review and re-author against usable sources. Without research, use an explicitly exploratory PRD hypothesis. Existing profiles are not deleted.")
-        return {
-            "run": str(run_path),
-            "bundle": str(safe_path(research["bundle"])),
-            "gate": str(safe_path(research["gate"])),
-            "source_bundle_id": bundle["bundle_id"],
-            "bundle_input_sha256": gate["bundle_input_sha256"],
-            "process_input_sha256": gate["process_input_sha256"],
-            "valid_until": gate.get("valid_until"),
-            "claims": [{"claim_id": cid, "gate_status": cards[cid]["gate_status"],
-                        "source_ids": cards[cid]["source_ids"],
-                        "counting_evidence_ids": cards[cid]["counting_evidence_ids"],
-                        "context_evidence_ids": cards[cid]["context_evidence_ids"]}
-                       for cid in sorted(claim_ids)],
-        }
+        return _research_binding_record(research, claim_ids, bundle, gate)
+
+
+def _research_binding_locked(research, claim_ids, run, store):
+    """Internal shared validator; the caller already holds this research lock."""
+    from uxresearch.engine import fresh
+    exact_keys(research, {"run", "bundle", "gate"})
+    run_path = safe_path(research["run"])
+    if store.fd is None or store.root != run_path or safe_path(run.path) != run_path:
+        fail("persona_lock", "The matching research lock is required.")
+    bundle, gate = fresh(run, store, Path(research["bundle"]), Path(research["gate"]))
+    return _research_binding_record(research, claim_ids, bundle, gate)
+
+
+def _research_binding_record(research, claim_ids, bundle, gate):
+    """Pure projection of a snapshot read inside one of the locked entry points."""
+    from uxresearch.personas import claim_cards
+    run_path = safe_path(research["run"])
+    if gate.get("mode") != "live" or gate.get("result") != "pass":
+        fail("research_not_live", "Only a current passing live research gate can motivate research personas.")
+    cards = {row["claim_id"]: row for row in claim_cards(bundle, gate)}
+    if not claim_ids or any(cid not in cards or not cards[cid]["exportable"] for cid in claim_ids):
+        raise EngineError(
+            "unsafe_motivation",
+            "Selected research claims are missing, unsafe or lack observed non-counter motivation.",
+            next_step="Inspect the current persona-starter claim cards. Preserve contrary evidence; review and re-author against usable sources. Without research, use an explicitly exploratory PRD hypothesis. Existing profiles are not deleted.")
+    return {
+        "run": str(run_path),
+        "bundle": str(safe_path(research["bundle"])),
+        "gate": str(safe_path(research["gate"])),
+        "source_bundle_id": bundle["bundle_id"],
+        "bundle_input_sha256": gate["bundle_input_sha256"],
+        "process_input_sha256": gate["process_input_sha256"],
+        "valid_until": gate.get("valid_until"),
+        "claims": [{"claim_id": cid, "gate_status": cards[cid]["gate_status"],
+                    "source_ids": cards[cid]["source_ids"],
+                    "counting_evidence_ids": cards[cid]["counting_evidence_ids"],
+                    "context_evidence_ids": cards[cid]["context_evidence_ids"]}
+                   for cid in sorted(claim_ids)],
+    }
 
 
 def _retention_markers(source):
@@ -210,13 +228,21 @@ class Library:
         return state
 
     def _save(self, state):
-        atomic(self.root / "library.json", canonical({"state": state, "sha256": digest(state)}))
+        from uxresearch.storage import MAX_BYTES
+        raw = canonical({"state": state, "sha256": digest(state)})
+        if len(raw) > MAX_BYTES:
+            fail("persona_capacity", "The library update exceeds its readable size limit; existing state is preserved.")
+        atomic(self.root / "library.json", raw)
 
     @staticmethod
     def _key(product_id, persona_id):
         return identifier(product_id, "product id") + "/" + identifier(persona_id, "persona id")
 
     def import_profiles(self, doc):
+        return self._commit_profiles(self._prepare_profiles(doc))
+
+    def _prepare_profiles(self, doc, *, research_validator=None):
+        """Validate a whole batch before touching library state."""
         exact_keys(doc, {"schema_version", "product_id", "mode", "context", "personas"}, {"research", "review_days"})
         if doc["schema_version"] != INPUT_SCHEMA or doc["mode"] not in MODES:
             fail("persona_input", "Unknown persona input schema or provenance mode.")
@@ -248,16 +274,21 @@ class Library:
                 fail("persona_input", "Invalid research claim IDs.")
             provenance = {"mode": doc["mode"], "claim_ids": claim_ids}
             if doc["mode"] == "gated_research":
-                provenance["research"] = _research_binding(doc["research"], claim_ids)
+                provenance["research"] = (research_validator or _research_binding)(doc["research"], claim_ids)
             elif claim_ids:
                 fail("persona_input", "PRD-only hypotheses cannot carry research claim IDs.")
             body = {"product_id": product, "persona_id": pid, "basis": "synthetic", "review_days": review_days,
                     "profile": profile, "context": context, "provenance": provenance}
             prepared.append((self._key(product, pid), body))
+        return prepared
+
+    def _commit_profiles(self, prepared, *, before_save=None, now=None):
+        """One atomic publication; an identical current import does not rewrite."""
         state = self._state()
         result = []
-        now = self.clock()
+        now = self.clock() if now is None else now
         for key, body in prepared:
+            product = body["product_id"]
             history = state["entries"].setdefault(key, [])
             signature = digest(body)
             current = history[-1] if history else None
@@ -267,10 +298,13 @@ class Library:
                 continue
             revision = (current["revision"] if current else 0) + 1
             history.append({**body, "revision": revision, "profile_sha256": signature,
-                            "status": "active", "created_at": now, "review_after": now + review_days * 86400})
+                            "status": "active", "created_at": now, "review_after": now + body["review_days"] * 86400})
             result.append({"product_id": product, "persona_id": body["persona_id"],
                            "revision": revision, "profile_sha256": signature, "changed": True})
-        self._save(state)
+        if any(row["changed"] for row in result):
+            if before_save:
+                before_save()
+            self._save(state)
         return {"basis": "synthetic", "imported": result,
                 "limits": "Stored test hypotheses, not real participants, prevalence or product results."}
 
@@ -284,6 +318,9 @@ class Library:
             fail("persona_review_due", "Persona review is due; recheck the PRD and research before importing a new revision.")
         prd_context(record["context"])
         provenance = record["provenance"]
+        if "research_scenarios" in record["profile"] or "research_export" in provenance:
+            from .research_intake import validate_projection
+            validate_projection(record)
         if provenance["mode"] == "gated_research":
             reason = retention_reason(record, self.clock())
             if reason:

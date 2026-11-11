@@ -112,6 +112,18 @@ After URL discovery, the bundled insane-search methods remain subject to the
 existing access/evidence rules. See the [operational checklist](skills/remorsearch-ux-qa/references/loop/product-improvement.md)
 for the product-to-replay workflow and existing plan/bundle/loop commands.
 
+### Save researched personas for later QA
+
+The host can import the current validated research export directly into the
+versioned Library with `ux_personas.py import-research`. It prepares the exact PRD
+mapping and explicit persona IDs, preserving authored scenarios, decisions,
+falsifying tests and unknowns. Identical retries keep the revision; changed
+existing profiles require the reviewed current revision. The command creates no
+task or execution result. See the [research intake contract](skills/remorsearch-ux-qa/references/persona-qa/persona-library-swarm.md#13-import-a-current-research-export-into-the-library)
+and [public evidence pilot](docs/validation/public-evidence-pilot-20261111.md).
+Public-source capture, synthetic hypotheses, CLI verification and actual-user UX
+evidence remain separate.
+
 ### Reuse completed journeys on the next build
 
 From the skill folder, the host can prepare the next run without rewriting the
