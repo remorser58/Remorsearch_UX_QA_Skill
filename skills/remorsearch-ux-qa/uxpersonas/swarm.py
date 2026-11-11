@@ -185,7 +185,7 @@ def _historical_binding(library, product, entry):
         fail("Task requirements must belong to the original persona and PRD.")
 
 
-def _load(root, library, *, historical_blockers=None):
+def _load(root, library, *, historical_blockers=None, expire_leases=True):
     if root.stat().st_mode & 0o077:
         fail("Run directory must be private.")
     envelope = read_json(root / "swarm-state.json", private=True)
@@ -213,11 +213,11 @@ def _load(root, library, *, historical_blockers=None):
             _settlement(entry)
     changed = False
     for entry in state["tasks"]:
-        if entry["status"] == "running" and entry["lease"]["expires_at"] <= time.time():
+        if expire_leases and entry["status"] == "running" and entry["lease"]["expires_at"] <= time.time():
             entry["status"] = "inconclusive"
             entry["reason"] = "Worker lease expired; execution outcome is unknown. Explicit retry required."
             changed = True
-    if changed:
+    if changed and expire_leases:
         _save(root, state)
     return state
 
@@ -335,6 +335,50 @@ def claim(library, run_path, worker_id, task_id=None):
                         build=state["build"], attempt=entry["attempts"], evidence_path=str(evidence),
                         lease=entry["lease"], guardrails=GUARDRAILS, limitations=LIMITATIONS)
         return dict(claimed=False, reason="no_available_task")
+
+
+def receipt_starter(library, run_path, claim_packet):
+    """Draft from a supplied current claim; never assign, renew or record work."""
+    if (not isinstance(claim_packet, dict) or claim_packet.get("claimed") is not True
+            or not isinstance(claim_packet.get("task"), dict)):
+        fail("A successful current claim packet is required.", "claim_mismatch")
+    root = safe_path(run_path)
+    # This read path must not create a run or a missing lock as a side effect.
+    if not safe_path(root / "engine.lock").is_file():
+        fail("An existing claimed run is required.", "claim_mismatch")
+    with Store(root):
+        state = _load(root, library, expire_leases=False)
+        entry = _entry(state, claim_packet["task"].get("id"))
+        if entry["status"] != "running":
+            fail("Task does not have an active lease.", "lease_mismatch")
+        expected = {"task": entry["task"], "binding": entry["binding"],
+                    "build": state["build"], "lease": entry["lease"],
+                    "attempt": entry["attempts"], "operation_id": entry["operation_id"]}
+        if (type(claim_packet.get("attempt")) is not int
+                or any(claim_packet.get(key) != value for key, value in expected.items())):
+            fail("Claim packet does not match the current task, attempt and lease.", "claim_mismatch")
+        if entry["lease"]["expires_at"] <= time.time():
+            fail("Worker lease expired; the starter cannot renew or reconcile it.", "lease_expired")
+        criteria, guidance = [], []
+        for kind in ("success", "recovery"):
+            descriptions = strings(entry["task"][kind + "_criteria"])
+            if clean(descriptions) != descriptions:
+                fail("Task criteria contain personal identifiers.")
+            for index, description in enumerate(descriptions):
+                criteria.append(dict(kind=kind, index=index, status="not_run",
+                                     observation="Not assessed in this draft; the host must supply actual observations.",
+                                     evidence_ids=[]))
+                guidance.append(dict(kind=kind, index=index, description=description))
+        return dict(schema_version="ux-persona-swarm-receipt-draft.v1",
+                    task_id=entry["task"]["id"], worker_id=entry["lease"]["worker_id"],
+                    lease_token=claim_packet["lease"]["lease_token"],
+                    build_sha256=state["build"]["sha256"],
+                    persona_revision=entry["binding"]["revision"],
+                    profile_sha256=entry["binding"]["profile_sha256"],
+                    outcome="inconclusive", reason="Draft only; no execution result is asserted.",
+                    steps=[], criteria=criteria, artifacts=[],
+                    drafting_guidance=dict(criteria=guidance,
+                        next_step="The host must supply actual steps, evidence and criterion observations, choose the supported outcome, remove drafting_guidance, and explicitly use ux-persona-swarm-receipt.v1 before record. This draft grants no new actions and is not recordable."))
 
 
 def _artifacts(root, entry, receipt):

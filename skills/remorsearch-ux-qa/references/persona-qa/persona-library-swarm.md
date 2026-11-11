@@ -250,6 +250,17 @@ A legacy task already marked pending after an inconclusive write is not automati
 
 A pass requires observed steps, every success/recovery criterion passed, and referenced execution-log plus screenshot evidence. A failed executed task requires observed steps and at least one evidence-backed failed criterion; use blocked/inconclusive for no execution. `record` validates the active worker lease and current build/persona binding. `report` rechecks stored receipts and artifacts, including prior attempts, and always returns `product_ready: false`. These checks cannot determine whether an authored observation honestly describes the image or whether the browser truly ran; host review remains required.
 
+The host can prepare a starter from its saved current claim, so the user does not need to hand-copy bindings or author JSON:
+
+```sh
+umask 077
+python3 scripts/ux_personas.py receipt-starter --library LIBRARY --run NEW_RUN --claim claim.json > receipt-draft.json
+```
+
+Keep the claim and draft private: both contain the existing worker lease token. This command checks the current build, persona and exact active claim, but assigns nothing, renews no lease, records no outcome and does not save expiry transitions. It uses existing local validation locks. An expired, stale or mismatched claim is blocked; it never creates a missing library or run. `ux-persona-swarm-receipt-draft.v1` is deliberately not recordable. All current criteria start `not_run`, with no steps or artifacts; this means the draft has not assessed them, not that the product actions never happened. Criterion wording is separate drafting guidance, not evidence or authority.
+
+The host uses actual observations and captured evidence to finish the draft, preserves any unknown outcome, chooses the supported outcome, removes `drafting_guidance`, and explicitly changes the schema to `ux-persona-swarm-receipt.v1` before `record`. Merely generating or renaming a draft cannot establish a pass. Existing receipt, privacy, evidence and lease gates still apply; the starter does not stop workers or reconcile uncertain effects.
+
 Receipt authoring errors identify fixed schema locations (for example, `receipt.steps[0].observation`) without echoing rejected values. Describe an actually observed blank page explicitly rather than submitting an empty observation or inventing success. Privacy diagnostics remain rejections: use concise privacy-safe observations and descriptive evidence IDs, updating their matching artifact references. Timestamp-like IDs can trigger the conservative identifier check. Do not copy raw tool output or private local paths into prose; retain original evidence separately. Diagnostics do not automatically scrub content, alter results, renew leases or validate the truth of a rewritten observation.
 
 `prune --library LIBRARY` explicitly removes derived profile payloads across all revisions of an affected persona when authoritative local source records show expiry/withdrawal. It retains retirement tombstones. Missing or transiently unreadable evidence produces a blocker without deleting payloads. Source/profile reuse remains blocked while current validity cannot be established.

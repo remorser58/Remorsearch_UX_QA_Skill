@@ -16,12 +16,12 @@ def parser():
     root = argparse.ArgumentParser(description=__doc__)
     commands = root.add_subparsers(dest="command", required=True)
     default = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "remorsearch-ux-qa/personas"
-    for name in ("import", "list", "retire", "reuse", "prune", "plan", "claim", "record", "report", "retry", "settle"):
+    for name in ("import", "list", "retire", "reuse", "prune", "plan", "claim", "record", "report", "retry", "settle", "receipt-starter"):
         sub = commands.add_parser(name)
         sub.add_argument("--library", type=Path, default=default, help="private persistent persona directory")
         if name in {"import", "plan", "record"}:
             sub.add_argument("--input", type=Path, required=True)
-        if name in {"plan", "claim", "record", "report", "retry", "settle"}:
+        if name in {"plan", "claim", "record", "report", "retry", "settle", "receipt-starter"}:
             sub.add_argument("--run", type=Path, required=True)
         if name in {"retire", "reuse"}:
             sub.add_argument("--product", required=True)
@@ -35,6 +35,9 @@ def parser():
         if name == "claim":
             sub.add_argument("--worker", required=True)
             sub.add_argument("--task")
+        if name == "receipt-starter":
+            sub.add_argument("--claim", type=Path, required=True,
+                             help="private saved current claim; produces a non-recordable draft without renewing the lease")
         if name == "retry":
             sub.add_argument("--task", required=True)
             sub.add_argument("--reconciliation", type=Path,
@@ -49,6 +52,11 @@ def parser():
 def main(argv=None):
     args = parser().parse_args(argv)
     try:
+        if args.command == "receipt-starter":
+            # Do not initialize a missing library through this read-only command.
+            from uxresearch.storage import safe_path
+            if not all(safe_path(args.library / name).is_file() for name in ("library.json", "engine.lock")):
+                raise EngineError("persona_missing", "An existing persona library and current claim are required.")
         with Library(args.library) as library:
             if args.command == "import":
                 result = library.import_profiles(read_json(args.input))
@@ -66,6 +74,8 @@ def main(argv=None):
                     result = swarm.create_plan(library, args.run, read_json(args.input))
                 elif args.command == "claim":
                     result = swarm.claim(library, args.run, args.worker, args.task)
+                elif args.command == "receipt-starter":
+                    result = swarm.receipt_starter(library, args.run, read_json(args.claim, private=True))
                 elif args.command == "record":
                     result = swarm.record(library, args.run, read_json(args.input))
                 elif args.command == "retry":
