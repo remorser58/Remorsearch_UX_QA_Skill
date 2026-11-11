@@ -148,6 +148,9 @@ def retention_reason(record, now):
             source = sources[source_id]
             if source.get("research_tombstone") or source.get("retention_status") in {"withdrawn", "deleted", "redacted"}:
                 return "An authoritative research source was withdrawn or removed."
+            if any(capture["metadata"].get("retention_status") in {"withdrawn", "deleted", "redacted"}
+                   for capture in source.get("captures", [])):
+                return "An authoritative research capture was withdrawn or removed."
             deadlines = [source.get("retention_until")] + [capture["metadata"].get("retention_until") for capture in source.get("captures", [])]
             if any(timestamp(value, bare_date=True).timestamp() <= now for value in deadlines if value):
                 return "An authoritative research source retention deadline expired."
