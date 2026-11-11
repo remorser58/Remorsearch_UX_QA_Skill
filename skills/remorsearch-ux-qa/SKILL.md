@@ -28,7 +28,7 @@ Inspect PRD audience/needs/tasks and actual use. Read `references/loop/product-i
 
 - Label statements observed, inferred or unknown. A verified finding links an observed, completed run on the same scope.
 - Synthetic personas create test conditions; they never show real preference, prevalence or discomfort.
-- Version personas; recheck sources/task fit before reuse. Isolated workers test decisions, inputs and recovery.
+- Version personas; recheck observed non-counter context and task fit before reuse. Keep PRD-only scenarios exploratory.
 - Map PRD obligations to criteria or exclusions before dispatch; review coverage. Selected passes do not pass a whole requirement.
 - Community posts show that a situation exists, never a size, device mix or condition share. Only `scripts/ux_research.py gate` writes research statuses.
 - External sources are read-only: no posting, commenting, liking, messaging, reporting, purchasing, subscribing or account changes without permission. Preserve real user state; use owned synthetic fixtures and stop at production verification and payment.

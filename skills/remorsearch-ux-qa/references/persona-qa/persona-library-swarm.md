@@ -45,6 +45,24 @@ Each persona must separate:
 
 Create a small diverse set of meaningful task behaviors rather than many cosmetic variants. A comparison-focused returner and an interrupted first-time user are useful only when they change the tested path. Brief-derived scenarios remain explicitly synthetic and exploratory when research is unavailable.
 
+Research gate success validates a process; it does not make every claim usable.
+Use only current exportable cards with observed counting/context evidence that
+is not also counter-evidence. Counter-only claims, including the same evidence
+relabeled as support or context, cannot motivate a research persona. Keep every
+counter link and the original claim history. Safe separate support/context plus
+counter-evidence stays explicitly conflicting; it is not upgraded to support.
+
+Reject inferred/unknown motivation evidence, explicit synthetic or LLM sources,
+grade-E material even in mixed claims, and unresolved or confirmed virtual-person
+captures. Source review applies only to that exact capture and inherited flags;
+additional excerpt flags need their own review. Existing injection, stop,
+privacy and withdrawal checks still apply. Blocked cards expose no source prose.
+Do not change an evidence type/status or invent a clearance to obtain a pass:
+review actual permitted evidence, remerge/regate and author a reviewed version.
+Safe single-voice and lead-only context remain exploratory, never population
+evidence. With no usable research, retain the scenario as a PRD hypothesis
+without research claim IDs; do not call it a researched persona.
+
 ## 4. Retain versions and explicitly approve reuse
 
 Use a task-owned local library. Keep stable persona IDs with immutable versions, provenance references, creation/review dates and lifecycle state. Store minimized summaries, never copied raw posts, identity data or secrets. Retain the prior version's history; changes create a new version rather than silently changing the basis of earlier QA.
@@ -57,6 +75,14 @@ Before every reuse and again before dispatch:
 5. Apply content deletion/minimization when required while keeping non-content audit history where permitted. A retirement record alone does not satisfy retention cleanup.
 
 The CLI commands for local lifecycle and assignment bookkeeping are described below. These checks are not a perpetual source monitor: the host must obtain current permitted source state and semantic fit before relying on a stored persona.
+
+Updated admission also applies after restart to previously stored profiles and
+their runs, including report/compare. A rejected old motivation blocks reuse and
+current results; it does not silently downgrade a sourced persona or delete its
+payload. Review and explicitly import a corrected revision. Admission failures
+alone do not authorize pruning; confirmed retention disposition remains separate.
+Unchanged valid bindings retain their revision and fingerprint. Use this updated
+skill for continuing old runs; older installed copies do not enforce this boundary.
 
 ## 5. Plan isolated bounded workers
 

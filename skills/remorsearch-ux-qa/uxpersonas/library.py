@@ -98,7 +98,10 @@ def _research_binding(research, claim_ids):
             fail("research_not_live", "Only a current passing live research gate can motivate research personas.")
         cards = {row["claim_id"]: row for row in claim_cards(bundle, gate)}
         if not claim_ids or any(cid not in cards or not cards[cid]["exportable"] for cid in claim_ids):
-            fail("unsafe_motivation", "Every research claim must remain exportable in the current gate.")
+            raise EngineError(
+                "unsafe_motivation",
+                "Selected research claims are missing, unsafe or lack observed non-counter motivation.",
+                next_step="Inspect the current persona-starter claim cards. Preserve contrary evidence; review and re-author against usable sources. Without research, use an explicitly exploratory PRD hypothesis. Existing profiles are not deleted.")
         return {
             "run": str(run_path),
             "bundle": str(safe_path(research["bundle"])),
