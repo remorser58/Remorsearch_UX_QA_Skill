@@ -16,13 +16,17 @@ def parser():
     root = argparse.ArgumentParser(description=__doc__)
     commands = root.add_subparsers(dest="command", required=True)
     default = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "remorsearch-ux-qa/personas"
-    for name in ("import", "list", "retire", "reuse", "prune", "plan", "claim", "record", "report", "retry", "settle", "receipt-starter"):
+    for name in ("import", "list", "retire", "reuse", "prune", "plan", "claim", "record", "report", "retry", "settle", "receipt-starter", "compare"):
         sub = commands.add_parser(name)
         sub.add_argument("--library", type=Path, default=default, help="private persistent persona directory")
         if name in {"import", "plan", "record"}:
             sub.add_argument("--input", type=Path, required=True)
-        if name in {"plan", "claim", "record", "report", "retry", "settle", "receipt-starter"}:
+        if name in {"plan", "claim", "record", "report", "retry", "settle", "receipt-starter", "compare"}:
             sub.add_argument("--run", type=Path, required=True)
+        if name == "compare":
+            sub.add_argument("--baseline", type=Path, required=True, help="existing baseline run to compare with --run")
+            sub.add_argument("--format", choices=("text", "json"), default="text",
+                             help="readable paired report by default; JSON for host integrations")
         if name in {"retire", "reuse"}:
             sub.add_argument("--product", required=True)
             sub.add_argument("--persona", required=True)
@@ -52,11 +56,16 @@ def parser():
 def main(argv=None):
     args = parser().parse_args(argv)
     try:
-        if args.command == "receipt-starter":
+        if args.command in {"receipt-starter", "compare"}:
             # Do not initialize a missing library through this read-only command.
-            from uxresearch.storage import safe_path
+            from uxresearch.storage import read_bytes, safe_path
             if not all(safe_path(args.library / name).is_file() for name in ("library.json", "engine.lock")):
-                raise EngineError("persona_missing", "An existing persona library and current claim are required.")
+                reason = ("An existing persona library and current claim are required." if args.command == "receipt-starter"
+                          else "An existing persona library is required.")
+                raise EngineError("persona_missing", reason)
+            if args.command == "compare":
+                for name in ("library.json", "engine.lock"):
+                    read_bytes(args.library / name, private=True)
         with Library(args.library) as library:
             if args.command == "import":
                 result = library.import_profiles(read_json(args.input))
@@ -83,10 +92,18 @@ def main(argv=None):
                                          reconciliation=read_json(args.reconciliation) if args.reconciliation else None)
                 elif args.command == "settle":
                     result = swarm.settle(library, args.run, args.task, read_json(args.inspection))
+                elif args.command == "compare":
+                    from .comparison import compare
+                    result = compare(library, args.baseline, args.run)
                 else:
                     result = swarm.report(library, args.run)
-        print(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False))
-        return 1 if args.command == "prune" and result["blockers"] else 0
+        if args.command == "compare" and args.format == "text":
+            from .comparison import render_text
+            print(render_text(result))
+        else:
+            print(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False))
+        return 1 if ((args.command == "prune" and result["blockers"])
+                     or (args.command == "compare" and not result["comparison_complete"])) else 0
     except EngineError as exc:
         print(json.dumps({"result": "blocked", "issue": exc.issue}, ensure_ascii=False), file=sys.stderr)
         return exc.exit_code or 2

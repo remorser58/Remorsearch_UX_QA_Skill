@@ -98,6 +98,7 @@ python3 scripts/ux_personas.py claim --library LIBRARY --run NEW_RUN --worker WO
 # Host worker performs the real assigned task before authoring a receipt.
 python3 scripts/ux_personas.py record --library LIBRARY --run NEW_RUN --input receipt.json
 python3 scripts/ux_personas.py report --library LIBRARY --run NEW_RUN
+python3 scripts/ux_personas.py compare --library LIBRARY --baseline BEFORE_RUN --run AFTER_RUN
 # Only retry eligible incomplete work within the original budget.
 python3 scripts/ux_personas.py retry --library LIBRARY --run NEW_RUN --task TASK_ID
 # An uncertain fixture-write outcome needs actual inspection and an explicit attestation.
@@ -266,6 +267,50 @@ Receipt authoring errors identify fixed schema locations (for example, `receipt.
 `prune --library LIBRARY` explicitly removes derived profile payloads across all revisions of an affected persona when authoritative local source records show expiry/withdrawal. It retains retirement tombstones. Missing or transiently unreadable evidence produces a blocker without deleting payloads. Source/profile reuse remains blocked while current validity cannot be established.
 
 No command detects remote deletion or schedules background cleanup. Review current permitted source state before reuse. Library retirement/pruning does not remove independently exported captures, QA profiles or reports; those require their own retention review and authorized cleanup. Neither a stale revision nor a locally retained capture may reactivate withdrawn support.
+
+## 11. Compare the same journeys across builds
+
+After recording a baseline and a replay, the host uses two existing run paths.
+The user does not need to merge JSON reports or copy criteria, persona bindings
+or evidence references:
+
+```sh
+python3 scripts/ux_personas.py compare --library LIBRARY --baseline BEFORE_RUN --run AFTER_RUN
+# Packaged launcher: python3 scripts/remorsearch.py personas compare ...
+# Structured output for integrations:
+python3 scripts/ux_personas.py compare --library LIBRARY --baseline BEFORE_RUN --run AFTER_RUN --format json
+```
+
+The default is a readable report of each journey and its failed-to-passed,
+passed-to-failed or unchanged recorded outcome. JSON also links the current
+criterion observations to their verified artifact paths/hashes and includes
+both runs' fingerprints and declared requirement coverage. A missing task,
+changed persona version/journey/criteria/coverage/limit or an unobserved outcome
+is explicitly not compared. Missing criterion observations remain not-run,
+never improvements. Excluded/unassessed PRD obligations stay visible and cannot
+become requirement passes.
+
+The command revalidates both existing runs, active personas, local PRD/research
+and retention state, build artifacts and receipt evidence. Keep the original
+verified build artifact for each run; replacing its bytes in place blocks the
+comparison. Resource IDs and synthetic namespaces may differ for isolation,
+but the host must verify actual starting-data, device and input equivalence.
+Matching declared text does not independently establish those conditions.
+
+Comparison is read-only: it does not create runs, expire/renew leases, retry,
+settle, prune or start workers. It preserves current attempts and all history.
+An incomplete run can be compared again after the host safely continues the
+existing work. Unknown writes still require the existing inspection/retry or
+settlement boundary; opening another comparison grants no execution rights.
+
+Exit 0 means all task and criterion outcomes were compared, including any
+reported regressions; it does not mean the candidate passed. Exit 1 returns a
+partial/blocked comparison when work cannot be paired or observations remain
+missing. Invalid, stale or unsafe inputs are rejected with the existing error
+codes (normally exit 2). Both product readiness and measured UX improvement
+remain false. Separately saved comparison exports need their own retention
+review.
+
 
 ## Deliverable
 

@@ -767,49 +767,54 @@ def report(library, run_path):
     with Store(root):
         blockers = {}
         state = _load(root, library, historical_blockers=blockers)
-        counts = {x: 0 for x in ("pending", "running", "passed", "failed", "blocked", "inconclusive", "skipped")}
-        historical_counts = dict(counts)
-        quarantined_resources = {entry["task"]["resource_id"] for entry in state["tasks"]
-                                 if _quarantined(entry)}
-        tasks = []
-        for entry in state["tasks"]:
-            for attempt in entry["history"] + [entry]:
-                if "receipt" in attempt:
-                    _receipt(root, dict(task=entry["task"], attempts=attempt["attempts"]), attempt["receipt"])
-            historical_counts[entry["status"]] += 1
-            counts["blocked" if entry["task"]["id"] in blockers else entry["status"]] += 1
-            tasks.append(dict(task_id=entry["task"]["id"], persona_id=entry["task"]["persona_id"],
-                              status=entry["status"], attempts=entry["attempts"],
-                              reason=entry.get("reason", "Not executed." if entry["status"] == "pending" else "Lease active."),
-                              binding=entry["binding"], requirement_ids=entry["task"]["requirement_ids"],
-                              operation_id=entry.get("operation_id"),
-                              coverage_status=_coverage(entry["task"]),
-                              requirement_coverage=entry["task"].get("requirement_coverage"),
-                              requirement_results=_requirement_results(entry),
-                              result={k: entry["receipt"][k] for k in ("steps", "criteria", "artifacts")}
-                              if "receipt" in entry else None,
-                              prior_outcomes=[h["status"] for h in entry["history"]]))
-            row = tasks[-1]
-            row["current_binding_valid"] = entry["task"]["id"] not in blockers
-            row["recorded_status"] = entry["status"]
-            row["resource_quarantined"] = entry["task"]["resource_id"] in quarantined_resources
-            if _pending_retry_blocker(entry):
-                row["retry_blocker"] = _pending_retry_blocker(entry)
-            if "settlement" in entry:
-                row["settlement"] = copy.deepcopy(entry["settlement"])
-                row["retry_allowed"] = False
-            if not row["current_binding_valid"]:
-                row.update(status="blocked", blocker=blockers[row["task_id"]],
-                           historical_result=row["result"], historical_reason=row["reason"],
-                           historical_requirement_results=row["requirement_results"],
-                           historical_requirement_coverage=row["requirement_coverage"],
-                           result=None, reason=blockers[row["task_id"]]["reason"],
-                           coverage_status="superseded_not_current", requirement_coverage=None,
-                           requirement_results=[dict(requirement_id=rid, status="unassessed", obligations=[])
-                                                for rid in row["requirement_ids"]])
-        return dict(schema_version="ux-persona-swarm-report.v1", product_id=state["product_id"],
-                    build=state["build"], counts=counts, tasks=tasks, product_ready=False,
-                    coverage_summary=_coverage_summary(tasks),
-                    historical_counts=historical_counts,
-                    max_parallel=state["max_parallel"], max_attempts=state["max_attempts"],
-                    lease_seconds=state["lease_seconds"], limitations=LIMITATIONS)
+        return _report_state(root, state, blockers)
+
+
+def _report_state(root, state, blockers):
+    """Project an already locked and validated snapshot without changing it."""
+    counts = {x: 0 for x in ("pending", "running", "passed", "failed", "blocked", "inconclusive", "skipped")}
+    historical_counts = dict(counts)
+    quarantined_resources = {entry["task"]["resource_id"] for entry in state["tasks"]
+                             if _quarantined(entry)}
+    tasks = []
+    for entry in state["tasks"]:
+        for attempt in entry["history"] + [entry]:
+            if "receipt" in attempt:
+                _receipt(root, dict(task=entry["task"], attempts=attempt["attempts"]), attempt["receipt"])
+        historical_counts[entry["status"]] += 1
+        counts["blocked" if entry["task"]["id"] in blockers else entry["status"]] += 1
+        tasks.append(dict(task_id=entry["task"]["id"], persona_id=entry["task"]["persona_id"],
+                          status=entry["status"], attempts=entry["attempts"],
+                          reason=entry.get("reason", "Not executed." if entry["status"] == "pending" else "Lease active."),
+                          binding=entry["binding"], requirement_ids=entry["task"]["requirement_ids"],
+                          operation_id=entry.get("operation_id"),
+                          coverage_status=_coverage(entry["task"]),
+                          requirement_coverage=entry["task"].get("requirement_coverage"),
+                          requirement_results=_requirement_results(entry),
+                          result={k: entry["receipt"][k] for k in ("steps", "criteria", "artifacts")}
+                          if "receipt" in entry else None,
+                          prior_outcomes=[h["status"] for h in entry["history"]]))
+        row = tasks[-1]
+        row["current_binding_valid"] = entry["task"]["id"] not in blockers
+        row["recorded_status"] = entry["status"]
+        row["resource_quarantined"] = entry["task"]["resource_id"] in quarantined_resources
+        if _pending_retry_blocker(entry):
+            row["retry_blocker"] = _pending_retry_blocker(entry)
+        if "settlement" in entry:
+            row["settlement"] = copy.deepcopy(entry["settlement"])
+            row["retry_allowed"] = False
+        if not row["current_binding_valid"]:
+            row.update(status="blocked", blocker=blockers[row["task_id"]],
+                       historical_result=row["result"], historical_reason=row["reason"],
+                       historical_requirement_results=row["requirement_results"],
+                       historical_requirement_coverage=row["requirement_coverage"],
+                       result=None, reason=blockers[row["task_id"]]["reason"],
+                       coverage_status="superseded_not_current", requirement_coverage=None,
+                       requirement_results=[dict(requirement_id=rid, status="unassessed", obligations=[])
+                                            for rid in row["requirement_ids"]])
+    return dict(schema_version="ux-persona-swarm-report.v1", product_id=state["product_id"],
+                build=state["build"], counts=counts, tasks=tasks, product_ready=False,
+                coverage_summary=_coverage_summary(tasks),
+                historical_counts=historical_counts,
+                max_parallel=state["max_parallel"], max_attempts=state["max_attempts"],
+                lease_seconds=state["lease_seconds"], limitations=LIMITATIONS)
