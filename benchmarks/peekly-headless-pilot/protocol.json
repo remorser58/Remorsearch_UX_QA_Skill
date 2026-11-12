@@ -1,0 +1,672 @@
+{
+  "schema_version": "peekly-headless-pilot-protocol.v1",
+  "id": "peekly-headless-journey-20261112",
+  "remorsearch_base": "7359fb6c8c770601598d431b92d350bda20096d9",
+  "reuse": {
+    "protocol": "benchmarks/peekly-journey-pilot/protocol.json",
+    "generator": "benchmarks/peekly-journey-pilot/peeklyJourneys.test.ts:expanded",
+    "sample_module": "src/core/sampleData.ts:buildSampleExportZip",
+    "personas": "The four original PRD-hypothesis profiles below are copied unchanged; no public-community evidence or new population claim is invented."
+  },
+  "product_id": "peekly-owned-pilot",
+  "mode": "prd_hypothesis",
+  "peekly_head": "58214441a1f87bd7b766a72c97de2a79b27438dd",
+  "peekly_source_manifest_sha256": "dd057f188c7f222d879956506dc314bfbff373d7bd4331d628d2dbebee62c838",
+  "fixed_now": "2026-11-12T00:00:00+09:00",
+  "generator_timezone": "UTC",
+  "source_binding": {
+    "sample_sha256": "3abd54c7a34fedf924d02463853f76fa2dbf1cbba4ac7a9ed084d117e7b296d9",
+    "node_version": "v22.16.0",
+    "typescript_version": "5.7.3",
+    "fflate_version": "0.8.3",
+    "build_receipt_schema": "peekly-owned-source-build.v1"
+  },
+  "fixture_hash_state": "frozen",
+  "fixtures": [
+    {
+      "id": "ZIP-PREVIOUS",
+      "path": "previous.zip",
+      "name": "instagram-jimin.daily_-2026-10-29-owned.zip",
+      "mime_type": "application/zip",
+      "bytes": 3435,
+      "sha256": "49b29cf570663f2d561fc845e01b5c11cc283ca19c619196d0efc3f3b9e03004"
+    },
+    {
+      "id": "ZIP-CURRENT",
+      "path": "current.zip",
+      "name": "instagram-jimin.daily_-2026-11-12-owned.zip",
+      "mime_type": "application/zip",
+      "bytes": 4675,
+      "sha256": "b65df20cfb3cd3e890671d0b87da51ccc65186af62023bc9166c4d103197e018"
+    },
+    {
+      "id": "ZIP-MISSING-FOLLOWING",
+      "path": "missing-following.zip",
+      "name": "instagram-jimin.daily_-2026-11-12-missing-following.zip",
+      "mime_type": "application/zip",
+      "bytes": 4213,
+      "sha256": "2f5e297ce3a5d6611318e7467a58ac3d10ab3f14909e9c4a2ba6fdfeab13ff92"
+    },
+    {
+      "id": "ZIP-CONTROL-5000",
+      "path": "control-5000.zip",
+      "name": "instagram-jimin.daily_-2026-11-12-control-5000.zip",
+      "mime_type": "application/zip",
+      "bytes": 31435,
+      "sha256": "3d5256e09143f33fdad13467be827b94cd984f03a30a6a06ed4babea68f92176"
+    },
+    {
+      "id": "ZIP-LARGE-150000",
+      "path": "large-150000.zip",
+      "name": "instagram-jimin.daily_-2026-11-12-large-150000.zip",
+      "mime_type": "application/zip",
+      "bytes": 816720,
+      "sha256": "02e5d68b0da3d12c63e97ffa820652b3acfc2b71d905de9cdbc7e2b16e148164"
+    },
+    {
+      "id": "JSON-LARGE-PROFILE",
+      "path": "large-json/personal_information.json",
+      "name": "personal_information.json",
+      "mime_type": "application/json",
+      "bytes": 76,
+      "sha256": "40066ff2645323f4041abe18ca53204636a76015c3080f81e9a2205db062c5d3",
+      "archive_entry": "personal_information/personal_information/personal_information.json"
+    },
+    {
+      "id": "JSON-LARGE-FOLLOWERS",
+      "path": "large-json/followers_1.json",
+      "name": "followers_1.json",
+      "mime_type": "application/json",
+      "bytes": 11850001,
+      "sha256": "234bbb45d81bb50e7c3f596f498700b1c96db081603db9727b635cec7eca2618",
+      "archive_entry": "connections/followers_and_following/followers_1.json"
+    },
+    {
+      "id": "JSON-LARGE-FOLLOWING",
+      "path": "large-json/following.json",
+      "name": "following.json",
+      "mime_type": "application/json",
+      "bytes": 11850029,
+      "sha256": "a7b0d7bb34dfc59a7c1d7a4e4071af0f27a461da002238739aeb357b3be4c3ee",
+      "archive_entry": "connections/followers_and_following/following.json"
+    },
+    {
+      "id": "JSON-LARGE-PENDING",
+      "path": "large-json/pending_follow_requests.json",
+      "name": "pending_follow_requests.json",
+      "mime_type": "application/json",
+      "bytes": 393,
+      "sha256": "79abf2db7905d3d2b58628b2ef8f375cfe3ec3a7d9bf293d529e46927a85b2d5",
+      "archive_entry": "connections/followers_and_following/pending_follow_requests.json"
+    },
+    {
+      "id": "JSON-LARGE-RECENT-REQUESTS",
+      "path": "large-json/recent_follow_requests.json",
+      "name": "recent_follow_requests.json",
+      "mime_type": "application/json",
+      "bytes": 43,
+      "sha256": "979320ddad4fa9558ddd193e3f29b01265c2300e533e1368c78d3d569e8b7a28",
+      "archive_entry": "connections/followers_and_following/recent_follow_requests.json"
+    },
+    {
+      "id": "JSON-LARGE-RECENT-UNFOLLOWED",
+      "path": "large-json/recently_unfollowed_profiles.json",
+      "name": "recently_unfollowed_profiles.json",
+      "mime_type": "application/json",
+      "bytes": 157,
+      "sha256": "a22e3948f1b3602846491ec9efde6b1c396283184f59e4ae44a8e73d527c939d",
+      "archive_entry": "connections/followers_and_following/recently_unfollowed_profiles.json"
+    },
+    {
+      "id": "JSON-LARGE-CLOSE-FRIENDS",
+      "path": "large-json/close_friends.json",
+      "name": "close_friends.json",
+      "mime_type": "application/json",
+      "bytes": 499,
+      "sha256": "7f2801507a083803ced236f4648f0a77e2540f3de2838aa2c33fefe563efb76b",
+      "archive_entry": "connections/followers_and_following/close_friends.json"
+    },
+    {
+      "id": "JSON-LARGE-BLOCKED",
+      "path": "large-json/blocked_profiles.json",
+      "name": "blocked_profiles.json",
+      "mime_type": "application/json",
+      "bytes": 271,
+      "sha256": "9c56c0db59fbd19c8209b1ca2192e5ade2adf8f25162916924df071be1d08871",
+      "archive_entry": "connections/followers_and_following/blocked_profiles.json"
+    },
+    {
+      "id": "JSON-LARGE-RESTRICTED",
+      "path": "large-json/restricted_profiles.json",
+      "name": "restricted_profiles.json",
+      "mime_type": "application/json",
+      "bytes": 155,
+      "sha256": "2ebc8f947418502624c6c8530d0b2fb00eb29e4e85ab705d7f68c08203242add",
+      "archive_entry": "connections/followers_and_following/restricted_profiles.json"
+    },
+    {
+      "id": "JSON-LARGE-HIDE-STORY",
+      "path": "large-json/hide_story_from.json",
+      "name": "hide_story_from.json",
+      "mime_type": "application/json",
+      "bytes": 269,
+      "sha256": "e34a98aada50ea1a04e60b4176e68e5a2964db3b89f26687bb78b7df4908ef80",
+      "archive_entry": "connections/followers_and_following/hide_story_from.json"
+    },
+    {
+      "id": "JSON-LARGE-LIKES",
+      "path": "large-json/liked_posts.json",
+      "name": "liked_posts.json",
+      "mime_type": "application/json",
+      "bytes": 7162,
+      "sha256": "bb2c7bdeeb8f17d7d3473878a9c3832d382ea67fd651668589f4545934dd3e18",
+      "archive_entry": "your_instagram_activity/likes/liked_posts.json"
+    },
+    {
+      "id": "JSON-LARGE-COMMENTS",
+      "path": "large-json/post_comments_1.json",
+      "name": "post_comments_1.json",
+      "mime_type": "application/json",
+      "bytes": 3845,
+      "sha256": "4b342855e7b33602ab04347e05a1398a67a03f93caa0b9d06f51c8c25bb40547",
+      "archive_entry": "your_instagram_activity/comments/post_comments_1.json"
+    }
+  ],
+  "bounds": {
+    "max_parallel": 1,
+    "max_attempts": 1,
+    "max_actions_per_task": 16,
+    "task_timeout_seconds": 30,
+    "fixture_total_bytes": 33554432,
+    "node_heap_mb": 512,
+    "control_rows": 5000,
+    "large_rows": 150000
+  },
+  "scope": "Frozen protocol for actual owned headless UI tasks against a fresh build of copied Peekly source, using only built-in or deterministically expanded synthetic sample bytes. The protocol and fixture generator are not execution evidence.",
+  "evidence_policy": {
+    "required": [
+      "Frozen criterion to action/check binding",
+      "Owned browser run and per-check observed result",
+      "PNG and execution log with source/build/fixture hashes",
+      "Owned-browser cleanup acknowledgement before another dispatch"
+    ],
+    "classification": "Product-task failure, harness failure, missing observation and recovery success remain distinct.",
+    "no_effect_claims": [
+      "No real participants or public-evidence personas were run in this pilot",
+      "No satisfaction, comparative effectiveness or general UX readiness claim",
+      "No browser result is fabricated from generation, source review, core tests or expected counts"
+    ]
+  },
+  "exclusions": [
+    "Real account login or export data",
+    "Opening generated Instagram handles or contacting Instagram",
+    "User Chrome, existing tabs, OS input or clipboard",
+    "Native iOS storage, bookmarks, file providers or permissions",
+    "Storage fault injection, ten-record retention and folder sync",
+    "App close/reopen onboarding resume, human comprehension, focus and accessibility acceptance"
+  ],
+  "requirements": [
+    {
+      "id": "R-SAMPLE",
+      "source_anchor": "PRD 1",
+      "excerpt": "첫 화면에는 인스타그램 파일로 시작하기 버튼과 샘플로 둘러보기 링크가 있다. ZIP·JSON·파일·백업을 이해하거나 형식을 고르는 일을 기본 흐름에서 요구하지 않는다."
+    },
+    {
+      "id": "R-COMPARE",
+      "source_anchor": "PRD 4",
+      "excerpt": "기록이 하나이면 다음 기록을 넣어 팔로워 변화를 비교하도록 안내한다. 시점이 다른 두 기록이 있으면 팔로워에서 빠진 계정 숫자와 목록을 표시한다."
+    },
+    {
+      "id": "R-RESUME",
+      "source_anchor": "PRD 2",
+      "excerpt": "현재 단계와 요청 시각은 로컬 저장소 `peekly_onboarding_v1`에 저장한다. 앱을 다시 열면 첫 화면에 이어서 할 일을 표시하고, 버튼을 누르면 저장된 단계에서 다시 시작한다."
+    },
+    {
+      "id": "R-IMPORT",
+      "source_anchor": "PRD 3",
+      "excerpt": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다. 이미 기록된 계정과 다른 계정의 파일은 막는다."
+    },
+    {
+      "id": "R-ZIP-LIMIT",
+      "source_anchor": "PRD 3",
+      "excerpt": "ZIP은 최대 128MB까지 지원한다."
+    },
+    {
+      "id": "R-FILE-LIMIT",
+      "source_anchor": "PRD 3",
+      "excerpt": "파일 하나는 최대 32MB까지 지원한다."
+    },
+    {
+      "id": "R-TOTAL-LIMIT",
+      "source_anchor": "PRD 3",
+      "excerpt": "압축을 푼 파일 합계는 최대 64MB까지 지원한다."
+    },
+    {
+      "id": "R-STORAGE",
+      "source_anchor": "PRD 3",
+      "excerpt": "저장 결과는 성공, 저장소 접근 불가, 쓰기 실패로 구분한다. 쓰기 실패 시 안내와 다시 저장 버튼을 표시한다. 시작할 때 저장소 읽기에 실패하면 기존 값을 보존하고 자동 저장·가져오기를 멈춘다. 다시 불러오기에 성공해야 기록을 수정할 수 있다."
+    },
+    {
+      "id": "R-RETENTION",
+      "source_anchor": "PRD 4",
+      "excerpt": "수동·자동 가져오기 모두 최근 10개 기록을 보관한다. 저장 공간 부족 오류일 때만 오래된 기록을 줄여 다시 저장하고 최근 두 개를 유지한다. 두 개도 저장하지 못하면 새 결과를 적용하지 않는다."
+    },
+    {
+      "id": "R-FOLDER",
+      "source_anchor": "PRD 4",
+      "excerpt": "같은 날짜 또는 더 오래된 기록은 다시 넣지 않는다. 가져온 파일 서명은 스냅샷과 함께 저장한다."
+    }
+  ],
+  "personas": [
+    {
+      "persona_id": "P-EXPLORE",
+      "label": "자료를 올리기 전에 결과를 이해하려는 탐색자",
+      "goals": [
+        "소유 샘플 두 기록으로 관계와 변화를 확인한다"
+      ],
+      "behaviors": [
+        "샘플 결과를 먼저 확인하고 기록을 다시 읽는다"
+      ],
+      "contexts": [
+        "처음 사용하며 실제 계정 연결 없이 탐색한다"
+      ],
+      "assumptions": [
+        "PRD에서 도출한 합성 행동 조건이다"
+      ],
+      "unknowns": [
+        "실제 사용 빈도와 화면 이해도는 측정하지 않는다"
+      ],
+      "requirement_ids": [
+        "R-SAMPLE",
+        "R-COMPARE"
+      ],
+      "claim_ids": []
+    },
+    {
+      "persona_id": "P-RETURN",
+      "label": "중단한 가져오기로 돌아온 사용자",
+      "goals": [
+        "저장한 단계를 회복하고 잘못된 자료를 고친 뒤 이전 기록을 유지한다"
+      ],
+      "behaviors": [
+        "중간 상태로 돌아오고 오류 뒤 올바른 샘플로 재시도한다"
+      ],
+      "contexts": [
+        "파일을 기다리다가 작업을 중단했다"
+      ],
+      "assumptions": [
+        "PRD에서 도출한 합성 행동 조건이다"
+      ],
+      "unknowns": [
+        "화면의 이어하기 안내와 오류 초점은 미검증이다"
+      ],
+      "requirement_ids": [
+        "R-RESUME",
+        "R-IMPORT"
+      ],
+      "claim_ids": []
+    },
+    {
+      "persona_id": "P-ARCHIVE",
+      "label": "규모가 큰 기록을 비교하려는 사용자",
+      "goals": [
+        "문서에 명시된 크기 안의 기록을 누락 없이 가져온다"
+      ],
+      "behaviors": [
+        "큰 자료를 넣고 실패하면 기존 기록을 확인한 뒤 작은 정상 자료로 회복한다"
+      ],
+      "contexts": [
+        "항목 수가 많지만 문서의 바이트 한도 이내다"
+      ],
+      "assumptions": [
+        "실제 계정 규모를 추정하지 않는 합성 조건이다"
+      ],
+      "unknowns": [
+        "실제 사용자 규모 분포와 브라우저 성능은 미검증이다"
+      ],
+      "requirement_ids": [
+        "R-ZIP-LIMIT",
+        "R-FILE-LIMIT",
+        "R-TOTAL-LIMIT",
+        "R-IMPORT"
+      ],
+      "claim_ids": []
+    },
+    {
+      "persona_id": "P-KEEP",
+      "label": "기존 비교 기록을 잃고 싶지 않은 사용자",
+      "goals": [
+        "저장 실패와 반복 가져오기에서 기존 기록을 보존한다"
+      ],
+      "behaviors": [
+        "저장 결과를 확인하고 재시작 후 중복과 부분 자료를 확인한다"
+      ],
+      "contexts": [
+        "저장소 오류 또는 새 내보내기가 늦게 완성된다"
+      ],
+      "assumptions": [
+        "저장 오류와 폴더 목록은 소유 어댑터로 통제한다"
+      ],
+      "unknowns": [
+        "실제 iOS 저장소와 파일 제공자 동작은 미검증이다"
+      ],
+      "requirement_ids": [
+        "R-STORAGE",
+        "R-RETENTION",
+        "R-FOLDER"
+      ],
+      "claim_ids": []
+    }
+  ],
+  "persona_coverage": {
+    "P-EXPLORE": [
+      "T-SAMPLE"
+    ],
+    "P-RETURN": [
+      "T-RECOVER"
+    ],
+    "P-ARCHIVE": [
+      "T-LARGE-ZIP",
+      "T-LARGE-JSON"
+    ],
+    "P-KEEP": []
+  },
+  "unexecuted_personas": [
+    {
+      "persona_id": "P-KEEP",
+      "reason": "Profile is preserved for reuse; this pilot does not execute its storage-fault, retention or folder-provider tasks."
+    }
+  ],
+  "ui_contract": {
+    "source_files": [
+      "src/App.tsx",
+      "src/components/ResultsTab.tsx",
+      "src/components/ExportWizardModal.tsx",
+      "src/components/Sheet.tsx",
+      "src/core/importValidation.ts"
+    ],
+    "selectors": {
+      "start": ".welcome-actions > button.btn-hero",
+      "sample": ".welcome-actions > button.btn-secondary-full",
+      "immediate_import": ".sheet-footer > button.text-link",
+      "file_button": ".sheet-body > button.btn-hero",
+      "file_input": ".sheet-body input",
+      "dialog_close": ".sheet-header > button.icon-btn:last-child",
+      "import_again": ".tab-container > button.btn-secondary-full",
+      "sample_close": ".tab-container > .notice > button.text-link",
+      "hero_counts": ".result-hero-meta > .stat",
+      "followers_count": ".result-hero-meta > :nth-child(1 of .stat)",
+      "following_count": ".result-hero-meta > :nth-child(2 of .stat)",
+      "nonreciprocal_count": ".answer-count > strong",
+      "nonreciprocal_open": "button.answer",
+      "departures_open": ".group > li:nth-child(3) > button.group-row",
+      "departures_count": ".group > li:nth-child(3) > button.group-row .row-value",
+      "list_title": ".sheet-title",
+      "list_names": ".person-list .row-label",
+      "limitation": ".sheet-lead",
+      "import_error": ".sheet-body .notice-text",
+      "welcome_title": ".welcome-title",
+      "single_snapshot_hint": ".result-next > .t-callout",
+      "large_followers_outcome": "body:not(:has(.sheet)) .result-hero-meta > :nth-child(1 of .stat), .sheet-body .notice-text",
+      "large_following_outcome": "body:not(:has(.sheet)) .result-hero-meta > :nth-child(2 of .stat), .sheet-body .notice-text"
+    },
+    "exact_text": {
+      "welcome_title": "맞팔 안 한 친구를 찾아드려요",
+      "account": "@jimin.daily_",
+      "missing_following": "팔로워와 팔로잉 목록이 모두 들어 있는 파일이 필요해요. 인스타그램에서 내보낼 때 [팔로워 및 팔로잉]을 골랐는지 확인해 주세요.",
+      "departure_limit": "이전 기록에는 있고 지금 기록에는 없는 계정이에요. 아이디 변경이나 계정 삭제도 포함될 수 있어요. 이 목록만으로 이유를 알 수는 없어요.",
+      "sample_notice": "샘플을 보고 있어요. 내 인스타그램 파일을 넣으면 내 결과가 나와요.",
+      "single_snapshot_hint": "나중에 인스타그램 파일을 한 번 더 받아 넣으면 두 기록 사이에 빠진 팔로워를 비교해요."
+    },
+    "upload_action": {
+      "action": "upload",
+      "target": ".sheet-body > button.btn-hero",
+      "input": ".sheet-body input",
+      "files": [
+        "REGISTERED-FIXTURE-ID"
+      ],
+      "timeout_ms": 5000
+    },
+    "upload_policy": "Activate the visible owned page file button and fulfill its own Playwright filechooser using reviewed buffers. Never open an OS picker or read arbitrary files from a page-provided name.",
+    "text_matching": "All text task checks use normalize_whitespace:true: trim and collapse Unicode whitespace (including NBSP) into one space. This affects comparison representation only; original text, numbers, PNG and entered values are retained. No phrase substitution or numeric tolerance is allowed.",
+    "import_progress": "A successful import clears onboarding; a subsequent '새 기록 불러오기' opens request stage and needs '받은 파일 바로 넣기'. A rejected import remains in import stage.",
+    "clock_policy": "Only fixture generation freezes Date. Do not set the browser clock to one constant millisecond: App snapshot IDs include parsed.importedAt.",
+    "large_outcome_rule": "After the fixed upload and 1000 ms wait, a plain CSS union selects exactly one visible outcome: a result count when no sheet exists, or the actual sheet notice. The unchanged expected text is 팔로워 150000명 / 팔로잉 150000명. A visible product rejection mismatches that goal; missing, ambiguous, occluded or unfinished observations remain unobserved, never filled as a pass.",
+    "large_recovery_rule": "The recovery action sequence is frozen to the previously suspected error branch. If the large input unexpectedly succeeds, the absent dialog-close target prevents that recovery sequence and leaves its checks unvisited; no adaptive branch, retry or resized fixture is allowed.",
+    "list_identity_boundary": "Automated checks measure list title/count and the comparison-limit message. The existing privacy gate does not accept literal handle expectations and is not weakened. Individual row/name identity must be compared separately against actual PNG captures and the source-based sets below; it is not claimed by automated receipt success."
+  },
+  "expected_sample": {
+    "previous_followers": 12,
+    "previous_following": 12,
+    "current_followers": 7,
+    "current_following": 10,
+    "mutual": 5,
+    "nonreciprocal_following": 5,
+    "fan_only": 2,
+    "departures": 6,
+    "new_followers": 1,
+    "account_handle": "jimin.daily_",
+    "nonreciprocal_names": [
+      "atelier.luna_",
+      "ina.archive",
+      "junho.jeong",
+      "minsu.kim_",
+      "taeo.kang_"
+    ],
+    "departure_names": [
+      "hyunwoo.k",
+      "ina.archive",
+      "jimin.han_",
+      "junho.jeong",
+      "sujin.lee_",
+      "yuna.99_"
+    ],
+    "name_comparison": "Source-based exact unordered sets for separate PNG review only. Automated task criteria do not claim individual-name identity. Never follow these synthetic handles as external URLs."
+  },
+  "fixture_contract": {
+    "previous_name": "instagram-jimin.daily_-2026-10-29-owned.zip",
+    "current_name": "instagram-jimin.daily_-2026-11-12-owned.zip",
+    "missing_name": "instagram-jimin.daily_-2026-11-12-missing-following.zip",
+    "large_name": "instagram-jimin.daily_-2026-11-12-large-150000.zip",
+    "generation_only_control": "ZIP-CONTROL-5000 is generated for reuse, but is not a UI acceptance result in this four-task pilot.",
+    "large_recipe": "Reuse expanded(rows) from the core pilot: clone current built-in ZIP entries; replace followers_1.json with 150000 rows and following.json with relationships_following containing the same rows. Row value is owned_fixture_ plus zero-padded six digits; timestamp is 1700000000; all other built-in entries remain unchanged.",
+    "large_loose_files": "Upload all 12 large JSON entries by their basenames. Each file has its own frozen ID, byte count and SHA-256; all bytes are synthetic.",
+    "determinism": "UTC, fixed Date.now for the copied sample module, and fixed ZIP mtime; ZIP level 1 for control/large, default level for sample/missing."
+  },
+  "tasks": [
+    {
+      "id": "T-SAMPLE",
+      "persona_id": "P-EXPLORE",
+      "requirement_ids": [
+        "R-SAMPLE",
+        "R-COMPARE"
+      ],
+      "goal": "샘플에서 내게 제공될 관계 목록과 비교의 한계를 확인하고 샘플을 종료한다",
+      "success_criteria": [
+        "샘플 결과에 팔로워 7명·팔로잉 10명과 나를 맞팔 안 한 사람 5명 수치 및 해당 목록 제목이 표시된다",
+        "팔로워에서 빠진 계정 6명 수치와 해당 목록 제목을 표시하고 이 목록만으로 이유를 알 수 없다는 한계를 함께 보여준다"
+      ],
+      "recovery_criteria": [
+        "샘플 닫기 후 환영 화면과 시작 선택지가 돌아오고 샘플 결과가 남아 있지 않다"
+      ],
+      "fixture_ids": [],
+      "milestones": [
+        "샘플로 둘러보기",
+        "7명·10명 및 나를 맞팔 안 한 사람 5명 확인",
+        "5명 목록 제목 확인·PNG 보존·닫기",
+        "빠진 계정 6명 목록 제목과 한계 안내 확인·PNG 보존·닫기",
+        "샘플 닫기·환영 화면 확인"
+      ]
+    },
+    {
+      "id": "T-RECOVER",
+      "persona_id": "P-RETURN",
+      "requirement_ids": [
+        "R-IMPORT",
+        "R-COMPARE"
+      ],
+      "goal": "정상 이전 기록을 유지한 채 누락 입력을 알아차리고 올바른 다음 기록으로 비교를 완성한다",
+      "success_criteria": [
+        "정상 previous ZIP을 실제 파일 선택 흐름으로 넣어 팔로워 12명·팔로잉 12명 결과와 한 기록의 비교 안내를 확인한다",
+        "following 목록이 없는 ZIP은 구체적인 목록 누락 안내로 거부된다"
+      ],
+      "recovery_criteria": [
+        "오류 dialog를 닫은 뒤 이전 12명·12명 결과가 보존된다",
+        "정상 current ZIP을 다시 넣어 팔로워 7명·팔로잉 10명과 빠진 계정 6명 수치·목록 제목·비교 한계 안내로 회복한다"
+      ],
+      "fixture_ids": [
+        "ZIP-PREVIOUS",
+        "ZIP-MISSING-FOLLOWING",
+        "ZIP-CURRENT"
+      ],
+      "milestones": [
+        "처음 시작→받은 파일 바로 넣기→previous ZIP→12명·12명 확인",
+        "새 기록 불러오기→받은 파일 바로 넣기→missing ZIP→누락 안내 확인",
+        "오류 dialog 닫기→12명·12명 보존 확인",
+        "새 기록 불러오기(보존된 import 단계)→current ZIP→7명·10명 확인",
+        "빠진 계정 6명 목록과 한계 안내 확인"
+      ],
+      "limited_claim": "This task exercises an import error and in-session recovery. It does not verify waiting-step app-reopen resume."
+    },
+    {
+      "persona_id": "P-ARCHIVE",
+      "requirement_ids": [
+        "R-ZIP-LIMIT",
+        "R-FILE-LIMIT",
+        "R-TOTAL-LIMIT",
+        "R-IMPORT"
+      ],
+      "success_criteria": [
+        "문서 바이트 한도 이내의 고정 150000행 팔로워·팔로잉 입력을 실제 파일 선택 흐름으로 넣으면 결과 화면에 두 목록 각각 150000명이 표시된다"
+      ],
+      "recovery_criteria": [
+        "큰 입력이 거절된 경우 오류 화면을 닫아 이전 12명·12명 결과가 보존됨을 확인한다",
+        "같은 과업 안에서 작은 정상 current ZIP을 다시 넣어 7명·10명 결과로 회복한다"
+      ],
+      "expected": {
+        "rows_per_list": 150000,
+        "baseline_followers": 12,
+        "baseline_following": 12,
+        "recovered_followers": 7,
+        "recovered_following": 10,
+        "max_archive_bytes": 134217728,
+        "max_file_bytes": 33554432,
+        "max_total_bytes": 67108864
+      },
+      "milestones": [
+        "새 context에서 previous ZIP을 실제 파일 선택 흐름으로 넣어 12명·12명 기준 결과를 확인한다",
+        "고정 large 입력을 정확히 한 번 넣고 결과·오류·소요시간·PNG를 남긴다; 입력 축소나 결과 재정의는 금지한다",
+        "거절 시 dialog 닫기로 기존 기준 결과를 확인한다; 다른 분기에서는 관측한 분기와 미실행 회복 항목을 명시한다",
+        "고정 current ZIP을 실제 파일 선택 흐름으로 넣고 7명·10명 결과를 확인한다"
+      ],
+      "failure_rule": "150000명 표시가 실패하면 작은 입력 회복에 성공해도 큰 입력 사용자 목표는 실패다. 예상된 오류나 이전 core 관측을 성공 판정으로 쓰지 않는다.",
+      "branch_rule": "예상과 다른 성공/오류 분기는 기록한다. 후속 고정 action이 적용되지 않으면 해당 회복 항목은 미실행·불확정이며 자동 성공으로 채우지 않는다.",
+      "id": "T-LARGE-ZIP",
+      "goal": "문서 바이트 한도 이내의 고정 150000행 ZIP을 실제 UI로 가져오고 실패 시 기존 결과와 작은 입력 회복을 확인한다",
+      "fixture_ids": [
+        "ZIP-PREVIOUS",
+        "ZIP-LARGE-150000",
+        "ZIP-CURRENT"
+      ],
+      "format": "zip"
+    },
+    {
+      "persona_id": "P-ARCHIVE",
+      "requirement_ids": [
+        "R-ZIP-LIMIT",
+        "R-FILE-LIMIT",
+        "R-TOTAL-LIMIT",
+        "R-IMPORT"
+      ],
+      "success_criteria": [
+        "문서 바이트 한도 이내의 고정 150000행 팔로워·팔로잉 입력을 실제 파일 선택 흐름으로 넣으면 결과 화면에 두 목록 각각 150000명이 표시된다"
+      ],
+      "recovery_criteria": [
+        "큰 입력이 거절된 경우 오류 화면을 닫아 이전 12명·12명 결과가 보존됨을 확인한다",
+        "같은 과업 안에서 작은 정상 current ZIP을 다시 넣어 7명·10명 결과로 회복한다"
+      ],
+      "expected": {
+        "rows_per_list": 150000,
+        "baseline_followers": 12,
+        "baseline_following": 12,
+        "recovered_followers": 7,
+        "recovered_following": 10,
+        "max_archive_bytes": 134217728,
+        "max_file_bytes": 33554432,
+        "max_total_bytes": 67108864
+      },
+      "milestones": [
+        "새 context에서 previous ZIP을 실제 파일 선택 흐름으로 넣어 12명·12명 기준 결과를 확인한다",
+        "고정 large 입력을 정확히 한 번 넣고 결과·오류·소요시간·PNG를 남긴다; 입력 축소나 결과 재정의는 금지한다",
+        "거절 시 dialog 닫기로 기존 기준 결과를 확인한다; 다른 분기에서는 관측한 분기와 미실행 회복 항목을 명시한다",
+        "고정 current ZIP을 실제 파일 선택 흐름으로 넣고 7명·10명 결과를 확인한다"
+      ],
+      "failure_rule": "150000명 표시가 실패하면 작은 입력 회복에 성공해도 큰 입력 사용자 목표는 실패다. 예상된 오류나 이전 core 관측을 성공 판정으로 쓰지 않는다.",
+      "branch_rule": "예상과 다른 성공/오류 분기는 기록한다. 후속 고정 action이 적용되지 않으면 해당 회복 항목은 미실행·불확정이며 자동 성공으로 채우지 않는다.",
+      "id": "T-LARGE-JSON",
+      "goal": "문서 바이트 한도 이내의 고정 150000행 JSON 묶음을 실제 UI로 가져오고 실패 시 기존 결과와 작은 입력 회복을 확인한다",
+      "fixture_ids": [
+        "ZIP-PREVIOUS",
+        "JSON-LARGE-PROFILE",
+        "JSON-LARGE-FOLLOWERS",
+        "JSON-LARGE-FOLLOWING",
+        "JSON-LARGE-PENDING",
+        "JSON-LARGE-RECENT-REQUESTS",
+        "JSON-LARGE-RECENT-UNFOLLOWED",
+        "JSON-LARGE-CLOSE-FRIENDS",
+        "JSON-LARGE-BLOCKED",
+        "JSON-LARGE-RESTRICTED",
+        "JSON-LARGE-HIDE-STORY",
+        "JSON-LARGE-LIKES",
+        "JSON-LARGE-COMMENTS",
+        "ZIP-CURRENT"
+      ],
+      "format": "loose-json"
+    }
+  ],
+  "fixture_manifest_sha256": "2d713311b2bb742c886cbad450fd587862fd0b4d71143257d08bf45998234a2d",
+  "fixture_total_bytes": 24573378,
+  "build_binding": {
+    "receipt_sha256": "9ee962c26ab9e24ded9e073f13bf7c32f7d7c0771433632df058729029e39008",
+    "dist_manifest_sha256": "0b766f9606a50a55f84d9cdf9f91625eb5036988a6581dac69dfb7923e7d82b1",
+    "dist_content_sha256": "905611c4994352e7d43fcea6626461a168a86b792e2f12ef37a2e7cbbe7b7a7d",
+    "dist_file_count": 6,
+    "dist_bytes": 542314,
+    "prd_sha256": "8c28c344b58b4d21d23bde3c2d6c76237882a8b78fb41bd55107382385f76050"
+  },
+  "authoring_revision": {
+    "id": "v2-baseline-refinement-before-execution",
+    "execution_occurred": false,
+    "original_rejection": "The first Library import was rejected by the Python version prerequisite before Library, workspace, browser or task-attempt creation.",
+    "reason": "Independent review required observing the 12/12 baseline before each large input to support the later preservation check. No product outcome was observed or used to change expectations.",
+    "new_artifacts": ["source/browser-adapter-v2.json", "reviewed-plan-v2.json", "criterion-map-v2.json"],
+    "preserved_artifacts": {
+      "source/browser-adapter.json": "311e44cc3cc97bbedcec6d8a894ab061929010c50a9ad6d31c9e376362bcc56d",
+      "reviewed-plan.json": "432d6726532f536eff95109d337c02e89dea73421325ee32bb37a154499220aa",
+      "criterion-map.json": "9fe053dc99cf85b1f8a52cde0d25283e0ac232a1ddcd12944c721baf3469608c",
+      "persona-input.json": "3a67743c92be62e0d2a1e53f349cd47b5e44d1a9b613f0a012042054e14e69fc",
+      "operations/001-import.json": "cd4743846b07cfe3fa1e00abac06a8bc5e9f15f31f6372fa1de516ea1fc23889"
+    }
+  },
+  "measurement_contract": {
+    "pre_execution_revision": "v2 adds two measured 12/12 baseline checks immediately after each large task's previous upload, refining the same preservation criterion before any browser or attempt. Action sequences and fixture bytes are unchanged. Old authored artifacts remain at their original paths and are excluded from reviewed execution selection.",
+    "checkpoint_timing": {"click_settle_ms": 500, "upload_settle_ms": 1000, "large_additional_wait_ms": 1000, "meaning": "Fixed before execution for Worker/React settling; not human performance and not outcome-adaptive."},
+    "capture_targets": "Declare every deduplicated check selector in scenario.targets.status so wrapped Korean text retains a captured element ID and visible geometry.",
+    "obligation_scope": "Requirement obligations name their actual case: built-in sample tour, missing-following recovery, bounded 150k ZIP, or bounded 150k loose JSON. Different case meanings are not given one generic cross-persona obligation ID.",
+    "atomic_criteria": "run_pilot.py splits each composite protocol criterion into one measured text check per number, title or limit statement. criterion-map-v2.json retains the original kind/index. No criterion is inferred from another check.",
+    "text_normalization": "normalize_whitespace:true on property:text only; Unicode whitespace is trimmed and collapsed without changing wording or numbers.",
+    "actions": {
+      "T-SAMPLE": 6,
+      "T-RECOVER": 11,
+      "T-LARGE-ZIP": 10,
+      "T-LARGE-JSON": 10
+    },
+    "device_id": "desktop-1920",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "large_fixed_wait_ms": 1000,
+    "not_measured": "Individual handle identity, subjective comprehension and all excluded personas/requirements remain unmeasured by automatic receipts."
+  }
+}
