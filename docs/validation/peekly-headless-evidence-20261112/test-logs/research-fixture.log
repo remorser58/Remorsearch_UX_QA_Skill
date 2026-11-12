@@ -1,0 +1,7 @@
+{"command": "merge", "exit_code": 0, "files": ["bundle.json", "query_log.json", "expansion_log.json", "merge_receipt.json", "merge_result.json"], "issues": [], "result": "pass", "warnings": []}
+{"command": "gate", "exit_code": 0, "files": ["gate.json", "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/research-diagnostic-7jeuyzyp/run/bundle.json"], "issues": [], "result": "pass", "warnings": []}
+{"command": "report-check", "exit_code": 0, "files": ["report_check.json"], "issues": [], "result": "pass", "warnings": []}
+{"command": "export-audience", "exit_code": 0, "files": ["audience.draft.json", "audience.todo.md"], "issues": [], "result": "pass", "warnings": []}
+{"schema_version": "ux-audience-check.v1", "mode": "draft", "result": "pass", "exit_code": 0, "audience_id": "AU-example", "bundle_id": "bundle-run-20261112T063438Z-7816b5", "checked_values": 3, "warnings": [], "errors": []}
+{"command": "minimize", "exit_code": 0, "files": ["bundle.min.json", "minimize.json"], "issues": [], "result": "pass", "warnings": []}
+{"passed": true, "network_requests": 0, "invented_content": true}

@@ -1,0 +1,97 @@
+{
+  "passed": true,
+  "command_count": 18,
+  "checks": [
+    {
+      "command": "python3 scripts/validate_bundle.py examples/bundle/minimal.json",
+      "exit": 0,
+      "expected_exit": 0
+    },
+    {
+      "command": "python3 scripts/ux_loop.py validate examples/loop/packet.json --evidence-root examples/loop",
+      "exit": 0,
+      "expected_exit": 0
+    },
+    {
+      "command": "python3 scripts/validate_bundle.py /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/invalid-broken-ref.json",
+      "exit": 1,
+      "expected_exit": 1
+    },
+    {
+      "command": "python3 scripts/validate_bundle.py /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/invalid-missing-id.json",
+      "exit": 1,
+      "expected_exit": 1
+    },
+    {
+      "command": "python3 scripts/validate_bundle.py /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/invalid-synthetic-claim.json",
+      "exit": 1,
+      "expected_exit": 1
+    },
+    {
+      "command": "python3 scripts/validate_bundle.py /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/invalid-verified-no-observation.json",
+      "exit": 1,
+      "expected_exit": 1
+    },
+    {
+      "command": "python3 scripts/ux_loop.py demo --output /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/denied",
+      "exit": 3,
+      "expected_exit": 3
+    },
+    {
+      "command": "python3 scripts/ux_loop.py demo --output /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/resumable --grant code_write --actor smoke-supervisor --reason Approve only the isolated fixture patch --pause-after browser",
+      "exit": 6,
+      "expected_exit": 6
+    },
+    {
+      "command": "python3 scripts/ux_loop.py resume --checkpoint /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/resumable/checkpoint.json",
+      "exit": 0,
+      "expected_exit": 0
+    },
+    {
+      "command": "python3 scripts/ux_loop.py resume --checkpoint /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/resumable/checkpoint.json",
+      "exit": 0,
+      "expected_exit": 0
+    },
+    {
+      "command": "python3 scripts/ux_loop.py fill /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/filled/draft.json --evidence-root /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/filled --workspace /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/filled/site --out /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/filled/filled.json",
+      "exit": 0,
+      "expected_exit": 0
+    },
+    {
+      "command": "python3 scripts/ux_loop.py validate /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/filled/filled.json --evidence-root /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/filled",
+      "exit": 0,
+      "expected_exit": 0
+    },
+    {
+      "command": "python3 scripts/ux_loop.py run /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/filled/filled.json --workspace /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/filled/site --evidence-root /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/filled --checkpoint /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/filled/checkpoint.json --grant code_write --actor smoke-supervisor --reason Approve only the isolated filled fixture patch",
+      "exit": 0,
+      "expected_exit": 0
+    },
+    {
+      "command": "python3 scripts/ux_loop.py run /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/failed_visual/packet.json --workspace /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/failed_visual/site --evidence-root /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/failed_visual --checkpoint /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/failed_visual/checkpoint.json --grant code_write --actor smoke-supervisor --reason Approve isolated fixture code",
+      "exit": 5,
+      "expected_exit": 5
+    },
+    {
+      "command": "python3 scripts/ux_loop.py run /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/unknown_evidence/packet.json --workspace /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/unknown_evidence/site --evidence-root /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/unknown_evidence --checkpoint /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/unknown_evidence/checkpoint.json --grant code_write --actor smoke-supervisor --reason Approve isolated fixture code",
+      "exit": 4,
+      "expected_exit": 4
+    },
+    {
+      "command": "python3 scripts/ux_loop.py run /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/regression_failure/packet.json --workspace /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/regression_failure/site --evidence-root /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/regression_failure --checkpoint /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/regression_failure/checkpoint.json --grant code_write --actor smoke-supervisor --reason Approve isolated fixture code",
+      "exit": 5,
+      "expected_exit": 5
+    },
+    {
+      "command": "python3 scripts/ux_loop.py run /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/missing_browser/packet.json --workspace /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/missing_browser/site --evidence-root /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/missing_browser --checkpoint /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/missing_browser/checkpoint.json --grant code_write --actor smoke-supervisor --reason Approve isolated fixture code",
+      "exit": 3,
+      "expected_exit": 3
+    },
+    {
+      "command": "python3 scripts/ux_loop.py validate /Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/smoke-cov_xw46/malformed.json",
+      "exit": 2,
+      "expected_exit": 2
+    }
+  ],
+  "live_integrations_executed": false
+}

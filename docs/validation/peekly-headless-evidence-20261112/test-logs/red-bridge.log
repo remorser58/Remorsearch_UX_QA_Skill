@@ -1,0 +1,73 @@
+TAP version 13
+# Subtest: binds fixed measured checkpoints to the reviewed scenario
+ok 1 - binds fixed measured checkpoints to the reviewed scenario
+  ---
+  duration_ms: 3.163042
+  type: 'test'
+  ...
+# Subtest: rejects other URLs, credentials, ports, fragments and unreviewed files
+ok 2 - rejects other URLs, credentials, ports, fragments and unreviewed files
+  ---
+  duration_ms: 0.355417
+  type: 'test'
+  ...
+# Subtest: rejects path traversal, unknown static types, oversized input maps and missing bindings
+ok 3 - rejects path traversal, unknown static types, oversized input maps and missing bindings
+  ---
+  duration_ms: 0.216875
+  type: 'test'
+  ...
+# Subtest: rejects unmeasured success, missing checkpoints and cross-build claims
+ok 4 - rejects unmeasured success, missing checkpoints and cross-build claims
+  ---
+  duration_ms: 0.982375
+  type: 'test'
+  ...
+# Subtest: serves only reviewed bytes and never offers a network fallback
+ok 5 - serves only reviewed bytes and never offers a network fallback
+  ---
+  duration_ms: 0.191125
+  type: 'test'
+  ...
+# Subtest: worker allowance is exact and leaves network connections forbidden
+not ok 6 - worker allowance is exact and leaves network connections forbidden
+  ---
+  duration_ms: 0.08975
+  type: 'test'
+  location: '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/drivers/web/journey_bridge.test.mjs:85:1'
+  failureType: 'testCodeFailure'
+  error: 'input_invalid'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    reject (file:///Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/drivers/web/journey_bridge.mjs:28:57)
+    keys (file:///Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/drivers/web/journey_bridge.mjs:32:85)
+    validateRequest (file:///Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/drivers/web/journey_bridge.mjs:54:3)
+    TestContext.<anonymous> (file:///Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/drivers/web/journey_bridge.test.mjs:92:16)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: preflight validates exact source bytes without output or a browser runtime
+ok 7 - preflight validates exact source bytes without output or a browser runtime
+  ---
+  duration_ms: 75.899666
+  type: 'test'
+  ...
+# Subtest: unrouted transport guard removes constructors and prevents restoration before page code
+ok 8 - unrouted transport guard removes constructors and prevents restoration before page code
+  ---
+  duration_ms: 1.986708
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 7
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 158.347375

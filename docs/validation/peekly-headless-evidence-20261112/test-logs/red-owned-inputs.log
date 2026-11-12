@@ -1,0 +1,57 @@
+EEFF
+======================================================================
+ERROR: test_exact_binary_and_worker_inputs_are_frozen_separately (test_browser_owned_inputs.OwnedBrowserInputTests.test_exact_binary_and_worker_inputs_are_frozen_separately)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/tests/test_browser_owned_inputs.py", line 41, in test_exact_binary_and_worker_inputs_are_frozen_separately
+    result = self.freeze()
+  File "/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/tests/test_browser_owned_inputs.py", line 38, in freeze
+    return browser_run.manifest(workspace._state(self.work), self.plan)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/uxpersonas/browser_run.py", line 46, in manifest
+    stop("browser_manifest", "각 과제에 정확히 하나의 검토된 브라우저 여정이 필요합니다.")
+    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/uxpersonas/browser_run.py", line 33, in stop
+    workspace.stop(code, reason, "호스트가 검토한 합성 웹 파일·기준 연결·브라우저 런타임을 확인합니다. 기존 시도를 자동 반복하지 않습니다.")
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/uxpersonas/workspace.py", line 30, in stop
+    raise error
+uxresearch.canonical.EngineError: 각 과제에 정확히 하나의 검토된 브라우저 여정이 필요합니다.
+
+======================================================================
+ERROR: test_policy_and_launcher_are_frozen_not_just_executable_hash (test_browser_owned_inputs.OwnedBrowserInputTests.test_policy_and_launcher_are_frozen_not_just_executable_hash)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/tests/test_browser_owned_inputs.py", line 61, in test_policy_and_launcher_are_frozen_not_just_executable_hash
+    "policy": browser_run.WORKER_POLICY, "launcher": browser_run.SANDBOX,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'uxpersonas.browser_run' has no attribute 'WORKER_POLICY'
+
+======================================================================
+FAIL: test_undeclared_and_duplicate_uploads_are_refused (test_browser_owned_inputs.OwnedBrowserInputTests.test_undeclared_and_duplicate_uploads_are_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/tests/test_browser_owned_inputs.py", line 51, in test_undeclared_and_duplicate_uploads_are_refused
+    self.assertEqual(caught.exception.issue["code"], "browser_uploads")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'browser_manifest' != 'browser_uploads'
+- browser_manifest
++ browser_uploads
+
+
+======================================================================
+FAIL: test_worker_must_be_an_exact_reviewed_javascript_asset (test_browser_owned_inputs.OwnedBrowserInputTests.test_worker_must_be_an_exact_reviewed_javascript_asset)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/tests/test_browser_owned_inputs.py", line 57, in test_worker_must_be_an_exact_reviewed_javascript_asset
+    self.assertEqual(caught.exception.issue["code"], "browser_workers")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'browser_manifest' != 'browser_workers'
+- browser_manifest
++ browser_workers
+
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.069s
+
+FAILED (failures=2, errors=2)

@@ -1,0 +1,1624 @@
+......................................................................................................................................................................................................................................................................................s..........................................................................................................................................................................................................................................................................................................................................................COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Missing/ambiguous artifact owner: artifact-baseline-console",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Ambiguous duplicate record id",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Malformed needed fill structure: 'missing'",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Malformed owning run: [\"$.steps: expected ['array']\"]",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Malformed owning run: [\"$.code_revision: expected ['string']\"]",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Artifact kind disagrees with its owner",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Malformed owning run: ['$.evidence.console: required']",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2j3yd5nt/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Missing/ambiguous artifact owner: artifact-baseline-visual",
+  "product_complete": false
+}
+ STDERR: 
+.COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/site']
+EXIT: 0 STDOUT: {
+  "written": [
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence/artifacts/artifact-baseline-console.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence/artifacts/artifact-baseline-network.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence/artifacts/artifact-baseline-runtime.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence/artifacts/artifact-baseline-steps.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence/artifacts/artifact-baseline-a11y.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence/artifacts/artifact-baseline-visual.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence/artifacts/artifact-replay-console.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence/artifacts/artifact-replay-network.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence/artifacts/artifact-replay-runtime.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence/artifacts/artifact-replay-steps.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence/artifacts/artifact-replay-a11y.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence/artifacts/artifact-replay-visual.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence/filled.json"
+  ],
+  "filled": [
+    "/packet/browser_runs/0/scenario_digest",
+    "/packet/browser_runs/1/scenario_digest",
+    "/packet/bundle/records/runs/0/scenario_id",
+    "/packet/bundle/records/runs/0/surface_ref",
+    "/packet/bundle/records/runs/1/scenario_id",
+    "/packet/bundle/records/runs/1/surface_ref",
+    "/packet/artifacts/0/sha256",
+    "/packet/artifacts/1/sha256",
+    "/payloads/artifact-baseline-console/run_id",
+    "/payloads/artifact-baseline-console/kind",
+    "/payloads/artifact-baseline-console/scenario_digest",
+    "/payloads/artifact-baseline-console/code_revision",
+    "/packet/artifacts/2/sha256",
+    "/payloads/artifact-baseline-network/run_id",
+    "/payloads/artifact-baseline-network/kind",
+    "/payloads/artifact-baseline-network/scenario_digest",
+    "/payloads/artifact-baseline-network/code_revision",
+    "/packet/artifacts/3/sha256",
+    "/payloads/artifact-baseline-runtime/run_id",
+    "/payloads/artifact-baseline-runtime/kind",
+    "/payloads/artifact-baseline-runtime/scenario_digest",
+    "/payloads/artifact-baseline-runtime/code_revision",
+    "/packet/artifacts/4/sha256",
+    "/payloads/artifact-baseline-steps/run_id",
+    "/payloads/artifact-baseline-steps/kind",
+    "/payloads/artifact-baseline-steps/scenario_digest",
+    "/payloads/artifact-baseline-steps/code_revision",
+    "/payloads/artifact-baseline-steps/results",
+    "/packet/artifacts/5/sha256",
+    "/payloads/artifact-baseline-a11y/run_id",
+    "/payloads/artifact-baseline-a11y/kind",
+    "/payloads/artifact-baseline-a11y/scenario_digest",
+    "/payloads/artifact-baseline-a11y/code_revision",
+    "/payloads/artifact-baseline-a11y/results",
+    "/packet/artifacts/6/sha256",
+    "/packet/artifacts/7/sha256",
+    "/payloads/artifact-baseline-visual/run_id",
+    "/payloads/artifact-baseline-visual/kind",
+    "/payloads/artifact-baseline-visual/scenario_digest",
+    "/payloads/artifact-baseline-visual/code_revision",
+    "/payloads/artifact-baseline-visual/comparison",
+    "/packet/artifacts/8/sha256",
+    "/payloads/artifact-replay-console/run_id",
+    "/payloads/artifact-replay-console/kind",
+    "/payloads/artifact-replay-console/scenario_digest",
+    "/payloads/artifact-replay-console/code_revision",
+    "/packet/artifacts/9/sha256",
+    "/payloads/artifact-replay-network/run_id",
+    "/payloads/artifact-replay-network/kind",
+    "/payloads/artifact-replay-network/scenario_digest",
+    "/payloads/artifact-replay-network/code_revision",
+    "/packet/artifacts/10/sha256",
+    "/payloads/artifact-replay-runtime/run_id",
+    "/payloads/artifact-replay-runtime/kind",
+    "/payloads/artifact-replay-runtime/scenario_digest",
+    "/payloads/artifact-replay-runtime/code_revision",
+    "/packet/artifacts/11/sha256",
+    "/payloads/artifact-replay-steps/run_id",
+    "/payloads/artifact-replay-steps/kind",
+    "/payloads/artifact-replay-steps/scenario_digest",
+    "/payloads/artifact-replay-steps/code_revision",
+    "/payloads/artifact-replay-steps/results",
+    "/packet/artifacts/12/sha256",
+    "/payloads/artifact-replay-a11y/run_id",
+    "/payloads/artifact-replay-a11y/kind",
+    "/payloads/artifact-replay-a11y/scenario_digest",
+    "/payloads/artifact-replay-a11y/code_revision",
+    "/payloads/artifact-replay-a11y/results",
+    "/packet/artifacts/13/sha256",
+    "/packet/artifacts/14/sha256",
+    "/payloads/artifact-replay-visual/run_id",
+    "/payloads/artifact-replay-visual/kind",
+    "/payloads/artifact-replay-visual/scenario_digest",
+    "/payloads/artifact-replay-visual/code_revision",
+    "/payloads/artifact-replay-visual/comparison",
+    "/packet/artifacts/15/sha256",
+    "/packet/artifacts/16/sha256",
+    "/packet/artifacts/17/sha256",
+    "/packet/fixes/0/before_revision",
+    "/packet/fixes/0/after_revision",
+    "/packet/fixes/0/changed_paths"
+  ],
+  "valid": true,
+  "errors": []
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'validate', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence/filled.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence']
+EXIT: 0 STDOUT: {
+  "valid": true,
+  "errors": [],
+  "completion_assessed": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'run', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/site', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/evidence', '--checkpoint', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmppxgxhe85/checkpoint.json', '--grant', 'code_write', '--actor', 'fixture-supervisor', '--reason', 'isolated-fixture']
+EXIT: 0 STDOUT: {
+  "intent_verified": false,
+  "intent_decisions": [],
+  "run_id": "ux-ee26693addf44c25b44485895500d409",
+  "goal_id": "goal-action-label",
+  "status": "complete",
+  "phase": "decision",
+  "reason": "All scoped evidence-backed stop conditions passed",
+  "mode": "fixture",
+  "product_complete": false,
+  "decision": "fixture_only_pass_not_product_verification",
+  "live_execution_performed_by_cli": false,
+  "iteration": 1,
+  "max_iterations": 2,
+  "code_scope": [
+    "index.html"
+  ],
+  "permissions": {
+    "read_only": {
+      "id": "permission-default",
+      "capability": "read_only",
+      "actor": "default-policy",
+      "reason": "Read-only research and QA; orchestration-owned checkpoint writes only",
+      "at": "2026-11-12T06:31:53.596728+00:00",
+      "decision": "grant"
+    },
+    "code_write": {
+      "id": "permission-1f42afb839f94607945c4cea57bfdfd4",
+      "capability": "code_write",
+      "actor": "fixture-supervisor",
+      "reason": "isolated-fixture",
+      "at": "2026-11-12T06:31:53.596891+00:00",
+      "decision": "grant"
+    }
+  },
+  "permission_events": [
+    {
+      "id": "permission-default",
+      "capability": "read_only",
+      "actor": "default-policy",
+      "reason": "Read-only research and QA; orchestration-owned checkpoint writes only",
+      "at": "2026-11-12T06:31:53.596728+00:00",
+      "decision": "grant"
+    },
+    {
+      "id": "permission-1f42afb839f94607945c4cea57bfdfd4",
+      "capability": "code_write",
+      "actor": "fixture-supervisor",
+      "reason": "isolated-fixture",
+      "at": "2026-11-12T06:31:53.596891+00:00",
+      "decision": "grant"
+    }
+  ],
+  "historical_bundle_permissions": {
+    "requested": [
+      "read_only",
+      "design_write"
+    ],
+    "granted": [
+      "read_only"
+    ],
+    "blocked": [
+      {
+        "capability": "design_write",
+        "reason": "Figma write access was not granted"
+      }
+    ]
+  },
+  "prioritized_findings": [
+    "finding-1"
+  ],
+  "applied_fixes": [
+    {
+      "fix_id": "fix-1",
+      "at": "2026-11-12T06:31:53.603570+00:00",
+      "iteration": 1,
+      "after_revision": "92cacc11123c9b7d582f7eac7aefd09da29eb51fe1e1495d032c1f44d410bf3d",
+      "authorization_event": "permission-1f42afb839f94607945c4cea57bfdfd4",
+      "intent_decision_ids": []
+    }
+  ],
+  "accepted_fix_ids": [
+    "fix-1"
+  ],
+  "pending_write_intent": false,
+  "product_context": null,
+  "evidence_ids": {
+    "sources": [
+      "source-1"
+    ],
+    "evidence": [
+      "evidence-1"
+    ],
+    "claims": [
+      "claim-1"
+    ],
+    "personas": [
+      "persona-1"
+    ],
+    "scenarios": [
+      "scenario-1"
+    ],
+    "runs": [
+      "baseline-1",
+      "replay-1"
+    ],
+    "observations": [
+      "observation-1"
+    ],
+    "findings": [
+      "finding-1"
+    ],
+    "proposals": [
+      "proposal-1"
+    ],
+    "figma": [
+      "figma-1"
+    ]
+  },
+  "epistemic_status": {
+    "evidence": {
+      "evidence-1": "observed"
+    },
+    "claims": {
+      "claim-1": "inferred"
+    },
+    "observations": {
+      "observation-1": "observed"
+    },
+    "findings": {
+      "finding-1": "observed"
+    }
+  },
+  "browser_runs": [
+    {
+      "id": "baseline-1",
+      "scenario_id": "scenario-1",
+      "scenario_digest": "98be8e0de9238b0e9c437a233b000f82b632111b28dd4df5ab7371bd9a5efda2",
+      "phase": "baseline",
+      "outcome": "failed",
+      "execution": "fixture",
+      "tool": {
+        "name": "authored-fixture",
+        "version": "1",
+        "browser": "not-executed",
+        "browser_version": "not-executed"
+      },
+      "code_revision": "a10023250bae9d7a89fef79340242ac4109845ee98eb7a37a763b265d6dab317",
+      "environment": {
+        "origin": "https://example.test",
+        "route": "/product",
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "device_scale_factor": 1
+        },
+        "device": "mobile-390",
+        "fixture_id": "fixture-1",
+        "fixture_revision": "seed-1",
+        "account_ref": "anonymous-isolated",
+        "session_id": "isolated-baseline"
+      }
+    },
+    {
+      "id": "replay-1",
+      "scenario_id": "scenario-1",
+      "scenario_digest": "98be8e0de9238b0e9c437a233b000f82b632111b28dd4df5ab7371bd9a5efda2",
+      "phase": "replay",
+      "outcome": "passed",
+      "execution": "fixture",
+      "tool": {
+        "name": "authored-fixture",
+        "version": "1",
+        "browser": "not-executed",
+        "browser_version": "not-executed"
+      },
+      "code_revision": "92cacc11123c9b7d582f7eac7aefd09da29eb51fe1e1495d032c1f44d410bf3d",
+      "environment": {
+        "origin": "https://example.test",
+        "route": "/product",
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "device_scale_factor": 1
+        },
+        "device": "mobile-390",
+        "fixture_id": "fixture-1",
+        "fixture_revision": "seed-1",
+        "account_ref": "anonymous-isolated",
+        "session_id": "isolated-replay"
+      }
+    }
+  ],
+  "figma": [
+    {
+      "id": "figma-1",
+      "file_key": "file-1",
+      "branch_key": "main",
+      "baseline_version": "version-1",
+      "readback_version": "version-1",
+      "node_ids": [
+        "12:34"
+      ],
+      "read_at": "2026-09-14T00:00:00+00:00",
+      "readback_artifact_ref": "artifact-figma",
+      "design_status": "comparison_ready",
+      "defect_class": "implementation_defect"
+    }
+  ],
+  "visual_checks": [
+    {
+      "id": "visual-baseline",
+      "run_id": "baseline-1",
+      "figma_id": "figma-1",
+      "node_ids": [
+        "12:34"
+      ],
+      "file_key": "file-1",
+      "branch_key": "main",
+      "baseline_version": "version-1",
+      "readback_version": "version-1",
+      "route": "/product",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "device_scale_factor": 1
+      },
+      "actual_artifact_id": "artifact-baseline-capture",
+      "reference_artifact_id": "artifact-reference",
+      "comparison_artifact_id": "artifact-baseline-visual",
+      "status": "failed",
+      "method": "review",
+      "reviewer": "fixture-author",
+      "checks": {
+        "layout": "passed",
+        "interaction_states": "failed",
+        "typography": "passed",
+        "side_accents": "passed"
+      },
+      "reason": "Synthetic comparison: ambiguous action label."
+    },
+    {
+      "id": "visual-replay",
+      "run_id": "replay-1",
+      "figma_id": "figma-1",
+      "node_ids": [
+        "12:34"
+      ],
+      "file_key": "file-1",
+      "branch_key": "main",
+      "baseline_version": "version-1",
+      "readback_version": "version-1",
+      "route": "/product",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "device_scale_factor": 1
+      },
+      "actual_artifact_id": "artifact-replay-capture",
+      "reference_artifact_id": "artifact-reference",
+      "comparison_artifact_id": "artifact-replay-visual",
+      "status": "passed",
+      "method": "review",
+      "reviewer": "fixture-author",
+      "checks": {
+        "layout": "passed",
+        "interaction_states": "passed",
+        "typography": "passed",
+        "side_accents": "passed"
+      },
+      "reason": ""
+    }
+  ],
+  "artifact_refs": [
+    {
+      "id": "artifact-figma",
+      "path": "artifacts/artifact-figma.json",
+      "sha256": "3ddd5ad9bd167f1189ac6c344ffd81e4988bbcdb6d145a2af94f33cf2365cfa4",
+      "kind": "figma_readback",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:00:00+00:00"
+    },
+    {
+      "id": "artifact-reference",
+      "path": "artifacts/artifact-reference.svg",
+      "sha256": "ad32e1652f460749332db47ef969fbb4bcf577074d24c08c1644baddc3bb4ca9",
+      "kind": "screenshot",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:00:00+00:00"
+    },
+    {
+      "id": "artifact-baseline-console",
+      "path": "artifacts/artifact-baseline-console.json",
+      "sha256": "b0535691fe2c13907da1edc1a848459dd067aefd650cde0122566435e0b67802",
+      "kind": "console",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:01:00+00:00"
+    },
+    {
+      "id": "artifact-baseline-network",
+      "path": "artifacts/artifact-baseline-network.json",
+      "sha256": "9ca109a3c79804c9e6371db2fc43001b6c9b06ab9c4a4007c6281a9c4f325577",
+      "kind": "network",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:01:00+00:00"
+    },
+    {
+      "id": "artifact-baseline-runtime",
+      "path": "artifacts/artifact-baseline-runtime.json",
+      "sha256": "eb23597bd5d4c0c6392f540d1edae31f3b908e297ed3d541f6cf6975cd943c05",
+      "kind": "runtime",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:01:00+00:00"
+    },
+    {
+      "id": "artifact-baseline-steps",
+      "path": "artifacts/artifact-baseline-steps.json",
+      "sha256": "11f885f53f648fec2ed73476a8317e9b9ddf54550e9bc2ab5bb8bb5a6924b0b6",
+      "kind": "steps",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:01:00+00:00"
+    },
+    {
+      "id": "artifact-baseline-a11y",
+      "path": "artifacts/artifact-baseline-a11y.json",
+      "sha256": "3e80a80164a1f9c7749b55806bcacbf3334e9cc5fd27301494e48ea1c45764fe",
+      "kind": "accessibility",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:01:00+00:00"
+    },
+    {
+      "id": "artifact-baseline-capture",
+      "path": "artifacts/artifact-baseline-capture.svg",
+      "sha256": "9d3f4fad44f6af601bdefc9bea32654c53f5e965019ae6f6199c01dd62e98a1e",
+      "kind": "screenshot",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:01:00+00:00"
+    },
+    {
+      "id": "artifact-baseline-visual",
+      "path": "artifacts/artifact-baseline-visual.json",
+      "sha256": "e3893c599e29ea42b755fb48c3ff83f6223a5e74fc1b4b8fac94757f445f40e9",
+      "kind": "visual_report",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:01:00+00:00"
+    },
+    {
+      "id": "artifact-replay-console",
+      "path": "artifacts/artifact-replay-console.json",
+      "sha256": "f453335715d77d127ac326de508a02d2fe0c6e142aea25e739d5d702db5905ec",
+      "kind": "console",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:04:00+00:00"
+    },
+    {
+      "id": "artifact-replay-network",
+      "path": "artifacts/artifact-replay-network.json",
+      "sha256": "d2798bddee4c9f5f2d196740642b7f181398551d0f64a488d634f5f563696758",
+      "kind": "network",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:04:00+00:00"
+    },
+    {
+      "id": "artifact-replay-runtime",
+      "path": "artifacts/artifact-replay-runtime.json",
+      "sha256": "987020dac891f44b0fe5a7ad728c34e2a274e31611be33a45fecc416ca6311f9",
+      "kind": "runtime",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:04:00+00:00"
+    },
+    {
+      "id": "artifact-replay-steps",
+      "path": "artifacts/artifact-replay-steps.json",
+      "sha256": "b77aadc909a82c40e8e3f30613c9e1e8f780fabf1a09f9b1d71fb0e9241b04e1",
+      "kind": "steps",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:04:00+00:00"
+    },
+    {
+      "id": "artifact-replay-a11y",
+      "path": "artifacts/artifact-replay-a11y.json",
+      "sha256": "5612d3c0dba8a30be7d03d3ed856c2a0a223d19d6a1fb665adbea2bbd519db6c",
+      "kind": "accessibility",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:04:00+00:00"
+    },
+    {
+      "id": "artifact-replay-capture",
+      "path": "artifacts/artifact-replay-capture.svg",
+      "sha256": "c905e1fef74a29b42e5f9a2175af8abf560edf26b11e392d6f5ab0fd365a66e7",
+      "kind": "screenshot",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:04:00+00:00"
+    },
+    {
+      "id": "artifact-replay-visual",
+      "path": "artifacts/artifact-replay-visual.json",
+      "sha256": "e2d54b03500f8628275b56b81a7b373a4ec625349b6d7622b73e64b443283a9e",
+      "kind": "visual_report",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:04:00+00:00"
+    },
+    {
+      "id": "artifact-patch",
+      "path": "artifacts/artifact-patch.patch",
+      "sha256": "1fcc4f02cd5fc262243bbd89c82cdbc68b9c0feb648b1facd18092f7bbc7caab",
+      "kind": "code_patch",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:00:00+00:00"
+    },
+    {
+      "id": "artifact-regression",
+      "path": "artifacts/artifact-regression.json",
+      "sha256": "1300d965fc55784310922d4fe56846defde0e025504b3a603e0122d175813dc8",
+      "kind": "regression",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:06:00+00:00"
+    }
+  ],
+  "replays": [
+    {
+      "id": "replay-set-1",
+      "round_id": "round-1",
+      "run_ids": [
+        "replay-1"
+      ],
+      "regression": {
+        "status": "passed",
+        "artifact_id": "artifact-regression",
+        "scenario_ids": [
+          "scenario-1"
+        ],
+        "code_revision": "92cacc11123c9b7d582f7eac7aefd09da29eb51fe1e1495d032c1f44d410bf3d",
+        "detail": "Synthetic regression fixture only."
+      }
+    }
+  ],
+  "limitations": [
+    "No embedded Aside, Figma, browser, design-write, or test-data-write integration.",
+    "Imported receipts and hashes establish consistency, not independent artifact authenticity.",
+    "Scope is the declared scenarios, accessibility checks and code_paths; not whole-site or WCAG certification.",
+    "Synthetic personas and community signals do not establish population preference/prevalence.",
+    "Legacy packet: product context and intent preservation were not checked."
+  ]
+}
+ STDERR: 
+.COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Forbidden packet sentinel: ['/goal/objective']",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Forbidden packet sentinel: ['/scenarios/0/origin']",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Forbidden packet sentinel: ['/browser_runs/0/code_revision']",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Forbidden packet sentinel: ['/browser_runs/0/outcome']",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp85ruymx_/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Forbidden packet sentinel: ['/artifacts/0/created_at']",
+  "product_complete": false
+}
+ STDERR: 
+.COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/site']
+EXIT: 0 STDOUT: {
+  "written": [
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/evidence/artifacts/artifact-baseline-console.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/evidence/artifacts/artifact-baseline-network.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/evidence/artifacts/artifact-baseline-runtime.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/evidence/artifacts/artifact-baseline-steps.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/evidence/artifacts/artifact-baseline-a11y.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/evidence/artifacts/artifact-baseline-visual.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/evidence/artifacts/artifact-replay-console.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/evidence/artifacts/artifact-replay-network.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/evidence/artifacts/artifact-replay-runtime.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/evidence/artifacts/artifact-replay-steps.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/evidence/artifacts/artifact-replay-a11y.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/evidence/artifacts/artifact-replay-visual.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/evidence/filled.json"
+  ],
+  "filled": [
+    "/packet/browser_runs/0/scenario_digest",
+    "/packet/browser_runs/1/scenario_digest",
+    "/packet/bundle/records/runs/0/scenario_id",
+    "/packet/bundle/records/runs/0/surface_ref",
+    "/packet/bundle/records/runs/1/scenario_id",
+    "/packet/bundle/records/runs/1/surface_ref",
+    "/packet/artifacts/0/sha256",
+    "/packet/artifacts/1/sha256",
+    "/payloads/artifact-baseline-console/run_id",
+    "/payloads/artifact-baseline-console/kind",
+    "/payloads/artifact-baseline-console/scenario_digest",
+    "/payloads/artifact-baseline-console/code_revision",
+    "/packet/artifacts/2/sha256",
+    "/payloads/artifact-baseline-network/run_id",
+    "/payloads/artifact-baseline-network/kind",
+    "/payloads/artifact-baseline-network/scenario_digest",
+    "/payloads/artifact-baseline-network/code_revision",
+    "/packet/artifacts/3/sha256",
+    "/payloads/artifact-baseline-runtime/run_id",
+    "/payloads/artifact-baseline-runtime/kind",
+    "/payloads/artifact-baseline-runtime/scenario_digest",
+    "/payloads/artifact-baseline-runtime/code_revision",
+    "/packet/artifacts/4/sha256",
+    "/payloads/artifact-baseline-steps/run_id",
+    "/payloads/artifact-baseline-steps/kind",
+    "/payloads/artifact-baseline-steps/scenario_digest",
+    "/payloads/artifact-baseline-steps/code_revision",
+    "/payloads/artifact-baseline-steps/results",
+    "/packet/artifacts/5/sha256",
+    "/payloads/artifact-baseline-a11y/run_id",
+    "/payloads/artifact-baseline-a11y/kind",
+    "/payloads/artifact-baseline-a11y/scenario_digest",
+    "/payloads/artifact-baseline-a11y/code_revision",
+    "/payloads/artifact-baseline-a11y/results",
+    "/packet/artifacts/6/sha256",
+    "/packet/artifacts/7/sha256",
+    "/payloads/artifact-baseline-visual/run_id",
+    "/payloads/artifact-baseline-visual/kind",
+    "/payloads/artifact-baseline-visual/scenario_digest",
+    "/payloads/artifact-baseline-visual/code_revision",
+    "/payloads/artifact-baseline-visual/comparison",
+    "/packet/artifacts/8/sha256",
+    "/payloads/artifact-replay-console/run_id",
+    "/payloads/artifact-replay-console/kind",
+    "/payloads/artifact-replay-console/scenario_digest",
+    "/payloads/artifact-replay-console/code_revision",
+    "/packet/artifacts/9/sha256",
+    "/payloads/artifact-replay-network/run_id",
+    "/payloads/artifact-replay-network/kind",
+    "/payloads/artifact-replay-network/scenario_digest",
+    "/payloads/artifact-replay-network/code_revision",
+    "/packet/artifacts/10/sha256",
+    "/payloads/artifact-replay-runtime/run_id",
+    "/payloads/artifact-replay-runtime/kind",
+    "/payloads/artifact-replay-runtime/scenario_digest",
+    "/payloads/artifact-replay-runtime/code_revision",
+    "/packet/artifacts/11/sha256",
+    "/payloads/artifact-replay-steps/run_id",
+    "/payloads/artifact-replay-steps/kind",
+    "/payloads/artifact-replay-steps/scenario_digest",
+    "/payloads/artifact-replay-steps/code_revision",
+    "/payloads/artifact-replay-steps/results",
+    "/packet/artifacts/12/sha256",
+    "/payloads/artifact-replay-a11y/run_id",
+    "/payloads/artifact-replay-a11y/kind",
+    "/payloads/artifact-replay-a11y/scenario_digest",
+    "/payloads/artifact-replay-a11y/code_revision",
+    "/payloads/artifact-replay-a11y/results",
+    "/packet/artifacts/13/sha256",
+    "/packet/artifacts/14/sha256",
+    "/payloads/artifact-replay-visual/run_id",
+    "/payloads/artifact-replay-visual/kind",
+    "/payloads/artifact-replay-visual/scenario_digest",
+    "/payloads/artifact-replay-visual/code_revision",
+    "/payloads/artifact-replay-visual/comparison",
+    "/packet/artifacts/15/sha256",
+    "/packet/artifacts/16/sha256",
+    "/packet/artifacts/17/sha256",
+    "/packet/artifacts/18/sha256",
+    "/packet/artifacts/19/sha256",
+    "/packet/fixes/0/before_revision",
+    "/packet/fixes/0/after_revision",
+    "/packet/fixes/0/changed_paths"
+  ],
+  "valid": true,
+  "errors": []
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'run', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/site', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/evidence', '--checkpoint', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_o3mlx9_/checkpoint.json', '--grant', 'code_write', '--actor', 'fixture-supervisor', '--reason', 'isolated-fixture']
+EXIT: 3 STDOUT: {
+  "intent_verified": false,
+  "intent_decisions": [],
+  "run_id": "ux-2d1f5bcc9b3543409b3187161a4494f0",
+  "goal_id": "goal-action-label",
+  "status": "blocked",
+  "phase": "fix",
+  "reason": "Fix fix-1 needs a specific operator intent decision for constraint constraint-action-flow; an imported actor or generic code_write grant is not a human decision",
+  "mode": "fixture",
+  "product_complete": false,
+  "decision": "stop_without_completion",
+  "live_execution_performed_by_cli": false,
+  "iteration": 1,
+  "max_iterations": 2,
+  "code_scope": [
+    "index.html"
+  ],
+  "permissions": {
+    "read_only": {
+      "id": "permission-default",
+      "capability": "read_only",
+      "actor": "default-policy",
+      "reason": "Read-only research and QA; orchestration-owned checkpoint writes only",
+      "at": "2026-11-12T06:31:54.184220+00:00",
+      "decision": "grant"
+    },
+    "code_write": {
+      "id": "permission-1e150df626534072b4173376a1f9563e",
+      "capability": "code_write",
+      "actor": "fixture-supervisor",
+      "reason": "isolated-fixture",
+      "at": "2026-11-12T06:31:54.184415+00:00",
+      "decision": "grant"
+    }
+  },
+  "permission_events": [
+    {
+      "id": "permission-default",
+      "capability": "read_only",
+      "actor": "default-policy",
+      "reason": "Read-only research and QA; orchestration-owned checkpoint writes only",
+      "at": "2026-11-12T06:31:54.184220+00:00",
+      "decision": "grant"
+    },
+    {
+      "id": "permission-1e150df626534072b4173376a1f9563e",
+      "capability": "code_write",
+      "actor": "fixture-supervisor",
+      "reason": "isolated-fixture",
+      "at": "2026-11-12T06:31:54.184415+00:00",
+      "decision": "grant"
+    }
+  ],
+  "historical_bundle_permissions": {
+    "requested": [
+      "read_only",
+      "design_write"
+    ],
+    "granted": [
+      "read_only"
+    ],
+    "blocked": [
+      {
+        "capability": "design_write",
+        "reason": "Figma write access was not granted"
+      }
+    ]
+  },
+  "prioritized_findings": [
+    "finding-1"
+  ],
+  "applied_fixes": [],
+  "accepted_fix_ids": [],
+  "pending_write_intent": false,
+  "product_context": {
+    "artifact_id": "artifact-context",
+    "intent_review_artifact_ids": {
+      "replay-set-1": "artifact-intent-review"
+    },
+    "memory_search": "searched_not_available",
+    "constraints": [
+      {
+        "id": "constraint-action-flow",
+        "title": "다음 행동 버튼의 위치와 진행 흐름 유지",
+        "scope": {
+          "paths": [
+            "index.html"
+          ],
+          "scenario_ids": [
+            "scenario-1"
+          ]
+        }
+      }
+    ],
+    "path_scenarios": {
+      "index.html": [
+        "scenario-1"
+      ]
+    },
+    "resolved_conflict_ids": [],
+    "unresolved_conflicts": [],
+    "applied_fix_decisions": {}
+  },
+  "evidence_ids": {
+    "sources": [
+      "source-1"
+    ],
+    "evidence": [
+      "evidence-1"
+    ],
+    "claims": [
+      "claim-1"
+    ],
+    "personas": [
+      "persona-1"
+    ],
+    "scenarios": [
+      "scenario-1"
+    ],
+    "runs": [
+      "baseline-1",
+      "replay-1"
+    ],
+    "observations": [
+      "observation-1"
+    ],
+    "findings": [
+      "finding-1"
+    ],
+    "proposals": [
+      "proposal-1"
+    ],
+    "figma": [
+      "figma-1"
+    ]
+  },
+  "epistemic_status": {
+    "evidence": {
+      "evidence-1": "observed"
+    },
+    "claims": {
+      "claim-1": "inferred"
+    },
+    "observations": {
+      "observation-1": "observed"
+    },
+    "findings": {
+      "finding-1": "observed"
+    }
+  },
+  "browser_runs": [
+    {
+      "id": "baseline-1",
+      "scenario_id": "scenario-1",
+      "scenario_digest": "98be8e0de9238b0e9c437a233b000f82b632111b28dd4df5ab7371bd9a5efda2",
+      "phase": "baseline",
+      "outcome": "failed",
+      "execution": "fixture",
+      "tool": {
+        "name": "authored-fixture",
+        "version": "1",
+        "browser": "not-executed",
+        "browser_version": "not-executed"
+      },
+      "code_revision": "a10023250bae9d7a89fef79340242ac4109845ee98eb7a37a763b265d6dab317",
+      "environment": {
+        "origin": "https://example.test",
+        "route": "/product",
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "device_scale_factor": 1
+        },
+        "device": "mobile-390",
+        "fixture_id": "fixture-1",
+        "fixture_revision": "seed-1",
+        "account_ref": "anonymous-isolated",
+        "session_id": "isolated-baseline"
+      }
+    },
+    {
+      "id": "replay-1",
+      "scenario_id": "scenario-1",
+      "scenario_digest": "98be8e0de9238b0e9c437a233b000f82b632111b28dd4df5ab7371bd9a5efda2",
+      "phase": "replay",
+      "outcome": "passed",
+      "execution": "fixture",
+      "tool": {
+        "name": "authored-fixture",
+        "version": "1",
+        "browser": "not-executed",
+        "browser_version": "not-executed"
+      },
+      "code_revision": "92cacc11123c9b7d582f7eac7aefd09da29eb51fe1e1495d032c1f44d410bf3d",
+      "environment": {
+        "origin": "https://example.test",
+        "route": "/product",
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "device_scale_factor": 1
+        },
+        "device": "mobile-390",
+        "fixture_id": "fixture-1",
+        "fixture_revision": "seed-1",
+        "account_ref": "anonymous-isolated",
+        "session_id": "isolated-replay"
+      }
+    }
+  ],
+  "figma": [
+    {
+      "id": "figma-1",
+      "file_key": "file-1",
+      "branch_key": "main",
+      "baseline_version": "version-1",
+      "readback_version": "version-1",
+      "node_ids": [
+        "12:34"
+      ],
+      "read_at": "2026-09-14T00:00:00+00:00",
+      "readback_artifact_ref": "artifact-figma",
+      "design_status": "comparison_ready",
+      "defect_class": "implementation_defect"
+    }
+  ],
+  "visual_checks": [
+    {
+      "id": "visual-baseline",
+      "run_id": "baseline-1",
+      "figma_id": "figma-1",
+      "node_ids": [
+        "12:34"
+      ],
+      "file_key": "file-1",
+      "branch_key": "main",
+      "baseline_version": "version-1",
+      "readback_version": "version-1",
+      "route": "/product",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "device_scale_factor": 1
+      },
+      "actual_artifact_id": "artifact-baseline-capture",
+      "reference_artifact_id": "artifact-reference",
+      "comparison_artifact_id": "artifact-baseline-visual",
+      "status": "failed",
+      "method": "review",
+      "reviewer": "fixture-author",
+      "checks": {
+        "layout": "passed",
+        "interaction_states": "failed",
+        "typography": "passed",
+        "side_accents": "passed"
+      },
+      "reason": "Synthetic comparison: ambiguous action label."
+    },
+    {
+      "id": "visual-replay",
+      "run_id": "replay-1",
+      "figma_id": "figma-1",
+      "node_ids": [
+        "12:34"
+      ],
+      "file_key": "file-1",
+      "branch_key": "main",
+      "baseline_version": "version-1",
+      "readback_version": "version-1",
+      "route": "/product",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "device_scale_factor": 1
+      },
+      "actual_artifact_id": "artifact-replay-capture",
+      "reference_artifact_id": "artifact-reference",
+      "comparison_artifact_id": "artifact-replay-visual",
+      "status": "passed",
+      "method": "review",
+      "reviewer": "fixture-author",
+      "checks": {
+        "layout": "passed",
+        "interaction_states": "passed",
+        "typography": "passed",
+        "side_accents": "passed"
+      },
+      "reason": ""
+    }
+  ],
+  "artifact_refs": [
+    {
+      "id": "artifact-figma",
+      "path": "artifacts/artifact-figma.json",
+      "sha256": "3ddd5ad9bd167f1189ac6c344ffd81e4988bbcdb6d145a2af94f33cf2365cfa4",
+      "kind": "figma_readback",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:00:00+00:00"
+    },
+    {
+      "id": "artifact-reference",
+      "path": "artifacts/artifact-reference.svg",
+      "sha256": "ad32e1652f460749332db47ef969fbb4bcf577074d24c08c1644baddc3bb4ca9",
+      "kind": "screenshot",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:00:00+00:00"
+    },
+    {
+      "id": "artifact-baseline-console",
+      "path": "artifacts/artifact-baseline-console.json",
+      "sha256": "b0535691fe2c13907da1edc1a848459dd067aefd650cde0122566435e0b67802",
+      "kind": "console",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:01:00+00:00"
+    },
+    {
+      "id": "artifact-baseline-network",
+      "path": "artifacts/artifact-baseline-network.json",
+      "sha256": "9ca109a3c79804c9e6371db2fc43001b6c9b06ab9c4a4007c6281a9c4f325577",
+      "kind": "network",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:01:00+00:00"
+    },
+    {
+      "id": "artifact-baseline-runtime",
+      "path": "artifacts/artifact-baseline-runtime.json",
+      "sha256": "eb23597bd5d4c0c6392f540d1edae31f3b908e297ed3d541f6cf6975cd943c05",
+      "kind": "runtime",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:01:00+00:00"
+    },
+    {
+      "id": "artifact-baseline-steps",
+      "path": "artifacts/artifact-baseline-steps.json",
+      "sha256": "11f885f53f648fec2ed73476a8317e9b9ddf54550e9bc2ab5bb8bb5a6924b0b6",
+      "kind": "steps",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:01:00+00:00"
+    },
+    {
+      "id": "artifact-baseline-a11y",
+      "path": "artifacts/artifact-baseline-a11y.json",
+      "sha256": "3e80a80164a1f9c7749b55806bcacbf3334e9cc5fd27301494e48ea1c45764fe",
+      "kind": "accessibility",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:01:00+00:00"
+    },
+    {
+      "id": "artifact-baseline-capture",
+      "path": "artifacts/artifact-baseline-capture.svg",
+      "sha256": "9d3f4fad44f6af601bdefc9bea32654c53f5e965019ae6f6199c01dd62e98a1e",
+      "kind": "screenshot",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:01:00+00:00"
+    },
+    {
+      "id": "artifact-baseline-visual",
+      "path": "artifacts/artifact-baseline-visual.json",
+      "sha256": "e3893c599e29ea42b755fb48c3ff83f6223a5e74fc1b4b8fac94757f445f40e9",
+      "kind": "visual_report",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:01:00+00:00"
+    },
+    {
+      "id": "artifact-replay-console",
+      "path": "artifacts/artifact-replay-console.json",
+      "sha256": "f453335715d77d127ac326de508a02d2fe0c6e142aea25e739d5d702db5905ec",
+      "kind": "console",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:04:00+00:00"
+    },
+    {
+      "id": "artifact-replay-network",
+      "path": "artifacts/artifact-replay-network.json",
+      "sha256": "d2798bddee4c9f5f2d196740642b7f181398551d0f64a488d634f5f563696758",
+      "kind": "network",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:04:00+00:00"
+    },
+    {
+      "id": "artifact-replay-runtime",
+      "path": "artifacts/artifact-replay-runtime.json",
+      "sha256": "987020dac891f44b0fe5a7ad728c34e2a274e31611be33a45fecc416ca6311f9",
+      "kind": "runtime",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:04:00+00:00"
+    },
+    {
+      "id": "artifact-replay-steps",
+      "path": "artifacts/artifact-replay-steps.json",
+      "sha256": "b77aadc909a82c40e8e3f30613c9e1e8f780fabf1a09f9b1d71fb0e9241b04e1",
+      "kind": "steps",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:04:00+00:00"
+    },
+    {
+      "id": "artifact-replay-a11y",
+      "path": "artifacts/artifact-replay-a11y.json",
+      "sha256": "5612d3c0dba8a30be7d03d3ed856c2a0a223d19d6a1fb665adbea2bbd519db6c",
+      "kind": "accessibility",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:04:00+00:00"
+    },
+    {
+      "id": "artifact-replay-capture",
+      "path": "artifacts/artifact-replay-capture.svg",
+      "sha256": "c905e1fef74a29b42e5f9a2175af8abf560edf26b11e392d6f5ab0fd365a66e7",
+      "kind": "screenshot",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:04:00+00:00"
+    },
+    {
+      "id": "artifact-replay-visual",
+      "path": "artifacts/artifact-replay-visual.json",
+      "sha256": "e2d54b03500f8628275b56b81a7b373a4ec625349b6d7622b73e64b443283a9e",
+      "kind": "visual_report",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:04:00+00:00"
+    },
+    {
+      "id": "artifact-patch",
+      "path": "artifacts/artifact-patch.patch",
+      "sha256": "1fcc4f02cd5fc262243bbd89c82cdbc68b9c0feb648b1facd18092f7bbc7caab",
+      "kind": "code_patch",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:00:00+00:00"
+    },
+    {
+      "id": "artifact-regression",
+      "path": "artifacts/artifact-regression.json",
+      "sha256": "1300d965fc55784310922d4fe56846defde0e025504b3a603e0122d175813dc8",
+      "kind": "regression",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:06:00+00:00"
+    },
+    {
+      "id": "artifact-context",
+      "path": "artifacts/artifact-context.json",
+      "sha256": "aadb3a4b0a88b914f35494dd90ac4b8dcbcb72c23f5e005cb88d0a9ade7cc5db",
+      "kind": "product_context",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:00:00+00:00"
+    },
+    {
+      "id": "artifact-intent-review",
+      "path": "artifacts/artifact-intent-review.json",
+      "sha256": "c9ab81f93fc314c8f913ceae5c07f9b65bd7c2b99e69de14fa16a8f3ff510761",
+      "kind": "intent_review",
+      "provenance": "fixture",
+      "created_at": "2026-09-14T00:07:00+00:00"
+    }
+  ],
+  "replays": [
+    {
+      "id": "replay-set-1",
+      "round_id": "round-1",
+      "run_ids": [
+        "replay-1"
+      ],
+      "regression": {
+        "status": "passed",
+        "artifact_id": "artifact-regression",
+        "scenario_ids": [
+          "scenario-1"
+        ],
+        "code_revision": "92cacc11123c9b7d582f7eac7aefd09da29eb51fe1e1495d032c1f44d410bf3d",
+        "detail": "Synthetic regression fixture only."
+      },
+      "intent_review_artifact_id": "artifact-intent-review"
+    }
+  ],
+  "limitations": [
+    "No embedded Aside, Figma, browser, design-write, or test-data-write integration.",
+    "Imported receipts and hashes establish consistency, not independent artifact authenticity.",
+    "Scope is the declared scenarios, accessibility checks and code_paths; not whole-site or WCAG certification.",
+    "Synthetic personas and community signals do not establish population preference/prevalence.",
+    "Product context and intent reviews are imported authored records attesting consistency, not independent authenticity."
+  ]
+}
+ STDERR: 
+.COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_8ao814_/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_8ao814_/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_8ao814_/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_8ao814_/site']
+EXIT: 1 STDOUT: {
+  "written": [
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp_8ao814_/evidence/filled.json"
+  ],
+  "filled": [],
+  "valid": false,
+  "errors": [
+    "$.policy.figma_first: must equal True"
+  ]
+}
+ STDERR: 
+.COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2f9b29hc/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2f9b29hc/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2f9b29hc/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp2f9b29hc/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Forbidden semantic payload sentinel: artifact-regression",
+  "product_complete": false
+}
+ STDERR: 
+.COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp652_cgal/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp652_cgal/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp652_cgal/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp652_cgal/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Missing, oversized or linked artifact: artifact-figma",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp652_cgal/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp652_cgal/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp652_cgal/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp652_cgal/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Unsafe relative path: '../outside.json'",
+  "product_complete": false
+}
+ STDERR: 
+.COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmprfmx8k54/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmprfmx8k54/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmprfmx8k54/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmprfmx8k54/site']
+EXIT: 0 STDOUT: {
+  "written": [
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmprfmx8k54/evidence/filled.json"
+  ],
+  "filled": [
+    "/packet/fixes/0/before_revision",
+    "/packet/fixes/0/after_revision",
+    "/packet/fixes/0/changed_paths"
+  ],
+  "valid": true,
+  "errors": []
+}
+ STDERR: 
+.COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmptw5wpgzf/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmptw5wpgzf/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmptw5wpgzf/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmptw5wpgzf/site']
+EXIT: 0 STDOUT: {
+  "written": [
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmptw5wpgzf/evidence/artifacts/artifact-baseline-console.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmptw5wpgzf/evidence/artifacts/artifact-baseline-network.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmptw5wpgzf/evidence/artifacts/artifact-baseline-runtime.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmptw5wpgzf/evidence/artifacts/artifact-baseline-steps.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmptw5wpgzf/evidence/artifacts/artifact-baseline-a11y.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmptw5wpgzf/evidence/artifacts/artifact-baseline-visual.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmptw5wpgzf/evidence/artifacts/artifact-replay-console.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmptw5wpgzf/evidence/artifacts/artifact-replay-network.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmptw5wpgzf/evidence/artifacts/artifact-replay-runtime.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmptw5wpgzf/evidence/artifacts/artifact-replay-steps.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmptw5wpgzf/evidence/artifacts/artifact-replay-a11y.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmptw5wpgzf/evidence/artifacts/artifact-replay-visual.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmptw5wpgzf/evidence/filled.json"
+  ],
+  "filled": [
+    "/packet/browser_runs/0/scenario_digest",
+    "/packet/browser_runs/1/scenario_digest",
+    "/packet/bundle/records/runs/0/scenario_id",
+    "/packet/bundle/records/runs/0/surface_ref",
+    "/packet/bundle/records/runs/1/scenario_id",
+    "/packet/bundle/records/runs/1/surface_ref",
+    "/packet/artifacts/0/sha256",
+    "/packet/artifacts/1/sha256",
+    "/payloads/artifact-baseline-console/run_id",
+    "/payloads/artifact-baseline-console/kind",
+    "/payloads/artifact-baseline-console/scenario_digest",
+    "/payloads/artifact-baseline-console/code_revision",
+    "/packet/artifacts/2/sha256",
+    "/payloads/artifact-baseline-network/run_id",
+    "/payloads/artifact-baseline-network/kind",
+    "/payloads/artifact-baseline-network/scenario_digest",
+    "/payloads/artifact-baseline-network/code_revision",
+    "/packet/artifacts/3/sha256",
+    "/payloads/artifact-baseline-runtime/run_id",
+    "/payloads/artifact-baseline-runtime/kind",
+    "/payloads/artifact-baseline-runtime/scenario_digest",
+    "/payloads/artifact-baseline-runtime/code_revision",
+    "/packet/artifacts/4/sha256",
+    "/payloads/artifact-baseline-steps/run_id",
+    "/payloads/artifact-baseline-steps/kind",
+    "/payloads/artifact-baseline-steps/scenario_digest",
+    "/payloads/artifact-baseline-steps/code_revision",
+    "/payloads/artifact-baseline-steps/results",
+    "/packet/artifacts/5/sha256",
+    "/payloads/artifact-baseline-a11y/run_id",
+    "/payloads/artifact-baseline-a11y/kind",
+    "/payloads/artifact-baseline-a11y/scenario_digest",
+    "/payloads/artifact-baseline-a11y/code_revision",
+    "/payloads/artifact-baseline-a11y/results",
+    "/packet/artifacts/6/sha256",
+    "/packet/artifacts/7/sha256",
+    "/payloads/artifact-baseline-visual/run_id",
+    "/payloads/artifact-baseline-visual/kind",
+    "/payloads/artifact-baseline-visual/scenario_digest",
+    "/payloads/artifact-baseline-visual/code_revision",
+    "/payloads/artifact-baseline-visual/comparison",
+    "/packet/artifacts/8/sha256",
+    "/payloads/artifact-replay-console/run_id",
+    "/payloads/artifact-replay-console/kind",
+    "/payloads/artifact-replay-console/scenario_digest",
+    "/payloads/artifact-replay-console/code_revision",
+    "/packet/artifacts/9/sha256",
+    "/payloads/artifact-replay-network/run_id",
+    "/payloads/artifact-replay-network/kind",
+    "/payloads/artifact-replay-network/scenario_digest",
+    "/payloads/artifact-replay-network/code_revision",
+    "/packet/artifacts/10/sha256",
+    "/payloads/artifact-replay-runtime/run_id",
+    "/payloads/artifact-replay-runtime/kind",
+    "/payloads/artifact-replay-runtime/scenario_digest",
+    "/payloads/artifact-replay-runtime/code_revision",
+    "/packet/artifacts/11/sha256",
+    "/payloads/artifact-replay-steps/run_id",
+    "/payloads/artifact-replay-steps/kind",
+    "/payloads/artifact-replay-steps/scenario_digest",
+    "/payloads/artifact-replay-steps/code_revision",
+    "/payloads/artifact-replay-steps/results",
+    "/packet/artifacts/12/sha256",
+    "/payloads/artifact-replay-a11y/run_id",
+    "/payloads/artifact-replay-a11y/kind",
+    "/payloads/artifact-replay-a11y/scenario_digest",
+    "/payloads/artifact-replay-a11y/code_revision",
+    "/payloads/artifact-replay-a11y/results",
+    "/packet/artifacts/13/sha256",
+    "/packet/artifacts/14/sha256",
+    "/payloads/artifact-replay-visual/run_id",
+    "/payloads/artifact-replay-visual/kind",
+    "/payloads/artifact-replay-visual/scenario_digest",
+    "/payloads/artifact-replay-visual/code_revision",
+    "/payloads/artifact-replay-visual/comparison",
+    "/packet/artifacts/15/sha256",
+    "/packet/artifacts/16/sha256",
+    "/packet/artifacts/17/sha256",
+    "/packet/fixes/0/before_revision",
+    "/packet/fixes/0/after_revision",
+    "/packet/fixes/0/changed_paths"
+  ],
+  "valid": true,
+  "errors": []
+}
+ STDERR: 
+.COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpxio0sn_m/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpxio0sn_m/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpxio0sn_m/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpxio0sn_m/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Concrete patch metadata mismatch: fix-1",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpxio0sn_m/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpxio0sn_m/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpxio0sn_m/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpxio0sn_m/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Concrete patch metadata mismatch: fix-1",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpxio0sn_m/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpxio0sn_m/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpxio0sn_m/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpxio0sn_m/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Concrete patch metadata mismatch: fix-1",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpxio0sn_m/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpxio0sn_m/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpxio0sn_m/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpxio0sn_m/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Hunk context/count mismatch: index.html",
+  "product_complete": false
+}
+ STDERR: 
+.COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpwvj4qzw2/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpwvj4qzw2/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpwvj4qzw2/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpwvj4qzw2/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Forbidden semantic payload sentinel: artifact-baseline-console",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpwvj4qzw2/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpwvj4qzw2/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpwvj4qzw2/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpwvj4qzw2/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Cannot rewrite hash-bound evidence",
+  "product_complete": false
+}
+ STDERR: 
+.COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpdzbku25f/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpdzbku25f/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpdzbku25f/evidence/filled.json']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Patch derivation requires --workspace",
+  "product_complete": false
+}
+ STDERR: 
+.COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence/filled.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/site']
+EXIT: 0 STDOUT: {
+  "written": [
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence/artifacts/artifact-baseline-console.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence/artifacts/artifact-baseline-network.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence/artifacts/artifact-baseline-runtime.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence/artifacts/artifact-baseline-steps.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence/artifacts/artifact-baseline-a11y.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence/artifacts/artifact-baseline-visual.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence/artifacts/artifact-replay-console.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence/artifacts/artifact-replay-network.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence/artifacts/artifact-replay-runtime.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence/artifacts/artifact-replay-steps.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence/artifacts/artifact-replay-a11y.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence/artifacts/artifact-replay-visual.json",
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence/filled.json"
+  ],
+  "filled": [
+    "/packet/browser_runs/0/scenario_digest",
+    "/packet/browser_runs/1/scenario_digest",
+    "/packet/bundle/records/runs/0/scenario_id",
+    "/packet/bundle/records/runs/0/surface_ref",
+    "/packet/bundle/records/runs/1/scenario_id",
+    "/packet/bundle/records/runs/1/surface_ref",
+    "/packet/artifacts/0/sha256",
+    "/packet/artifacts/1/sha256",
+    "/payloads/artifact-baseline-console/run_id",
+    "/payloads/artifact-baseline-console/kind",
+    "/payloads/artifact-baseline-console/scenario_digest",
+    "/payloads/artifact-baseline-console/code_revision",
+    "/packet/artifacts/2/sha256",
+    "/payloads/artifact-baseline-network/run_id",
+    "/payloads/artifact-baseline-network/kind",
+    "/payloads/artifact-baseline-network/scenario_digest",
+    "/payloads/artifact-baseline-network/code_revision",
+    "/packet/artifacts/3/sha256",
+    "/payloads/artifact-baseline-runtime/run_id",
+    "/payloads/artifact-baseline-runtime/kind",
+    "/payloads/artifact-baseline-runtime/scenario_digest",
+    "/payloads/artifact-baseline-runtime/code_revision",
+    "/packet/artifacts/4/sha256",
+    "/payloads/artifact-baseline-steps/run_id",
+    "/payloads/artifact-baseline-steps/kind",
+    "/payloads/artifact-baseline-steps/scenario_digest",
+    "/payloads/artifact-baseline-steps/code_revision",
+    "/payloads/artifact-baseline-steps/results",
+    "/packet/artifacts/5/sha256",
+    "/payloads/artifact-baseline-a11y/run_id",
+    "/payloads/artifact-baseline-a11y/kind",
+    "/payloads/artifact-baseline-a11y/scenario_digest",
+    "/payloads/artifact-baseline-a11y/code_revision",
+    "/payloads/artifact-baseline-a11y/results",
+    "/packet/artifacts/6/sha256",
+    "/packet/artifacts/7/sha256",
+    "/payloads/artifact-baseline-visual/run_id",
+    "/payloads/artifact-baseline-visual/kind",
+    "/payloads/artifact-baseline-visual/scenario_digest",
+    "/payloads/artifact-baseline-visual/code_revision",
+    "/payloads/artifact-baseline-visual/comparison",
+    "/packet/artifacts/8/sha256",
+    "/payloads/artifact-replay-console/run_id",
+    "/payloads/artifact-replay-console/kind",
+    "/payloads/artifact-replay-console/scenario_digest",
+    "/payloads/artifact-replay-console/code_revision",
+    "/packet/artifacts/9/sha256",
+    "/payloads/artifact-replay-network/run_id",
+    "/payloads/artifact-replay-network/kind",
+    "/payloads/artifact-replay-network/scenario_digest",
+    "/payloads/artifact-replay-network/code_revision",
+    "/packet/artifacts/10/sha256",
+    "/payloads/artifact-replay-runtime/run_id",
+    "/payloads/artifact-replay-runtime/kind",
+    "/payloads/artifact-replay-runtime/scenario_digest",
+    "/payloads/artifact-replay-runtime/code_revision",
+    "/packet/artifacts/11/sha256",
+    "/payloads/artifact-replay-steps/run_id",
+    "/payloads/artifact-replay-steps/kind",
+    "/payloads/artifact-replay-steps/scenario_digest",
+    "/payloads/artifact-replay-steps/code_revision",
+    "/payloads/artifact-replay-steps/results",
+    "/packet/artifacts/12/sha256",
+    "/payloads/artifact-replay-a11y/run_id",
+    "/payloads/artifact-replay-a11y/kind",
+    "/payloads/artifact-replay-a11y/scenario_digest",
+    "/payloads/artifact-replay-a11y/code_revision",
+    "/payloads/artifact-replay-a11y/results",
+    "/packet/artifacts/13/sha256",
+    "/packet/artifacts/14/sha256",
+    "/payloads/artifact-replay-visual/run_id",
+    "/payloads/artifact-replay-visual/kind",
+    "/payloads/artifact-replay-visual/scenario_digest",
+    "/payloads/artifact-replay-visual/code_revision",
+    "/payloads/artifact-replay-visual/comparison",
+    "/packet/artifacts/15/sha256",
+    "/packet/artifacts/16/sha256",
+    "/packet/artifacts/17/sha256",
+    "/packet/fixes/0/before_revision",
+    "/packet/fixes/0/after_revision",
+    "/packet/fixes/0/changed_paths"
+  ],
+  "valid": true,
+  "errors": []
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence/second.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/site']
+EXIT: 0 STDOUT: {
+  "written": [
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpm1iagdt9/evidence/second.json"
+  ],
+  "filled": [],
+  "valid": true,
+  "errors": []
+}
+ STDERR: 
+.COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp9g4s2mi0/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp9g4s2mi0/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp9g4s2mi0/evidence/filled.json']
+EXIT: 0 STDOUT: {
+  "written": [
+    "/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp9g4s2mi0/evidence/filled.json"
+  ],
+  "filled": [],
+  "valid": true,
+  "errors": []
+}
+ STDERR: 
+.COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence/draft.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Output must be a new file inside the evidence root",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence/packet.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Output must be a new file inside the evidence root",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/site/new.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Output must be a new file inside the evidence root",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence/artifacts/artifact-baseline-console.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Output must be a new file inside the evidence root",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/outside.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Output must be a new file inside the evidence root",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence/artifacts/artifact-baseline-console.json/child.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Fill path traverses a file: /private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence/artifacts/artifact-baseline-console.json/child.json",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence/.ux-loop/checkpoint.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Output cannot occupy a checkpoint path",
+  "product_complete": false
+}
+ STDERR: 
+COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/evidence', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/linked/output.json', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/site']
+EXIT: 2 STDOUT: {
+  "status": "invalid",
+  "reason": "Symlink is not allowed: /private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmp7yhnm10k/linked/output.json",
+  "product_complete": false
+}
+ STDERR: 
+.COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpgwrslm8j/.ux-loop/scratch/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpgwrslm8j/.ux-loop/scratch/evidence', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpgwrslm8j/site', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpgwrslm8j/.ux-loop/scratch/evidence/filled.json']
+.COMMAND: ['/opt/homebrew/opt/python@3.14/bin/python3.14', '/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/skills/remorsearch-ux-qa/scripts/ux_loop.py', 'fill', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpx5_ohu20/evidence/draft.json', '--evidence-root', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpx5_ohu20/evidence', '--workspace', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpx5_ohu20/site', '--out', '/private/var/folders/8j/bzjp1qps3fv03pltjr7n40100000gn/T/tmpx5_ohu20/evidence/filled.json']
+................................................................................................................................................................................................................................................................................................................{"check": "actual_process_terminal_recovery", "worker_exit": 23, "cli_seconds": 0.147, "original_writes": 1, "before_other_claim": false, "after_other_claim": true, "task_passes": 0, "synthetic_fixture_only": true}
+...................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+----------------------------------------------------------------------
+Ran 1428 tests in 194.194s
+
+OK (skipped=1)

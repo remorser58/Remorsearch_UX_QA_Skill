@@ -706,11 +706,11 @@ def report_locked(work, prepared, state=None, current=None):
             "검토한 정적 복사본을 소유 headless Chromium에서 실행한 자동화 관측입니다. 실제 사용자·실제 기기·실서비스 효과는 검증하지 않았습니다.",
             "페르소나는 PRD 또는 저장된 연구에 연결된 합성 가설입니다. 현재 연구·버전·기한 검사는 출처 진위나 대표성을 보장하지 않습니다.",
             "고정한 행동과 측정 기준만 실행하며 사람처럼 스스로 판단하거나 누락된 PRD 의미를 검증하지 않습니다.",
-            "정적 파일 요청을 검토한 바이트로만 응답하고 외부 요청을 차단합니다. 코드 검토가 필수이며 OS 네트워크 샌드박스는 아닙니다.",
+            "정적 파일 요청은 검토한 바이트로만 응답합니다. Worker 경로는 검토된 OS 네트워크 차단 정책을 추가로 요구하지만 파일 접근 격리나 일반 보안을 보증하지 않으며 코드·입력 검토가 필수입니다.",
             "정상 종료는 소유 브라우저 close 응답과 Node 종료로 확인합니다. 강제 종료·응답 유실은 불확실하며 자동 재실행하지 않습니다.",
             "일부 과업 통과는 제품 준비 완료나 스웜의 실제 사용자 효과가 아닙니다. 미실행·중복·상충 관측은 보존합니다."]
         if not uncertain and not quarantined and not audit_needs_review and not counts["pending"]:
-            summary["next_action"] = "측정한 실패와 미관측 조건을 검토합니다. 실제 제품·사용자 효과 검증은 별도 범위로 남아 있습니다."
+            summary["next_action"] = "측정한 실패와 미관측 조건을 검토합니다. 관측 범위 밖의 제품 과업과 실제 사용자 효과는 미검증입니다."
     summary["task_scope_passed"] = bool(is_browser and not audit_needs_review and not uncertain and not quarantined
         and counts["passed"] == len(tasks) and current and current["coverage_summary"]["all_declared_requirements_passed"])
     return workspace.publish_report(work, summary, render(summary))

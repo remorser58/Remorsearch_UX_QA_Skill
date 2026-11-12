@@ -154,9 +154,14 @@ Each check has a unique 1–128 character ID, CSS selector (≤1000 characters),
 `property: value|text|checked`, exactly one of `expected` or `from_step`, and
 authored `severity: P0|P1|P2|P3` plus `consequence` (≤1000 characters; no field
 values). At most 64 checks. `expected` is a string (≤5000 characters, including
-empty) or a boolean for `checked`. Comparisons are exact: author `expected:""`
-for intentional reset/cleanup, or the expected normalized string for deliberate
-normalization. Missing, multiple, hidden or credential targets are unevaluable;
+empty) or a boolean for `checked`. Comparisons are exact by default: author
+`expected:""` for intentional reset/cleanup. For visible `property:"text"` only,
+an explicit `normalize_whitespace:true` compares both strings after collapsing
+Unicode whitespace runs to one space and trimming the ends. This handles NBSP
+and visual line breaks without changing raw observations, captures, casing or
+punctuation; `value` and `checked` reject the option. The native criterion records
+the authored option, and absent options retain the original field shape. Missing,
+multiple, hidden or credential targets are unevaluable;
 no label or demographic inference is used. Password/hidden/credential fields,
 URL fields and value/URL attribute predicates are excluded.
 Use plain CSS IDs/classes/structure. Literal attribute predicates, CSS escapes
@@ -395,8 +400,10 @@ reduced Chrome UA is used. `hasTouch`/`isMobile` follow `Device.has_touch` /
 
 ## Actions and real input
 
-Every action is dispatched as real browser input (CDP `Input.dispatchTouchEvent`,
-Playwright touchscreen/mouse/keyboard), never as synthetic DOM events or `el.click()`.
+Pointer and keyboard actions use real browser input (CDP `Input.dispatchTouchEvent`,
+Playwright touchscreen/mouse/keyboard), never synthetic DOM events or `el.click()`.
+Owned uploads activate the visible control through that same pointer path, then
+provide reviewed bytes to the resulting Playwright filechooser.
 
 | action | fields | touch devices | mouse devices |
 | --- | --- | --- | --- |
@@ -407,6 +414,7 @@ Playwright touchscreen/mouse/keyboard), never as synthetic DOM events or `el.cli
 | `drag` | `target`, `to`/`dx/dy`/`direction`, `hold_ms?` (250), `duration_ms?` (600) | hold, move, hold 100 ms | same with mouse |
 | `scroll` | `dx/dy` or `direction`+`distance` (content direction), `target?` | slow finger strokes, slop-compensated, corrected | mouse wheel |
 | `type` | `text`, `target?` (tapped/clicked first), `clear?`, `delay_ms?` | keyboard | keyboard |
+| `upload` | visible `target`, unique file `input`, owned fixture ID `files`, `timeout_ms?` (1..5000) | tap + intercepted filechooser | click + intercepted filechooser |
 | `press` | `key`, `hold_ms?`, `repeat?` | keyboard | keyboard |
 | `gamepad` | `key` or `keys` (the keyboard mapping), `button?` (label), `hold_ms?` | keyboard | keyboard |
 | `wait` | `ms` | | |
@@ -433,6 +441,36 @@ programmatically and takes a **pre-action snapshot** (note
 `before`, so geometry always matches what was on screen when the input happened.
 Snapshot ids are `S-<run_id>-<nnn>` in capture order; `step_index` is the step
 they belong to (0 = initial load), so a step can own two snapshots.
+
+### Owned synthetic file selection
+
+`upload` is available only when a reviewed host constructs `WebSession` with the
+separate top-level `ownedUploads` Map. Ordinary CLI and serve sessions have no
+registry and reject this action before clicking. Registry values contain exactly
+`{name, mimeType, buffer, sha256}`; actions contain only 1..16 unique fixture IDs:
+
+```json
+{"action":"upload","target":".sheet-body > button.btn-hero","input":".sheet-body input","files":["synthetic-previous"],"timeout_ms":5000}
+```
+
+Both selectors must be plain CSS without literals or selector engines. The
+driver checks each selected Buffer against its SHA-256 before interacting with
+the page, with a 16 MiB per-file and 32 MiB total limit. It copies those bytes,
+checks that the target and its ancestors are visible, the control is enabled and
+uncovered, and verifies the unique
+file input is enabled. It arms a bounded filechooser listener before the click,
+then confirms the chooser belongs to that same page and input before `setFiles`.
+A missing chooser, changed/disabled input, wrong registry or selection failure
+produces a fixed error code. An upload cannot be a task check's `from_step`;
+that relationship remains limited to authored `type` actions.
+
+Successful file selection records `step.file_selection` with method
+`playwright_filechooser`, the input selector, and file metadata
+`{id, name, mime_type, size_bytes, sha256}`. It records no raw bytes or filesystem
+paths. Existing redaction also applies to display names. This evidence confirms
+the headless input operation; subsequent measured task checks must establish
+import success or recovery. It does not test an OS file dialog or a real person's
+ability to find a file.
 
 ## What is measured
 

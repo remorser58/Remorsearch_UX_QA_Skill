@@ -366,6 +366,170 @@ class BrowserJourneyAdmissionTests(unittest.TestCase):
         self.assertEqual(result["tasks"][1]["status"], "pending")
         self.assertEqual(result["tasks"][1]["attempts"], 0)
 
+    def configure_owned_upload_documents(self, mutation=None, *, redact=False):
+        """Extend the fake parser documents only, never execute or claim an upload."""
+        payload = b"PK synthetic admission fixture"
+        atomic(self.source / "owned-input.zip", payload)
+        atomic(self.source / "owned-worker.js", b"onmessage = () => postMessage('synthetic');")
+        name = "sensitive-synthetic.zip" if redact else "owned-input.zip"
+        self.adapter["uploads"] = [dict(id="owned-previous", path="owned-input.zip",
+                                       name=name, mime_type="application/zip")]
+        self.adapter["workers"] = ["owned-worker.js"]
+        for journey in self.adapter["journeys"]:
+            journey["scenario"]["steps"][1] = dict(action="upload", target="#choose", input="#archive",
+                                                  files=["owned-previous"], timeout_ms=100)
+            if redact:
+                journey["scenario"]["steps"][0]["text"] = name
+                journey["scenario"]["success"]["task_checks"][0]["redact"] = True
+        self.save_adapter()
+        workspace.prepare(self.source, self.work,
+                          reviewed_files=fixture.FILES + ["owned-input.zip", "owned-worker.js"])
+
+        def authored_metadata(native, docs):
+            request = self.calls[-1]
+            entry = request["uploads"][0]
+            native["owned_execution"] = dict(
+                uploads=[{key: entry[key] for key in ("id", "mime_type", "size_bytes", "sha256")}],
+                workers=copy.deepcopy(request["workers"]),
+                network_isolation=dict(policy=browser_run.WORKER_POLICY,
+                    profile_sha256=byte_digest(browser_run.NETWORK_PROFILE.encode()), bind_denied=True))
+            native["steps"][1]["file_selection"] = dict(method="playwright_filechooser", input="#archive", files=[
+                dict(id=entry["id"], name="[redacted]" if redact else entry["name"],
+                     mime_type=entry["mime_type"], size_bytes=entry["size_bytes"], sha256=entry["sha256"])])
+            if mutation:
+                mutation(native, docs)
+        self.mutate = authored_metadata
+
+    def assert_upload_evidence_rejected(self):
+        with self.mocked():
+            result = self.execute()
+        self.assertEqual(result["counts"]["passed"], 0)
+        self.assertEqual(result["counts"]["inconclusive"], 1)
+        self.assertEqual(result["tasks"][0]["result"]["steps"], [])
+        self.assertIn("invalid_browser_evidence", result["tasks"][0]["reason"])
+        self.assertEqual(len(self.calls), 1)
+
+    def test_owned_upload_metadata_enters_receipt_and_completed_readback_without_dispatch(self):
+        self.configure_owned_upload_documents()
+        with self.mocked():
+            first = self.execute()
+        self.assertEqual(first["counts"]["failed"], 1)
+        self.assertEqual(first["counts"]["passed"], 1)
+        self.assertEqual(first["evidence_audit"]["integrity"], "consistent")
+        self.assertTrue(all(row["attempts"] == 1 for row in first["tasks"]))
+        self.assertFalse(first["real_user_evidence"])
+        with patch.object(browser_run, "invoke", side_effect=AssertionError("redispatch")), \
+                patch.object(browser_run, "verify_runtime", side_effect=AssertionError("runtime reread")):
+            self.assertEqual(first, local_run.execute(self.work))
+            self.assertEqual(first, workspace.status(self.work))
+
+    def test_owned_upload_selection_requires_exact_id_name_mime_size_hash_and_input(self):
+        changes = [
+            ("missing-selection", lambda n, d: n["steps"][1].pop("file_selection")),
+            ("method", lambda n, d: n["steps"][1]["file_selection"].update(method="direct-state-write")),
+            ("input", lambda n, d: n["steps"][1]["file_selection"].update(input="#foreign")),
+            ("missing-hash", lambda n, d: n["steps"][1]["file_selection"]["files"][0].pop("sha256")),
+            ("hash", lambda n, d: n["steps"][1]["file_selection"]["files"][0].update(sha256="f" * 64)),
+            ("size", lambda n, d: n["steps"][1]["file_selection"]["files"][0].update(size_bytes=1)),
+            ("id", lambda n, d: n["steps"][1]["file_selection"]["files"][0].update(id="foreign")),
+            ("name", lambda n, d: n["steps"][1]["file_selection"]["files"][0].update(name="foreign.zip")),
+            ("mime", lambda n, d: n["steps"][1]["file_selection"]["files"][0].update(mime_type="text/plain")),
+            ("extra-file", lambda n, d: n["steps"][1]["file_selection"]["files"].append(
+                copy.deepcopy(n["steps"][1]["file_selection"]["files"][0]))),
+            ("raw-buffer", lambda n, d: n["steps"][1]["file_selection"]["files"][0].update(buffer="not-evidence")),
+        ]
+        for label, mutation in changes:
+            with self.subTest(change=label):
+                self.new_case()
+                self.configure_owned_upload_documents(mutation)
+                # fake_invoke rehashes the altered native run: a matching wrapper
+                # digest must not replace semantic binding to the authored input.
+                self.assert_upload_evidence_rejected()
+
+    def test_owned_execution_scope_requires_minimal_uploads_exact_workers_and_policy(self):
+        changes = [
+            ("missing", lambda n, d: n.pop("owned_execution")),
+            ("upload-id", lambda n, d: n["owned_execution"]["uploads"][0].update(id="foreign")),
+            ("upload-hash", lambda n, d: n["owned_execution"]["uploads"][0].update(sha256="f" * 64)),
+            ("upload-size", lambda n, d: n["owned_execution"]["uploads"][0].update(size_bytes=1)),
+            ("filename-leak", lambda n, d: n["owned_execution"]["uploads"][0].update(name="sensitive-synthetic.zip")),
+            ("path-leak", lambda n, d: n["owned_execution"]["uploads"][0].update(path="owned-input.zip")),
+            ("worker-hash", lambda n, d: n["owned_execution"]["workers"].update({"owned-worker.js": "f" * 64})),
+            ("foreign-worker", lambda n, d: n["owned_execution"]["workers"].update({"foreign.js": "f" * 64})),
+            ("policy", lambda n, d: n["owned_execution"]["network_isolation"].update(policy="allow-network")),
+            ("profile", lambda n, d: n["owned_execution"]["network_isolation"].update(profile_sha256="f" * 64)),
+            ("probe", lambda n, d: n["owned_execution"]["network_isolation"].update(bind_denied=False)),
+        ]
+        for label, mutation in changes:
+            with self.subTest(change=label):
+                self.new_case()
+                self.configure_owned_upload_documents(mutation)
+                self.assert_upload_evidence_rejected()
+
+    def test_undeclared_owned_execution_and_upload_on_a_different_action_are_refused(self):
+        self.mutate = lambda n, d: n.update(owned_execution=dict(
+            uploads=[dict(id="foreign", mime_type="application/zip", size_bytes=1, sha256="f" * 64)],
+            workers={}, network_isolation=None))
+        self.assert_upload_evidence_rejected()
+        self.new_case()
+        self.configure_owned_upload_documents(lambda n, d: n["steps"][0].update(
+            file_selection=copy.deepcopy(n["steps"][1]["file_selection"])))
+        self.assert_upload_evidence_rejected()
+
+    def test_redacted_upload_filename_never_reappears_in_native_owned_execution(self):
+        self.configure_owned_upload_documents(redact=True)
+        with self.mocked():
+            result = self.execute()
+        self.assertEqual(result["counts"]["failed"], 1)
+        self.assertEqual(result["counts"]["passed"], 1)
+        self.assertEqual(result["evidence_audit"]["integrity"], "consistent")
+        for request in self.calls:
+            raw = (Path(request["output"]) / "run.json").read_bytes()
+            native = json.loads(raw)
+            self.assertNotIn(b"sensitive-synthetic.zip", raw)
+            self.assertEqual(native["steps"][1]["file_selection"]["files"][0]["name"], "[redacted]")
+            self.assertEqual(set(native["owned_execution"]["uploads"][0]),
+                             {"id", "mime_type", "size_bytes", "sha256"})
+
+    def test_readback_rejects_upload_mutation_even_after_wrapper_and_artifact_rehash(self):
+        self.configure_owned_upload_documents()
+        with self.mocked():
+            result = self.execute()
+        state = local_run._read(self.work)
+        row = next(row for row in result["tasks"] if row["status"] == "passed")
+        claim = state["dispatches"][row["task_id"]]["claim"]
+        receipt = copy.deepcopy(dict(row["result"], outcome=row["status"], reason=row["reason"]))
+        root = self.work / local_run.DIRECTORY / "run"
+        run_artifact = next(a for a in receipt["artifacts"] if a["id"] == "browser-run")
+        native = json.loads((root / run_artifact["path"]).read_bytes())
+        native["steps"][1]["file_selection"]["files"][0]["sha256"] = "f" * 64
+        raw = canonical(native)
+        atomic(root / run_artifact["path"], raw)
+        run_artifact["sha256"] = byte_digest(raw)
+        log_artifact = next(a for a in receipt["artifacts"] if a["id"] == "execution")
+        log = json.loads((root / log_artifact["path"]).read_bytes())
+        log["browser_response"]["run"]["sha256"] = run_artifact["sha256"]
+        response = canonical(log["browser_response"])
+        log["diagnostic"].update(stdout_sha256=byte_digest(response), stdout_bytes=len(response))
+        raw = canonical(log)
+        atomic(root / log_artifact["path"], raw)
+        log_artifact["sha256"] = byte_digest(raw)
+        with patch.object(browser_run, "invoke", side_effect=AssertionError("redispatch")):
+            with self.assertRaisesRegex(ValueError, "browser_upload_binding"):
+                browser_run.audit(self.work, state, claim, receipt)
+
+    def test_owned_activity_rejects_foreign_worker_and_changed_served_bytes(self):
+        forged = [
+            dict(served_files=[], started_workers=[dict(path="foreign.js", sha256=None, count=1)]),
+            dict(served_files=[dict(path="index.html", sha256="f" * 64, count=1)], started_workers=[]),
+        ]
+        for activity in forged:
+            with self.subTest(activity=activity):
+                self.new_case()
+                self.configure_owned_upload_documents(lambda native, docs: native.update(
+                    owned_browser_activity=copy.deepcopy(activity)))
+                self.assert_upload_evidence_rejected()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,208 @@
+TAP version 13
+# Subtest: binds fixed measured checkpoints to the reviewed scenario
+ok 1 - binds fixed measured checkpoints to the reviewed scenario
+  ---
+  duration_ms: 1.7545
+  type: 'test'
+  ...
+# Subtest: rejects other URLs, credentials, ports, fragments and unreviewed files
+ok 2 - rejects other URLs, credentials, ports, fragments and unreviewed files
+  ---
+  duration_ms: 0.727
+  type: 'test'
+  ...
+# Subtest: rejects path traversal, unknown static types, oversized input maps and missing bindings
+ok 3 - rejects path traversal, unknown static types, oversized input maps and missing bindings
+  ---
+  duration_ms: 0.26225
+  type: 'test'
+  ...
+# Subtest: rejects unmeasured success, missing checkpoints and cross-build claims
+ok 4 - rejects unmeasured success, missing checkpoints and cross-build claims
+  ---
+  duration_ms: 0.556209
+  type: 'test'
+  ...
+# Subtest: serves only reviewed bytes and never offers a network fallback
+ok 5 - serves only reviewed bytes and never offers a network fallback
+  ---
+  duration_ms: 0.159
+  type: 'test'
+  ...
+# Subtest: worker allowance is exact and leaves network connections forbidden
+ok 6 - worker allowance is exact and leaves network connections forbidden
+  ---
+  duration_ms: 0.290042
+  type: 'test'
+  ...
+# Subtest: upload declarations cannot smuggle paths, unknown IDs, excessive bytes or worker URLs
+ok 7 - upload declarations cannot smuggle paths, unknown IDs, excessive bytes or worker URLs
+  ---
+  duration_ms: 0.436458
+  type: 'test'
+  ...
+# Subtest: binary fixtures require current regular owned bytes and refuse changed hashes or links
+ok 8 - binary fixtures require current regular owned bytes and refuse changed hashes or links
+  ---
+  duration_ms: 1.882583
+  type: 'test'
+  ...
+# Subtest: a plain Node invocation cannot claim the Worker network-denial capability
+ok 9 - a plain Node invocation cannot claim the Worker network-denial capability
+  ---
+  duration_ms: 3.73775
+  type: 'test'
+  ...
+# Subtest: preflight validates exact source bytes without output or a browser runtime
+ok 10 - preflight validates exact source bytes without output or a browser runtime
+  ---
+  duration_ms: 71.269417
+  type: 'test'
+  ...
+# Subtest: unrouted transport guard removes constructors and prevents restoration before page code
+ok 11 - unrouted transport guard removes constructors and prevents restoration before page code
+  ---
+  duration_ms: 0.959792
+  type: 'test'
+  ...
+# Subtest: accepts an owned upload action with a visible target and a separate file input
+ok 12 - accepts an owned upload action with a visible target and a separate file input
+  ---
+  duration_ms: 1.134667
+  type: 'test'
+  ...
+# Subtest: upload remains ineligible as a from_step text source
+ok 13 - upload remains ineligible as a from_step text source
+  ---
+  duration_ms: 0.521084
+  type: 'test'
+  ...
+# Subtest: rejects paths, URLs, buffers, duplicate IDs, ambiguous selectors and unbounded waits in actions
+ok 14 - rejects paths, URLs, buffers, duplicate IDs, ambiguous selectors and unbounded waits in actions
+  ---
+  duration_ms: 0.867791
+  type: 'test'
+  ...
+# Subtest: copies bound bytes and exposes only exact file-selection metadata
+ok 15 - copies bound bytes and exposes only exact file-selection metadata
+  ---
+  duration_ms: 0.519166
+  type: 'test'
+  ...
+# Subtest: refuses missing, unbound, malformed or changed registry entries before any page interaction
+ok 16 - refuses missing, unbound, malformed or changed registry entries before any page interaction
+  ---
+  duration_ms: 0.947208
+  type: 'test'
+  ...
+# Subtest: enforces per-file and total byte limits without invoking the browser
+ok 17 - enforces per-file and total byte limits without invoking the browser
+  ---
+  duration_ms: 27.458375
+  type: 'test'
+  ...
+# Subtest: arms the chooser before a real dispatch callback and transfers only the reviewed payload
+ok 18 - arms the chooser before a real dispatch callback and transfers only the reviewed payload
+  ---
+  duration_ms: 1.2825
+  type: 'test'
+  ...
+# Subtest: refuses hidden, covered or disabled click controls and invalid file inputs before clicking
+ok 19 - refuses hidden, covered or disabled click controls and invalid file inputs before clicking
+  ---
+  duration_ms: 4.302
+  type: 'test'
+  ...
+# Subtest: refuses a foreign chooser, another input, or an input disabled after activation
+ok 20 - refuses a foreign chooser, another input, or an input disabled after activation
+  ---
+  duration_ms: 1.149333
+  type: 'test'
+  ...
+# Subtest: an invisible ancestor cannot activate upload even when the button receives hit tests
+ok 21 - an invisible ancestor cannot activate upload even when the button receives hit tests
+  ---
+  duration_ms: 1.125
+  type: 'test'
+  ...
+# Subtest: a missing chooser times out without file transfer or a retained listener
+ok 22 - a missing chooser times out without file transfer or a retained listener
+  ---
+  duration_ms: 13.184042
+  type: 'test'
+  ...
+# Subtest: click, DOM and selection failures report fixed codes without private Playwright errors
+ok 23 - click, DOM and selection failures report fixed codes without private Playwright errors
+  ---
+  duration_ms: 13.331584
+  type: 'test'
+  ...
+# Subtest: ordinary WebSession cannot use an action or options object as an upload registry
+ok 24 - ordinary WebSession cannot use an action or options object as an upload registry
+  ---
+  duration_ms: 1.540708
+  type: 'test'
+  ...
+# Subtest: native input records metadata through performInput while preserving existing redaction
+ok 25 - native input records metadata through performInput while preserving existing redaction
+  ---
+  duration_ms: 2.05625
+  type: 'test'
+  ...
+# Subtest: accepts explicit whitespace normalization on a text task check
+ok 26 - accepts explicit whitespace normalization on a text task check
+  ---
+  duration_ms: 0.201917
+  type: 'test'
+  ...
+# Subtest: accepts sixteen owned files needed by a reviewed multi-file export
+ok 27 - accepts sixteen owned files needed by a reviewed multi-file export
+  ---
+  duration_ms: 0.14225
+  type: 'test'
+  ...
+# Subtest: whitespace option is a boolean restricted to text checks
+ok 28 - whitespace option is a boolean restricted to text checks
+  ---
+  duration_ms: 0.194417
+  type: 'test'
+  ...
+# Subtest: whitespace normalization compares both strings only when explicitly enabled
+ok 29 - whitespace normalization compares both strings only when explicitly enabled
+  ---
+  duration_ms: 1.665667
+  type: 'test'
+  ...
+# Subtest: whitespace normalization does not hide missing words, punctuation or casing
+ok 30 - whitespace normalization does not hide missing words, punctuation or casing
+  ---
+  duration_ms: 1.840833
+  type: 'test'
+  ...
+# Subtest: text checks may normalize an authored type source without changing source matching
+ok 31 - text checks may normalize an authored type source without changing source matching
+  ---
+  duration_ms: 0.485709
+  type: 'test'
+  ...
+# Subtest: raw text changes across a capture remain unevaluable despite normalized equivalence
+ok 32 - raw text changes across a capture remain unevaluable despite normalized equivalence
+  ---
+  duration_ms: 0.418792
+  type: 'test'
+  ...
+# Subtest: unvisited normalized checkpoints preserve the flag without inventing a pass
+ok 33 - unvisited normalized checkpoints preserve the flag without inventing a pass
+  ---
+  duration_ms: 0.125625
+  type: 'test'
+  ...
+1..33
+# tests 33
+# suites 0
+# pass 33
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 127.843042

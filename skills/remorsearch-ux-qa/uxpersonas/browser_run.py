@@ -1,8 +1,9 @@
 """Reviewed static browser journeys using the existing measured web driver.
 
 The host owns source review and semantic task selection. This module connects
-current saved personas to bounded browser observations; it is not a user study,
-an OS sandbox, a general URL launcher or a model/agent transport.
+current saved personas to bounded browser observations; it is not a user study
+or a general URL launcher. Reviewed Workers additionally require a frozen macOS
+process network-denial policy, not a general filesystem/OS sandbox.
 """
 from __future__ import annotations
 
@@ -27,6 +28,9 @@ BRIDGE = DRIVER / "journey_bridge.mjs"
 ORIGIN = "https://remorsearch.invalid/"
 STATIC = {".html", ".css", ".js", ".mjs", ".svg", ".png", ".jpg", ".jpeg", ".webp", ".woff", ".woff2"}
 MAX_OUTPUT = 256 * 1024
+SANDBOX = "/usr/bin/sandbox-exec"
+NETWORK_PROFILE = "(version 1)(allow default)(deny network*)"
+WORKER_POLICY = "macos-seatbelt-deny-network-v1"
 
 
 def stop(code, reason):
@@ -40,7 +44,8 @@ def manifest(prepared, plan):
         stop("browser_source_changed", "검토한 브라우저 계획 파일이 바뀌었습니다.")
     adapter = loads(raw)
     tasks = {t["id"]: t for t in plan["tasks"]}
-    if (not isinstance(adapter, dict) or set(adapter) != {"schema_version", "journeys"}
+    if (not isinstance(adapter, dict) or not {"schema_version", "journeys"} <= set(adapter)
+            or set(adapter) - {"schema_version", "journeys", "uploads", "workers"}
             or adapter["schema_version"] != ADAPTER or not isinstance(adapter["journeys"], list)
             or len(adapter["journeys"]) != len(tasks)):
         stop("browser_manifest", "각 과제에 정확히 하나의 검토된 브라우저 여정이 필요합니다.")
@@ -48,6 +53,33 @@ def manifest(prepared, plan):
              if Path(name).suffix in STATIC and prepared["destinations"][name] == "product/" + name}
     if not 1 <= len(files) <= 64:
         stop("browser_files", "브라우저가 읽을 검토된 정적 파일 범위가 없습니다.")
+    uploads, used, total = [], set(), 0
+    declarations = adapter.get("uploads", [])
+    if not isinstance(declarations, list) or len(declarations) > 32:
+        stop("browser_uploads", "합성 업로드 목록은 검토한 파일 32개 이내여야 합니다.")
+    for entry in declarations:
+        if (not isinstance(entry, dict) or set(entry) != {"id", "path", "name", "mime_type"}
+                or not isinstance(entry["id"], str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", entry["id"])
+                or entry["id"] in used or not isinstance(entry["path"], str)
+                or entry["path"] not in prepared["inputs"]
+                or prepared["destinations"][entry["path"]] != "product/" + entry["path"]
+                or not isinstance(entry["name"], str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,254}", entry["name"])
+                or not isinstance(entry["mime_type"], str) or len(entry["mime_type"]) > 127
+                or not re.fullmatch(r"[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*", entry["mime_type"])):
+            stop("browser_uploads", "업로드 식별자·파일명·검토된 경로가 맞지 않습니다.")
+        data = workspace.read_file(Path(prepared["source"]), entry["path"], sensitive_check=True)
+        if byte_digest(data) != prepared["inputs"][entry["path"]]:
+            stop("browser_source_changed", "검토한 합성 업로드 파일이 바뀌었습니다.")
+        total += len(data)
+        if total > 32 * 1024 * 1024:
+            stop("browser_uploads", "검토한 합성 업로드 합계가 32 MiB를 넘었습니다.")
+        used.add(entry["id"])
+        uploads.append(dict(entry, sha256=byte_digest(data), size_bytes=len(data)))
+    workers = adapter.get("workers", [])
+    if (not isinstance(workers, list) or len(workers) > 8
+            or any(not isinstance(name, str) or name not in files or Path(name).suffix not in {".js", ".mjs"} for name in workers)
+            or len(set(workers)) != len(workers)):
+        stop("browser_workers", "Worker는 검토된 정확한 JavaScript 파일만 허용합니다.")
     journeys = {}
     for journey in adapter["journeys"]:
         if not isinstance(journey, dict) or set(journey) != {"task_id", "scenario", "device_id", "criteria"}:
@@ -87,7 +119,8 @@ def manifest(prepared, plan):
         if swarm.clean(journey) != journey:
             stop("browser_privacy", "브라우저 계획에 개인 식별 형식이 있습니다.")
         journeys[tid] = copy.deepcopy(journey)
-    return dict(journeys=journeys, files=files, manifest_sha256=byte_digest(raw))
+    return dict(journeys=journeys, files=files, uploads=uploads,
+                workers={name: files[name] for name in workers}, manifest_sha256=byte_digest(raw))
 
 
 def _file_hash(path):
@@ -130,7 +163,20 @@ def environment(runtime, cwd):
     return env
 
 
-def runtime(work):
+def command(config, *arguments):
+    """One frozen launcher for preflight and dispatch; no unsandboxed fallback."""
+    prefix = []
+    if config.get("isolation"):
+        policy = config["isolation"]
+        if (policy.get("policy") != WORKER_POLICY or policy.get("launcher") != SANDBOX
+                or policy.get("profile") != NETWORK_PROFILE
+                or policy.get("profile_sha256") != byte_digest(NETWORK_PROFILE.encode())):
+            stop("browser_worker_isolation", "Worker 네트워크 격리 정책이 고정값과 다릅니다.")
+        prefix = [SANDBOX, "-p", NETWORK_PROFILE]
+    return prefix + [config["node"], str(BRIDGE), *arguments]
+
+
+def runtime(work, *, workers=False):
     node = os.environ.get("REMORSEARCH_JOURNEY_NODE") or shutil.which("node")
     if not node or not Path(node).is_file():
         stop("browser_runtime", "Node 22와 고정된 Playwright·Chromium이 준비되지 않았습니다.")
@@ -145,7 +191,7 @@ def runtime(work):
     module_dirs = [str(Path(p).expanduser().resolve()) for p in os.environ.get("NODE_PATH", "").split(os.pathsep) if p]
     config = {"node": node, "NODE_PATH": os.pathsep.join(module_dirs), "PLAYWRIGHT_BROWSERS_PATH": cache}
     try:
-        result = subprocess.run([node, str(BRIDGE), "--probe"], env=environment(config, work),
+        result = subprocess.run([node, str(BRIDGE), "--probe-workers" if workers else "--probe"], env=environment(config, work),
                                 cwd=work, capture_output=True, timeout=10)
         info = loads(result.stdout)
         if (result.returncode or len(result.stdout) > 16384 or len(result.stderr) > 16384
@@ -160,10 +206,27 @@ def runtime(work):
                   chromium_sha256=_file_hash(info["chromium_executable"]),
                   playwright_sha256=_package_hash(info["playwright_path"]),
                   playwright_core_sha256=_package_hash(info["playwright_core_path"]))
+    if workers:
+        if os.sys.platform != "darwin" or not Path(SANDBOX).is_file():
+            stop("browser_worker_isolation", "이 환경에는 검증된 Worker 네트워크 격리 실행기가 없습니다.")
+        config["isolation"] = dict(policy=WORKER_POLICY, launcher=SANDBOX, launcher_sha256=_file_hash(SANDBOX),
+            profile=NETWORK_PROFILE, profile_sha256=byte_digest(NETWORK_PROFILE.encode()))
+        try:
+            checked = subprocess.run(command(config, "--probe-isolation"), env=environment(config, work),
+                                     cwd=work, capture_output=True, timeout=10)
+            if checked.returncode or loads(checked.stdout) != {
+                    "schema_version": "ux-journey-worker-isolation.v1", "policy": WORKER_POLICY,
+                    "profile_sha256": byte_digest(NETWORK_PROFILE.encode()), "bind_denied": True}:
+                raise ValueError()
+        except (OSError, ValueError, subprocess.TimeoutExpired):
+            stop("browser_worker_isolation", "Worker 실행기의 네트워크 차단을 확인하지 못했습니다. 실행하지 않았습니다.")
     return config
 
 
 def verify_runtime(config):
+    command(config)
+    if config.get("isolation") and _file_hash(SANDBOX) != config["isolation"]["launcher_sha256"]:
+        stop("browser_runtime_changed", "고정한 Worker 격리 실행기가 바뀌었습니다.")
     info = config["info"]
     if (_file_hash(config["node"]) != config["node_sha256"] or _driver_hash() != config["driver_sha256"]
             or _file_hash(info["chromium_executable"]) != config["chromium_sha256"]
@@ -178,12 +241,13 @@ def request_for(work, browser, task_id, binding, output, seconds):
     scenario["surface"]["build_id"] = binding["build_sha256"]
     return dict(schema_version="ux-journey-browser-request.v1", binding=binding, source=str(work / "product"),
                 files=browser["files"], output=str(output), scenario=scenario,
-                device_id=journey["device_id"], timeout_seconds=seconds)
+                device_id=journey["device_id"], timeout_seconds=seconds,
+                uploads=browser.get("uploads", []), workers=browser.get("workers", {}))
 
 
 def prepare(work, prepared, plan, personas, build_hash):
     browser = manifest(prepared, plan)
-    config = runtime(work)
+    config = runtime(work, workers=bool(browser["workers"]))
     for task in plan["tasks"]:
         record = personas["state"]["entries"][plan["product_id"] + "/" + task["persona_id"]][-1]
         # Non-executable preflight input, never a claim, receipt or observation.
@@ -195,7 +259,7 @@ def prepare(work, prepared, plan, personas, build_hash):
         if len(raw) > MAX_OUTPUT:
             stop("browser_request", "브라우저 여정 요청이 허용 크기를 넘었습니다.")
         try:
-            checked = subprocess.run([config["node"], str(BRIDGE), "--validate"], input=raw,
+            checked = subprocess.run(command(config, "--validate"), input=raw,
                 env=environment(config, work), cwd=work, capture_output=True, timeout=10)
             if checked.returncode or loads(checked.stdout) != {"schema_version": "ux-journey-browser-validation.v1", "valid": True}:
                 raise ValueError()
@@ -224,6 +288,8 @@ def invoke(browser, cwd, request, seconds, on_spawn):
     """Bounded pipes; graceful close acknowledgement is required for descendants."""
     from .local_run import _cancellation
     config, payload = browser["runtime"], canonical(request)
+    if request.get("workers") and not config.get("isolation"):
+        stop("browser_worker_isolation", "Worker 요청에 고정한 네트워크 격리 실행기가 없습니다.")
     if len(payload) > MAX_OUTPUT:
         stop("browser_request", "브라우저 실행 요청이 허용 크기를 넘었습니다.")
     start, process = time.monotonic(), None
@@ -231,7 +297,7 @@ def invoke(browser, cwd, request, seconds, on_spawn):
     problem, forced = None, False
     try:
         with _cancellation(), selectors.DefaultSelector() as selector:
-            process = subprocess.Popen([config["node"], str(BRIDGE)], cwd=cwd,
+            process = subprocess.Popen(command(config), cwd=cwd,
                 env=environment(config, cwd), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, start_new_session=True, close_fds=True)
             on_spawn()
@@ -341,7 +407,30 @@ def observations(run_root, state, claim, response, diagnostic):
         return raw
     raw = artifact("run.json", "browser-run", "execution_log", response["run"]["sha256"])
     native = loads(raw)
+    if browser.get("uploads") or browser.get("workers") or "owned_execution" in native:
+        isolation = (dict(policy=WORKER_POLICY, profile_sha256=byte_digest(NETWORK_PROFILE.encode()), bind_denied=True)
+                     if browser.get("workers") else None)
+        minimal_uploads = [{key: entry[key] for key in ("id", "mime_type", "size_bytes", "sha256")}
+                           for entry in browser.get("uploads", [])]
+        if native.get("owned_execution") != dict(uploads=minimal_uploads,
+                workers=browser.get("workers", {}), network_isolation=isolation):
+            raise ValueError("browser_owned_execution")
     expected_run = "R-" + binding["operation_id"]
+    if "owned_browser_activity" in native:
+        activity = native["owned_browser_activity"]
+        if not isinstance(activity, dict) or set(activity) != {"served_files", "started_workers"}:
+            raise ValueError("browser_activity_shape")
+        for field, scope in (("served_files", browser["files"]), ("started_workers", browser.get("workers", {}))):
+            rows, seen = activity[field], set()
+            if not isinstance(rows, list) or len(rows) > len(scope):
+                raise ValueError("browser_activity_scope")
+            for row in rows:
+                if (not isinstance(row, dict) or set(row) != {"path", "sha256", "count"}
+                        or not isinstance(row["path"], str) or row["path"] in seen or row["path"] not in scope
+                        or scope.get(row["path"]) != row["sha256"]
+                        or type(row["count"]) is not int or not 1 <= row["count"] <= 1024):
+                    raise ValueError("browser_activity_binding")
+                seen.add(row["path"])
     driver = native.get("driver", {})
     if (native.get("schema_version") != "ergo-run.v1" or native.get("run_id") != expected_run
             or native.get("scenario_id") != scenario["scenario_id"] or native.get("profile_id") != binding["persona_id"]
@@ -397,6 +486,17 @@ def observations(run_root, state, claim, response, diagnostic):
                 or any(actual.get(k) != ("[redacted]" if k == "text" and (authored.get("redact") or i in redacted_inputs) else displayed(v, k))
                        for k, v in authored.items())):
             raise ValueError("browser_step_binding")
+        if authored["action"] == "upload" and (step["result"] == "ok" or "file_selection" in step):
+            registry = {entry["id"]: entry for entry in browser.get("uploads", [])}
+            selected = []
+            for identity in authored["files"]:
+                entry = registry[identity]
+                selected.append(dict(id=identity, name=displayed(entry["name"], "name"),
+                    mime_type=entry["mime_type"], size_bytes=entry["size_bytes"], sha256=entry["sha256"]))
+            if step.get("file_selection") != dict(method="playwright_filechooser", input=authored["input"], files=selected):
+                raise ValueError("browser_upload_binding")
+        elif authored["action"] != "upload" and "file_selection" in step:
+            raise ValueError("browser_unexpected_upload")
         before = captures.get(step.get("before"))
         previous_id = snapshots[0]["snapshot_id"] if i == 1 else executed[i - 1]["after"]
         previous = captures.get(previous_id)
@@ -439,6 +539,8 @@ def observations(run_root, state, claim, response, diagnostic):
         item = by_id[ref["check_id"]]
         if any(item.get(k) != check[k] for k in ("id", "selector", "property", "severity")) or item.get("checkpoint") != check["after_step"]:
             raise ValueError("browser_check_binding")
+        if item.get("normalize_whitespace", False) is not check.get("normalize_whitespace", False):
+            raise ValueError("browser_check_normalization")
         if item.get("consequence") != displayed(check["consequence"], "consequence"):
             raise ValueError("browser_check_description")
         status = {"pass": "passed", "fail": "failed", "unevaluable": "not_run"}.get(item.get("result"))

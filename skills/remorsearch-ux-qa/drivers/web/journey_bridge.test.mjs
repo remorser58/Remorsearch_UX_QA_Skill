@@ -6,7 +6,8 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import vm from 'node:vm';
-import { validateRequest, routeReply, disableUnroutedTransports } from './journey_bridge.mjs';
+import os from 'node:os';
+import { validateRequest, routeReply, disableUnroutedTransports, readReviewedUploads, requireWorkerIsolation } from './journey_bridge.mjs';
 
 function request() {
   return {
@@ -80,6 +81,64 @@ test('serves only reviewed bytes and never offers a network fallback', () => {
     ['https://remorsearch.invalid/index.html?secret=value', 'GET'], ['file:///index.html', 'GET'],
     ['https://remorsearch.invalid/missing.js', 'GET'], ['https://remorsearch.invalid/%2e%2e/index.html', 'GET'],
   ]) assert.equal(routeReply(files, url, method), null);
+});
+
+test('worker allowance is exact and leaves network connections forbidden', () => {
+  const doc = request();
+  doc.files['worker.js'] = 'e'.repeat(64);
+  doc.workers = { 'worker.js': 'e'.repeat(64) };
+  doc.uploads = [{ id: 'owned-zip', path: 'inputs/owned.zip', name: 'owned.zip',
+    mime_type: 'application/zip', size_bytes: 12, sha256: 'f'.repeat(64) }];
+  doc.scenario.steps[1] = { action: 'upload', target: '#choose', input: '#files', files: ['owned-zip'], timeout_ms: 5000 };
+  assert.equal(validateRequest(doc).scenario.steps[1].action, 'upload');
+  const files = new Map([['worker.js', { body: Buffer.from('postMessage(1)'), contentType: 'text/javascript' }]]);
+  const csp = routeReply(files, 'https://remorsearch.invalid/worker.js', 'GET', doc.workers).headers['content-security-policy'];
+  assert.match(csp, /worker-src https:\/\/remorsearch.invalid\/worker.js;/);
+  assert.match(csp, /connect-src 'none'/);
+  doc.workers['worker.js'] = 'a'.repeat(64);
+  assert.throws(() => validateRequest(doc));
+});
+
+test('upload declarations cannot smuggle paths, unknown IDs, excessive bytes or worker URLs', () => {
+  const declared = () => {
+    const d = request();
+    d.uploads = [{ id: 'owned', path: 'inputs/owned.zip', name: 'owned.zip',
+      mime_type: 'application/zip', size_bytes: 3, sha256: 'a'.repeat(64) }];
+    d.scenario.steps[1] = { action: 'upload', target: '#choose', input: '#files', files: ['owned'] };
+    return d;
+  };
+  assert.doesNotThrow(() => validateRequest(declared()));
+  for (const change of [
+    d => { d.uploads[0].path = '../private.zip'; },
+    d => { d.uploads[0].name = '/private.zip'; },
+    d => { d.uploads[0].sha256 = 'unknown'; },
+    d => { d.uploads[0].size_bytes = 16 * 1024 * 1024 + 1; },
+    d => { d.uploads.push({ ...d.uploads[0] }); },
+    d => { d.scenario.steps[1].files = ['foreign']; },
+    d => { d.workers = { 'https://remote.invalid/worker.js': 'a'.repeat(64) }; },
+    d => { d.workers = { 'unreviewed.js': undefined }; },
+    d => { d.workers = { 'index.html': d.files['index.html'] }; },
+  ]) { const d = declared(); change(d); assert.throws(() => validateRequest(d)); }
+});
+
+test('binary fixtures require current regular owned bytes and refuse changed hashes or links', () => {
+  const directory = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'rq-owned-upload-')));
+  try {
+    const body = Buffer.from([80, 75, 0, 255, 1]);
+    fs.writeFileSync(path.join(directory, 'owned.zip'), body);
+    const entry = { id: 'owned', path: 'owned.zip', name: 'owned.zip', mime_type: 'application/zip',
+      size_bytes: body.length, sha256: crypto.createHash('sha256').update(body).digest('hex') };
+    assert.deepEqual(readReviewedUploads(directory, [entry]).get('owned').buffer, body);
+    assert.throws(() => readReviewedUploads(directory, [{ ...entry, sha256: 'f'.repeat(64) }]));
+    fs.symlinkSync('owned.zip', path.join(directory, 'linked.zip'));
+    assert.throws(() => readReviewedUploads(directory, [{ ...entry, path: 'linked.zip' }]));
+    fs.linkSync(path.join(directory, 'owned.zip'), path.join(directory, 'hard.zip'));
+    assert.throws(() => readReviewedUploads(directory, [entry]));
+  } finally { fs.rmSync(directory, { recursive: true }); }
+});
+
+test('a plain Node invocation cannot claim the Worker network-denial capability', async () => {
+  await assert.rejects(requireWorkerIsolation(), { bridgeCode: 'worker_isolation_unavailable' });
 });
 
 test('preflight validates exact source bytes without output or a browser runtime', () => {

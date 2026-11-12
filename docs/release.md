@@ -82,7 +82,7 @@ and modification times remain unchanged. Its live-mode contract fields and
 source grades belong to invented diagnostic inputs, not actual acquisition or
 user evidence. Both original and research diagnostics retain zero product passes.
 
-The browser gate also runs the pure bridge contract tests and the extracted
+The browser gate also runs the pure bridge/owned-upload contract tests and the extracted
 `examples/journey/run_browser_fixture.py --research` diagnostic. It reuses the
 prepared Node 22 / Playwright 1.56.1 / Chromium runtime, starts owned headless
 sessions over reviewed synthetic static bytes, and admits native checkpoints,
@@ -91,6 +91,12 @@ input-loss task must fail while the normal control passes. Earlier failure
 survives final recovery, and repeated readback preserves the report and originals
 without another dispatch. This is actual browser execution of an authored
 diagnostic, not actual-user evidence, Peekly QA or measured UX improvement.
+
+Actual Peekly UI validation has a separate frozen protocol and fresh-build
+provenance under benchmarks/peekly-headless-pilot. It uses owned synthetic
+archives, the existing Chromium headless shell and the frozen macOS network-denial
+launcher. The release checker does not rebuild or rerun that product experiment;
+its contract and packaging tests must remain distinguishable from product results.
 
 The output must be a new directory. Failed checks return nonzero. `--skip-web`
 produces a partial report with `ready: false`. Synthetic tests establish local

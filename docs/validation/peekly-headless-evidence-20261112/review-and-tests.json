@@ -1,0 +1,136 @@
+{
+  "schema_version": "peekly-headless-review-and-tests.v1",
+  "scope": "Owned Remorsearch implementation regression and independent model review; not real participant or UX-effectiveness evidence.",
+  "red_to_green": [
+    {
+      "component": "Python owned binary inputs and Workers",
+      "red": {
+        "tests": 4,
+        "failures": 2,
+        "errors": 2,
+        "exit_code": 1,
+        "log": "test-logs/red-owned-inputs.log"
+      },
+      "green": "Included in the full 1428-test Python suite"
+    },
+    {
+      "component": "Bridge Worker declarations",
+      "red": {
+        "tests": 8,
+        "passed": 7,
+        "failed": 1,
+        "exit_code": 1,
+        "log": "test-logs/red-bridge.log"
+      },
+      "green": {
+        "tests": 11,
+        "passed": 11
+      }
+    },
+    {
+      "component": "Owned filechooser and explicit text whitespace normalization",
+      "green": {
+        "tests": 22,
+        "passed": 22
+      },
+      "independent_counterexample": "Invisible ancestor with an otherwise hit-testable button was rejected after a recorded failing test"
+    }
+  ],
+  "regression": {
+    "python": {
+      "run": 1428,
+      "passed": 1427,
+      "skipped": 1,
+      "failed": 0,
+      "exit_code": 0,
+      "log": "test-logs/python-suite.log"
+    },
+    "smoke_loop": {
+      "exit_code": 0,
+      "log": "test-logs/smoke-loop.log"
+    },
+    "research_fixture": {
+      "exit_code": 0,
+      "log": "test-logs/research-fixture.log"
+    },
+    "native_contract": {
+      "tests": 33,
+      "passed": 33,
+      "failed": 0,
+      "log": "test-logs/browser-bridge-contract.log"
+    },
+    "web_driver": {
+      "passed": 559,
+      "failed": 0,
+      "optional_shared_browser_path": "skipped; no connection to user browser",
+      "log": "test-logs/web-driver.log"
+    },
+    "first_release": {
+      "ready": false,
+      "checks_passed": 20,
+      "checks_total": 21,
+      "failed_gate": "validation-inputs-stable",
+      "changed_during_check": [
+        "benchmarks/peekly-headless-pilot/README.md",
+        "benchmarks/peekly-headless-pilot/protocol.json",
+        "benchmarks/peekly-headless-pilot/run_pilot.py"
+      ],
+      "preserved_report": "test-logs/validation.json"
+    },
+    "final_release_receipt": "final-release.json"
+  },
+  "independent_review": {
+    "reviewer_type": "separate model agent; not a human participant",
+    "production_contract": "No remaining blocker after resolving counterexamples",
+    "pre_dispatch_v2_plan": "Verified baseline and criterion mapping, fixed action counts, narrow prerequisite-only preparation recovery",
+    "actual_evidence": "Reconciled all 37 criteria, native bytes, upload bindings, real product PNGs and outcomes; no mismatches",
+    "actual_native_pngs_visually_reviewed": 14,
+    "archive": {
+      "members_checked": 157,
+      "native_members_checked": 131,
+      "representative_pngs_checked": 12,
+      "all_hashes_sizes_match": true
+    },
+    "resolved_findings": [
+      "Post-redaction upload filename exposure",
+      "Unexpected owned-execution scope when the reviewed scope is empty",
+      "Invisible ancestor file-selection target",
+      "Missing 12/12 baseline before large input",
+      "Overclaiming complete list verification from two count checks",
+      "Generic network limitation inconsistent with Worker execution"
+    ],
+    "additional_browser_product_or_test_execution_by_reviewer": false,
+    "first_run_result_sha256": "0741842a71b55d260e1ff93b18eddf8da2e93bf2f1c31349807de0d30f18b571",
+    "results_json_sha256": "bdf2090bbd6fdd67e527a38e6feb8d744dda15e9bf1304e09bc6ba7c50cbfdd8"
+  },
+  "after_product_execution_change": {
+    "file": "skills/remorsearch-ux-qa/uxpersonas/local_run.py",
+    "executed_sha256": "ba67b34ce12f621404bafa093e2d2ea4dafab7523b9a7fc196ca110503fc160e",
+    "final_sha256": "670023abb237b175229afe7415533398930f42d8dbb9ee7ad6cd031a63166583",
+    "scope": "Exactly two explanatory strings in report_locked; no condition, action, dispatch, criterion, admission or receipt change",
+    "original_report_preserved": true,
+    "immutable_readback_check_performed_before_text_change": true,
+    "product_reexecuted": false
+  },
+  "reviewed_implementation_sha256": {
+    "skills/remorsearch-ux-qa/uxpersonas/browser_run.py": "d36691832053875087252ce568c96034e27cbe5b5eb6ace727dfcc02d98e0060",
+    "skills/remorsearch-ux-qa/drivers/web/journey_bridge.mjs": "a47441644e4f2c421dc956a83a1e4e405696f618d1ecfbed92db93ef38592f6a",
+    "skills/remorsearch-ux-qa/drivers/web/owned_upload.mjs": "00f4c9ef4d01dfeb35c73c59ceed09fe3bc53e70970a9ae04c4e611c7b1da7ff",
+    "skills/remorsearch-ux-qa/drivers/web/session.mjs": "554114c9a29c7c396406916dd122aacd95fa21d5d2acf7f60bcd7485e8517dd0",
+    "skills/remorsearch-ux-qa/drivers/web/validate.mjs": "f741c35468763f68510507c0568478c3343c8d3d367be939e3e39571e989f88c",
+    "scripts/check_release.py": "1b247d506a7abf134272d409914bce5a2e53f55e419b355c10e9f9cacd4b8fb3"
+  },
+  "log_sha256": {
+    "red-owned-inputs.log": "4d742f91a31df0863039773b41551e8f30d249708ac898f0c3b2b97d718776cc",
+    "red-bridge.log": "60814c21a0e10f4b5106b0409597accec221cf6898fa94deab52fedb4f63fafe",
+    "python-suite.log": "989626e4d16af00a57fa79b93faa1424ed6ece3e73a007a1193eb6d4db8614bb",
+    "smoke-loop.log": "4079db8b533c25df2a032167a933dd4558f9a81bfe9f91bda34abc305f715db4",
+    "research-fixture.log": "6c669ed2447e0668a043c00db6065812918d46026f901362e523802dfd0ac5df",
+    "release-owned-spa/logs/browser-bridge-contract.log": "f4692302488751e88c0eb470e1c372fb6b8001a35ced2b19e1c1186450532164",
+    "release-owned-spa/logs/web-driver.log": "697d8a0eef89e378a1633236b4001a22b5ff76f11f2b7b05daeea5b31ef7ef10",
+    "release-owned-spa/validation.json": "c88a605c48f69d3c8f626a2f4ebac2abbf5b7e1b6f3d95431b789e3e8f0060e1"
+  },
+  "preservation_receipt": "preservation-before-final-check-v2.json",
+  "preserved_comparison_error": "preservation-before-final-check.json used newline status against a NUL-delimited baseline; v2 uses the exact original command and all 12 checks pass",
+  "protocol_generator_whitespace_note": "One extra trailing blank line was retained to preserve the already frozen generated-fixture and prepared hashes; functional validation is unchanged."
+}

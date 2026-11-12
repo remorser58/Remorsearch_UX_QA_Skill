@@ -245,7 +245,7 @@ def main(argv=None):
                     "const p=require('./package.json'); const v=require('./node_modules/playwright/package.json').version; "
                     "console.log('Playwright '+v); if(v!==p.dependencies.playwright) process.exit(2);"], cwd=driver)
                 check("web-driver", [node, "selftest.mjs"], cwd=driver, timeout=900)
-                check("browser-bridge-contract", [node, "--test", "journey_bridge.test.mjs"], cwd=driver)
+                check("browser-bridge-contract", [node, "--test", "journey_bridge.test.mjs", "owned_upload.test.mjs"], cwd=driver)
                 check("extracted-browser-journey", [python, extracted_skill / "examples/journey/run_browser_fixture.py",
                       "--research", "--out", output / "browser-journey-result"], cwd=output, timeout=180)
                 check("post-browser-integrity", [python, extracted_skill / "scripts/remorsearch.py", "verify"])

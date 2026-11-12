@@ -3,6 +3,7 @@
 // in scripted scenarios are reported as warnings, in /act they are rejected.
 
 import { ActionError, UsageError, isPlainObject } from './util.mjs';
+import { uploadFileIds, UPLOAD_LIMITS } from './owned_upload.mjs';
 
 export const KNOWN_ROLES = [
   'primary', 'destructive', 'irreversible', 'critical_message', 'error_message', 'status',
@@ -20,6 +21,7 @@ const SPEC = {
   swipe: { req: [], opt: ['target', 'offset', 'to', 'dx', 'dy', 'direction', 'distance', 'duration_ms'] },
   drag: { req: ['target'], opt: ['offset', 'to', 'dx', 'dy', 'direction', 'distance', 'duration_ms', 'hold_ms'] },
   type: { req: ['text'], opt: ['target', 'offset', 'delay_ms', 'clear', 'redact'] },
+  upload: { req: ['target', 'input', 'files'], opt: [] },
   press: { req: ['key'], opt: ['hold_ms', 'repeat'] },
   scroll: { req: [], opt: ['target', 'offset', 'dx', 'dy', 'direction', 'distance', 'duration_ms'] },
   wait: { req: ['ms'], opt: [] },
@@ -82,6 +84,7 @@ export function normalizeAction(raw, { strict, where = 'action' } = {}) {
   const out = { action: kind };
   for (const key of Object.keys(raw)) {
     if (!allowed.has(key)) {
+      if (kind === 'upload') fail(`${where}: unsupported upload field; allowed: ${[...allowed].join(', ')}`);
       if (strict) fail(`${where}: key ${JSON.stringify(key)} is not allowed for ${kind}; allowed: ${[...allowed].join(', ')}`);
       warnings.push(`${where}: ignored unknown key ${JSON.stringify(key)} for ${kind}`);
     }
@@ -96,6 +99,11 @@ export function normalizeAction(raw, { strict, where = 'action' } = {}) {
       out[key] = v;
     } else if (key === 'target' || key === 'to') {
       out[key] = checkTarget(v, at);
+    } else if (key === 'input') {
+      if (!isTaskSelector(v) || v.startsWith('hotspot:')) fail(`${at} must be plain CSS without literals, escapes or selector engines`);
+      out[key] = v;
+    } else if (key === 'files') {
+      out[key] = uploadFileIds(v, at);
     } else if (key === 'offset') {
       out[key] = checkPoint(v, at);
     } else if (key in MS_LIMITS) {
@@ -132,6 +140,10 @@ export function normalizeAction(raw, { strict, where = 'action' } = {}) {
   }
   if (kind === 'scroll' && !('dx' in out) && !('dy' in out) && !out.direction) fail(`${where}: scroll needs "dx"/"dy" or "direction"`);
   if (out.redact && (!isTaskSelector(out.target) || out.target.startsWith('hotspot:'))) fail(`${where}: redacted typing requires plain CSS without literals, escapes or selector engines`);
+  if (kind === 'upload') {
+    if (!isTaskSelector(out.target) || out.target.startsWith('hotspot:')) fail(`${where}.target must be a plain CSS file-choose control`);
+    if (out.timeout_ms !== undefined && (!Number.isInteger(out.timeout_ms) || out.timeout_ms < 1 || out.timeout_ms > UPLOAD_LIMITS.timeoutMs)) fail(`${where}.timeout_ms must be an integer within 1..${UPLOAD_LIMITS.timeoutMs}`);
+  }
   return { action: out, warnings };
 }
 
@@ -154,7 +166,7 @@ function checkBox(b, where) {
 
 export const SUCCESS_KEYS = ['selector_visible', 'url_contains', 'text_present', 'task_checks'];
 
-const TASK_CHECK_KEYS = new Set(['id', 'selector', 'property', 'after_step', 'expected', 'from_step', 'severity', 'consequence', 'redact']);
+const TASK_CHECK_KEYS = new Set(['id', 'selector', 'property', 'after_step', 'expected', 'from_step', 'severity', 'consequence', 'redact', 'normalize_whitespace']);
 
 function taskChecks(value, steps, requireSteps) {
   if (!Array.isArray(value) || value.length < 1 || value.length > 64) usage('scenario.success.task_checks must contain 1..64 checks');
@@ -167,6 +179,7 @@ function taskChecks(value, steps, requireSteps) {
     ids.add(c.id);
     if (!isTaskSelector(c.selector)) usage(`${at}.selector must be plain CSS without literals, escapes or credentials`);
     if (!['value', 'text', 'checked'].includes(c.property)) usage(`${at}.property must be value, text or checked`);
+    if (c.normalize_whitespace !== undefined && (typeof c.normalize_whitespace !== 'boolean' || c.property !== 'text')) usage(`${at}.normalize_whitespace is a boolean available only for text checks`);
     if (c.after_step !== undefined && (!Number.isInteger(c.after_step) || c.after_step < 1 || c.after_step > 10000 || (requireSteps && c.after_step > steps.length))) usage(`${at}.after_step must name a reachable 1-based action index`);
     const checkpoint = JSON.stringify([c.selector, c.property, c.after_step ?? 'final']);
     if (checkpoints.has(checkpoint)) usage(`${at} duplicates a selector/property/checkpoint`);

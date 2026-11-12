@@ -17,6 +17,7 @@ import {
   blockStats, changeMask, cssScaleCopy, decodePng, frameFromImage, frameStats, indicatorPixels, indicatorPixelsMulti, makeBlockGrid, resampleImage, visualDiffFraction,
 } from './png.mjs';
 import { KNOWN_ROLES } from './validate.mjs';
+import { chooseOwnedFiles } from './owned_upload.mjs';
 import {
   DriverFailure, epochNow, isoNow, pngSize, round1, sha256, sleep, truncate, writeFileAtomic, writeJsonAtomic,
 } from './util.mjs';
@@ -71,8 +72,8 @@ const REFLOW_BUDGET_MS = 40000;
 const TEXT_SPACING = Object.freeze({ line_height: 1.5, paragraph_after: 2, letter_spacing: 0.12, word_spacing: 0.16, preserve_larger: true });
 const SHORT_HEIGHT = Object.freeze({ height_ratio: 0.5, min_height_css: 256 });
 
-const MEASURED = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'type', 'press', 'scroll', 'gamepad']);
-const POINTER = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'scroll']);
+const MEASURED = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'type', 'upload', 'press', 'scroll', 'gamepad']);
+const POINTER = new Set(['tap', 'click', 'double_tap', 'long_press', 'swipe', 'drag', 'scroll', 'upload']);
 // Actions that move content with the pointer (scroll gestures) or hold it down.
 const GESTURES = new Set(['long_press', 'swipe', 'drag', 'scroll']);
 
@@ -84,7 +85,7 @@ function r4(n) {
   return Math.round(n * 10000) / 10000;
 }
 
-function sampleTaskState({ selector, property, expected, key }) {
+function sampleTaskState({ selector, property, expected, key, normalize_whitespace = false }) {
   const elements = document.querySelectorAll(selector);
   if (elements.length !== 1) return { reason: elements.length ? 'ambiguous_target' : 'missing_target' };
   const el = elements[0];
@@ -107,7 +108,11 @@ function sampleTaskState({ selector, property, expected, key }) {
     if (/^(input|textarea|select|script|style|html|body|iframe)$/.test(el.localName)) return { reason: 'unsupported_property' };
     actual = el.innerText;
   }
-  const passed = actual === expected;
+  // Opt in only for visible text. Preserve raw values for the before/after
+  // capture-state fence; whitespace normalization must not hide a DOM change.
+  const compare = (value) => value.replace(/\s+/g, ' ').trim();
+  const passed = property === 'text' && normalize_whitespace
+    ? compare(actual) === compare(expected) : actual === expected;
   return { passed, result: passed ? 'pass' : 'fail', reason: null,
     element_id: window[Symbol.for(key)]?.ids?.get(el) ?? null,
     private_actual: actual, private_node: el };
@@ -842,7 +847,7 @@ function focusInfo() {
 }
 
 export class WebSession {
-  constructor({ pw, pwInfo, scenario, deviceRequest, profileId, runId, runDir, mode, options, warnings }) {
+  constructor({ pw, pwInfo, scenario, deviceRequest, profileId, runId, runDir, mode, options, warnings, ownedUploads }) {
     this.pw = pw;
     this.pwInfo = pwInfo;
     this.scenario = scenario;
@@ -852,6 +857,9 @@ export class WebSession {
     this.runDir = runDir;
     this.mode = mode;
     this.opts = options;
+    // Private host data, never an option or a serialized run field. Ordinary
+    // CLI/serve sessions have no registry and refuse uploads before clicking.
+    this.ownedUploads = ownedUploads;
     this.warnings = [...(warnings || [])];
     this.warned = new Set();
     this.steps = [];
@@ -2508,6 +2516,12 @@ export class WebSession {
         }
         await this.page.keyboard.type(action.text, { delay: action.delay_ms ?? 25 });
         return p ? `${mode}+keyboard` : 'keyboard';
+      case 'upload': {
+        const fileSelection = await chooseOwnedFiles({ page: this.page, action,
+          registry: this.ownedUploads, point: p,
+          click: () => this.dispatchInput({ action: 'click' }, resolved) });
+        return { input: `${mode}+filechooser`, file_selection: fileSelection };
+      }
       case 'press':
         for (let i = 0; i < (action.repeat ?? 1); i++) {
           await this.page.keyboard.press(action.key, { delay: action.hold_ms ?? 0 });
@@ -2648,7 +2662,10 @@ export class WebSession {
     let inputErr = null;
     try {
       const r = await this.dispatchInput(action, resolved);
-      if (r && typeof r === 'object') {
+      if (r?.file_selection) {
+        step.input = r.input;
+        step.file_selection = r.file_selection;
+      } else if (r && typeof r === 'object') {
         step.input = r.input;
         if (!step.point) step.point = { x: round1(r.start.x), y: round1(r.start.y) };
         step.end_point = { x: round1(r.end.x), y: round1(r.end.y) };
@@ -2981,7 +2998,8 @@ export class WebSession {
         || (c.from_step !== checkpoint && this.steps[c.from_step - 1]?.result !== 'ok'))) continue;
       try {
         samples.set(c.id, await this.page.evaluateHandle(sampleTaskState, { selector: c.selector, property: c.property,
-          expected: 'from_step' in c ? this.scenario.steps[c.from_step - 1].text : c.expected, key: STATE_KEY }));
+          expected: 'from_step' in c ? this.scenario.steps[c.from_step - 1].text : c.expected, key: STATE_KEY,
+          normalize_whitespace: c.normalize_whitespace === true }));
       } catch { samples.set(c.id, null); }
     }
     return samples;
@@ -2995,6 +3013,7 @@ export class WebSession {
         checkpoint, step_index: snapshot?.snap.step_index ?? this.steps.length,
         snapshot_id: snapshot?.id ?? null, element_id: null, passed: null, result: 'unevaluable', reason: null,
         severity: criterion.severity, consequence: criterion.consequence,
+        ...('normalize_whitespace' in criterion ? { normalize_whitespace: criterion.normalize_whitespace } : {}),
       };
       const expected = 'from_step' in criterion ? this.scenario.steps[criterion.from_step - 1].text : criterion.expected;
       if (stepResult !== 'ok') result.reason = 'action_failed';
@@ -3008,7 +3027,8 @@ export class WebSession {
           const before = beforeSamples.get(criterion.id);
           if (!before) result.reason = 'capture_unavailable';
           else {
-            const after = await this.page.evaluateHandle(sampleTaskState, { selector: criterion.selector, property: criterion.property, expected, key: STATE_KEY });
+            const after = await this.page.evaluateHandle(sampleTaskState, { selector: criterion.selector, property: criterion.property, expected, key: STATE_KEY,
+              normalize_whitespace: criterion.normalize_whitespace === true });
             try {
               Object.assign(result, await after.evaluate((last, first) => {
                 if (last.reason !== first.reason || !Object.is(last.private_actual, first.private_actual) || last.private_node !== first.private_node) return { reason: 'capture_state_changed' };
@@ -3054,6 +3074,7 @@ export class WebSession {
         checkpoint: criterion.after_step ?? 'final', step_index: criterion.after_step ?? this.steps.length,
         snapshot_id: null, element_id: null, passed: null, result: 'unevaluable', reason: 'checkpoint_unvisited',
         severity: criterion.severity, consequence: criterion.consequence,
+        ...('normalize_whitespace' in criterion ? { normalize_whitespace: criterion.normalize_whitespace } : {}),
       };
       results.push(this.redactRecord(result));
       if (result.passed === null) unevaluable.push(criterion.id);

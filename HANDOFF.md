@@ -1,4 +1,59 @@
-# Mac mini 개발 핸드오프
+# Remorsearch UX QA 개발 핸드오프
+
+기준일: 2026-11-12. 현재 MacBook 작업과 아래 2026-10-03 Mac mini 이력을 구분합니다. 예전 작업 위치·명령·승인 범위는 현재 지시로 적용하지 않습니다.
+
+## 2026-11-12 현재 상태와 읽을 순서
+
+현재 목표는 PRD의 실제 기능을 필요로 하는 근거 있는 페르소나를 재사용 가능하게 저장하고, 각 목적의 여정으로 QA를 실행하여 과업 성공·실패와 재현 근거를 얻는 것입니다. 외관 평가나 완료 작업자 수만으로 성공을 선언하지 않습니다. 사용자가 내부 JSON·복사 절차·Library 명령을 작성하도록 맡기지 않고 호스트가 실제 소스와 기존 분석을 재사용합니다.
+
+1. [PRD](PRD.md)의 현재 실행 범위와 미완료 조건을 읽습니다.
+2. [브라우저 실행 계약](skills/remorsearch-ux-qa/references/persona-qa/browser-run.md)에서 검토한 정적 빌드·합성 업로드·Worker·종료 확인의 경계를 확인합니다.
+3. [Peekly 고정 프로토콜](benchmarks/peekly-headless-pilot/protocol.json), [실행 절차와 준비 이력](benchmarks/peekly-headless-pilot/README.md), [실브라우저 검증 MD](docs/validation/peekly-headless-results-20261112.md)와 [검증 JSON](docs/validation/peekly-headless-results-20261112.json)을 함께 읽습니다.
+4. [이전 Peekly 코어 관측](docs/validation/peekly-journey-results-20261112.md), [최초 합성 브라우저 검증](docs/validation/browser-journey-results-20261112.md), [연구 여정 검증](docs/validation/research-journey-results-20261112.md)은 각각 당시 범위의 근거로 대조합니다. 후속 UI 관측으로 이전 기록을 덮어쓰지 않습니다.
+
+### 작업 위치와 보존 경계
+
+| 용도 | 현재 경로·기준 |
+| --- | --- |
+| 지정 저장소 | `/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume`, 원격 `remorser58/Remorsearch_UX_QA_Skill` |
+| 현재 별도 worktree | `/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree` |
+| 이번 작업의 시작 기준 | `7359fb6c8c770601598d431b92d350bda20096d9` |
+| 실제 UI 실행 전 benchmark 4파일 커밋 | `28160d29f9f5b07b8b97c86c66034d67588fbe26`. 프로토콜·fixture generator·pilot runner·README를 커밋했으며 production driver는 별도 소스 SHA-256·독립 검토로 고정했습니다. 최종 현재 HEAD·remote SHA는 별도로 확인합니다. |
+| 읽기 전용 제품 원본 | `/Users/r3m0r5e/CodeProjects/insta_tracker`. 기존 dirty 원본과 개인 자료를 보존합니다. |
+| 소유 실행 근거 | 현재 worktree의 `.ux-loop/peekly-headless-20261112/`. `product-build-receipt.json`, `product-dist-manifest.json`, `synthetic-fixtures/`, `ui-pilot/`에 복사·빌드·입력·준비·실행 근거를 보존합니다. |
+
+이번 범위는 Web GPT Agent MacBook Secure MCP의 파일·터미널만 사용합니다. 사용자 Chrome·기존 화면/탭·키보드/클립보드, Codex CLI/API/쿼터를 사용하지 않습니다. 실제 계정 로그인·개인 자료 전송·디시 접근 제한 또는 YouTube 키 부재 우회는 허용하지 않습니다. 원본 수정·reset·force·기존 값 삭제를 하지 않습니다. 제품 작업은 검토한 별도 복사본과 합성 입력으로 한정했습니다.
+
+### 실제 Peekly 화면까지 연결한 범위
+
+기존 64개 파일의 최소 복사 목록과 현재 원본 바이트를 재사용해 소유 복사본을 만들고, 의존성을 APFS 복사로 한 번 보존한 뒤 실제 `tsc -b`와 Vite 설정으로 한 번 빌드했습니다. 빌드 결과는 6개 파일, 542,314바이트입니다. 제품 소스 수정과 의존성 설치는 0건입니다. 원본 선택 파일·의존성·Git 상태·기존 dist의 전후 지문을 보존·대조했으며 자세한 범위는 빌드 receipt에 있습니다.
+
+실행기는 고정한 합성 origin에서 검토한 실제 정적 SPA 바이트를 제공하고 새 소유 headless Chromium을 사용했습니다. 실제 화면의 파일 선택 버튼에 연결된 filechooser에 고정 Buffer를 넘겨 제품의 파일 입력을 작동시켰으며 OS 파일 선택창이나 사용자 입력을 사용하지 않았습니다. 정확한 빌드 Worker 자산을 허용했고 Worker 코드를 바꾸지 않았습니다. Worker 계획에는 고정한 macOS 프로세스 네트워크 거부 정책과 실행 전 거부 검증이 필요합니다. 이는 일반 파일시스템 샌드박스나 모든 OS 보안 성질의 독립 인증이 아닙니다.
+
+기존 PRD 가설 페르소나 4개를 저장·재사용했고 그중 실제 Library·receipt ID인 `PER-EXPLORE`, `PER-RETURN`, `PER-ARCHIVE` 3개에 연결한 4개 과업을 각각 1회 직렬 실행했습니다. 기존 프로토콜의 `P-*` 가설과 이 `PER-*` ID가 대응합니다. `PER-KEEP`는 저장했지만 실행하지 않았습니다. 새 공개 근거 수집은 0건, 실제 참여자는 0명입니다. 이는 연구로 입증된 3명이나 실제 사람의 사용성 검사로 보고하지 않습니다.
+
+| 과업 | 실제 관측 | 판정 범위 |
+| --- | --- | --- |
+| `T-SAMPLE` | 10/10 체크 통과 | 샘플 카운트·목록 제목·비교 한계 문구·샘플 종료 |
+| `T-RECOVER` | 11/11 체크 통과 | following 누락 ZIP 오류, 닫은 뒤 이전 12/12 카운트, 정상 현재 ZIP의 7/10 카운트와 departures 6명 제목·한계 문구 |
+| `T-LARGE-ZIP` | 6개 통과·2개 목표 실패 | 150,000행씩인 합성 ZIP 뒤 오류 표시. 오류 전·닫은 뒤 12/12, 작은 정상 현재 ZIP 뒤 7/10 |
+| `T-LARGE-JSON` | 6개 통과·2개 목표 실패 | 같은 행 조건의 개별 JSON에서도 오류 표시. 오류 전·닫은 뒤 12/12, 작은 정상 현재 ZIP 뒤 7/10 |
+
+37개 행동·37개 체크에서 33개가 통과하고 4개가 실패했습니다. 전체 과업 목표가 충족되지 않아 실행 명령의 종료 코드는 1입니다. 4개 receipt와 영속 로그의 감사는 일치했고 실행 불확실·격리는 0건입니다. 결과 보고 생성 성공, 작은 입력 회복, 감사 일치를 대용량 과업 통과로 바꾸지 않습니다. `task_scope_passed`는 거짓이며 `real_user_evidence`와 `product_ready`도 거짓입니다.
+
+두 대용량 과업의 step 7 snapshot·PNG에는 `[followers_1.json] 파일에서 팔로워·팔로잉 목록을 읽지 못해 불러오지 않았어요. 인스타그램에서 파일을 다시 받아 주세요.`가 표시됐습니다. step 3의 이전 결과와 오류를 닫은 step 8은 각각 12/12, 정상 현재 ZIP을 넣은 step 10은 7/10으로 관측했습니다. 고정한 행 조건·입력 해시·뷰포트·행동·checkpoint와 각 근거 위치는 새 검증 MD/JSON을 따릅니다.
+
+### 원인 후보와 남은 검증
+
+복사한 제품 소스의 `src/core/zipParser.ts` 집계 구간은 `push(...parsed.users)`를 포함한 예외를 잡아 `InstagramExportFormatError`로 바꿉니다. Worker·client·오류 안내 경로에는 원래 예외와 stack이 남지 않습니다. 이전 코어 실험의 단일 파일 파싱 성공·집계 실패와 이 소스는 집계 구간을 강한 원인 후보로 지지합니다. 이번 실제 UI의 오류 문구가 원래 `RangeError` 또는 정확한 실패 호출을 증명하지는 않습니다. 이번 합성 ZIP은 별도로 해시를 고정했으며 이전 코어 실험 ZIP과 바이트가 같다고 가정하지 않습니다.
+
+자동 기준은 관측한 카운트·목록 제목·한계 문구에 한정됩니다. 전체 목록의 동일성·완전성, 모든 행의 접근 가능성, localStorage 바이트 보존을 증명하지 않았습니다. 고정 대기 시간과 한 뷰포트의 headless 실행은 사람의 속도·이해·접근성 또는 실제 기기 사용 경험의 측정이 아닙니다. 제품 결함 수정·수정 후 재실행·독립 비교 효과 검증은 수행하지 않았습니다. 공개 연구의 진위·대표성, 일반 서비스/backend, 자율적인 사용자 행동 판단과 병렬 다중 스웜의 실제 효과도 남아 있습니다.
+
+후속 작업은 보존한 근거로 실행 범위와 제품 결함 후보를 구분한 뒤 하나씩 정합니다. 제품 수정 권한은 이 기록에서 확대하지 않으며 dirty 원본을 변경하지 않습니다. 완료한 과업을 다시 호출하면 기존 상태만 읽고, 시도 한도·기준·입력을 바꿔 이번 결과를 재평가하지 않습니다. 새 빌드의 승인된 후속 검증은 새 실행으로 기존 페르소나 버전·목표·기준과 시작 조건의 동등성을 연결해야 합니다. 처음 준비가 Python 버전 때문에 중단된 기록과 실행 전 독립 검토의 v2 기준 보완, 원래 준비 파일도 그대로 보존했습니다.
+
+## 2026-10-03 Mac mini 개발 핸드오프 — 보존 이력
+
+아래는 당시 기준과 명령을 보존한 역사 기록입니다. 현재 작업 위치와 권한은 위 2026-11-12 절 및 최신 사용자 지시를 따릅니다.
 
 기준일: 2026-10-03. 맥미니에서 Remorsearch UX QA를 이어서 개발할 때 이 문서부터 읽습니다.
 현재 구현과 검증 공백을 함께 확인하려면 아래 읽기 순서를 따르세요.

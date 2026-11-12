@@ -1,0 +1,1794 @@
+{
+  "actual_isolated_browser_executed": true,
+  "actual_product_code_executed": true,
+  "archived_evidence": {
+    "manifest_path": "peekly-headless-evidence-20261112/archive-manifest.json",
+    "manifest_sha256": "bbc6a73f1dca9fd34cda6830a16deda28b63133ce39bf6ad052beb8f579f3509",
+    "members": 157,
+    "named_png_copies": 12,
+    "original_evidence_files": 131,
+    "original_evidence_root": "/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/peekly-headless-20261112/ui-pilot/work/local-execution/run/evidence",
+    "original_native_png_files": 82,
+    "path": "peekly-headless-evidence-20261112/native-evidence.zip",
+    "product_sources_dependencies_and_synthetic_input_files_included": false,
+    "sha256": "93d1407c3c20304ed7f6b8d066207759ec3b894478455586b6485b187b7b23f6",
+    "size_bytes": 5343416
+  },
+  "base_commit": "7359fb6c8c770601598d431b92d350bda20096d9",
+  "build": {
+    "build_receipt_sha256": "9ee962c26ab9e24ded9e073f13bf7c32f7d7c0771433632df058729029e39008",
+    "dist_content_sha256": "905611c4994352e7d43fcea6626461a168a86b792e2f12ef37a2e7cbbe7b7a7d",
+    "dist_file_bytes": 542314,
+    "dist_file_count": 6,
+    "head": "58214441a1f87bd7b766a72c97de2a79b27438dd",
+    "original": "/Users/r3m0r5e/CodeProjects/insta_tracker",
+    "preservation_at_build": {
+      "all_required_checks_passed": true,
+      "copied_source_bytes_equal_frozen_source": true,
+      "dependency_tree_after_sha256": "5b0cf502f54aeabe199fdcdb76c42560f7942299b506949792c5f6d5ada74a81",
+      "dependency_tree_bytes_and_metadata_unchanged": true,
+      "git_status_selected_diffs_head_index_unchanged": true,
+      "original_dist_after_sha256": "d93d6302a048d873731a8a2328611aa6cecb28212e3d020abdb7ba7fb4bafce4",
+      "original_dist_bytes_and_metadata_unchanged": true,
+      "original_git_after": {
+        "diff_scope": "only the 64 approved recipe paths; no environment or collected-data content",
+        "head": "58214441a1f87bd7b766a72c97de2a79b27438dd",
+        "index": {
+          "ctime_ns": 1794241817110891062,
+          "device": 16777229,
+          "inode": 348115876,
+          "kind": "file",
+          "mode": 420,
+          "mtime_ns": 1794241817110794396,
+          "nlink": 1,
+          "sha256": "9d499ec41b99d611cbac08cb05973c1a9da023ba82c962df91459454a216bc50",
+          "size": 24613
+        },
+        "selected_staged_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "selected_worktree_diff_sha256": "29c94fb0004cbbd2cde867cffa8609f376b664a1c6b38b8fe0eb944e4b0c05bc",
+        "status_all_bytes": 1943,
+        "status_all_sha256": "3908af87572bccde4825bb096f423200033d840af071796c5923b545bb258298",
+        "status_compact_entries": 50,
+        "status_compact_sha256": "1ae40c4182e84107555366303f747941b1fd8a2081edb8ff197800d08e5e3589"
+      },
+      "selected_source_after_sha256": "a370274dad1a2f0b3236d724ecf8de5d564da0bfe641bf80265780ec8e6b8b36",
+      "selected_source_bytes_and_metadata_unchanged": true
+    },
+    "source_manifest_sha256": "dd057f188c7f222d879956506dc314bfbff373d7bd4331d628d2dbebee62c838"
+  },
+  "counts": {
+    "blocked": 0,
+    "failed": 2,
+    "inconclusive": 0,
+    "passed": 2,
+    "pending": 0,
+    "running": 0,
+    "skipped": 0
+  },
+  "coverage": {
+    "all_declared_requirements_passed": false,
+    "basis": "declared_obligations_not_semantic_completeness",
+    "obligations": {
+      "declared": 23,
+      "excluded": 12,
+      "failed": 7,
+      "not_run": 0,
+      "passed": 4
+    },
+    "requirement_assignments": {
+      "excluded": 1,
+      "failed": 7,
+      "incomplete": 4,
+      "mapped": 12,
+      "passed": 0,
+      "unassessed": 0
+    }
+  },
+  "evidence_audit": {
+    "basis": "deterministic_receipt_and_cross_persona_audit",
+    "conflicts": [],
+    "definition_conflicts": [],
+    "duplicates": [],
+    "independent_reviewer": false,
+    "integrity": "consistent",
+    "issues": [],
+    "limitations": [
+      "Deterministic linkage and cross-persona consistency only; not a human or independent model reviewer.",
+      "Distinct observations are not independent participants or proof that adapter claims are true."
+    ],
+    "obligations": {
+      "conflicted": 0,
+      "declared": 23,
+      "definition_conflicts": 0,
+      "distinct_observations": 11,
+      "duplicated": 0,
+      "excluded": 12,
+      "incomplete": 0,
+      "observed": 11
+    },
+    "receipts_checked": 4
+  },
+  "executed_profiles": 3,
+  "first_release": {
+    "checks": [
+      {
+        "exit_code": 0,
+        "log": "logs/unit-tests.log",
+        "name": "unit-tests",
+        "passed": true,
+        "seconds": 193.14
+      },
+      {
+        "exit_code": 0,
+        "log": "logs/release-files.log",
+        "name": "release-files",
+        "passed": true,
+        "seconds": 0.05
+      },
+      {
+        "exit_code": 0,
+        "log": "logs/bundle-build.log",
+        "name": "bundle-build",
+        "passed": true,
+        "seconds": 0.2
+      },
+      {
+        "exit_code": 0,
+        "log": "logs/bundle-integrity.log",
+        "name": "bundle-integrity",
+        "passed": true,
+        "seconds": 0.09
+      },
+      {
+        "exit_code": 0,
+        "log": "logs/extracted-integrity.log",
+        "name": "extracted-integrity",
+        "passed": true,
+        "seconds": 0.08
+      },
+      {
+        "exit_code": 0,
+        "log": "logs/extracted-runtime-discovery.log",
+        "name": "extracted-runtime-discovery",
+        "passed": true,
+        "seconds": 0.31
+      },
+      {
+        "exit_code": 0,
+        "log": "logs/extracted-research-help.log",
+        "name": "extracted-research-help",
+        "passed": true,
+        "seconds": 0.26
+      },
+      {
+        "exit_code": 0,
+        "log": "logs/extracted-search-source.log",
+        "name": "extracted-search-source",
+        "passed": true,
+        "seconds": 0.14
+      },
+      {
+        "exit_code": 0,
+        "log": "logs/extracted-search-method.log",
+        "name": "extracted-search-method",
+        "passed": true,
+        "seconds": 0.13
+      },
+      {
+        "name": "search-method-body",
+        "passed": true,
+        "reason": "A linked platform method body, including its command, is readable"
+      },
+      {
+        "exit_code": 0,
+        "log": "logs/extracted-smoke.log",
+        "name": "extracted-smoke",
+        "passed": true,
+        "seconds": 2.13
+      },
+      {
+        "exit_code": 0,
+        "log": "logs/extracted-local-journey.log",
+        "name": "extracted-local-journey",
+        "passed": true,
+        "seconds": 1.17
+      },
+      {
+        "exit_code": 0,
+        "log": "logs/extracted-research-journey.log",
+        "name": "extracted-research-journey",
+        "passed": true,
+        "seconds": 3.25
+      },
+      {
+        "exit_code": 0,
+        "log": "logs/node-version.log",
+        "name": "node-version",
+        "passed": true,
+        "seconds": 0.13
+      },
+      {
+        "exit_code": 0,
+        "log": "logs/driver-dependencies.log",
+        "name": "driver-dependencies",
+        "passed": true,
+        "seconds": 0.04
+      },
+      {
+        "exit_code": 0,
+        "log": "logs/web-driver.log",
+        "name": "web-driver",
+        "passed": true,
+        "seconds": 268.57
+      },
+      {
+        "exit_code": 0,
+        "log": "logs/browser-bridge-contract.log",
+        "name": "browser-bridge-contract",
+        "passed": true,
+        "seconds": 0.19
+      },
+      {
+        "exit_code": 0,
+        "log": "logs/extracted-browser-journey.log",
+        "name": "extracted-browser-journey",
+        "passed": true,
+        "seconds": 34.51
+      },
+      {
+        "exit_code": 0,
+        "log": "logs/post-browser-integrity.log",
+        "name": "post-browser-integrity",
+        "passed": true,
+        "seconds": 0.07
+      },
+      {
+        "name": "current-source-match",
+        "passed": true,
+        "reason": "Candidate matches current inputs"
+      },
+      {
+        "added": [],
+        "changed": [
+          "benchmarks/peekly-headless-pilot/README.md",
+          "benchmarks/peekly-headless-pilot/protocol.json",
+          "benchmarks/peekly-headless-pilot/run_pilot.py"
+        ],
+        "name": "validation-inputs-stable",
+        "passed": false,
+        "reason": "Validation source inputs changed or could not be safely fingerprinted; rerun all checks",
+        "removed": []
+      }
+    ],
+    "ready": false,
+    "report_sha256": "c88a605c48f69d3c8f626a2f4ebac2abbf5b7e1b6f3d95431b789e3e8f0060e1"
+  },
+  "native_action_count": 37,
+  "native_check_counts": {
+    "failed": 4,
+    "passed": 33,
+    "unobserved": 0
+  },
+  "new_public_research_sources": 0,
+  "persona_effectiveness_validated": false,
+  "persona_provenance_mode": "prd_hypothesis",
+  "prepared_sha256": "a55630ccf9dfdf19260fef573c9958968f7f4ac11518a39b75650067a523a72d",
+  "product_ready": false,
+  "product_source_modified": false,
+  "protocol_commit": "28160d29f9f5b07b8b97c86c66034d67588fbe26",
+  "readback": {
+    "after_manifest_sha256": "9dfa25d45f43317db0baab6577f91b514f910877a2cbde712b7a28be70bf2d6c",
+    "all_pilot_file_hashes_unchanged": true,
+    "before_manifest_sha256": "9dfa25d45f43317db0baab6577f91b514f910877a2cbde712b7a28be70bf2d6c",
+    "command": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-B",
+      "/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/benchmarks/peekly-headless-pilot/run_pilot.py",
+      "readback",
+      "--stage",
+      "/Users/r3m0r5e/CodeProjects/remorsearch-ux-qa-resume/.ux-loop/web-pro-peekly-headless-20261112/worktree/.ux-loop/peekly-headless-20261112"
+    ],
+    "elapsed_seconds": 22.240314,
+    "files_after": 214,
+    "files_before": 214,
+    "product_dispatch_performed": false,
+    "result_identical_to_first_run": true,
+    "returncode": 0,
+    "schema_version": "peekly-headless-readback.v1",
+    "stderr_bytes": 0,
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_bytes": 72703,
+    "stdout_sha256": "5f7d1bba40efbdf815cace9bdecd425ee10c50735abf6d8620d06200953a3c13"
+  },
+  "real_participants": 0,
+  "real_user_evidence": false,
+  "report_boundary_notes": [
+    "Original raw first-run report is immutable. Its legacy generic network limitation predates the subsequent explanatory-text correction; actual Worker policy is in each owned_execution record.",
+    "The archive contains complete native JSON and PNG evidence plus provenance metadata; it excludes product source, dependencies, real accounts and actual user files.",
+    "UI success checks cover displayed counts, titles and limitation text; they do not prove every list row, complete storage byte identity, human comprehension, or UX effectiveness.",
+    "Both large inputs were rejected in UI. An original RangeError or exception stack was not captured; source-based aggregation analysis is an inference.",
+    "The 5000-row synthetic control was generated but not executed through UI."
+  ],
+  "saved_profiles": 4,
+  "schema_version": "peekly-headless-validation.v1",
+  "synthetic_personas": true,
+  "synthetic_product_html": false,
+  "task_scope_passed": false,
+  "tasks": [
+    {
+      "action_count": 6,
+      "action_results": {
+        "ok": 6
+      },
+      "attempts": 1,
+      "browser_cleanup_confirmed": true,
+      "check_counts": {
+        "pass": 10
+      },
+      "checks": [
+        {
+          "actual_text": "팔로워 7명",
+          "checkpoint": 1,
+          "element_id": "el-8",
+          "id": "sample-followers",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-6074bfcde253596635ee7c62d022320f-001"
+        },
+        {
+          "actual_text": "팔로잉 10명",
+          "checkpoint": 1,
+          "element_id": "el-9",
+          "id": "sample-following",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-6074bfcde253596635ee7c62d022320f-001"
+        },
+        {
+          "actual_text": "5",
+          "checkpoint": 1,
+          "element_id": "el-11",
+          "id": "not-back-count",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-6074bfcde253596635ee7c62d022320f-001"
+        },
+        {
+          "actual_text": "6명",
+          "checkpoint": 1,
+          "element_id": "el-15",
+          "id": "departures-count",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-6074bfcde253596635ee7c62d022320f-001"
+        },
+        {
+          "actual_text": "나를 맞팔 안 한 사람 5명",
+          "checkpoint": 2,
+          "element_id": "el-19",
+          "id": "not-back-list-title",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-6074bfcde253596635ee7c62d022320f-002"
+        },
+        {
+          "actual_text": "팔로워에서 빠진 계정 6명",
+          "checkpoint": 4,
+          "element_id": "el-19",
+          "id": "departures-list-title",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-6074bfcde253596635ee7c62d022320f-004"
+        },
+        {
+          "actual_text": "이전 기록에는 있고 지금 기록에는 없는 계정이에요. 아이디 변경이나 계정 삭제도 포함될 수 있어요. 이 목록만으로 이유를 알 수는 없어요.",
+          "checkpoint": 4,
+          "element_id": "el-21",
+          "id": "comparison-limit",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-6074bfcde253596635ee7c62d022320f-004"
+        },
+        {
+          "actual_text": "맞팔 안 한 친구를 찾아드려요",
+          "checkpoint": 6,
+          "element_id": "el-3",
+          "id": "welcome-returned",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-6074bfcde253596635ee7c62d022320f-006"
+        },
+        {
+          "actual_text": "인스타그램 파일로 시작하기",
+          "checkpoint": 6,
+          "element_id": "el-6",
+          "id": "file-start-returned",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-6074bfcde253596635ee7c62d022320f-006"
+        },
+        {
+          "actual_text": "샘플로 둘러보기",
+          "checkpoint": 6,
+          "element_id": "el-8",
+          "id": "sample-start-returned",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-6074bfcde253596635ee7c62d022320f-006"
+        }
+      ],
+      "console_errors": [],
+      "controller_diagnostic": {
+        "cleanup_confirmed": true,
+        "elapsed_seconds": 4.516703,
+        "problem": null,
+        "returncode": 0,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 578,
+        "stdout_sha256": "30da8ff7e1a1e071543be5ba2ee87f6e631488592200bcd0e41af735163eff01"
+      },
+      "ended_at": "2026-11-12T06:46:11Z",
+      "native_run_sha256": "f189e034bf6e9416fa6ac4eaa4fa59a7930d6ccdb24a38419f4b3b9f28fdda19",
+      "native_status": "completed",
+      "observation_sha256": "ec76c60dfb1d38e66c8757769499e4868a4bbb36a8ffec6f307183056209b2e0",
+      "operation_id": "uxop-6074bfcde253596635ee7c62d022320f",
+      "owned_browser_activity": {
+        "served_files": [
+          {
+            "count": 1,
+            "path": "index.html",
+            "sha256": "f6cdb626ee425c2fdf8f82f99aefede3abae8f3ceb9831d11fe04be719f1bab1"
+          },
+          {
+            "count": 1,
+            "path": "assets/index-BSOruyyP.js",
+            "sha256": "e2520a36bdb32f6828eed018e8311fbb3436e5003d3cdf9407a6a6617895d1bc"
+          },
+          {
+            "count": 1,
+            "path": "assets/index-D2jlfvMz.css",
+            "sha256": "51cd8e2a2f8e59116da24b98806f03a6c9aad0b1297514e7699f6f0b7f224c76"
+          },
+          {
+            "count": 1,
+            "path": "assets/brand-mark-YuYvTQpp.png",
+            "sha256": "dc0587362993a1d57576b35c90aaf2627cfb4b0d499ff5b082330124e57d75a0"
+          }
+        ],
+        "started_workers": []
+      },
+      "owned_execution": {
+        "network_isolation": {
+          "bind_denied": true,
+          "policy": "macos-seatbelt-deny-network-v1",
+          "profile_sha256": "80de7c41c4cac0234db39d259c29450b17c4e5768f24bc7dd9f9f8c75d2c12a3"
+        },
+        "uploads": [
+          {
+            "id": "ZIP-PREVIOUS",
+            "mime_type": "application/zip",
+            "sha256": "49b29cf570663f2d561fc845e01b5c11cc283ca19c619196d0efc3f3b9e03004",
+            "size_bytes": 3435
+          },
+          {
+            "id": "ZIP-CURRENT",
+            "mime_type": "application/zip",
+            "sha256": "b65df20cfb3cd3e890671d0b87da51ccc65186af62023bc9166c4d103197e018",
+            "size_bytes": 4675
+          },
+          {
+            "id": "ZIP-MISSING-FOLLOWING",
+            "mime_type": "application/zip",
+            "sha256": "2f5e297ce3a5d6611318e7467a58ac3d10ab3f14909e9c4a2ba6fdfeab13ff92",
+            "size_bytes": 4213
+          },
+          {
+            "id": "ZIP-CONTROL-5000",
+            "mime_type": "application/zip",
+            "sha256": "3d5256e09143f33fdad13467be827b94cd984f03a30a6a06ed4babea68f92176",
+            "size_bytes": 31435
+          },
+          {
+            "id": "ZIP-LARGE-150000",
+            "mime_type": "application/zip",
+            "sha256": "02e5d68b0da3d12c63e97ffa820652b3acfc2b71d905de9cdbc7e2b16e148164",
+            "size_bytes": 816720
+          },
+          {
+            "id": "JSON-LARGE-PROFILE",
+            "mime_type": "application/json",
+            "sha256": "40066ff2645323f4041abe18ca53204636a76015c3080f81e9a2205db062c5d3",
+            "size_bytes": 76
+          },
+          {
+            "id": "JSON-LARGE-FOLLOWERS",
+            "mime_type": "application/json",
+            "sha256": "234bbb45d81bb50e7c3f596f498700b1c96db081603db9727b635cec7eca2618",
+            "size_bytes": 11850001
+          },
+          {
+            "id": "JSON-LARGE-FOLLOWING",
+            "mime_type": "application/json",
+            "sha256": "a7b0d7bb34dfc59a7c1d7a4e4071af0f27a461da002238739aeb357b3be4c3ee",
+            "size_bytes": 11850029
+          },
+          {
+            "id": "JSON-LARGE-PENDING",
+            "mime_type": "application/json",
+            "sha256": "79abf2db7905d3d2b58628b2ef8f375cfe3ec3a7d9bf293d529e46927a85b2d5",
+            "size_bytes": 393
+          },
+          {
+            "id": "JSON-LARGE-RECENT-REQUESTS",
+            "mime_type": "application/json",
+            "sha256": "979320ddad4fa9558ddd193e3f29b01265c2300e533e1368c78d3d569e8b7a28",
+            "size_bytes": 43
+          },
+          {
+            "id": "JSON-LARGE-RECENT-UNFOLLOWED",
+            "mime_type": "application/json",
+            "sha256": "a22e3948f1b3602846491ec9efde6b1c396283184f59e4ae44a8e73d527c939d",
+            "size_bytes": 157
+          },
+          {
+            "id": "JSON-LARGE-CLOSE-FRIENDS",
+            "mime_type": "application/json",
+            "sha256": "7f2801507a083803ced236f4648f0a77e2540f3de2838aa2c33fefe563efb76b",
+            "size_bytes": 499
+          },
+          {
+            "id": "JSON-LARGE-BLOCKED",
+            "mime_type": "application/json",
+            "sha256": "9c56c0db59fbd19c8209b1ca2192e5ade2adf8f25162916924df071be1d08871",
+            "size_bytes": 271
+          },
+          {
+            "id": "JSON-LARGE-RESTRICTED",
+            "mime_type": "application/json",
+            "sha256": "2ebc8f947418502624c6c8530d0b2fb00eb29e4e85ab705d7f68c08203242add",
+            "size_bytes": 155
+          },
+          {
+            "id": "JSON-LARGE-HIDE-STORY",
+            "mime_type": "application/json",
+            "sha256": "e34a98aada50ea1a04e60b4176e68e5a2964db3b89f26687bb78b7df4908ef80",
+            "size_bytes": 269
+          },
+          {
+            "id": "JSON-LARGE-LIKES",
+            "mime_type": "application/json",
+            "sha256": "bb2c7bdeeb8f17d7d3473878a9c3832d382ea67fd651668589f4545934dd3e18",
+            "size_bytes": 7162
+          },
+          {
+            "id": "JSON-LARGE-COMMENTS",
+            "mime_type": "application/json",
+            "sha256": "4b342855e7b33602ab04347e05a1398a67a03f93caa0b9d06f51c8c25bb40547",
+            "size_bytes": 3845
+          }
+        ],
+        "workers": {
+          "assets/importWorker-hLjzVhak.js": "1d124bb6590f4eccc420baa24c60ab8a7d4c68cdd16928fc26010fbd070237d5"
+        }
+      },
+      "persona": {
+        "persona_id": "PER-EXPLORE",
+        "prd_sha256": "8c28c344b58b4d21d23bde3c2d6c76237882a8b78fb41bd55107382385f76050",
+        "profile_sha256": "0d4ca78922dee59adc8ed3f9603a32b08f1dd73dd2f05a7daaaeec4915afb86f",
+        "revision": 1
+      },
+      "pngs": [
+        {
+          "path": "T-SAMPLE-step-001.png",
+          "sha256": "433b9b21781cd635f144018fa2964d415173e13070ae188e6ac3a1fa6141f849"
+        },
+        {
+          "path": "T-SAMPLE-step-002.png",
+          "sha256": "3e3d0d6f1ee05ad86fafa085ea1cd6d5508fa0b06e68f0dd330cbf2f8ba009ed"
+        },
+        {
+          "path": "T-SAMPLE-step-004.png",
+          "sha256": "00b77407e54ed00ec02801eaba77447a796041b50a8b755e363daf28a95f5d9b"
+        },
+        {
+          "path": "T-SAMPLE-step-006.png",
+          "sha256": "b4a070d18417755f654c11798811d3a1ba17e1c75c88755b71ebfc538c74a91e"
+        }
+      ],
+      "screen_url": "https://remorsearch.invalid/index.html",
+      "started_at": "2026-11-12T06:46:07Z",
+      "status": "passed",
+      "task_id": "T-SAMPLE",
+      "uploads": []
+    },
+    {
+      "action_count": 11,
+      "action_results": {
+        "ok": 11
+      },
+      "attempts": 1,
+      "browser_cleanup_confirmed": true,
+      "check_counts": {
+        "pass": 11
+      },
+      "checks": [
+        {
+          "actual_text": "팔로워 12명",
+          "checkpoint": 3,
+          "element_id": "el-5",
+          "id": "previous-followers",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-f78a144149ae4906e8f9d6460d23756c-003"
+        },
+        {
+          "actual_text": "팔로잉 12명",
+          "checkpoint": 3,
+          "element_id": "el-6",
+          "id": "previous-following",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-f78a144149ae4906e8f9d6460d23756c-003"
+        },
+        {
+          "actual_text": "나중에 인스타그램 파일을 한 번 더 받아 넣으면 두 기록 사이에 빠진 팔로워를 비교해요.",
+          "checkpoint": 3,
+          "element_id": "el-11",
+          "id": "single-record-guidance",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-f78a144149ae4906e8f9d6460d23756c-003"
+        },
+        {
+          "actual_text": "팔로워와 팔로잉 목록이 모두 들어 있는 파일이 필요해요. 인스타그램에서 내보낼 때 [팔로워 및 팔로잉]을 골랐는지 확인해 주세요.",
+          "checkpoint": 6,
+          "element_id": "el-29",
+          "id": "missing-following-error",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-f78a144149ae4906e8f9d6460d23756c-006"
+        },
+        {
+          "actual_text": "팔로워 12명",
+          "checkpoint": 7,
+          "element_id": "el-5",
+          "id": "preserved-previous-followers",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-f78a144149ae4906e8f9d6460d23756c-007"
+        },
+        {
+          "actual_text": "팔로잉 12명",
+          "checkpoint": 7,
+          "element_id": "el-6",
+          "id": "preserved-previous-following",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-f78a144149ae4906e8f9d6460d23756c-007"
+        },
+        {
+          "actual_text": "팔로워 7명",
+          "checkpoint": 9,
+          "element_id": "el-5",
+          "id": "recovered-current-followers",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-f78a144149ae4906e8f9d6460d23756c-009"
+        },
+        {
+          "actual_text": "팔로잉 10명",
+          "checkpoint": 9,
+          "element_id": "el-6",
+          "id": "recovered-current-following",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-f78a144149ae4906e8f9d6460d23756c-009"
+        },
+        {
+          "actual_text": "6명",
+          "checkpoint": 9,
+          "element_id": "el-11",
+          "id": "recovered-departures-count",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-f78a144149ae4906e8f9d6460d23756c-009"
+        },
+        {
+          "actual_text": "팔로워에서 빠진 계정 6명",
+          "checkpoint": 10,
+          "element_id": "el-16",
+          "id": "recovered-departures-title",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-f78a144149ae4906e8f9d6460d23756c-010"
+        },
+        {
+          "actual_text": "이전 기록에는 있고 지금 기록에는 없는 계정이에요. 아이디 변경이나 계정 삭제도 포함될 수 있어요. 이 목록만으로 이유를 알 수는 없어요.",
+          "checkpoint": 10,
+          "element_id": "el-18",
+          "id": "recovered-comparison-limit",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-f78a144149ae4906e8f9d6460d23756c-010"
+        }
+      ],
+      "console_errors": [],
+      "controller_diagnostic": {
+        "cleanup_confirmed": true,
+        "elapsed_seconds": 9.029638,
+        "problem": null,
+        "returncode": 0,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 578,
+        "stdout_sha256": "fbec26ccc2d749a6793281182a0f2fe40022190de625c6adb9353090e900dde7"
+      },
+      "ended_at": "2026-11-12T06:46:28Z",
+      "native_run_sha256": "2289f63a59ebe9fc6aa3f5e101891d7d1be7f3260505de9aba3eaa960544f6bf",
+      "native_status": "completed",
+      "observation_sha256": "6cc255196c09a6697e8aec03be02672fa521896e9cbf93e3d06c3d2b728a53e9",
+      "operation_id": "uxop-f78a144149ae4906e8f9d6460d23756c",
+      "owned_browser_activity": {
+        "served_files": [
+          {
+            "count": 1,
+            "path": "index.html",
+            "sha256": "f6cdb626ee425c2fdf8f82f99aefede3abae8f3ceb9831d11fe04be719f1bab1"
+          },
+          {
+            "count": 1,
+            "path": "assets/index-BSOruyyP.js",
+            "sha256": "e2520a36bdb32f6828eed018e8311fbb3436e5003d3cdf9407a6a6617895d1bc"
+          },
+          {
+            "count": 1,
+            "path": "assets/index-D2jlfvMz.css",
+            "sha256": "51cd8e2a2f8e59116da24b98806f03a6c9aad0b1297514e7699f6f0b7f224c76"
+          },
+          {
+            "count": 1,
+            "path": "assets/brand-mark-YuYvTQpp.png",
+            "sha256": "dc0587362993a1d57576b35c90aaf2627cfb4b0d499ff5b082330124e57d75a0"
+          },
+          {
+            "count": 3,
+            "path": "assets/importWorker-hLjzVhak.js",
+            "sha256": "1d124bb6590f4eccc420baa24c60ab8a7d4c68cdd16928fc26010fbd070237d5"
+          }
+        ],
+        "started_workers": [
+          {
+            "count": 3,
+            "path": "assets/importWorker-hLjzVhak.js",
+            "sha256": "1d124bb6590f4eccc420baa24c60ab8a7d4c68cdd16928fc26010fbd070237d5"
+          }
+        ]
+      },
+      "owned_execution": {
+        "network_isolation": {
+          "bind_denied": true,
+          "policy": "macos-seatbelt-deny-network-v1",
+          "profile_sha256": "80de7c41c4cac0234db39d259c29450b17c4e5768f24bc7dd9f9f8c75d2c12a3"
+        },
+        "uploads": [
+          {
+            "id": "ZIP-PREVIOUS",
+            "mime_type": "application/zip",
+            "sha256": "49b29cf570663f2d561fc845e01b5c11cc283ca19c619196d0efc3f3b9e03004",
+            "size_bytes": 3435
+          },
+          {
+            "id": "ZIP-CURRENT",
+            "mime_type": "application/zip",
+            "sha256": "b65df20cfb3cd3e890671d0b87da51ccc65186af62023bc9166c4d103197e018",
+            "size_bytes": 4675
+          },
+          {
+            "id": "ZIP-MISSING-FOLLOWING",
+            "mime_type": "application/zip",
+            "sha256": "2f5e297ce3a5d6611318e7467a58ac3d10ab3f14909e9c4a2ba6fdfeab13ff92",
+            "size_bytes": 4213
+          },
+          {
+            "id": "ZIP-CONTROL-5000",
+            "mime_type": "application/zip",
+            "sha256": "3d5256e09143f33fdad13467be827b94cd984f03a30a6a06ed4babea68f92176",
+            "size_bytes": 31435
+          },
+          {
+            "id": "ZIP-LARGE-150000",
+            "mime_type": "application/zip",
+            "sha256": "02e5d68b0da3d12c63e97ffa820652b3acfc2b71d905de9cdbc7e2b16e148164",
+            "size_bytes": 816720
+          },
+          {
+            "id": "JSON-LARGE-PROFILE",
+            "mime_type": "application/json",
+            "sha256": "40066ff2645323f4041abe18ca53204636a76015c3080f81e9a2205db062c5d3",
+            "size_bytes": 76
+          },
+          {
+            "id": "JSON-LARGE-FOLLOWERS",
+            "mime_type": "application/json",
+            "sha256": "234bbb45d81bb50e7c3f596f498700b1c96db081603db9727b635cec7eca2618",
+            "size_bytes": 11850001
+          },
+          {
+            "id": "JSON-LARGE-FOLLOWING",
+            "mime_type": "application/json",
+            "sha256": "a7b0d7bb34dfc59a7c1d7a4e4071af0f27a461da002238739aeb357b3be4c3ee",
+            "size_bytes": 11850029
+          },
+          {
+            "id": "JSON-LARGE-PENDING",
+            "mime_type": "application/json",
+            "sha256": "79abf2db7905d3d2b58628b2ef8f375cfe3ec3a7d9bf293d529e46927a85b2d5",
+            "size_bytes": 393
+          },
+          {
+            "id": "JSON-LARGE-RECENT-REQUESTS",
+            "mime_type": "application/json",
+            "sha256": "979320ddad4fa9558ddd193e3f29b01265c2300e533e1368c78d3d569e8b7a28",
+            "size_bytes": 43
+          },
+          {
+            "id": "JSON-LARGE-RECENT-UNFOLLOWED",
+            "mime_type": "application/json",
+            "sha256": "a22e3948f1b3602846491ec9efde6b1c396283184f59e4ae44a8e73d527c939d",
+            "size_bytes": 157
+          },
+          {
+            "id": "JSON-LARGE-CLOSE-FRIENDS",
+            "mime_type": "application/json",
+            "sha256": "7f2801507a083803ced236f4648f0a77e2540f3de2838aa2c33fefe563efb76b",
+            "size_bytes": 499
+          },
+          {
+            "id": "JSON-LARGE-BLOCKED",
+            "mime_type": "application/json",
+            "sha256": "9c56c0db59fbd19c8209b1ca2192e5ade2adf8f25162916924df071be1d08871",
+            "size_bytes": 271
+          },
+          {
+            "id": "JSON-LARGE-RESTRICTED",
+            "mime_type": "application/json",
+            "sha256": "2ebc8f947418502624c6c8530d0b2fb00eb29e4e85ab705d7f68c08203242add",
+            "size_bytes": 155
+          },
+          {
+            "id": "JSON-LARGE-HIDE-STORY",
+            "mime_type": "application/json",
+            "sha256": "e34a98aada50ea1a04e60b4176e68e5a2964db3b89f26687bb78b7df4908ef80",
+            "size_bytes": 269
+          },
+          {
+            "id": "JSON-LARGE-LIKES",
+            "mime_type": "application/json",
+            "sha256": "bb2c7bdeeb8f17d7d3473878a9c3832d382ea67fd651668589f4545934dd3e18",
+            "size_bytes": 7162
+          },
+          {
+            "id": "JSON-LARGE-COMMENTS",
+            "mime_type": "application/json",
+            "sha256": "4b342855e7b33602ab04347e05a1398a67a03f93caa0b9d06f51c8c25bb40547",
+            "size_bytes": 3845
+          }
+        ],
+        "workers": {
+          "assets/importWorker-hLjzVhak.js": "1d124bb6590f4eccc420baa24c60ab8a7d4c68cdd16928fc26010fbd070237d5"
+        }
+      },
+      "persona": {
+        "persona_id": "PER-RETURN",
+        "prd_sha256": "8c28c344b58b4d21d23bde3c2d6c76237882a8b78fb41bd55107382385f76050",
+        "profile_sha256": "d9ec1a0ea1173fb35618145ebcb2a4bb972464b805065d7941396d035e6ce321",
+        "revision": 1
+      },
+      "pngs": [
+        {
+          "path": "T-RECOVER-step-006.png",
+          "sha256": "dde67dd26285872b9ec44f8252892889a72ed677846ff830112708d284773172"
+        },
+        {
+          "path": "T-RECOVER-step-009.png",
+          "sha256": "8980cac444b2154051468cfbaab180da4e9103a5119956247f090192e7736d48"
+        },
+        {
+          "path": "T-RECOVER-step-010.png",
+          "sha256": "d208a55cf7a4ddb278d046717f9ce0df91c1160bf06334b5e5451ff4c81a80c1"
+        }
+      ],
+      "screen_url": "https://remorsearch.invalid/index.html",
+      "started_at": "2026-11-12T06:46:19Z",
+      "status": "passed",
+      "task_id": "T-RECOVER",
+      "uploads": [
+        {
+          "file_selection": {
+            "files": [
+              {
+                "id": "ZIP-PREVIOUS",
+                "mime_type": "application/zip",
+                "name": "instagram-jimin.daily_-2026-10-29-owned.zip",
+                "sha256": "49b29cf570663f2d561fc845e01b5c11cc283ca19c619196d0efc3f3b9e03004",
+                "size_bytes": 3435
+              }
+            ],
+            "input": ".sheet-body input",
+            "method": "playwright_filechooser"
+          },
+          "step_index": 3
+        },
+        {
+          "file_selection": {
+            "files": [
+              {
+                "id": "ZIP-MISSING-FOLLOWING",
+                "mime_type": "application/zip",
+                "name": "instagram-jimin.daily_-2026-11-12-missing-following.zip",
+                "sha256": "2f5e297ce3a5d6611318e7467a58ac3d10ab3f14909e9c4a2ba6fdfeab13ff92",
+                "size_bytes": 4213
+              }
+            ],
+            "input": ".sheet-body input",
+            "method": "playwright_filechooser"
+          },
+          "step_index": 6
+        },
+        {
+          "file_selection": {
+            "files": [
+              {
+                "id": "ZIP-CURRENT",
+                "mime_type": "application/zip",
+                "name": "instagram-jimin.daily_-2026-11-12-owned.zip",
+                "sha256": "b65df20cfb3cd3e890671d0b87da51ccc65186af62023bc9166c4d103197e018",
+                "size_bytes": 4675
+              }
+            ],
+            "input": ".sheet-body input",
+            "method": "playwright_filechooser"
+          },
+          "step_index": 9
+        }
+      ]
+    },
+    {
+      "action_count": 10,
+      "action_results": {
+        "ok": 10
+      },
+      "attempts": 1,
+      "browser_cleanup_confirmed": true,
+      "check_counts": {
+        "fail": 2,
+        "pass": 6
+      },
+      "checks": [
+        {
+          "actual_text": "팔로워 12명",
+          "checkpoint": 3,
+          "element_id": "el-5",
+          "id": "baseline-before-large-followers",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-d25b71e4fec2154da942978c06520925-003"
+        },
+        {
+          "actual_text": "팔로잉 12명",
+          "checkpoint": 3,
+          "element_id": "el-6",
+          "id": "baseline-before-large-following",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-d25b71e4fec2154da942978c06520925-003"
+        },
+        {
+          "actual_text": "[followers_1.json] 파일에서 팔로워·팔로잉 목록을 읽지 못해 불러오지 않았어요. 인스타그램에서 파일을 다시 받아 주세요.",
+          "checkpoint": 7,
+          "element_id": "el-29",
+          "id": "large-followers",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "fail",
+          "snapshot_id": "S-R-uxop-d25b71e4fec2154da942978c06520925-007"
+        },
+        {
+          "actual_text": "[followers_1.json] 파일에서 팔로워·팔로잉 목록을 읽지 못해 불러오지 않았어요. 인스타그램에서 파일을 다시 받아 주세요.",
+          "checkpoint": 7,
+          "element_id": "el-29",
+          "id": "large-following",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "fail",
+          "snapshot_id": "S-R-uxop-d25b71e4fec2154da942978c06520925-007"
+        },
+        {
+          "actual_text": "팔로워 12명",
+          "checkpoint": 8,
+          "element_id": "el-5",
+          "id": "preserved-previous-followers",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-d25b71e4fec2154da942978c06520925-008"
+        },
+        {
+          "actual_text": "팔로잉 12명",
+          "checkpoint": 8,
+          "element_id": "el-6",
+          "id": "preserved-previous-following",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-d25b71e4fec2154da942978c06520925-008"
+        },
+        {
+          "actual_text": "팔로워 7명",
+          "checkpoint": 10,
+          "element_id": "el-5",
+          "id": "recovered-current-followers",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-d25b71e4fec2154da942978c06520925-010"
+        },
+        {
+          "actual_text": "팔로잉 10명",
+          "checkpoint": 10,
+          "element_id": "el-6",
+          "id": "recovered-current-following",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-d25b71e4fec2154da942978c06520925-010"
+        }
+      ],
+      "console_errors": [],
+      "controller_diagnostic": {
+        "cleanup_confirmed": true,
+        "elapsed_seconds": 9.115028,
+        "problem": null,
+        "returncode": 0,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 581,
+        "stdout_sha256": "cb29bc39e1c10317dd9a54d21628424c42f1a9d76f2c5aa5b8d03aae56647a5b"
+      },
+      "ended_at": "2026-11-12T06:46:54Z",
+      "native_run_sha256": "37de3ffc2e1367a21f764d6d1d7a48675de82ce2cab90565e2d7fc670c09383c",
+      "native_status": "completed",
+      "observation_sha256": "12dda347a8e73cd984dd86c047bc2c034ae8a16129699efec1d9d1f1c010a114",
+      "operation_id": "uxop-d25b71e4fec2154da942978c06520925",
+      "owned_browser_activity": {
+        "served_files": [
+          {
+            "count": 1,
+            "path": "index.html",
+            "sha256": "f6cdb626ee425c2fdf8f82f99aefede3abae8f3ceb9831d11fe04be719f1bab1"
+          },
+          {
+            "count": 1,
+            "path": "assets/index-BSOruyyP.js",
+            "sha256": "e2520a36bdb32f6828eed018e8311fbb3436e5003d3cdf9407a6a6617895d1bc"
+          },
+          {
+            "count": 1,
+            "path": "assets/index-D2jlfvMz.css",
+            "sha256": "51cd8e2a2f8e59116da24b98806f03a6c9aad0b1297514e7699f6f0b7f224c76"
+          },
+          {
+            "count": 1,
+            "path": "assets/brand-mark-YuYvTQpp.png",
+            "sha256": "dc0587362993a1d57576b35c90aaf2627cfb4b0d499ff5b082330124e57d75a0"
+          },
+          {
+            "count": 3,
+            "path": "assets/importWorker-hLjzVhak.js",
+            "sha256": "1d124bb6590f4eccc420baa24c60ab8a7d4c68cdd16928fc26010fbd070237d5"
+          }
+        ],
+        "started_workers": [
+          {
+            "count": 3,
+            "path": "assets/importWorker-hLjzVhak.js",
+            "sha256": "1d124bb6590f4eccc420baa24c60ab8a7d4c68cdd16928fc26010fbd070237d5"
+          }
+        ]
+      },
+      "owned_execution": {
+        "network_isolation": {
+          "bind_denied": true,
+          "policy": "macos-seatbelt-deny-network-v1",
+          "profile_sha256": "80de7c41c4cac0234db39d259c29450b17c4e5768f24bc7dd9f9f8c75d2c12a3"
+        },
+        "uploads": [
+          {
+            "id": "ZIP-PREVIOUS",
+            "mime_type": "application/zip",
+            "sha256": "49b29cf570663f2d561fc845e01b5c11cc283ca19c619196d0efc3f3b9e03004",
+            "size_bytes": 3435
+          },
+          {
+            "id": "ZIP-CURRENT",
+            "mime_type": "application/zip",
+            "sha256": "b65df20cfb3cd3e890671d0b87da51ccc65186af62023bc9166c4d103197e018",
+            "size_bytes": 4675
+          },
+          {
+            "id": "ZIP-MISSING-FOLLOWING",
+            "mime_type": "application/zip",
+            "sha256": "2f5e297ce3a5d6611318e7467a58ac3d10ab3f14909e9c4a2ba6fdfeab13ff92",
+            "size_bytes": 4213
+          },
+          {
+            "id": "ZIP-CONTROL-5000",
+            "mime_type": "application/zip",
+            "sha256": "3d5256e09143f33fdad13467be827b94cd984f03a30a6a06ed4babea68f92176",
+            "size_bytes": 31435
+          },
+          {
+            "id": "ZIP-LARGE-150000",
+            "mime_type": "application/zip",
+            "sha256": "02e5d68b0da3d12c63e97ffa820652b3acfc2b71d905de9cdbc7e2b16e148164",
+            "size_bytes": 816720
+          },
+          {
+            "id": "JSON-LARGE-PROFILE",
+            "mime_type": "application/json",
+            "sha256": "40066ff2645323f4041abe18ca53204636a76015c3080f81e9a2205db062c5d3",
+            "size_bytes": 76
+          },
+          {
+            "id": "JSON-LARGE-FOLLOWERS",
+            "mime_type": "application/json",
+            "sha256": "234bbb45d81bb50e7c3f596f498700b1c96db081603db9727b635cec7eca2618",
+            "size_bytes": 11850001
+          },
+          {
+            "id": "JSON-LARGE-FOLLOWING",
+            "mime_type": "application/json",
+            "sha256": "a7b0d7bb34dfc59a7c1d7a4e4071af0f27a461da002238739aeb357b3be4c3ee",
+            "size_bytes": 11850029
+          },
+          {
+            "id": "JSON-LARGE-PENDING",
+            "mime_type": "application/json",
+            "sha256": "79abf2db7905d3d2b58628b2ef8f375cfe3ec3a7d9bf293d529e46927a85b2d5",
+            "size_bytes": 393
+          },
+          {
+            "id": "JSON-LARGE-RECENT-REQUESTS",
+            "mime_type": "application/json",
+            "sha256": "979320ddad4fa9558ddd193e3f29b01265c2300e533e1368c78d3d569e8b7a28",
+            "size_bytes": 43
+          },
+          {
+            "id": "JSON-LARGE-RECENT-UNFOLLOWED",
+            "mime_type": "application/json",
+            "sha256": "a22e3948f1b3602846491ec9efde6b1c396283184f59e4ae44a8e73d527c939d",
+            "size_bytes": 157
+          },
+          {
+            "id": "JSON-LARGE-CLOSE-FRIENDS",
+            "mime_type": "application/json",
+            "sha256": "7f2801507a083803ced236f4648f0a77e2540f3de2838aa2c33fefe563efb76b",
+            "size_bytes": 499
+          },
+          {
+            "id": "JSON-LARGE-BLOCKED",
+            "mime_type": "application/json",
+            "sha256": "9c56c0db59fbd19c8209b1ca2192e5ade2adf8f25162916924df071be1d08871",
+            "size_bytes": 271
+          },
+          {
+            "id": "JSON-LARGE-RESTRICTED",
+            "mime_type": "application/json",
+            "sha256": "2ebc8f947418502624c6c8530d0b2fb00eb29e4e85ab705d7f68c08203242add",
+            "size_bytes": 155
+          },
+          {
+            "id": "JSON-LARGE-HIDE-STORY",
+            "mime_type": "application/json",
+            "sha256": "e34a98aada50ea1a04e60b4176e68e5a2964db3b89f26687bb78b7df4908ef80",
+            "size_bytes": 269
+          },
+          {
+            "id": "JSON-LARGE-LIKES",
+            "mime_type": "application/json",
+            "sha256": "bb2c7bdeeb8f17d7d3473878a9c3832d382ea67fd651668589f4545934dd3e18",
+            "size_bytes": 7162
+          },
+          {
+            "id": "JSON-LARGE-COMMENTS",
+            "mime_type": "application/json",
+            "sha256": "4b342855e7b33602ab04347e05a1398a67a03f93caa0b9d06f51c8c25bb40547",
+            "size_bytes": 3845
+          }
+        ],
+        "workers": {
+          "assets/importWorker-hLjzVhak.js": "1d124bb6590f4eccc420baa24c60ab8a7d4c68cdd16928fc26010fbd070237d5"
+        }
+      },
+      "persona": {
+        "persona_id": "PER-ARCHIVE",
+        "prd_sha256": "8c28c344b58b4d21d23bde3c2d6c76237882a8b78fb41bd55107382385f76050",
+        "profile_sha256": "5ea3d4fa88bfec2daa3165c4a990df8c3d51ee00ed9bcc2c19e6f425c96ceb13",
+        "revision": 1
+      },
+      "pngs": [
+        {
+          "path": "T-LARGE-ZIP-step-003.png",
+          "sha256": "ad8ef1f934dffda59b3020652892d0ad35848bba122be2e4b36159982133b406"
+        },
+        {
+          "path": "T-LARGE-ZIP-step-007.png",
+          "sha256": "cc72e64ef372b248bdcae0bb921cf59bc97a8bbbde3826624878d6a2f4784791"
+        },
+        {
+          "path": "T-LARGE-ZIP-step-008.png",
+          "sha256": "7b5d51c9b89de89c6e50ad9f55686c5aa3ff9d65ec73734770f54f963743abc0"
+        },
+        {
+          "path": "T-LARGE-ZIP-step-010.png",
+          "sha256": "7307836213d002decdcfc7cae787b2b2e0304e6c0ba95dcc0aaeccef1a835ae7"
+        }
+      ],
+      "screen_url": "https://remorsearch.invalid/index.html",
+      "started_at": "2026-11-12T06:46:45Z",
+      "status": "failed",
+      "task_id": "T-LARGE-ZIP",
+      "uploads": [
+        {
+          "file_selection": {
+            "files": [
+              {
+                "id": "ZIP-PREVIOUS",
+                "mime_type": "application/zip",
+                "name": "instagram-jimin.daily_-2026-10-29-owned.zip",
+                "sha256": "49b29cf570663f2d561fc845e01b5c11cc283ca19c619196d0efc3f3b9e03004",
+                "size_bytes": 3435
+              }
+            ],
+            "input": ".sheet-body input",
+            "method": "playwright_filechooser"
+          },
+          "step_index": 3
+        },
+        {
+          "file_selection": {
+            "files": [
+              {
+                "id": "ZIP-LARGE-150000",
+                "mime_type": "application/zip",
+                "name": "instagram-jimin.daily_-2026-11-12-large-150000.zip",
+                "sha256": "02e5d68b0da3d12c63e97ffa820652b3acfc2b71d905de9cdbc7e2b16e148164",
+                "size_bytes": 816720
+              }
+            ],
+            "input": ".sheet-body input",
+            "method": "playwright_filechooser"
+          },
+          "step_index": 6
+        },
+        {
+          "file_selection": {
+            "files": [
+              {
+                "id": "ZIP-CURRENT",
+                "mime_type": "application/zip",
+                "name": "instagram-jimin.daily_-2026-11-12-owned.zip",
+                "sha256": "b65df20cfb3cd3e890671d0b87da51ccc65186af62023bc9166c4d103197e018",
+                "size_bytes": 4675
+              }
+            ],
+            "input": ".sheet-body input",
+            "method": "playwright_filechooser"
+          },
+          "step_index": 10
+        }
+      ]
+    },
+    {
+      "action_count": 10,
+      "action_results": {
+        "ok": 10
+      },
+      "attempts": 1,
+      "browser_cleanup_confirmed": true,
+      "check_counts": {
+        "fail": 2,
+        "pass": 6
+      },
+      "checks": [
+        {
+          "actual_text": "팔로워 12명",
+          "checkpoint": 3,
+          "element_id": "el-5",
+          "id": "baseline-before-large-followers",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-bd8e30b3d0bc1420ce12392232c53854-003"
+        },
+        {
+          "actual_text": "팔로잉 12명",
+          "checkpoint": 3,
+          "element_id": "el-6",
+          "id": "baseline-before-large-following",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-bd8e30b3d0bc1420ce12392232c53854-003"
+        },
+        {
+          "actual_text": "[followers_1.json] 파일에서 팔로워·팔로잉 목록을 읽지 못해 불러오지 않았어요. 인스타그램에서 파일을 다시 받아 주세요.",
+          "checkpoint": 7,
+          "element_id": "el-29",
+          "id": "large-followers",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "fail",
+          "snapshot_id": "S-R-uxop-bd8e30b3d0bc1420ce12392232c53854-007"
+        },
+        {
+          "actual_text": "[followers_1.json] 파일에서 팔로워·팔로잉 목록을 읽지 못해 불러오지 않았어요. 인스타그램에서 파일을 다시 받아 주세요.",
+          "checkpoint": 7,
+          "element_id": "el-29",
+          "id": "large-following",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "fail",
+          "snapshot_id": "S-R-uxop-bd8e30b3d0bc1420ce12392232c53854-007"
+        },
+        {
+          "actual_text": "팔로워 12명",
+          "checkpoint": 8,
+          "element_id": "el-5",
+          "id": "preserved-previous-followers",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-bd8e30b3d0bc1420ce12392232c53854-008"
+        },
+        {
+          "actual_text": "팔로잉 12명",
+          "checkpoint": 8,
+          "element_id": "el-6",
+          "id": "preserved-previous-following",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-bd8e30b3d0bc1420ce12392232c53854-008"
+        },
+        {
+          "actual_text": "팔로워 7명",
+          "checkpoint": 10,
+          "element_id": "el-5",
+          "id": "recovered-current-followers",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-bd8e30b3d0bc1420ce12392232c53854-010"
+        },
+        {
+          "actual_text": "팔로잉 10명",
+          "checkpoint": 10,
+          "element_id": "el-6",
+          "id": "recovered-current-following",
+          "in_viewport": true,
+          "measured_visible": true,
+          "normalize_whitespace": true,
+          "occluded_fraction": 0,
+          "result": "pass",
+          "snapshot_id": "S-R-uxop-bd8e30b3d0bc1420ce12392232c53854-010"
+        }
+      ],
+      "console_errors": [],
+      "controller_diagnostic": {
+        "cleanup_confirmed": true,
+        "elapsed_seconds": 10.418265,
+        "problem": null,
+        "returncode": 0,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 582,
+        "stdout_sha256": "9801750de1c1f247b52a2043a101ede3445d8c9718f719e57a0db04c339aa344"
+      },
+      "ended_at": "2026-11-12T06:47:26Z",
+      "native_run_sha256": "0bc93a7194d32cf2c0e291b033a59ef6a8cedae3ac6db2e44d456e7bbd876266",
+      "native_status": "completed",
+      "observation_sha256": "02c032348d3423ac2631bb978780e196e1475f30214da9cec106b9193a9fe77f",
+      "operation_id": "uxop-bd8e30b3d0bc1420ce12392232c53854",
+      "owned_browser_activity": {
+        "served_files": [
+          {
+            "count": 1,
+            "path": "index.html",
+            "sha256": "f6cdb626ee425c2fdf8f82f99aefede3abae8f3ceb9831d11fe04be719f1bab1"
+          },
+          {
+            "count": 1,
+            "path": "assets/index-BSOruyyP.js",
+            "sha256": "e2520a36bdb32f6828eed018e8311fbb3436e5003d3cdf9407a6a6617895d1bc"
+          },
+          {
+            "count": 1,
+            "path": "assets/index-D2jlfvMz.css",
+            "sha256": "51cd8e2a2f8e59116da24b98806f03a6c9aad0b1297514e7699f6f0b7f224c76"
+          },
+          {
+            "count": 1,
+            "path": "assets/brand-mark-YuYvTQpp.png",
+            "sha256": "dc0587362993a1d57576b35c90aaf2627cfb4b0d499ff5b082330124e57d75a0"
+          },
+          {
+            "count": 3,
+            "path": "assets/importWorker-hLjzVhak.js",
+            "sha256": "1d124bb6590f4eccc420baa24c60ab8a7d4c68cdd16928fc26010fbd070237d5"
+          }
+        ],
+        "started_workers": [
+          {
+            "count": 3,
+            "path": "assets/importWorker-hLjzVhak.js",
+            "sha256": "1d124bb6590f4eccc420baa24c60ab8a7d4c68cdd16928fc26010fbd070237d5"
+          }
+        ]
+      },
+      "owned_execution": {
+        "network_isolation": {
+          "bind_denied": true,
+          "policy": "macos-seatbelt-deny-network-v1",
+          "profile_sha256": "80de7c41c4cac0234db39d259c29450b17c4e5768f24bc7dd9f9f8c75d2c12a3"
+        },
+        "uploads": [
+          {
+            "id": "ZIP-PREVIOUS",
+            "mime_type": "application/zip",
+            "sha256": "49b29cf570663f2d561fc845e01b5c11cc283ca19c619196d0efc3f3b9e03004",
+            "size_bytes": 3435
+          },
+          {
+            "id": "ZIP-CURRENT",
+            "mime_type": "application/zip",
+            "sha256": "b65df20cfb3cd3e890671d0b87da51ccc65186af62023bc9166c4d103197e018",
+            "size_bytes": 4675
+          },
+          {
+            "id": "ZIP-MISSING-FOLLOWING",
+            "mime_type": "application/zip",
+            "sha256": "2f5e297ce3a5d6611318e7467a58ac3d10ab3f14909e9c4a2ba6fdfeab13ff92",
+            "size_bytes": 4213
+          },
+          {
+            "id": "ZIP-CONTROL-5000",
+            "mime_type": "application/zip",
+            "sha256": "3d5256e09143f33fdad13467be827b94cd984f03a30a6a06ed4babea68f92176",
+            "size_bytes": 31435
+          },
+          {
+            "id": "ZIP-LARGE-150000",
+            "mime_type": "application/zip",
+            "sha256": "02e5d68b0da3d12c63e97ffa820652b3acfc2b71d905de9cdbc7e2b16e148164",
+            "size_bytes": 816720
+          },
+          {
+            "id": "JSON-LARGE-PROFILE",
+            "mime_type": "application/json",
+            "sha256": "40066ff2645323f4041abe18ca53204636a76015c3080f81e9a2205db062c5d3",
+            "size_bytes": 76
+          },
+          {
+            "id": "JSON-LARGE-FOLLOWERS",
+            "mime_type": "application/json",
+            "sha256": "234bbb45d81bb50e7c3f596f498700b1c96db081603db9727b635cec7eca2618",
+            "size_bytes": 11850001
+          },
+          {
+            "id": "JSON-LARGE-FOLLOWING",
+            "mime_type": "application/json",
+            "sha256": "a7b0d7bb34dfc59a7c1d7a4e4071af0f27a461da002238739aeb357b3be4c3ee",
+            "size_bytes": 11850029
+          },
+          {
+            "id": "JSON-LARGE-PENDING",
+            "mime_type": "application/json",
+            "sha256": "79abf2db7905d3d2b58628b2ef8f375cfe3ec3a7d9bf293d529e46927a85b2d5",
+            "size_bytes": 393
+          },
+          {
+            "id": "JSON-LARGE-RECENT-REQUESTS",
+            "mime_type": "application/json",
+            "sha256": "979320ddad4fa9558ddd193e3f29b01265c2300e533e1368c78d3d569e8b7a28",
+            "size_bytes": 43
+          },
+          {
+            "id": "JSON-LARGE-RECENT-UNFOLLOWED",
+            "mime_type": "application/json",
+            "sha256": "a22e3948f1b3602846491ec9efde6b1c396283184f59e4ae44a8e73d527c939d",
+            "size_bytes": 157
+          },
+          {
+            "id": "JSON-LARGE-CLOSE-FRIENDS",
+            "mime_type": "application/json",
+            "sha256": "7f2801507a083803ced236f4648f0a77e2540f3de2838aa2c33fefe563efb76b",
+            "size_bytes": 499
+          },
+          {
+            "id": "JSON-LARGE-BLOCKED",
+            "mime_type": "application/json",
+            "sha256": "9c56c0db59fbd19c8209b1ca2192e5ade2adf8f25162916924df071be1d08871",
+            "size_bytes": 271
+          },
+          {
+            "id": "JSON-LARGE-RESTRICTED",
+            "mime_type": "application/json",
+            "sha256": "2ebc8f947418502624c6c8530d0b2fb00eb29e4e85ab705d7f68c08203242add",
+            "size_bytes": 155
+          },
+          {
+            "id": "JSON-LARGE-HIDE-STORY",
+            "mime_type": "application/json",
+            "sha256": "e34a98aada50ea1a04e60b4176e68e5a2964db3b89f26687bb78b7df4908ef80",
+            "size_bytes": 269
+          },
+          {
+            "id": "JSON-LARGE-LIKES",
+            "mime_type": "application/json",
+            "sha256": "bb2c7bdeeb8f17d7d3473878a9c3832d382ea67fd651668589f4545934dd3e18",
+            "size_bytes": 7162
+          },
+          {
+            "id": "JSON-LARGE-COMMENTS",
+            "mime_type": "application/json",
+            "sha256": "4b342855e7b33602ab04347e05a1398a67a03f93caa0b9d06f51c8c25bb40547",
+            "size_bytes": 3845
+          }
+        ],
+        "workers": {
+          "assets/importWorker-hLjzVhak.js": "1d124bb6590f4eccc420baa24c60ab8a7d4c68cdd16928fc26010fbd070237d5"
+        }
+      },
+      "persona": {
+        "persona_id": "PER-ARCHIVE",
+        "prd_sha256": "8c28c344b58b4d21d23bde3c2d6c76237882a8b78fb41bd55107382385f76050",
+        "profile_sha256": "5ea3d4fa88bfec2daa3165c4a990df8c3d51ee00ed9bcc2c19e6f425c96ceb13",
+        "revision": 1
+      },
+      "pngs": [
+        {
+          "path": "T-LARGE-JSON-step-007.png",
+          "sha256": "cc72e64ef372b248bdcae0bb921cf59bc97a8bbbde3826624878d6a2f4784791"
+        }
+      ],
+      "screen_url": "https://remorsearch.invalid/index.html",
+      "started_at": "2026-11-12T06:47:17Z",
+      "status": "failed",
+      "task_id": "T-LARGE-JSON",
+      "uploads": [
+        {
+          "file_selection": {
+            "files": [
+              {
+                "id": "ZIP-PREVIOUS",
+                "mime_type": "application/zip",
+                "name": "instagram-jimin.daily_-2026-10-29-owned.zip",
+                "sha256": "49b29cf570663f2d561fc845e01b5c11cc283ca19c619196d0efc3f3b9e03004",
+                "size_bytes": 3435
+              }
+            ],
+            "input": ".sheet-body input",
+            "method": "playwright_filechooser"
+          },
+          "step_index": 3
+        },
+        {
+          "file_selection": {
+            "files": [
+              {
+                "id": "JSON-LARGE-PROFILE",
+                "mime_type": "application/json",
+                "name": "personal_information.json",
+                "sha256": "40066ff2645323f4041abe18ca53204636a76015c3080f81e9a2205db062c5d3",
+                "size_bytes": 76
+              },
+              {
+                "id": "JSON-LARGE-FOLLOWERS",
+                "mime_type": "application/json",
+                "name": "followers_1.json",
+                "sha256": "234bbb45d81bb50e7c3f596f498700b1c96db081603db9727b635cec7eca2618",
+                "size_bytes": 11850001
+              },
+              {
+                "id": "JSON-LARGE-FOLLOWING",
+                "mime_type": "application/json",
+                "name": "following.json",
+                "sha256": "a7b0d7bb34dfc59a7c1d7a4e4071af0f27a461da002238739aeb357b3be4c3ee",
+                "size_bytes": 11850029
+              },
+              {
+                "id": "JSON-LARGE-PENDING",
+                "mime_type": "application/json",
+                "name": "pending_follow_requests.json",
+                "sha256": "79abf2db7905d3d2b58628b2ef8f375cfe3ec3a7d9bf293d529e46927a85b2d5",
+                "size_bytes": 393
+              },
+              {
+                "id": "JSON-LARGE-RECENT-REQUESTS",
+                "mime_type": "application/json",
+                "name": "recent_follow_requests.json",
+                "sha256": "979320ddad4fa9558ddd193e3f29b01265c2300e533e1368c78d3d569e8b7a28",
+                "size_bytes": 43
+              },
+              {
+                "id": "JSON-LARGE-RECENT-UNFOLLOWED",
+                "mime_type": "application/json",
+                "name": "recently_unfollowed_profiles.json",
+                "sha256": "a22e3948f1b3602846491ec9efde6b1c396283184f59e4ae44a8e73d527c939d",
+                "size_bytes": 157
+              },
+              {
+                "id": "JSON-LARGE-CLOSE-FRIENDS",
+                "mime_type": "application/json",
+                "name": "close_friends.json",
+                "sha256": "7f2801507a083803ced236f4648f0a77e2540f3de2838aa2c33fefe563efb76b",
+                "size_bytes": 499
+              },
+              {
+                "id": "JSON-LARGE-BLOCKED",
+                "mime_type": "application/json",
+                "name": "blocked_profiles.json",
+                "sha256": "9c56c0db59fbd19c8209b1ca2192e5ade2adf8f25162916924df071be1d08871",
+                "size_bytes": 271
+              },
+              {
+                "id": "JSON-LARGE-RESTRICTED",
+                "mime_type": "application/json",
+                "name": "restricted_profiles.json",
+                "sha256": "2ebc8f947418502624c6c8530d0b2fb00eb29e4e85ab705d7f68c08203242add",
+                "size_bytes": 155
+              },
+              {
+                "id": "JSON-LARGE-HIDE-STORY",
+                "mime_type": "application/json",
+                "name": "hide_story_from.json",
+                "sha256": "e34a98aada50ea1a04e60b4176e68e5a2964db3b89f26687bb78b7df4908ef80",
+                "size_bytes": 269
+              },
+              {
+                "id": "JSON-LARGE-LIKES",
+                "mime_type": "application/json",
+                "name": "liked_posts.json",
+                "sha256": "bb2c7bdeeb8f17d7d3473878a9c3832d382ea67fd651668589f4545934dd3e18",
+                "size_bytes": 7162
+              },
+              {
+                "id": "JSON-LARGE-COMMENTS",
+                "mime_type": "application/json",
+                "name": "post_comments_1.json",
+                "sha256": "4b342855e7b33602ab04347e05a1398a67a03f93caa0b9d06f51c8c25bb40547",
+                "size_bytes": 3845
+              }
+            ],
+            "input": ".sheet-body input",
+            "method": "playwright_filechooser"
+          },
+          "step_index": 6
+        },
+        {
+          "file_selection": {
+            "files": [
+              {
+                "id": "ZIP-CURRENT",
+                "mime_type": "application/zip",
+                "name": "instagram-jimin.daily_-2026-11-12-owned.zip",
+                "sha256": "b65df20cfb3cd3e890671d0b87da51ccc65186af62023bc9166c4d103197e018",
+                "size_bytes": 4675
+              }
+            ],
+            "input": ".sheet-body input",
+            "method": "playwright_filechooser"
+          },
+          "step_index": 10
+        }
+      ]
+    }
+  ]
+}

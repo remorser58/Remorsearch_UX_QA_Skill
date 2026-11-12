@@ -5,12 +5,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import net from 'node:net';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { WebSession } from './session.mjs';
 import { resolveDevice } from './devices.mjs';
 import { normalizeAction, normalizeScenario, isTaskSelector } from './validate.mjs';
 import { loadPlaywright } from './playwright_loader.mjs';
+import { UPLOAD_LIMITS } from './owned_upload.mjs';
+import { writeJsonAtomic } from './util.mjs';
 
 const ORIGIN = 'https://remorsearch.invalid';
 const INPUT_LIMIT = 256 * 1024;
@@ -24,6 +27,8 @@ const MIME = Object.freeze({ '.html': 'text/html; charset=utf-8', '.css': 'text/
   '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.woff': 'font/woff', '.woff2': 'font/woff2' });
 const CSP = "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'none'; frame-src 'none'; object-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'";
+const WORKER_POLICY = 'macos-seatbelt-deny-network-v1';
+const NETWORK_PROFILE = '(version 1)(allow default)(deny network*)';
 
 function reject(code = 'input_invalid') { const error = new Error(code); error.bridgeCode = code; throw error; }
 function object(value) { return value !== null && typeof value === 'object' && !Array.isArray(value); }
@@ -32,10 +37,10 @@ function keys(value, required, optional = []) {
       Object.keys(value).some(k => !required.includes(k) && !optional.includes(k))) reject();
 }
 function digest(bytes) { return crypto.createHash('sha256').update(bytes).digest('hex'); }
-function relative(name) {
+function relative(name, staticOnly = true) {
   if (typeof name !== 'string' || name.length > 512 || !/^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(name) ||
       name.split('/').some(part => !part || part === '.' || part === '..' || part.startsWith('.'))) reject();
-  if (!Object.hasOwn(MIME, path.posix.extname(name))) reject();
+  if (staticOnly && !Object.hasOwn(MIME, path.posix.extname(name))) reject();
   return name;
 }
 function absolute(name) {
@@ -51,7 +56,7 @@ function resourceName(url) {
 
 /** Pure validation. A scenario is data; it never contains an execution program. */
 export function validateRequest(raw) {
-  keys(raw, ['schema_version', 'binding', 'source', 'files', 'output', 'scenario', 'device_id', 'timeout_seconds']);
+  keys(raw, ['schema_version', 'binding', 'source', 'files', 'output', 'scenario', 'device_id', 'timeout_seconds'], ['uploads', 'workers']);
   if (raw.schema_version !== 'ux-journey-browser-request.v1') reject();
   const b = raw.binding;
   keys(b, ['task_id', 'attempt', 'operation_id', 'build_sha256', 'persona_id', 'revision', 'profile_sha256', 'prd_sha256']);
@@ -62,6 +67,27 @@ export function validateRequest(raw) {
   if (inside(raw.output, raw.source) || inside(raw.source, raw.output)) reject();
   if (!object(raw.files) || Object.keys(raw.files).length < 1 || Object.keys(raw.files).length > 64) reject();
   for (const [name, hash] of Object.entries(raw.files)) { relative(name); if (typeof hash !== 'string' || !HASH.test(hash)) reject(); }
+  const workers = raw.workers ?? {};
+  if (!object(workers) || Object.keys(workers).length > 8) reject();
+  for (const [name, hash] of Object.entries(workers)) {
+    relative(name);
+    if (!['.js', '.mjs'].includes(path.posix.extname(name)) || !Object.hasOwn(raw.files, name)
+      || typeof hash !== 'string' || !HASH.test(hash) || raw.files[name] !== hash) reject();
+  }
+  const uploads = raw.uploads ?? [], uploadIds = new Set();
+  let uploadBytes = 0;
+  if (!Array.isArray(uploads) || uploads.length > 32) reject();
+  for (const entry of uploads) {
+    keys(entry, ['id', 'path', 'name', 'mime_type', 'size_bytes', 'sha256']);
+    if (typeof entry.id !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(entry.id) || uploadIds.has(entry.id)
+      || typeof entry.name !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,254}$/.test(entry.name)
+      || typeof entry.mime_type !== 'string' || entry.mime_type.length > 127
+      || !/^[a-z0-9][a-z0-9!#$&^_.+-]*\/[a-z0-9][a-z0-9!#$&^_.+-]*$/.test(entry.mime_type)
+      || !Number.isSafeInteger(entry.size_bytes) || entry.size_bytes < 0 || entry.size_bytes > UPLOAD_LIMITS.fileBytes
+      || typeof entry.sha256 !== 'string' || !HASH.test(entry.sha256)) reject();
+    relative(entry.path, false); uploadIds.add(entry.id); uploadBytes += entry.size_bytes;
+  }
+  if (uploadBytes > UPLOAD_LIMITS.totalBytes) reject();
   if (!Number.isInteger(raw.timeout_seconds) || raw.timeout_seconds < 1 || raw.timeout_seconds > 30) reject();
   const doc = structuredClone(raw.scenario);
   keys(doc, ['schema_version', 'scenario_id', 'surface', 'task_goal_ko', 'device_ids', 'steps', 'success'], ['targets']);
@@ -74,13 +100,15 @@ export function validateRequest(raw) {
   if (!Array.isArray(doc.device_ids) || doc.device_ids.length !== 1 || doc.device_ids[0] !== raw.device_id) reject();
   if (!Array.isArray(doc.steps) || doc.steps.length < 1 || doc.steps.length > 16) reject();
   for (const action of doc.steps) {
-    if (!['type', 'click', 'tap', 'press', 'scroll', 'wait', 'snapshot'].includes(action?.action)) reject();
+    if (!['type', 'click', 'tap', 'press', 'scroll', 'wait', 'snapshot', 'upload'].includes(action?.action)) reject();
     normalizeAction(action, { strict: true });
     // Bound authored typing by action work, not a hidden per-character delay.
     if (action.action === 'type' && action.delay_ms === undefined) action.delay_ms = 0;
-    if (['type', 'click', 'tap'].includes(action.action) && !isTaskSelector(action.target)) reject();
+    if (['type', 'click', 'tap', 'upload'].includes(action.action) && !isTaskSelector(action.target)) reject();
+    if (action.action === 'upload' && (!isTaskSelector(action.input) || action.files.some(id => !uploadIds.has(id)))) reject();
     for (const key of ['ms', 'hold_ms', 'duration_ms', 'delay_ms', 'settle_ms', 'feedback_timeout_ms', 'timeout_ms']) {
-      if (action[key] !== undefined && (action[key] > 1000 || (key === 'delay_ms' && action[key] !== 0))) reject();
+      const limit = action.action === 'upload' && key === 'timeout_ms' ? UPLOAD_LIMITS.timeoutMs : 1000;
+      if (action[key] !== undefined && (action[key] > limit || (key === 'delay_ms' && action[key] !== 0))) reject();
     }
   }
   keys(doc.success, ['task_checks']);
@@ -97,12 +125,14 @@ export function validateRequest(raw) {
 }
 
 /** Null means abort, never continue/fetch. Query strings and URL aliases are refused. */
-export function routeReply(files, url, method) {
+export function routeReply(files, url, method, workers = {}) {
   const name = resourceName(url);
   if (name === null || !['GET', 'HEAD'].includes(method) || !files.has(name)) return null;
   const entry = files.get(name);
   return { status: 200, contentType: entry.contentType, body: method === 'HEAD' ? Buffer.alloc(0) : entry.body,
-    headers: { 'content-security-policy': CSP, 'x-content-type-options': 'nosniff', 'cache-control': 'no-store' } };
+    headers: { 'content-security-policy': Object.keys(workers).length
+      ? CSP.replace("worker-src 'none'", 'worker-src ' + Object.keys(workers).map(name => ORIGIN + '/' + name).join(' '))
+      : CSP, 'x-content-type-options': 'nosniff', 'cache-control': 'no-store' } };
 }
 
 function noLinks(file) {
@@ -134,6 +164,46 @@ function readReviewedFiles(source, manifest) {
   return result;
 }
 
+/** Binary uploads are read only from the frozen owned copy, never action paths. */
+export function readReviewedUploads(source, declarations = []) {
+  noLinks(source);
+  if (!fs.statSync(source).isDirectory() || fs.realpathSync(source) !== source) reject('source_unavailable');
+  const result = new Map();
+  for (const entry of declarations) {
+    const file = path.join(source, relative(entry.path, false)); noLinks(file);
+    const fd = fs.openSync(file, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+    try {
+      const stat = fs.fstatSync(fd);
+      if (!stat.isFile() || stat.nlink !== 1 || stat.size !== entry.size_bytes || stat.size > UPLOAD_LIMITS.fileBytes) reject('source_unavailable');
+      const buffer = fs.readFileSync(fd);
+      const after = fs.fstatSync(fd);
+      if (buffer.length !== entry.size_bytes || digest(buffer) !== entry.sha256
+        || stat.mtimeMs !== after.mtimeMs || stat.size !== after.size || fs.realpathSync(file) !== file) reject('source_changed');
+      result.set(entry.id, { name: entry.name, mimeType: entry.mime_type, buffer, sha256: entry.sha256 });
+    } finally { fs.closeSync(fd); }
+  }
+  return result;
+}
+
+/** Fail closed even if somebody invokes this bridge with plain Node. An owned
+ * ephemeral bind succeeds outside the policy; only explicit OS denial qualifies.
+ * This probes this process, not a claim of inspecting every browser syscall.
+ * The profile hash declares the Python controller's frozen launcher policy;
+ * a bind refusal alone is not independent kernel attestation of that policy. */
+export async function requireWorkerIsolation() {
+  if (process.platform !== 'darwin') reject('worker_isolation_unavailable');
+  const denied = await new Promise(resolve => {
+    const server = net.createServer();
+    const timer = setTimeout(() => { server.close(() => {}); resolve(false); }, 1000);
+    server.once('error', error => { clearTimeout(timer); resolve(['EPERM', 'EACCES'].includes(error.code)); });
+    server.listen({ host: '127.0.0.1', port: 0, exclusive: true }, () => {
+      clearTimeout(timer); server.close(() => resolve(false));
+    });
+  });
+  if (!denied) reject('worker_isolation_unavailable');
+  return { policy: WORKER_POLICY, profile_sha256: digest(NETWORK_PROFILE), bind_denied: true };
+}
+
 /** Runs before page code in every owned document, including child frames/popups.
  * Routing/CSP do not cover every RTC transport (for example TCP TURN). Disable
  * these capabilities instead of claiming that an HTTP interception is a firewall.
@@ -143,7 +213,7 @@ export function disableUnroutedTransports() {
   const names = [...new Set([
     'RTCPeerConnection', 'webkitRTCPeerConnection', 'mozRTCPeerConnection',
     'RTCIceTransport', 'RTCDtlsTransport', 'RTCSctpTransport', 'RTCQuicTransport',
-    'RTCDataChannel', 'RTCRtpSender', 'RTCRtpReceiver', 'RTCRtpTransceiver', 'WebTransport',
+    'RTCDataChannel', 'RTCRtpSender', 'RTCRtpReceiver', 'RTCRtpTransceiver', 'WebTransport', 'SharedWorker',
     ...Object.getOwnPropertyNames(globalThis).filter(name => /^RTC[A-Z]|^(?:webkit|moz)RTCPeerConnection$|^WebTransport$/.test(name)),
   ])];
   for (const name of names) {
@@ -166,11 +236,29 @@ function transportGuardInstalled() {
 }
 
 class OwnedSession extends WebSession {
-  constructor(options, files) { super(options); this.reviewedFiles = files; }
+  constructor(options, files, workers) {
+    super(options); this.reviewedFiles = files; this.reviewedWorkers = workers;
+    this.servedFiles = new Map(); this.startedWorkers = new Map();
+  }
+  activity(map, name, hash) {
+    const old = map.get(name);
+    map.set(name, { path: name, sha256: hash, count: (old?.count ?? 0) + 1 });
+  }
+  workerStarted(worker) {
+    const name = resourceName(worker.url());
+    if (name === null || !Object.hasOwn(this.reviewedWorkers, name)) this.block('Unreviewed Worker refused');
+    else this.activity(this.startedWorkers, name, this.reviewedWorkers[name]);
+  }
   async onRoute(route) {
     const request = route.request();
-    const reply = routeReply(this.reviewedFiles, request.url(), request.method());
-    if (reply) await route.fulfill(reply).catch(() => {});
+    const reply = routeReply(this.reviewedFiles, request.url(), request.method(), this.reviewedWorkers);
+    if (reply) {
+      try {
+        await route.fulfill(reply);
+        const name = resourceName(request.url());
+        this.activity(this.servedFiles, name, digest(this.reviewedFiles.get(name).body));
+      } catch { /* closed/cancelled requests are not served-byte observations */ }
+    }
     else { this.blockedCount++; await route.abort('blockedbyclient').catch(() => {}); }
   }
   async onWebSocket(socket) {
@@ -214,7 +302,7 @@ function packageRoot(start, expectedName) {
   }
 }
 
-function runtime({ discovery = false } = {}) {
+function runtime({ discovery = false, workers = false } = {}) {
   if (process.versions.node.split('.')[0] !== '22' || process.env.REMORSEARCH_BROWSER_WS !== undefined ||
       process.env.NODE_OPTIONS !== undefined) reject('runtime_unavailable');
   let loaded;
@@ -244,7 +332,13 @@ function runtime({ discovery = false } = {}) {
     const requireFromPlaywright = createRequire(path.join(playwrightPath, 'package.json'));
     corePath = packageRoot(requireFromPlaywright.resolve('playwright-core'), 'playwright-core');
   } catch { reject('runtime_unavailable'); }
-  const executable = loaded.pw.chromium.executablePath();
+  // The full macOS app needs ProcessSingleton Unix sockets outside its owned
+  // profile. Playwright's already-installed headless shell avoids that service.
+  // Resolve through the pinned 1.56.1 registry, never an arbitrary binary path.
+  const requireCore = createRequire(path.join(corePath, 'package.json'));
+  const executable = workers
+    ? requireCore(path.join(corePath, 'lib/server/registry/index.js')).registry.findExecutable('chromium-headless-shell')?.executablePath()
+    : loaded.pw.chromium.executablePath();
   if (!discovery && process.env.REMORSEARCH_JOURNEY_CHROMIUM !== executable) reject('runtime_unavailable');
   try {
     if (!fs.statSync(executable).isFile()) reject('runtime_unavailable');
@@ -273,11 +367,13 @@ export async function executeRequest(request) {
   try {
     const accepted = validateRequest(request);
     result.binding = structuredClone(request.binding);
-    const { pw, info, executable } = runtime();
+    const { pw, info, executable } = runtime({ workers: Object.keys(request.workers ?? {}).length > 0 });
     const cwd = fs.realpathSync(process.cwd());
     noLinks(path.dirname(request.output));
     if (path.dirname(request.output) !== cwd || fs.statSync(cwd).mode & 0o077 || fs.existsSync(request.output)) reject('output_unavailable');
     const files = readReviewedFiles(request.source, request.files);
+    const ownedUploads = readReviewedUploads(request.source, request.uploads);
+    const networkIsolation = Object.keys(request.workers ?? {}).length ? await requireWorkerIsolation() : null;
     fs.mkdirSync(request.output, { mode: 0o700 });
     process.umask(0o077);
     const stopSignal = new Promise(resolve => { interrupt = resolve; });
@@ -299,6 +395,7 @@ export async function executeRequest(request) {
           await context.addInitScript(disableUnroutedTransports);
           let firstPage = null;
           context.on('page', page => {
+            page.on('worker', worker => session?.workerStarted(worker));
             page.on('download', download => {
               session?.block('unexpected download blocked');
               void download.cancel().catch(() => {});
@@ -323,7 +420,7 @@ export async function executeRequest(request) {
         return typeof value === 'function' ? value.bind(target) : value;
       } });
     } } };
-    session = new OwnedSession({ pw: wrappedPw, pwInfo: info, scenario: accepted.scenario,
+    session = new OwnedSession({ pw: wrappedPw, pwInfo: info, scenario: accepted.scenario, ownedUploads,
       deviceRequest: accepted.deviceRequest, profileId: request.binding.persona_id, runId: accepted.runId,
       runDir: request.output, mode: 'scripted', warnings: [], options: {
         headed: false, flashSampleMs: 0, feedbackTimeoutMs: 100, settleMs: 50,
@@ -331,7 +428,7 @@ export async function executeRequest(request) {
         locale: 'ko-KR', timezoneId: 'Asia/Seoul', buildId: request.binding.build_sha256,
         buildIdSource: 'frozen reviewed workspace', agent: 'deterministic reviewed journey bridge',
         agentInfo: { model_family: 'none', model: 'scripted task execution', input_channel: 'screenshot+a11y', persona_arm: 'neutral' },
-      } }, files);
+      } }, files, request.workers ?? {});
     flow = (async () => {
       await session.start();
       if (aborted) reject(aborted);
@@ -358,6 +455,14 @@ export async function executeRequest(request) {
     evidenceSize(request.output);
     const runFile = path.join(request.output, 'run.json');
     if (finished.runPath !== runFile || !fs.lstatSync(runFile).isFile()) reject('evidence_invalid');
+    if ((request.uploads ?? []).length || Object.keys(request.workers ?? {}).length) {
+      const native = JSON.parse(fs.readFileSync(runFile, 'utf8'));
+      native.owned_execution = { uploads: (request.uploads ?? []).map(({ id, mime_type, size_bytes, sha256 }) =>
+        ({ id, mime_type, size_bytes, sha256 })), workers: request.workers ?? {}, network_isolation: networkIsolation };
+      native.owned_browser_activity = { served_files: [...session.servedFiles.values()],
+        started_workers: [...session.startedWorkers.values()] };
+      writeJsonAtomic(runFile, native, 0o600);
+    }
     const bytes = fs.readFileSync(runFile);
     if (!bytes.length || bytes.length > 8 * 1024 * 1024) reject('evidence_invalid');
     result.run = { path: 'run.json', sha256: digest(bytes) };
@@ -375,9 +480,19 @@ export async function executeRequest(request) {
 }
 
 async function main() {
-  if (process.argv.length === 3 && process.argv[2] === '--probe') {
+  if (process.argv.length === 3 && process.argv[2] === '--probe-isolation') {
     try {
-      const { info, executable, playwrightPath, corePath } = runtime({ discovery: true });
+      const proof = await requireWorkerIsolation();
+      process.stdout.write(JSON.stringify({ schema_version: 'ux-journey-worker-isolation.v1', ...proof }) + '\n');
+    } catch {
+      process.stdout.write(JSON.stringify({ problem: 'worker_isolation_unavailable' }) + '\n');
+      process.exitCode = 2;
+    }
+    return;
+  }
+  if (process.argv.length === 3 && ['--probe', '--probe-workers'].includes(process.argv[2])) {
+    try {
+      const { info, executable, playwrightPath, corePath } = runtime({ discovery: true, workers: process.argv[2] === '--probe-workers' });
       process.stdout.write(JSON.stringify({ schema_version: 'ux-journey-browser-runtime.v1',
         node_version: process.versions.node, playwright_version: info.version, chromium_executable: executable,
         playwright_path: playwrightPath, playwright_core_path: corePath }) + '\n');
@@ -398,6 +513,7 @@ async function main() {
     if (validationOnly) {
       validateRequest(request);
       readReviewedFiles(request.source, request.files);
+      readReviewedUploads(request.source, request.uploads);
       process.stdout.write(JSON.stringify({ schema_version: 'ux-journey-browser-validation.v1', valid: true }) + '\n');
       return;
     }
