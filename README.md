@@ -124,6 +124,12 @@ to the existing receipt validator and immutable MD/JSON reports. `status` and a
 repeated `start` show the current goals, failures, unexecuted criteria and next
 action. The host reads that report back in ordinary language.
 
+The report re-reads each stored execution log against its receipt and checks
+repeated or contradictory observations for the same PRD obligation across
+personas. Repeated evidence is not counted twice; conflicts stay visible and
+require review. This is deterministic integrity/consistency checking, not an
+independent human or model evaluator, and it cannot prove adapter observations true.
+
 This bounded path reuses current PRD hypotheses and saved research-motivated
 synthetic personas. The host explicitly reviews each research location; current
 gate, source/capture retention and motivation checks remain mandatory, and the
@@ -138,6 +144,10 @@ Host details: [start](skills/remorsearch-ux-qa/references/persona-qa/start.md),
 [local execution contract](skills/remorsearch-ux-qa/references/persona-qa/local-run.md),
 [fixed criteria](docs/validation/journey-run-protocol-20261112.md) and
 [validation results](docs/validation/journey-run-results-20261112.md).
+The additional [swarm evidence audit protocol](docs/validation/swarm-evidence-audit-protocol-20261112.md)
+and [verification record](docs/validation/swarm-evidence-audit-results-20261112.md)
+describe receipt/log rechecks, cross-persona duplicate/conflict detection and the
+explicit boundary between deterministic consistency checks and independent review.
 The installed `examples/journey/run_fixture.py` is a diagnostic with a known
 synthetic defect, not an actual-user study. Release validation runs it from the
 extracted package and keeps failed/inconclusive product verdicts distinct from

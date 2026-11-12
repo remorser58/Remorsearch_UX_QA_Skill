@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "skills/remorsearch-ux-qa"))
-from uxpersonas import workspace, local_run
+from uxpersonas import workspace, local_run, swarm
 from uxpersonas.library import Library
 from uxresearch.canonical import EngineError, byte_digest, canonical, digest
 from uxresearch.storage import atomic
@@ -99,6 +99,80 @@ class JourneyRunTests(unittest.TestCase):
         self.assertIn("Keep earlier items", markdown)
         self.assertIn(artifact["path"], markdown)
         self.assertIn("not_run", markdown)
+
+    def test_multi_persona_report_exposes_a_separate_swarm_evidence_audit(self):
+        report = self.execute()
+        audit = report["evidence_audit"]
+        self.assertEqual(audit["basis"], "deterministic_receipt_and_cross_persona_audit")
+        self.assertEqual(audit["integrity"], "consistent")
+        self.assertFalse(audit["independent_reviewer"])
+        self.assertEqual(audit["obligations"]["conflicted"], 0)
+        self.assertEqual(audit["obligations"]["definition_conflicts"], 1)
+        self.assertGreaterEqual(audit["obligations"]["incomplete"], 2)
+
+    def _shared_obligation_report(self, runner):
+        self.variant(runner)
+        for task in self.plan["tasks"]:
+            task["requirement_coverage"][0]["obligations"][0]["description"] = "Preserve the same existing item after validation."
+        atomic(self.plan_path, canonical(self.plan))
+        return self.execute()
+
+    def test_identical_observations_from_two_personas_are_not_counted_as_two_signals(self):
+        report = self._shared_obligation_report(RUNNER.replace('if request["task"]["id"] == "T-RETURN":', "if False:"))
+        audit = report["evidence_audit"]
+        self.assertEqual(audit["obligations"]["duplicated"], 1)
+        duplicate = audit["duplicates"][0]
+        self.assertEqual(set(duplicate["task_ids"]), {"T-EXPLORE", "T-RETURN"})
+        self.assertEqual(duplicate["distinct_observations"], 1)
+        self.assertIn("중복 관측", Path(report["report_path"]).read_text())
+
+    def test_contradictory_persona_observations_remain_unresolved(self):
+        report = self._shared_obligation_report(RUNNER)
+        audit = report["evidence_audit"]
+        self.assertEqual(audit["obligations"]["conflicted"], 1)
+        conflict = audit["conflicts"][0]
+        self.assertEqual(set(conflict["statuses"]), {"passed", "failed"})
+        self.assertEqual(set(conflict["task_ids"]), {"T-EXPLORE", "T-RETURN"})
+        self.assertEqual(report["counts"]["failed"], 1)
+        self.assertEqual(report["counts"]["passed"], 0)
+        self.assertIn("상충 관측", Path(report["report_path"]).read_text())
+        self.assertIn("종합 판정을 보류", report["next_action"])
+
+    def test_same_obligation_id_and_wording_with_different_criteria_is_not_compared(self):
+        self.variant(RUNNER)
+        for task in self.plan["tasks"]:
+            task["requirement_coverage"][0]["obligations"][0]["description"] = "Same wording, different criterion mapping."
+        self.plan["tasks"][1]["requirement_coverage"][0]["obligations"][0]["criterion_refs"] = [
+            {"kind": "recovery", "index": 0}]
+        atomic(self.plan_path, canonical(self.plan))
+        report = self.execute()
+        audit = report["evidence_audit"]
+        self.assertEqual(audit["obligations"]["definition_conflicts"], 1)
+        self.assertEqual(audit["obligations"]["conflicted"], 0)
+
+    def test_receipt_artifact_hash_cannot_hide_observation_receipt_disagreement(self):
+        self.execute()
+        state = local_run._read(self.work)
+        task_id = "T-EXPLORE"
+        run = self.work / local_run.DIRECTORY / "run"
+        swarm_path = run / "swarm-state.json"
+        envelope = json.loads(swarm_path.read_bytes())
+        swarm_state = envelope["payload"]
+        entry = next(row for row in swarm_state["tasks"] if row["task"]["id"] == task_id)
+        artifact = entry["receipt"]["artifacts"][0]
+        evidence_path = run / artifact["path"]
+        evidence = json.loads(evidence_path.read_bytes())
+        evidence["observation"]["criteria"][0]["observation"] = "A different observation not present in the receipt."
+        raw = canonical(evidence)
+        atomic(evidence_path, raw)
+        artifact["sha256"] = byte_digest(raw)
+        atomic(swarm_path, swarm._state_bytes(swarm_state))
+        report = local_run.execute(self.work)
+        audit = report["evidence_audit"]
+        self.assertEqual(audit["integrity"], "blocked")
+        self.assertIn(dict(code="execution_evidence_mismatch", task_id=task_id), audit["issues"])
+        self.assertEqual(report["counts"]["passed"], 0)
+        self.assertIn("로그와 receipt", report["next_action"])
 
     def test_missing_approval_and_missing_persona_never_create_execution(self):
         with self.assertRaises(EngineError) as caught:

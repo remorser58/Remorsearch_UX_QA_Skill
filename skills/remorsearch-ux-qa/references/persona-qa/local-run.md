@@ -135,6 +135,18 @@ If its exit cannot be confirmed, no result is finalized and remaining work is
 blocked. No saved PID is signalled after restart. Descendant/background process
 cleanup is unsupported; adapters that launch them are outside this contract.
 
+Every current report also performs a read-only deterministic evidence audit. It
+reopens each recorded execution log, checks its digest and dispatch binding, and
+compares the stored observation with the receipt's steps and criteria. It then
+groups only matching PRD requirement/obligation IDs across different tasks to
+flag repeated observations, contradictory pass/fail outcomes, mismatched
+obligation definitions and missing observations. A duplicate is one repeated
+signal, not extra corroboration. Conflicts remain unresolved and are shown beside
+the original per-task outcomes; no receipt is rewritten and no task is rerun.
+This is a second mechanical consistency check, not an independent human or model
+review and not proof that the reviewed adapter's statements are true. Actual
+browser, service and user acceptance remain separate gates.
+
 Unknown owned writes retain the existing resource quarantine. A stopped process
 alone does not prove fixture state. The host must inspect actual state and use
 the existing explicit `settle` rules before shared-resource work can continue.

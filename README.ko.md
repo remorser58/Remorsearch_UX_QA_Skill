@@ -88,6 +88,8 @@ Node.js 22를 쓰십시오. 고정된 Playwright 1.56.1에서는 Node.js 24.16 �
 
 [진입 안내](skills/remorsearch-ux-qa/references/persona-qa/start.md), [호스트 실행 계약](skills/remorsearch-ux-qa/references/persona-qa/local-run.md), [사전 기준](docs/validation/journey-run-protocol-20261112.md), [검증 결과](docs/validation/journey-run-results-20261112.md)에 범위와 복구 절차를 기록합니다. 설치물의 `examples/journey/run_fixture.py`는 알려진 결함이 있는 합성 진단이며 실제 사용자 연구가 아닙니다. 추출 배포물 검사에서도 실행하고, 진단 소프트웨어 검사 성공과 대상 과제의 실패·보류 판정을 구분합니다.
 
+추가 [swarm 증거 감사 기준](docs/validation/swarm-evidence-audit-protocol-20261112.md)과 [검증 결과](docs/validation/swarm-evidence-audit-results-20261112.md)는 receipt/실행 로그 재대조, 페르소나 간 중복·상충 관측 표시, 결정적 일관성 검사와 독립 검토의 차이를 설명합니다.
+
 ### 조사 페르소나를 다음 QA에 보관
 
 현재 실행 보고서에는 주장·출처 ID, 게이트 상태, 정확한 페르소나 버전·내보내기 지문이 실제 제품 관측과 구분되어 연결됩니다. [연구 재사용 사전 기준](docs/validation/research-journey-protocol-20261112.md)과 [연구 재사용 검증](docs/validation/research-journey-results-20261112.md)을 참고합니다. 추출본의 `--research` 진단은 소유한 가상 자료로 로컬 계약을 검증하며, 기존 공개 파일럿의 재수집이나 출처 진위 검증이 아닙니다.

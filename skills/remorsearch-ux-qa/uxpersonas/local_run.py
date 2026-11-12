@@ -398,6 +398,152 @@ def _reconcile(state, current):
     return changed
 
 
+def _evidence_audit(work, state, tasks):
+    """Read-only second-path audit of receipts and cross-persona obligation signals.
+
+    This is deterministic consistency checking, not a human/LLM reviewer and not
+    proof that an adapter's reported observation is true.
+    """
+    run = work / DIRECTORY / "run"
+    specs = {task["id"]: task for task in state["plan"]["tasks"]}
+    dispatches = state["dispatches"]
+    rows = {row["task_id"]: row for row in tasks}
+    issues, checked = [], 0
+    observations = {}
+    for task_id, row in rows.items():
+        if not row.get("current_binding_valid", True):
+            continue
+        dispatch = dispatches.get(task_id)
+        if row.get("result") is None:
+            if row.get("attempts", 0) and dispatch is None:
+                issues.append(dict(code="dispatch_missing", task_id=task_id))
+            continue
+        if not dispatch or dispatch.get("phase") not in {"intent", "recorded"}:
+            issues.append(dict(code="dispatch_receipt_mismatch", task_id=task_id))
+            continue
+        claim = dispatch.get("claim")
+        if not isinstance(claim, dict) or claim.get("task", {}).get("id") != task_id:
+            issues.append(dict(code="dispatch_binding_invalid", task_id=task_id))
+            continue
+        artifacts = row["result"].get("artifacts")
+        if (not isinstance(artifacts, list) or len(artifacts) != 1 or
+                artifacts[0].get("id") != "execution" or artifacts[0].get("kind") != "execution_log"):
+            issues.append(dict(code="execution_log_missing_or_duplicated", task_id=task_id))
+            continue
+        artifact = artifacts[0]
+        try:
+            raw = workspace.read_file(run, artifact["path"], sensitive_check=True)
+            if len(raw) > 512 * 1024 or byte_digest(raw) != artifact["sha256"]:
+                raise ValueError("digest_or_size")
+            evidence = loads(raw)
+            expected_binding = dict(task_id=task_id, attempt=claim["attempt"],
+                operation_id=claim["operation_id"], build_sha256=claim["build"]["sha256"], **claim["binding"])
+            if (not isinstance(evidence, dict) or
+                    set(evidence) != {"schema_version", "binding", "diagnostic", "observation", "ui_observed", "real_user_evidence"} or
+                    evidence["schema_version"] != "ux-journey-execution-log.v1" or
+                    evidence["binding"] != expected_binding or evidence["ui_observed"] is not False or
+                    evidence["real_user_evidence"] is not False):
+                raise ValueError("binding_or_schema")
+            diagnostic = evidence["diagnostic"]
+            required_diagnostic = {"problem", "cleanup_confirmed", "returncode", "elapsed_seconds", "stdout_bytes",
+                                   "stderr_bytes", "stdout_sha256", "stderr_sha256"}
+            if (not isinstance(diagnostic, dict) or set(diagnostic) != required_diagnostic or
+                    type(diagnostic["cleanup_confirmed"]) is not bool or
+                    type(diagnostic["stdout_bytes"]) is not int or diagnostic["stdout_bytes"] < 0 or
+                    type(diagnostic["stderr_bytes"]) is not int or diagnostic["stderr_bytes"] < 0):
+                raise ValueError("diagnostic")
+            observation = evidence["observation"]
+            if diagnostic["problem"] is None:
+                if diagnostic["cleanup_confirmed"] is not True or diagnostic["returncode"] != 0 or not isinstance(observation, dict):
+                    raise ValueError("completion")
+                parsed = _observation(canonical(observation), expected_binding, specs[task_id])
+                expected_steps = [{**step, "evidence_ids": ["execution"]} for step in parsed["steps"]]
+                expected_criteria = [{**criterion, "evidence_ids": [] if criterion["status"] == "not_run" else ["execution"]}
+                                     for criterion in parsed["criteria"]]
+                if row["result"]["steps"] != expected_steps or row["result"]["criteria"] != expected_criteria:
+                    raise ValueError("receipt_observation_mismatch")
+            else:
+                if observation is not None or row["result"]["steps"] or any(
+                        criterion["status"] != "not_run" or criterion["evidence_ids"]
+                        for criterion in row["result"]["criteria"]):
+                    raise ValueError("uncertain_result_mismatch")
+            checked += 1
+            observations[task_id] = observation
+        except (EngineError, OSError, ValueError, KeyError, TypeError, AttributeError):
+            issues.append(dict(code="execution_evidence_mismatch", task_id=task_id))
+
+    buckets = {}
+    incomplete = excluded = declared = 0
+    for task_id, task in specs.items():
+        row = rows.get(task_id, {})
+        result = row.get("result")
+        criteria = {(item["kind"], item["index"]): item for item in (result or {}).get("criteria", [])}
+        steps = (result or {}).get("steps", [])
+        step_fingerprint = [{"action": item["action"], "observation": item["observation"]} for item in steps]
+        for requirement in task.get("requirement_coverage", []):
+            for obligation in requirement.get("obligations", []):
+                declared += 1
+                key = (requirement["requirement_id"], obligation["id"])
+                definition = dict(description=obligation["description"], criterion_refs=obligation["criterion_refs"],
+                                  exclusion_reason=obligation["exclusion_reason"])
+                bucket = buckets.setdefault(key, {"definitions": {}, "signals": []})
+                bucket["definitions"][digest(definition)] = definition
+                refs = obligation["criterion_refs"]
+                if obligation["exclusion_reason"] is not None:
+                    excluded += 1
+                    continue
+                if not refs or result is None or task_id not in observations or observations[task_id] is None:
+                    incomplete += 1
+                    continue
+                evaluated = [criteria.get((ref["kind"], ref["index"])) for ref in refs]
+                if any(item is None or item["status"] == "not_run" for item in evaluated):
+                    incomplete += 1
+                    continue
+                status = "failed" if any(item["status"] == "failed" for item in evaluated) else "passed"
+                signal = dict(task_id=task_id, persona_id=task["persona_id"], status=status,
+                    criteria=[dict(kind=ref["kind"], index=ref["index"], status=item["status"],
+                                   observation=item["observation"]) for ref, item in zip(refs, evaluated)],
+                    observation_sha256=digest({"criteria": [{"kind": ref["kind"], "index": ref["index"],
+                        "status": item["status"], "observation": " ".join(item["observation"].split())}
+                        for ref, item in zip(refs, evaluated)], "steps": step_fingerprint}))
+                bucket["signals"].append(signal)
+
+    conflicts, duplicates, definition_conflicts = [], [], []
+    distinct = 0
+    for (requirement_id, obligation_id), bucket in sorted(buckets.items()):
+        signals = bucket["signals"]
+        distinct += len({signal["observation_sha256"] for signal in signals})
+        if len(bucket["definitions"]) > 1:
+            definition_conflicts.append(dict(requirement_id=requirement_id, obligation_id=obligation_id,
+                definitions=[bucket["definitions"][key] for key in sorted(bucket["definitions"])],
+                tasks=[signal["task_id"] for signal in signals]))
+            # An ID collision is not evidence that the same obligation was tested.
+            continue
+        by_hash = {}
+        for signal in signals:
+            by_hash.setdefault(signal["observation_sha256"], []).append(signal)
+        for fingerprint, repeated in sorted(by_hash.items()):
+            if len(repeated) > 1:
+                duplicates.append(dict(requirement_id=requirement_id, obligation_id=obligation_id,
+                    observation_sha256=fingerprint, task_ids=[item["task_id"] for item in repeated],
+                    persona_ids=sorted({item["persona_id"] for item in repeated}), distinct_observations=1))
+        statuses = {signal["status"] for signal in signals}
+        if statuses == {"passed", "failed"}:
+            conflicts.append(dict(requirement_id=requirement_id, obligation_id=obligation_id,
+                task_ids=[signal["task_id"] for signal in signals], statuses=sorted(statuses),
+                signals=signals))
+
+    return dict(basis="deterministic_receipt_and_cross_persona_audit",
+        integrity="blocked" if issues else "consistent", issues=issues, receipts_checked=checked,
+        independent_reviewer=False,
+        obligations=dict(declared=declared, observed=sum(bool(bucket["signals"]) for bucket in buckets.values()),
+            incomplete=incomplete, excluded=excluded, distinct_observations=distinct,
+            duplicated=len(duplicates), conflicted=len(conflicts), definition_conflicts=len(definition_conflicts)),
+        duplicates=duplicates, conflicts=conflicts, definition_conflicts=definition_conflicts,
+        limitations=["Deterministic linkage and cross-persona consistency only; not a human or independent model reviewer.",
+                     "Distinct observations are not independent participants or proof that adapter claims are true."])
+
+
 def execute(work, *, library_path=None, input_path=None, approved=False, reviewed_research_runs=None, fault=None):
     work = safe_path(work)
     if not (work / "workspace.json").is_file():
@@ -494,6 +640,10 @@ def report_locked(work, prepared, state=None, current=None):
                 row["research"]["export"] = {key: copy.deepcopy(origin[key]) for key in
                     ("source_persona_id", "scenario_ids", "packet_sha256", "projection_sha256")}
     counts = current["counts"] if current else {k: len(tasks) if k == "pending" else 0 for k in ("pending", "running", "passed", "failed", "blocked", "inconclusive", "skipped")}
+    evidence_audit = _evidence_audit(work, state, tasks)
+    audit_needs_review = (evidence_audit["integrity"] != "consistent" or
+        evidence_audit["obligations"]["conflicted"] > 0 or
+        evidence_audit["obligations"]["definition_conflicts"] > 0)
     summary = dict(schema_version="ux-journey-run-report.v1", preparation_complete=True,
         execution_performed=True if any(row["spawned"] for row in state["dispatches"].values()) else (None if uncertain else False),
         execution_complete=not uncertain and counts["pending"] == 0 and counts["running"] == 0,
@@ -501,8 +651,12 @@ def report_locked(work, prepared, state=None, current=None):
         source_files=prepared["source_files"], plan_sha256=digest(state["plan"]), workspace_sha256=state["workspace_sha256"],
         evidence_kind="owned_local_core_observations", ui_observed=False, real_user_evidence=False, product_ready=False,
         coverage=current["coverage_summary"] if current else None,
+        evidence_audit=evidence_audit,
         next_action=("중단된 실행의 실제 프로세스·근거·영향을 호스트가 먼저 확인해야 합니다. 자동 재실행하지 않습니다." if uncertain else
                      "쓰기 결과가 불확실한 자원이 격리되어 있습니다. 호스트가 실제 상태를 검사하고 기존 settle 규칙을 적용하기 전에는 같은 자원을 재사용하지 않습니다." if quarantined else
+                     "저장된 실행 로그와 receipt가 일치하지 않습니다. 원본을 보존하고 각 과제의 현재 시도·근거를 호스트가 다시 검토해야 합니다. 자동 재실행하지 않습니다." if evidence_audit["integrity"] != "consistent" else
+                     "같은 PRD 의무에 대한 페르소나 관측이 상충하거나 의무 ID 정의가 다릅니다. 원본 관측을 나란히 검토하고 해결 전에는 종합 판정을 보류합니다." if audit_needs_review else
+                     "중복 관측은 독립된 추가 신호로 세지 않았습니다. 서로 다른 과업·기준의 추가 검증이 필요하면 새 범위를 검토합니다." if evidence_audit["obligations"]["duplicated"] else
                      "남은 과제가 있습니다. 실행 장애를 확인한 뒤 같은 run으로 아직 시작하지 않은 과제만 이어갑니다." if counts["pending"] else
                      "관측된 실패를 재현하고 수정 후보를 별도 검토합니다. 실제 UI·사용자 검증이 남아 있습니다."),
         limitations=["재사용한 페르소나는 PRD 또는 검토된 연구를 바탕으로 한 합성 가설이며 실제 참가자가 아닙니다.",
@@ -521,7 +675,23 @@ def render(summary):
     labels = dict(failed="실패", inconclusive="판정 보류", pending="대기", running="실행 확인 필요", blocked="차단", skipped="미실행", passed="통과")
     c = summary["counts"]
     lines = ["# 사용자 목표별 로컬 QA 결과", "", f"실패 {c['failed']} · 판정 보류 {c['inconclusive']} · 대기 {c['pending']} · 통과 {c['passed']}.",
-             "실제 UI와 사용자 효과는 미검증입니다. 코어 실행 완료와 제품 통과를 구분합니다.", "", "## 재사용한 페르소나", ""]
+             "실제 UI와 사용자 효과는 미검증입니다. 코어 실행 완료와 제품 통과를 구분합니다.", ""]
+    audit = summary["evidence_audit"]
+    counts = audit["obligations"]
+    lines += ["## 다중 페르소나 증거 일관성 검사", "",
+        f"무결성: {audit['integrity']} · receipt 재검사 {audit['receipts_checked']}건 · 의무 중복 {counts['duplicated']}건 · 상충 {counts['conflicted']}건 · 미관측/미실행 {counts['incomplete']}건.",
+        "이 검사는 저장된 실행 로그와 receipt를 결정적으로 대조합니다. 독립적인 사람/모델 평가가 아니며, 서로 다른 관측도 독립 참가자나 사실성의 증거가 아닙니다."]
+    for issue in audit["issues"]:
+        lines.append(f"- 근거 무결성 차단: {issue['task_id']} · {issue['code']}")
+    for duplicate in audit["duplicates"]:
+        lines.append(f"- 중복 관측: {duplicate['requirement_id']}/{duplicate['obligation_id']} · 과제 {', '.join(duplicate['task_ids'])} · 독립 신호 1건으로만 계산")
+    for conflict in audit["conflicts"]:
+        lines.append(f"- 상충 관측: {conflict['requirement_id']}/{conflict['obligation_id']} · 과제 {', '.join(conflict['task_ids'])} · {', '.join(conflict['statuses'])}")
+    for conflict in audit["definition_conflicts"]:
+        lines.append(f"- 의무 정의 충돌: {conflict['requirement_id']}/{conflict['obligation_id']} · 과제 {', '.join(conflict['tasks'])}")
+    if audit["integrity"] != "consistent":
+        lines.append("- 무결성 차단: 아래 과제의 관측 로그와 receipt를 일치시킬 수 없습니다. 기존 원본을 수정하거나 다시 실행하지 마세요.")
+    lines += ["", "## 재사용한 페르소나", ""]
     for persona in summary["personas_reused"]:
         basis = "연구 근거를 연결한 합성 가설" if persona["provenance_mode"] == "gated_research" else "PRD 합성 가설"
         lines.append(f"- {text(persona['label'])} — {persona['persona_id']} v{persona['revision']}, {basis}, profile `{persona['profile_sha256']}`")
