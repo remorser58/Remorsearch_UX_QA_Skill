@@ -115,6 +115,24 @@ It verifies actual PNGs and model/tool-loop integration using authored decisions
 Actual approved-model execution remains a separate acceptance condition.
 Document both optional-package-absent diagnosis and installed checks.
 
+The optional Aside transport uses only an existing approved SSH/profile route
+and the documented installed CLI REPL. It opens fresh owned temporary Pro
+contexts, rejects user drafts and stale responses, and binds model/tool/review
+receipts to the real graph. `tests/test_aside_transport.py` exercises protocol
+failures without contacting a model. `examples/agents/aside_live.py` separately
+records actual model decisions and owned Chromium observations; fixture
+decisions and transport probes cannot satisfy its two-persona completion gate.
+Default installs still need no new dependency. Aside/SSH/ChatGPT access is
+supplied by the approved host, not installed or authorized by this package.
+
+Keep real-run records separate from release regression results. Record both
+successful and interrupted live attempts, cleanup receipts, prompt/reply/PNG
+hashes and exact source manifests. MacBook coordinator elapsed/maxRSS excludes
+remote model memory and aggregate browser memory. The live note diagnostic
+does not establish arbitrary-product navigation, allowed public research,
+representative personas or measured user benefit. The new transport leaves the
+existing browser-run/driver/release-checker sources unchanged.
+
 ## Research and distribution boundary
 
 Research plans its questions and discovers candidate URLs, then loads the bundled

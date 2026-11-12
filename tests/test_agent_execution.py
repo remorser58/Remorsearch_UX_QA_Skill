@@ -101,6 +101,23 @@ class AgentExecutionTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(report["agent_execution"]["parallel_observed"])
         self.assertEqual(report["agent_execution"]["peak_calls_by_kind"]["model"], 1)
 
+    async def test_rejected_callbacks_are_not_completed_parallel_models(self):
+        # Protocol simulation, never a live-model validation claim.
+        self.host.info["mode"] = "model_tools"
+        original = self.host.call
+        async def call(kind, request):
+            if kind == "model":
+                await asyncio.sleep(0.02)
+                raise RuntimeError("Pre-send rejection")
+            return await original(kind, request)
+        self.host.call = call
+        report = await self.execute()
+        execution = report["agent_execution"]
+        self.assertEqual(execution["peak_calls_by_kind"]["model"], 2)
+        self.assertEqual(execution["actual_model_calls"], 0)
+        self.assertEqual(execution["actual_review_calls"], 0)
+        self.assertFalse(execution["actual_model_parallel_observed"])
+
     async def test_repeated_execution_reads_results_without_calls_or_attempts(self):
         first = await self.execute()
         calls = copy.deepcopy(self.host.calls)
@@ -134,6 +151,25 @@ class AgentExecutionTests(unittest.IsolatedAsyncioTestCase):
         count = len(self.host.calls)
         await self.execute(limits=limits)
         self.assertEqual(len(self.host.calls), count)
+
+    async def test_interrupted_model_preserves_native_failed_checkpoint(self):
+        original = self.host.call
+        async def call(kind, request):
+            if kind == "model" and any(c["status"] == "failed"
+                    for o in request["payload"]["observations"] for c in o["checks"]):
+                raise RuntimeError("Model interrupted after verified rejection")
+            return await original(kind, request)
+        self.host.call = call
+        report = await self.execute()
+        self.assertEqual(report["counts"]["passed"], 1)
+        self.assertEqual(report["counts"]["inconclusive"], 1)
+        state = read_json(self.root / "run/agent-runtime/state.json", private=True)["payload"]
+        worker = next(w for w in state["workers"] if w["claim"]["task"]["id"] == "T-RETURN")
+        self.assertNotIn("first_judgment_sha256", worker)
+        criterion = next(c for c in worker["receipt"]["criteria"] if c["kind"] == "success")
+        self.assertEqual(criterion["status"], "failed")
+        self.assertTrue(criterion["evidence_ids"])
+        self.assertEqual(worker["receipt"]["outcome"], "inconclusive")
 
     async def test_cancel_blocks_further_dispatch_and_late_admission(self):
         cancel = asyncio.Event()

@@ -81,8 +81,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   installed license files. No LangSmith hosted service is enabled.
 - **Playwright** (Apache License 2.0) and its Chromium build, installed with
   `npm install` in `drivers/web/` for the live web driver.
-- **Aside** (optional browser research tool), installed and licensed by its own
-  distributor.
+- **Aside** (optional browser research tool and documented CLI REPL transport
+  for separately authorized owned Pro contexts), installed and licensed by its
+  own distributor. Remorsearch's adapter is original code; no Aside source,
+  binary, credentials or guide text is bundled. Aside is not the OSS graph engine.
 - Other browser tools that an agent host provides, such as Claude in Chrome,
   Playwright MCP or Chrome DevTools MCP, are used through the host. They are not
   part of this folder.

@@ -1,5 +1,7 @@
 # Secure 모델 실행 경로 진단 — 2026-11-12
 
+후속 기록: 아래 08:00 UTC 진단 이후 사용자가 기존 Aside CLI 소유 배경 페이지 경로를 승인했습니다. [실제 두 Pro 컨텍스트의 모델·도구 실행](aside-live-20261112.md)은 이 별도 경로를 구현한 결과입니다. Secure agents 설정이나 기존 managed work를 변경한 것이 아니며 아래 당시 관측은 그대로 보존합니다.
+
 ## 판정
 
 **실제 모델 두 페르소나 실행은 계속 blocked이며 모델 호출은 0회입니다.** 현재 Secure daemon과 MCP 통신은 살아 있습니다. Remorsearch에는 `CallbackHost` 계약이 있지만 Web GPT Agent의 실제 모델 transport는 연결되지 않았고, 이 세션에 노출된 Secure 인터페이스에는 `agents` 또는 독립 모델 callback이 없습니다.

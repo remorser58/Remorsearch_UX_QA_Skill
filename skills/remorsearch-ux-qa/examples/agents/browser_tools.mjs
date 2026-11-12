@@ -1,5 +1,5 @@
 // Owned, single-file diagnostic tool transport. No user browser or live target.
-// The Python fixture supplies authored decisions; this is not a model transport.
+// Callers supply decisions: offline fixture or the separately reviewed live host.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -62,7 +62,8 @@ async function start(input) {
 async function act(input) {
   if (!page || page.url() !== origin || count >= 24) throw new Error('scope');
   if (input.name === 'enter') {
-    if (!['Owned draft', 'Owned corrected note'].includes(input.value)) throw new Error('owned_data');
+    if (typeof input.value !== 'string' || !/^Owned [A-Za-z0-9 .,!?'-]{1,80}$/.test(input.value))
+      throw new Error('owned_data');
     await page.locator('#note').fill(input.value, { timeout: 1000 });
   } else if (input.name === 'reject') {
     if (!['#reject-control', '#reject-broken'].includes(input.target)) throw new Error('target');

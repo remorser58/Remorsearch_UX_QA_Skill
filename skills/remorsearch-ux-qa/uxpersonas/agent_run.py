@@ -102,10 +102,12 @@ class Limits:
     turns: int = 12
     call_seconds: int = 20
     task_seconds: int = 120
+    close_seconds: int = 2
 
     def validate(self):
         for value, low, high in ((self.parallel, 1, 8), (self.turns, 1, 24),
-                                 (self.call_seconds, 1, 60), (self.task_seconds, 1, 600)):
+                                 (self.call_seconds, 1, 180), (self.task_seconds, 1, 1800),
+                                 (self.close_seconds, 1, 15)):
             swarm.number(value, low, high)
         return vars(self).copy()
 
@@ -183,7 +185,7 @@ class Execution:
         timeout = min(self.limits.call_seconds, worker["deadline"] - now,
                       worker["claim"]["lease"]["expires_at"] - now)
         if closing:
-            timeout = 2
+            timeout = self.limits.close_seconds
         if timeout <= 0:
             fail("timeout", "The task's original deadline expired.")
         body = copy.deepcopy(payload)
@@ -329,6 +331,20 @@ class Execution:
         receipt["artifacts"] = [a for o in observations for a in o["artifacts"]]
         receipt["steps"] = [dict(action=o["action"], observation=o["text"],
                                  evidence_ids=[a["id"] for a in o["artifacts"]]) for o in observations]
+        if judgment is None:
+            # An interrupted model/review does not erase already verified native
+            # checkpoints. Overall completion remains inconclusive below.
+            for criterion in receipt["criteria"]:
+                matching = [(o, c) for o in observations for c in o["checks"]
+                            if (c["kind"], c["index"]) == (criterion["kind"], criterion["index"])
+                            and c["status"] != "not_run"
+                            and any(a["kind"] == "screenshot" for a in o["artifacts"])]
+                failed = [(o, c) for o, c in matching if c["status"] == "failed"]
+                if matching:
+                    observed, check = (failed or matching)[-1]
+                    criterion.update(status=check["status"],
+                        observation="Native checkpoint before interrupted completion: " + observed["text"],
+                        evidence_ids=[a["id"] for a in observed["artifacts"]])
         if judgment is not None:
             receipt["criteria"] = self.criteria(worker, judgment, observations)
             # Later recovery/review cannot erase an earlier native failed check.
@@ -503,6 +519,12 @@ class Execution:
             workers = self.state["workers"]
             decision_calls = sum(k.startswith("model-") and c["status"] == "done"
                                  for w in workers for k, c in w["calls"].items())
+            model_intervals = [(w["context_id"], c["started_at"], c["ended_at"])
+                               for w in workers for k, c in w["calls"].items()
+                               if k.startswith("model-") and c["status"] == "done"]
+            completed_model_overlap = any(a[0] != b[0] and max(a[1], b[1]) < min(a[2], b[2])
+                                          for i, a in enumerate(model_intervals)
+                                          for b in model_intervals[i + 1:])
             model_personas = sorted({w["claim"]["task"]["persona_id"] for w in workers
                 if self.info["mode"] == "model_tools"
                 and any(k.startswith("model-") and c["status"] == "done" for k, c in w["calls"].items())
@@ -520,7 +542,10 @@ class Execution:
                 actual_model_tool_personas=model_personas,
                 two_persona_model_tool_execution=len(model_personas) >= 2,
                 peak_calls_by_kind=copy.deepcopy(peaks),
-                actual_model_parallel_observed=self.info["mode"] == "model_tools" and peaks.get("model", 0) > 1,
+                actual_model_parallel_observed=self.info["mode"] == "model_tools" and completed_model_overlap,
+                model_parallel_basis="completed_host_callback_intervals; provider_compute_concurrency_unverified",
+                actual_review_calls=sum(k.startswith("review-") and c["status"] == "done"
+                    for w in workers for k, c in w["calls"].items()) if self.info["mode"] == "model_tools" else 0,
                 tool_calls=sum(k.startswith("tool-") and c["status"] == "done" for w in workers for k, c in w["calls"].items()),
                 first_judgments=[dict(task_id=w["claim"]["task"]["id"], sha256=w["first_judgment_sha256"])
                                  for w in workers if "first_judgment_sha256" in w],

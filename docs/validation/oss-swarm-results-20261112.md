@@ -1,5 +1,7 @@
 # 선택적 OSS 페르소나 실행 구현·검증 — 2026-11-12
 
+후속 기록: 아래는 최초 검증 시점의 모델 0회 상태입니다. 같은 날 사용자 승인 Aside 경로로 수행한 [실제 2-persona 모델·도구 실행](aside-live-20261112.md)은 별도 기록이며 이 과거 fixture 결과를 승격하지 않습니다.
+
 ## 판정
 
 LangGraph 실행 계층과 fixture 검증은 구현했습니다. **실제 모델을 사용하는 두 페르소나 스웜의 완료조건은 미충족입니다.** 최초 검증 당시 일반 Web GPT Agent의 agents/status와 후속 tools_search는 `McpServerError: Connection failed`를 반환했습니다. 실제 페르소나 모델 호출은 0회입니다. 다른 모델/API나 권한 확대를 대체 경로로 사용하지 않았습니다.
