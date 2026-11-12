@@ -2,7 +2,9 @@
 
 ## 판정
 
-LangGraph 실행 계층과 fixture 검증은 구현했습니다. **실제 모델을 사용하는 두 페르소나 스웜의 완료조건은 미충족입니다.** 승인된 Web GPT Agent의 agents/status와 후속 tools_search가 모두 `McpServerError: Connection failed`를 반환했고, Secure MCP에는 agents 도구가 없습니다. 실제 페르소나 모델 호출은 0회입니다. 다른 모델/API나 권한 확대를 대체 경로로 사용하지 않았습니다.
+LangGraph 실행 계층과 fixture 검증은 구현했습니다. **실제 모델을 사용하는 두 페르소나 스웜의 완료조건은 미충족입니다.** 최초 검증 당시 일반 Web GPT Agent의 agents/status와 후속 tools_search는 `McpServerError: Connection failed`를 반환했습니다. 실제 페르소나 모델 호출은 0회입니다. 다른 모델/API나 권한 확대를 대체 경로로 사용하지 않았습니다.
+
+후속 [Secure transport 진단](oss-swarm-transport-diagnosis-20261112.md)은 정확한 daemon 프로필이 정상이고 browser transport도 켜져 있음을 확인했습니다. Secure에는 직접 `work`가 있으며 `agents`는 현재 노출되지 않습니다. nested tools_search의 부재만으로 lifecycle 기능 부재를 단정할 수 없습니다. 기존 work의 `ready`는 약 69시간 전 페이지 관측을 사용했고, Remorsearch의 `host_ready`는 false입니다. 이 진단은 실제 모델 실행이나 transport 구현 완료를 뜻하지 않습니다.
 
 실제 StateGraph/AsyncSqliteSaver 호출, 독립 컨텍스트, 도구 왕복, 첫 판단 고정, 근거 검사, 보고서 생성은 실행했습니다. 아래 브라우저 진단의 판단과 검증 함수는 **작성된 fixture**입니다. 이를 자율 AI 판단, 실사용자 조사, Peekly QA 또는 제품 개선 완료로 해석하면 안 됩니다.
 
