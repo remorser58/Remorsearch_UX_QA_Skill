@@ -9,6 +9,7 @@ Inspect PRD audience/needs/tasks and actual use. Read `references/loop/product-i
 
 Local preparation/reuse: read `references/persona-qa/start.md`.
 Execution/research reuse: read `references/persona-qa/local-run.md` (§6 before research access).
+Browser: read `references/persona-qa/browser-run.md`.
 
 ## Components
 

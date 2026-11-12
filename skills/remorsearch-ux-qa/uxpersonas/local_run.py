@@ -2,7 +2,8 @@
 
 This is bounded trusted-code execution, not an OS/network sandbox. The host must
 review the exact copied Python adapter and its selected inputs before approval.
-No shell, package installation, automatic personas, browser or model transport.
+The separate browser plan uses the bundled measured driver on reviewed static
+copies. Neither path installs packages or calls a model.
 """
 from __future__ import annotations
 
@@ -21,10 +22,11 @@ from uxresearch.canonical import EngineError, byte_digest, canonical, digest, lo
 from uxresearch.storage import Store, atomic, safe_path
 from .library import Library, SCHEMA as LIBRARY_SCHEMA
 from .research_access import ReferenceScope, roots_for
-from . import swarm, workspace
+from . import swarm, workspace, browser_run
 
 PLAN = "ux-journey-local-plan.v1"
 STATE = "ux-journey-local-state.v1"
+BROWSER_STATE = "ux-journey-browser-state.v1"
 MARKER = "local-execution.json"
 DIRECTORY = "local-execution"
 MAX_OUTPUT = 256 * 1024
@@ -45,13 +47,15 @@ def _read(work):
     _private(work / MARKER)
     envelope = loads(workspace.read_file(work, MARKER))
     state = envelope.get("payload")
-    if envelope.get("schema_version") != STATE or not isinstance(state, dict) or digest(state) != envelope.get("sha256"):
+    expected = BROWSER_STATE if isinstance(state, dict) and state.get("plan", {}).get("schema_version") == browser_run.PLAN else STATE
+    if envelope.get("schema_version") != expected or not isinstance(state, dict) or digest(state) != envelope.get("sha256"):
         stop("execution_integrity", "실행 상태의 무결성을 확인할 수 없습니다.")
     return state
 
 
 def _save(work, state):
-    atomic(work / MARKER, canonical(dict(schema_version=STATE, payload=state, sha256=digest(state))))
+    schema = BROWSER_STATE if state["plan"]["schema_version"] == browser_run.PLAN else STATE
+    atomic(work / MARKER, canonical(dict(schema_version=schema, payload=state, sha256=digest(state))))
 
 
 def _immutable(root, name, raw):
@@ -69,12 +73,13 @@ def _plan(path, prepared):
     path = safe_path(path)
     plan = loads(workspace.read_file(path.parent, path.name, sensitive_check=True))
     if (not isinstance(plan, dict) or set(plan) != {"schema_version", "product_id", "runner", "timeout_seconds", "tasks"}
-            or plan["schema_version"] != PLAN):
+            or plan["schema_version"] not in {PLAN, browser_run.PLAN}):
         stop("execution_plan", "호스트가 검토한 실행 계획 형식이 맞지 않습니다.")
     workspace.relative(plan["runner"])
-    if (not plan["runner"].endswith(".py") or plan["runner"] not in prepared["inputs"]
+    suffix = ".json" if plan["schema_version"] == browser_run.PLAN else ".py"
+    if (not plan["runner"].endswith(suffix) or plan["runner"] not in prepared["inputs"]
             or prepared["destinations"][plan["runner"]] != "product/" + plan["runner"]):
-        stop("runner_scope", "실행 어댑터가 검토하고 복사한 Python 파일이 아닙니다.")
+        stop("runner_scope", "실행 어댑터가 검토하고 복사한 해당 실행 종류의 파일이 아닙니다.")
     swarm.ident(plan["product_id"])
     swarm.number(plan["timeout_seconds"], 1, 30)
     if (not isinstance(plan["tasks"], list) or not 1 <= len(plan["tasks"]) <= 16
@@ -85,6 +90,8 @@ def _plan(path, prepared):
             stop("execution_coverage", "실행 전에 목표별 PRD 의무와 성공·복구 기준 연결을 고정해야 합니다.")
     if swarm.clean(plan) != plan:
         stop("execution_privacy", "실행 계획에 개인 식별 형식이 있습니다.")
+    if plan["schema_version"] == browser_run.PLAN:
+        browser_run.manifest(prepared, plan)
     return plan
 
 
@@ -191,6 +198,8 @@ def _initialize(work, prepared, library_path, input_path, approved, reviewed_res
         stop("execution_conflict", "기존 파일이 있는 실행 폴더를 사용하지 않았습니다.")
     state = dict(plan=plan, library=str(library_path), library_sha256=library_hash, personas=personas, research_runs=research_runs,
                  workspace_sha256=build_hash, seed=seed, phase="preparing", dispatches={})
+    if plan["schema_version"] == browser_run.PLAN:
+        state["browser"] = browser_run.prepare(work, prepared, plan, personas, build_hash)
     _save(work, state)  # Durable ownership and fixed criteria before any run files.
     return state
 
@@ -425,6 +434,14 @@ def _evidence_audit(work, state, tasks):
         if not isinstance(claim, dict) or claim.get("task", {}).get("id") != task_id:
             issues.append(dict(code="dispatch_binding_invalid", task_id=task_id))
             continue
+        if state["plan"]["schema_version"] == browser_run.PLAN:
+            try:
+                observations[task_id] = browser_run.audit(work, state, claim,
+                    {**row["result"], "outcome": row["status"], "reason": row["reason"]})
+                checked += 1
+            except (EngineError, OSError, ValueError, KeyError, TypeError, AttributeError):
+                issues.append(dict(code="execution_evidence_mismatch", task_id=task_id))
+            continue
         artifacts = row["result"].get("artifacts")
         if (not isinstance(artifacts, list) or len(artifacts) != 1 or
                 artifacts[0].get("id") != "execution" or artifacts[0].get("kind") != "execution_log"):
@@ -579,6 +596,8 @@ def execute(work, *, library_path=None, input_path=None, approved=False, reviewe
                 if next(row for row in current["tasks"] if row["task_id"] == task["id"])["status"] != "pending":
                     continue
                 _verify(work, prepared, state)
+                if state["plan"]["schema_version"] == browser_run.PLAN:
+                    browser_run.verify_runtime(state["browser"]["runtime"])
                 claim = swarm.claim(library, run, "reviewed-local-runner", task["id"])
                 if not claim["claimed"]:
                     break
@@ -597,11 +616,23 @@ def execute(work, *, library_path=None, input_path=None, approved=False, reviewe
                     dispatch["spawned"] = True
                     _save(work, state)
                 _verify(work, prepared, state)
-                raw, diagnostic = _invoke(work / "product" / state["plan"]["runner"], cwd, request, state["plan"]["timeout_seconds"], spawned)
+                is_browser = state["plan"]["schema_version"] == browser_run.PLAN
+                if is_browser:
+                    request = browser_run.request_for(work, state["browser"], task["id"], binding,
+                        cwd / "browser", state["plan"]["timeout_seconds"])
+                    raw, diagnostic = browser_run.invoke(state["browser"], cwd, request, state["plan"]["timeout_seconds"], spawned)
+                else:
+                    raw, diagnostic = _invoke(work / "product" / state["plan"]["runner"], cwd, request, state["plan"]["timeout_seconds"], spawned)
                 if not diagnostic["cleanup_confirmed"]:
+                    dispatch["diagnostic"] = diagnostic
+                    _save(work, state)
                     stop("execution_cleanup", "소유 실행 프로세스의 종료를 확인하지 못했습니다. 결과를 확정하거나 다음 과제를 시작하지 않았습니다.")
                 _verify(work, prepared, state)
-                _record(work, library, state, claim, request, raw, diagnostic)
+                if is_browser:
+                    browser_run.verify_runtime(state["browser"]["runtime"])
+                    browser_run.record(work, library, state, claim, raw, diagnostic)
+                else:
+                    _record(work, library, state, claim, request, raw, diagnostic)
                 if fault:
                     fault("recorded")
                 dispatch.update(phase="recorded", diagnostic=diagnostic)
@@ -628,7 +659,7 @@ def report_locked(work, prepared, state=None, current=None):
     quarantined = [row["task_id"] for row in tasks if row.get("resource_quarantined")]
     personas = [{k: record[k] for k in ("persona_id", "revision", "profile_sha256", "basis")} |
                 {"label": record["profile"]["label"], "provenance_mode": record["provenance"]["mode"], "prd_sha256": record["context"]["prd_sha256"]}
-                for history in state["personas"]["state"]["entries"].values() for record in history]
+                for _, history in sorted(state["personas"]["state"]["entries"].items()) for record in history]
     for row in personas:
         record = state["personas"]["state"]["entries"][Library._key(state["plan"]["product_id"], row["persona_id"])][-1]
         if row["provenance_mode"] == "gated_research":
@@ -644,12 +675,16 @@ def report_locked(work, prepared, state=None, current=None):
     audit_needs_review = (evidence_audit["integrity"] != "consistent" or
         evidence_audit["obligations"]["conflicted"] > 0 or
         evidence_audit["obligations"]["definition_conflicts"] > 0)
+    is_browser = state["plan"]["schema_version"] == browser_run.PLAN
+    ui_observed = bool(is_browser and evidence_audit["integrity"] == "consistent" and any(
+        row.get("result") and any(a["kind"] == "screenshot" for a in row["result"]["artifacts"]) for row in tasks))
     summary = dict(schema_version="ux-journey-run-report.v1", preparation_complete=True,
         execution_performed=True if any(row["spawned"] for row in state["dispatches"].values()) else (None if uncertain else False),
         execution_complete=not uncertain and counts["pending"] == 0 and counts["running"] == 0,
         uncertain_dispatches=uncertain, quarantined_tasks=quarantined, counts=counts, tasks=tasks, personas_reused=personas,
         source_files=prepared["source_files"], plan_sha256=digest(state["plan"]), workspace_sha256=state["workspace_sha256"],
-        evidence_kind="owned_local_core_observations", ui_observed=False, real_user_evidence=False, product_ready=False,
+        evidence_kind="owned_static_browser_observations" if is_browser else "owned_local_core_observations",
+        ui_observed=ui_observed, real_user_evidence=False, product_ready=False,
         coverage=current["coverage_summary"] if current else None,
         evidence_audit=evidence_audit,
         next_action=("중단된 실행의 실제 프로세스·근거·영향을 호스트가 먼저 확인해야 합니다. 자동 재실행하지 않습니다." if uncertain else
@@ -666,6 +701,18 @@ def report_locked(work, prepared, state=None, current=None):
                      "검토한 단일 Python 프로세스만 지원합니다. 별도 자식·백그라운드 작업을 실행하는 어댑터는 지원하지 않습니다.",
                      "해시와 receipt는 연결·무결성을 검사하며 어댑터 관측의 진실성이나 PRD 해석의 완전성을 증명하지 않습니다.",
                      "실패 없는 코어 관측도 최종 통과가 아닙니다. 미실행 기준과 근거 부족을 그대로 표시합니다."])
+    if is_browser:
+        summary["limitations"] = [
+            "검토한 정적 복사본을 소유 headless Chromium에서 실행한 자동화 관측입니다. 실제 사용자·실제 기기·실서비스 효과는 검증하지 않았습니다.",
+            "페르소나는 PRD 또는 저장된 연구에 연결된 합성 가설입니다. 현재 연구·버전·기한 검사는 출처 진위나 대표성을 보장하지 않습니다.",
+            "고정한 행동과 측정 기준만 실행하며 사람처럼 스스로 판단하거나 누락된 PRD 의미를 검증하지 않습니다.",
+            "정적 파일 요청을 검토한 바이트로만 응답하고 외부 요청을 차단합니다. 코드 검토가 필수이며 OS 네트워크 샌드박스는 아닙니다.",
+            "정상 종료는 소유 브라우저 close 응답과 Node 종료로 확인합니다. 강제 종료·응답 유실은 불확실하며 자동 재실행하지 않습니다.",
+            "일부 과업 통과는 제품 준비 완료나 스웜의 실제 사용자 효과가 아닙니다. 미실행·중복·상충 관측은 보존합니다."]
+        if not uncertain and not quarantined and not audit_needs_review and not counts["pending"]:
+            summary["next_action"] = "측정한 실패와 미관측 조건을 검토합니다. 실제 제품·사용자 효과 검증은 별도 범위로 남아 있습니다."
+    summary["task_scope_passed"] = bool(is_browser and not audit_needs_review and not uncertain and not quarantined
+        and counts["passed"] == len(tasks) and current and current["coverage_summary"]["all_declared_requirements_passed"])
     return workspace.publish_report(work, summary, render(summary))
 
 
@@ -675,7 +722,9 @@ def render(summary):
     labels = dict(failed="실패", inconclusive="판정 보류", pending="대기", running="실행 확인 필요", blocked="차단", skipped="미실행", passed="통과")
     c = summary["counts"]
     lines = ["# 사용자 목표별 로컬 QA 결과", "", f"실패 {c['failed']} · 판정 보류 {c['inconclusive']} · 대기 {c['pending']} · 통과 {c['passed']}.",
-             "실제 UI와 사용자 효과는 미검증입니다. 코어 실행 완료와 제품 통과를 구분합니다.", ""]
+             ("검토한 정적 복사본의 실제 headless 브라우저 관측입니다. 실제 사용자 효과·제품 준비 완료는 미검증입니다."
+              if summary["evidence_kind"] == "owned_static_browser_observations" else
+              "실제 UI와 사용자 효과는 미검증입니다. 코어 실행 완료와 제품 통과를 구분합니다."), ""]
     audit = summary["evidence_audit"]
     counts = audit["obligations"]
     lines += ["## 다중 페르소나 증거 일관성 검사", "",

@@ -17,13 +17,18 @@ the user to author a manifest, plan JSON, receipt, hash or lease token. Reuse th
 current granted scope; the host's review flag records that review, not a new
 permission grant or a requirement to ask the user again.
 
-Use this path only for a reviewed single Python process with stdlib-compatible
+This document's Python plan supports only a reviewed single process with stdlib-compatible
 owned code and synthetic inputs. Inspect imports and behavior as well as the
 adapter file. No shell, package install, model call, browser, real account,
 network operation, background process or descendant worker belongs in this
 bounded adapter. The engine does not sandbox the OS or network and cannot turn
 untrusted repository code into safe code. If that review is unavailable, report
 the missing adapter/execution access; never enable an unsupported provider.
+
+For reviewed owned static web tasks, use the separate browser plan described in
+[browser-run.md](browser-run.md). It reuses current personas, research checks and
+attempt ownership while adding actual native browser checkpoint/capture evidence.
+The Python plan's core-only no-pass boundary remains unchanged.
 
 This path reuses existing `prd_hypothesis` and `gated_research` personas whose cited
 PRD is among the reviewed source files. For research-linked records, first read

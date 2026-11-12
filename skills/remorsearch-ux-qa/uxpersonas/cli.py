@@ -25,7 +25,7 @@ def parser():
     run = commands.add_parser("run", help="Execute an explicitly reviewed owned local adapter and report current observations")
     run.add_argument("--work", type=Path, required=True)
     run.add_argument("--library", type=Path, help="Explicit existing reviewed persona library; never the implicit global library")
-    run.add_argument("--input", type=Path, help="Host-reviewed fixed goals, criteria and copied Python adapter")
+    run.add_argument("--input", type=Path, help="Host-reviewed fixed goals, criteria and copied Python or static browser adapter")
     run.add_argument("--allow-reviewed-local-runner", action="store_true", help="Host attests review of exact owned code/input; this is not an OS sandbox")
     run.add_argument("--reviewed-research-run", action="append", type=Path, help="Exact existing research directory already reviewed by the host; repeat up to four; no discovery or collection")
     run.add_argument("--format", choices=("text", "json"), default="text")
@@ -94,8 +94,8 @@ def main(argv=None):
                       if args.command == "start" else workspace.status(args.work))
             print(json.dumps(result, ensure_ascii=False, indent=2) if args.format == "json"
                   else workspace.render(result) + "\n보고서: " + result["report_path"])
-            # Core-only observations cannot satisfy the existing full QA gate.
-            return 1 if args.command == "run" else 0
+            # A measured browser task scope can pass; product readiness stays false.
+            return (0 if result.get("task_scope_passed") else 1) if args.command == "run" else 0
         except (EngineError, OSError, ValueError, TypeError, KeyError, AttributeError) as exc:
             result = workspace.error_result(exc)
             print(json.dumps(result, ensure_ascii=False) if args.format == "json"

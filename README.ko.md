@@ -25,7 +25,7 @@ Python 도구는 Python 3.10 이상에서 표준 라이브러리와 POSIX 파일
 macOS, Linux, Windows의 WSL에서 실행할 수 있습니다. 기본 `python3`가 더 낮으면(macOS 기본 Python은 3.9입니다) 호스트가 스킬 폴더에서 `python3 scripts/find_runtime.py`를 실행합니다. 지원되는 가장 높은 Python, Node.js 22 경로와 공백을 JSON으로 출력하며 아무것도 설치하지 않습니다.
 
 ```sh
-git clone --branch rem/research-journey-20261112 --single-branch https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
+git clone --branch rem/browser-journey-20261112 --single-branch https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
 # Claude Code(개인용). 팀과 나누려면 프로젝트 안의 .claude/skills/에 복사합니다
 mkdir -p ~/.claude/skills
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
@@ -54,7 +54,7 @@ Node.js 22를 쓰십시오. 고정된 Playwright 1.56.1에서는 Node.js 24.16 �
 
 ## 사용법
 
-현재 연구 페르소나의 로컬 여정 실행까지 포함한 누적 개선은 `rem/research-journey-20261112` 브랜치에 있으며 아직 `main`에 병합하지 않았습니다.
+현재 저장된 페르소나의 정적 브라우저 여정 실행까지 포함한 누적 개선은 `rem/browser-journey-20261112` 브랜치에 있으며 아직 `main`에 병합하지 않았습니다.
 앞의 설치 명령은 이 브랜치를 선택합니다. 기존 설치본을 직접 수정했다면 먼저 보존합니다.
 
 저장소는 비공개로 유지합니다. [재실행 검증 결과·남은 제한](docs/validation/persona-journey-replay-20261111.md)과
@@ -89,6 +89,12 @@ Node.js 22를 쓰십시오. 고정된 Playwright 1.56.1에서는 Node.js 24.16 �
 [진입 안내](skills/remorsearch-ux-qa/references/persona-qa/start.md), [호스트 실행 계약](skills/remorsearch-ux-qa/references/persona-qa/local-run.md), [사전 기준](docs/validation/journey-run-protocol-20261112.md), [검증 결과](docs/validation/journey-run-results-20261112.md)에 범위와 복구 절차를 기록합니다. 설치물의 `examples/journey/run_fixture.py`는 알려진 결함이 있는 합성 진단이며 실제 사용자 연구가 아닙니다. 추출 배포물 검사에서도 실행하고, 진단 소프트웨어 검사 성공과 대상 과제의 실패·보류 판정을 구분합니다.
 
 추가 [swarm 증거 감사 기준](docs/validation/swarm-evidence-audit-protocol-20261112.md)과 [검증 결과](docs/validation/swarm-evidence-audit-results-20261112.md)는 receipt/실행 로그 재대조, 페르소나 간 중복·상충 관측 표시, 결정적 일관성 검사와 독립 검토의 차이를 설명합니다.
+
+### 검토한 정적 브라우저 여정 실행
+
+별도의 검토된 정적 브라우저 계획은 같은 저장 페르소나를 기존 Playwright 측정 드라이버에 연결합니다. 호스트가 실제 소스와 사용자 목표에서 행동·checkpoint를 구성하고, 소유 headless Chromium이 입력 보존·완료·복구를 관측합니다. 현재 과업·빌드·페르소나, native 로그와 PNG를 기존 receipt·감사에서 대조합니다. 앞선 실패는 나중 복구로 지워지지 않으며, 화면 밖·가림·미방문 조건은 미관측으로 남깁니다. 완료 재조회는 브라우저를 실행하거나 시도를 추가하지 않습니다.
+
+지원 대상은 검토한 소유 정적 파일과 합성 입력입니다. 임의 제품 URL·backend·계정·사용자 브라우저는 지원하지 않습니다. 선택 과업이 통과해도 `real_user_evidence`·`product_ready`는 거짓입니다. 설치물의 브라우저 진단은 알려진 입력 손실 경로와 정상 대조 경로로 실패 1·통과 1을 기대하며 제품 준비 완료를 뜻하지 않습니다. [브라우저 실행 계약](skills/remorsearch-ux-qa/references/persona-qa/browser-run.md), [사전 기준](docs/validation/browser-journey-protocol-20261112.md), [검증 기록](docs/validation/browser-journey-results-20261112.md)에 범위와 실제 결과를 기록합니다.
 
 ### 조사 페르소나를 다음 QA에 보관
 

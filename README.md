@@ -30,7 +30,7 @@ and component tests do not establish that result.
 
 ## Install
 
-The cumulative research-persona journey update is on `rem/research-journey-20261112`, not yet merged
+The cumulative saved-persona browser journey update is on `rem/browser-journey-20261112`, not yet merged
 into `main`. The commands below select this branch. The repository remains
 private. See [replay validation and remaining limits](docs/validation/persona-journey-replay-20261111.md)
 and the [persona library/task contract](skills/remorsearch-ux-qa/references/persona-qa/persona-library-swarm.md).
@@ -45,7 +45,7 @@ default `python3` is older (the macOS system Python is 3.9), the host runs
 highest supported Python, a Node.js 22 path and any gaps; it installs nothing.
 
 ```sh
-git clone --branch rem/research-journey-20261112 --single-branch https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
+git clone --branch rem/browser-journey-20261112 --single-branch https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
 # Claude Code (personal); use .claude/skills/ inside a project to share it with a team
 mkdir -p ~/.claude/skills
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
@@ -159,6 +159,25 @@ from observed product behavior. See the [research reuse criteria](docs/validatio
 and [research reuse validation](docs/validation/research-journey-results-20261112.md).
 The extracted `--research` diagnostic uses invented offline source contracts;
 it does not repeat the historical public pilot or establish source authenticity.
+
+### Execute a reviewed static browser journey
+
+A separate reviewed static-browser plan now connects those saved personas to the
+existing measured Playwright driver. The host derives actions and checkpoints
+from the actual reviewed source and user goal. An owned headless Chromium
+captures input retention, completion and recovery, with current task/build/persona
+bindings, native logs and PNGs checked by the existing receipt/audit path.
+An earlier failure survives later recovery; unseen or unvisited targets remain
+unobserved. Completed readback does not launch a browser or spend another attempt.
+
+This path supports reviewed owned static files and synthetic inputs. It does not
+run an arbitrary product URL, backend, account or the user's browser. One task
+scope may pass while real_user_evidence and product_ready remain false.
+The installed browser diagnostic has a known input-loss path and normal control:
+expected task outcomes are one failure and one pass, not a product-readiness claim.
+See the [browser execution contract](skills/remorsearch-ux-qa/references/persona-qa/browser-run.md),
+[fixed browser criteria](docs/validation/browser-journey-protocol-20261112.md)
+and [browser verification record](docs/validation/browser-journey-results-20261112.md).
 
 ### Save researched personas for later QA
 
