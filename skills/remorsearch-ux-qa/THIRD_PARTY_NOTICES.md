@@ -73,6 +73,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## Installed separately by the user (not included)
 
+- **LangGraph 1.2.20** and **langgraph-checkpoint-sqlite 3.1.3** (MIT,
+  Copyright LangChain, Inc.), https://github.com/langchain-ai/langgraph.
+  The optional agent runtime imports StateGraph and AsyncSqliteSaver.
+  Packages and transitive dependencies are separately installed through
+  `requirements-agent.txt`; no upstream code is vendored. Preserve their
+  installed license files. No LangSmith hosted service is enabled.
 - **Playwright** (Apache License 2.0) and its Chromium build, installed with
   `npm install` in `drivers/web/` for the live web driver.
 - **Aside** (optional browser research tool), installed and licensed by its own
@@ -83,6 +89,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## Studied as references only (no code included)
 
+- **OpenAI Swarm / Agents SDK**: examined for runtime selection, not imported.
+  https://github.com/openai/swarm recommends Agents SDK for production;
+  https://github.com/openai/openai-agents-python carries the MIT license.
 - **MiroFish** (github.com/666ghj/MiroFish, AGPL-3.0): the ergonomics mode borrows
   the structure of seed → personas → parallel agents → report → interviews. No
   MiroFish code is used.

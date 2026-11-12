@@ -97,6 +97,24 @@ produces a partial report with `ready: false`. Synthetic tests establish local
 behavior and packaging; live community access, real-user preferences, Figma access
 and accessibility certification remain outside this check.
 
+## Optional agent runtime checks
+
+The default installation remains standard-library only. The optional
+`requirements-agent.txt` pins LangGraph 1.2.20 and its SQLite checkpoint adapter
+3.1.3. Prepare a separate environment; do not install into a user's global
+Python or configure paid APIs/telemetry. The package actually compiles/invokes
+StateGraph and AsyncSqliteSaver; a missing runtime is an explicit diagnosis.
+
+Run the full check above with that interpreter and
+`REMORSEARCH_REQUIRE_AGENT_RUNTIME=1`, then run the extracted installation's
+`examples/agents/fixture.py --out NEW` and `scripts/ux_agents.py report`.
+The optional gate must not silently skip when the dependency is required.
+The owned browser variant accepts already-prepared Node 22, Playwright 1.56.1
+and Chromium paths; reuse those runtimes without copying browser/build trees.
+It verifies actual PNGs and model/tool-loop integration using authored decisions.
+Actual approved-model execution remains a separate acceptance condition.
+Document both optional-package-absent diagnosis and installed checks.
+
 ## Research and distribution boundary
 
 Research plans its questions and discovers candidate URLs, then loads the bundled
