@@ -19,7 +19,7 @@ LIBRARY = ROOT / ".ux-loop/peekly-persona-library-v3"
 PRODUCT = Path("/Volumes/SanDisk2TB/m4mini/CodeProjects/insta-tracker/.omo/worktrees/peekly-import-ux-20261113")
 FIXTURES = ROOT / ".ux-loop/peekly-fixtures-v4"
 BUILD = PRODUCT / ".ux-loop/peekly-build-manifest.json"
-OUT = ROOT / ".ux-loop/peekly-explicit-success-retry-3-v3"
+OUT = ROOT / ".ux-loop/peekly-explicit-success-retry-3-v4"
 PERSONAS = ["PER-PEEKLY-V2-014", "PER-PEEKLY-V2-015", "PER-PEEKLY-V2-016"]
 
 
@@ -33,8 +33,8 @@ async def main() -> None:
         run_root=OUT, library=LIBRARY, product_id="peekly",
         url="http://127.0.0.1:4174/",
         target="Peekly isolated local preview; immutable source commit 51110f4c569673faa8d242d5b85c4b47afb54cbb",
-        goal=("Post-8a2cd76 selector-privacy recovery: execute the three unresolved v3 personas "
-              "in a new isolated queue with structural DOM selectors only. "
+        goal=("Post-94b7453 fixture-key privacy recovery: execute the three unresolved v3 personas "
+              "in a new isolated queue with structural selectors and manifest-only fixture keys. "
               "Use the frozen 51110f4 build and hash-pinned v4 synthetic fixtures. "
               "Execute all explicit criteria; keep untested criteria not_run and native iOS checks N/A. "
               "Do not use real Instagram accounts, payments, or external destinations."),
