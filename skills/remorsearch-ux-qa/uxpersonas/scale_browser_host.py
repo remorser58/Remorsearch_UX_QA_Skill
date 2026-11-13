@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import re
 import time
+import zipfile
 
 from uxresearch.canonical import byte_digest
 from uxresearch.storage import safe_path
@@ -51,6 +52,43 @@ class ScaleBrowserHost:
         self.context_tasks = {}
         self.context_uploads = {}
         self.context_observations = {}
+        self.context_fixture_validation = {}
+
+    def _validate_fixture_upload(self, fixture_name):
+        """Expose bounded fixture-shape metadata without leaking fixture contents."""
+        if (not isinstance(fixture_name, str) or fixture_name.startswith("@group:")
+                or not fixture_name.lower().endswith(".zip")):
+            return None
+        try:
+            path = safe_path(self.fixtures / fixture_name, self.fixtures)
+            with zipfile.ZipFile(path) as archive:
+                html_members = [name for name in archive.namelist()
+                                if name.lower().endswith(".html")]
+                if not html_members:
+                    return None
+                documents = []
+                for member in html_members[:32]:
+                    raw = archive.read(member)
+                    html = raw.decode("utf-8-sig", "replace")
+                    complete = bool(
+                        re.search(r"<html\b", html, re.I)
+                        and re.search(r"<body\b", html, re.I)
+                        and re.search(r"</body\s*>[\s\S]*</html\s*>", html, re.I)
+                    )
+                    documents.append({
+                        "member": Path(member).name,
+                        "complete_html_document": complete,
+                    })
+                return {
+                    "fixture": fixture_name,
+                    "archive_valid": True,
+                    "html_documents": documents,
+                    "complete_html_documents": bool(documents) and all(
+                        row["complete_html_document"] for row in documents),
+                }
+        except (OSError, ValueError, KeyError, zipfile.BadZipFile):
+            return {"fixture": fixture_name, "archive_valid": False,
+                    "reason": "fixture_archive_unreadable"}
 
     def can_resume(self, context_id, observations):
         process = self.processes.get(context_id)
@@ -93,6 +131,7 @@ class ScaleBrowserHost:
         self.context_tasks = getattr(self, "context_tasks", {})
         self.context_uploads = getattr(self, "context_uploads", {})
         self.context_observations = getattr(self, "context_observations", {})
+        self.context_fixture_validation = getattr(self, "context_fixture_validation", {})
         if kind == "close":
             process = self.processes.get(context)
             if process is None:
@@ -111,6 +150,7 @@ class ScaleBrowserHost:
             self.context_tasks.pop(context, None)
             self.context_uploads.pop(context, None)
             self.context_observations.pop(context, None)
+            self.context_fixture_validation.pop(context, None)
             return {"operation_id":request["operation_id"],"context_id":context,
                 "request_sha256":request["request_sha256"],"trace_id":"browser-close-"+context[-12:],
                 "result":result}
@@ -122,6 +162,7 @@ class ScaleBrowserHost:
             self.context_tasks.setdefault(context, copy.deepcopy(task))
         self.context_uploads.setdefault(context, set())
         self.context_observations.setdefault(context, [])
+        self.context_fixture_validation.setdefault(context, [])
         if context not in self.processes:
             await self._exchange(context, "start", {"url":self.target_url, "chrome":self.chrome,
                 "profile_dir":str(evidence / "browser-profile"), "evidence_path":str(evidence),
@@ -145,10 +186,16 @@ class ScaleBrowserHost:
                 "This is a failed action, not a successful navigation. Re-observe the current "
                 "controls and choose a safe recovery; no click was retried.\n" + result["text"])
         if name == "upload" and isinstance(arguments, dict) and isinstance(arguments.get("file"), str):
-            self.context_uploads[context].add(arguments["file"])
+            fixture_name = arguments["file"]
+            self.context_uploads[context].add(fixture_name)
+            validation = self._validate_fixture_upload(fixture_name)
+            if validation and validation not in self.context_fixture_validation[context]:
+                self.context_fixture_validation[context].append(validation)
         if set(result) != {"text","facts","captures","checks"}:
             raise RuntimeError("browser_observation_contract")
         result["facts"]["fixture_uploads"] = sorted(self.context_uploads[context])
+        result["facts"]["fixture_validation"] = copy.deepcopy(
+            self.context_fixture_validation[context])
         task = self.context_tasks.get(context)
         if task:
             result["checks"] = evaluate_peekly_criteria(task, result["facts"], result["text"],

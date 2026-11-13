@@ -1,12 +1,17 @@
 """Verdict-state semantics and per-persona task design regressions."""
+import json
+from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch
+import zipfile
 
 import _paths
 from uxpersonas.agent_run import Execution, Tool
 from uxpersonas.scale_entry import _persona_journey_goal
 from uxpersonas.peekly_criteria import CRITERIA, evaluate
 from uxpersonas.scale_run import Evidence
+from uxpersonas.scale_browser_host import ScaleBrowserHost
 
 
 class VerdictQualityTests(unittest.TestCase):
@@ -54,6 +59,9 @@ class VerdictQualityTests(unittest.TestCase):
             self.assertIn(expected, goal)
         self.assertIn("not_applicable", goal)
         self.assertIn("not_run", goal)
+        self.assertIn("아이디나 이름으로 찾기", _persona_journey_goal("Use Peekly.", ["PRD-RESULT-SEARCH"]))
+        self.assertIn("MatrixTab", _persona_journey_goal("Use Peekly.", ["PRD-SAMPLE-EXPORT"]))
+        self.assertIn("not_run", _persona_journey_goal("Use Peekly.", ["PRD-SNAPSHOT-RETENTION"]))
 
     def test_unobserved_success_condition_remains_not_run(self):
         goal = _persona_journey_goal("Use Peekly.", ["PRD-IMPORT-SIZE"])
@@ -81,17 +89,133 @@ class VerdictQualityTests(unittest.TestCase):
         facts = {"controls": [], "file_inputs": [], "network_policy": {"external_requests_blocked": True}}
         text = "결과를 불러왔어요. 나를 맞팔 안 한 사람 1명 내가 맞팔 안 한 사람 1명 맞팔 중인 사람 0명"
         self.assertEqual(evaluate(task, facts, text, ()), [])
-        checks = evaluate(task, facts, text,
-            ("peekly-format-html.zip", "peekly-format-json.zip"))
+        uploads = ("peekly-format-html.zip", "peekly-format-json.zip")
+        validation = [{"fixture": "peekly-format-html.zip", "archive_valid": True,
+                       "complete_html_documents": True, "html_documents": [
+                           {"member": "followers.html", "complete_html_document": True}]}]
+        history = [{"text": text, "facts": {"fixture_uploads": ["peekly-format-html.zip"],
+            "fixture_validation": validation}}]
+        current = dict(facts, fixture_uploads=list(uploads), fixture_validation=validation)
+        checks = evaluate(task, current, text, uploads, history)
         self.assertEqual(checks, [{"kind": "success", "index": 0, "status": "passed"}])
+
+    def test_incomplete_html_fixture_is_not_misreported_as_a_product_failure(self):
+        task = {"requirement_ids": ["PRD-IMPORT-FORMATS"]}
+        uploads = ("peekly-format-html.zip", "peekly-format-json.zip")
+        validation = [{"fixture": "peekly-format-html.zip", "archive_valid": True,
+                       "complete_html_documents": False, "html_documents": [
+                           {"member": "followers.html", "complete_html_document": False}]}]
+        history = [{"text": "파일에서 팔로워·팔로잉 목록을 읽지 못했어요.",
+                    "facts": {"fixture_uploads": ["peekly-format-html.zip"],
+                              "fixture_validation": validation}}]
+        facts = {"fixture_uploads": list(uploads), "fixture_validation": validation}
+        checks = evaluate(task, facts, "JSON 결과 1명 1명 0명", uploads, history)
+        self.assertEqual(checks[0]["status"], "not_run")
+        self.assertIn("fixture", checks[0]["reason"])
+
+    def test_browser_fixture_audit_detects_incomplete_and_complete_html_documents(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            host = ScaleBrowserHost.__new__(ScaleBrowserHost)
+            host.fixtures = root
+            with zipfile.ZipFile(root / "incomplete.zip", "w") as archive:
+                archive.writestr("followers.html", "<!doctype html><div>followers</div>")
+            with zipfile.ZipFile(root / "complete.zip", "w") as archive:
+                archive.writestr("followers.html", "<!doctype html><html><body>followers</body></html>")
+            incomplete = host._validate_fixture_upload("incomplete.zip")
+            complete = host._validate_fixture_upload("complete.zip")
+        self.assertFalse(incomplete["complete_html_documents"])
+        self.assertTrue(complete["complete_html_documents"])
+
+    def test_current_more_import_route_replaces_legacy_request_guide_shortcut(self):
+        task = {"requirement_ids": ["PRD-START-IMPORT", "PRD-START-SKIP"]}
+        facts = {"file_inputs": [{"accept": ".zip,.json,.html"}], "controls": []}
+        text = "더보기 이미 받은 자료로 확인하기 파일 고르기"
+        checks = evaluate(task, facts, text)
+        self.assertEqual([row["status"] for row in checks], ["passed", "passed"])
+        legacy_only = evaluate({"requirement_ids": ["PRD-START-SKIP"]},
+            {"file_inputs": [], "controls": []}, "이미 파일을 받았어요")
+        self.assertEqual(legacy_only[0]["status"], "not_run")
+
+    def test_sample_export_is_only_judged_on_sample_matrix_tab(self):
+        task = {"requirement_ids": ["PRD-SAMPLE-EXPORT"]}
+        buttons = [
+            {"tag": "button", "label": "목록 복사", "disabled": True,
+             "title": "샘플 목록은 복사할 수 없어요."},
+            {"tag": "button", "label": "목록 저장", "disabled": True,
+             "title": "샘플 목록은 저장할 수 없어요."},
+        ]
+        history = [{"text": "샘플로 먼저 둘러보기", "facts": {
+            "last_action_label": "샘플로 먼저 둘러보기", "fixture_uploads": []}}]
+        sample_facts = {"controls": buttons, "fixture_uploads": [], "list_rows": []}
+        sample_text = "미맞팔 3 나만 팔로우 2 맞팔 해제 1 목록 복사 목록 저장"
+        self.assertEqual(evaluate(task, sample_facts, sample_text, (), history),
+                         [{"kind": "success", "index": 0, "status": "passed"}])
+        real_facts = {"controls": [dict(buttons[0], disabled=False, title=""),
+                                    dict(buttons[1], disabled=False, title="")],
+                      "fixture_uploads": ["peekly-sample-current.zip"]}
+        real = evaluate(task, real_facts, sample_text, ("peekly-sample-current.zip",), ())
+        self.assertEqual(real[0]["status"], "not_run")
+        missing = evaluate(task, {"controls": [], "fixture_uploads": [], "list_rows": []},
+                           sample_text, (), history)
+        self.assertEqual(missing[0]["status"], "failed")
+
+    def test_search_uses_current_text_input_placeholder(self):
+        task = {"requirement_ids": ["PRD-RESULT-SEARCH"]}
+        large = {"text": "관계 목록", "facts": {
+            "controls": [{"tag": "input", "type": "text", "placeholder": "아이디나 이름으로 찾기"}],
+            "list_rows": [{"key": f"user-{i:02d}"} for i in range(9)]}}
+        filtered = {"text": "검색 결과", "facts": {
+            "controls": [{"tag": "input", "type": "text", "placeholder": "아이디나 이름으로 찾기"}],
+            "list_rows": [{"key": "synthetic_user"}],
+            "typed_input_checks": [{"retained": True}]}}
+        checks = evaluate(task, filtered["facts"], filtered["text"], (), [large])
+        self.assertEqual(checks[0]["status"], "passed")
+
+    def test_retention_requires_eleven_distinct_uploads_and_current_history_count(self):
+        task = {"requirement_ids": ["PRD-SNAPSHOT-RETENTION"]}
+        names = [f"peekly-retention-snapshot-{i:02d}.zip" for i in range(1, 12)]
+        facts = {"fixture_uploads": names, "controls": []}
+        checks = evaluate(task, facts, "10번의 관계 기록 최근 10번까지 이 기기에 보관해요.", names)
+        self.assertEqual(checks[0]["status"], "passed")
+        checks = evaluate(task, dict(facts, fixture_uploads=names[:-1]),
+                          "10번의 관계 기록 최근 10번까지 이 기기에 보관해요.", names[:-1])
+        self.assertEqual(checks[0]["status"], "not_run")
+
+    def test_paywall_boundary_requires_free_latest_comparison_and_pro_history_evidence(self):
+        task = {"requirement_ids": ["PRD-PAYWALL-BOUNDARY"]}
+        uploads = ("peekly-sample-previous.zip", "peekly-sample-current.zip")
+        free = {"text": "팔로워에서 빠진 사람 2명", "facts": {"list_rows": [{"key": "[handle]"}]}}
+        history = {"text": "기록 살펴보기 비교 시작 기록 비교 종료 기록", "facts": {
+            "controls": [
+                {"tag": "select", "label": "비교 시작 기록", "disabled": True},
+                {"tag": "select", "label": "비교 종료 기록", "disabled": True},
+            ]}}
+        pro = {"text": "변화 타임라인 두 시점 비교 사람별 관계 이력", "facts": {"controls": []}}
+        checks = evaluate(task, pro["facts"], pro["text"], uploads, [free, history])
+        self.assertEqual(checks[0]["status"], "passed")
+        checks = evaluate(task, free["facts"], free["text"], uploads, [free])
+        self.assertEqual(checks[0]["status"], "not_run")
+
+    def test_product_privacy_requires_product_notice_not_host_network_block(self):
+        task = {"requirement_ids": ["PRD-PRIVACY-LOCAL"]}
+        facts = {"file_inputs": [{"accept": ".zip"}], "network_policy": {"external_requests_blocked": True}}
+        self.assertEqual(evaluate(task, facts, "기기 안에서 처리", ())[0]["status"], "failed")
+        self.assertEqual(evaluate(task, facts, "파일은 이 기기 안에서만 읽어요. 어디로도 보내지 않아요.", ())[0]["status"], "passed")
 
     def test_native_failure_is_emitted_only_after_triggering_fixture(self):
         task = {"requirement_ids": ["PRD-IMPORT-MISSING"]}
         facts = {"controls": [], "file_inputs": [], "network_policy": {}}
-        self.assertEqual(evaluate(task, facts, "결과를 불러왔어요", ()), [])
+        checks = evaluate(task, facts, "결과를 불러왔어요", ())
+        self.assertEqual(checks[0]["status"], "not_run")
+        history = [
+            {"text": "결과를 불러왔어요", "facts": {"uploaded_fixture": "peekly-missing-followers.zip"}},
+            {"text": "결과를 불러왔어요", "facts": {"uploaded_fixture": "peekly-missing-following.zip"}},
+        ]
         checks = evaluate(task, facts, "결과를 불러왔어요",
-            ("peekly-missing-followers.zip", "peekly-missing-following.zip"))
-        self.assertEqual(checks, [{"kind": "success", "index": 0, "status": "failed"}])
+            ("peekly-missing-followers.zip", "peekly-missing-following.zip"), history)
+        self.assertEqual([(row["kind"], row["index"], row["status"]) for row in checks],
+                         [("success", 0, "failed")])
 
     def test_progress_requires_both_phases_and_an_observed_cancel(self):
         facts = {"controls": [], "file_inputs": [], "network_policy": {}}
@@ -137,3 +261,17 @@ class VerdictQualityTests(unittest.TestCase):
                 {"build": {"sha256": "c" * 64}}, judgment=judgment)
         self.assertEqual(receipt["criteria"][0]["status"], "passed")
         self.assertEqual(receipt["criteria"][0]["evidence_ids"], ["png-1"])
+
+    def test_native_not_run_reason_is_preserved_in_receipt(self):
+        worker = {"claim": {"task": {"id": "task", "success_criteria": ["retention"],
+            "recovery_criteria": []}, "binding": {"revision": 1, "profile_sha256": "a" * 64}},
+            "queue_claim": {"owner": "worker", "lease_token": "b" * 64}}
+        observation = {"id": "obs-1", "action": "observe", "text": "History not opened.",
+            "checks": [{"kind": "success", "index": 0, "status": "not_run",
+                        "reason": "Eleven distinct snapshots were not imported."}],
+            "artifacts": [{"id": "png-1", "kind": "screenshot"}]}
+        with patch("uxpersonas.scale_run.swarm._receipt", side_effect=lambda root, job, value: value):
+            receipt = Evidence(".").receipt(worker, {"observations": [observation]},
+                {"build": {"sha256": "c" * 64}}, judgment=None)
+        self.assertEqual(receipt["criteria"][0]["status"], "not_run")
+        self.assertEqual(receipt["criteria"][0]["observation"], "Eleven distinct snapshots were not imported.")

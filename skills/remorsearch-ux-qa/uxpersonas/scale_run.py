@@ -67,12 +67,21 @@ class Evidence:
                     if (c["kind"], c["index"]) == (criterion["kind"], criterion["index"])
                     and c["status"] in {"passed", "failed"}
                     and any(a["kind"] == "screenshot" for a in o["artifacts"])]
+                native_not_runs = [(o, c) for o in observations for c in o["checks"]
+                    if (c["kind"], c["index"]) == (criterion["kind"], criterion["index"])
+                    and c["status"] == "not_run"
+                    and any(a["kind"] == "screenshot" for a in o["artifacts"])]
                 native_failures = [(o, c) for o, c in matching if c["status"] == "failed"]
                 native_passes = [(o, c) for o, c in matching if c["status"] == "passed"]
                 if native_passes and not native_failures and criterion["status"] == "not_run":
                     observation, _ = native_passes[-1]
                     criterion.update(status="passed",
                         observation="Deterministic browser check passed: " + observation["text"],
+                        evidence_ids=[a["id"] for a in observation["artifacts"]])
+                elif native_not_runs and criterion["status"] == "not_run":
+                    observation, check = native_not_runs[-1]
+                    criterion.update(
+                        observation=check.get("reason") or "Deterministic check not run because its precondition was not observed.",
                         evidence_ids=[a["id"] for a in observation["artifacts"]])
             failed = {(c["kind"], c["index"]) for o in observations
                       for c in o["checks"] if c["status"] == "failed"}
@@ -85,11 +94,20 @@ class Evidence:
                             if (c["kind"], c["index"]) == (criterion["kind"], criterion["index"])
                             and c["status"] != "not_run"
                             and any(a["kind"] == "screenshot" for a in o["artifacts"])]
+                native_not_runs = [(o, c) for o in observations for c in o["checks"]
+                            if (c["kind"], c["index"]) == (criterion["kind"], criterion["index"])
+                            and c["status"] == "not_run"
+                            and any(a["kind"] == "screenshot" for a in o["artifacts"])]
                 failed = [(o, c) for o, c in matching if c["status"] == "failed"]
                 if matching:
                     observation, check = (failed or matching)[-1]
                     criterion.update(status=check["status"],
                         observation="Admitted native checkpoint: " + observation["text"],
+                        evidence_ids=[a["id"] for a in observation["artifacts"]])
+                elif native_not_runs:
+                    observation, check = native_not_runs[-1]
+                    criterion.update(status="not_run",
+                        observation=check.get("reason") or "Deterministic check not run because its precondition was not observed.",
                         evidence_ids=[a["id"] for a in observation["artifacts"]])
         statuses = {c["status"] for c in criteria}
         outcome = ("failed" if "failed" in statuses else

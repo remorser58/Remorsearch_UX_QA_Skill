@@ -54,11 +54,11 @@ def _persona_journey_goal(base_goal, requirement_ids):
     if ids & {"PRD-START-SAMPLE", "PRD-RESULT-RECIPROCITY", "PRD-RESULT-REVERSE", "PRD-RESULT-MUTUAL"}:
         actions.append("샘플로 둘러보기를 열고 요구된 관계 카드의 설명·숫자를 확인한다. 목록이 해당 기준에 포함되면 직접 열어 목록도 확인한다.")
     if ids & {"PRD-START-IMPORT", "PRD-START-SKIP"}:
-        actions.append("현재 PRD 기준으로 More 첫 화면의 '이미 받은 자료로 확인하기' 진입을 확인한다. 별도로 요청 안내를 열었다면 '이미 파일을 받았어요'를 눌러 파일 선택 단계로 바로 이동하는지도 확인한다. 구형 1/3 단계 문구를 기대하지 않는다.")
+        actions.append("현재 PRD 기준으로 More 첫 화면의 '이미 받은 자료로 확인하기'를 눌러 실제 파일 선택 단계까지 이동한다. 별도의 요청 안내 shortcut '이미 파일을 받았어요'는 현재 PRD 요구가 아니므로 찾거나 실패로 판정하지 않는다.")
     if "PRD-RESULT-SNAPSHOT" in ids:
         actions.append("동일 계정의 두 완전한 합성 스냅샷을 이전→최신 순서로 가져온다. 무료 결과 화면에서 '팔로워에서 빠진 사람'의 숫자와 이름 목록을 확인하고, 목록 변화만으로 원인을 단정하지 않는지 확인한다.")
     if "PRD-IMPORT-FORMATS" in ids:
-        actions.append("HTML 형식과 JSON 형식의 동등성이 기준이면 peekly-format-html.zip과 peekly-format-json.zip을 각각 가져와 결과 범주와 수를 대조한다. 각 업로드 후 같은 샘플 기준 결과인지 확인한다.")
+        actions.append("HTML 형식과 JSON 형식의 동등성이 기준이면 두 fixture를 각각 가져와 결과 범주와 수를 대조한다. HTML fixture의 complete html/body 문서 검증이 실패하면 fixture 결함으로 기록하고 제품 실패로 판정하지 않는다.")
     if "PRD-IMPORT-MISSING" in ids:
         actions.append("필수 관계 파일 누락 기준이면 peekly-missing-followers.zip과 peekly-missing-following.zip을 각각 넣고 파일 누락 안내가 실제 표시되는지 확인한다. 정상 ZIP으로 대체하지 않는다.")
     if "PRD-IMPORT-ACCOUNT" in ids:
@@ -68,17 +68,17 @@ def _persona_journey_goal(base_goal, requirement_ids):
     if "PRD-IMPORT-SNAPSHOT-UNKNOWN" in ids:
         actions.append("비어 있는 이전 백업의 비교 제외 기준이면 peekly-empty-previous.zip을 먼저 넣고 peekly-sample-current.zip을 이어 넣어 비교가 제외되는지 확인한다.")
     if "PRD-RESULT-SEARCH" in ids:
-        actions.append("9명 이상 관계 목록을 열어 username 순서와 실제 placeholder '이름 또는 아이디 찾기'를 확인한다. 합성 아이디를 검색해 대상 행만 남는지 확인한다.")
+        actions.append("9명 이상 관계 목록을 열어 username 순서와 현재 UI placeholder '아이디나 이름으로 찾기'가 있는 text input을 확인한다. 합성 아이디를 검색해 대상 행만 남는지 확인한다.")
     if "PRD-PRIVACY-LOCAL" in ids:
         actions.append("현재 PRD의 자체 서버 없음·기기 내 처리 고지를 확인한다. 결과 공유는 사용자가 고른 목적지로 전달될 수 있고 샘플 공유는 비활성화된다는 경계를 구분한다. desktop 브라우저의 외부 요청 차단은 테스트 격리 정책이지 제품 자체의 데이터 흐름 증거라고 주장하지 않는다.")
     if "PRD-PRIVACY-DELETE" in ids:
         actions.append("합성 데이터만 든 별도 브라우저 프로필에서 데이터 삭제 확인 단계를 실행하고 localStorage 앱 상태·onboarding 키 제거를 확인한다. iOS 알림 취소와 WKWebView/cookie 삭제는 desktop 검증 범위 밖이므로 N/A로 기록한다.")
     if "PRD-SAMPLE-EXPORT" in ids:
-        actions.append("샘플의 목록 복사와 CSV 저장을 각각 눌러 실제 동작/사용 제한을 확인한다. 버튼이 비활성·잠금이면 해당 상태와 안내를 기록한다.")
+        actions.append("샘플 둘러보기에서 More > 관계 목록(MatrixTab)을 실제로 연다. 목록 복사와 목록 저장 버튼의 disabled 상태와 샘플 전용 title 안내를 확인한다. 비활성 버튼을 억지로 클릭하지 않으며, 실데이터 목록의 활성 버튼을 샘플 기준 실패로 판정하지 않는다.")
     if "PRD-SNAPSHOT-RETENTION" in ids:
-        actions.append("기록 보관 기준이 있으면 서로 다른 합성 스냅샷을 순서대로 추가하고 기록 목록에서 최신 10개 보관/초과 시 정리 규칙을 확인한다. 실행하지 않은 장기 보관은 통과시키지 않는다.")
+        actions.append("서로 다른 유효 합성 스냅샷 11개를 개별 import하고 기록 목록에서 최대 10개 보관을 확인한다. 저장 공간 압박으로 더 적게 보관되면 최신 두 기록 보존을 확인한다. 고정 turn budget으로 11회 import를 끝낼 수 없으면 retention은 not_run으로 남기고 통과/실패를 만들지 않는다.")
     if "PRD-PAYWALL-BOUNDARY" in ids:
-        actions.append("현재 관계 목록과 같은 계정 최신 두 기록 비교의 이름까지 무료로 보이는지 확인한다. 여러 기록 timeline·두 날짜 비교·사람별 이력만 Pro 경계로 확인하고, 예전 PRD의 가려진 이름 전제를 재사용하지 않는다. 결제는 누르지 않는다.")
+        actions.append("동일 계정 두 스냅샷의 현재 관계 목록과 최신 두 기록 비교 이름까지 무료로 보이는지 확인한다. 두 기록 미만이면 upsell을 요구하지 않는다. 여러 기록 timeline·두 날짜 선택·사람별 이력만 Pro 경계로 확인하고 결제는 누르지 않는다.")
     if "PRD-IMPORT-MULTI" in ids:
         actions.append("파일 선택에서 @group:peekly-mixed-loose-valid를 실제 input[type=file][multiple]에 넣고, 512개 허용·513개 거절 및 ZIP+loose 혼합 거절 group을 각각 실행한다.")
     if "PRD-IMPORT-SIZE" in ids:
