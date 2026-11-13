@@ -42,6 +42,49 @@ def engine_manifest():
     return {name: byte_digest(read_bytes(root / name)) for name in files}
 
 
+def _persona_journey_goal(base_goal, requirement_ids):
+    """Turn each saved persona's mapped PRD requirements into executable actions.
+
+    Do not declare unrelated, untriggered recovery paths as success requirements.
+    Missing evidence for an applicable success requirement remains not_run.
+    """
+    actions = []
+    ids = set(requirement_ids)
+    if ids & {"PRD-START-SAMPLE", "PRD-RESULT-RECIPROCITY", "PRD-RESULT-REVERSE", "PRD-RESULT-MUTUAL"}:
+        actions.append("샘플로 둘러보기를 열고 요구된 관계 카드의 설명·숫자를 확인한다. 목록이 해당 기준에 포함되면 직접 열어 목록도 확인한다.")
+    if ids & {"PRD-START-IMPORT", "PRD-START-SKIP"}:
+        actions.append("샘플/시작 화면에서 이미 받은 자료 가져오기를 찾아 연다. '받은 파일 바로 넣기' 기준이 있으면 요청 단계에서 눌러 실제로 3단계로 이동하는지 확인한다.")
+    if "PRD-RESULT-SNAPSHOT" in ids:
+        actions.append("시점 비교가 요구되면 peekly-sample-previous.zip을 먼저 가져온 뒤 peekly-sample-current.zip을 가져온다. 결과 화면에서 언팔 숫자와 해당 목록을 모두 열어 확인한다.")
+    if "PRD-IMPORT-FORMATS" in ids:
+        actions.append("HTML 형식과 JSON 형식의 동등성이 기준이면 peekly-format-html.zip과 peekly-format-json.zip을 각각 가져와 결과 범주와 수를 대조한다. 각 업로드 후 같은 샘플 기준 결과인지 확인한다.")
+    if "PRD-IMPORT-MISSING" in ids:
+        actions.append("필수 관계 파일 누락 기준이면 peekly-missing-followers.zip과 peekly-missing-following.zip을 각각 넣고 파일 누락 안내가 실제 표시되는지 확인한다. 정상 ZIP으로 대체하지 않는다.")
+    if "PRD-IMPORT-ACCOUNT" in ids:
+        actions.append("계정 불일치 기준이면 peekly-account-mismatch.zip을 넣고 계정 불일치 차단 안내를 확인한다.")
+    if "PRD-IMPORT-HTML" in ids:
+        actions.append("읽을 수 없는 HTML 관계 항목 기준이면 peekly-malformed-html.zip을 넣고 가져오기 중단 안내를 확인한다.")
+    if "PRD-IMPORT-SNAPSHOT-UNKNOWN" in ids:
+        actions.append("비어 있는 이전 백업의 비교 제외 기준이면 peekly-empty-previous.zip을 먼저 넣고 peekly-sample-current.zip을 이어 넣어 비교가 제외되는지 확인한다.")
+    if "PRD-RESULT-SEARCH" in ids:
+        actions.append("관계 목록을 열어 정렬 순서와 8명 초과 시 검색 입력을 확인하고, 실제 합성 이름으로 검색해 목록이 좁혀지는지 시험한다.")
+    if "PRD-PRIVACY-LOCAL" in ids:
+        actions.append("기기 내 처리 문구와 현재 origin 외 네트워크 요청 차단 증거를 확인한다. 공유 이미지 기준이 요구에 포함되면 공유 미리보기까지 확인하고, 불가능하면 not_run으로 남긴다.")
+    if "PRD-PRIVACY-DELETE" in ids:
+        actions.append("새로 만든 격리 브라우저 컨텍스트의 합성 데이터만 대상으로 전체 초기화 화면과 확인 단계를 시험한다. 실제 사용자 데이터나 다른 컨텍스트는 건드리지 않는다.")
+    if "PRD-SAMPLE-EXPORT" in ids:
+        actions.append("샘플의 목록 복사와 CSV 저장을 각각 눌러 실제 동작/사용 제한을 확인한다. 버튼이 비활성·잠금이면 해당 상태와 안내를 기록한다.")
+    if "PRD-SNAPSHOT-RETENTION" in ids:
+        actions.append("기록 보관 기준이 있으면 서로 다른 합성 스냅샷을 순서대로 추가하고 기록 목록에서 최신 10개 보관/초과 시 정리 규칙을 확인한다. 실행하지 않은 장기 보관은 통과시키지 않는다.")
+    if "PRD-PAYWALL-BOUNDARY" in ids:
+        actions.append("무료 결과와 유료 잠금 항목을 각각 열어 무료로 보이는 범위, 가려진 이름, 잠금 안내를 구분해 확인한다. 결제는 누르지 않는다.")
+    if ids & {"PRD-IMPORT-PROGRESS", "PRD-IMPORT-SIZE", "PRD-IMPORT-SAVE-FAIL"}:
+        actions.append("가져오기 진행·크기 제한·저장 실패 기준은 제공된 해당 시나리오 fixture가 manifest에 실제로 있을 때만 실행한다. 없는 실패 조건을 억지로 만들거나 not_run을 실패로 판정하지 않는다.")
+    if not actions:
+        actions.append("이 페르소나의 요구사항에 직접 대응하는 화면 흐름을 관찰하고 각 성공 기준을 개별적으로 확인한다.")
+    return base_goal + "\n\n이 페르소나의 요구사항별 실행 과제:\n" + "\n".join("- " + action for action in actions) + "\n\n판정 규칙: 각 성공 기준을 직접 실행하고 관측 ID와 화면 증거를 남긴다. 성공 기준을 실행하지 않았거나 fixture/전제조건이 없어 확인할 수 없으면 not_run으로 남긴다. 조건부 복구 기준은 해당 실패가 실제 발생했을 때만 복구를 시험하며, 실패가 전혀 발생하지 않았으면 not_applicable로 남긴다. 실행하지 않은 조건을 failed로 판정하지 않는다."
+
+
 def prepare_scale_goal(library, run_path, providers, tool_host, tools, *, product_id,
                        target, goal, build, limits=ScaleLimits(), persona_ids=None,
                        assignments=None, credential_scopes=None, reviewed=False,
@@ -125,12 +168,14 @@ def prepare_scale_goal(library, run_path, providers, tool_host, tools, *, produc
         # phone/account identifiers in the existing whole-task privacy gate.
         jid = "S-" + digest([product_id, pid, profile["revision"], goal, build])[:24].translate(
             str.maketrans("0123456789abcdef", "abcdefghijklmnop"))
-        task = dict(id=jid, persona_id=pid, requirement_ids=[r["id"] for r in requirements], goal=goal,
+        requirement_ids = [r["id"] for r in requirements]
+        task = dict(id=jid, persona_id=pid, requirement_ids=requirement_ids,
+            goal=_persona_journey_goal(goal, requirement_ids),
             starting_state="Fresh isolated owned context for the reviewed product.",
             actions=["Choose a permitted next action from your own current observations."],
             decisions=copy.deepcopy(profile["profile"]["behaviors"]),
             success_criteria=[r["excerpt"] for r in requirements],
-            recovery_criteria=["Exercise an applicable safe recovery and verify it; otherwise report not_run."],
+            recovery_criteria=["If a recoverable browser/import failure actually occurs, perform the safe recovery and verify it. If no triggering failure occurs, report not_applicable; do not manufacture a failure."],
             data_namespace=jid, resource_id=jid,
             side_effects="owned_fixture_write" if any(t["effect"] == "owned_fixture_write" for t in tools) else "read_only",
             stop_conditions=["Stop at real accounts, payment, unapproved resources, uncertain effects or exhausted limits."],

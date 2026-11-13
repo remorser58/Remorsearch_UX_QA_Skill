@@ -298,7 +298,7 @@ class RoutedScaleProvider:
             "Use only your persona, current browser observations and approved tool allowlist. "
             "Do not invent actions or observations. Never claim real-user evidence. Preserve failures. "
             "Keep decision, reason and each criterion observation concise (at most 200 characters each). "
-            "In final judgments, not_run MUST have observation_ids: []; passed/failed MUST cite one or more "
+            "In final judgments, not_run and not_applicable MUST have observation_ids: []; passed/failed MUST cite one or more "
             "actual observation IDs (obs-N), never PNG/log IDs. Include every criterion exactly once. "
             "During review return the original first_judgment unchanged when already evidence-consistent.")
         context_id = request["context_id"]
@@ -319,8 +319,11 @@ class RoutedScaleProvider:
                 "Return exactly the listed (kind,index) pairs, each once. Index is an integer, "
                 "zero-based separately for success and recovery; recovery starts at 0 again. "
                 "Do not split, add, merge or renumber criteria. Allowed status values are "
-                "passed, failed, not_run. A criterion requires kind,index,status,observation,observation_ids. "
-                "not_run has no observation_ids. Never invent missing evidence.")
+                "passed, failed, not_run, not_applicable. A criterion requires kind,index,status,observation,observation_ids. "
+                "not_run means this applicable criterion was not executed or lacks sufficient evidence. "
+                "not_applicable is allowed ONLY for a recovery criterion whose triggering failure did not occur. "
+                "Never mark a success criterion not_applicable. Never mark an unexecuted condition failed. "
+                "A failed status requires direct evidence that the criterion was actually tested and failed.")
         observations = projected.get("observations", [])
         for observation in observations[:-1]:
             facts = observation.get("facts", {})
@@ -367,12 +370,23 @@ class RoutedScaleProvider:
                         if (kind, index) in seen_bindings:
                             raise ValueError("criterion_binding_duplicate:" + repr((kind, index)))
                         seen_bindings.add((kind, index))
-                        if criterion.get("status") not in {"passed", "failed", "not_run"}:
+                        if criterion.get("status") not in {"passed", "failed", "not_run", "not_applicable"}:
                             raise ValueError("criterion_status_requires_passed_failed_or_not_run")
+                        if criterion.get("status") == "not_applicable" and kind != "recovery":
+                            raise ValueError("not_applicable_only_for_conditional_recovery")
                         refs = criterion.get("observation_ids")
                         label = str(criterion.get("kind")) + "[" + str(criterion.get("index")) + "]"
-                        if criterion.get("status") == "not_run" and refs != []:
-                            raise ValueError(label + " not_run requires observation_ids=[]")
+                        if criterion.get("status") in {"not_run", "not_applicable"} and refs != []:
+                            raise ValueError(label + " unassessed statuses require observation_ids=[]")
+                        if criterion.get("status") == "failed":
+                            observation = criterion.get("observation", "").lower()
+                            untested_markers = ("확인하지 못", "보지 못", "시험하지 않", "관찰하지 못", "미확인",
+                                "열지 않아", "열지 않", "눌러보지", "실행하지 않", "not tested", "not observed",
+                                "not opened", "not exercised", "not_run")
+                            wording_only = ("문구" in observation and "눌러서" in observation
+                                and any(marker in observation for marker in ("이동", "열렸", "동작", "진입")))
+                            if wording_only or any(marker in observation for marker in untested_markers):
+                                raise ValueError(label + " failed_without_executed_evidence")
                         if not isinstance(refs, list) or any(ref not in available_ids for ref in refs):
                             raise ValueError(label + " must cite only current obs-N identifiers")
                     if seen_bindings != set(expected_bindings):

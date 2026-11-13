@@ -306,13 +306,16 @@ class Execution:
             if not isinstance(item, dict) or set(item) != {"kind", "index", "status", "observation", "observation_ids"}:
                 fail("judgment_invalid", "Criterion fields are invalid.")
             key = (item["kind"], item["index"])
-            if key not in expected or key in seen or item["status"] not in {"passed", "failed", "not_run"}:
+            if key not in expected or key in seen or item["status"] not in {"passed", "failed", "not_run", "not_applicable"}:
                 fail("judgment_invalid", "Criterion binding is invalid.")
+            if item["status"] == "not_applicable" and item["kind"] != "recovery":
+                fail("judgment_invalid", "Only a conditional recovery criterion may be not_applicable.")
             seen.add(key)
             swarm.text(item["observation"])
             ids = item["observation_ids"]
             if (not isinstance(ids, list) or len(ids) != len(set(ids))
-                    or not set(ids) <= by_id.keys() or (item["status"] == "not_run") != (not ids)):
+                    or not set(ids) <= by_id.keys()
+                    or (item["status"] in {"not_run", "not_applicable"}) != (not ids)):
                 fail("judgment_invalid", "Criterion must reference its own observed evidence.")
             refs = [a["id"] for oid in ids for a in by_id[oid]["artifacts"]]
             if ids and not any(a["kind"] == "screenshot" for oid in ids for a in by_id[oid]["artifacts"]):
@@ -337,7 +340,7 @@ class Execution:
             for criterion in receipt["criteria"]:
                 matching = [(o, c) for o in observations for c in o["checks"]
                             if (c["kind"], c["index"]) == (criterion["kind"], criterion["index"])
-                            and c["status"] != "not_run"
+                            and c["status"] not in {"not_run", "not_applicable"}
                             and any(a["kind"] == "screenshot" for a in o["artifacts"])]
                 failed = [(o, c) for o, c in matching if c["status"] == "failed"]
                 if matching:
@@ -352,7 +355,9 @@ class Execution:
             if any((c["kind"], c["index"]) in failed and c["status"] != "failed" for c in receipt["criteria"]):
                 fail("erased_failure", "The judgment erases an earlier observed failed checkpoint.")
             statuses = {c["status"] for c in receipt["criteria"]}
-            receipt["outcome"] = "failed" if "failed" in statuses else "passed" if statuses == {"passed"} else "inconclusive"
+            receipt["outcome"] = ("failed" if "failed" in statuses else
+                "passed" if "not_run" not in statuses and "passed" in statuses
+                and statuses <= {"passed", "not_applicable"} else "inconclusive")
             receipt["reason"] = judgment["reason"]
         if problem:
             receipt["outcome"], receipt["reason"] = "inconclusive", problem

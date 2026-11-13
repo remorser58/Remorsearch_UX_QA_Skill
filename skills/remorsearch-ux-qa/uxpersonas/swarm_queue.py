@@ -578,6 +578,60 @@ class Queue:
                 self._event(db, "billing_overage", dict(operation_id=operation_id, reserved=op["reserved"], observed=amount))
         return self.report()
 
+    def resolve_verified_pre_dispatch_rejection(self, operation_id, *, actor,
+            evidence_reference, host_context_live, no_effect_confirmed):
+        """Reopen only a narrowly allowlisted browser rejection proven before dispatch.
+
+        Unlike a general uncertain-send reconciliation, this path is limited to
+        the CDP file-input lookup error raised before DOM.setFileInputFiles. The
+        old operation is permanently marked not_sent; the checkpoint advances
+        to a fresh model decision, never replays the rejected tool request.
+        """
+        if (not isinstance(actor, str) or not actor.strip()
+                or not isinstance(evidence_reference, str) or not evidence_reference.strip()
+                or host_context_live is not True or no_effect_confirmed is not True):
+            fail("reconciliation_required", "A live owned context and pre-dispatch no-effect evidence are required.")
+        with self._db(write=True) as db:
+            op = db.execute("SELECT * FROM operations WHERE id=?", (operation_id,)).fetchone()
+            if (not op or op["state"] != "uncertain" or op["kind"] != "tool"
+                    or op["problem"] != "host_execution_failed:browser_action_failed:upload_target_missing"):
+                fail("reconciliation_required", "Only the exact pre-dispatch file-input lookup rejection can use this recovery.")
+            job = db.execute("SELECT * FROM jobs WHERE id=?", (op["job_id"],)).fetchone()
+            if not job or job["status"] != "uncertain":
+                fail("reconciliation_required", "The matching session is not in an uncertain state.")
+            checkpoint = json.loads(job["checkpoint"])
+            if digest(checkpoint) != job["checkpoint_sha"]:
+                fail("checkpoint_integrity", "The uncertain session checkpoint changed.")
+            if checkpoint.get("phase") != "tool" or not isinstance(checkpoint.get("decision"), dict):
+                fail("reconciliation_required", "The saved decision is not the rejected tool action.")
+            decision = checkpoint["decision"]
+            if decision.get("kind") != "tool" or decision.get("tool") != "upload":
+                fail("reconciliation_required", "The rejected action is not the allowlisted fixture upload.")
+            if db.execute("SELECT 1 FROM operations WHERE job_id=? AND id!=? AND state IN ('intent','uncertain')",
+                          (op["job_id"], operation_id)).fetchone():
+                fail("uncertain_execution", "Another unresolved operation remains in this session.")
+            checkpoint["phase"] = "model"
+            checkpoint["decision"] = None
+            checkpoint["problem"] = None
+            checkpoint.pop("receipt_preview", None)
+            note_id = "obs-host-" + digest([operation_id, evidence_reference])[:16]
+            observations = checkpoint.setdefault("observations", [])
+            if any(row.get("id") == note_id for row in observations):
+                fail("reconciliation_required", "This host rejection was already reconciled.")
+            observations.append(dict(id=note_id, action="Host pre-dispatch rejection",
+                text="The requested file-input selector was not found. The driver rejected the action before DOM.setFileInputFiles; no fixture was selected. Re-observe the current page and choose a fresh safe action. This note is operational context, not UI pass/fail evidence.",
+                facts={"host_pre_dispatch_rejection": "upload_target_missing", "no_file_selected": True},
+                checks=[], captures=[], artifacts=[]))
+            now = self.clock()
+            db.execute("UPDATE operations SET state='not_sent',reserved=0,ended=?,problem='verified_pre_dispatch_rejection_no_effect' WHERE id=?",
+                       (now, operation_id))
+            db.execute("UPDATE jobs SET status='queued',problem=NULL,owner=NULL,lease_token=NULL,lease_until=NULL,checkpoint=?,checkpoint_sha=?,ready_at=? WHERE id=?",
+                       (canonical(checkpoint).decode(), digest(checkpoint), now, op["job_id"]))
+            self._event(db, "verified_pre_dispatch_rejection", dict(operation_id=operation_id,
+                actor=actor[:160], evidence_reference=evidence_reference[:500],
+                next_action="fresh_model_decision", old_tool_request_resent=False))
+        return self.report()
+
     def report(self):
         with self._db() as db:
             control = self._get(db, "control")

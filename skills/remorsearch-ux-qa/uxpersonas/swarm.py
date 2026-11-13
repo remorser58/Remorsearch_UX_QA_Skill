@@ -514,20 +514,33 @@ def _receipt(root, entry, receipt):
             fail("Criterion kind is invalid.")
         number(index, 0, len(entry["task"][kind + "_criteria"]) - 1)
         key = (kind, index)
-        if key in seen or item["status"] not in {"passed", "failed", "not_run"}:
+        if key in seen or item["status"] not in {"passed", "failed", "not_run", "not_applicable"}:
             fail("Criterion is repeated or has invalid status.")
+        if item["status"] == "not_applicable" and kind != "recovery":
+            fail("Only a conditional recovery criterion may be not_applicable.")
         seen.add(key)
         location = f"receipt.criteria[{criterion_index}]"
-        if item["status"] == "not_run":
+        if item["status"] in {"not_run", "not_applicable"}:
             _receipt_value(text, item["observation"], location + ".observation")
             if item["evidence_ids"] != []:
                 fail("Not-run criteria cannot claim evidence.")
         else:
             refs |= observation(item, location)
+            if item["status"] == "failed":
+                statement = item["observation"].lower()
+                untested = ("확인하지 못", "보지 못", "시험하지 않", "관찰하지 못", "미확인",
+                            "열지 않아", "열지 않", "눌러보지", "실행하지 않", "not tested",
+                            "not observed", "not opened", "not exercised", "not_run")
+                wording_only = ("문구" in statement and "눌러서" in statement
+                    and any(marker in statement for marker in ("이동", "열렸", "동작", "진입")))
+                if wording_only or any(marker in statement for marker in untested):
+                    fail("An unexecuted or unobserved condition cannot be recorded as failed.")
     if outcome == "passed":
         expected = {(kind, i) for kind in ("success", "recovery")
                     for i in range(len(entry["task"][kind + "_criteria"]))}
-        if not steps or seen != expected or any(i["status"] != "passed" for i in criteria):
+        statuses = {i["status"] for i in criteria}
+        if (not steps or seen != expected or "not_run" in statuses
+                or "passed" not in statuses or not statuses <= {"passed", "not_applicable"}):
             fail("Pass requires actual steps and all success/recovery criteria.")
         if {artifacts[i]["kind"] for i in refs} != {"execution_log", "screenshot"}:
             fail("Pass requires referenced execution log and PNG capture.")

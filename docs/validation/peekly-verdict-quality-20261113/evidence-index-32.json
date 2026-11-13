@@ -1,0 +1,1593 @@
+{
+  "schema_version": "peekly-final-persona-evidence-index.v1",
+  "personas": [
+    {
+      "persona_id": "PER-PEEKLY-V2-001",
+      "run": "peekly-verdict-quality-r1",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r1/stage-32/sessions/S-pjnpkljgpkdjjlbclmgcoloi",
+      "result_sha256": "fb552410b461d854e48f9d710e7ddbaaad88a010a83eede38f4f7315978bc2b1",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "첫 화면에 '인스타 연결하기' 버튼과 '샘플로 둘러보기' 링크가 있고, ZIP·JSON·형식 선택 요구 없이 샘플 카드 화면으로 진입했다.",
+          "evidence_ids": [
+            "log-1",
+            "png-1-0",
+            "log-2",
+            "png-2-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "observation": "'연결 관리와 다른 방법'을 열자 '이미 받은 자료로 확인하기'가 나타났고, 누르자 1/3단계 직접 가져오기 안내가 열렸다. 이어 '받은 파일 바로 넣기'로 3/3단계 파일 선택으로 이동했다.",
+          "evidence_ids": [
+            "log-7",
+            "png-7-0",
+            "log-8",
+            "png-8-0",
+            "log-9",
+            "png-9-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "observation": "'파일은 이 기기 안에서만 읽어요' 문구와 외부 요청 차단(blocked_request_count, external_requests_blocked=true)은 관측됐으나, 공유 이미지 미리보기 진입이 불가해 계정 아이디·집계 숫자 포함 여부를 확인하지 못했다.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "가져오기·브라우저 복구가 필요한 실패가 실제로 발생하지 않았다.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-002",
+      "run": "peekly-verdict-quality-r1",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r1/stage-32/sessions/S-jkammfjbbjoipnfincngdmeb",
+      "result_sha256": "532591306c4c709e63801c4f659aab2c9ff9d0644a0bea9c7a27c6fd33617ef3",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "첫 화면에 '인스타 연결하기' 버튼과 '샘플로 둘러보기' 링크가 함께 있고, ZIP·JSON·파일·백업 형식 선택을 요구하지 않는다.",
+          "evidence_ids": [
+            "log-1",
+            "png-1-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "observation": "'연결 관리와 다른 방법'을 펼쳐 '이미 받은 자료로 확인하기'를 누르자 1/3단계 직접 가져오기 안내와 '받은 파일 바로 넣기'가 열렸다.",
+          "evidence_ids": [
+            "log-11",
+            "png-11-0",
+            "log-12",
+            "png-12-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "observation": "기기 내 처리 문구와 로컬 origin 외 요청 차단은 보였지만, 공유 시 아이디·집계 숫자가 담기는 공유 미리보기를 열지 못해 기준 전체를 확인하지 못했다.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "복구를 시험할 브라우저/가져오기 실패가 실제로 발생하지 않았다.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-003",
+      "run": "peekly-verdict-quality-r1",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r1/stage-32/sessions/S-fdelhbekldmandmmgiapicde",
+      "result_sha256": "a14db583ce751f91fa4704bf4b4af2d2b07d7a05934fa9762da8b730ed416934",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "첫 화면에 '인스타 연결하기'와 '샘플로 둘러보기'가 함께 있고, 형식 선택 없이 샘플 관계 카드(5·2·5·6명, 팔로워 7·팔로잉 10)가 열렸다.",
+          "evidence_ids": [
+            "log-1",
+            "png-1-0",
+            "log-2",
+            "png-2-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "observation": "샘플 화면의 '연결 관리와 다른 방법'→'이미 받은 자료로 확인하기'로 3단계 안내(1/3)가 열렸고, '받은 파일 바로 넣기'를 눌러 3/3 파일 선택 단계로 이동했다. 진입 라벨이 '다른 방법으로 시작하기'와 달라 카피 드리프트로 기록한다.",
+          "evidence_ids": [
+            "log-6",
+            "png-6-0",
+            "log-7",
+            "png-7-0",
+            "log-8",
+            "png-8-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "observation": "기기 내 처리 문구('로그인 정보는 이 기기에만 남아요', '파일은 이 기기 안에서만 읽어요')와 전 관측 external_requests_blocked=true(차단 6→16건)는 확인했으나, 계정 아이디·집계 숫자가 담긴 공유 이미지 미리보기는 '자세히 보기'가 뷰포트에 노출되지 않아 열지 못했다.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "합성 ZIP 업로드가 정상 처리되어 가져오기/브라우저 실패가 실제로 발생하지 않았다.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-004",
+      "run": "peekly-verdict-quality-r1",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r1/stage-32/sessions/S-fpjclbdfoppokjmbkbeaffoa",
+      "result_sha256": "658853c301cb6aa452f50bdfe9594326cbf5017707259bfcaab72d47feba6f0b",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "첫 화면에 '인스타 연결하기' 버튼과 '샘플로 둘러보기' 링크가 있고 ZIP/JSON/형식 선택 요구가 없다. 샘플은 클릭 1회로 결과 화면(팔로워 7·팔로잉 10, 관계 카드 5/2/5/6명)으로 이동.",
+          "evidence_ids": [
+            "log-1",
+            "png-1-0",
+            "log-2",
+            "png-2-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "observation": "'연결 관리와 다른 방법'에서 '이미 받은 자료로 확인하기'가 노출되고, 클릭 시 1/3단계 직접 가져오기 안내가 열리며 '받은 파일 바로 넣기'로 3/3단계로 이동함.",
+          "evidence_ids": [
+            "log-5",
+            "png-5-0",
+            "log-6",
+            "png-6-0",
+            "log-7",
+            "png-7-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "observation": "기기 내 처리 문구('이 기기 안에서만 읽어요')와 외부 요청 차단은 관측됐으나, 아이디·집계 숫자를 포함한 공유 이미지 미리보기를 열지 못해 기준 전체에 대한 충분한 근거가 없음.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "샘플 진입과 3단계 가져오기 경로 모두 정상 동작해 복구를 시험할 만한 브라우저·가져오기 실패가 실제로 발생하지 않았음.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-005",
+      "run": "peekly-verdict-quality-r1",
+      "outcome": "passed",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r1/stage-32/sessions/S-ednmhohbhppolpheolddbdoo",
+      "result_sha256": "209101287da2529553c7db00e547168efad3f05d5a0f533ed7d49a4938fc7399",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "'다른 방법으로 시작하기'를 펼친 뒤 '이미 받은 자료로 확인하기'를 누르자 '1 / 3단계' 직접 가져오기 안내가 열렸다.",
+          "evidence_ids": [
+            "log-2",
+            "png-2-0",
+            "log-3",
+            "png-3-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "observation": "1단계 하단의 바로 넣기 컨트롤(표기: '받은 파일 바로 넣기', PRD 문구와 카피 드리프트)을 누르자 '3 / 3단계' 파일 선택 화면으로 바로 이동했다.",
+          "evidence_ids": [
+            "log-3",
+            "png-3-0",
+            "log-4",
+            "png-4-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "passed",
+          "observation": "HTML 업로드 결과는 나를 맞팔 안 한 사람 1명·내가 맞팔 안 한 사람 1명·맞팔 중인 사람 0명이었고, JSON 업로드 후에도 동일하게 1/1/0으로 나타났다.",
+          "evidence_ids": [
+            "log-5",
+            "png-5-0",
+            "log-16",
+            "png-16-0"
+          ]
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "업로드·가져오기 과정에서 복구가 필요한 브라우저/가져오기 실패가 실제로 발생하지 않아 복구를 시험하지 않았다.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-006",
+      "run": "peekly-verdict-quality-r1",
+      "outcome": "passed",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r1/stage-32/sessions/S-ljjaphilmjbceebodeimkejh",
+      "result_sha256": "3f06ecbcb430de42bb9628071051c9f73f4c7da114ab6bf9336641e7a835aac0",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "obs-4: clicking 이미 받은 자료로 확인하기 opened '인스타그램에 내 파일을 요청해요' with the '1 / 3단계' direct-import guide.",
+          "evidence_ids": [
+            "log-4",
+            "png-4-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "observation": "obs-4→obs-5: the step-1 link labeled '받은 파일 바로 넣기' (copy drift from '이미 파일을 받았어요') moved directly to '3 / 3단계'; the action works.",
+          "evidence_ids": [
+            "log-4",
+            "png-4-0",
+            "log-5",
+            "png-5-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "passed",
+          "observation": "obs-6 and obs-15: HTML and JSON uploads both produced core category counts of 1/1/0; JSON also showed 0 unfollowed via prior-snapshot comparison.",
+          "evidence_ids": [
+            "log-6",
+            "png-6-0",
+            "log-15",
+            "png-15-0"
+          ]
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "passed",
+          "observation": "obs-2: first click on 다른 방법으로 시작하기 left the page unchanged; obs-3: retry opened the options, verifying safe recovery.",
+          "evidence_ids": [
+            "log-2",
+            "png-2-0",
+            "log-3",
+            "png-3-0"
+          ]
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-007",
+      "run": "peekly-verdict-quality-r1",
+      "outcome": "passed",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r1/stage-32/sessions/S-pmobjppfiandkdpcdlnlngek",
+      "result_sha256": "dc36b591699ed32e3eea9e2418e7e08e26c820bef2cf7d681f3625b282dc0bf6",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "다른 방법으로 시작하기를 열어 '이미 받은 자료로 확인하기'를 클릭하자 기존 직접 가져오기 안내 1/3단계가 열렸다.",
+          "evidence_ids": [
+            "log-2",
+            "png-2-0",
+            "log-3",
+            "png-3-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "observation": "1단계 하단의 '받은 파일 바로 넣기'를 클릭하자 3/3단계 업로드 화면으로 바로 이동했다. PRD 문구('이미 파일을 받았어요')와 라벨 문구가 달라 copy drift로만 기록한다.",
+          "evidence_ids": [
+            "log-3",
+            "png-3-0",
+            "log-4",
+            "png-4-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "passed",
+          "observation": "peekly-format-html.zip 업로드 후 범주는 나를 맞팔 안 한 사람 1명/내가 맞팔 안 한 사람 1명/맞팔 중 0명이었고, peekly-format-json.zip 업로드 후에도 같은 범주·수였다. 추가된 '나를 언팔한 사람 0명'은 이전 기록과의 비교 결과로 형식 차이가 아니다.",
+          "evidence_ids": [
+            "log-5",
+            "png-5-0",
+            "log-13",
+            "png-13-0"
+          ]
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "두 형식 업로드 모두 '결과를 불러왔어요'로 정상 완료되어 복구를 시험할 브라우저/가져오기 실패가 발생하지 않았다.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-008",
+      "run": "peekly-verdict-quality-r1",
+      "outcome": "passed",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r1/stage-32/sessions/S-pilnibjhddkpoooakilmbdfo",
+      "result_sha256": "81370cc059857e96eb299fac1e955afe771f2e0b3a16e0e0676ab9e14f3eecd5",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "'다른 방법으로 시작하기'를 열자 '이미 받은 자료로 확인하기'가 나타났고(obs-2), 누르자 1/3단계 직접 가져오기 안내가 열렸다(obs-3).",
+          "evidence_ids": [
+            "log-2",
+            "png-2-0",
+            "log-3",
+            "png-3-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "observation": "1단계의 '받은 파일 바로 넣기'를 누르자 3/3단계 파일 선택 화면으로 바로 이동했다(obs-4). PRD 문구 '이미 파일을 받았어요'와 라벨이 달라 copy drift로만 기록.",
+          "evidence_ids": [
+            "log-3",
+            "png-3-0",
+            "log-4",
+            "png-4-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "passed",
+          "observation": "HTML 업로드 결과 나를 맞팔 안 한 1·내가 맞팔 안 한 1·맞팔 중 0(obs-5), JSON 업로드도 동일 1·1·0에 비교 범주만 추가(obs-15).",
+          "evidence_ids": [
+            "log-5",
+            "png-5-0",
+            "log-15",
+            "png-15-0"
+          ]
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "가져오기·업로드 전 구간에서 복구를 요구하는 브라우저/가져오기 실패가 발생하지 않아 복구를 시험하지 않았다.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-009",
+      "run": "peekly-verdict-quality-r2",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r2/stage-23/sessions/S-phbagpklggigglealdjjblee",
+      "result_sha256": "90028fe673757d9bcc4e5b52f0a2a20ad48e548b76d46d29c6c02febdbb747ac",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "HTML 업로드와 JSON 업로드 모두 동일 범주·수(나를 맞팔 안 한 1명, 내가 맞팔 안 한 1명, 맞팔 0명)로 결과 표시.",
+          "evidence_ids": [
+            "log-5",
+            "png-5-0",
+            "log-11",
+            "png-11-0",
+            "log-14",
+            "png-14-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "peekly-malformed-html.zip을 넣지 않아 읽기 실패 HTML 항목의 가져오기 중단 안내를 확인하지 못함.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "passed",
+          "observation": "계정 불일치 ZIP 업로드 시 '[handle] 계정의 파일이에요. 지금 기록된 계정은 [handle]' 안내로 차단되고 결과가 생성되지 않음.",
+          "evidence_ids": [
+            "log-18",
+            "png-18-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 3,
+          "status": "passed",
+          "observation": "팔로워 누락 ZIP 업로드 시 '팔로워와 팔로잉 목록이 모두 들어 있는 파일이 필요해요…[팔로워 및 팔로잉]을 골랐는지 확인해 주세요' 안내 표시. 팔로잉 누락 변형은 미실행.",
+          "evidence_ids": [
+            "log-17",
+            "png-17-0"
+          ]
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "브라우저·가져오기 복구가 필요한 실패는 발생하지 않았고, 관측된 안내는 의도된 입력 차단이었음.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-010",
+      "run": "peekly-verdict-quality-r1",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r1/stage-32/sessions/S-ifaananfacdngfcbpinenpfg",
+      "result_sha256": "098e156aa8cefbaee67132843e177416e611db0eeedc26e579d7b253980e077f",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "HTML 업로드(팔로워1·팔로잉1, 1/1/0명)와 JSON 업로드(동일 1/1/0명, 언팔 비교 0명 추가)가 같은 범주·수로 일치함.",
+          "evidence_ids": [
+            "log-5",
+            "png-5-0",
+            "log-17",
+            "png-17-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "peekly-malformed-html.zip을 넣지 않아 읽기 불가 HTML 항목에서 파일명 포함 오류로 중단되는지 확인하지 못함.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "observation": "peekly-account-mismatch.zip을 업로드하지 않았고(obs-18은 가져오기 화면 재개방뿐) 계정 불일치 차단 안내를 확인하지 못함.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 3,
+          "status": "passed",
+          "observation": "관계 파일 누락 ZIP 업로드 후 '팔로워와 팔로잉 목록이 모두 들어 있는 파일이 필요해요…[팔로워 및 팔로잉]을 골랐는지 확인' 안내가 표시되고 결과는 생성되지 않음.",
+          "evidence_ids": [
+            "log-16",
+            "png-16-0"
+          ]
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "passed",
+          "observation": "누락 파일로 가져오기가 차단된 뒤(obs-16) 유효 ZIP을 다시 넣자 결과가 정상 표시되어 복구가 확인됨(obs-17).",
+          "evidence_ids": [
+            "log-16",
+            "png-16-0",
+            "log-17",
+            "png-17-0"
+          ]
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-011",
+      "run": "peekly-verdict-quality-r2",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r2/stage-23/sessions/S-npfancliabnodpeeggbolddf",
+      "result_sha256": "ea847b23baf11438b4203bfbdb1fc6763de1cf73e8247bd6f0f5b49773bca39d",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "HTML upload (obs-5) and JSON upload (obs-16) both show the same core categories at 1/1/0.",
+          "evidence_ids": [
+            "log-5",
+            "png-5-0",
+            "log-16",
+            "png-16-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "peekly-malformed-html.zip was not uploaded; no malformed-HTML stop error was observed.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "observation": "peekly-account-mismatch.zip was not uploaded; no account-mismatch block was observed.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 3,
+          "status": "not_run",
+          "observation": "peekly-missing-followers.zip and peekly-missing-following.zip were not uploaded; no missing-file guidance was observed.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "No recoverable import failure occurred; both completed uploads produced result screens.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-012",
+      "run": "peekly-verdict-quality-r4",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r4/stage-7/sessions/S-nphbckdfcibpniollmlmngpc",
+      "result_sha256": "81bbd67f679cb8628e6dcf74c595bff2d6cd444742347abecfce55a4943a8a93",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "not_run",
+          "observation": "HTML 기준 1회 업로드(obs-5)만 있었고 peekly-format-json.zip 업로드 및 범주·수 대조는 실행되지 않음.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "peekly-malformed-html.zip을 넣는 단계에 도달하지 못해 가져오기 중단 안내를 확인하지 못함.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "passed",
+          "observation": "peekly-account-mismatch.zip 업로드 후 기존 기록과 다른 계정이라 기록 삭제 후 불러오라는 차단 안내가 표시됨.",
+          "evidence_ids": [
+            "log-19",
+            "png-19-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 3,
+          "status": "not_run",
+          "observation": "peekly-missing-followers.zip과 peekly-missing-following.zip을 넣지 않아 누락 안내를 확인하지 못함.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "복구가 필요한 브라우저/가져오기 실패가 실제로 발생하지 않아 복구를 시험하지 않음.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-013",
+      "run": "peekly-verdict-quality-r3-a",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r3-a/stage-11/sessions/S-ecnnifclnhifpgefobdkooie",
+      "result_sha256": "029043e22fddb51e4f8625c9138ae4c47bd00e79725d2141ab10d2bf5d63c651",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "not_run",
+          "observation": "Uploaded a synthetic ZIP and saw completion (obs-10, obs-14) but no distinct read/analysis progress state and no close-cancellation test.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "Manifest fixtures (obs-14) contain no 128MB boundary or oversize ZIP, so the size limit could not be executed.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "observation": "No save-failure fixture or induced write failure was available; failure guidance and re-save button could not be tested.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "No recoverable browser/import failure occurred; the synthetic import completed (obs-11) without a triggering error.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-014",
+      "run": "peekly-verdict-quality-r3-a",
+      "outcome": "failed",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r3-a/stage-11/sessions/S-fcplgngafbnlnngakmkepfbo",
+      "result_sha256": "d065681ea2c3d09196ca5788385cbba13ac2ac3734946929b6c86c8e31608cac",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "failed",
+          "observation": "Three ZIP imports (valid, malformed, valid) resolved instantly to results/error with no read-vs-analysis progress display and no in-progress close/cancel control (obs-5,15,16,17).",
+          "evidence_ids": [
+            "log-5",
+            "png-5-0",
+            "log-15",
+            "png-15-0",
+            "log-16",
+            "png-16-0",
+            "log-17",
+            "png-17-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "No >128MB or boundary-size ZIP fixture exists in the frozen manifest (fixtures listed in obs-17), so the size limit was never exercised.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "observation": "No write/save-failure fixture or save action was available; clicking 저장 위치 연결 관리 only surfaced an iPhone-only notice (obs-17), so retry-save UI was untested.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "passed",
+          "observation": "Malformed HTML upload produced a readable error on the file-picker step (obs-15); selecting the valid synthetic current ZIP on the same screen recovered to a loaded results view (obs-16).",
+          "evidence_ids": [
+            "log-15",
+            "png-15-0",
+            "log-16",
+            "png-16-0"
+          ]
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-015",
+      "run": "peekly-verdict-quality-r4",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r4/stage-7/sessions/S-ldajhfdifdclmodbijpcebmh",
+      "result_sha256": "78588496d561d4b62a30f1c1be24dccc4aa638757ce9e3ba82c36aa0b47fbb96",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "not_run",
+          "observation": "샘플 ZIP 업로드 후 즉시 결과만 보였고, 읽기/분석 진행 상태 표시나 창 닫기 중단은 관측·실행되지 않았다.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "128MB 초과 또는 경계 크기 fixture가 manifest에 없어 ZIP 크기 제한을 실행·확인하지 못했다.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "observation": "쓰기 실패를 유발하는 fixture나 실제 저장 실패가 없어 안내와 다시 저장 버튼을 시험하지 못했다.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "가져오기 중 복구가 필요한 실패가 실제 발생하지 않아 복구 절차를 시험할 수 없었다.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-016",
+      "run": "peekly-verdict-quality-r4",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r4/stage-7/sessions/S-aalepdehpjckbobpenkmeopd",
+      "result_sha256": "aa1745ecca0c4cc907da70d8e19db3634e74945e3a8ffe45e12409ff6271317a",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "not_run",
+          "observation": "업로드 후 결과 화면만 확인됐고 읽기/분석 진행 표시나 창 닫기 중단은 관측되지 않았다.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "manifest에 128MB 경계나 초과 크기 fixture가 없어 크기 제한을 시험하지 못했다.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "observation": "저장 실패 시나리오와 다시 저장 버튼을 확인할 fixture/트리거가 없어 시험하지 못했다.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "복구를 요구하는 브라우저/가져오기 실패가 실제 발생하지 않았다.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-017",
+      "run": "peekly-verdict-quality-r7",
+      "outcome": "passed",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r7/stage-1/sessions/S-glfegkfhnnechefdpnlnadpj",
+      "result_sha256": "14111fd071574045f91b96f71f4974e91a1012a6526100793e6fce12e5cdb8ab",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "카드 라벨 '나를 맞팔 안 한 사람 5명', 설명 '내가 팔로우하는데 나를 팔로우하지 않아요' 확인 후 목록을 열어 AT/IN/JU/MI/TA 5명으로 숫자와 일치함을 대조했다.",
+          "evidence_ids": [
+            "log-2",
+            "png-2-0",
+            "log-3",
+            "png-3-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "observation": "카드 라벨 '내가 맞팔 안 한 사람 2명', 설명 '나를 팔로우하는데 내가 팔로우하지 않아요' 확인 후 목록에서 HA/SE 2명을 열어 숫자와 일치함을 대조했다.",
+          "evidence_ids": [
+            "log-2",
+            "png-2-0",
+            "log-5",
+            "png-5-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "passed",
+          "observation": "카드 라벨 '맞팔 중인 사람 5명', 설명 '서로 팔로우하고 있어요' 확인 후 목록에서 DO/HA/MI/SE/YU 5명을 열어 숫자와 일치함을 대조했다.",
+          "evidence_ids": [
+            "log-2",
+            "png-2-0",
+            "log-7",
+            "png-7-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 3,
+          "status": "passed",
+          "observation": "비교 대상 기록이 있는 샘플에서 '2026년 10월 30일 기록과 비교했어요 6명'과 목록 6건(IN, JU, 가려진 계정 4)을 함께 확인했고, 이전→현재 ZIP 가져오기 후에도 언팔 카드 6명이 표시됐다. ZIP 결과의 기준/비교 날짜가 모두 2026년 11월 13일로 보이는 표기 모호성은 어휘 관찰로만 남긴다.",
+          "evidence_ids": [
+            "log-2",
+            "png-2-0",
+            "log-9",
+            "png-9-0",
+            "log-18",
+            "png-18-0"
+          ]
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "업로드 거부·가져오기 오류 등 복구를 요구하는 실패가 발생하지 않아 복구 절차를 시험하지 않았다.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-018",
+      "run": "peekly-verdict-quality-r4",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r4/stage-7/sessions/S-libkbhdlmegmegnafjjdopcc",
+      "result_sha256": "83f409d859b8c1a0561f8caf675645e5c696400bf54ebbd298f6cdb57c2ce56e",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "샘플에서 '나를 맞팔 안 한 사람' 카드 5명과 설명 '내가 팔로우하는데 나를 팔로우하지 않아요' 확인 후 목록(5개 핸들)을 직접 열어 확인. '예전 맞팔 포함' 문구는 미표기(문구 차이만 보고).",
+          "evidence_ids": [
+            "log-2",
+            "png-2-0",
+            "log-6",
+            "png-6-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "observation": "'내가 맞팔 안 한 사람' 카드 2명, 설명 '나를 팔로우하는데 내가 팔로우하지 않아요' 확인 후 목록 패널에서 HA·SE 2개 핸들 확인.",
+          "evidence_ids": [
+            "log-2",
+            "png-2-0",
+            "log-4",
+            "png-4-0",
+            "log-5",
+            "png-5-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "passed",
+          "observation": "'맞팔 중인 사람' 카드 5명, 설명 '서로 팔로우하고 있어요' 확인 후 목록 패널에서 DO·HA·MI·SE·YU 5개 핸들 확인.",
+          "evidence_ids": [
+            "log-2",
+            "png-2-0",
+            "log-9",
+            "png-9-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 3,
+          "status": "not_run",
+          "observation": "peekly-sample-previous.zip → current 순 업로드와 언팔 숫자·목록 확인을 실행하지 못함. 가져오기 섹션만 열렸고 파일 입력·비교 결과 화면 관측 없음.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "브라우저/가져오기 실패가 실제로 발생하지 않아 복구를 시험할 트리거가 없었음.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-019",
+      "run": "peekly-verdict-quality-r4",
+      "outcome": "passed",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r4/stage-7/sessions/S-oohllfmpbmabdgkccgldmkam",
+      "result_sha256": "3165636373a08dcba4842d916acaf52c7c288eadcae86593a71362816cab3eff",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "카드 설명 '내가 팔로우하는데 나를 팔로우하지 않아요'와 5명이 보였고, 카드를 열어 AT/IN/JU/MI/TA 5개 목록을 확인했다.",
+          "evidence_ids": [
+            "log-2",
+            "png-2-0",
+            "log-3",
+            "png-3-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "observation": "카드 설명 '나를 팔로우하는데 내가 팔로우하지 않아요'와 2명이 보였고, 카드를 열어 HA/SE 2개 목록을 확인했다.",
+          "evidence_ids": [
+            "log-2",
+            "png-2-0",
+            "log-5",
+            "png-5-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "passed",
+          "observation": "카드 설명 '서로 팔로우하고 있어요'와 5명이 보였고, 카드를 열어 DO/HA/MI/SE/YU 5개 목록을 확인했다.",
+          "evidence_ids": [
+            "log-2",
+            "png-2-0",
+            "log-8",
+            "png-8-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 3,
+          "status": "passed",
+          "observation": "peekly-sample-previous.zip 후 peekly-sample-current.zip을 넣자 '나를 언팔한 사람 6명'과 비교 기준 기록이 표시되었고, 목록을 열어 6개 항목을 확인했다.",
+          "evidence_ids": [
+            "log-14",
+            "png-14-0",
+            "log-17",
+            "png-17-0",
+            "log-18",
+            "png-18-0"
+          ]
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "업로드·가져오기 과정에서 복구가 필요한 실패가 발생하지 않았다.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-020",
+      "run": "peekly-verdict-quality-r3-a",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r3-a/stage-11/sessions/S-ojhgjnncboibfkgmkjcncnnk",
+      "result_sha256": "2942e4b1aedae44a3b0c887b5ebd021ba9563f729a87c86d9a57a4504628767f",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "샘플 결과에서 '나를 맞팔 안 한 사람 5명 / 내가 팔로우하는데 나를 팔로우하지 않아요' 카드를 열어 AT·IN·JU·MI·TA 5개 목록까지 확인했다.",
+          "evidence_ids": [
+            "log-2",
+            "png-2-0",
+            "log-3",
+            "png-3-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "observation": "'내가 맞팔 안 한 사람 2명 / 나를 팔로우하는데 내가 팔로우하지 않아요' 카드를 열어 HA·SE 2개 목록을 확인했고 라벨도 의미상 일치한다.",
+          "evidence_ids": [
+            "log-2",
+            "png-2-0",
+            "log-6",
+            "png-6-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "passed",
+          "observation": "'맞팔 중인 사람 5명 / 서로 팔로우하고 있어요' 카드를 열어 DO·HA·MI·SE·YU 5개 목록을 확인했다.",
+          "evidence_ids": [
+            "log-2",
+            "png-2-0",
+            "log-8",
+            "png-8-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 3,
+          "status": "not_run",
+          "observation": "peekly-sample-previous.zip만 가져와 결과가 2명/10명으로 갱신됐을 뿐, '나를 언팔한 사람' 숫자·목록은 표시되지 않고 인스타 연결 안내만 나왔다. 현재 기록 ZIP 가져오기를 실행하지 않아 두 시점 비교의 숫자와 목록을 모두 확인하지 못했다.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "가져오기·브라우저 오류 등 복구가 필요한 실패가 실제로 발생하지 않아 복구 절차를 시험하지 않았다.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-021",
+      "run": "peekly-verdict-quality-r3-a",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r3-a/stage-11/sessions/S-gbgilkidnmjkemfaihnkiede",
+      "result_sha256": "cdb63288eaae66253a68e37fe6d73488f2b9d862284c2a6307b62ae49a1b68d6",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "peekly-missing-followers.zip과 peekly-missing-following.zip을 각각 업로드하자 '팔로워와 팔로잉 목록이 모두 들어 있는 파일이 필요해요 … [팔로워 및 팔로잉]을 골랐는지 확인해 주세요' 안내가 표시됨. 문구는 PRD와 의미 동일하고 표현만 다름.",
+          "evidence_ids": [
+            "log-5",
+            "png-5-0",
+            "log-7",
+            "png-7-0",
+            "log-8",
+            "png-8-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "영구 ID 부재로 사용자명 변경·계정 삭제 시 '사라진 계정'으로 나타나는지 시험할 fixture와 경로를 실행하지 못함. obs-14의 계정 불일치 안내는 이 기준의 증거가 아님.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "observation": "peekly-empty-previous.zip은 0/0 기록으로 수용되었으나, 이어 넣은 peekly-sample-current.zip이 계정 불일치 안내로 거부되어 두 기록 비교가 실행되지 않아 제외 여부를 확인할 수 없음.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "가져오기 중 복구가 필요한 예기치 못한 브라우저/임포트 실패가 발생하지 않아 복구 절차를 시험하지 않음(계정 불일치는 정상 가드 안내).",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-022",
+      "run": "peekly-verdict-quality-r3-a",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r3-a/stage-11/sessions/S-klpofpjbljbnffimkljhkgna",
+      "result_sha256": "4c5baccc2a9a2f212b6d6c458bc4648273e6918062d8e00e68a24cd91697ae26",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "누락 ZIP 업로드 후 '팔로워와 팔로잉 목록이 모두 들어 있는 파일이 필요해요…[팔로워 및 팔로잉]을 골랐는지 확인해 주세요' 안내가 표시됨. 반대 조각에서도 동일 안내(문구 차이 없음).",
+          "evidence_ids": [
+            "log-5",
+            "png-5-0",
+            "log-6",
+            "png-6-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "영구 ID 부재/사용자명 변경·계정 삭제 시 사라진 계정 표시 한계를 확인할 fixture 실행이나 화면 확인에 도달하지 못함.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "observation": "빈 이전 백업 업로드(obs-7)는 0명 결과만 표시했고, 현재 샘플 ZIP 재업로드와 비교 제외 안내 확인 단계까지 진행하지 못함(obs-8~obs-16 탐색).",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "업로드/탐색 중 복구가 필요한 브라우저·가져오기 실패가 실제로 발생하지 않아 복구 절차를 시험하지 않음.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-023",
+      "run": "peekly-verdict-quality-r3-b",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r3-b/stage-10/sessions/S-mppcgojlmaebinlhcaofcadm",
+      "result_sha256": "343b80da0db405b4971af192cfccef7c876455dc6e0be2d4f265677762c5bf4c",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "obs-5(missing-followers)·obs-7(missing-following) 업로드 후 '팔로워와 팔로잉 목록이 모두 들어 있는 파일이 필요해요…[팔로워 및 팔로잉]을 골랐는지 확인해 주세요' 안내 표시. 결과 생성 없음.",
+          "evidence_ids": [
+            "log-5",
+            "png-5-0",
+            "log-7",
+            "png-7-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "이름 변경·계정 삭제 재현 fixture 없음. obs-17은 핸들 기준 계정 경고뿐, 영구 ID 부재로 인한 사라진 계정 표시는 확인 불가.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "observation": "빈 이전 백업(obs-8)은 0명 결과만 표시. 이어 넣은 sample-current가 계정 경고로 차단되어(obs-17) 비교 제외 여부를 끝까지 확인 못 함.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "복구를 요하는 브라우저/가져오기 실패 미발생. 누락 안내는 정상 검증 동작이며, 네이티브 공유 시트는 데스크톱 범위 밖.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-024",
+      "run": "peekly-verdict-quality-r3-b",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r3-b/stage-10/sessions/S-flfpfcpgdnkppcpednkmnebg",
+      "result_sha256": "98a977b58823822f06e73b2f07e61064556b73a9e6c5c7ba82227a67e55f0279",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "obs-4(업로드 전)에는 없던 '팔로워와 팔로잉 목록이 모두 들어 있는 파일이 필요해요 … [팔로워 및 팔로잉]을 골랐는지 확인해 주세요' 안내가 obs-5와 obs-6 업로드 후 표시됨. 두 실행의 스크린샷 해시가 동일해 팔로잉 누락 건은 렌더 증거가 약하나 실패 증거는 없음.",
+          "evidence_ids": [
+            "log-4",
+            "png-4-0",
+            "log-5",
+            "png-5-0",
+            "log-6",
+            "png-6-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "백업에 영구 ID가 없어 이름 변경·계정 삭제 시 사라진 계정으로 보일 수 있다는 한계 문구를 확인하는 실행을 하지 못함. obs-17은 계정 불일치 안내일 뿐 해당 한계 설명이 아님.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "observation": "peekly-empty-previous.zip 로드(obs-7) 후 재가져오기를 시도했으나 obs-17에서 계정 안내가 표시되어 peekly-sample-current.zip 비교 제외 결과를 확인하지 못함. 제외 동작의 화면 증거 없음.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "브라우저/가져오기 복구가 필요한 실제 실패(오류·중단)가 발생하지 않음. obs-17의 계정 안내는 검증 메시지이며 복구를 요구하는 실패가 아님.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-025",
+      "run": "peekly-verdict-quality-r4",
+      "outcome": "failed",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r4/stage-7/sessions/S-nopffofbobdmlmfijipnmoee",
+      "result_sha256": "938b627b2b0d46672900c6575a3ce562af8ac32e53485cd79f067d82a6fe0c5b",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "failed",
+          "observation": "관계도 목록이 JU·IN·TA·AT·MI 순으로 아이디 정렬이 아니며, 검색 입력은 있어 JU 입력 시 1명으로 좁혀짐.",
+          "evidence_ids": [
+            "log-6",
+            "png-6-0",
+            "log-7",
+            "png-7-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "기기 내 처리 문구와 외부 요청 차단은 확인했으나 공유 이미지 미리보기는 실행하지 못해 전체 기준 미확인.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "observation": "데이터 삭제 탭과 '기록 모두 지우기' 화면은 확인했으나 확인 단계 실행 및 저장소·알림·쿠키·결제 유지 검증은 못함.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "복구를 촉발한 브라우저/가져오기 실패가 관측되지 않음.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-026",
+      "run": "peekly-verdict-quality-r3-b",
+      "outcome": "failed",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r3-b/stage-10/sessions/S-mmdpilbpijagjogammagoogn",
+      "result_sha256": "eb8209e64ad7af1d8f4f87038b5d58c300b4c17e23cbc9c1184a2126059f713f",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "failed",
+          "observation": "관계도 목록이 JU, IN, TA, AT, MI 순으로 보여 아이디 오름차순이 아니었고, 검색 입력은 5명 목록에서도 노출되어 5→1명으로 좁혀졌다.",
+          "evidence_ids": [
+            "log-10",
+            "png-10-0",
+            "log-11",
+            "png-11-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "기기 내 처리 문구와 외부 요청 차단은 확인했으나 공유 이미지 미리보기를 실행하지 않아 전체 기준을 검증하지 못했다.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "observation": "데이터 삭제 패널에서 '기록 모두 지우기'와 구매 이용권 유지 문구는 확인했으나 확인 단계를 실행하지 않아 초기화 동작을 검증하지 못했다.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "passed",
+          "observation": "클릭이 전송되지 않는 실패가 발생한 뒤 스크롤로 대상을 노출하고 재클릭해 약관·개인정보 패널 진입에 성공했다.",
+          "evidence_ids": [
+            "log-13",
+            "png-13-0",
+            "log-16",
+            "png-16-0"
+          ]
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-027",
+      "run": "peekly-verdict-quality-r3-b",
+      "outcome": "failed",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r3-b/stage-10/sessions/S-kmlikifnkmgblpaddbihbhoa",
+      "result_sha256": "8c62e3ea31997aa4dc920eacd89616d87add6411d09b5c4648b49bbb50f3c136",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "failed",
+          "observation": "관계도 목록이 JU, IN, TA, AT, MI 순으로 표시되어 아이디 알파벳순 정렬이 아니었다. 합성 이름 JU 입력 후 5명에서 1명으로 좁혀져 검색 입력은 동작했다.",
+          "evidence_ids": [
+            "log-10",
+            "png-10-0",
+            "log-11",
+            "png-11-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "기기 내 처리 문구와 외부 요청 차단은 확인했으나, 공유 이미지에 계정 아이디·집계 숫자가 포함되는지 보여주는 네이티브 공유 시트 미리보기는 데스크톱 범위 밖이라 검증하지 못했다.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "observation": "전체 초기화 확인 대화상자와 결제 권한 유지 문구는 확인했으나, 폴더 북마크·로컬 저장소·알림·WebView/쿠키 삭제를 실제로 실행해 검증하지 않았다.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "복구를 촉발한 브라우저/가져오기 실패가 발생하지 않았다.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-028",
+      "run": "peekly-verdict-quality-r3-b",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r3-b/stage-10/sessions/S-bkgnhjajglfjfkomnefdedna",
+      "result_sha256": "fd2d7e263579bcd7b1be3a86d77d7b15193d7233dfd5330dc5acb36f46cde7d2",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "not_run",
+          "observation": "8명 초과 목록의 아이디 찾기 입력과 정렬 순서를 실제 합성 이름으로 실행·확인하지 못함.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "기기 내 처리 문구와 외부 요청 차단은 보였으나 공유 이미지의 아이디·집계 포함은 미확인.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "observation": "초기화 확인과 완료 문구는 관측했으나 폴더·저장소·알림·쿠키 삭제 및 이용권 유지의 실제 효과는 미검증.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "복구가 필요한 브라우저 또는 가져오기 실패가 발생하지 않아 해당 없음.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-029",
+      "run": "peekly-verdict-quality-r3-b",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r3-b/stage-10/sessions/S-bblcpfabniipccolfcknbakn",
+      "result_sha256": "da4af76ff4c888f7aef94673cfc6ea2ddb23e29c73ca9a1c7971ca5d818a3280",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "관계도 화면에서 목록 복사와 CSV 저장이 모두 disabled=true로 표시되어 샘플에서는 사용할 수 없음을 확인했다.",
+          "evidence_ids": [
+            "log-17",
+            "png-17-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "서로 다른 스냅샷을 추가하거나 기록 목록에서 최신 10개 보관·초과 시 정리 규칙을 확인하지 못했다.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "passed",
+          "observation": "메인 결과에서 맞팔·언팔 분석이 무료로 보이고, 이용권 시트가 기록 비교·직접 확인은 무료, 가려진 이름·차단 계정은 유료라고 안내했다.",
+          "evidence_ids": [
+            "log-2",
+            "png-2-0",
+            "log-16",
+            "png-16-0"
+          ]
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "복구를 시험할 브라우저/가져오기 실패가 실제 발생하지 않았다.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-030",
+      "run": "peekly-verdict-quality-r3-b",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r3-b/stage-10/sessions/S-clglpeiebmnljpaalmiiciae",
+      "result_sha256": "3e0881ab827c63d513b169ab3e26561a2b3d15107c2c96fd415680644bdc4313",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "관계도에서 목록 복사·CSV 저장 모두 disabled=true로 확인됨. 잠금 안내 문구는 화면에 표시되지 않았음.",
+          "evidence_ids": [
+            "log-10",
+            "png-10-0",
+            "log-17",
+            "png-17-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "가져오기·기록 추가 경로와 파일 입력을 찾지 못해 스냅샷 추가와 최근 10개 보관·정리 규칙을 실행하지 못함.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "passed",
+          "observation": "무료 결과·기록 비교 화면을 확인했고, 이용권 안내가 무료 범위와 가려진 이름·차단 계정의 유료 범위를 구분함. 결제는 누르지 않음.",
+          "evidence_ids": [
+            "log-2",
+            "png-2-0",
+            "log-11",
+            "png-11-0"
+          ]
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "복구를 시험할 만한 브라우저·가져오기 실패가 실제 발생하지 않음.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-031",
+      "run": "peekly-verdict-quality-r3-b",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r3-b/stage-10/sessions/S-jdhafbilnklbncnpmefocfgp",
+      "result_sha256": "e6f429b880601df12701a4599cb00b2aceb7086f87f884a6b864471a0acc958e",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "not_run",
+          "observation": "관계도 화면에서 '목록 복사'·'CSV 저장' 버튼 위치만 확인했고 실제로 누르지 않아 샘플 사용 제한을 검증하지 못했다.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "합성 스냅샷을 추가하거나 기록 목록을 열지 않아 최근 10개 보관/정리 규칙을 실행 확인하지 못했다.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "observation": "무료 결과와 이용권 안내 문구는 봤으나 레이더 등 유료 잠금 항목의 가려진 이름·잠금 안내를 열어 확인하지 않았다.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "observation": "가져오기·브라우저 오류 등 복구가 필요한 실패가 실제로 발생하지 않았다.",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-032",
+      "run": "peekly-verdict-quality-r3-b",
+      "outcome": "inconclusive",
+      "operational_completed": true,
+      "evidence_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-verdict-quality-r3-b/stage-10/sessions/S-idoaadobdpklmdknefaldklm",
+      "result_sha256": "cc75515ae5cf93f93434ea8964b57848142afdf1547d408f55d2adcaa2f4a74c",
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "observation": "샘플 관계도 화면에서 목록 복사·CSV 저장이 모두 disabled=true였고, 복사 클릭은 디스패치 거부되었다. 비활성 사유를 설명하는 별도 안내 문구는 관측되지 않았다.",
+          "evidence_ids": [
+            "log-14",
+            "png-14-0",
+            "log-15",
+            "png-15-0",
+            "log-16",
+            "png-16-0"
+          ]
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "observation": "합성 스냅샷을 순서대로 추가하거나 기록 목록에서 최신 10개 보관·초과 정리 규칙을 확인하는 실행을 하지 않았다. 픽스처는 제공 목록에 있었으나 사용하지 않았다.",
+          "evidence_ids": []
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "passed",
+          "observation": "무료 결과 화면(맞팔·언팔 집계)을 열람했고, 이용권 모달에서 무료 범위(맞팔 결과·기록 비교·직접 확인)와 유료 범위(가려진 이름·차단 여부) 안내를 구분해 확인했다. 결제는 실행하지 않았다.",
+          "evidence_ids": [
+            "log-3",
+            "png-3-0",
+            "log-14",
+            "png-14-0",
+            "log-16",
+            "png-16-0"
+          ]
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "passed",
+          "observation": "관계도 클릭이 노출 문제로 디스패치 거부된 뒤 스크롤로 복구를 시도해 실제 진입에 성공했고, 같은 세션에서 목록 복사/CSV 상태를 이어서 확인했다.",
+          "evidence_ids": [
+            "log-8",
+            "png-8-0",
+            "log-9",
+            "png-9-0",
+            "log-13",
+            "png-13-0",
+            "log-14",
+            "png-14-0"
+          ]
+        }
+      ]
+    }
+  ]
+}

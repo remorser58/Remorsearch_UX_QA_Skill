@@ -207,6 +207,36 @@ class QueueTests(unittest.TestCase):
         self.assert_code("admission_wait", queue.begin, third, "close", 0, {})
         self.assertEqual(len(queue.report()["operations"]), 2)
 
+    def test_verified_pre_dispatch_upload_rejection_reopens_fresh_model_decision(self):
+        queue = self.create(count=1, parallel=2)
+        claim = queue.claim("worker")
+        checkpoint = {"phase": "tool", "turn": 15,
+            "decision": {"kind": "tool", "tool": "upload", "arguments": {"file": "owned.zip"}},
+            "observations": [], "problem": None}
+        queue.checkpoint(claim, checkpoint)
+        request = queue.begin(claim, "tool", 15, {"name": "upload", "file": "owned.zip"})["request"]
+        queue.uncertain(claim, request["operation_id"],
+                        "host_execution_failed:browser_action_failed:upload_target_missing")
+        with self.assertRaises(EngineError):
+            self.reopen().resolve_verified_pre_dispatch_rejection(request["operation_id"],
+                actor="offline-test", evidence_reference="driver line 137 before DOM.setFileInputFiles",
+                host_context_live=False, no_effect_confirmed=True)
+        report = self.reopen().resolve_verified_pre_dispatch_rejection(request["operation_id"],
+            actor="offline-test", evidence_reference="driver line 137 before DOM.setFileInputFiles",
+            host_context_live=True, no_effect_confirmed=True)
+        self.assertEqual(report["counts"]["queued"], 1)
+        self.assertEqual(report["counts"]["uncertain"], 0)
+        self.assertEqual(report["operations"][0]["state"], "not_sent")
+        resumed = self.reopen().claim("fresh-worker")
+        state = resumed["checkpoint"]
+        self.assertEqual(state["phase"], "model")
+        self.assertEqual(state["turn"], 15)
+        self.assertIsNone(state["decision"])
+        self.assertIn("no fixture was selected", state["observations"][-1]["text"])
+        fresh = self.reopen().begin(resumed, "model", 15, {"phase": "model", "turn": 15})
+        self.assertFalse(fresh["cached"])
+        self.assertNotEqual(fresh["request"]["operation_id"], request["operation_id"])
+
     def test_rate_window_survives_restart_and_does_not_starve_other_provider(self):
         queue = self.create(routes=["a", "a", "b"], parallel=1,
                             providers={"a": provider(requests_per_minute=1), "b": provider("b")})

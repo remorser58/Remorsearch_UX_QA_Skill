@@ -132,7 +132,11 @@ async function act(input) {
     const fullPath=path.join(fixturesDir,filename);
     const st=fs.lstatSync(fullPath);
     if (!st.isFile() || st.isSymbolicLink() || fs.realpathSync(fullPath)!==fullPath || st.size!==entry.bytes || hash(fs.readFileSync(fullPath))!==entry.sha256) throw new Error('fixture_integrity');
-    const document=await send('DOM.getDocument',{depth:1,pierce:false});
+    // Hidden React file inputs may be nested below several wrapper nodes.
+    // Request the complete owned document tree before querying; a shallow
+    // depth-1 snapshot can falsely report upload_target_missing even though
+    // the input exists deeper in the page. This remains a read-only lookup.
+    const document=await send('DOM.getDocument',{depth:-1,pierce:false});
     const found=await send('DOM.querySelector',{nodeId:document.root.nodeId,selector});
     if (!found.nodeId) throw new Error('upload_target_missing');
     const described=await send('DOM.describeNode',{nodeId:found.nodeId});
