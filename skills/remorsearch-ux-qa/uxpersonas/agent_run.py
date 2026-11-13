@@ -290,12 +290,17 @@ class Execution:
         obs = dict(id=f"obs-{index}", action=action, text=result["text"], facts=result["facts"],
                    checks=result["checks"], captures=copy.deepcopy(artifacts))
         for check in obs["checks"]:
-            if (not isinstance(check, dict) or set(check) != {"kind", "index", "status"}
+            if (not isinstance(check, dict)
+                    or set(check) not in ({"kind", "index", "status"}, {"kind", "index", "status", "reason"})
                     or check["kind"] not in {"success", "recovery"}
                     or type(check["index"]) is not int or check["index"] < 0
                     or check["index"] >= len(worker["claim"]["task"][check["kind"] + "_criteria"])
                     or check["status"] not in {"passed", "failed", "not_run"}):
                 fail("observation_invalid", "Native criterion observation is invalid.")
+            if "reason" in check:
+                if check["status"] != "not_run" or not isinstance(check["reason"], str) or not check["reason"].strip() or len(check["reason"]) > 320:
+                    fail("observation_invalid", "Only a bounded not_run criterion may carry an execution reason.")
+                swarm.text(check["reason"])
         raw = canonical(dict(schema_version="ux-agent-observation.v1",
                              context_id=worker["context_id"], binding=worker["claim"]["binding"], observation=obs))
         path = base / f"agent-observation-{index}.json"

@@ -313,3 +313,24 @@ class VerdictQualityTests(unittest.TestCase):
                 {"build": {"sha256": "c" * 64}}, judgment=None)
         self.assertEqual(receipt["criteria"][0]["status"], "not_run")
         self.assertEqual(receipt["criteria"][0]["observation"], "Eleven distinct snapshots were not imported.")
+
+    def test_native_not_run_reason_is_admitted_but_reason_cannot_mask_a_pass(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            evidence_root = root / "evidence" / "task-test" / "1"
+            evidence_root.mkdir(parents=True)
+            execution = Execution.__new__(Execution)
+            execution.root = root
+            worker = {"context_id": "ctx-test", "observations": [], "claim": {
+                "task": {"id": "task-test", "success_criteria": ["Open history"], "recovery_criteria": []},
+                "binding": {"revision": 1, "profile_sha256": "a" * 64},
+                "evidence_path": str(evidence_root), "attempt": 1}}
+            valid = {"text": "History was not opened.", "facts": {}, "captures": [],
+                "checks": [{"kind": "success", "index": 0, "status": "not_run",
+                            "reason": "History screen was not reached; click action unavailable."}]}
+            observed = execution.observation(worker, "inspect history", valid, 1)
+            self.assertEqual(observed["checks"][0]["reason"], valid["checks"][0]["reason"])
+            invalid = {**valid, "checks": [{"kind": "success", "index": 0, "status": "passed",
+                                             "reason": "This must not hide missing evidence."}]}
+            with self.assertRaises(Exception):
+                execution.observation(worker, "inspect history", invalid, 2)
