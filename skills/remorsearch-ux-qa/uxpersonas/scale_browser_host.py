@@ -118,10 +118,9 @@ class ScaleBrowserHost:
         result = await self._exchange(context, "act", {"name":name, "arguments":arguments})
         if set(result) != {"text","facts","captures","checks"}:
             raise RuntimeError("browser_observation_contract")
-        # Product sample content may contain synthetic-looking account handles.
-        # Scrub identifiers before the observation crosses into the model/queue;
-        # screenshots remain private, hash-bound evidence and are not uploaded.
-        result = swarm.clean(result)
+        # Verify immutable capture metadata before scrubbing page content. Keep
+        # the original capture receipts untouched; only observations/facts/text
+        # cross into the model and queue after privacy scrubbing.
         for capture in result["captures"]:
             if not isinstance(capture, dict) or set(capture) != {"path", "sha256"}:
                 raise RuntimeError("browser_capture_integrity:metadata")
@@ -130,8 +129,12 @@ class ScaleBrowserHost:
                 raise RuntimeError("browser_capture_integrity:missing")
             if path.stat().st_mode & 0o077:
                 raise RuntimeError("browser_capture_integrity:permissions")
-            if byte_digest(path.read_bytes()) != capture["sha256"]:
-                raise RuntimeError("browser_capture_integrity:digest")
+            actual = byte_digest(path.read_bytes())
+            if actual != capture["sha256"]:
+                raise RuntimeError("browser_capture_integrity:digest:"+capture["path"]+":"+capture["sha256"][:12]+":"+actual[:12])
+        result["text"] = swarm.clean(result["text"])
+        result["facts"] = swarm.clean(result["facts"])
+        result["checks"] = swarm.clean(result["checks"])
         return {"operation_id":request["operation_id"],"context_id":context,
             "request_sha256":request["request_sha256"],"trace_id":"browser-"+request["operation_id"][-16:],
             "result":result}
