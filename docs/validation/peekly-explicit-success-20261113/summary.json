@@ -1,0 +1,60 @@
+{
+  "schema_version": "peekly-explicit-success-comparison.v1",
+  "date": "2026-11-14",
+  "product_commit": "51110f4",
+  "product_prd_sha256": "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b",
+  "runs": [
+    {
+      "name": "first-32-persona",
+      "reference_commit": "696dbe3",
+      "sessions": {"total": 32, "passed": 0, "failed": 2, "inconclusive": 30, "not_assessed": 0},
+      "success_criteria_units": {"passed": null, "failed": null, "not_run": null, "not_applicable": null, "note": "The committed evidence index does not retain a complete criterion-unit counter."},
+      "review_notes": {"model_failed_candidates_for_review": 3, "independently_confirmed_functional_defects_from_those": 0, "historical_product_findings": 3}
+    },
+    {
+      "name": "verdict-quality-revision",
+      "reference_commit": "cb0188d",
+      "sessions": {"total": 32, "passed": 4, "failed": 0, "inconclusive": 7, "not_assessed": 21},
+      "success_criteria_units": {"passed": 22, "failed": 0, "not_run": 6, "not_applicable": 0},
+      "recovery_criteria_units": {"passed": 2, "failed": 0, "not_run": 0, "not_applicable": 7},
+      "execution_notes": {"engine_conflict_blocked": 21, "uncertain": 2}
+    },
+    {
+      "name": "current-stored-evidence-rejudgment",
+      "reference_commit": "51d871f75a6c6e4bc35e5c90f919452a37ca5da1",
+      "queue_sessions": {"total": 25, "complete": 23, "blocked": 1, "uncertain": 1},
+      "session_ux_outcomes": {"passed": 0, "failed": 0, "inconclusive": 23, "not_assessed": 2},
+      "success_criteria_units": {"passed": 2, "failed": 0, "not_run": 74, "not_applicable": 0},
+      "recovery_criteria_units": {"passed": 1, "failed": 0, "not_run": 22, "not_applicable": 0},
+      "stored_evidence_rejudgment": {"criteria_changed": 16, "failed_to_passed": 1, "failed_to_not_run": 12, "passed_to_not_run": 3, "model_calls": 0, "browser_calls": 0},
+      "execution_notes": {"host_protocol_on_completed_receipts": 22, "blocked_tool_context_unavailable": 1, "uncertain_model_send": 1, "uncertain_send_replayed": false}
+    }
+  ],
+  "current_product_findings": [
+    {"severity": "P3", "id": "RELATIONSHIP-INCLUSION-COPY", "status": "confirmed-in-current-source", "file": "src/components/ResultsTab.tsx", "line": 272},
+    {"severity": "P2", "id": "POST-IMPORT-RESULT-VIEWPORT", "status": "historical-finding-source-scroll-fix-present-runtime-not-retested", "file": "src/components/ResultsTab.tsx", "line": 164},
+    {"severity": "P2", "id": "MANUAL-IMPORT-DISCOVERY", "status": "historical-finding-current-more-entry-observed-working", "evidence": "PER-PEEKLY-V2-007 observations 2-3"}
+  ],
+  "verdict_rejudgment": {
+    "method": "deterministic current-PRD rules applied to saved observation JSON and frozen fixture metadata only",
+    "source_report_sha256": "b43f6a8b60e5cd001bc57f1928430e6e4b8af585cea1983a2e84b7d31d6a6866",
+    "overlay_report_sha256": "d6436cf3f68c96faa39c1b8e17b1f96a85006042572c618eb8803b00bca4c506",
+    "invalid_html_fixture_sha256": "23d5efe57558a95f13ae00615b1a5b8ccc8c597c1b59b877da5e40d8071ae63d",
+    "model_calls": 0,
+    "browser_calls": 0
+  },
+  "validation": {
+    "python": "3.11",
+    "unittest_total": 1604,
+    "unittest_skipped": 21,
+    "unittest_failed": 0,
+    "focused_verdict_tests": 21,
+    "smoke_loop": "passed (18 expected command outcomes)",
+    "research_fixture": "passed"
+  },
+  "limitations": [
+    "No further persona rerun was performed.",
+    "No iOS runtime, real Instagram account, real-user study, accessibility certification or product-readiness claim is made.",
+    "The first 696dbe3 evidence index does not expose complete criterion-unit totals."
+  ]
+}
