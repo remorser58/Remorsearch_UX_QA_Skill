@@ -59,6 +59,21 @@ class Evidence:
         ]
         if judgment is not None:
             criteria = self.criteria(worker, judgment, observations)
+            # Deterministic browser checks outrank a model's missing judgment.
+            # A model-reported failure remains visible; a native failure is
+            # immutable and a native pass can close a model-reported not_run.
+            for criterion in criteria:
+                matching = [(o, c) for o in observations for c in o["checks"]
+                    if (c["kind"], c["index"]) == (criterion["kind"], criterion["index"])
+                    and c["status"] in {"passed", "failed"}
+                    and any(a["kind"] == "screenshot" for a in o["artifacts"])]
+                native_failures = [(o, c) for o, c in matching if c["status"] == "failed"]
+                native_passes = [(o, c) for o, c in matching if c["status"] == "passed"]
+                if native_passes and not native_failures and criterion["status"] == "not_run":
+                    observation, _ = native_passes[-1]
+                    criterion.update(status="passed",
+                        observation="Deterministic browser check passed: " + observation["text"],
+                        evidence_ids=[a["id"] for a in observation["artifacts"]])
             failed = {(c["kind"], c["index"]) for o in observations
                       for c in o["checks"] if c["status"] == "failed"}
             if any((c["kind"], c["index"]) in failed and c["status"] != "failed"

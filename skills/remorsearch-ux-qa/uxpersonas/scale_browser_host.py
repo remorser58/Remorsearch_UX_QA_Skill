@@ -17,6 +17,7 @@ import time
 from uxresearch.canonical import byte_digest
 from uxresearch.storage import safe_path
 from . import swarm
+from .peekly_criteria import evaluate as evaluate_peekly_criteria
 
 
 class ScaleBrowserHost:
@@ -47,6 +48,9 @@ class ScaleBrowserHost:
         self.locks = {}
         self.context_paths = {}
         self.serials = {}
+        self.context_tasks = {}
+        self.context_uploads = {}
+        self.context_observations = {}
 
     def can_resume(self, context_id, observations):
         process = self.processes.get(context_id)
@@ -86,6 +90,9 @@ class ScaleBrowserHost:
     async def call(self, kind, request):
         context = request["context_id"]
         payload = request["payload"]
+        self.context_tasks = getattr(self, "context_tasks", {})
+        self.context_uploads = getattr(self, "context_uploads", {})
+        self.context_observations = getattr(self, "context_observations", {})
         if kind == "close":
             process = self.processes.get(context)
             if process is None:
@@ -101,12 +108,20 @@ class ScaleBrowserHost:
                 result = {"stopped":False}
             self.processes.pop(context, None)
             self.context_paths.pop(context, None)
+            self.context_tasks.pop(context, None)
+            self.context_uploads.pop(context, None)
+            self.context_observations.pop(context, None)
             return {"operation_id":request["operation_id"],"context_id":context,
                 "request_sha256":request["request_sha256"],"trace_id":"browser-close-"+context[-12:],
                 "result":result}
         if kind != "tool":
             raise RuntimeError("unsupported_browser_host_operation")
         evidence = safe_path(payload["evidence_path"])
+        task = payload.get("task")
+        if isinstance(task, dict):
+            self.context_tasks.setdefault(context, copy.deepcopy(task))
+        self.context_uploads.setdefault(context, set())
+        self.context_observations.setdefault(context, [])
         if context not in self.processes:
             await self._exchange(context, "start", {"url":self.target_url, "chrome":self.chrome,
                 "profile_dir":str(evidence / "browser-profile"), "evidence_path":str(evidence),
@@ -129,8 +144,15 @@ class ScaleBrowserHost:
             result["text"] = ("Click NOT dispatched: target was not allowed or visible. "
                 "This is a failed action, not a successful navigation. Re-observe the current "
                 "controls and choose a safe recovery; no click was retried.\n" + result["text"])
+        if name == "upload" and isinstance(arguments, dict) and isinstance(arguments.get("file"), str):
+            self.context_uploads[context].add(arguments["file"])
         if set(result) != {"text","facts","captures","checks"}:
             raise RuntimeError("browser_observation_contract")
+        result["facts"]["fixture_uploads"] = sorted(self.context_uploads[context])
+        task = self.context_tasks.get(context)
+        if task:
+            result["checks"] = evaluate_peekly_criteria(task, result["facts"], result["text"],
+                self.context_uploads[context], self.context_observations[context])
         # Product sample content may contain synthetic-looking account handles.
         # Scrub identifiers before the observation crosses into the model/queue;
         # screenshots remain private, hash-bound evidence and are not uploaded.
@@ -139,6 +161,7 @@ class ScaleBrowserHost:
         # Verify original capture bytes and never rewrite their identifiers.
         result = {**result, **swarm.clean({key: result[key]
             for key in ("text", "facts", "checks")})}
+        self.context_observations[context].append({"text": result["text"], "facts": result["facts"]})
         for capture in result["captures"]:
             if not isinstance(capture, dict) or set(capture) != {"path", "sha256"}:
                 raise RuntimeError("browser_capture_integrity:metadata")

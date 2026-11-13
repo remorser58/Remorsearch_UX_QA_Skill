@@ -33,7 +33,7 @@ async function start(input) {
   fixtureManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   if (fixtureManifest.schema_version !== 'peekly-synthetic-fixtures.v1' || !Array.isArray(fixtureManifest.files)) throw new Error('fixture_manifest_schema');
   for (const row of fixtureManifest.files) {
-    if (!row || typeof row.name !== 'string' || path.basename(row.name)!==row.name || !/^[a-zA-Z0-9._-]+$/.test(row.name) || !/^[a-f0-9]{64}$/.test(row.sha256) || !Number.isSafeInteger(row.bytes) || row.bytes<0 || row.bytes>134217728) throw new Error('fixture_manifest_entry');
+    if (!row || typeof row.name !== 'string' || path.basename(row.name)!==row.name || !/^[a-zA-Z0-9._-]+$/.test(row.name) || !/^[a-f0-9]{64}$/.test(row.sha256) || !Number.isSafeInteger(row.bytes) || row.bytes<0 || row.bytes>134217729) throw new Error('fixture_manifest_entry');
     const filename=path.join(fixturesDir,row.name), st=fs.lstatSync(filename);
     if (!st.isFile() || st.isSymbolicLink() || fs.realpathSync(filename)!==filename || st.size!==row.bytes || hash(fs.readFileSync(filename))!==row.sha256) throw new Error('fixture_integrity');
   }
@@ -98,7 +98,7 @@ async function evaluate(expression) {
   return r.result?.value;
 }
 async function observe() {
-  const expression = "(() => {const rendered=e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return r.width>0&&r.height>0&&s.visibility!=='hidden'&&s.display!=='none'&&(e.tagName==='SUMMARY'||!e.closest('details:not([open])'))};const visible=e=>{if(!rendered(e))return false;const r=e.getBoundingClientRect();if(r.bottom<=0||r.top>=innerHeight||r.right<=0||r.left>=innerWidth)return false;const x=Math.min(innerWidth-1,Math.max(0,r.x+r.width/2)),y=Math.min(innerHeight-1,Math.max(0,r.y+r.height/2)),hit=document.elementFromPoint(x,y);return !!hit&&(hit===e||e.contains(hit)||hit.closest('button,a,summary,[role=button],[role=link]')===e)};const selector=e=>{if(e.id)return '#'+CSS.escape(e.id);const parts=[];while(e&&e.nodeType===1&&e!==document.body){let n=1;for(let p=e.previousElementSibling;p;p=p.previousElementSibling)if(p.tagName===e.tagName)n++;parts.unshift(e.tagName.toLowerCase()+':nth-of-type('+n+')');e=e.parentElement;}return 'body>'+parts.join('>');};const controls=[...document.querySelectorAll('button,a,summary,input,textarea,select,[role=button],[role=link]')].filter(rendered).slice(0,100).map((e,i)=>({index:i,selector:selector(e),tag:e.tagName.toLowerCase(),id:e.id||null,role:e.getAttribute('role'),type:e.type||null,label:(e.getAttribute('aria-label')||e.innerText||e.textContent||e.getAttribute('placeholder')||'').trim().slice(0,180),disabled:!!e.disabled,visible:visible(e),href:e.tagName==='A'?e.href:null}));const fileInputs=[...document.querySelectorAll('input[type=file]')].map((e,i)=>({index:i,selector:selector(e),accept:e.accept,multiple:e.multiple,disabled:!!e.disabled,hidden:!visible(e)}));return {url:location.href,title:document.title,text:(document.body?.innerText||'').slice(0,12000),controls,file_inputs:fileInputs,viewport:{width:innerWidth,height:innerHeight}};})()";
+  const expression = "(() => {const rendered=e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return r.width>0&&r.height>0&&s.visibility!=='hidden'&&s.display!=='none'&&(e.tagName==='SUMMARY'||!e.closest('details:not([open])'))};const visible=e=>{if(!rendered(e))return false;const r=e.getBoundingClientRect();if(r.bottom<=0||r.top>=innerHeight||r.right<=0||r.left>=innerWidth)return false;const x=Math.min(innerWidth-1,Math.max(0,r.x+r.width/2)),y=Math.min(innerHeight-1,Math.max(0,r.y+r.height/2)),hit=document.elementFromPoint(x,y);return !!hit&&(hit===e||e.contains(hit)||hit.closest('button,a,summary,[role=button],[role=link]')===e)};const selector=e=>{if(e.id)return '#'+CSS.escape(e.id);const parts=[];while(e&&e.nodeType===1&&e!==document.body){let n=1;for(let p=e.previousElementSibling;p;p=p.previousElementSibling)if(p.tagName===e.tagName)n++;parts.unshift(e.tagName.toLowerCase()+':nth-of-type('+n+')');e=e.parentElement;}return 'body>'+parts.join('>');};const controls=[...document.querySelectorAll('button,a,summary,input,textarea,select,[role=button],[role=link]')].filter(rendered).slice(0,100).map((e,i)=>({index:i,selector:selector(e),tag:e.tagName.toLowerCase(),id:e.id||null,role:e.getAttribute('role'),type:e.type||null,label:(e.getAttribute('aria-label')||e.innerText||e.textContent||e.getAttribute('placeholder')||'').trim().slice(0,180),placeholder:e.getAttribute('placeholder')||null,title:e.getAttribute('title')||null,multiple:e.multiple===true,disabled:!!e.disabled,visible:visible(e),href:e.tagName==='A'?e.href:null}));const fileInputs=[...document.querySelectorAll('input[type=file]')].map((e,i)=>({index:i,selector:selector(e),accept:e.accept,multiple:e.multiple,disabled:!!e.disabled,hidden:!visible(e)}));return {url:location.href,title:document.title,text:(document.body?.innerText||'').slice(0,12000),controls,file_inputs:fileInputs,viewport:{width:innerWidth,height:innerHeight}};})()";
   const data=await evaluate(expression);
   if (!data || new URL(data.url).origin!==targetOrigin) throw new Error('origin_changed');
   const values = await evaluate("(() => {const out={};for(const selector of "+JSON.stringify([...typedInputs.keys()])+ "){try{const e=document.querySelector(selector);out[selector]=e&&('value' in e)?String(e.value):null;}catch{out[selector]=null;}}return out;})()");
@@ -120,6 +120,7 @@ async function screenshot() {
 }
 async function act(input) {
   const name=input.name, args=input.arguments||{};
+  let uploadedFixture=null, uploadProgressSamples=[];
   if (name==='observe') {
     const state=await observe(); const capture=await screenshot();
     return {text:'URL '+state.url+'\nTitle '+state.title+'\n'+state.text,facts:state,captures:[capture],checks:[]};
@@ -144,7 +145,18 @@ async function act(input) {
     const attrs=Object.fromEntries((node.attributes||[]).reduce((out,value,index,array)=>{if(index%2===0)out.push([value,array[index+1]]);return out;},[]));
     if (node.nodeName!=='INPUT' || attrs.type!=='file') throw new Error('upload_target_not_single_file_input');
     await send('DOM.setFileInputFiles',{files:[fullPath],nodeId:found.nodeId});
-    await new Promise(resolve=>setTimeout(resolve,700));
+    uploadedFixture=filename;
+    const started=Date.now(); let sawProgress=false, lastPhase=null;
+    while (Date.now()-started<15000) {
+      const phase=await evaluate("(() => {const e=document.querySelector('[role=status][aria-live=polite]');return e?(e.innerText||e.textContent||'').trim():null;})()");
+      if (phase) {
+        sawProgress=true;
+        if (phase!==lastPhase) uploadProgressSamples.push({elapsed_ms:Date.now()-started,text:phase.slice(0,240)});
+        lastPhase=phase;
+      } else if ((sawProgress && Date.now()-started>150) || Date.now()-started>1200) break;
+      await new Promise(resolve=>setTimeout(resolve,50));
+    }
+    if (!uploadProgressSamples.length) await new Promise(resolve=>setTimeout(resolve,700));
   } else if (name==='click') {
     const selector=args.selector, label=args.label;
     if (typeof label!=='string' || !label.trim() || label.length>180) throw new Error('click_label_required');
@@ -174,7 +186,9 @@ async function act(input) {
     const ms=Math.max(0,Math.min(3000,args.ms)); await new Promise(r=>setTimeout(r,ms));
   } else throw new Error('unknown_tool');
   const state=await observe(); const capture=await screenshot();
-  return {text:'Action '+name+' completed.\nURL '+state.url+'\nTitle '+state.title+'\n'+state.text,facts:{...state,last_action:name},captures:[capture],checks:[]};
+  return {text:'Action '+name+' completed.\nURL '+state.url+'\nTitle '+state.title+'\n'+state.text,
+    facts:{...state,last_action:name,...(uploadedFixture?{uploaded_fixture:uploadedFixture,upload_progress_samples:uploadProgressSamples}:{})},
+    captures:[capture],checks:[]};
 }
 async function close() {
   try { if(ws) ws.close(); } catch {}

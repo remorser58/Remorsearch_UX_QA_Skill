@@ -12,6 +12,7 @@ import copy
 from uxresearch.canonical import byte_digest, canonical, digest
 from uxresearch.storage import atomic, read_bytes, read_json, safe_path
 from .agent_run import Tool, _host_info
+from .peekly_criteria import CRITERIA as PEEKLY_CRITERIA
 from . import swarm
 from .swarm_queue import Queue, SCHEMA, bounded, fail, quote
 
@@ -37,7 +38,7 @@ class ScaleLimits:
 
 def engine_manifest():
     root = Path(__file__).resolve().parent
-    files = ("swarm_queue.py", "swarm_providers.py", "model_router.py", "scale_run.py", "scale_entry.py", "scale_report.py",
+    files = ("swarm_queue.py", "swarm_providers.py", "model_router.py", "scale_run.py", "scale_entry.py", "scale_report.py", "peekly_criteria.py",
              "agent_run.py", "swarm.py", "library.py")
     return {name: byte_digest(read_bytes(root / name)) for name in files}
 
@@ -79,10 +80,22 @@ def _persona_journey_goal(base_goal, requirement_ids):
     if "PRD-PAYWALL-BOUNDARY" in ids:
         actions.append("무료 결과와 유료 잠금 항목을 각각 열어 무료로 보이는 범위, 가려진 이름, 잠금 안내를 구분해 확인한다. 결제는 누르지 않는다.")
     if ids & {"PRD-IMPORT-PROGRESS", "PRD-IMPORT-SIZE", "PRD-IMPORT-SAVE-FAIL"}:
-        actions.append("가져오기 진행·크기 제한·저장 실패 기준은 제공된 해당 시나리오 fixture가 manifest에 실제로 있을 때만 실행한다. 없는 실패 조건을 억지로 만들거나 not_run을 실패로 판정하지 않는다.")
+        actions.append("가져오기 진행·크기 제한 기준은 이 실행 전 생성·해시 고정한 전용 합성 fixture로 실제 업로드한다. 저장 실패는 제품 코드에 주입 경로가 없으므로 별도 격리 테스트 하네스에서 결정적 저장 실패를 재현하고, 브라우저에서 검증한 것처럼 보고하지 않는다.")
     if not actions:
         actions.append("이 페르소나의 요구사항에 직접 대응하는 화면 흐름을 관찰하고 각 성공 기준을 개별적으로 확인한다.")
-    return base_goal + "\n\n이 페르소나의 요구사항별 실행 과제:\n" + "\n".join("- " + action for action in actions) + "\n\n판정 규칙: 각 성공 기준을 직접 실행하고 관측 ID와 화면 증거를 남긴다. 성공 기준을 실행하지 않았거나 fixture/전제조건이 없어 확인할 수 없으면 not_run으로 남긴다. 조건부 복구 기준은 해당 실패가 실제 발생했을 때만 복구를 시험하며, 실패가 전혀 발생하지 않았으면 not_applicable로 남긴다. 실행하지 않은 조건을 failed로 판정하지 않는다."
+    criteria = []
+    for rid in requirement_ids:
+        spec = PEEKLY_CRITERIA.get(rid)
+        if spec:
+            criteria.append(f"- [{rid}] 화면={spec['screen']}; 셀렉터={spec['selector']}; 필수 텍스트={', '.join(spec['text'])}; 기대값={spec['value']}; 선행조건={spec['precondition']}; 행동={spec['action']}; 제한시간={spec['timeout_seconds']}초; 범위={spec['scope']}")
+    return (base_goal + "\n\n이 페르소나의 요구사항별 실행 과제:\n" + "\n".join("- " + action for action in actions)
+        + "\n\n명시적 성공 기준과 기계 판정 계약:\n" + "\n".join(criteria)
+        + "\n\n실행 규칙: 새 브라우저의 현재 DOM을 먼저 관찰하고 기준마다 선행조건을 충족한 뒤 제한시간 안에 지정 행동을 실제 수행한다. "
+        "업로드 기준은 이름이 지정된 모든 fixture를 실제 input[type=file]에 업로드하고 결과 화면까지 확인한다. "
+        "기준에 적힌 텍스트만 보였다는 이유로 통과시키지 말고 숫자·상태·목록까지 확인한다. "
+        "기계 판정 checks가 존재하면 그 결과를 반드시 따른다. 기계 판정이 없는 기준은 관측 ID와 스크린샷을 인용한다. "
+        "필수 fixture나 하위 흐름을 건너뛰고 최종 판단하지 않는다. 성공 기준을 실행하지 않았거나 전제조건이 확인되지 않으면 not_run으로 남기고 다음 실행 행동을 먼저 시도한다. "
+        "조건부 복구 기준은 실제 실패가 발생했을 때만 실행하며 실패가 전혀 발생하지 않았으면 not_applicable로 남긴다. 실행하지 않은 조건을 failed로 판정하지 않는다.")
 
 
 def prepare_scale_goal(library, run_path, providers, tool_host, tools, *, product_id,
@@ -174,7 +187,8 @@ def prepare_scale_goal(library, run_path, providers, tool_host, tools, *, produc
             starting_state="Fresh isolated owned context for the reviewed product.",
             actions=["Choose a permitted next action from your own current observations."],
             decisions=copy.deepcopy(profile["profile"]["behaviors"]),
-            success_criteria=[r["excerpt"] for r in requirements],
+            success_criteria=[r["excerpt"] + (" [" + r["id"] + "] " + PEEKLY_CRITERIA[r["id"]]["value"]
+                if r["id"] in PEEKLY_CRITERIA else "") for r in requirements],
             recovery_criteria=["If a recoverable browser/import failure actually occurs, perform the safe recovery and verify it. If no triggering failure occurs, report not_applicable; do not manufacture a failure."],
             data_namespace=jid, resource_id=jid,
             side_effects="owned_fixture_write" if any(t["effect"] == "owned_fixture_write" for t in tools) else "read_only",
