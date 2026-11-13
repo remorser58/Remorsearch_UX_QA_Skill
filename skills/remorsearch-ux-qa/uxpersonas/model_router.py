@@ -306,6 +306,14 @@ class RoutedScaleProvider:
         # Re-appending every prior checkpoint caused quadratic context growth and
         # stale control choices. Send one projection, never another persona's data.
         projected = copy.deepcopy(payload)
+        if "task" in payload:
+            projected["expected_criterion_bindings"] = [
+                {"kind": kind, "index": index, "criterion": criterion}
+                for kind in ("success", "recovery")
+                for index, criterion in enumerate(payload["task"][kind + "_criteria"])]
+            projected["criterion_index_rule"] = (
+                "Use each expected kind/index pair exactly once. Indices are zero-based"
+                " and restart at 0 separately for success and recovery.")
         observations = projected.get("observations", [])
         for observation in observations[:-1]:
             facts = observation.get("facts", {})
@@ -342,15 +350,28 @@ class RoutedScaleProvider:
                     raise ValueError("final_decision_schema")
                 if "task" in payload and "observations" in payload:
                     available_ids = {o["id"] for o in payload["observations"]}
+                    expected = {(kind, index) for kind in ("success", "recovery")
+                        for index in range(len(payload["task"][kind + "_criteria"]))}
+                    seen = set()
                     for criterion in value["judgment"].get("criteria", []):
                         if not isinstance(criterion, dict):
                             raise ValueError("criterion_must_be_object")
                         refs = criterion.get("observation_ids")
                         label = str(criterion.get("kind")) + "[" + str(criterion.get("index")) + "]"
+                        key = (criterion.get("kind"), criterion.get("index"))
+                        if (type(key[1]) is not int or key not in expected or key in seen):
+                            raise ValueError("Use each zero-based binding once: " +
+                                ",".join(kind + "[" + str(index) + "]" for kind, index in sorted(expected)))
+                        if criterion.get("status") not in {"passed", "failed", "not_run"}:
+                            raise ValueError(label + " status must be passed/failed/not_run")
+                        seen.add(key)
                         if criterion.get("status") == "not_run" and refs != []:
                             raise ValueError(label + " not_run requires observation_ids=[]")
                         if not isinstance(refs, list) or any(ref not in available_ids for ref in refs):
                             raise ValueError(label + " must cite only current obs-N identifiers")
+                    if seen != expected:
+                        raise ValueError("Missing zero-based bindings: " +
+                            ",".join(kind + "[" + str(index) + "]" for kind, index in sorted(expected - seen)))
                     from .agent_run import Execution
                     Execution.criteria(None, {"claim": {"task": payload["task"]}},
                         value["judgment"], payload["observations"])

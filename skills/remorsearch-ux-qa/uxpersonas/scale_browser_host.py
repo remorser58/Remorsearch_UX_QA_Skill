@@ -115,7 +115,26 @@ class ScaleBrowserHost:
         arguments = payload["arguments"]
         if name not in {"observe", "click", "type", "upload", "scroll", "wait"}:
             raise RuntimeError("tool_not_allowlisted")
-        result = await self._exchange(context, "act", {"name":name, "arguments":arguments})
+        try:
+            result = await self._exchange(context, "act", {"name":name, "arguments":arguments})
+        except RuntimeError as exc:
+            # These exact driver codes are raised before click/navigation, text
+            # insertion or file upload. Re-observe a rejected action as evidence
+            # rather than pretending it happened or aborting a recoverable journey.
+            # Transport, origin, fixture and capture-integrity failures still fail closed.
+            prefix = "browser_action_failed:"
+            safe_rejections = {"click_label_required", "click_target_not_allowed_or_visible",
+                "cross_origin_link_blocked", "typed_value_limit", "type_target_not_allowed",
+                "fixture_name_invalid", "fixture_not_allowlisted", "upload_target_missing",
+                "upload_target_not_single_file_input"}
+            reason = str(exc)[len(prefix):] if str(exc).startswith(prefix) else ""
+            if reason not in safe_rejections:
+                raise
+            result = await self._exchange(context, "act", {"name": "observe", "arguments": {}})
+            result["text"] = ("Requested " + name + " was rejected before dispatch: " + reason +
+                ". No requested click/navigation/text/upload was performed. Current page:\n" + result["text"])
+            result["facts"]["tool_outcome"] = {"requested_tool": name,
+                "status": "rejected_before_dispatch", "reason": reason}
         if set(result) != {"text","facts","captures","checks"}:
             raise RuntimeError("browser_observation_contract")
         # Product sample content may contain synthetic-looking account handles.

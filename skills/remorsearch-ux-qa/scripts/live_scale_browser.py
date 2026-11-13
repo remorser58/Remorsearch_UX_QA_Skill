@@ -20,6 +20,8 @@ from uxresearch.storage import atomic, read_bytes, safe_path
 from uxpersonas.library import Library
 from uxpersonas.scale_entry import ScaleLimits, prepare_scale_goal, preview
 from uxpersonas.scale_run import execute_scale
+from uxpersonas.scale_report import current_report
+from uxpersonas.swarm_queue import Queue
 from uxpersonas.swarm_providers import ProviderSpec
 from uxpersonas.model_router import ModelRoute, ModelRouter, RoutedScaleProvider
 from uxpersonas.scale_browser_host import ScaleBrowserHost
@@ -91,6 +93,46 @@ def _load_personas(library_path, product_id, count):
     return [row["persona_id"] for row in reusable[:count]]
 
 
+def recovery_selection(args):
+    """Explicit fresh attempts for unfinished personas; never mutate an old queue."""
+    source = safe_path(args.recover_stage)
+    summary = json.loads(read_bytes(source / "stage-summary.json", private=True))
+    if summary.get("browser_shutdown_confirmed") is not True:
+        raise RuntimeError("recovery_requires_closed_source_browsers")
+    if summary.get("recovery_of"):
+        raise RuntimeError("automatic_recovery_chaining_not_allowed")
+    queue = Queue(source)
+    report = current_report(queue)
+    plan = queue.plan
+    if report["counts"]["running"] or report["control"] == "cancelled":
+        raise RuntimeError("recovery_source_not_quiescent")
+    if (plan["product_id"] != args.product_id or plan["goal"] != args.goal
+            or plan["target"] != args.target or safe_path(plan["library_path"]) != args.library
+            or plan["build"]["sha256"] != byte_digest(read_bytes(args.build_artifact))):
+        raise RuntimeError("recovery_input_binding_changed")
+    selected, retained = [], []
+    for task in report["tasks"]:
+        if task.get("current_issue") or task["status"] == "cancelled":
+            raise RuntimeError("recovery_source_evidence_or_cancellation_block")
+        result = task.get("result") or {}
+        if task["status"] == "complete" and result.get("operational_completed") is True:
+            if task["current_valid"] is not True:
+                raise RuntimeError("completed_source_evidence_invalid")
+            retained.append(task["persona_id"])
+        else:
+            selected.append(task["persona_id"])
+    if not selected:
+        raise RuntimeError("no_unfinished_personas_to_recover")
+    endpoint = summary["stage_cumulative_sessions"]
+    if args.stages != [endpoint]:
+        raise RuntimeError("recover_exact_stage_before_expanding")
+    return selected, {"source_stage": str(source), "source_plan_sha256": queue.plan_sha256,
+        "source_counts": report["counts"], "retained_completed_personas": retained,
+        "fresh_attempt_personas": selected,
+        "authorization": "explicit user request to repair interrupted sessions and complete the staged cohort",
+        "original_queue_modified": False, "completed_personas_replayed": False}
+
+
 def live_limits(session_count, turns=16):
     limits = ScaleLimits(parallel=2, turns=turns, call_seconds=180, task_seconds=1800,
         lease_seconds=240, budget_microusd=0, max_model_calls=session_count*(turns+1))
@@ -154,11 +196,17 @@ async def run_stage(args, persona_ids, index):
     completed = sum(bool((task.get("result") or {}).get("operational_completed"))
                     for task in report.get("tasks", []))
     validation = report.get("evidence_validation", {})
+    with queue._db() as db:
+        rejected_tools = sum(
+            observation.get("facts", {}).get("tool_outcome", {}).get("status") == "rejected_before_dispatch"
+            for (checkpoint,) in db.execute("SELECT checkpoint FROM jobs")
+            for observation in json.loads(checkpoint).get("observations", []))
     ready = (completed == len(persona_ids) and report["counts"]["complete"] == len(persona_ids)
         and validation.get("current_valid_sessions") == len(persona_ids)
         and not any(report["counts"][key] for key in ("queued", "running", "uncertain", "blocked", "cancelled")))
     summary = {
         "stage_cumulative_sessions":index,"sessions":len(persona_ids),"persona_ids":persona_ids,
+        "recovery_of":getattr(args, "recovery_info", None),
         "counts":report["counts"],"elapsed_seconds":round(time.monotonic()-started,3),
         "actual_model_calls":report["actual_model_calls"],"actual_browser_tool_calls":sum(
             op["kind"]=="tool" and op["state"]=="done" for op in report["operations"]),
@@ -167,6 +215,7 @@ async def run_stage(args, persona_ids, index):
         "model_attempts":route_stats,"configured_routes":configured_routes,
         "fixture_manifest_sha256":byte_digest(read_bytes(args.fixtures / "fixture-manifest.json")),
         "browser_shutdown_confirmed":stopped,
+        "browser_actions_rejected_before_dispatch":rejected_tools,
         "current_evidence_validation":report.get("evidence_validation"),
         "operational_completed_sessions":completed,
         "stage_ready_for_expansion":ready,
@@ -197,6 +246,16 @@ async def main(args):
         raise RuntimeError("peekly_fixture_manifest_invalid")
     if args.run_root.exists():
         raise RuntimeError("run_root_exists_preserved")
+    if args.recover_stage is not None:
+        ids, args.recovery_info = recovery_selection(args)
+        args.run_root.mkdir(parents=True, mode=0o700)
+        summary = await run_stage(args, ids, args.stages[0])
+        atomic(args.run_root / "stages.json", canonical({"stages": [summary],
+            "total_sessions": len(ids), "recovery": args.recovery_info,
+            "real_user_evidence": False, "product_ready": False}))
+        if not summary["stage_ready_for_expansion"]:
+            raise RuntimeError("recovery_incomplete_preserved")
+        return
     args.run_root.mkdir(parents=True,mode=0o700)
     if args.start_index < 0 or args.start_index >= 32:
         raise RuntimeError("persona_start_index_out_of_range")
@@ -225,6 +284,8 @@ def parse_args():
     p.add_argument("--build-artifact",required=True,type=Path)
     p.add_argument("--fixtures",required=True,type=Path)
     p.add_argument("--run-root",required=True,type=Path)
+    p.add_argument("--recover-stage",type=Path,default=None,
+        help="Explicit fresh attempts for unfinished personas in a closed saved stage; preserves completed sessions")
     p.add_argument("--node",type=Path,default=Path(NODE_DEFAULT))
     p.add_argument("--chrome",type=Path,default=Path(CHROME_DEFAULT))
     p.add_argument("--stages",type=int,nargs="+",default=[4,16,32],
