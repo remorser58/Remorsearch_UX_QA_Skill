@@ -140,7 +140,7 @@ class ModelRouter:
                         judgment = arguments.get("judgment", arguments)
                         normalized = {"kind":"final", "judgment":judgment}
                     else:
-                        raise ValueError("tool_call_name_not_allowlisted")
+                        raise ValueError("tool_call_name_not_allowlisted:"+str(name)[:80]+":argument_keys="+",".join(sorted(arguments))[:120])
                     content = json.dumps(normalized, ensure_ascii=False, separators=(",", ":"))
             if not isinstance(content, str) or not content.strip():
                 raise ValueError("content_missing:message_keys="+",".join(sorted(message.keys()))[:120]
@@ -228,7 +228,11 @@ class ModelRouter:
                             response_excerpt=excerpt)); self._persist()
                     errors.append({"model": route.model, "reason": reason}); break
                 errors.append(receipt)
-                retryable = receipt.get("http_status") in (408, 429, 500, 502, 503, 504) or receipt.get("status") == "transport_or_protocol_error"
+                protocol_reason = receipt.get("error_reason", "")
+                retryable = (receipt.get("http_status") in (408, 429, 500, 502, 503, 504)
+                    or (receipt.get("status") == "transport_or_protocol_error"
+                        and not any(marker in protocol_reason for marker in
+                            ("tool_call_name_not_allowlisted", "content_missing", "choices_invalid"))))
                 if not retryable or attempt >= self.max_retries: break
                 if receipt.get("http_status") == 429:
                     if not self.respect_rpm:
