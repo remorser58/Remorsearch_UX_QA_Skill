@@ -102,8 +102,8 @@ async def run_stage(args, persona_ids, index):
         fixtures_path=args.fixtures, parallel_safe=True)
     build = dict(id=args.build_id, artifact_path=str(args.build_artifact),
         sha256=byte_digest(read_bytes(args.build_artifact)))
-    limits = ScaleLimits(parallel=2, turns=8, call_seconds=120, task_seconds=1200,
-        lease_seconds=180, budget_microusd=0, max_model_calls=len(persona_ids)*9)
+    limits = ScaleLimits(parallel=2, turns=args.turns, call_seconds=120, task_seconds=1800,
+        lease_seconds=180, budget_microusd=0, max_model_calls=len(persona_ids)*(args.turns+1))
     billing_review = {"input_token_cap":spec.input_token_cap,"output_token_cap":spec.output_token_cap,
         "input_price_per_million":spec.input_price_per_million,
         "output_price_per_million":spec.output_price_per_million,
@@ -111,7 +111,7 @@ async def run_stage(args, persona_ids, index):
         "free_tier":True,"billing_source":"free",
         "requested_model":"TOKENMAXX/deepseek-v4.1-flash-free",
         "source":"User-supplied Mac mini OpenCodex diagnostic confirms TOKENMAXX free billing; direct authenticated chat/completions probe returned served model deepseek-v4.1-flash-free and usage cost 0. No paid fallback.",
-        "checked_at":"2026-11-13T15:30:00+09:00"}
+        "checked_at":datetime.now(timezone.utc).isoformat()}
     started = time.monotonic()
     with Library(args.library) as library:
         queue = prepare_scale_goal(library, run_root, providers, host, TOOLS,
@@ -143,6 +143,14 @@ async def run_stage(args, persona_ids, index):
     route_stats = router.report()["routes"]
     route_stats = {model: dict(stats, failure_rate=((stats["failures"]+stats["quality_rejections"]) / stats["attempts"] if stats["attempts"] else 0.0))
                    for model, stats in route_stats.items()}
+    events = [event for event in router.report()["events"]
+              if event.get("status") != "quality_rejected"]
+    completed = sum(bool((task.get("result") or {}).get("operational_completed"))
+                    for task in report.get("tasks", []))
+    validation = report.get("evidence_validation", {})
+    ready = (completed == len(persona_ids) and report["counts"]["complete"] == len(persona_ids)
+        and validation.get("current_valid_sessions") == len(persona_ids)
+        and not any(report["counts"][key] for key in ("queued", "running", "uncertain", "blocked", "cancelled")))
     summary = {
         "stage_cumulative_sessions":index,"sessions":len(persona_ids),"persona_ids":persona_ids,
         "counts":report["counts"],"elapsed_seconds":round(time.monotonic()-started,3),
@@ -154,6 +162,16 @@ async def run_stage(args, persona_ids, index):
         "fixture_manifest_sha256":byte_digest(read_bytes(args.fixtures / "fixture-manifest.json")),
         "browser_shutdown_confirmed":stopped,
         "current_evidence_validation":report.get("evidence_validation"),
+        "operational_completed_sessions":completed,
+        "stage_ready_for_expansion":ready,
+        "input_tokens_all_attempts":sum(row["input_tokens"] for row in route_stats.values()),
+        "output_tokens_all_attempts":sum(row["output_tokens"] for row in route_stats.values()),
+        "cost_record":{"authorized_route":"user_confirmed_free_TOKENMAXX",
+            "policy_cost_usd":0,
+            "provider_reported_cost_values":[event.get("provider_reported_cost") for event in events],
+            "billing_source_values":[event.get("billing_source") for event in events],
+            "missing_cost_responses":sum(event.get("provider_reported_cost") is None for event in events),
+            "provider_invoice_verified":False},
         "real_user_evidence":False,"product_ready":False,
     }
     atomic(run_root / "stage-summary.json", canonical(summary))
@@ -176,7 +194,7 @@ async def main(args):
     args.run_root.mkdir(parents=True,mode=0o700)
     if args.start_index < 0 or args.start_index >= 32:
         raise RuntimeError("persona_start_index_out_of_range")
-    all_ids = _load_personas(args.library,args.product_id,args.start_index+max(args.stages))
+    all_ids = _load_personas(args.library,args.product_id,max(args.stages))
     cursor=args.start_index; stages=[]
     for count in args.stages:
         ids=all_ids[cursor:count]; cursor=count
@@ -186,8 +204,8 @@ async def main(args):
             "total_sessions":sum(x["sessions"] for x in stages),
             "actual_model_calls":sum(x["actual_model_calls"] for x in stages),
             "real_user_evidence":False,"product_ready":False}))
-        if summary["counts"]["uncertain"] or summary["counts"]["blocked"] or summary["counts"]["queued"]:
-            break
+        if not summary["stage_ready_for_expansion"]:
+            raise RuntimeError("stage_incomplete_preserved:"+str(count))
 
 
 def parse_args():
@@ -207,7 +225,10 @@ def parse_args():
         help="cumulative persona indices to execute (e.g. 4 16 32)")
     p.add_argument("--start-index",type=int,default=0,
         help="zero-based first saved persona index; use to continue cumulative batches without replaying prior personas")
+    p.add_argument("--turns", type=int, default=16, help="bounded model decisions per persona (4..24)")
     args=p.parse_args()
+    if not 4 <= args.turns <= 24:
+        p.error("turns must be from 4 to 24")
     if args.start_index < 0 or args.start_index >= 32:
         p.error("start-index must be between 0 and 31")
     if any(n<=args.start_index or n>32 for n in args.stages) or args.stages != sorted(set(args.stages)):

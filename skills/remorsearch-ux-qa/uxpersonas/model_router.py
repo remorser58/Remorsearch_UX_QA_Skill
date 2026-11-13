@@ -1,7 +1,7 @@
 """OpenAI-compatible local gateway router with ordered model fallback and usage receipts."""
 from __future__ import annotations
 from dataclasses import dataclass
-import json, os, time, threading, urllib.error, urllib.request
+import copy, json, os, time, threading, urllib.error, urllib.request
 from decimal import Decimal, InvalidOperation, ROUND_CEILING
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -58,7 +58,8 @@ class ModelRouter:
     def _request(self, route, messages, max_tokens, temperature, call_id=None):
         body = json.dumps({"model": route.model, "messages": messages, "max_tokens": max_tokens,
             "temperature": temperature, "stream": False,
-            "response_format": {"type": "json_object"}}, ensure_ascii=False).encode()
+            "response_format": {"type": "json_object"},
+            "tool_choice": "none"}, ensure_ascii=False).encode()
         # The Mac mini OpenCodex gateway authenticates with the existing
         # PROXY_API_KEY environment variable. Never print, persist or forward it
         # anywhere except this explicitly loopback-only gateway.
@@ -71,6 +72,7 @@ class ModelRouter:
         }, method="POST")
         started = time.monotonic()
         prompt = completion = None
+        data, usage, message = {}, {}, {}
         try:
             with self.opener(req, timeout=self.timeout) as response:
                 raw = response.read(2 * 1024 * 1024 + 1)
@@ -204,6 +206,11 @@ class ModelRouter:
                     stat.input_tokens += prompt; stat.output_tokens += completion
             receipt = {"call_id": call_id, "provider": route.provider, "requested_model": route.model,
                 "status": "transport_or_protocol_error", "error_type": type(exc).__name__, "error_reason": str(exc)[:120],
+                "served_model": data.get("model"), "response_id": data.get("id"),
+                "provider_reported_cost": usage.get("cost"),
+                "billing_source": usage.get("billing_source"),
+                "native_tool_names": [call.get("function", {}).get("name")
+                    for call in (message.get("tool_calls") or []) if isinstance(call, dict)],
                 "input_tokens": prompt, "output_tokens": completion,
                 "elapsed_seconds": round(time.monotonic() - started, 4)}
             with self.lock: self.events.append(receipt); self._persist()
@@ -226,7 +233,17 @@ class ModelRouter:
                         self.stats[route.model].quality_rejections += 1
                         self.events.append(dict(receipt, status="quality_rejected", quality_reason=reason,
                             response_excerpt=excerpt)); self._persist()
-                    errors.append({"model": route.model, "reason": reason}); break
+                    errors.append({"model": route.model, "reason": reason})
+                    if attempt >= self.max_retries:
+                        break
+                    # A rejected decision has not executed a browser action.
+                    # Retry only within the original attempt ceiling and ledger.
+                    messages = list(messages) + [{"role": "user", "content":
+                        "The previous reply failed the reviewed JSON contract: " + reason +
+                        ". Return exactly one valid JSON decision using only the supplied tools,"
+                        " exact argument keys, and your own observation IDs. No prose."}]
+                    self.sleep(min(self.backoff_max, self.backoff_initial * (2 ** attempt)))
+                    continue
                 errors.append(receipt)
                 retryable = receipt.get("http_status") in (408, 429, 500, 502, 503, 504) or receipt.get("status") == "transport_or_protocol_error"
                 if not retryable or attempt >= self.max_retries: break
@@ -273,9 +290,19 @@ class RoutedScaleProvider:
             "Use only your persona, current browser observations and approved tool allowlist. "
             "Do not invent actions or observations. Never claim real-user evidence. Preserve failures.")
         context_id = request["context_id"]
-        with self.lock:
-            messages = list(self.conversations.get(context_id, [{"role":"system","content":system}]))
-        messages.append({"role":"user","content":json.dumps(payload,ensure_ascii=False,separators=(",",":"))})
+        # Queue checkpoints already contain this persona's complete observations.
+        # Re-appending every prior checkpoint caused quadratic context growth and
+        # stale control choices. Send one projection, never another persona's data.
+        projected = copy.deepcopy(payload)
+        observations = projected.get("observations", [])
+        for observation in observations[:-1]:
+            facts = observation.get("facts", {})
+            for key in ("controls", "file_inputs", "available_fixtures", "text"):
+                facts.pop(key, None)
+        if observations:
+            observations[-1].get("facts", {}).pop("text", None)
+        messages = [{"role": "system", "content": system},
+                    {"role": "user", "content": json.dumps(projected, ensure_ascii=False, separators=(",", ":"))}]
         def parse_decision(content):
             if not isinstance(content, str):
                 raise ValueError("decision_not_text")
@@ -290,9 +317,21 @@ class RoutedScaleProvider:
             if value.get("kind")=="tool":
                 if set(value)!={"kind","tool","arguments","decision"} or not isinstance(value["arguments"],dict):
                     raise ValueError("tool_decision_schema")
+                from .agent_run import Tool
+                tools = {spec["name"]: Tool(**spec) for spec in payload.get("tools", [])}
+                if payload.get("phase") == "review" or payload.get("remaining_model_turns") == 1:
+                    raise ValueError("final_judgment_required")
+                if tools:
+                    if value["tool"] not in tools:
+                        raise ValueError("tool_not_reviewed")
+                    tools[value["tool"]].validate(value["arguments"])
             elif value.get("kind")=="final":
                 if set(value)!={"kind","judgment"} or not isinstance(value["judgment"],dict):
                     raise ValueError("final_decision_schema")
+                if "task" in payload and "observations" in payload:
+                    from .agent_run import Execution
+                    Execution.criteria(None, {"claim": {"task": payload["task"]}},
+                        value["judgment"], payload["observations"])
             else:
                 raise ValueError("decision_kind_invalid")
             return value
@@ -302,12 +341,13 @@ class RoutedScaleProvider:
                 return True
             except (ValueError,TypeError) as exc:
                 return "decision_parse:" + type(exc).__name__ + ":" + str(exc)[:100]
+            except Exception as exc:
+                return "decision_contract:" + getattr(exc, "issue", {}).get("code", type(exc).__name__)
         content, receipt = await asyncio.to_thread(self.router.complete, messages, max_tokens=1536, temperature=0.0, quality_check=valid, call_id=request["operation_id"])
         result=parse_decision(content)
         from . import swarm
         result=swarm.clean(result)
-        with self.lock:
-            self.conversations[context_id] = messages + [{"role":"assistant","content":content}]
+        # Do not retain a duplicate prompt history; the durable queue owns it.
         attempts = [event for event in self.router.report()["events"] if event.get("call_id") == request["operation_id"]]
         unique = {}
         for event in attempts:

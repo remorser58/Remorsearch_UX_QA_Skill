@@ -121,7 +121,11 @@ class ScaleBrowserHost:
         # Product sample content may contain synthetic-looking account handles.
         # Scrub identifiers before the observation crosses into the model/queue;
         # screenshots remain private, hash-bound evidence and are not uploaded.
-        result = swarm.clean(result)
+        # Hashes are machine metadata, not free text. A hexadecimal digest can
+        # contain a digit run which the privacy scrubber mistakes for a card.
+        # Verify original capture bytes and never rewrite their identifiers.
+        result = {**result, **swarm.clean({key: result[key]
+            for key in ("text", "facts", "checks")})}
         for capture in result["captures"]:
             if not isinstance(capture, dict) or set(capture) != {"path", "sha256"}:
                 raise RuntimeError("browser_capture_integrity:metadata")
