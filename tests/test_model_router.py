@@ -152,6 +152,26 @@ class RouterTests(unittest.TestCase):
                 self.assertEqual(receipt.get("billing_source"),usage.get("billing_source"))
                 self.assertEqual(receipt["provider_cost_microusd"],0 if "cost" in usage else None)
 
+    def test_tokenmaxx_structured_tool_call_is_normalized_to_reviewed_envelope(self):
+        from unittest.mock import patch
+        route=ModelRoute("TOKENMAXX","TOKENMAXX/deepseek-v4.1-flash-free","0","0",30,
+            ("deepseek-v4.1-flash",))
+        def opener(req,timeout):
+            body=json.loads(req.data)
+            self.assertEqual(body["response_format"],{"type":"json_object"})
+            return Response({"id":"tool-call","model":"deepseek-v4.1-flash",
+                "choices":[{"finish_reason":"tool_calls","message":{"role":"assistant","content":None,
+                    "tool_calls":[{"id":"call-1","type":"function","function":{"name":"click",
+                        "arguments":"{\"selector\":\"#sample\",\"label\":\"샘플\"}"}}]}}],
+                "usage":{"prompt_tokens":5,"completion_tokens":8}})
+        with patch.dict(os.environ,{"PROXY_API_KEY":"test-secret"}):
+            router=ModelRouter("http://127.0.0.1:10100/v1",[route],opener=opener)
+            content,receipt=router.complete([{"role":"user","content":"test"}])
+        self.assertEqual(json.loads(content),{"kind":"tool","tool":"click",
+            "arguments":{"selector":"#sample","label":"샘플"},
+            "decision":"Model selected the tool from the current observations."})
+        self.assertEqual(receipt["served_model"],"deepseek-v4.1-flash")
+
     def test_tokenmaxx_flash_1m_is_not_an_allowed_route(self):
         from unittest.mock import patch
         called=[]

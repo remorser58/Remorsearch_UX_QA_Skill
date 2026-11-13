@@ -115,6 +115,34 @@ class ModelRouter:
                 # actual non-empty string and still run the strict JSON schema.
                 content = message.get("reasoning_content")
             if not isinstance(content, str) or not content.strip():
+                # OpenCodex may expose the model's structured decision as a
+                # native OpenAI tool_call even when response_format=json_object
+                # was requested. Normalize one call into our strict envelope;
+                # the downstream reviewed tool allowlist remains authoritative.
+                calls = message.get("tool_calls")
+                if isinstance(calls, list) and len(calls) == 1:
+                    function = calls[0].get("function") or {}
+                    name = function.get("name")
+                    raw_arguments = function.get("arguments", "{}")
+                    arguments = json.loads(raw_arguments) if isinstance(raw_arguments, str) else raw_arguments
+                    if not isinstance(arguments, dict):
+                        raise ValueError("tool_call_arguments_invalid")
+                    if arguments.get("kind") in {"tool", "final"}:
+                        normalized = arguments
+                    elif isinstance(arguments.get("tool"), str) and isinstance(arguments.get("arguments"), dict):
+                        normalized = {"kind":"tool", "tool":arguments["tool"],
+                            "arguments":arguments["arguments"],
+                            "decision":arguments.get("decision", "Model selected the tool from the current observations.")}
+                    elif name in {"observe", "click", "type", "upload", "scroll", "wait"}:
+                        decision = arguments.pop("decision", "Model selected the tool from the current observations.")
+                        normalized = {"kind":"tool", "tool":name, "arguments":arguments, "decision":decision}
+                    elif name in {"final", "final_judgment"}:
+                        judgment = arguments.get("judgment", arguments)
+                        normalized = {"kind":"final", "judgment":judgment}
+                    else:
+                        raise ValueError("tool_call_name_not_allowlisted")
+                    content = json.dumps(normalized, ensure_ascii=False, separators=(",", ":"))
+            if not isinstance(content, str) or not content.strip():
                 raise ValueError("content_missing:message_keys="+",".join(sorted(message.keys()))[:120]
                     +":finish_reason="+str(choices[0].get("finish_reason"))[:40])
             elapsed = time.monotonic() - started
