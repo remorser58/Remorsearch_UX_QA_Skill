@@ -14,10 +14,12 @@ class VerdictQualityTests(unittest.TestCase):
         tool = Tool("upload", "Select an owned fixture.", {
             "selector": "string", "file": "string"}, "owned_fixture_write")
         valid = {"selector": "body>div:nth-of-type(2)>section:nth-of-type(1)>input:nth-of-type(1)",
-                 "file": "peekly-sample-current.zip"}
+                 "file": "@group:peekly-loose-512-valid"}
         self.assertEqual(tool.validate(valid), valid)
         with self.assertRaises(Exception):
             tool.validate({"selector": "#account-123456", "file": "peekly-sample-current.zip"})
+        with self.assertRaises(Exception):
+            tool.validate({"selector": "body>input:nth-of-type(1)", "file": "../outside.zip"})
 
     def test_only_conditional_recovery_can_be_not_applicable(self):
         task = {"success_criteria": ["Show imported result"],

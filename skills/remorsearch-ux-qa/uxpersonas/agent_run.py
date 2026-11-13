@@ -99,11 +99,17 @@ class Tool:
                 # no IDs, attributes, URLs, usernames or arbitrary text.
                 if not re.fullmatch(r"body(?:>[a-z][a-z0-9-]*:nth-of-type\([1-9][0-9]*\))+", value):
                     fail("tool_selector", "Selectors must be observed structural DOM paths.")
+            if kind == "string" and key == "file":
+                # Fixture names are opaque allowlist keys. The browser host
+                # independently checks exact manifest membership and SHA-256.
+                if not re.fullmatch(r"(?:@group:[A-Za-z0-9._-]{1,80}|[A-Za-z0-9._-]{1,128})", value):
+                    fail("tool_fixture", "Fixture names must be plain manifest keys.")
         if len(canonical(arguments)) > 16384:
             fail("host_protocol", "Tool arguments exceed their bound.")
         # The selector has already been restricted to a non-identifying DOM
         # grammar; all other string values still pass the normal privacy scrub.
-        _data({key: value for key, value in arguments.items() if key != "selector"}, 16384)
+        _data({key: value for key, value in arguments.items()
+               if key not in {"selector", "file"}}, 16384)
         return copy.deepcopy(arguments)
 
 
