@@ -22,6 +22,7 @@ class RouterTests(unittest.TestCase):
             body=json.loads(req.data)
             self.assertEqual(body["model"],"TOKENMAXX/deepseek-v4.1-flash-free")
             self.assertEqual(body["response_format"],{"type":"json_object"})
+            self.assertEqual(body["tool_choice"],"none")
             return Response({"id":"r1","model":"deepseek-v4.1-flash-free","choices":[{"message":{"content":"ok"}}],"usage":{"prompt_tokens":11,"completion_tokens":7}})
         router=ModelRouter("http://127.0.0.1:10100/v1",[ModelRoute("TOKENMAXX","TOKENMAXX/deepseek-v4.1-flash-free")],opener=opener)
         content, receipt=router.complete([{"role":"user","content":"test"}])
@@ -141,6 +142,7 @@ class RouterTests(unittest.TestCase):
                     body=json.loads(req.data)
                     self.assertEqual(body["model"],"TOKENMAXX/deepseek-v4.1-flash-free")
                     self.assertEqual(body["response_format"],{"type":"json_object"})
+                    self.assertEqual(body["tool_choice"],"none")
                     return Response({"id":"response-"+served,"model":served,
                         "choices":[{"message":{"content":"ok"}}],"usage":usage})
                 with patch.dict(os.environ,{"PROXY_API_KEY":"test-secret"}):
@@ -159,6 +161,7 @@ class RouterTests(unittest.TestCase):
         def opener(req,timeout):
             body=json.loads(req.data)
             self.assertEqual(body["response_format"],{"type":"json_object"})
+            self.assertEqual(body["tool_choice"],"none")
             return Response({"id":"tool-call","model":"deepseek-v4.1-flash",
                 "choices":[{"finish_reason":"tool_calls","message":{"role":"assistant","content":None,
                     "tool_calls":[{"id":"call-1","type":"function","function":{"name":"click",

@@ -57,7 +57,7 @@ class ModelRouter:
 
     def _request(self, route, messages, max_tokens, temperature, call_id=None):
         body = json.dumps({"model": route.model, "messages": messages, "max_tokens": max_tokens,
-            "temperature": temperature, "stream": False,
+            "temperature": temperature, "stream": False, "tool_choice": "none",
             "response_format": {"type": "json_object"}}, ensure_ascii=False).encode()
         # The Mac mini OpenCodex gateway authenticates with the existing
         # PROXY_API_KEY environment variable. Never print, persist or forward it
