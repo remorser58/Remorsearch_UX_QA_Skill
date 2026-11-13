@@ -174,8 +174,10 @@ async def main(args):
     if args.run_root.exists():
         raise RuntimeError("run_root_exists_preserved")
     args.run_root.mkdir(parents=True,mode=0o700)
-    all_ids = _load_personas(args.library,args.product_id,max(args.stages))
-    cursor=0; stages=[]
+    if args.start_index < 0 or args.start_index >= 32:
+        raise RuntimeError("persona_start_index_out_of_range")
+    all_ids = _load_personas(args.library,args.product_id,args.start_index+max(args.stages))
+    cursor=args.start_index; stages=[]
     for count in args.stages:
         ids=all_ids[cursor:count]; cursor=count
         summary=await run_stage(args,ids,count)
@@ -201,10 +203,15 @@ def parse_args():
     p.add_argument("--run-root",required=True,type=Path)
     p.add_argument("--node",type=Path,default=Path(NODE_DEFAULT))
     p.add_argument("--chrome",type=Path,default=Path(CHROME_DEFAULT))
-    p.add_argument("--stages",type=int,nargs="+",default=[4,16,32])
+    p.add_argument("--stages",type=int,nargs="+",default=[4,16,32],
+        help="cumulative persona indices to execute (e.g. 4 16 32)")
+    p.add_argument("--start-index",type=int,default=0,
+        help="zero-based first saved persona index; use to continue cumulative batches without replaying prior personas")
     args=p.parse_args()
-    if any(n<1 or n>100 for n in args.stages) or args.stages != sorted(set(args.stages)):
-        p.error("cumulative stage sizes must be strictly increasing values from 1 to 100")
+    if args.start_index < 0 or args.start_index >= 32:
+        p.error("start-index must be between 0 and 31")
+    if any(n<=args.start_index or n>32 for n in args.stages) or args.stages != sorted(set(args.stages)):
+        p.error("cumulative stage endpoints must be strictly increasing values after start-index and at most 32")
     return args
 
 if __name__=="__main__":
