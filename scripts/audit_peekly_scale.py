@@ -53,6 +53,27 @@ def artifact_bytes(root, descriptor):
     return raw
 
 
+def verify_product_build(build):
+    path = Path(build["artifact_path"]).resolve(strict=True)
+    raw = path.read_bytes()
+    if sha(raw) != build["sha256"]:
+        raise ValueError("build_manifest_digest_mismatch")
+    manifest = json.loads(raw)
+    if manifest.get("schema_version") != "peekly-build-manifest.v1":
+        raise ValueError("unexpected_product_build_manifest")
+    dist = path.parent.parent / "dist"
+    files = manifest.get("dist_files", [])
+    if not files:
+        raise ValueError("build_manifest_has_no_dist_files")
+    for file in files:
+        raw = artifact_bytes(dist, {**file, "kind": "product_build_file"})
+        if len(raw) != file["bytes"]:
+            raise ValueError("product_build_size_mismatch")
+    return {"source_commit": manifest["source_commit"],
+        "dist_files_rehashed": len(files), "prd_sha256": manifest["prd_sha256"],
+        "manifest_sha256": build["sha256"]}
+
+
 def completion_counts(tasks):
     """A closed turn-limit task is NOT a successfully completed execution."""
     statuses = Counter(row["status"] for row in tasks)
@@ -230,7 +251,9 @@ def audit_run(root):
         "browser_shutdown_confirmed": original_summary.get("browser_shutdown_confirmed"),
         "plan_sha256": queue.plan_sha256, "event_chain_head": queue.audit_events(),
         "engine_manifest": queue.plan["engine_manifest"],
-        "build": queue.plan["build"], "limits": queue.plan["limits"],
+        "build": queue.plan["build"],
+        "build_validation": verify_product_build(queue.plan["build"]),
+        "limits": queue.plan["limits"],
         "fixture_manifest_sha256": original_summary.get("fixture_manifest_sha256"),
         "usage_ledger": ledger_source, "usage": usage, "sessions": rows,
         "product_ready": False, "real_user_evidence": False}
@@ -247,6 +270,9 @@ def cohort_summary(runs):
     identities = [row["persona_id"] for run in runs for row in run["sessions"]]
     if len(identities) != len(set(identities)):
         raise ValueError("cohort_contains_repeated_persona_attempts")
+    contexts = [row["context_id"] for run in runs for row in run["sessions"]]
+    if len(contexts) != len(set(contexts)):
+        raise ValueError("cohort_reuses_browser_context")
     if len({run["build"]["sha256"] for run in runs}) != 1:
         raise ValueError("cohort_mixes_product_builds")
     stages, cumulative = [], Counter()

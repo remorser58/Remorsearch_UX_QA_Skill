@@ -1,6 +1,7 @@
 """Offline audit tests; no provider or browser is invoked."""
 import hashlib
 import importlib.util
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -65,10 +66,28 @@ class ScaleAuditTests(unittest.TestCase):
             audit.cohort_summary([run, run])
 
     def test_cohort_rejects_mixed_product_builds(self):
-        runs = [{"sessions": [{"persona_id": "PER-A"}], "build": {"sha256": "a" * 64}},
-                {"sessions": [{"persona_id": "PER-B"}], "build": {"sha256": "b" * 64}}]
+        runs = [{"sessions": [{"persona_id": "PER-A", "context_id": "ctx-a"}], "build": {"sha256": "a" * 64}},
+                {"sessions": [{"persona_id": "PER-B", "context_id": "ctx-b"}], "build": {"sha256": "b" * 64}}]
         with self.assertRaisesRegex(ValueError, "mixes_product_builds"):
             audit.cohort_summary(runs)
+
+    def test_build_manifest_cannot_hide_changed_dist_file(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name).resolve()
+            (root / ".ux-loop").mkdir()
+            (root / "dist").mkdir()
+            page = root / "dist/index.html"
+            page.write_bytes(b"owned-build")
+            manifest = {"schema_version": "peekly-build-manifest.v1", "source_commit": "abc",
+                "prd_sha256": "p", "dist_files": [{"path": "index.html", "bytes": 11,
+                    "sha256": hashlib.sha256(page.read_bytes()).hexdigest()}]}
+            path = root / ".ux-loop/manifest.json"
+            path.write_text(json.dumps(manifest))
+            descriptor = {"artifact_path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+            self.assertEqual(audit.verify_product_build(descriptor)["dist_files_rehashed"], 1)
+            page.write_bytes(b"different")
+            with self.assertRaisesRegex(ValueError, "digest_mismatch"):
+                audit.verify_product_build(descriptor)
 
 
 if __name__ == "__main__":
