@@ -107,8 +107,16 @@ class ModelRouter:
                 return None, receipt
             choices = data.get("choices")
             if not isinstance(choices, list) or not choices or len(choices) > 4: raise ValueError("choices_invalid")
-            content = (choices[0].get("message") or {}).get("content")
-            if not isinstance(content, str) or not content.strip(): raise ValueError("content_missing")
+            message = choices[0].get("message") or {}
+            content = message.get("content")
+            if not isinstance(content, str) or not content.strip():
+                # Some TOKENMAXX DeepSeek responses place the JSON decision in
+                # reasoning_content while leaving content empty. Accept only an
+                # actual non-empty string and still run the strict JSON schema.
+                content = message.get("reasoning_content")
+            if not isinstance(content, str) or not content.strip():
+                raise ValueError("content_missing:message_keys="+",".join(sorted(message.keys()))[:120]
+                    +":finish_reason="+str(choices[0].get("finish_reason"))[:40])
             elapsed = time.monotonic() - started
             stat = self.stats[route.model]
             with self.lock:

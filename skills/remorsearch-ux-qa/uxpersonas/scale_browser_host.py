@@ -123,9 +123,15 @@ class ScaleBrowserHost:
         # screenshots remain private, hash-bound evidence and are not uploaded.
         result = swarm.clean(result)
         for capture in result["captures"]:
+            if not isinstance(capture, dict) or set(capture) != {"path", "sha256"}:
+                raise RuntimeError("browser_capture_integrity:metadata")
             path = safe_path(evidence / capture["path"], evidence)
-            if not path.is_file() or path.stat().st_mode & 0o077 or byte_digest(path.read_bytes()) != capture["sha256"]:
-                raise RuntimeError("browser_capture_integrity")
+            if not path.is_file():
+                raise RuntimeError("browser_capture_integrity:missing")
+            if path.stat().st_mode & 0o077:
+                raise RuntimeError("browser_capture_integrity:permissions")
+            if byte_digest(path.read_bytes()) != capture["sha256"]:
+                raise RuntimeError("browser_capture_integrity:digest")
         return {"operation_id":request["operation_id"],"context_id":context,
             "request_sha256":request["request_sha256"],"trace_id":"browser-"+request["operation_id"][-16:],
             "result":result}
