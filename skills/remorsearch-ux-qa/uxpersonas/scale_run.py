@@ -26,7 +26,13 @@ def fail(code, reason):
 
 
 def _code(exc):
-    return exc.issue["code"] if isinstance(exc, EngineError) else "host_execution_failed"
+    if isinstance(exc, EngineError):
+        return exc.issue["code"]
+    if isinstance(exc, RuntimeError):
+        # Keep the bounded host reason in the durable uncertainty record so a
+        # browser/protocol fault can be diagnosed without replaying the action.
+        return ("host_execution_failed:" + str(exc).replace("\n", " "))[:160]
+    return "host_execution_failed:" + type(exc).__name__
 
 
 class _Stopped(Exception):
@@ -237,7 +243,12 @@ class ScaleExecution:
             self.validate(claim)
             if not isinstance(reply, dict) or "result" not in reply:
                 fail("host_protocol", "A correlated response envelope is required.")
-            result = _data(reply["result"], 262144, privacy=kind not in {"tool", "close"})
+            from . import swarm
+            if kind in {"model", "review"}:
+                model_result = swarm.clean(reply["result"])
+                result = _data(model_result, 262144, privacy=False)
+            else:
+                result = _data(reply["result"], 262144, privacy=kind not in {"tool", "close"})
             if kind == "tool":
                 if not isinstance(result, dict) or set(result) != {"text", "facts", "captures", "checks"}:
                     fail("observation_invalid", "Tool observations must use the evidence contract.")

@@ -172,9 +172,16 @@ def _request(request, spec):
 
 
 def _usage(usage, spec):
-    if (not isinstance(usage, dict) or set(usage) != {"input_tokens", "output_tokens"}
+    allowed = {"input_tokens", "output_tokens", "provider", "model", "provider_cost_microusd", "cost_basis"}
+    if (not isinstance(usage, dict) or set(usage) - allowed
+            or not {"input_tokens", "output_tokens"} <= set(usage)
             or not _integer(usage["input_tokens"], 0, spec.input_token_cap)
             or not _integer(usage["output_tokens"], 0, spec.output_token_cap)):
+        raise ProviderUncertain("provider_usage")
+    for field in ("provider", "model", "cost_basis"):
+        if field in usage and (not isinstance(usage[field], str) or not usage[field] or len(usage[field]) > 160):
+            raise ProviderUncertain("provider_usage")
+    if "provider_cost_microusd" in usage and usage["provider_cost_microusd"] is not None and not _integer(usage["provider_cost_microusd"], 0, 10**12):
         raise ProviderUncertain("provider_usage")
     return usage
 

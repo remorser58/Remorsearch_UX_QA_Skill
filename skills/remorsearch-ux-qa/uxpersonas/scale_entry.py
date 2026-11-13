@@ -37,7 +37,7 @@ class ScaleLimits:
 
 def engine_manifest():
     root = Path(__file__).resolve().parent
-    files = ("swarm_queue.py", "swarm_providers.py", "scale_run.py", "scale_entry.py", "scale_report.py",
+    files = ("swarm_queue.py", "swarm_providers.py", "model_router.py", "scale_run.py", "scale_entry.py", "scale_report.py",
              "agent_run.py", "swarm.py", "library.py")
     return {name: byte_digest(read_bytes(root / name)) for name in files}
 
@@ -91,6 +91,14 @@ def prepare_scale_goal(library, run_path, providers, tool_host, tools, *, produc
                     or not isinstance(review.get("source"), str) or not review["source"].strip()
                     or not isinstance(review.get("checked_at"), str) or not review["checked_at"].strip()):
                 fail("billing_review_required", "Resolve documented model context limits, current prices, unpriced features and provider destination before live preparation.")
+            if spec["input_price_per_million"] == 0 or spec["output_price_per_million"] == 0:
+                if not (key == "local-router" and spec["protocol"] == "callback"
+                        and spec["model"] == "tokenmaxx-deepseek-v4-1-flash-free"
+                        and spec["input_price_per_million"] == 0 and spec["output_price_per_million"] == 0
+                        and review.get("free_tier") is True
+                        and review.get("billing_source") == "free"
+                        and review.get("requested_model") == "TOKENMAXX/deepseek-v4.1-flash-free"):
+                    fail("billing_review_required", "Zero-priced live routes require the exact reviewed free TOKENMAXX model and billing source.")
         specs[key] = dict(spec=spec, mode=mode, adapter_sha256=provider.adapter_sha256, credential_scope=scope,
                          destination=destination, billing_review=review)
     tools = [tool.spec() for tool in tools]
@@ -126,7 +134,7 @@ def prepare_scale_goal(library, run_path, providers, tool_host, tools, *, produc
             data_namespace=jid, resource_id=jid,
             side_effects="owned_fixture_write" if any(t["effect"] == "owned_fixture_write" for t in tools) else "read_only",
             stop_conditions=["Stop at real accounts, payment, unapproved resources, uncertain effects or exhausted limits."],
-            requirement_coverage=[dict(requirement_id=r["id"], obligations=[dict(id="O-PRD", description=r["excerpt"],
+            requirement_coverage=[dict(requirement_id=r["id"], obligations=[dict(id=f"O-PRD-{i+1}", description=r["excerpt"],
                 criterion_refs=[dict(kind="success", index=i)], exclusion_reason=None)]) for i, r in enumerate(requirements)])
         # Reuse the existing plan/PRD/research gates in bounded single-task chunks;
         # the new queue, not a raised old eight-worker constant, schedules them.

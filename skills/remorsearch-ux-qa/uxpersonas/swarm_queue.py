@@ -177,7 +177,16 @@ class Queue:
                         or not isinstance(review.get("checked_at"), str) or not review["checked_at"].strip()
                         or not isinstance(provider.get("destination"), str) or not provider["destination"].strip()
                         or spec["protocol"] == "fixture"
-                        or spec["input_price_per_million"] <= 0 or spec["output_price_per_million"] <= 0):
+                        or ((spec["input_price_per_million"] <= 0 or spec["output_price_per_million"] <= 0)
+                            and not (
+                                spec["key"] == "local-router"
+                                and spec["protocol"] == "callback"
+                                and spec["model"] == "tokenmaxx-deepseek-v4-1-flash-free"
+                                and spec["input_price_per_million"] == 0
+                                and spec["output_price_per_million"] == 0
+                                and review.get("free_tier") is True
+                                and review.get("billing_source") == "free"
+                                and review.get("requested_model") == "TOKENMAXX/deepseek-v4.1-flash-free"))):
                     fail("billing_review_required", "Review the actual input context ceiling, output limit, prices and data destination before live approval.")
         if any(j["provider"] not in providers for j in jobs):
             fail("queue_input", "A session refers to an unreviewed provider.")
@@ -451,17 +460,41 @@ class Queue:
             if billed:
                 usage = reply["usage"]
                 spec = self.plan["providers"][job["provider"]]["spec"]
-                if not isinstance(usage, dict) or set(usage) != {"input_tokens", "output_tokens"}:
+                allowed_usage = {"input_tokens", "output_tokens", "provider", "model", "provider_cost_microusd",
+                    "provider_reported_costs", "billing_sources", "cost_basis"}
+                if not isinstance(usage, dict) or set(usage) - allowed_usage or not {"input_tokens", "output_tokens"} <= set(usage):
                     fail("usage_unknown", "Keep the reservation until provider usage is known.")
                 bounded(usage["input_tokens"], 0, spec["input_token_cap"], "input_tokens")
                 bounded(usage["output_tokens"], 0, spec["output_token_cap"], "output_tokens")
-                charge = quote(spec, usage["input_tokens"], usage["output_tokens"])
+                for field in ("provider", "model", "cost_basis"):
+                    if field in usage and (not isinstance(usage[field], str) or not usage[field] or len(usage[field]) > 160):
+                        fail("usage_unknown", "Actual provider, model and cost basis labels must be bounded strings.")
+                if "provider_cost_microusd" in usage and usage["provider_cost_microusd"] is not None:
+                    charge = bounded(usage["provider_cost_microusd"], 0, 10**12, "provider_cost_microusd")
+                else:
+                    charge = quote(spec, usage["input_tokens"], usage["output_tokens"])
+                if "provider_reported_costs" in usage and (
+                        not isinstance(usage["provider_reported_costs"], list)
+                        or len(usage["provider_reported_costs"]) > 32
+                        or any(value is not None and (not isinstance(value, (str, int, float)) or isinstance(value, bool))
+                               for value in usage["provider_reported_costs"])):
+                    fail("usage_unknown", "Raw provider-reported cost fields must be retained without coercion.")
+                if "billing_sources" in usage and (
+                        not isinstance(usage["billing_sources"], list)
+                        or len(usage["billing_sources"]) > 16
+                        or any(not isinstance(value, str) or not value or len(value) > 80
+                               for value in usage["billing_sources"])):
+                    fail("usage_unknown", "Provider billing-source labels must be retained as bounded strings.")
                 if charge > op["reserved"]:
                     fail("cost_bound", "Provider usage exceeded the reviewed reservation.")
             db.execute("UPDATE operations SET state='done',reply=?,reply_sha=?,charged=?,ended=? WHERE id=?",
                 (canonical(reply).decode(), digest(reply), charge, self.clock(), op["id"]))
             db.execute("UPDATE jobs SET elapsed=elapsed+? WHERE id=?", (max(0, self.clock()-op["started"]), job["id"]))
-            self._event(db, "response_committed", dict(operation_id=op["id"], reply_sha256=digest(reply), charged_microusd=charge))
+            usage = reply.get("usage", {})
+            self._event(db, "response_committed", dict(operation_id=op["id"], reply_sha256=digest(reply), charged_microusd=charge,
+                actual_provider=usage.get("provider"), actual_model=usage.get("model"),
+                input_tokens=usage.get("input_tokens"), output_tokens=usage.get("output_tokens"),
+                cost_basis=usage.get("cost_basis", "reviewed_price_quote")))
         return copy.deepcopy(reply)
 
     def uncertain(self, claim, operation_id, code, retry_after=0):
@@ -564,7 +597,15 @@ class Queue:
                     problem=row["problem"], result=result, result_sha256=row["result_sha"],
                     receipt_preview=checkpoint.get("receipt_preview") if result is None else None,
                     first_judgment_sha256=checkpoint.get("first_judgment_sha256")))
-            operations = [dict(r) for r in db.execute("SELECT id,job_id,provider,kind,state,request_sha,reply_sha,reserved,charged,started,ended,deadline,problem FROM operations ORDER BY started,id")]
+            operations = []
+            for record in db.execute("SELECT id,job_id,provider,kind,state,request_sha,reply_sha,reserved,charged,started,ended,deadline,problem,reply FROM operations ORDER BY started,id"):
+                item = {k: record[k] for k in record.keys() if k != "reply"}
+                if record["reply"]:
+                    usage = json.loads(record["reply"]).get("usage", {})
+                    item.update(actual_provider=usage.get("provider"), actual_model=usage.get("model"),
+                                input_tokens=usage.get("input_tokens"), output_tokens=usage.get("output_tokens"),
+                                cost_basis=usage.get("cost_basis", "reviewed_price_quote"))
+                operations.append(item)
             approved = self._approved(db)
             tail = db.execute("SELECT sha FROM events ORDER BY seq DESC LIMIT 1").fetchone()
             completed_models = sum(o["state"] == "done" and o["kind"] in {"model", "review"} for o in operations)
@@ -577,6 +618,21 @@ class Queue:
                 providers[key] = dict(model=info["spec"]["model"], concurrency=info["spec"]["concurrency"],
                     active_or_uncertain=len(active), cooldown_until=cool[0] if cool else None,
                     endpoint=info["spec"]["endpoint"], credential_scope=info["credential_scope"])
+        provider_usage = {}
+        for operation in operations:
+            if operation.get("state") != "done" or operation.get("kind") not in {"model", "review"}:
+                continue
+            provider_name = operation.get("actual_provider") or self.plan["providers"][operation["provider"]]["spec"]["key"]
+            model_name = operation.get("actual_model") or self.plan["providers"][operation["provider"]]["spec"]["model"]
+            key = provider_name + "/" + model_name
+            totals = provider_usage.setdefault(key, dict(provider=provider_name, model=model_name, calls=0,
+                input_tokens=0, output_tokens=0, charged_or_estimated_microusd=0, cost_bases={}))
+            totals["calls"] += 1
+            totals["input_tokens"] += operation.get("input_tokens") or 0
+            totals["output_tokens"] += operation.get("output_tokens") or 0
+            totals["charged_or_estimated_microusd"] += operation.get("charged") or 0
+            basis = operation.get("cost_basis") or "reviewed_price_quote"
+            totals["cost_bases"][basis] = totals["cost_bases"].get(basis, 0) + 1
         if control == "cancelled":
             next_action = "취소됐습니다. 이미 전송된 요청과 미확정 비용은 원래 실행 기록에서 확인하세요."
         elif not approved:
@@ -605,7 +661,8 @@ class Queue:
             actual_model_identity_basis="reviewed_host_transport_attestation",
             actual_model_execution=self.plan["mode"] == "live" and completed_models > 0,
             product_ready=False, real_user_evidence=False, os_or_network_sandbox=False,
-            tasks=tasks, operations=operations, event_chain_head=tail[0] if tail else None, next_action=next_action)
+            tasks=tasks, operations=operations, provider_usage=list(provider_usage.values()),
+            event_chain_head=tail[0] if tail else None, next_action=next_action)
 
     def audit_operations(self):
         count = 0
@@ -628,8 +685,11 @@ class Queue:
                         spec = self.plan["providers"][row["provider"]]["spec"]
                         bounded(usage.get("input_tokens"), 0, spec["input_token_cap"], "input_tokens")
                         bounded(usage.get("output_tokens"), 0, spec["output_token_cap"], "output_tokens")
-                        if quote(spec, usage["input_tokens"], usage["output_tokens"]) != row["charged"]:
-                            fail("cost_integrity", "Recorded cost differs from the admitted usage and reviewed rates.")
+                        recorded = usage.get("provider_cost_microusd")
+                        expected_charge = (recorded if type(recorded) is int else
+                            quote(spec, usage["input_tokens"], usage["output_tokens"]))
+                        if expected_charge != row["charged"]:
+                            fail("cost_integrity", "Recorded cost differs from provider usage or the reviewed fallback rate.")
                 count += 1
         return count
 

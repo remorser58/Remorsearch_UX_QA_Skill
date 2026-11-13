@@ -416,6 +416,37 @@ class QueueTests(unittest.TestCase):
                                  self.root, candidate, clock=self.clock)
                 self.assertFalse(self.root.exists())
 
+    def test_exact_free_tokenmaxx_route_allows_zero_cost_live_queue_only(self):
+        route = provider(key="local-router", mode="live", model="tokenmaxx-deepseek-v4-1-flash-free",
+                         input_price_per_million=0, output_price_per_million=0)
+        review = route["billing_review"]
+        review.update(free_tier=True, billing_source="free",
+                      requested_model="TOKENMAXX/deepseek-v4.1-flash-free",
+                      source="verified exact free route", checked_at="2026-11-13T15:30:00+09:00")
+        candidate = plan(mode="live", providers={"local-router":route},
+                         routes=["local-router"], budget_microusd=0)
+        queue = Queue.create(self.root, candidate, clock=self.clock)
+        self.assertEqual(queue.report()["budget"]["ceiling"], 0)
+        self.assertEqual(queue.report()["budget"]["reserved"], 0)
+
+    def test_zero_cost_live_route_rejects_any_other_provider_or_model(self):
+        route = provider(key="local-router", mode="live", model="tokenmaxx-deepseek-v4-1-flash-free",
+                         input_price_per_million=0, output_price_per_million=0)
+        route["billing_review"].update(free_tier=True, billing_source="free",
+            requested_model="TOKENMAXX/deepseek-v4.1-flash-free", source="verified", checked_at="2026-11-13")
+        for key, model, requested in (
+            ("other-router", "tokenmaxx-deepseek-v4-1-flash-free", "TOKENMAXX/deepseek-v4.1-flash-free"),
+            ("local-router", "some-other-free-model", "TOKENMAXX/deepseek-v4.1-flash-free"),
+            ("local-router", "tokenmaxx-deepseek-v4-1-flash-free", "inferhub/paid-model"),
+        ):
+            candidate_route = provider(key=key, mode="live", model=model,
+                input_price_per_million=0, output_price_per_million=0)
+            candidate_route["billing_review"].update(free_tier=True, billing_source="free",
+                requested_model=requested, source="verified", checked_at="2026-11-13")
+            candidate = plan(mode="live", providers={key:candidate_route}, routes=[key], budget_microusd=0)
+            self.assert_code("billing_review_required", Queue.create, self.root, candidate, clock=self.clock)
+            self.assertFalse(self.root.exists())
+
     def test_invalid_usage_and_response_correlation_cannot_release_reservation(self):
         queue = self.create(count=1)
         claim = queue.claim("worker")

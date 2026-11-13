@@ -36,7 +36,8 @@ class ScaleRunTests(unittest.IsolatedAsyncioTestCase):
             response = await self.host.respond(kind, request)
             if kind == "review":
                 response["result"] = dict(kind="final", judgment=response["result"])
-            response["usage"] = dict(input_tokens=10, output_tokens=10)
+            response["usage"] = dict(input_tokens=10, output_tokens=10, provider="fixture", model="authored-fixture",
+                                     provider_cost_microusd=0, cost_basis="fixture_no_charge")
             return response
 
         provider_spec = ProviderSpec(key="fixture", protocol="fixture", model="authored",
@@ -65,6 +66,11 @@ class ScaleRunTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(report["counts"]["complete"], 2, report)
         self.assertFalse(report["actual_model_execution"])
         self.assertGreater(report["authored_model_calls"], 0)
+        self.assertTrue(report["provider_usage"])
+        self.assertEqual(report["provider_usage"][0]["provider"], "fixture")
+        self.assertEqual(report["provider_usage"][0]["input_tokens"], report["authored_model_calls"] * 10)
+        self.assertEqual(report["provider_usage"][0]["output_tokens"], report["authored_model_calls"] * 10)
+        self.assertEqual(report["provider_usage"][0]["charged_or_estimated_microusd"], 0)
         results = [row["result"] for row in report["tasks"]]
         self.assertEqual(sorted(row["ux_outcome"] for row in results), ["failed", "passed"])
         self.assertTrue(all(row["operational_completed"] for row in results))
