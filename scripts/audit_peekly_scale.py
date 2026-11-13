@@ -177,7 +177,8 @@ def evidence_summary(root, task):
     observations.sort(key=lambda pair: int(pair[0]["id"].split("-")[-1]))
     milestone = {"sample_result_seen": [], "manual_import_entry_seen": [],
         "management_control_offscreen": [], "import_result_seen": [],
-        "post_import_connection_prompt": [], "single_snapshot_message_seen": []}
+        "post_import_connection_prompt": [], "single_snapshot_message_seen": [],
+        "rejected_action_observed": []}
     viewports = set()
     for observation, log in observations:
         facts = observation["facts"]
@@ -204,6 +205,9 @@ def evidence_summary(root, task):
             milestone["post_import_connection_prompt"].append(anchor)
         if has_relations and "다음에 확인할 때" in text:
             milestone["single_snapshot_message_seen"].append(anchor)
+        if facts.get("rejected_action"):
+            milestone["rejected_action_observed"].append({**anchor,
+                "rejection": facts["rejected_action"]})
     return {"png_files_verified": screenshots, "observation_logs_verified": len(observations),
         "viewports": [{"width": w, "height": h} for w, h in sorted(viewports)],
         "milestones": milestone, "artifacts": artifacts}
@@ -261,7 +265,8 @@ def audit_run(root):
         for key in ("png_files_verified", "observation_logs_verified")}
     output["milestone_session_counts"] = {key: sum(bool(row["evidence"]["milestones"][key]) for row in rows)
         for key in ("sample_result_seen", "manual_import_entry_seen", "management_control_offscreen",
-                    "import_result_seen", "post_import_connection_prompt", "single_snapshot_message_seen")}
+                    "import_result_seen", "post_import_connection_prompt", "single_snapshot_message_seen",
+                    "rejected_action_observed")}
     return output
 
 

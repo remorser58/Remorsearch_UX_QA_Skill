@@ -115,7 +115,19 @@ class ScaleBrowserHost:
         arguments = payload["arguments"]
         if name not in {"observe", "click", "type", "upload", "scroll", "wait"}:
             raise RuntimeError("tool_not_allowlisted")
-        result = await self._exchange(context, "act", {"name":name, "arguments":arguments})
+        try:
+            result = await self._exchange(context, "act", {"name":name, "arguments":arguments})
+        except RuntimeError as exc:
+            # These exact driver codes precede all Input events. A refused
+            # target is a known non-action, not permission to retry a click.
+            rejected = str(exc).removeprefix("browser_action_failed:")
+            if name != "click" or rejected not in {"click_target_not_allowed_or_visible", "cross_origin_link_blocked"}:
+                raise
+            result = await self._exchange(context, "act", {"name": "observe", "arguments": {}})
+            result["facts"]["rejected_action"] = {"tool": name, "arguments": arguments,
+                "reason": rejected, "action_executed": False}
+            result["text"] = ("Requested click was rejected before dispatch; no click executed. "
+                + rejected + ". Current page observation follows.\n" + result["text"])
         if set(result) != {"text","facts","captures","checks"}:
             raise RuntimeError("browser_observation_contract")
         # Product sample content may contain synthetic-looking account handles.

@@ -18,6 +18,32 @@ from uxpersonas.swarm_providers import ProviderSpec
 
 
 class CaptureRecoveryTests(unittest.IsolatedAsyncioTestCase):
+    async def test_known_rejected_click_is_observed_not_retried_or_marked_success(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            data = b"owned-rejection-capture"
+            picture = root / "browser-1.png"
+            picture.write_bytes(data)
+            picture.chmod(0o600)
+            observed = {"text": "Current page", "facts": {}, "checks": [],
+                "captures": [{"path": picture.name, "sha256": hashlib.sha256(data).hexdigest()}]}
+            host = object.__new__(ScaleBrowserHost)
+            host.processes = {"context": object()}
+            host._exchange = AsyncMock(side_effect=[
+                RuntimeError("browser_action_failed:click_target_not_allowed_or_visible"), observed])
+            request = {"operation_id": "op-rejection", "context_id": "context",
+                "request_sha256": "a" * 64, "payload": {"name": "click",
+                    "arguments": {"selector": "#missing", "label": "Missing"}, "evidence_path": str(root)}}
+            reply = await host.call("tool", request)
+            self.assertEqual([args.args[2]["name"] for args in host._exchange.await_args_list], ["click", "observe"])
+            self.assertIs(reply["result"]["facts"]["rejected_action"]["action_executed"], False)
+            self.assertIn("no click executed", reply["result"]["text"])
+            self.assertEqual(reply["result"]["captures"][0]["sha256"], hashlib.sha256(data).hexdigest())
+            host._exchange = AsyncMock(side_effect=RuntimeError("browser_action_failed:cdp_timeout:Input.dispatchMouseEvent"))
+            with self.assertRaisesRegex(RuntimeError, "cdp_timeout"):
+                await host.call("tool", request)
+            self.assertEqual(host._exchange.await_count, 1)
+
     async def test_scrub_text_without_corrupting_hash_and_still_reject_tampering(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()

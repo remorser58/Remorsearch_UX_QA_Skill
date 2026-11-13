@@ -296,6 +296,8 @@ class RoutedScaleProvider:
             "For an action use {\"kind\":\"tool\",\"tool\":\"observe\",\"arguments\":{},\"decision\":\"reason\"}. "
             "For completion use {\"kind\":\"final\",\"judgment\":{...}}. "
             "Use only your persona, current browser observations and approved tool allowlist. "
+            "An observation with rejected_action means the click DID NOT execute; never claim it succeeded. "
+            "Use the current observed page to recover or report the task blocked. "
             "Do not invent actions or observations. Never claim real-user evidence. Preserve failures. "
             "Keep decision, reason and each criterion observation concise (at most 200 characters each). "
             "In final judgments, not_run MUST have observation_ids: []; passed/failed MUST cite one or more "
