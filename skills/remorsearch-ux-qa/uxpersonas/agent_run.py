@@ -93,7 +93,18 @@ class Tool:
             value = arguments[key]
             if type(value) is not types[kind] or (kind == "string" and len(value) > 2000):
                 fail("tool_arguments", "Tool argument type or length is invalid.")
-        return _data(arguments, 16384)
+            if kind == "string" and key == "selector":
+                # CSS selectors are technical locators, not user-authored
+                # content. Permit only the driver's structural path grammar:
+                # no IDs, attributes, URLs, usernames or arbitrary text.
+                if not re.fullmatch(r"body(?:>[a-z][a-z0-9-]*:nth-of-type\([1-9][0-9]*\))+", value):
+                    fail("tool_selector", "Selectors must be observed structural DOM paths.")
+        if len(canonical(arguments)) > 16384:
+            fail("host_protocol", "Tool arguments exceed their bound.")
+        # The selector has already been restricted to a non-identifying DOM
+        # grammar; all other string values still pass the normal privacy scrub.
+        _data({key: value for key, value in arguments.items() if key != "selector"}, 16384)
+        return copy.deepcopy(arguments)
 
 
 @dataclass(frozen=True)
