@@ -43,7 +43,7 @@ class ModelRouter:
         self.conversations = {}
         self.next_allowed = {r.model: 0.0 for r in routes}
         self.cooldown_until = {r.model: 0.0 for r in routes}
-    def _throttle(self, route):
+    def _throttle(self, route, deadline=None):
         if not self.respect_rpm:
             return
         interval = 60.0 / max(1, min(600, int(route.requests_per_minute)))
@@ -53,9 +53,11 @@ class ModelRouter:
             wait = max(0.0, scheduled - now)
             self.next_allowed[route.model] = max(now, scheduled) + interval
         if wait:
+            if deadline is not None and wait >= deadline - time.time():
+                raise RuntimeError("provider_cooldown_exceeds_deadline")
             self.sleep(wait)
 
-    def _request(self, route, messages, max_tokens, temperature, call_id=None):
+    def _request(self, route, messages, max_tokens, temperature, call_id=None, request_timeout=None):
         body = json.dumps({"model": route.model, "messages": messages, "max_tokens": max_tokens,
             "temperature": temperature, "stream": False,
             "response_format": {"type": "json_object"},
@@ -74,7 +76,9 @@ class ModelRouter:
         prompt = completion = None
         data, usage, message = {}, {}, {}
         try:
-            with self.opener(req, timeout=self.timeout) as response:
+            with self.lock:
+                self.stats[route.model].attempts += 1
+            with self.opener(req, timeout=self.timeout if request_timeout is None else request_timeout) as response:
                 raw = response.read(2 * 1024 * 1024 + 1)
                 if len(raw) > 2 * 1024 * 1024: raise ValueError("response_too_large")
                 data = json.loads(raw)
@@ -168,6 +172,7 @@ class ModelRouter:
                 "input_tokens": prompt, "output_tokens": completion,
                 "provider_cost_microusd": cost_microusd, "provider_reported_cost": reported_cost,
                 "billing_source": billing_source, "cost_basis": cost_basis,
+                "finish_reason": choices[0].get("finish_reason"),
                 "elapsed_seconds": round(elapsed, 4), "status": "success"}
             with self.lock:
                 self.events.append(receipt)
@@ -215,13 +220,16 @@ class ModelRouter:
                 "elapsed_seconds": round(time.monotonic() - started, 4)}
             with self.lock: self.events.append(receipt); self._persist()
             return None, receipt
-    def complete(self, messages, *, max_tokens=512, temperature=0.1, quality_check=None, call_id=None):
+    def complete(self, messages, *, max_tokens=512, temperature=0.1, quality_check=None, call_id=None, deadline=None):
         errors = []
         for route in self.routes:
             for attempt in range(self.max_retries + 1):
-                with self.lock: self.stats[route.model].attempts += 1
-                self._throttle(route)
-                content, receipt = self._request(route, messages, max_tokens, temperature, call_id)
+                self._throttle(route, deadline)
+                remaining = self.timeout if deadline is None else deadline - time.time()
+                if remaining <= 0:
+                    raise RuntimeError("provider_deadline_before_dispatch")
+                content, receipt = self._request(route, messages, max_tokens, temperature, call_id,
+                    request_timeout=min(self.timeout, remaining))
                 if content is not None:
                     try: accepted = True if quality_check is None else quality_check(content)
                     except Exception as exc: accepted = "quality_check_error:" + type(exc).__name__
@@ -288,7 +296,11 @@ class RoutedScaleProvider:
             "For an action use {\"kind\":\"tool\",\"tool\":\"observe\",\"arguments\":{},\"decision\":\"reason\"}. "
             "For completion use {\"kind\":\"final\",\"judgment\":{...}}. "
             "Use only your persona, current browser observations and approved tool allowlist. "
-            "Do not invent actions or observations. Never claim real-user evidence. Preserve failures.")
+            "Do not invent actions or observations. Never claim real-user evidence. Preserve failures. "
+            "Keep decision, reason and each criterion observation concise (at most 200 characters each). "
+            "In final judgments, not_run MUST have observation_ids: []; passed/failed MUST cite one or more "
+            "actual observation IDs (obs-N), never PNG/log IDs. Include every criterion exactly once. "
+            "During review return the original first_judgment unchanged when already evidence-consistent.")
         context_id = request["context_id"]
         # Queue checkpoints already contain this persona's complete observations.
         # Re-appending every prior checkpoint caused quadratic context growth and
@@ -329,6 +341,16 @@ class RoutedScaleProvider:
                 if set(value)!={"kind","judgment"} or not isinstance(value["judgment"],dict):
                     raise ValueError("final_decision_schema")
                 if "task" in payload and "observations" in payload:
+                    available_ids = {o["id"] for o in payload["observations"]}
+                    for criterion in value["judgment"].get("criteria", []):
+                        if not isinstance(criterion, dict):
+                            raise ValueError("criterion_must_be_object")
+                        refs = criterion.get("observation_ids")
+                        label = str(criterion.get("kind")) + "[" + str(criterion.get("index")) + "]"
+                        if criterion.get("status") == "not_run" and refs != []:
+                            raise ValueError(label + " not_run requires observation_ids=[]")
+                        if not isinstance(refs, list) or any(ref not in available_ids for ref in refs):
+                            raise ValueError(label + " must cite only current obs-N identifiers")
                     from .agent_run import Execution
                     Execution.criteria(None, {"claim": {"task": payload["task"]}},
                         value["judgment"], payload["observations"])
@@ -343,7 +365,8 @@ class RoutedScaleProvider:
                 return "decision_parse:" + type(exc).__name__ + ":" + str(exc)[:100]
             except Exception as exc:
                 return "decision_contract:" + getattr(exc, "issue", {}).get("code", type(exc).__name__)
-        content, receipt = await asyncio.to_thread(self.router.complete, messages, max_tokens=1536, temperature=0.0, quality_check=valid, call_id=request["operation_id"])
+        content, receipt = await asyncio.to_thread(self.router.complete, messages, max_tokens=4096, temperature=0.0,
+            quality_check=valid, call_id=request["operation_id"], deadline=request.get("deadline"))
         result=parse_decision(content)
         from . import swarm
         result=swarm.clean(result)

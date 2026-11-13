@@ -17,11 +17,18 @@ class Response:
     def read(self, size): return self.value
 
 class RouterTests(unittest.TestCase):
+    def setUp(self):
+        # Every test uses a mocked HTTP opener; never depend on a developer key.
+        auth = patch.dict(os.environ, {"PROXY_API_KEY": "offline-router-test-key"})
+        auth.start()
+        self.addCleanup(auth.stop)
+
     def test_usage_and_model_route_recorded(self):
         def opener(req, timeout):
             body=json.loads(req.data)
             self.assertEqual(body["model"],"TOKENMAXX/deepseek-v4.1-flash-free")
             self.assertEqual(body["response_format"],{"type":"json_object"})
+            self.assertEqual(body["tool_choice"], "none")
             return Response({"id":"r1","model":"deepseek-v4.1-flash-free","choices":[{"message":{"content":"ok"}}],"usage":{"prompt_tokens":11,"completion_tokens":7}})
         router=ModelRouter("http://127.0.0.1:10100/v1",[ModelRoute("TOKENMAXX","TOKENMAXX/deepseek-v4.1-flash-free")],opener=opener)
         content, receipt=router.complete([{"role":"user","content":"test"}])
