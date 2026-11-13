@@ -176,7 +176,7 @@ async def main(args):
     args.run_root.mkdir(parents=True,mode=0o700)
     if args.start_index < 0 or args.start_index >= 32:
         raise RuntimeError("persona_start_index_out_of_range")
-    all_ids = _load_personas(args.library,args.product_id,args.start_index+max(args.stages))
+    all_ids = _load_personas(args.library,args.product_id,max(args.stages))
     cursor=args.start_index; stages=[]
     for count in args.stages:
         ids=all_ids[cursor:count]; cursor=count
