@@ -115,7 +115,20 @@ class ScaleBrowserHost:
         arguments = payload["arguments"]
         if name not in {"observe", "click", "type", "upload", "scroll", "wait"}:
             raise RuntimeError("tool_not_allowlisted")
-        result = await self._exchange(context, "act", {"name":name, "arguments":arguments})
+        try:
+            result = await self._exchange(context, "act", {"name":name, "arguments":arguments})
+        except RuntimeError as exc:
+            # This exact driver rejection happens before mouse/key dispatch.
+            # Preserve the failure as an observed state; do not replay the click
+            # or relax the target guard. Transport/unknown side effects still stop.
+            if name != "click" or str(exc) != "browser_action_failed:click_target_not_allowed_or_visible":
+                raise
+            result = await self._exchange(context, "act", {"name":"observe", "arguments":{}})
+            result["facts"]["rejected_action"] = {"name": name, "reason": "target_not_allowed_or_visible",
+                "click_dispatched": False, "automatic_click_retry": False}
+            result["text"] = ("Click NOT dispatched: target was not allowed or visible. "
+                "This is a failed action, not a successful navigation. Re-observe the current "
+                "controls and choose a safe recovery; no click was retried.\n" + result["text"])
         if set(result) != {"text","facts","captures","checks"}:
             raise RuntimeError("browser_observation_contract")
         # Product sample content may contain synthetic-looking account handles.

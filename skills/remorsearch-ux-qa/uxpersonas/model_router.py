@@ -306,6 +306,21 @@ class RoutedScaleProvider:
         # Re-appending every prior checkpoint caused quadratic context growth and
         # stale control choices. Send one projection, never another persona's data.
         projected = copy.deepcopy(payload)
+        task = payload.get("task")
+        expected_bindings = []
+        if isinstance(task, dict):
+            expected_bindings = [(kind, index) for kind in ("success", "recovery")
+                for index in range(len(task.get(kind + "_criteria", [])))]
+            projected["final_criterion_bindings"] = [
+                {"kind": kind, "index": index,
+                 "requirement": task[kind + "_criteria"][index]}
+                for kind, index in expected_bindings]
+            projected["final_criterion_contract"] = (
+                "Return exactly the listed (kind,index) pairs, each once. Index is an integer, "
+                "zero-based separately for success and recovery; recovery starts at 0 again. "
+                "Do not split, add, merge or renumber criteria. Allowed status values are "
+                "passed, failed, not_run. A criterion requires kind,index,status,observation,observation_ids. "
+                "not_run has no observation_ids. Never invent missing evidence.")
         observations = projected.get("observations", [])
         for observation in observations[:-1]:
             facts = observation.get("facts", {})
@@ -342,15 +357,26 @@ class RoutedScaleProvider:
                     raise ValueError("final_decision_schema")
                 if "task" in payload and "observations" in payload:
                     available_ids = {o["id"] for o in payload["observations"]}
+                    seen_bindings = set()
                     for criterion in value["judgment"].get("criteria", []):
                         if not isinstance(criterion, dict):
                             raise ValueError("criterion_must_be_object")
+                        kind, index = criterion.get("kind"), criterion.get("index")
+                        if type(index) is not int or not isinstance(kind, str) or (kind, index) not in expected_bindings:
+                            raise ValueError("criterion_binding_expected:" + repr(expected_bindings))
+                        if (kind, index) in seen_bindings:
+                            raise ValueError("criterion_binding_duplicate:" + repr((kind, index)))
+                        seen_bindings.add((kind, index))
+                        if criterion.get("status") not in {"passed", "failed", "not_run"}:
+                            raise ValueError("criterion_status_requires_passed_failed_or_not_run")
                         refs = criterion.get("observation_ids")
                         label = str(criterion.get("kind")) + "[" + str(criterion.get("index")) + "]"
                         if criterion.get("status") == "not_run" and refs != []:
                             raise ValueError(label + " not_run requires observation_ids=[]")
                         if not isinstance(refs, list) or any(ref not in available_ids for ref in refs):
                             raise ValueError(label + " must cite only current obs-N identifiers")
+                    if seen_bindings != set(expected_bindings):
+                        raise ValueError("criterion_bindings_missing:" + repr(sorted(set(expected_bindings) - seen_bindings)))
                     from .agent_run import Execution
                     Execution.criteria(None, {"claim": {"task": payload["task"]}},
                         value["judgment"], payload["observations"])

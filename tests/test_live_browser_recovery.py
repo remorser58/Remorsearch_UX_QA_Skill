@@ -18,6 +18,32 @@ from uxpersonas.swarm_providers import ProviderSpec
 
 
 class CaptureRecoveryTests(unittest.IsolatedAsyncioTestCase):
+    async def test_predispatch_click_rejection_is_observed_not_replayed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            data = b"observed-rejection-capture"
+            path = root / "browser-00002.png"
+            path.write_bytes(data); path.chmod(0o600)
+            observed = {"text": "Current page", "facts": {"last_action": "observe"},
+                "captures": [{"path": path.name, "sha256": hashlib.sha256(data).hexdigest()}],
+                "checks": []}
+            host = object.__new__(ScaleBrowserHost)
+            host.processes = {"context": object()}
+            host._exchange = AsyncMock(side_effect=[
+                RuntimeError("browser_action_failed:click_target_not_allowed_or_visible"), observed])
+            request = {"operation_id": "rejected-click", "context_id": "context",
+                "request_sha256": "b" * 64, "payload": {"name": "click",
+                    "arguments": {"selector": "#hidden", "label": "Hidden"}, "evidence_path": str(root)}}
+            reply = await host.call("tool", request)
+            self.assertFalse(reply["result"]["facts"]["rejected_action"]["click_dispatched"])
+            self.assertIn("Click NOT dispatched", reply["result"]["text"])
+            self.assertEqual(host._exchange.await_args_list[1].args[2], {"name": "observe", "arguments": {}})
+            self.assertEqual(host._exchange.await_count, 2)
+            host._exchange = AsyncMock(side_effect=RuntimeError("browser_action_failed:cdp_timeout"))
+            with self.assertRaisesRegex(RuntimeError, "cdp_timeout"):
+                await host.call("tool", request)
+            self.assertEqual(host._exchange.await_count, 1)
+
     async def test_scrub_text_without_corrupting_hash_and_still_reject_tampering(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
