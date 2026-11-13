@@ -44,6 +44,34 @@ class CaptureRecoveryTests(unittest.IsolatedAsyncioTestCase):
 
 
 class ProjectionRecoveryTests(unittest.IsolatedAsyncioTestCase):
+    async def test_final_contract_lists_exact_indices_and_explains_binding_errors(self):
+        test = self
+        class Router:
+            routes = [ModelRoute("TOKENMAXX", "TOKENMAXX/deepseek-v4.1-flash-free")]
+            def complete(self, messages, **kwargs):
+                projected = json.loads(messages[1]["content"])
+                test.assertEqual(projected["final_judgment_contract"]["required_slots"],
+                    [{"kind": "success", "index": 0}, {"kind": "recovery", "index": 0}])
+                good = {"kind": "final", "judgment": {"reason": "Unobserved conditions remain unknown",
+                    "criteria": [{"kind": kind, "index": 0, "status": "not_run",
+                        "observation": "Not observed", "observation_ids": []}
+                        for kind in ("success", "recovery")]}}
+                bad = copy.deepcopy(good)
+                bad["judgment"]["criteria"][0]["index"] = 1
+                reason = kwargs["quality_check"](json.dumps(bad))
+                test.assertIsInstance(reason, str)
+                test.assertIn("zero-based", reason)
+                test.assertIs(kwargs["quality_check"](json.dumps(good)), True)
+                self.event = {"call_id": kwargs["call_id"], "response_id": "schema-test",
+                    "provider": "TOKENMAXX", "requested_model": self.routes[0].model,
+                    "served_model": "deepseek-v4.1-flash", "input_tokens": 3, "output_tokens": 4}
+                return json.dumps(good), self.event
+            def report(self): return {"events": [self.event]}
+        provider = RoutedScaleProvider(ProviderSpec(key="route", protocol="callback", model="free"), Router())
+        await provider.call({"operation_id": "op-schema", "context_id": "ctx-schema",
+            "request_sha256": "a" * 64, "payload": {"phase": "review", "observations": [],
+                "task": {"success_criteria": ["Check condition"], "recovery_criteria": ["Check recovery"]}}})
+
     async def test_each_request_contains_one_checkpoint_without_duplicate_history(self):
         class Router:
             routes = [ModelRoute("TOKENMAXX", "TOKENMAXX/deepseek-v4.1-flash-free")]

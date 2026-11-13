@@ -313,6 +313,17 @@ class RoutedScaleProvider:
                 facts.pop(key, None)
         if observations:
             observations[-1].get("facts", {}).pop("text", None)
+        task = payload.get("task", {})
+        slots = [(kind, index) for kind in ("success", "recovery")
+                 for index in range(len(task.get(kind + "_criteria", [])))]
+        projected["final_judgment_contract"] = {
+            "required_slots": [{"kind": kind, "index": index} for kind, index in slots],
+            "criterion_fields": ["kind", "index", "status", "observation", "observation_ids"],
+            "allowed_statuses": ["passed", "failed", "not_run"],
+            "allowed_observation_ids": [row["id"] for row in observations],
+            "rule": "Use every slot exactly once, with its zero-based integer index. Do not add requirement_id. "
+                    "Never mark a condition passed merely because related UI text was observed. "
+                    "not_run must use observation_ids=[]; passed/failed require actual own observation IDs."}
         messages = [{"role": "system", "content": system},
                     {"role": "user", "content": json.dumps(projected, ensure_ascii=False, separators=(",", ":"))}]
         def parse_decision(content):
@@ -342,15 +353,26 @@ class RoutedScaleProvider:
                     raise ValueError("final_decision_schema")
                 if "task" in payload and "observations" in payload:
                     available_ids = {o["id"] for o in payload["observations"]}
+                    supplied_slots = set()
                     for criterion in value["judgment"].get("criteria", []):
                         if not isinstance(criterion, dict):
                             raise ValueError("criterion_must_be_object")
+                        if set(criterion) != {"kind", "index", "status", "observation", "observation_ids"}:
+                            raise ValueError("criterion_fields must be kind,index,status,observation,observation_ids only")
+                        key = (criterion.get("kind"), criterion.get("index"))
+                        if (type(criterion.get("index")) is not int or key not in slots
+                                or key in supplied_slots):
+                            raise ValueError("use required_slots exactly once with zero-based integer indices: "
+                                + str(slots))
+                        supplied_slots.add(key)
                         refs = criterion.get("observation_ids")
                         label = str(criterion.get("kind")) + "[" + str(criterion.get("index")) + "]"
                         if criterion.get("status") == "not_run" and refs != []:
                             raise ValueError(label + " not_run requires observation_ids=[]")
                         if not isinstance(refs, list) or any(ref not in available_ids for ref in refs):
                             raise ValueError(label + " must cite only current obs-N identifiers")
+                    if supplied_slots != set(slots):
+                        raise ValueError("include every required success/recovery slot exactly once")
                     from .agent_run import Execution
                     Execution.criteria(None, {"claim": {"task": payload["task"]}},
                         value["judgment"], payload["observations"])
