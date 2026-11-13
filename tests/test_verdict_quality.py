@@ -10,11 +10,49 @@ import _paths
 from uxpersonas.agent_run import Execution, Tool
 from uxpersonas.scale_entry import _persona_journey_goal
 from uxpersonas.peekly_criteria import CRITERIA, evaluate
-from uxpersonas.scale_run import Evidence
+from uxpersonas.scale_run import Evidence, ScaleExecution, _project_model_observations
 from uxpersonas.scale_browser_host import ScaleBrowserHost
 
 
 class VerdictQualityTests(unittest.TestCase):
+    def test_model_observation_projection_deduplicates_fixture_catalog_and_cumulative_uploads(self):
+        catalog = [f"boundary-extra-{i:03d}.json" for i in range(531)]
+        observations = []
+        for i in range(16):
+            observations.append({
+                "id": f"obs-{i + 1}", "action": "observe", "text": "A bounded synthetic observation.",
+                "facts": {
+                    "available_fixtures": catalog,
+                    "fixture_uploads": [f"fixture-{j}.zip" for j in range(i + 1)],
+                    "fixture_validation": [{"fixture": f"fixture-{j}.zip", "archive_valid": True}
+                                           for j in range(i + 1)],
+                    "viewport": {"width": 756, "height": 413},
+                },
+                "checks": [], "captures": [{"id": f"png-{i}", "kind": "screenshot", "sha256": "a" * 64,
+                                               "path": f"private-{i}.png"}],
+                "artifacts": [{"id": f"png-{i}", "kind": "screenshot", "sha256": "a" * 64,
+                               "path": f"private-{i}.png"}],
+            })
+        execution = ScaleExecution.__new__(ScaleExecution)
+        execution.plan = {"tools": [], "limits": {"turns": 24}}
+        task = {"id": "S-test", "goal": "test bounded request", "requirement_ids": []}
+        state = {"observations": observations, "turn": 10}
+        record = {"profile": {}, "provenance": {"mode": "synthetic", "research": {"claims": []}},
+                  "context": {"requirements": []}}
+        payload = execution.payload({"job": {"task": task}}, state, record, "model")
+        encoded = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode()
+        projected = payload["observations"]
+        projected_catalog = payload["fixture_catalog"]
+        self.assertLess(len(encoded), 262144)
+        self.assertEqual(projected_catalog, catalog)
+        self.assertEqual(sum(len(row["facts"]["fixture_uploads_delta"]) for row in projected), 16)
+        self.assertEqual([row["facts"]["fixture_uploads_delta"] for row in projected[:3]],
+                         [["fixture-0.zip"], ["fixture-1.zip"], ["fixture-2.zip"]])
+        self.assertEqual(sum(len(row["facts"]["fixture_validation_delta"]) for row in projected), 16)
+        self.assertNotIn("available_fixtures", projected[-1]["facts"])
+        self.assertNotIn("fixture_uploads", projected[-1]["facts"])
+        self.assertNotIn("path", projected[-1]["captures"][0])
+
     def test_structural_dom_selectors_are_typed_metadata_not_free_user_text(self):
         tool = Tool("upload", "Select an owned fixture.", {
             "selector": "string", "file": "string"}, "owned_fixture_write")
