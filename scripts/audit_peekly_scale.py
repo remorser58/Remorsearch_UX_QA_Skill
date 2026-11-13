@@ -204,6 +204,7 @@ def audit_run(root):
     for task in report["tasks"]:
         result = task.get("result") or {}
         receipt = result.get("receipt") or task.get("receipt_preview") or {}
+        planned = queue.jobs[task["job_id"]]["task"]
         rows.append({"persona_id": task["persona_id"], "job_id": task["job_id"],
             "context_id": task["context_id"], "queue_status": task["status"],
             "operational_completed": result.get("operational_completed") is True,
@@ -213,6 +214,9 @@ def audit_run(root):
             "ux_outcome": task.get("current_ux_outcome") or "unassessed",
             "criterion_counts": dict(Counter(c["status"] for c in receipt.get("criteria", []))),
             "criteria": receipt.get("criteria", []),
+            "success_criteria": planned["success_criteria"],
+            "recovery_criteria": planned["recovery_criteria"],
+            "requirement_coverage": planned["requirement_coverage"],
             "first_judgment_sha256": result.get("first_judgment_sha256"),
             "same_persona_review": result.get("review"),
             "evidence": evidence_summary(root, task)})
@@ -238,6 +242,49 @@ def audit_run(root):
     return output
 
 
+def cohort_summary(runs):
+    """Aggregate disjoint final batches; never replace earlier failures silently."""
+    identities = [row["persona_id"] for run in runs for row in run["sessions"]]
+    if len(identities) != len(set(identities)):
+        raise ValueError("cohort_contains_repeated_persona_attempts")
+    if len({run["build"]["sha256"] for run in runs}) != 1:
+        raise ValueError("cohort_mixes_product_builds")
+    stages, cumulative = [], Counter()
+    for run in runs:
+        count, usage = run["counts"], run["usage"]
+        cumulative.update({"sessions": len(run["sessions"]),
+            "operational_completed": count["operational_completed"],
+            "not_operationally_completed": count["not_operationally_completed"],
+            "input_tokens": usage["known_input_tokens"],
+            "output_tokens": usage["known_output_tokens"],
+            "attempts": usage["recorded_dispatch_attempts"],
+            "failed_attempts": usage["failed_attempts_including_quality"],
+            "http_429": usage["http_429"],
+            "verified_pngs": run["evidence_totals"]["png_files_verified"],
+            "verified_logs": run["evidence_totals"]["observation_logs_verified"]})
+        stages.append({"stage": run["stage_name"], "new_sessions": len(run["sessions"]),
+            "queue_closed_complete": count["queue_closed_complete"],
+            "operational_completed": count["operational_completed"],
+            "not_operationally_completed": count["not_operationally_completed"],
+            "ux_outcomes": count["ux_outcomes"],
+            "attempts": usage["recorded_dispatch_attempts"],
+            "failed_attempts": usage["failed_attempts_including_quality"],
+            "attempt_failure_rate": usage["failure_rate"],
+            "input_tokens": usage["known_input_tokens"],
+            "output_tokens": usage["known_output_tokens"],
+            "elapsed_seconds": run["elapsed_seconds"],
+            "cumulative": dict(cumulative)})
+    return {"distinct_personas": len(identities), "stages": stages,
+        "totals": dict(cumulative),
+        "all_operationally_completed": cumulative["sessions"] == cumulative["operational_completed"],
+        "all_usage_known": all(run["usage"]["usage_complete"] for run in runs),
+        "all_evidence_current_valid": all(row["current_valid"] is True for run in runs for row in run["sessions"]),
+        "all_owned_browsers_stopped": all(run["browser_shutdown_confirmed"] is True for run in runs),
+        "free_route_only": all(run["usage"]["approved_route_only"] for run in runs),
+        "policy_cost_usd": 0 if all(run["usage"]["approved_route_only"] for run in runs) else None,
+        "product_ready": False, "real_user_evidence": False}
+
+
 def audit_many(roots):
     return {"schema_version": "peekly-live-scale-audit.v1",
         "audited_at": datetime.now(timezone.utc).isoformat(),
@@ -257,10 +304,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run", action="append", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--cohort", action="store_true",
+        help="Also aggregate the specified disjoint final batches (reject duplicate personas).")
     args = parser.parse_args()
     if args.output.exists():
         raise ValueError("output_exists_preserved")
     result = audit_many(args.run)
+    if args.cohort:
+        result["cohort"] = cohort_summary(result["runs"])
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("x", encoding="utf-8") as stream:
         json.dump(result, stream, ensure_ascii=False, indent=2, allow_nan=False)

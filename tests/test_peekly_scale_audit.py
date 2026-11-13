@@ -59,6 +59,17 @@ class ScaleAuditTests(unittest.TestCase):
         self.assertEqual(audit.normalized("이미\xa0받은\n자료"), "이미 받은 자료")
         self.assertEqual(audit.normalized(r"이미\xa0받은\n자료"), "이미 받은 자료")
 
+    def test_cohort_rejects_repeated_persona_attempts(self):
+        run = {"sessions": [{"persona_id": "PER-A"}], "build": {"sha256": "a" * 64}}
+        with self.assertRaisesRegex(ValueError, "repeated_persona"):
+            audit.cohort_summary([run, run])
+
+    def test_cohort_rejects_mixed_product_builds(self):
+        runs = [{"sessions": [{"persona_id": "PER-A"}], "build": {"sha256": "a" * 64}},
+                {"sessions": [{"persona_id": "PER-B"}], "build": {"sha256": "b" * 64}}]
+        with self.assertRaisesRegex(ValueError, "mixes_product_builds"):
+            audit.cohort_summary(runs)
+
 
 if __name__ == "__main__":
     unittest.main()
