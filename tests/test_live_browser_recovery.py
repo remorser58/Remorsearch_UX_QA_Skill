@@ -78,6 +78,17 @@ class ProjectionRecoveryTests(unittest.IsolatedAsyncioTestCase):
 
 
 class ProtocolRecoveryTests(unittest.TestCase):
+    def test_expired_deadline_does_not_dispatch_or_count_an_attempt(self):
+        calls = []
+        router = ModelRouter("http://127.0.0.1:10100/v1",
+            [ModelRoute("TOKENMAXX", "TOKENMAXX/deepseek-v4.1-flash-free")],
+            opener=lambda *args, **kwargs: calls.append(True), respect_rpm=False)
+        with patch("uxpersonas.model_router.time.time", return_value=100):
+            with self.assertRaisesRegex(RuntimeError, "deadline_before_dispatch"):
+                router.complete([{"role": "user", "content": "test"}], deadline=99)
+        self.assertEqual(calls, [])
+        self.assertEqual(router.report()["routes"][router.routes[0].model]["attempts"], 0)
+
     def test_error_receipt_keeps_usage_served_name_and_native_tool_diagnostic(self):
         class Response:
             status = 200

@@ -68,14 +68,14 @@ def _route(ledger_path=None):
             raise RuntimeError("tokenmaxx_deepseek_v4_1_flash_free_not_in_local_catalog_or_provider_config")
     routes = [ModelRoute("TOKENMAXX", primary, "0", "0", 30,
         ("TOKENMAXX/deepseek-v4.1-flash-free", "deepseek-v4.1-flash-free", "deepseek-v4.1-flash"))]
-    router = ModelRouter(BASE_URL, routes, timeout=120, max_retries=2,
+    router = ModelRouter(BASE_URL, routes, timeout=60, max_retries=2,
         backoff_initial=2, backoff_max=30, ledger_path=ledger_path)
     # ProviderSpec's internal identifier intentionally excludes '/' while the
     # router retains and sends the exact catalog model ID above.
     spec = ProviderSpec(key="local-router", protocol="callback", model="tokenmaxx-deepseek-v4-1-flash-free",
         concurrency=2, requests_per_minute=30,
         input_price_per_million=0, output_price_per_million=0,
-        input_token_cap=262144, output_token_cap=8192, timeout_seconds=120)
+        input_token_cap=262144, output_token_cap=16384, timeout_seconds=240)
     provider = RoutedScaleProvider(spec, router)
     return router, {"local-router":provider}, spec, [route.model for route in routes]
 
@@ -102,8 +102,8 @@ async def run_stage(args, persona_ids, index):
         fixtures_path=args.fixtures, parallel_safe=True)
     build = dict(id=args.build_id, artifact_path=str(args.build_artifact),
         sha256=byte_digest(read_bytes(args.build_artifact)))
-    limits = ScaleLimits(parallel=2, turns=args.turns, call_seconds=120, task_seconds=1800,
-        lease_seconds=180, budget_microusd=0, max_model_calls=len(persona_ids)*(args.turns+1))
+    limits = ScaleLimits(parallel=2, turns=args.turns, call_seconds=240, task_seconds=1800,
+        lease_seconds=300, budget_microusd=0, max_model_calls=len(persona_ids)*(args.turns+1))
     billing_review = {"input_token_cap":spec.input_token_cap,"output_token_cap":spec.output_token_cap,
         "input_price_per_million":spec.input_price_per_million,
         "output_price_per_million":spec.output_price_per_million,
