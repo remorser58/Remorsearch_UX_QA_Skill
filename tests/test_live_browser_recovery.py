@@ -2,6 +2,7 @@
 import asyncio
 import copy
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -78,6 +79,18 @@ class ProjectionRecoveryTests(unittest.IsolatedAsyncioTestCase):
 
 
 class ProtocolRecoveryTests(unittest.TestCase):
+    def test_live_limits_fit_the_existing_queue_ceiling(self):
+        path = Path(__file__).resolve().parents[1] / "skills/remorsearch-ux-qa/scripts/live_scale_browser.py"
+        spec = importlib.util.spec_from_file_location("live_scale_recovery_test", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        for count in (4, 12, 16):
+            limits = module.live_limits(count)
+            self.assertEqual(limits.validate()["call_seconds"], 180)
+            self.assertEqual(limits.max_model_calls, count * 17)
+            self.assertEqual(limits.budget_microusd, 0)
+            self.assertLess(3 * 50 + 2 + 4 + 6, limits.call_seconds)
+
     def test_expired_deadline_does_not_dispatch_or_count_an_attempt(self):
         calls = []
         router = ModelRouter("http://127.0.0.1:10100/v1",
