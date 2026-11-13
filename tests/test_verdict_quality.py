@@ -12,6 +12,7 @@ from uxpersonas.scale_entry import _persona_journey_goal
 from uxpersonas.peekly_criteria import CRITERIA, evaluate
 from uxpersonas.scale_run import Evidence, ScaleExecution, _project_model_observations
 from uxpersonas.scale_browser_host import ScaleBrowserHost
+from uxpersonas.model_router import _clean_decision
 
 
 class VerdictQualityTests(unittest.TestCase):
@@ -63,6 +64,18 @@ class VerdictQualityTests(unittest.TestCase):
             tool.validate({"selector": "#account-123456", "file": "peekly-sample-current.zip"})
         with self.assertRaises(Exception):
             tool.validate({"selector": "body>input:nth-of-type(1)", "file": "../outside.zip"})
+
+    def test_privacy_scrubber_preserves_typed_fixture_group_keys(self):
+        selector = "body>div:nth-of-type(1)>input:nth-of-type(1)"
+        group = "@group:peekly-loose-total-over"
+        raw = {"kind": "tool", "tool": "upload", "decision": "Upload the approved group.",
+               "arguments": {"selector": selector, "file": group}}
+        cleaned = _clean_decision(raw)
+        self.assertEqual(cleaned["arguments"]["file"], group)
+        self.assertEqual(cleaned["arguments"]["selector"], selector)
+        tool = Tool("upload", "Select an owned fixture.",
+                    {"selector": "string", "file": "string"}, "owned_fixture_write")
+        self.assertEqual(tool.validate(cleaned["arguments"]), cleaned["arguments"])
 
     def test_only_conditional_recovery_can_be_not_applicable(self):
         task = {"success_criteria": ["Show imported result"],

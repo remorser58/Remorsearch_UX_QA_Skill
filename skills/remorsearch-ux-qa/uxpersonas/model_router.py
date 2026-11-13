@@ -6,6 +6,27 @@ from decimal import Decimal, InvalidOperation, ROUND_CEILING
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from hashlib import sha256
+from . import swarm
+
+
+def _clean_decision(result):
+    """Scrub model-authored prose without rewriting typed tool locators.
+
+    Fixture group IDs use the reserved ``@group:`` prefix. Treating that field
+    as free prose makes the privacy scrubber rewrite it as a social handle. The
+    selector and fixture key are typed metadata: independent Tool/host validators
+    are stricter than text scrubbing and must see the exact model-chosen value.
+    """
+    if not isinstance(result, dict) or result.get("kind") != "tool" or not isinstance(result.get("arguments"), dict):
+        return swarm.clean(result)
+    arguments = result["arguments"]
+    typed = {key: arguments[key] for key in ("selector", "file") if key in arguments}
+    prose = {key: value for key, value in arguments.items() if key not in typed}
+    cleaned = swarm.clean({"kind": result["kind"], "tool": result["tool"],
+                           "arguments": prose, "decision": result["decision"]})
+    cleaned["arguments"].update(typed)
+    return cleaned
+
 @dataclass(frozen=True)
 class ModelRoute:
     provider: str
@@ -235,7 +256,6 @@ class ModelRouter:
                     except Exception as exc: accepted = "quality_check_error:" + type(exc).__name__
                     if accepted is True: return content, receipt
                     reason = accepted if isinstance(accepted, str) else "quality_rejected"
-                    from . import swarm
                     excerpt = swarm.clean(content)[:240]
                     with self.lock:
                         self.stats[route.model].quality_rejections += 1
@@ -409,7 +429,7 @@ class RoutedScaleProvider:
             quality_check=valid, call_id=request["operation_id"], deadline=request.get("deadline"))
         result=parse_decision(content)
         from . import swarm
-        result=swarm.clean(result)
+        result=_clean_decision(result)
         # Do not retain a duplicate prompt history; the durable queue owns it.
         attempts = [event for event in self.router.report()["events"] if event.get("call_id") == request["operation_id"]]
         unique = {}
