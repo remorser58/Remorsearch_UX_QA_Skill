@@ -17,6 +17,7 @@ from uxresearch.storage import safe_path
 from . import swarm
 from .agent_run import Execution, Tool, _data, _host_info
 from .library import Library
+from .model_router import _clean_decision
 from .swarm_providers import DefinitelyNotSent, ProviderUncertain
 from .swarm_queue import Queue
 
@@ -337,7 +338,10 @@ class ScaleExecution:
                 fail("host_protocol", "A correlated response envelope is required.")
             from . import swarm
             if kind in {"model", "review"}:
-                model_result = swarm.clean(reply["result"])
+                # The model router already privacy-scrubs prose while preserving
+                # typed selector/file locators. A second blanket clean here would
+                # rewrite reserved @group fixture keys into [handle] strings.
+                model_result = _clean_decision(reply["result"])
                 result = _data(model_result, 262144, privacy=False)
             else:
                 result = _data(reply["result"], 262144, privacy=kind not in {"tool", "close"})
