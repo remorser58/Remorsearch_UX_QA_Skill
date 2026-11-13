@@ -130,7 +130,10 @@ class Evidence:
                     observation, check = native_not_runs[-1]
                     criterion.update(
                         observation=check.get("reason") or "Deterministic check not run because its precondition was not observed.",
-                        evidence_ids=[a["id"] for a in observation["artifacts"]])
+                        # not_run cannot claim criterion evidence. The observation
+                        # and screenshot remain in the receipt's artifact ledger;
+                        # the reason explains why the criterion was not executed.
+                        evidence_ids=[])
             failed = {(c["kind"], c["index"]) for o in observations
                       for c in o["checks"] if c["status"] == "failed"}
             if any((c["kind"], c["index"]) in failed and c["status"] != "failed"
@@ -156,7 +159,7 @@ class Evidence:
                     observation, check = native_not_runs[-1]
                     criterion.update(status="not_run",
                         observation=check.get("reason") or "Deterministic check not run because its precondition was not observed.",
-                        evidence_ids=[a["id"] for a in observation["artifacts"]])
+                        evidence_ids=[])
         statuses = {c["status"] for c in criteria}
         outcome = ("failed" if "failed" in statuses else
                    "passed" if "not_run" not in statuses and "passed" in statuses

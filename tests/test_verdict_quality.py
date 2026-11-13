@@ -313,6 +313,7 @@ class VerdictQualityTests(unittest.TestCase):
                 {"build": {"sha256": "c" * 64}}, judgment=None)
         self.assertEqual(receipt["criteria"][0]["status"], "not_run")
         self.assertEqual(receipt["criteria"][0]["observation"], "Eleven distinct snapshots were not imported.")
+        self.assertEqual(receipt["criteria"][0]["evidence_ids"], [])
 
     def test_native_not_run_reason_is_admitted_but_reason_cannot_mask_a_pass(self):
         with tempfile.TemporaryDirectory() as temporary:
