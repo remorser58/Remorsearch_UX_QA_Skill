@@ -39,14 +39,14 @@ class VerdictQualityTests(unittest.TestCase):
         for expected in ("peekly-sample-previous.zip", "peekly-sample-current.zip",
                          "peekly-format-html.zip", "peekly-format-json.zip",
                          "peekly-missing-followers.zip", "peekly-missing-following.zip",
-                         "peekly-account-mismatch.zip", "검색", "격리 브라우저"):
+                         "peekly-account-mismatch.zip", "검색", "별도 브라우저 프로필"):
             self.assertIn(expected, goal)
         self.assertIn("not_applicable", goal)
         self.assertIn("not_run", goal)
 
     def test_unobserved_success_condition_remains_not_run(self):
         goal = _persona_journey_goal("Use Peekly.", ["PRD-IMPORT-SIZE"])
-        self.assertIn("전용 합성 fixture로 실제 업로드", goal)
+        self.assertIn("32MiB+1 loose file", goal)
         self.assertIn("not_run", goal)
 
     def test_every_saved_peekly_prd_requirement_has_an_explicit_acceptance_contract(self):
@@ -82,19 +82,34 @@ class VerdictQualityTests(unittest.TestCase):
             ("peekly-missing-followers.zip", "peekly-missing-following.zip"))
         self.assertEqual(checks, [{"kind": "success", "index": 0, "status": "failed"}])
 
-    def test_progress_and_size_criteria_require_their_exact_boundary_fixtures(self):
-        facts = {"controls": [{"label": "읽기 멈추기"}], "file_inputs": [],
-            "network_policy": {}, "uploaded_fixture": "peekly-progress-sample.zip",
-            "upload_progress_samples": [
-                {"text": "파일을 읽고 있어요"}, {"text": "팔로우 목록을 확인하고 있어요"}]}
-        progress = evaluate({"requirement_ids": ["PRD-IMPORT-PROGRESS"]}, facts, "processing")
-        self.assertEqual(progress, [{"kind": "success", "index": 0, "status": "passed"}])
-        size_facts = {"controls": [], "file_inputs": [], "network_policy": {},
-            "uploaded_fixture": "peekly-oversize-plus-one.zip"}
-        size = evaluate({"requirement_ids": ["PRD-IMPORT-SIZE"]}, size_facts,
-            "ZIP 파일이 너무 커요. 최대 128MB까지 불러올 수 있어요. 팔로워 1명 팔로잉 1명",
-            history=[{"text": "기존 팔로워 1명 팔로잉 1명 결과"}])
-        self.assertEqual(size, [{"kind": "success", "index": 0, "status": "passed"}])
+    def test_progress_requires_both_phases_and_an_observed_cancel(self):
+        facts = {"controls": [], "file_inputs": [], "network_policy": {}}
+        history = [
+            {"text": "파일을 읽고 있어요", "facts": {"upload_progress_samples": [{"text": "파일을 읽고 있어요"}]}},
+            {"text": "팔로우 목록을 확인하고 있어요", "facts": {"upload_progress_samples": [{"text": "팔로우 목록을 확인하고 있어요"}]}},
+        ]
+        uploads = ("peekly-progress-sample.zip",)
+        self.assertEqual(evaluate({"requirement_ids": ["PRD-IMPORT-PROGRESS"]}, facts, "", uploads, history), [])
+        history.append({"text": "읽기 멈추기", "facts": {"last_action_label": "읽기 멈추기"}})
+        self.assertEqual(evaluate({"requirement_ids": ["PRD-IMPORT-PROGRESS"]}, facts, "", uploads, history),
+            [{"kind": "success", "index": 0, "status": "passed"}])
+
+    def test_size_criteria_requires_all_three_boundary_uploads_and_messages(self):
+        task = {"requirement_ids": ["PRD-IMPORT-SIZE"]}
+        facts = {"controls": [], "file_inputs": [], "network_policy": {}}
+        uploads = ("peekly-oversize-plus-one.zip", "@group:peekly-loose-file-over", "@group:peekly-loose-total-over")
+        text = "ZIP 파일이 너무 커요. 최대 128MB까지 불러올 수 있어요. 파일 하나는 최대 32MB까지 불러올 수 있어요. 파일은 모두 합쳐 최대 64MB까지 불러올 수 있어요."
+        self.assertEqual(evaluate(task, facts, text, uploads), [{"kind": "success", "index": 0, "status": "passed"}])
+        self.assertEqual(evaluate(task, facts, text, uploads[:1]), [])
+
+    def test_multi_file_criterion_requires_every_real_group_and_outcomes(self):
+        task = {"requirement_ids": ["PRD-IMPORT-MULTI"]}
+        facts = {"controls": [], "file_inputs": [{"multiple": True}], "network_policy": {}}
+        uploads = ("@group:peekly-mixed-loose-valid", "@group:peekly-loose-512-valid",
+            "@group:peekly-loose-513-rejected", "@group:peekly-zip-plus-loose-rejected")
+        text = "팔로우 목록을 찾았어요. 파일이 너무 많아요. 최대 512개까지 골라 주세요. ZIP 파일은 다른 파일과 함께 고를 수 없어요."
+        self.assertEqual(evaluate(task, facts, text, uploads), [{"kind": "success", "index": 0, "status": "passed"}])
+        self.assertEqual(evaluate(task, facts, text, uploads[:2]), [])
 
     def test_native_browser_pass_closes_model_not_run(self):
         worker = {"claim": {"task": {"id": "task", "success_criteria": ["show result"],

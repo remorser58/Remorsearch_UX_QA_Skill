@@ -1,0 +1,1022 @@
+{
+  "schema_version": "peekly-persona-prd-diff.v1",
+  "source_library": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/live-persona-browser-integration-20261113/.ux-loop/peekly-persona-library-v2",
+  "source_prd_sha256": "5c18b75a9e4c5d31a1b8b45df60818a2391ea464d4010d976b94a0e908a6bb2d",
+  "current_prd": "/Volumes/SanDisk2TB/m4mini/CodeProjects/insta-tracker/.omo/worktrees/peekly-import-ux-20261113/docs/PRD.md",
+  "current_prd_sha256": "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b",
+  "persona_count": 32,
+  "personas": [
+    {
+      "persona_id": "PER-PEEKLY-V2-001",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-START-SAMPLE",
+        "PRD-START-IMPORT",
+        "PRD-PRIVACY-LOCAL"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-START-SAMPLE",
+        "PRD-START-IMPORT",
+        "PRD-PRIVACY-LOCAL"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-START-SAMPLE": "첫 화면에는 인스타 연결하기 버튼과 샘플로 둘러보기 링크가 있다. ZIP·JSON·파일·백업을 이해하거나 형식을 고르는 일을 기본 흐름에서 요구하지 않는다.",
+        "PRD-START-IMPORT": "다른 방법으로 시작하기의 이미 받은 자료로 확인하기를 누르면 기존 3단계 직접 가져오기 안내가 열린다.",
+        "PRD-PRIVACY-LOCAL": "앱에는 자체 서버가 없다. 백업 내용은 기기 안에서만 처리하고, 사용자가 리포트를 공유하면 계정 아이디와 집계 숫자가 이미지에 포함된다."
+      },
+      "current_prd_excerpts": {
+        "PRD-START-SAMPLE": "첫 화면에는 인스타그램으로 로그인 버튼과 샘플로 먼저 둘러보기 링크가 있다.",
+        "PRD-START-IMPORT": "이미 Instagram 자료를 받은 사용자는 더보기 첫 화면의 **이미 받은 자료로 확인하기**에서 직접 가져오기 흐름을 바로 연다.",
+        "PRD-PRIVACY-LOCAL": "직접 연결·파일에서 받은 관계 목록과 기록 비교는 기기 안에서 처리한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-002",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-START-SAMPLE",
+        "PRD-START-IMPORT",
+        "PRD-PRIVACY-LOCAL"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-START-SAMPLE",
+        "PRD-START-IMPORT",
+        "PRD-PRIVACY-LOCAL"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-START-SAMPLE": "첫 화면에는 인스타 연결하기 버튼과 샘플로 둘러보기 링크가 있다. ZIP·JSON·파일·백업을 이해하거나 형식을 고르는 일을 기본 흐름에서 요구하지 않는다.",
+        "PRD-START-IMPORT": "다른 방법으로 시작하기의 이미 받은 자료로 확인하기를 누르면 기존 3단계 직접 가져오기 안내가 열린다.",
+        "PRD-PRIVACY-LOCAL": "앱에는 자체 서버가 없다. 백업 내용은 기기 안에서만 처리하고, 사용자가 리포트를 공유하면 계정 아이디와 집계 숫자가 이미지에 포함된다."
+      },
+      "current_prd_excerpts": {
+        "PRD-START-SAMPLE": "첫 화면에는 인스타그램으로 로그인 버튼과 샘플로 먼저 둘러보기 링크가 있다.",
+        "PRD-START-IMPORT": "이미 Instagram 자료를 받은 사용자는 더보기 첫 화면의 **이미 받은 자료로 확인하기**에서 직접 가져오기 흐름을 바로 연다.",
+        "PRD-PRIVACY-LOCAL": "직접 연결·파일에서 받은 관계 목록과 기록 비교는 기기 안에서 처리한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-003",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-START-SAMPLE",
+        "PRD-START-IMPORT",
+        "PRD-PRIVACY-LOCAL"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-START-SAMPLE",
+        "PRD-START-IMPORT",
+        "PRD-PRIVACY-LOCAL"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-START-SAMPLE": "첫 화면에는 인스타 연결하기 버튼과 샘플로 둘러보기 링크가 있다. ZIP·JSON·파일·백업을 이해하거나 형식을 고르는 일을 기본 흐름에서 요구하지 않는다.",
+        "PRD-START-IMPORT": "다른 방법으로 시작하기의 이미 받은 자료로 확인하기를 누르면 기존 3단계 직접 가져오기 안내가 열린다.",
+        "PRD-PRIVACY-LOCAL": "앱에는 자체 서버가 없다. 백업 내용은 기기 안에서만 처리하고, 사용자가 리포트를 공유하면 계정 아이디와 집계 숫자가 이미지에 포함된다."
+      },
+      "current_prd_excerpts": {
+        "PRD-START-SAMPLE": "첫 화면에는 인스타그램으로 로그인 버튼과 샘플로 먼저 둘러보기 링크가 있다.",
+        "PRD-START-IMPORT": "이미 Instagram 자료를 받은 사용자는 더보기 첫 화면의 **이미 받은 자료로 확인하기**에서 직접 가져오기 흐름을 바로 연다.",
+        "PRD-PRIVACY-LOCAL": "직접 연결·파일에서 받은 관계 목록과 기록 비교는 기기 안에서 처리한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-004",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-START-SAMPLE",
+        "PRD-START-IMPORT",
+        "PRD-PRIVACY-LOCAL"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-START-SAMPLE",
+        "PRD-START-IMPORT",
+        "PRD-PRIVACY-LOCAL"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-START-SAMPLE": "첫 화면에는 인스타 연결하기 버튼과 샘플로 둘러보기 링크가 있다. ZIP·JSON·파일·백업을 이해하거나 형식을 고르는 일을 기본 흐름에서 요구하지 않는다.",
+        "PRD-START-IMPORT": "다른 방법으로 시작하기의 이미 받은 자료로 확인하기를 누르면 기존 3단계 직접 가져오기 안내가 열린다.",
+        "PRD-PRIVACY-LOCAL": "앱에는 자체 서버가 없다. 백업 내용은 기기 안에서만 처리하고, 사용자가 리포트를 공유하면 계정 아이디와 집계 숫자가 이미지에 포함된다."
+      },
+      "current_prd_excerpts": {
+        "PRD-START-SAMPLE": "첫 화면에는 인스타그램으로 로그인 버튼과 샘플로 먼저 둘러보기 링크가 있다.",
+        "PRD-START-IMPORT": "이미 Instagram 자료를 받은 사용자는 더보기 첫 화면의 **이미 받은 자료로 확인하기**에서 직접 가져오기 흐름을 바로 연다.",
+        "PRD-PRIVACY-LOCAL": "직접 연결·파일에서 받은 관계 목록과 기록 비교는 기기 안에서 처리한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-005",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-START-IMPORT",
+        "PRD-START-SKIP",
+        "PRD-IMPORT-FORMATS"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-START-IMPORT"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-START-IMPORT": "다른 방법으로 시작하기의 이미 받은 자료로 확인하기를 누르면 기존 3단계 직접 가져오기 안내가 열린다.",
+        "PRD-START-SKIP": "1단계에는 **이미 파일을 받았어요** 링크가 있어 3단계로 바로 갈 수 있다.",
+        "PRD-IMPORT-FORMATS": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다."
+      },
+      "current_prd_excerpts": {
+        "PRD-START-IMPORT": "이미 Instagram 자료를 받은 사용자는 더보기 첫 화면의 **이미 받은 자료로 확인하기**에서 직접 가져오기 흐름을 바로 연다.",
+        "PRD-START-SKIP": "1단계에는 **이미 파일을 받았어요** 링크가 있어 3단계로 바로 갈 수 있다.",
+        "PRD-IMPORT-FORMATS": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-006",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-START-IMPORT",
+        "PRD-START-SKIP",
+        "PRD-IMPORT-FORMATS"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-START-IMPORT"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-START-IMPORT": "다른 방법으로 시작하기의 이미 받은 자료로 확인하기를 누르면 기존 3단계 직접 가져오기 안내가 열린다.",
+        "PRD-START-SKIP": "1단계에는 **이미 파일을 받았어요** 링크가 있어 3단계로 바로 갈 수 있다.",
+        "PRD-IMPORT-FORMATS": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다."
+      },
+      "current_prd_excerpts": {
+        "PRD-START-IMPORT": "이미 Instagram 자료를 받은 사용자는 더보기 첫 화면의 **이미 받은 자료로 확인하기**에서 직접 가져오기 흐름을 바로 연다.",
+        "PRD-START-SKIP": "1단계에는 **이미 파일을 받았어요** 링크가 있어 3단계로 바로 갈 수 있다.",
+        "PRD-IMPORT-FORMATS": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-007",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-START-IMPORT",
+        "PRD-START-SKIP",
+        "PRD-IMPORT-FORMATS"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-START-IMPORT"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-START-IMPORT": "다른 방법으로 시작하기의 이미 받은 자료로 확인하기를 누르면 기존 3단계 직접 가져오기 안내가 열린다.",
+        "PRD-START-SKIP": "1단계에는 **이미 파일을 받았어요** 링크가 있어 3단계로 바로 갈 수 있다.",
+        "PRD-IMPORT-FORMATS": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다."
+      },
+      "current_prd_excerpts": {
+        "PRD-START-IMPORT": "이미 Instagram 자료를 받은 사용자는 더보기 첫 화면의 **이미 받은 자료로 확인하기**에서 직접 가져오기 흐름을 바로 연다.",
+        "PRD-START-SKIP": "1단계에는 **이미 파일을 받았어요** 링크가 있어 3단계로 바로 갈 수 있다.",
+        "PRD-IMPORT-FORMATS": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-008",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-START-IMPORT",
+        "PRD-START-SKIP",
+        "PRD-IMPORT-FORMATS"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-START-IMPORT"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-START-IMPORT": "다른 방법으로 시작하기의 이미 받은 자료로 확인하기를 누르면 기존 3단계 직접 가져오기 안내가 열린다.",
+        "PRD-START-SKIP": "1단계에는 **이미 파일을 받았어요** 링크가 있어 3단계로 바로 갈 수 있다.",
+        "PRD-IMPORT-FORMATS": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다."
+      },
+      "current_prd_excerpts": {
+        "PRD-START-IMPORT": "이미 Instagram 자료를 받은 사용자는 더보기 첫 화면의 **이미 받은 자료로 확인하기**에서 직접 가져오기 흐름을 바로 연다.",
+        "PRD-START-SKIP": "1단계에는 **이미 파일을 받았어요** 링크가 있어 3단계로 바로 갈 수 있다.",
+        "PRD-IMPORT-FORMATS": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-009",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-IMPORT-FORMATS",
+        "PRD-IMPORT-HTML",
+        "PRD-IMPORT-MISSING",
+        "PRD-IMPORT-ACCOUNT"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-IMPORT-FORMATS": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다.",
+        "PRD-IMPORT-HTML": "팔로워·팔로잉 HTML 목록에서 아이디를 읽지 못한 항목이 하나라도 있으면, 그 사람이 떠난 것처럼 보이지 않도록 파일 이름을 담은 오류로 멈춘다.",
+        "PRD-IMPORT-ACCOUNT": "이미 기록된 계정과 다른 계정의 파일은 막는다.",
+        "PRD-IMPORT-MISSING": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-IMPORT-FORMATS": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다.",
+        "PRD-IMPORT-HTML": "팔로워·팔로잉 HTML 목록에서 아이디를 읽지 못한 항목이 하나라도 있으면, 그 사람이 떠난 것처럼 보이지 않도록 파일 이름을 담은 오류로 멈춘다.",
+        "PRD-IMPORT-ACCOUNT": "이미 기록된 계정과 다른 계정의 파일은 막는다.",
+        "PRD-IMPORT-MISSING": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-010",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-IMPORT-FORMATS",
+        "PRD-IMPORT-HTML",
+        "PRD-IMPORT-MISSING",
+        "PRD-IMPORT-ACCOUNT"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-IMPORT-FORMATS": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다.",
+        "PRD-IMPORT-HTML": "팔로워·팔로잉 HTML 목록에서 아이디를 읽지 못한 항목이 하나라도 있으면, 그 사람이 떠난 것처럼 보이지 않도록 파일 이름을 담은 오류로 멈춘다.",
+        "PRD-IMPORT-ACCOUNT": "이미 기록된 계정과 다른 계정의 파일은 막는다.",
+        "PRD-IMPORT-MISSING": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-IMPORT-FORMATS": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다.",
+        "PRD-IMPORT-HTML": "팔로워·팔로잉 HTML 목록에서 아이디를 읽지 못한 항목이 하나라도 있으면, 그 사람이 떠난 것처럼 보이지 않도록 파일 이름을 담은 오류로 멈춘다.",
+        "PRD-IMPORT-ACCOUNT": "이미 기록된 계정과 다른 계정의 파일은 막는다.",
+        "PRD-IMPORT-MISSING": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-011",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-IMPORT-FORMATS",
+        "PRD-IMPORT-HTML",
+        "PRD-IMPORT-MISSING",
+        "PRD-IMPORT-ACCOUNT"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-IMPORT-FORMATS": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다.",
+        "PRD-IMPORT-HTML": "팔로워·팔로잉 HTML 목록에서 아이디를 읽지 못한 항목이 하나라도 있으면, 그 사람이 떠난 것처럼 보이지 않도록 파일 이름을 담은 오류로 멈춘다.",
+        "PRD-IMPORT-ACCOUNT": "이미 기록된 계정과 다른 계정의 파일은 막는다.",
+        "PRD-IMPORT-MISSING": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-IMPORT-FORMATS": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다.",
+        "PRD-IMPORT-HTML": "팔로워·팔로잉 HTML 목록에서 아이디를 읽지 못한 항목이 하나라도 있으면, 그 사람이 떠난 것처럼 보이지 않도록 파일 이름을 담은 오류로 멈춘다.",
+        "PRD-IMPORT-ACCOUNT": "이미 기록된 계정과 다른 계정의 파일은 막는다.",
+        "PRD-IMPORT-MISSING": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-012",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-IMPORT-FORMATS",
+        "PRD-IMPORT-HTML",
+        "PRD-IMPORT-MISSING",
+        "PRD-IMPORT-ACCOUNT"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-IMPORT-FORMATS": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다.",
+        "PRD-IMPORT-HTML": "팔로워·팔로잉 HTML 목록에서 아이디를 읽지 못한 항목이 하나라도 있으면, 그 사람이 떠난 것처럼 보이지 않도록 파일 이름을 담은 오류로 멈춘다.",
+        "PRD-IMPORT-ACCOUNT": "이미 기록된 계정과 다른 계정의 파일은 막는다.",
+        "PRD-IMPORT-MISSING": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-IMPORT-FORMATS": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다.",
+        "PRD-IMPORT-HTML": "팔로워·팔로잉 HTML 목록에서 아이디를 읽지 못한 항목이 하나라도 있으면, 그 사람이 떠난 것처럼 보이지 않도록 파일 이름을 담은 오류로 멈춘다.",
+        "PRD-IMPORT-ACCOUNT": "이미 기록된 계정과 다른 계정의 파일은 막는다.",
+        "PRD-IMPORT-MISSING": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-013",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-IMPORT-PROGRESS",
+        "PRD-IMPORT-SIZE",
+        "PRD-IMPORT-SAVE-FAIL"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-IMPORT-PROGRESS"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-IMPORT-PROGRESS": "가져오기는 백그라운드 워커에서 처리한다. 읽기와 분석 단계를 구분해 진행 상태를 표시하고, 사용자가 창을 닫으면 즉시 중단한다.",
+        "PRD-IMPORT-SIZE": "ZIP은 최대 128MB까지 지원한다.",
+        "PRD-IMPORT-SAVE-FAIL": "쓰기 실패 시 안내와 다시 저장 버튼을 표시한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-IMPORT-PROGRESS": "가져오기는 백그라운드 워커에서 처리한다.",
+        "PRD-IMPORT-SIZE": "ZIP은 최대 128MB까지 지원한다.",
+        "PRD-IMPORT-SAVE-FAIL": "쓰기 실패 시 안내와 다시 저장 버튼을 표시한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-014",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-IMPORT-PROGRESS",
+        "PRD-IMPORT-SIZE",
+        "PRD-IMPORT-SAVE-FAIL"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-IMPORT-PROGRESS"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-IMPORT-PROGRESS": "가져오기는 백그라운드 워커에서 처리한다. 읽기와 분석 단계를 구분해 진행 상태를 표시하고, 사용자가 창을 닫으면 즉시 중단한다.",
+        "PRD-IMPORT-SIZE": "ZIP은 최대 128MB까지 지원한다.",
+        "PRD-IMPORT-SAVE-FAIL": "쓰기 실패 시 안내와 다시 저장 버튼을 표시한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-IMPORT-PROGRESS": "가져오기는 백그라운드 워커에서 처리한다.",
+        "PRD-IMPORT-SIZE": "ZIP은 최대 128MB까지 지원한다.",
+        "PRD-IMPORT-SAVE-FAIL": "쓰기 실패 시 안내와 다시 저장 버튼을 표시한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-015",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-IMPORT-PROGRESS",
+        "PRD-IMPORT-SIZE",
+        "PRD-IMPORT-SAVE-FAIL"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-IMPORT-PROGRESS"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-IMPORT-PROGRESS": "가져오기는 백그라운드 워커에서 처리한다. 읽기와 분석 단계를 구분해 진행 상태를 표시하고, 사용자가 창을 닫으면 즉시 중단한다.",
+        "PRD-IMPORT-SIZE": "ZIP은 최대 128MB까지 지원한다.",
+        "PRD-IMPORT-SAVE-FAIL": "쓰기 실패 시 안내와 다시 저장 버튼을 표시한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-IMPORT-PROGRESS": "가져오기는 백그라운드 워커에서 처리한다.",
+        "PRD-IMPORT-SIZE": "ZIP은 최대 128MB까지 지원한다.",
+        "PRD-IMPORT-SAVE-FAIL": "쓰기 실패 시 안내와 다시 저장 버튼을 표시한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-016",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-IMPORT-PROGRESS",
+        "PRD-IMPORT-SIZE",
+        "PRD-IMPORT-SAVE-FAIL"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-IMPORT-PROGRESS"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-IMPORT-PROGRESS": "가져오기는 백그라운드 워커에서 처리한다. 읽기와 분석 단계를 구분해 진행 상태를 표시하고, 사용자가 창을 닫으면 즉시 중단한다.",
+        "PRD-IMPORT-SIZE": "ZIP은 최대 128MB까지 지원한다.",
+        "PRD-IMPORT-SAVE-FAIL": "쓰기 실패 시 안내와 다시 저장 버튼을 표시한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-IMPORT-PROGRESS": "가져오기는 백그라운드 워커에서 처리한다.",
+        "PRD-IMPORT-SIZE": "ZIP은 최대 128MB까지 지원한다.",
+        "PRD-IMPORT-SAVE-FAIL": "쓰기 실패 시 안내와 다시 저장 버튼을 표시한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-017",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-RESULT-RECIPROCITY",
+        "PRD-RESULT-REVERSE",
+        "PRD-RESULT-MUTUAL",
+        "PRD-RESULT-SNAPSHOT"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-RESULT-RECIPROCITY",
+        "PRD-RESULT-SNAPSHOT"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-RESULT-RECIPROCITY": "나를 맞팔 안 한 사람 | 내가 팔로우하는데 나를 팔로우하지 않는다. 예전에 맞팔이었던 계정도 포함한다.",
+        "PRD-RESULT-REVERSE": "내가 맞팔 안 한 사람 | 나를 팔로우하는데 내가 팔로우하지 않는다.",
+        "PRD-RESULT-MUTUAL": "맞팔 중인 사람 | 서로 팔로우한다.",
+        "PRD-RESULT-SNAPSHOT": "시점이 다른 기록이 두 개 있으면 나를 언팔한 사람 숫자와 목록을 함께 표시한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-RESULT-RECIPROCITY": "나를 맞팔 안 한 사람 | 내가 팔로우하는데 나를 팔로우하지 않는다.",
+        "PRD-RESULT-REVERSE": "내가 맞팔 안 한 사람 | 나를 팔로우하는데 내가 팔로우하지 않는다.",
+        "PRD-RESULT-MUTUAL": "맞팔 중인 사람 | 서로 팔로우한다.",
+        "PRD-RESULT-SNAPSHOT": "같은 계정의 시점이 다른 완전한 기록이 두 개 있으면 최신 비교의 숫자와 계정 이름을 무료로 보여 준다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-018",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-RESULT-RECIPROCITY",
+        "PRD-RESULT-REVERSE",
+        "PRD-RESULT-MUTUAL",
+        "PRD-RESULT-SNAPSHOT"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-RESULT-RECIPROCITY",
+        "PRD-RESULT-SNAPSHOT"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-RESULT-RECIPROCITY": "나를 맞팔 안 한 사람 | 내가 팔로우하는데 나를 팔로우하지 않는다. 예전에 맞팔이었던 계정도 포함한다.",
+        "PRD-RESULT-REVERSE": "내가 맞팔 안 한 사람 | 나를 팔로우하는데 내가 팔로우하지 않는다.",
+        "PRD-RESULT-MUTUAL": "맞팔 중인 사람 | 서로 팔로우한다.",
+        "PRD-RESULT-SNAPSHOT": "시점이 다른 기록이 두 개 있으면 나를 언팔한 사람 숫자와 목록을 함께 표시한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-RESULT-RECIPROCITY": "나를 맞팔 안 한 사람 | 내가 팔로우하는데 나를 팔로우하지 않는다.",
+        "PRD-RESULT-REVERSE": "내가 맞팔 안 한 사람 | 나를 팔로우하는데 내가 팔로우하지 않는다.",
+        "PRD-RESULT-MUTUAL": "맞팔 중인 사람 | 서로 팔로우한다.",
+        "PRD-RESULT-SNAPSHOT": "같은 계정의 시점이 다른 완전한 기록이 두 개 있으면 최신 비교의 숫자와 계정 이름을 무료로 보여 준다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-019",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-RESULT-RECIPROCITY",
+        "PRD-RESULT-REVERSE",
+        "PRD-RESULT-MUTUAL",
+        "PRD-RESULT-SNAPSHOT"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-RESULT-RECIPROCITY",
+        "PRD-RESULT-SNAPSHOT"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-RESULT-RECIPROCITY": "나를 맞팔 안 한 사람 | 내가 팔로우하는데 나를 팔로우하지 않는다. 예전에 맞팔이었던 계정도 포함한다.",
+        "PRD-RESULT-REVERSE": "내가 맞팔 안 한 사람 | 나를 팔로우하는데 내가 팔로우하지 않는다.",
+        "PRD-RESULT-MUTUAL": "맞팔 중인 사람 | 서로 팔로우한다.",
+        "PRD-RESULT-SNAPSHOT": "시점이 다른 기록이 두 개 있으면 나를 언팔한 사람 숫자와 목록을 함께 표시한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-RESULT-RECIPROCITY": "나를 맞팔 안 한 사람 | 내가 팔로우하는데 나를 팔로우하지 않는다.",
+        "PRD-RESULT-REVERSE": "내가 맞팔 안 한 사람 | 나를 팔로우하는데 내가 팔로우하지 않는다.",
+        "PRD-RESULT-MUTUAL": "맞팔 중인 사람 | 서로 팔로우한다.",
+        "PRD-RESULT-SNAPSHOT": "같은 계정의 시점이 다른 완전한 기록이 두 개 있으면 최신 비교의 숫자와 계정 이름을 무료로 보여 준다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-020",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-RESULT-RECIPROCITY",
+        "PRD-RESULT-REVERSE",
+        "PRD-RESULT-MUTUAL",
+        "PRD-RESULT-SNAPSHOT"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-RESULT-RECIPROCITY",
+        "PRD-RESULT-SNAPSHOT"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-RESULT-RECIPROCITY": "나를 맞팔 안 한 사람 | 내가 팔로우하는데 나를 팔로우하지 않는다. 예전에 맞팔이었던 계정도 포함한다.",
+        "PRD-RESULT-REVERSE": "내가 맞팔 안 한 사람 | 나를 팔로우하는데 내가 팔로우하지 않는다.",
+        "PRD-RESULT-MUTUAL": "맞팔 중인 사람 | 서로 팔로우한다.",
+        "PRD-RESULT-SNAPSHOT": "시점이 다른 기록이 두 개 있으면 나를 언팔한 사람 숫자와 목록을 함께 표시한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-RESULT-RECIPROCITY": "나를 맞팔 안 한 사람 | 내가 팔로우하는데 나를 팔로우하지 않는다.",
+        "PRD-RESULT-REVERSE": "내가 맞팔 안 한 사람 | 나를 팔로우하는데 내가 팔로우하지 않는다.",
+        "PRD-RESULT-MUTUAL": "맞팔 중인 사람 | 서로 팔로우한다.",
+        "PRD-RESULT-SNAPSHOT": "같은 계정의 시점이 다른 완전한 기록이 두 개 있으면 최신 비교의 숫자와 계정 이름을 무료로 보여 준다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-021",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-IMPORT-MISSING",
+        "PRD-IDENTITY-LIMIT",
+        "PRD-IMPORT-SNAPSHOT-UNKNOWN"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-IDENTITY-LIMIT"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-IMPORT-MISSING": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다.",
+        "PRD-IDENTITY-LIMIT": "Instagram 백업에 계정의 영구 ID가 없다. 사용자 이름이 바뀌거나 계정이 삭제되면 사라진 계정으로 나타날 수 있다.",
+        "PRD-IMPORT-SNAPSHOT-UNKNOWN": "목록이 실제로 비어 있었는지 알 수 없는 과거 백업은 비교 대상에서 제외한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-IMPORT-MISSING": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다.",
+        "PRD-IDENTITY-LIMIT": "안정적 ID가 없는 백업 비교에는 이름 변경도 포함될 수 있다는 안내를 붙인다.",
+        "PRD-IMPORT-SNAPSHOT-UNKNOWN": "목록이 실제로 비어 있었는지 알 수 없는 과거 백업은 비교 대상에서 제외한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-022",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-IMPORT-MISSING",
+        "PRD-IDENTITY-LIMIT",
+        "PRD-IMPORT-SNAPSHOT-UNKNOWN"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-IDENTITY-LIMIT"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-IMPORT-MISSING": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다.",
+        "PRD-IDENTITY-LIMIT": "Instagram 백업에 계정의 영구 ID가 없다. 사용자 이름이 바뀌거나 계정이 삭제되면 사라진 계정으로 나타날 수 있다.",
+        "PRD-IMPORT-SNAPSHOT-UNKNOWN": "목록이 실제로 비어 있었는지 알 수 없는 과거 백업은 비교 대상에서 제외한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-IMPORT-MISSING": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다.",
+        "PRD-IDENTITY-LIMIT": "안정적 ID가 없는 백업 비교에는 이름 변경도 포함될 수 있다는 안내를 붙인다.",
+        "PRD-IMPORT-SNAPSHOT-UNKNOWN": "목록이 실제로 비어 있었는지 알 수 없는 과거 백업은 비교 대상에서 제외한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-023",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-IMPORT-MISSING",
+        "PRD-IDENTITY-LIMIT",
+        "PRD-IMPORT-SNAPSHOT-UNKNOWN"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-IDENTITY-LIMIT"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-IMPORT-MISSING": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다.",
+        "PRD-IDENTITY-LIMIT": "Instagram 백업에 계정의 영구 ID가 없다. 사용자 이름이 바뀌거나 계정이 삭제되면 사라진 계정으로 나타날 수 있다.",
+        "PRD-IMPORT-SNAPSHOT-UNKNOWN": "목록이 실제로 비어 있었는지 알 수 없는 과거 백업은 비교 대상에서 제외한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-IMPORT-MISSING": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다.",
+        "PRD-IDENTITY-LIMIT": "안정적 ID가 없는 백업 비교에는 이름 변경도 포함될 수 있다는 안내를 붙인다.",
+        "PRD-IMPORT-SNAPSHOT-UNKNOWN": "목록이 실제로 비어 있었는지 알 수 없는 과거 백업은 비교 대상에서 제외한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-024",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-IMPORT-MISSING",
+        "PRD-IDENTITY-LIMIT",
+        "PRD-IMPORT-SNAPSHOT-UNKNOWN"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-IDENTITY-LIMIT"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-IMPORT-MISSING": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다.",
+        "PRD-IDENTITY-LIMIT": "Instagram 백업에 계정의 영구 ID가 없다. 사용자 이름이 바뀌거나 계정이 삭제되면 사라진 계정으로 나타날 수 있다.",
+        "PRD-IMPORT-SNAPSHOT-UNKNOWN": "목록이 실제로 비어 있었는지 알 수 없는 과거 백업은 비교 대상에서 제외한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-IMPORT-MISSING": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다.",
+        "PRD-IDENTITY-LIMIT": "안정적 ID가 없는 백업 비교에는 이름 변경도 포함될 수 있다는 안내를 붙인다.",
+        "PRD-IMPORT-SNAPSHOT-UNKNOWN": "목록이 실제로 비어 있었는지 알 수 없는 과거 백업은 비교 대상에서 제외한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-025",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-PRIVACY-LOCAL",
+        "PRD-PRIVACY-DELETE",
+        "PRD-RESULT-SEARCH"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-PRIVACY-LOCAL",
+        "PRD-PRIVACY-DELETE"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-RESULT-SEARCH": "목록은 아이디 순으로 정렬하고, 8명이 넘으면 아이디 찾기 칸을 표시한다.",
+        "PRD-PRIVACY-LOCAL": "앱에는 자체 서버가 없다. 백업 내용은 기기 안에서만 처리하고, 사용자가 리포트를 공유하면 계정 아이디와 집계 숫자가 이미지에 포함된다.",
+        "PRD-PRIVACY-DELETE": "전체 초기화는 폴더 북마크와 로컬 저장소 키(시작 안내 단계와 연결 정보 포함)를 지우고, 예약된 알림을 취소하고, iOS WebView 데이터와 쿠키 저장소를 삭제한다. 결제 권한은 유지한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-RESULT-SEARCH": "목록은 아이디 순으로 정렬하고, 8명이 넘으면 아이디 찾기 칸을 표시한다.",
+        "PRD-PRIVACY-LOCAL": "직접 연결·파일에서 받은 관계 목록과 기록 비교는 기기 안에서 처리한다.",
+        "PRD-PRIVACY-DELETE": "전체 초기화는 폴더 북마크와 로컬 저장소 키(v7·v6·legacy 상태, 시작 안내 단계·연결 정보·조회 일정 포함)를 지우고, 예약된 알림을 취소하고, iOS WebView 데이터와 쿠키 저장소를 삭제한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-026",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-PRIVACY-LOCAL",
+        "PRD-PRIVACY-DELETE",
+        "PRD-RESULT-SEARCH"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-PRIVACY-LOCAL",
+        "PRD-PRIVACY-DELETE"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-RESULT-SEARCH": "목록은 아이디 순으로 정렬하고, 8명이 넘으면 아이디 찾기 칸을 표시한다.",
+        "PRD-PRIVACY-LOCAL": "앱에는 자체 서버가 없다. 백업 내용은 기기 안에서만 처리하고, 사용자가 리포트를 공유하면 계정 아이디와 집계 숫자가 이미지에 포함된다.",
+        "PRD-PRIVACY-DELETE": "전체 초기화는 폴더 북마크와 로컬 저장소 키(시작 안내 단계와 연결 정보 포함)를 지우고, 예약된 알림을 취소하고, iOS WebView 데이터와 쿠키 저장소를 삭제한다. 결제 권한은 유지한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-RESULT-SEARCH": "목록은 아이디 순으로 정렬하고, 8명이 넘으면 아이디 찾기 칸을 표시한다.",
+        "PRD-PRIVACY-LOCAL": "직접 연결·파일에서 받은 관계 목록과 기록 비교는 기기 안에서 처리한다.",
+        "PRD-PRIVACY-DELETE": "전체 초기화는 폴더 북마크와 로컬 저장소 키(v7·v6·legacy 상태, 시작 안내 단계·연결 정보·조회 일정 포함)를 지우고, 예약된 알림을 취소하고, iOS WebView 데이터와 쿠키 저장소를 삭제한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-027",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-PRIVACY-LOCAL",
+        "PRD-PRIVACY-DELETE",
+        "PRD-RESULT-SEARCH"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-PRIVACY-LOCAL",
+        "PRD-PRIVACY-DELETE"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-RESULT-SEARCH": "목록은 아이디 순으로 정렬하고, 8명이 넘으면 아이디 찾기 칸을 표시한다.",
+        "PRD-PRIVACY-LOCAL": "앱에는 자체 서버가 없다. 백업 내용은 기기 안에서만 처리하고, 사용자가 리포트를 공유하면 계정 아이디와 집계 숫자가 이미지에 포함된다.",
+        "PRD-PRIVACY-DELETE": "전체 초기화는 폴더 북마크와 로컬 저장소 키(시작 안내 단계와 연결 정보 포함)를 지우고, 예약된 알림을 취소하고, iOS WebView 데이터와 쿠키 저장소를 삭제한다. 결제 권한은 유지한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-RESULT-SEARCH": "목록은 아이디 순으로 정렬하고, 8명이 넘으면 아이디 찾기 칸을 표시한다.",
+        "PRD-PRIVACY-LOCAL": "직접 연결·파일에서 받은 관계 목록과 기록 비교는 기기 안에서 처리한다.",
+        "PRD-PRIVACY-DELETE": "전체 초기화는 폴더 북마크와 로컬 저장소 키(v7·v6·legacy 상태, 시작 안내 단계·연결 정보·조회 일정 포함)를 지우고, 예약된 알림을 취소하고, iOS WebView 데이터와 쿠키 저장소를 삭제한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-028",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-PRIVACY-LOCAL",
+        "PRD-PRIVACY-DELETE",
+        "PRD-RESULT-SEARCH"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-PRIVACY-LOCAL",
+        "PRD-PRIVACY-DELETE"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-RESULT-SEARCH": "목록은 아이디 순으로 정렬하고, 8명이 넘으면 아이디 찾기 칸을 표시한다.",
+        "PRD-PRIVACY-LOCAL": "앱에는 자체 서버가 없다. 백업 내용은 기기 안에서만 처리하고, 사용자가 리포트를 공유하면 계정 아이디와 집계 숫자가 이미지에 포함된다.",
+        "PRD-PRIVACY-DELETE": "전체 초기화는 폴더 북마크와 로컬 저장소 키(시작 안내 단계와 연결 정보 포함)를 지우고, 예약된 알림을 취소하고, iOS WebView 데이터와 쿠키 저장소를 삭제한다. 결제 권한은 유지한다."
+      },
+      "current_prd_excerpts": {
+        "PRD-RESULT-SEARCH": "목록은 아이디 순으로 정렬하고, 8명이 넘으면 아이디 찾기 칸을 표시한다.",
+        "PRD-PRIVACY-LOCAL": "직접 연결·파일에서 받은 관계 목록과 기록 비교는 기기 안에서 처리한다.",
+        "PRD-PRIVACY-DELETE": "전체 초기화는 폴더 북마크와 로컬 저장소 키(v7·v6·legacy 상태, 시작 안내 단계·연결 정보·조회 일정 포함)를 지우고, 예약된 알림을 취소하고, iOS WebView 데이터와 쿠키 저장소를 삭제한다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-029",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-SNAPSHOT-RETENTION",
+        "PRD-PAYWALL-BOUNDARY",
+        "PRD-SAMPLE-EXPORT"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-SNAPSHOT-RETENTION",
+        "PRD-PAYWALL-BOUNDARY",
+        "PRD-SAMPLE-EXPORT"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-SAMPLE-EXPORT": "샘플 데이터에서는 두 기능을 모두 사용할 수 없다.",
+        "PRD-SNAPSHOT-RETENTION": "수동·자동 가져오기 모두 최근 10개 기록을 보관한다.",
+        "PRD-PAYWALL-BOUNDARY": "맞팔·언팔 분석, 백업 비교, 직접 확인 기록은 무료다. 유료 권한은 가려진 이름, 친한 친구 미맞팔 이름, 차단한 계정 목록을 연다."
+      },
+      "current_prd_excerpts": {
+        "PRD-SAMPLE-EXPORT": "샘플의 공유는 비활성화한다.",
+        "PRD-SNAPSHOT-RETENTION": "무료·유료 모두 최근 최대 10개라는 기존 보관 범위를 유지한다.",
+        "PRD-PAYWALL-BOUNDARY": "연결·현재 관계 목록과 이름·최신 두 기록 비교·직접 확인 기록은 무료다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-030",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-SNAPSHOT-RETENTION",
+        "PRD-PAYWALL-BOUNDARY",
+        "PRD-SAMPLE-EXPORT"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-SNAPSHOT-RETENTION",
+        "PRD-PAYWALL-BOUNDARY",
+        "PRD-SAMPLE-EXPORT"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-SAMPLE-EXPORT": "샘플 데이터에서는 두 기능을 모두 사용할 수 없다.",
+        "PRD-SNAPSHOT-RETENTION": "수동·자동 가져오기 모두 최근 10개 기록을 보관한다.",
+        "PRD-PAYWALL-BOUNDARY": "맞팔·언팔 분석, 백업 비교, 직접 확인 기록은 무료다. 유료 권한은 가려진 이름, 친한 친구 미맞팔 이름, 차단한 계정 목록을 연다."
+      },
+      "current_prd_excerpts": {
+        "PRD-SAMPLE-EXPORT": "샘플의 공유는 비활성화한다.",
+        "PRD-SNAPSHOT-RETENTION": "무료·유료 모두 최근 최대 10개라는 기존 보관 범위를 유지한다.",
+        "PRD-PAYWALL-BOUNDARY": "연결·현재 관계 목록과 이름·최신 두 기록 비교·직접 확인 기록은 무료다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-031",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-SNAPSHOT-RETENTION",
+        "PRD-PAYWALL-BOUNDARY",
+        "PRD-SAMPLE-EXPORT"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-SNAPSHOT-RETENTION",
+        "PRD-PAYWALL-BOUNDARY",
+        "PRD-SAMPLE-EXPORT"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-SAMPLE-EXPORT": "샘플 데이터에서는 두 기능을 모두 사용할 수 없다.",
+        "PRD-SNAPSHOT-RETENTION": "수동·자동 가져오기 모두 최근 10개 기록을 보관한다.",
+        "PRD-PAYWALL-BOUNDARY": "맞팔·언팔 분석, 백업 비교, 직접 확인 기록은 무료다. 유료 권한은 가려진 이름, 친한 친구 미맞팔 이름, 차단한 계정 목록을 연다."
+      },
+      "current_prd_excerpts": {
+        "PRD-SAMPLE-EXPORT": "샘플의 공유는 비활성화한다.",
+        "PRD-SNAPSHOT-RETENTION": "무료·유료 모두 최근 최대 10개라는 기존 보관 범위를 유지한다.",
+        "PRD-PAYWALL-BOUNDARY": "연결·현재 관계 목록과 이름·최신 두 기록 비교·직접 확인 기록은 무료다."
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-032",
+      "preserved_revision": 1,
+      "new_requirement_ids": [
+        "PRD-SNAPSHOT-RETENTION",
+        "PRD-PAYWALL-BOUNDARY",
+        "PRD-SAMPLE-EXPORT"
+      ],
+      "removed_requirement_ids": [],
+      "excerpt_changes": [
+        "PRD-SNAPSHOT-RETENTION",
+        "PRD-PAYWALL-BOUNDARY",
+        "PRD-SAMPLE-EXPORT"
+      ],
+      "behavior_identity_preserved": true,
+      "v3_execution_directive_added": true,
+      "old_prd_excerpts": {
+        "PRD-SAMPLE-EXPORT": "샘플 데이터에서는 두 기능을 모두 사용할 수 없다.",
+        "PRD-SNAPSHOT-RETENTION": "수동·자동 가져오기 모두 최근 10개 기록을 보관한다.",
+        "PRD-PAYWALL-BOUNDARY": "맞팔·언팔 분석, 백업 비교, 직접 확인 기록은 무료다. 유료 권한은 가려진 이름, 친한 친구 미맞팔 이름, 차단한 계정 목록을 연다."
+      },
+      "current_prd_excerpts": {
+        "PRD-SAMPLE-EXPORT": "샘플의 공유는 비활성화한다.",
+        "PRD-SNAPSHOT-RETENTION": "무료·유료 모두 최근 최대 10개라는 기존 보관 범위를 유지한다.",
+        "PRD-PAYWALL-BOUNDARY": "연결·현재 관계 목록과 이름·최신 두 기록 비교·직접 확인 기록은 무료다."
+      }
+    }
+  ],
+  "global_changes": [
+    "Use current 51110f4 PRD's first-screen and More > saved-file entry labels; do not assume an older 3-step entry layout.",
+    "Enforce 512 loose JSON/HTML files, 32 MiB per file, 64 MiB aggregate, and prohibit ZIP mixed with loose files.",
+    "Use the current free latest-two-snapshot comparison and Pro multi-record timeline/date/person history boundary.",
+    "Do not test native iOS WebView/cookie deletion, notification cancellation, or native share-sheet behavior in desktop Chrome; mark those N/A.",
+    "Keep current list search label and username sorting requirement; no PRD requirement for a new alphabetical sort variant beyond username order."
+  ],
+  "new_revision_count": 32,
+  "current_reusable_count": 32,
+  "revision_map": [
+    {
+      "persona_id": "PER-PEEKLY-V2-001",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-002",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-003",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-004",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-005",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-006",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-007",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-008",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-009",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-010",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-011",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-012",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-013",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-014",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-015",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-016",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-017",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-018",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-019",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-020",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-021",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-022",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-023",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-024",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-025",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-026",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-027",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-028",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-029",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-030",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-031",
+      "revision": 2,
+      "changed": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-032",
+      "revision": 2,
+      "changed": true
+    }
+  ],
+  "excerpt_changes_total": 52
+}

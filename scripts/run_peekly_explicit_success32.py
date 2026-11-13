@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "skills/remorsearch-ux-qa/scripts"))
 from live_scale_browser import _load_personas, run_stage
 
-LIBRARY = ROOT.parents[2] / "live-persona-browser-integration-20261113" / ".ux-loop/peekly-persona-library-v2"
+LIBRARY = ROOT / ".ux-loop/peekly-persona-library-v3"
 PRODUCT = Path("/Volumes/SanDisk2TB/m4mini/CodeProjects/insta-tracker/.omo/worktrees/peekly-import-ux-20261113")
 FIXTURES = ROOT / ".ux-loop/peekly-fixtures-v4"
 BUILD = PRODUCT / ".ux-loop/peekly-build-manifest.json"

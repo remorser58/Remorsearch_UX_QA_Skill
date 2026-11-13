@@ -32,6 +32,12 @@ async function start(input) {
   if (!manifestStat.isFile() || manifestStat.isSymbolicLink() || fs.realpathSync(manifestPath)!==manifestPath) throw new Error('fixture_manifest_invalid');
   fixtureManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   if (fixtureManifest.schema_version !== 'peekly-synthetic-fixtures.v1' || !Array.isArray(fixtureManifest.files)) throw new Error('fixture_manifest_schema');
+  if (fixtureManifest.groups !== undefined) {
+    if (!fixtureManifest.groups || typeof fixtureManifest.groups !== 'object' || Array.isArray(fixtureManifest.groups)) throw new Error('fixture_manifest_groups');
+    for (const [group,names] of Object.entries(fixtureManifest.groups)) {
+      if (!/^[a-zA-Z0-9._-]{1,80}$/.test(group) || !Array.isArray(names) || !names.length || names.length>513 || names.some(name=>typeof name!=='string'||path.basename(name)!==name)) throw new Error('fixture_manifest_group_entry');
+    }
+  }
   for (const row of fixtureManifest.files) {
     if (!row || typeof row.name !== 'string' || path.basename(row.name)!==row.name || !/^[a-zA-Z0-9._-]+$/.test(row.name) || !/^[a-f0-9]{64}$/.test(row.sha256) || !Number.isSafeInteger(row.bytes) || row.bytes<0 || row.bytes>134217729) throw new Error('fixture_manifest_entry');
     const filename=path.join(fixturesDir,row.name), st=fs.lstatSync(filename);
@@ -98,7 +104,7 @@ async function evaluate(expression) {
   return r.result?.value;
 }
 async function observe() {
-  const expression = "(() => {const rendered=e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return r.width>0&&r.height>0&&s.visibility!=='hidden'&&s.display!=='none'&&(e.tagName==='SUMMARY'||!e.closest('details:not([open])'))};const visible=e=>{if(!rendered(e))return false;const r=e.getBoundingClientRect();if(r.bottom<=0||r.top>=innerHeight||r.right<=0||r.left>=innerWidth)return false;const x=Math.min(innerWidth-1,Math.max(0,r.x+r.width/2)),y=Math.min(innerHeight-1,Math.max(0,r.y+r.height/2)),hit=document.elementFromPoint(x,y);return !!hit&&(hit===e||e.contains(hit)||hit.closest('button,a,summary,[role=button],[role=link]')===e)};const selector=e=>{if(e.id)return '#'+CSS.escape(e.id);const parts=[];while(e&&e.nodeType===1&&e!==document.body){let n=1;for(let p=e.previousElementSibling;p;p=p.previousElementSibling)if(p.tagName===e.tagName)n++;parts.unshift(e.tagName.toLowerCase()+':nth-of-type('+n+')');e=e.parentElement;}return 'body>'+parts.join('>');};const controls=[...document.querySelectorAll('button,a,summary,input,textarea,select,[role=button],[role=link]')].filter(rendered).slice(0,100).map((e,i)=>({index:i,selector:selector(e),tag:e.tagName.toLowerCase(),id:e.id||null,role:e.getAttribute('role'),type:e.type||null,label:(e.getAttribute('aria-label')||e.innerText||e.textContent||e.getAttribute('placeholder')||'').trim().slice(0,180),placeholder:e.getAttribute('placeholder')||null,title:e.getAttribute('title')||null,multiple:e.multiple===true,disabled:!!e.disabled,visible:visible(e),href:e.tagName==='A'?e.href:null}));const fileInputs=[...document.querySelectorAll('input[type=file]')].map((e,i)=>({index:i,selector:selector(e),accept:e.accept,multiple:e.multiple,disabled:!!e.disabled,hidden:!visible(e)}));return {url:location.href,title:document.title,text:(document.body?.innerText||'').slice(0,12000),controls,file_inputs:fileInputs,viewport:{width:innerWidth,height:innerHeight}};})()";
+  const expression = "(() => {const rendered=e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return r.width>0&&r.height>0&&s.visibility!=='hidden'&&s.display!=='none'&&(e.tagName==='SUMMARY'||!e.closest('details:not([open])'))};const visible=e=>{if(!rendered(e))return false;const r=e.getBoundingClientRect();if(r.bottom<=0||r.top>=innerHeight||r.right<=0||r.left>=innerWidth)return false;const x=Math.min(innerWidth-1,Math.max(0,r.x+r.width/2)),y=Math.min(innerHeight-1,Math.max(0,r.y+r.height/2)),hit=document.elementFromPoint(x,y);return !!hit&&(hit===e||e.contains(hit)||hit.closest('button,a,summary,[role=button],[role=link]')===e)};const selector=e=>{if(e.id)return '#'+CSS.escape(e.id);const parts=[];while(e&&e.nodeType===1&&e!==document.body){let n=1;for(let p=e.previousElementSibling;p;p=p.previousElementSibling)if(p.tagName===e.tagName)n++;parts.unshift(e.tagName.toLowerCase()+':nth-of-type('+n+')');e=e.parentElement;}return 'body>'+parts.join('>');};const controls=[...document.querySelectorAll('button,a,summary,input,textarea,select,[role=button],[role=link]')].filter(rendered).slice(0,100).map((e,i)=>({index:i,selector:selector(e),tag:e.tagName.toLowerCase(),id:e.id||null,role:e.getAttribute('role'),type:e.type||null,label:(e.getAttribute('aria-label')||e.innerText||e.textContent||e.getAttribute('placeholder')||'').trim().slice(0,180),placeholder:e.getAttribute('placeholder')||null,title:e.getAttribute('title')||null,multiple:e.multiple===true,disabled:!!e.disabled,visible:visible(e),href:e.tagName==='A'?e.href:null}));const fileInputs=[...document.querySelectorAll('input[type=file]')].map((e,i)=>({index:i,selector:selector(e),accept:e.accept,multiple:e.multiple,disabled:!!e.disabled,hidden:!visible(e)}));const listRows=[...document.querySelectorAll('.person-list [data-row-key]')].map(e=>({key:e.getAttribute('data-row-key'),text:(e.innerText||e.textContent||'').trim().slice(0,180)}));return {url:location.href,title:document.title,text:(document.body?.innerText||'').slice(0,12000),controls,file_inputs:fileInputs,list_rows:listRows,storage_keys:Object.keys(localStorage),viewport:{width:innerWidth,height:innerHeight}};})()";
   const data=await evaluate(expression);
   if (!data || new URL(data.url).origin!==targetOrigin) throw new Error('origin_changed');
   const values = await evaluate("(() => {const out={};for(const selector of "+JSON.stringify([...typedInputs.keys()])+ "){try{const e=document.querySelector(selector);out[selector]=e&&('value' in e)?String(e.value):null;}catch{out[selector]=null;}}return out;})()");
@@ -128,11 +134,16 @@ async function act(input) {
   if (name==='upload') {
     const selector=args.selector, filename=args.file;
     if (typeof filename!=='string' || path.basename(filename)!==filename) throw new Error('fixture_name_invalid');
-    const entry=fixtureManifest.files.find(row=>row.name===filename);
-    if (!entry) throw new Error('fixture_not_allowlisted');
-    const fullPath=path.join(fixturesDir,filename);
-    const st=fs.lstatSync(fullPath);
-    if (!st.isFile() || st.isSymbolicLink() || fs.realpathSync(fullPath)!==fullPath || st.size!==entry.bytes || hash(fs.readFileSync(fullPath))!==entry.sha256) throw new Error('fixture_integrity');
+    const groupName=filename.startsWith('@group:')?filename.slice(7):null;
+    const names=groupName?(fixtureManifest.groups?.[groupName]||[]):[filename];
+    if (!names.length || names.some(name=>typeof name!=='string'||path.basename(name)!==name)) throw new Error('fixture_not_allowlisted');
+    const entries=names.map(name=>fixtureManifest.files.find(row=>row.name===name));
+    if (entries.some(entry=>!entry)) throw new Error('fixture_not_allowlisted');
+    const fullPaths=names.map((name,index)=>{
+      const fullPath=path.join(fixturesDir,name), entry=entries[index], st=fs.lstatSync(fullPath);
+      if (!st.isFile() || st.isSymbolicLink() || fs.realpathSync(fullPath)!==fullPath || st.size!==entry.bytes || hash(fs.readFileSync(fullPath))!==entry.sha256) throw new Error('fixture_integrity');
+      return fullPath;
+    });
     // Hidden React file inputs may be nested below several wrapper nodes.
     // Request the complete owned document tree before querying; a shallow
     // depth-1 snapshot can falsely report upload_target_missing even though
@@ -144,23 +155,22 @@ async function act(input) {
     const node=described.node;
     const attrs=Object.fromEntries((node.attributes||[]).reduce((out,value,index,array)=>{if(index%2===0)out.push([value,array[index+1]]);return out;},[]));
     if (node.nodeName!=='INPUT' || attrs.type!=='file') throw new Error('upload_target_not_single_file_input');
-    await send('DOM.setFileInputFiles',{files:[fullPath],nodeId:found.nodeId});
+    await send('DOM.setFileInputFiles',{files:fullPaths,nodeId:found.nodeId});
     uploadedFixture=filename;
     const started=Date.now(); let sawProgress=false, lastPhase=null;
-    while (Date.now()-started<15000) {
+    while (Date.now()-started<1200) {
       const phase=await evaluate("(() => {const e=document.querySelector('[role=status][aria-live=polite]');return e?(e.innerText||e.textContent||'').trim():null;})()");
       if (phase) {
         sawProgress=true;
         if (phase!==lastPhase) uploadProgressSamples.push({elapsed_ms:Date.now()-started,text:phase.slice(0,240)});
         lastPhase=phase;
-      } else if ((sawProgress && Date.now()-started>150) || Date.now()-started>1200) break;
+      } else if ((sawProgress && Date.now()-started>100) || Date.now()-started>500) break;
       await new Promise(resolve=>setTimeout(resolve,50));
     }
-    if (!uploadProgressSamples.length) await new Promise(resolve=>setTimeout(resolve,700));
   } else if (name==='click') {
     const selector=args.selector, label=args.label;
     if (typeof label!=='string' || !label.trim() || label.length>180) throw new Error('click_label_required');
-    const expression="(() => {const norm=s=>(s||'').replace(/\\s+/g,' ').trim();const candidate=e=>!!e&&e.getBoundingClientRect().width>0&&e.getBoundingClientRect().height>0&&getComputedStyle(e).visibility!=='hidden'&&getComputedStyle(e).display!=='none'&&(e.tagName==='SUMMARY'||!e.closest('details:not([open])'))&&!e.disabled&&e.type!=='submit'&&!(e.closest('form')&&e.tagName==='BUTTON'&&e.type!=='button');let e=null;try{e=document.querySelector("+JSON.stringify(selector)+")}catch{};if(!candidate(e)||norm(e.getAttribute('aria-label')||e.innerText||e.textContent)!==norm("+JSON.stringify(label)+")){const matches=[...document.querySelectorAll('button,a,summary,[role=button],[role=link]')].filter(x=>candidate(x)&&norm(x.getAttribute('aria-label')||x.innerText||x.textContent)===norm("+JSON.stringify(label)+"));if(matches.length!==1)return null;e=matches[0];}e.scrollIntoView({block:'center',inline:'nearest'});const r=e.getBoundingClientRect();if(r.bottom<=0||r.top>=innerHeight||r.right<=0||r.left>=innerWidth)return null;return {x:r.x+r.width/2,y:r.y+r.height/2,tag:e.tagName,href:e.tagName==='A'?e.href:null,selector:e.id?'#'+CSS.escape(e.id):"+JSON.stringify(selector)+"};})()";
+    const expression="(() => {const norm=s=>(s||'').replace(/\\s+/g,' ').trim();const candidate=e=>!!e&&e.getBoundingClientRect().width>0&&e.getBoundingClientRect().height>0&&getComputedStyle(e).visibility!=='hidden'&&getComputedStyle(e).display!=='none'&&(e.tagName==='SUMMARY'||!e.closest('details:not([open])'))&&!e.disabled&&e.type!=='submit'&&!(e.closest('form')&&e.tagName==='BUTTON'&&e.type!=='button');let e=null;try{e=document.querySelector("+JSON.stringify(selector)+")}catch{};if(!candidate(e)||norm(e.getAttribute('aria-label')||e.innerText||e.textContent)!==norm("+JSON.stringify(label)+")){const matches=[...document.querySelectorAll('button,a,summary,[role=button],[role=link]')].filter(x=>candidate(x)&&norm(x.getAttribute('aria-label')||x.innerText||x.textContent)===norm("+JSON.stringify(label)+"));if(matches.length!==1)return null;e=matches[0];}e.scrollIntoView({block:'center',inline:'nearest'});const r=e.getBoundingClientRect();if(r.bottom<=0||r.top>=innerHeight||r.right<=0||r.left>=innerWidth)return null;return {x:r.x+r.width/2,y:r.y+r.height/2,tag:e.tagName,href:e.tagName==='A'?e.href:null,label:norm(e.getAttribute('aria-label')||e.innerText||e.textContent),selector:e.id?'#'+CSS.escape(e.id):"+JSON.stringify(selector)+"};})()";
     const box=await evaluate(expression);
     if (!box) throw new Error('click_target_not_allowed_or_visible');
     if (box.href && new URL(box.href).origin!==targetOrigin) throw new Error('cross_origin_link_blocked');
@@ -187,7 +197,7 @@ async function act(input) {
   } else throw new Error('unknown_tool');
   const state=await observe(); const capture=await screenshot();
   return {text:'Action '+name+' completed.\nURL '+state.url+'\nTitle '+state.title+'\n'+state.text,
-    facts:{...state,last_action:name,...(uploadedFixture?{uploaded_fixture:uploadedFixture,upload_progress_samples:uploadProgressSamples}:{})},
+    facts:{...state,last_action:name,...(name==='click'?{last_action_label:args.label}:{}),...(uploadedFixture?{uploaded_fixture:uploadedFixture,upload_progress_samples:uploadProgressSamples}:{})},
     captures:[capture],checks:[]};
 }
 async function close() {

@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import shutil
 import zipfile
+import tempfile
 
 
 def sha256(path: Path) -> str:
@@ -28,6 +29,7 @@ def main(source: Path, destination: Path) -> None:
         raise SystemExit("fixture_manifest_schema_invalid")
     destination.mkdir(parents=True, mode=0o700)
     files = []
+    groups = {}
     for row in original["files"]:
         name = row["name"]
         source_file = source / name
@@ -45,7 +47,7 @@ def main(source: Path, destination: Path) -> None:
             outgoing.writestr(info.filename, incoming.read(info.filename), compress_type=zipfile.ZIP_STORED)
         with outgoing.open("padding.bin", "w") as padding:
             block = bytes(1024 * 1024)
-            for _ in range(64):
+            for _ in range(112):
                 padding.write(block)
     files.append(dict(name=progress_name, bytes=progress.stat().st_size,
                       sha256=sha256(progress), scenario="large-valid-progress"))
@@ -60,10 +62,51 @@ def main(source: Path, destination: Path) -> None:
     files.append(dict(name=oversized_name, bytes=oversized.stat().st_size,
                       sha256=sha256(oversized), scenario="oversize-128mib-plus-one"))
 
+    def add_bytes(name: str, data: bytes, scenario: str):
+        path = destination / name
+        path.write_bytes(data)
+        os.chmod(path, 0o600)
+        files.append(dict(name=name, bytes=path.stat().st_size, sha256=sha256(path), scenario=scenario))
+
+    # Loose files are extracted from the exact hash-verified v3 synthetic ZIPs.
+    for archive_name, wanted in (("peekly-format-html.zip", ("followers.html", "following.html")),
+                                 ("peekly-format-json.zip", ("followers.json", "following.json", "personal_information.json"))):
+        with zipfile.ZipFile(source / archive_name) as archive:
+            for name in wanted:
+                add_bytes(name, archive.read(name), "extracted-from-" + archive_name)
+    groups["peekly-mixed-loose-valid"] = ["followers.html", "following.html", "followers.json", "following.json", "personal_information.json"]
+    groups["peekly-zip-plus-loose-rejected"] = ["peekly-format-html.zip", "followers.json"]
+
+    # 512/513 loose-file boundaries: two recognized relationship files plus
+    # ignored-but-valid JSON metadata files exercise the picker/parser limit.
+    filler = []
+    for index in range(510):
+        name = f"boundary-extra-{index:03d}.json"
+        add_bytes(name, b"{}", "loose-file-count-boundary")
+        filler.append(name)
+    groups["peekly-loose-512-valid"] = ["followers.json", "following.json", *filler]
+    extra_name = "boundary-extra-510.json"
+    add_bytes(extra_name, b"{}", "loose-file-count-boundary")
+    groups["peekly-loose-513-rejected"] = ["followers.json", "following.json", *filler, extra_name]
+
+    # Per-file and aggregate byte limits; valid JSON followed by whitespace
+    # remains parseable but forces the size checks before result aggregation.
+    base = (source / "peekly-format-json.zip")
+    with zipfile.ZipFile(base) as archive:
+        follower_json = archive.read("followers.json")
+        following_json = archive.read("following.json")
+    one_over = "loose-file-over-32mib.json"
+    add_bytes(one_over, follower_json + b" " * (32 * 1024 * 1024 + 1 - len(follower_json)), "loose-single-file-over-32mib")
+    groups["peekly-loose-file-over"] = [one_over]
+    aggregate_names = ["loose-total-a.json", "loose-total-b.json", "loose-total-c.json"]
+    for name, data in zip(aggregate_names, (follower_json, following_json, b"{}")):
+        add_bytes(name, data + b" " * (22 * 1024 * 1024 - len(data)), "loose-aggregate-over-64mib")
+    groups["peekly-loose-total-over"] = aggregate_names
+
     manifest = dict(schema_version="peekly-synthetic-fixtures.v1", version="peekly-explicit-success-v4",
         created_at=original.get("created_at"), product_id="peekly",
         source=dict(path="src/core/zipParser.ts", sha256="synthetic-only-boundary-fixtures-no-product-source-modification"),
-        files=files)
+        files=files, groups=groups)
     (destination / "fixture-manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     os.chmod(destination / "fixture-manifest.json", 0o600)
     print(json.dumps({"fixture_count": len(files), "progress_fixture_bytes": progress.stat().st_size,

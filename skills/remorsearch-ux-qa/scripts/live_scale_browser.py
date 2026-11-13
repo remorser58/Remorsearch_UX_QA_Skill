@@ -33,7 +33,7 @@ TOOLS = [
     Tool("observe", "Read the current page title, visible text and visible controls; capture a screenshot.", {}, "owned_fixture_write"),
     Tool("click", "Click one visible, enabled, non-submit control by exact CSS selector and its exact visible label. The label is rechecked at action time to avoid stale selectors.", {"selector":"string","label":"string"}, "owned_fixture_write"),
     Tool("type", "Enter synthetic non-sensitive text into a visible text or textarea control by exact CSS selector.", {"selector":"string","value":"string"}, "owned_fixture_write"),
-    Tool("upload", "Choose one hash-verified synthetic fixture from the reviewed fixture manifest for a visible or hidden single-file input.", {"selector":"string","file":"string"}, "owned_fixture_write"),
+    Tool("upload", "Choose one hash-verified synthetic fixture or one reviewed @group:<name> multi-file fixture from the manifest for a visible or hidden file input.", {"selector":"string","file":"string"}, "owned_fixture_write"),
     Tool("scroll", "Scroll the current page by a bounded signed pixel delta.", {"delta":"integer"}, "owned_fixture_write"),
     Tool("wait", "Wait briefly for the current page to settle.", {"ms":"integer"}, "owned_fixture_write"),
 ]
