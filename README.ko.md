@@ -25,7 +25,7 @@ Python 도구는 Python 3.10 이상에서 표준 라이브러리와 POSIX 파일
 macOS, Linux, Windows의 WSL에서 실행할 수 있습니다. 기본 `python3`가 더 낮으면(macOS 기본 Python은 3.9입니다) 호스트가 스킬 폴더에서 `python3 scripts/find_runtime.py`를 실행합니다. 지원되는 가장 높은 Python, Node.js 22 경로와 공백을 JSON으로 출력하며 아무것도 설치하지 않습니다.
 
 ```sh
-git clone --branch rem/browser-journey-20261112 --single-branch https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
+git clone --branch rem/scalable-swarm-20261113 --single-branch https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
 # Claude Code(개인용). 팀과 나누려면 프로젝트 안의 .claude/skills/에 복사합니다
 mkdir -p ~/.claude/skills
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
@@ -54,7 +54,7 @@ Node.js 22를 쓰십시오. 고정된 Playwright 1.56.1에서는 Node.js 24.16 �
 
 ## 사용법
 
-현재 저장된 페르소나의 정적 브라우저 여정 실행까지 포함한 누적 개선은 `rem/browser-journey-20261112` 브랜치에 있으며 아직 `main`에 병합하지 않았습니다.
+현재 저장된 페르소나의 정적 브라우저 여정과 대규모 실행 큐를 포함한 누적 개선은 `rem/scalable-swarm-20261113` 브랜치에 있으며 아직 `main`에 병합하지 않았습니다.
 앞의 설치 명령은 이 브랜치를 선택합니다. 기존 설치본을 직접 수정했다면 먼저 보존합니다.
 
 저장소는 비공개로 유지합니다. [재실행 검증 결과·남은 제한](docs/validation/persona-journey-replay-20261111.md)과
@@ -81,6 +81,8 @@ Node.js 22를 쓰십시오. 고정된 Playwright 1.56.1에서는 Node.js 24.16 �
 기본 조사 후보는 당근, 디시인사이드, 유튜브 댓글, X, 인스타그램, Threads(쓰레드)입니다. 관찰한 과업에 맞는 곳을 선택하며 매번 모두 수집하지는 않습니다. 현재 접근 가능성이나 수집 성공도 보장하지 않습니다. 후보 URL을 찾은 뒤 포함된 insane-search 방법을 사용하되 기존 접근·근거 규칙을 따릅니다. [실행 안내](skills/remorsearch-ux-qa/references/loop/product-improvement.md)에 제품 탐색부터 재검증까지의 절차와 plan·bundle·loop 명령을 정리했습니다.
 
 ### 목표를 말하면 현재 QA 결과까지 연결
+
+여러 작은 모델로 수십~수백 페르소나를 실행하는 경로는 [대규모 큐 안내](skills/remorsearch-ux-qa/references/persona-qa/scale-run.md)에 연결했습니다. 호스트가 저장된 현재 프로필과 도구를 준비하고 세션 수·전송 대상·동시 요청·최대 비용을 먼저 보여 줍니다. 유료 실행은 그 계획에 대한 명시적 승인 후 시작하며 일시정지·재개는 저장된 응답과 예산을 유지합니다. 응답이 불확실한 요청을 자동 반복하지 않습니다. [이번 검증 기록](docs/validation/scalable-swarm-results-20261113.md)은 모의 확장 시험과 실제 모델 미검증 범위를 구분합니다.
 
 대상 폴더와 확인할 사용자 목표를 평소 말투로 전달합니다. 호스트가 필요한 코드·기존 페르소나·실행 경로를 검토하므로 사용자가 복사 목록, JSON, 해시, lease를 작성할 필요가 없습니다. `start`로 준비한 새 작업공간에서 검토된 소유 단일 Python 어댑터가 있으면 `run`이 실제 코어 과제를 실행하고 관측을 기존 receipt 검증과 MD/JSON 보고서에 연결합니다. 이후 `status` 또는 같은 `start`로 목표별 실패, 미실행 조건, 정확한 페르소나 버전, 근거와 다음 행동을 확인합니다.
 

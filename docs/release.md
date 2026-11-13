@@ -97,6 +97,14 @@ produces a partial report with `ready: false`. Synthetic tests establish local
 behavior and packaging; live community access, real-user preferences, Figma access
 and accessibility certification remain outside this check.
 
+The extracted package also checks `remorsearch.py swarm --help`, runs an eight-session
+`examples/agents/scale_fixture.py` diagnostic at concurrency four, and reads it back
+through `remorsearch.py swarm status`. These checks use the durable queue and existing
+persona/evidence gates with authored model callbacks and generated PNGs. They make
+zero model or browser calls. Larger 8/32/100/300 stages and their measured coordinator
+cost are recorded separately in `docs/validation/scalable-swarm-results-20261113.md`.
+The standard-library queue does not require the optional agent runtime below.
+
 ## Optional agent runtime checks
 
 The default installation remains standard-library only. The optional

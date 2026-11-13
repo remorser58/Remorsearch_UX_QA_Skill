@@ -30,7 +30,7 @@ and component tests do not establish that result.
 
 ## Install
 
-The cumulative saved-persona browser journey update is on `rem/browser-journey-20261112`, not yet merged
+The cumulative saved-persona queued swarm update is on `rem/scalable-swarm-20261113`, not yet merged
 into `main`. The commands below select this branch. The repository remains
 private. See [replay validation and remaining limits](docs/validation/persona-journey-replay-20261111.md)
 and the [persona library/task contract](skills/remorsearch-ux-qa/references/persona-qa/persona-library-swarm.md).
@@ -45,7 +45,7 @@ default `python3` is older (the macOS system Python is 3.9), the host runs
 highest supported Python, a Node.js 22 path and any gaps; it installs nothing.
 
 ```sh
-git clone --branch rem/browser-journey-20261112 --single-branch https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
+git clone --branch rem/scalable-swarm-20261113 --single-branch https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
 # Claude Code (personal); use .claude/skills/ inside a project to share it with a team
 mkdir -p ~/.claude/skills
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
@@ -114,6 +114,14 @@ existing access/evidence rules. See the [operational checklist](skills/remorsear
 for the product-to-replay workflow and existing plan/bundle/loop commands.
 
 ### From an ordinary request to a current local QA report
+
+For larger independent persona runs, the [queued swarm workflow](skills/remorsearch-ux-qa/references/persona-qa/scale-run.md)
+connects current saved profiles to a durable provider-neutral model/tool loop.
+The host previews session count, destinations, concurrent calls and budget before
+recording explicit approval for paid calls. Pause/resume retains checkpoints and
+unknown-send cost exposure; authored simulations and live model results remain
+separate. The [current validation](docs/validation/scalable-swarm-results-20261113.md)
+records exercised scale, failures and remaining live-provider gaps.
 
 Tell the host the approved product folder and user goal. The host reviews the
 minimal source, existing personas and permitted execution path; you do not need

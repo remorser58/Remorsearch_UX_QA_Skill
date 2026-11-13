@@ -224,6 +224,11 @@ def main(argv=None):
                       "--out", output / "local-journey-result"], cwd=output)
                 check("extracted-research-journey", [python, extracted_skill / "examples/journey/run_fixture.py",
                       "--research", "--out", output / "research-journey-result"], cwd=output)
+                check("extracted-swarm-help", [python, launcher, "swarm", "--help"], cwd=output)
+                check("extracted-scale-fixture", [python, extracted_skill / "examples/agents/scale_fixture.py",
+                      "--out", output / "scale-fixture-result", "--stages", "8", "--parallel", "4"], cwd=output)
+                check("extracted-swarm-status", [python, launcher, "swarm", "status", "--run",
+                      output / "scale-fixture-result/stage-8/run"], cwd=output)
         except (OSError, ValueError, zipfile.BadZipFile) as error:
             checks.append({"name": "extract", "passed": False, "error": str(error)})
     if args.skip_web:

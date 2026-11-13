@@ -37,6 +37,12 @@ Library commands, calculate hashes or explain internal task IDs.
 The conversational interface is the skill's host. CLI examples are for that
 host and maintainers, not prerequisites the end user must learn.
 
+For a requested larger model-driven swarm, continue with `scale-run.md` after
+current persona/source preparation. Preview available personas, provider data
+destinations, concurrency and the maximum cost; obtain explicit approval before
+paid calls. Pause/resume uses the same queue and budget. A fixture simulation
+does not prove actual-model or actual-product UX performance.
+
 ## Supported entry
 
 From the installed skill folder:

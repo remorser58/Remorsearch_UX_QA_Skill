@@ -199,10 +199,11 @@ separately from callback overlap; neither exposes provider-internal GPU timing.
 Offline protocol simulations remain distinct from actual Pro runs.
 The product target is tens to hundreds of independent personas on economical
 host models, with total persona count separate from concurrent worker count.
-The current entry admits two to eight contexts; the two-context Pro diagnostic
-is transport acceptance only. A larger queue, budget control and staged actual
-model scale tests are not implemented or validated here. Unconnected provider
-names are requirements examples, not supported integrations or verified prices.
+This legacy entry admits two to eight contexts; its two-context Pro diagnostic
+is transport acceptance only. `scale-run.md` describes the separate durable
+queue, provider adapters, budget approval and offline scale diagnostic. Actual
+small-model scale tests still need explicit cost approval and live evidence.
+Unconnected provider names are examples, not verified integrations or prices.
 Each new owned context first completes one short transport probe. It gives the
 conversation a bounded title and verifies the wire format before persona work.
 Probe responses are counted separately and cannot satisfy persona execution.

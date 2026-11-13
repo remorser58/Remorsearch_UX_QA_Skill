@@ -5,7 +5,7 @@ description: Improve existing product UX from a URL or repository. Inspect PRD a
 
 # Remorsearch UX QA
 
-Inspect PRD audience/needs/tasks and actual use. Read `references/loop/product-improvement.md`. No prepared brief or personas required. Research/review is read-only. Separate observations, inferences and unknowns.
+Inspect PRD audience/needs/tasks and actual use. Read `references/loop/product-improvement.md`. No prepared brief or personas required. Research/review is read-only.
 
 Start: `references/persona-qa/start.md`.
 Local: `references/persona-qa/local-run.md` (§6 before research).
@@ -70,7 +70,7 @@ After planning and URL discovery, use `references/insane-search/SOURCE.md` and i
 | Cause layers | `references/shared/causal-chain.md` |
 | Scenarios | `references/persona-qa/persona-scenario-design.md`, `references/persona-qa/community-to-test.md` |
 | Persona library/replay | `references/persona-qa/persona-library-swarm.md` §12 replay |
-| Agent loop | `references/persona-qa/agent-run.md` |
+| Model / queued swarm | `references/persona-qa/agent-run.md`, `references/persona-qa/scale-run.md` |
 | Severity | `references/persona-qa/evidence-and-severity.md` |
 | Korean channels, law, statistics | `references/research/korea/overview.md` |
 | Accessibility items | `references/persona-qa/kwcag-2.2.md` by ID |
