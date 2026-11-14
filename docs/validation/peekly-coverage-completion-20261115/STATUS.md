@@ -20,7 +20,13 @@ The user authorizes implementation, regression, owned isolated test contexts, sm
 - The old uncertain 009/010/012 remain preserved. The new requested cohort uses new jobs and call IDs.
 - Original 46 weighted mapping at 65f: 20 passed / 8 failed / 18 not_run; 32 unique mappings: 13 / 6 / 13.
 
-## Current phase — R4 preserved; exact close contract repaired for R5
+## Current phase — R5 actual smoke running on exact-contract source
+
+- R5 launched at `2026-11-14T19:07:40.327649+00:00` (04:07 Asia/Seoul), detached PID 61433; source `6046c7af218178ad2384900405cb428cd211072e` committed/pushed with exact remote SHA verified. Runtime and tests were committed; the only untracked files were two offline report-review helpers under this documentation directory, outside the 17-file runtime freeze.
+- Root `.ux-loop/peekly-completion-smoke-r5-20261115`; 022 job `S-jempbmnekmnoidfgnohkeofd`, 031 job `S-pcngliijgicolppnjdbkipjn`. Initial checkpoint: two running jobs, two model intents, no recorded problem. R5 preflight verified 36 prior queues, 335 excluded prior job IDs and 43 preserved historical uncertain rows.
+- Keep runtime, fixtures, library and product bytes fixed. This is not yet a passed smoke; no 32-person execution has started. The exact close contract now has real Queue/ScaleExecution regression coverage.
+
+### R4 preservation and R5 preparation (historical)
 
 - R4 ended at `2026-11-14T18:58:20.151359+00:00` with `smoke_failed`, control paused, queued 2 / complete 0 / running 0 / uncertain 0. It was intentionally paused after discovering a close-result adapter contract mismatch, before either job dispatched close. All in-flight responses settled; 37 logical model/review calls, 38 attempts with one known received-reply quality repair, zero uncertain resends. Both browser contexts and groups closed. The 35 prior queues and all 70 partial artifacts remain intact; partial observations earn no completed-session coverage. See `smoke-r4-diagnostics.json` / `.md`.
 - The root's lifecycle change incorrectly added details to the close wire result. Existing ScaleExecution and AgentExecution require exactly `{"stopped": true}`. The prior 88-case suite and zero-model browser lifecycle probe did not cover that caller boundary. An offline actual Queue/ScaleExecution reproduction yielded blocked 2 / complete 0 with `worker_stop_unconfirmed`; this code was not dispatched as a per-job close in R4.
@@ -158,10 +164,9 @@ The reference to 3 legacy UNKNOWN prerequisites was the repeated original-46 map
 
 ## Completion still required
 
-1. Finish and review the R3 lifecycle fixes/regressions, record results, and commit/push before new execution.
-2. Fresh independent R4 two-person smoke (024/032); inspect seed and PAYWALL evidence and all strict gates before expansion.
-3. Only after passed smoke, launch fresh 32 once in background and monitor with short read-only checks.
-4. Terminal raw aggregation, full byte/seal/source/ledger audit, independent semantic review. Compare pinned remaining 23 and original 46 without N/A or unassessed credit.
-5. Update historical comparison, STATUS and findings, commit/push, verify exact remote SHA and clean worktree.
+1. Complete the fixed R5 smoke (022/031); verify two current-valid sessions, all six success criteria executed, and the matched three-not-run reduction with actual seed/IDENTITY/PAYWALL evidence.
+2. Only after the strict gate and evidence review pass, launch fresh 32 once with the identical freeze. Start its durable raw report/audit publisher and monitor with short read-only checks.
+3. Terminal raw aggregation, full byte/seal/source/ledger audit, independent semantic review. Compare pinned remaining 23 and original 46 with N/A and unassessed separate and earning no execution credit.
+4. Update historical comparison, STATUS and findings, commit/push, verify exact remote SHA and clean worktree.
 
 Historical r1 had five uncertain resends and remains disclosed. The preceding final 32 had zero. New runs must independently verify zero; no lifetime-zero claim.
