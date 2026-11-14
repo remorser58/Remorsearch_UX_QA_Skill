@@ -1,0 +1,597 @@
+{
+  "admitted_observations": 17,
+  "artifact_audit": {
+    "artifacts": [
+      {
+        "bytes": 18456,
+        "id": "log-1",
+        "kind": "execution_log",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/agent-observation-1.json",
+        "sha256": "cabc91f9c691f620fd20785ab834b2a42a9e00988d77d4ddaf0ce140333bf3bb"
+      },
+      {
+        "bytes": 23500,
+        "id": "png-1-0",
+        "kind": "screenshot",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/browser-00014.png",
+        "sha256": "bdd0b8b7514ec9249498d858a4ffab440aacb2fbe5f3e7d32e87a181212115df"
+      },
+      {
+        "bytes": 20024,
+        "id": "log-2",
+        "kind": "execution_log",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/agent-observation-2.json",
+        "sha256": "345ab4e76390fed8382a865e40bf29f9d0b5986fa4280f32d01f4d772e7f9c65"
+      },
+      {
+        "bytes": 23406,
+        "id": "png-2-0",
+        "kind": "screenshot",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/browser-00027.png",
+        "sha256": "e5434411bd8181687757800e47bd025f97678457944615d6c7ede2d230a240cc"
+      },
+      {
+        "bytes": 23021,
+        "id": "log-3",
+        "kind": "execution_log",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/agent-observation-3.json",
+        "sha256": "d2cd6b87c0746471ee77aab69a1d0e1b0557b8d1fbf996c8406eb1432da8be7a"
+      },
+      {
+        "bytes": 22728,
+        "id": "png-3-0",
+        "kind": "screenshot",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/browser-00038.png",
+        "sha256": "350a906cc432a1bd77e26f34fbbbda951e8e23d3fe5614de59926194e0139c7e"
+      },
+      {
+        "bytes": 23027,
+        "id": "log-4",
+        "kind": "execution_log",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/agent-observation-4.json",
+        "sha256": "95ccd3a837b3b433bb9d01e27c20fe757f41b856edaf678e0156f937a9b90f9b"
+      },
+      {
+        "bytes": 22528,
+        "id": "png-4-0",
+        "kind": "screenshot",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/browser-00044.png",
+        "sha256": "f1b648137dfac1cdbc636fa328ad48241041b03ad1e73ddf760970b6f395d397"
+      },
+      {
+        "bytes": 25796,
+        "id": "log-5",
+        "kind": "execution_log",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/agent-observation-5.json",
+        "sha256": "b66814656eaf78be1ba37647502c9a188476cfaa906899435deaf47e83e2267e"
+      },
+      {
+        "bytes": 30085,
+        "id": "png-5-0",
+        "kind": "screenshot",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/browser-00055.png",
+        "sha256": "cb110a4a27aeed079cb71720e9541982aea8ec08928ee2b1e3c874684ba5fa3c"
+      },
+      {
+        "bytes": 24112,
+        "id": "log-6",
+        "kind": "execution_log",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/agent-observation-6.json",
+        "sha256": "9afe1c486241e3b015714a68f583290bc01c4adbec20289a1fcf65d3b72965b9"
+      },
+      {
+        "bytes": 30159,
+        "id": "png-6-0",
+        "kind": "screenshot",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/browser-00069.png",
+        "sha256": "fb5a4f7c5edb01f42fb5e6313b0ac28698e6f56c59a622d1a67030c9c074138f"
+      },
+      {
+        "bytes": 23892,
+        "id": "log-7",
+        "kind": "execution_log",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/agent-observation-7.json",
+        "sha256": "02e265d259873b51a45fbc0ebbbb2c425d48fb97894aaff693860eed2fca380b"
+      },
+      {
+        "bytes": 34529,
+        "id": "png-7-0",
+        "kind": "screenshot",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/browser-00080.png",
+        "sha256": "692c6b05781f961b10ba6c3d9b566b19d3dbcdf8ea219190524c0bde85a2b4f5"
+      },
+      {
+        "bytes": 26569,
+        "id": "log-8",
+        "kind": "execution_log",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/agent-observation-8.json",
+        "sha256": "262351e546b7d51f6e53dc72db71e7d5e2331bf3603156278c44a58bd2a25fa8"
+      },
+      {
+        "bytes": 29956,
+        "id": "png-8-0",
+        "kind": "screenshot",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/browser-00091.png",
+        "sha256": "86dc9980f4b47863598e2891ae0d752f82d5c67146e0367f059d2c72a569ba0d"
+      },
+      {
+        "bytes": 29315,
+        "id": "log-9",
+        "kind": "execution_log",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/agent-observation-9.json",
+        "sha256": "24995345910e38571fba6b59ebb1609fe988d146d28a76fcb031af295d289033"
+      },
+      {
+        "bytes": 36506,
+        "id": "png-9-0",
+        "kind": "screenshot",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/browser-00102.png",
+        "sha256": "3a12005d410a9fd338c96879f522132db1d7aece357f4b017d06c7e2c6c97f4a"
+      },
+      {
+        "bytes": 29838,
+        "id": "log-10",
+        "kind": "execution_log",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/agent-observation-10.json",
+        "sha256": "e0b233605860d74134d4540649635706d60376daaa54c29efcc2c9ef2b068863"
+      },
+      {
+        "bytes": 36745,
+        "id": "png-10-0",
+        "kind": "screenshot",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/browser-00123.png",
+        "sha256": "b80d84a1e858054f5a30e8a9b25832268247b47d40c3fe87c024407704ba7442"
+      },
+      {
+        "bytes": 29915,
+        "id": "log-11",
+        "kind": "execution_log",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/agent-observation-11.json",
+        "sha256": "3c325bc366bdde48316ff236fd2b476dfba2152b3b563fce8ca2adbc7a846b23"
+      },
+      {
+        "bytes": 36745,
+        "id": "png-11-0",
+        "kind": "screenshot",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/browser-00153.png",
+        "sha256": "b80d84a1e858054f5a30e8a9b25832268247b47d40c3fe87c024407704ba7442"
+      },
+      {
+        "bytes": 24730,
+        "id": "log-12",
+        "kind": "execution_log",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/agent-observation-12.json",
+        "sha256": "160c7b4e74a785f560f2429fdd3914f9b6d0cc9b48bdf4536f7c8351c44b1fb9"
+      },
+      {
+        "bytes": 31633,
+        "id": "png-12-0",
+        "kind": "screenshot",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/browser-00166.png",
+        "sha256": "fe383046c5b18e2210ff7ebc02ff086fbf454ae6e3da952db5748c3ce636c80f"
+      },
+      {
+        "bytes": 26945,
+        "id": "log-13",
+        "kind": "execution_log",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/agent-observation-13.json",
+        "sha256": "8bf605425758fadcd156b2171d6676100fcdadc158bbf693efe8e7f99e1c2504"
+      },
+      {
+        "bytes": 25137,
+        "id": "png-13-0",
+        "kind": "screenshot",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/browser-00177.png",
+        "sha256": "fede188958d9b7a6bfc81e67a075f342e3f6a46b0338116770f650abd05fdf87"
+      },
+      {
+        "bytes": 29724,
+        "id": "log-14",
+        "kind": "execution_log",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/agent-observation-14.json",
+        "sha256": "f4a45806ad3f9aae8f6fcb0749d81c0ee92dc3d491b5ca891a65ab541ef3a7bd"
+      },
+      {
+        "bytes": 36492,
+        "id": "png-14-0",
+        "kind": "screenshot",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/browser-00188.png",
+        "sha256": "e313757cd45688de6f601269eefcd014980acc1b9d1a2a92c00e2e8da087e319"
+      },
+      {
+        "bytes": 25408,
+        "id": "log-15",
+        "kind": "execution_log",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/agent-observation-15.json",
+        "sha256": "2a9771118dd2a6e322a310d24abf042e7ecd7704d2018f6b2df4883559c9b54f"
+      },
+      {
+        "bytes": 32551,
+        "id": "png-15-0",
+        "kind": "screenshot",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/browser-00201.png",
+        "sha256": "37dfb959d5b88f61791762bf0e9640220a8c95b3bf6309a2fb7e27f230cff38d"
+      },
+      {
+        "bytes": 25361,
+        "id": "log-16",
+        "kind": "execution_log",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/agent-observation-16.json",
+        "sha256": "0fb6dfd08291db9a1a886bbf79ba0f9b19c6f50ac236aca2b9fd3a7b1655468b"
+      },
+      {
+        "bytes": 32426,
+        "id": "png-16-0",
+        "kind": "screenshot",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/browser-00212.png",
+        "sha256": "a439d0003d2aec56d81a0210c8d6e3739201bfc6e955be4ee99cb9eb76f783e1"
+      },
+      {
+        "bytes": 28682,
+        "id": "log-17",
+        "kind": "execution_log",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/agent-observation-17.json",
+        "sha256": "b9c507573788c0018ebfae2bf082a655e7dec7109e879495d6879a7ec2d2783a"
+      },
+      {
+        "bytes": 32708,
+        "id": "png-17-0",
+        "kind": "screenshot",
+        "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/sessions/S-beegcnopeblnnfadcbmfpcbk/evidence/S-beegcnopeblnnfadcbmfpcbk/1/browser-00223.png",
+        "sha256": "e56bdf177d5b7f5a305bc8b81c70783fe1afccb12ab1377446cc1a0897efd4de"
+      }
+    ],
+    "bytes": 952649,
+    "count": 34,
+    "mismatches": []
+  },
+  "audit_call_scope": "The following zero counts describe this offline evidence review only. The recorded completed session has its own model/tool operations listed above.",
+  "baseline_23_scope": {
+    "baseline_status": "not_run",
+    "counts_as_32_cohort_person": false,
+    "matching_old_row": "PER-PEEKLY-V2-021 / success / PRD-IMPORT-SNAPSHOT-UNKNOWN",
+    "note": "Only this matched old-23 requirement was previously not_run for 021. This smoke is not a new 32-person cohort result, and N/A/unassessed would earn no coverage credit.",
+    "smoke_reviewed_status": "passed"
+  },
+  "build": {
+    "artifact_path": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-pinned-product-51110f4-20261115/build-manifest.json",
+    "id": "peekly-completion-smoke-peekly-completion-smoke-pinned-20261115",
+    "sha256": "c8adccb882b4bba6592e11f3792b8779809f771e66ea169118b5db84a7100d17"
+  },
+  "counts": {
+    "raw": {
+      "recovery": {
+        "failed": 0,
+        "not_applicable": 0,
+        "not_run": 0,
+        "passed": 1
+      },
+      "success": {
+        "failed": 0,
+        "not_applicable": 0,
+        "not_run": 0,
+        "passed": 3
+      }
+    },
+    "reviewed": {
+      "recovery": {
+        "failed": 0,
+        "not_applicable": 0,
+        "not_run": 0,
+        "passed": 1
+      },
+      "success": {
+        "failed": 1,
+        "not_applicable": 0,
+        "not_run": 0,
+        "passed": 2
+      }
+    }
+  },
+  "criteria": [
+    {
+      "classification": "runner_navigation_recovery",
+      "criterion_reference_note": "The browser-navigation recovery is already proved by obs-4 to obs-5; later upload obs-6 is corroborating, not a required missing reference.",
+      "index": 0,
+      "kind": "recovery",
+      "raw_evidence_ids": [
+        "log-4",
+        "png-4-0",
+        "log-5",
+        "png-5-0"
+      ],
+      "raw_status": "passed",
+      "reason": "The criterion explicitly includes recoverable browser failures. A known nondispatched click at obs-4 was followed by a fresh observed, hit-tested click at obs-5 that visibly opened the import sheet. This is runner navigation recovery, not recovery from a product data-loss failure.",
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "reviewed_status": "passed",
+      "supporting_admitted_observation_ids": [
+        "obs-3",
+        "obs-4",
+        "obs-5"
+      ],
+      "task_text": "If a recoverable browser/import failure actually occurs, perform the safe recovery and verify it. If no triggering failure occurs, report not_applicable; do not manufacture a failure."
+    },
+    {
+      "classification": "executed_product_criterion",
+      "criterion_reference_note": null,
+      "index": 0,
+      "kind": "success",
+      "raw_evidence_ids": [
+        "log-10",
+        "png-10-0",
+        "log-11",
+        "png-11-0"
+      ],
+      "raw_status": "passed",
+      "reason": "Both distinct hash-bound missing-list uploads were actually rejected with the required rendered guidance; saved state remained unchanged.",
+      "requirement_id": "PRD-IMPORT-MISSING",
+      "reviewed_status": "passed",
+      "supporting_admitted_observation_ids": [
+        "obs-10",
+        "obs-11"
+      ],
+      "task_text": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다. [PRD-IMPORT-MISSING] both missing-followers and missing-following fixtures are rejected"
+    },
+    {
+      "classification": "product_misleading_cause_and_judge_false_pass",
+      "criterion_reference_note": "Previous-pair setup obs-12 is admitted globally but not listed in the raw criterion references; the independent review includes it.",
+      "index": 1,
+      "kind": "success",
+      "raw_evidence_ids": [
+        "log-15",
+        "png-15-0",
+        "log-16",
+        "png-16-0",
+        "log-17",
+        "png-17-0"
+      ],
+      "raw_status": "passed",
+      "reason": "The actual opened comparison renders the identity caveat but also labels two rows as unfollow. This contradicts the explicit no-confirmed-cause obligation. The reviewer relies on admitted rendered DOM/list_rows; the screenshot does not fully show those badge glyphs.",
+      "requirement_id": "PRD-IDENTITY-LIMIT",
+      "reviewed_status": "failed",
+      "supporting_admitted_observation_ids": [
+        "obs-12",
+        "obs-15",
+        "obs-16",
+        "obs-17"
+      ],
+      "task_text": "안정적 ID가 없는 백업 비교에는 이름 변경도 포함될 수 있다는 안내를 붙인다. [PRD-IDENTITY-LIMIT] comparison explains username change/account deletion as possible explanations and does not assert a confirmed unfollow cause"
+    },
+    {
+      "classification": "executed_product_criterion",
+      "criterion_reference_note": null,
+      "index": 2,
+      "kind": "success",
+      "raw_evidence_ids": [
+        "log-2",
+        "png-2-0",
+        "log-6",
+        "png-6-0",
+        "log-7",
+        "png-7-0"
+      ],
+      "raw_status": "passed",
+      "reason": "The actual validated v6 migration retained one unknown record; one completed current import was followed by the expanded exclusion notice with no departed-account comparison control.",
+      "requirement_id": "PRD-IMPORT-SNAPSHOT-UNKNOWN",
+      "reviewed_status": "passed",
+      "supporting_admitted_observation_ids": [
+        "obs-1",
+        "obs-2",
+        "obs-6",
+        "obs-7"
+      ],
+      "task_text": "목록이 실제로 비어 있었는지 알 수 없는 과거 백업은 비교 대상에서 제외한다. [PRD-IMPORT-SNAPSHOT-UNKNOWN] a legacy snapshot with unknown included-file provenance is excluded; a recognized empty import is known-empty"
+    }
+  ],
+  "global_smoke_gate_verified": false,
+  "identity_conflict": {
+    "actual_admitted_observation": "obs-17",
+    "button_visibility": [
+      {
+        "index": 11,
+        "label": "IN\n[handle]\n언팔로우",
+        "visible": true
+      },
+      {
+        "index": 13,
+        "label": "JU\n[handle]\n언팔로우",
+        "visible": false
+      }
+    ],
+    "classes": [
+      "product_content_contradiction",
+      "native_judgment_false_pass"
+    ],
+    "prd_paragraph": "기록이 하나이면 다음 확인을 안내하며, 연결이 없으면 인스타그램으로 로그인을 제공한다. 알림은 사용자가 명시적으로 누를 때만 예약한다. 직접 연결과 저장 위치 연결의 확인 경로를 구분한다. 같은 계정의 시점이 다른 완전한 기록이 두 개 있으면 최신 비교의 숫자와 계정 이름을 무료로 보여 준다. 이전 기록의 팔로워 중 지금 팔로워에 없는 계정이라는 관찰이며, 목록 변화만으로 사라진 이유를 단정하지 않는다. 안정적 ID가 없는 백업 비교에는 이름 변경도 포함될 수 있다는 안내를 붙인다. 현재 결과나 최신 비교에서 이미 보여 준 이름을 다른 기본 화면에서 다시 가려 결제를 요구하지 않는다.",
+    "rendered_conflicting_rows": [
+      {
+        "key": "evt_ina.archive",
+        "text": "IN\n[handle]\n언팔로우"
+      },
+      {
+        "key": "evt_junho.jeong",
+        "text": "JU\n[handle]\n언팔로우"
+      }
+    ],
+    "severity": "P2",
+    "source_corroboration": "ResultsTab departureRows renders describeDisappearance(event).label; diffEngine derives UNFOLLOWED from stillInMyFollowing and returns the label 언팔로우. Actual admitted DOM, not source alone, is the basis for the review delta.",
+    "source_refs": [
+      {
+        "bytes": 41759,
+        "path": ".ux-loop/peekly-pinned-product-51110f4-20261115/source/docs/PRD.md",
+        "sha256": "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b"
+      },
+      {
+        "bytes": 18693,
+        "path": ".ux-loop/peekly-pinned-product-51110f4-20261115/source/src/components/ResultsTab.tsx",
+        "sha256": "e68c671e2ab677b419d01576fd761ac80cace67b614de2109e10725c0d5e46a2"
+      },
+      {
+        "bytes": 13489,
+        "path": ".ux-loop/peekly-pinned-product-51110f4-20261115/source/src/core/diffEngine.ts",
+        "sha256": "9f1a3c5963d6e7ba5f8ad4d16712482e4e71bf3b1e4e940c336f9895439b1a0c"
+      }
+    ],
+    "task_obligation": "안정적 ID가 없는 백업 비교에는 이름 변경도 포함될 수 있다는 안내를 붙인다. [PRD-IDENTITY-LIMIT] comparison explains username change/account deletion as possible explanations and does not assert a confirmed unfollow cause",
+    "viewport_limitation": "PNG17 shows the caveat, first row and second row title. It does not fully show the contradictory badge glyphs. The first conflicting row button is marked visible, but that does not prove each descendant glyph is in the viewport."
+  },
+  "job_id": "S-beegcnopeblnnfadcbmfpcbk",
+  "new_browser_calls": 0,
+  "new_model_calls": 0,
+  "operational_completed": true,
+  "operations": [
+    {
+      "count": 1,
+      "kind": "close",
+      "state": "done"
+    },
+    {
+      "count": 18,
+      "kind": "model",
+      "state": "done"
+    },
+    {
+      "count": 1,
+      "kind": "review",
+      "state": "done"
+    },
+    {
+      "count": 17,
+      "kind": "tool",
+      "state": "done"
+    }
+  ],
+  "persona_id": "PER-PEEKLY-V2-021",
+  "plan": {
+    "bytes": 34417,
+    "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/plan.json",
+    "sha256": "2c5e3c82966002357787af3121baa4d633623b260f12f1b5e9ae2388201c38d9"
+  },
+  "queue_status": "complete",
+  "raw_artifacts_modified": false,
+  "raw_session_outcome": "passed",
+  "reviewed_at": "2026-11-14T18:12:17.968091+00:00",
+  "reviewed_session_outcome": "failed",
+  "reviewer": "independent ChatGPT audit; not a real-user study",
+  "run_root": ".ux-loop/peekly-completion-smoke-pinned-20261115",
+  "runtime_modified": false,
+  "schema_version": "peekly-smoke-independent-review.v1",
+  "scope": "Completed 021 only. Other smoke session, global target-after/closure/router checks and full smoke gate are pending parent verification.",
+  "seals": {
+    "all_verified": true,
+    "checkpoint_sha256": "5aacd6ac14cde802ff9da1b15043bc726bc71a8e9357b683c3337f2ff68dc2e3",
+    "first_judgment_sha256": "64de06d311bd6c02369c9cdff9e722fad9902fc991265e4f6038641fc03b5a3c",
+    "result_sha256": "e5be554ec26c0a074070024db799b229af7ac66422cbab3a666084bb9fb502fd"
+  },
+  "source_commit": "1939f32ccef5bf2eae2edb2e0c51d6fba10dd0d5",
+  "stage": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2",
+  "terminal_current_report_validation": "Deferred to parent after the whole stage finishes; this review independently rehashed the completed job receipt and evidence.",
+  "unknown_proof": {
+    "exclusion_observation": "obs-7",
+    "one_current_readback": {
+      "active_snapshot_id": "snap_[card]_fc6e8499-c534-4034-8d43-538bb7330a74",
+      "available": true,
+      "comparison_snapshot_id": "snap_[card]_fc6e8499-c534-4034-8d43-538bb7330a74",
+      "schema_version": "peekly-legacy-state.v1",
+      "seed_attempt_id": "legacy-seed-17",
+      "snapshots": [
+        {
+          "account_sha256": "d3a9cb66b6e4e094776153196c0f4c302d5d7951a9c1ce3eb5238aa75ca0e1c9",
+          "id": "peekly_legacy_unknown_v6",
+          "included_files": [
+            "followers",
+            "following"
+          ],
+          "is_sample": false,
+          "list_completeness": "unknown"
+        },
+        {
+          "account_sha256": "d3a9cb66b6e4e094776153196c0f4c302d5d7951a9c1ce3eb5238aa75ca0e1c9",
+          "id": "snap_[card]_fc6e8499-c534-4034-8d43-538bb7330a74",
+          "included_files": [
+            "blocked_profiles",
+            "close_friends",
+            "followers",
+            "following",
+            "hide_story_from",
+            "pending_requests",
+            "recent_requests",
+            "recently_unfollowed",
+            "restricted_profiles",
+            "comments",
+            "liked_posts"
+          ],
+          "is_sample": false,
+          "list_completeness": null
+        }
+      ],
+      "storage_sha256": "54a8e43a2af3195025eac93a67baa2b4a342e01f89f10d9b71dcacc6cf2f4de8"
+    },
+    "same_current_storage_sha256": "54a8e43a2af3195025eac93a67baa2b4a342e01f89f10d9b71dcacc6cf2f4de8",
+    "seed": {
+      "attempt_id": "legacy-seed-17",
+      "fixture": "peekly-legacy-unknown-state.json",
+      "fixture_sha256": "f4ea8b627d7b305552cf326205096aa244cf40a873fcbf275807947feec1a6f5",
+      "fresh_owned_profile": true,
+      "initial_storage_match": true,
+      "migration_validated": true,
+      "product_commit": "51110f4c569673faa8d242d5b85c4b47afb54cbb",
+      "product_loader_sha256": "401759c4ef2d11efcf7b710292ba6269ce66653cd3d19fd2164fa6f54883559a",
+      "product_validation_sha256": "8812e073064029937aaecb1908d0301eff96c2bee8794e3ee8ec6a6ddc46871c",
+      "reload_observed": true,
+      "schema_version": "peekly-legacy-seed.v1",
+      "source_included_files_absent": true,
+      "source_key": "peekly_state_v6",
+      "source_list_completeness_absent": true,
+      "source_snapshot_ids": [
+        "peekly_legacy_unknown_v6"
+      ],
+      "status": "validated",
+      "storage_after": {
+        "available": true,
+        "keys": [
+          "peekly_state_v7",
+          "peekly_state_v6"
+        ],
+        "sha256": "d273e2664b286d305c32341a40beb35c31ec02877b97275807b8bbcb29f121db"
+      },
+      "storage_before": {
+        "available": true,
+        "keys": [
+          "peekly_state_v7"
+        ],
+        "sha256": "7b3f3a770f0ac89471a660ccfe9a54f5de96b387ebb22d307e06fadb84f77355"
+      },
+      "target_key": "peekly_state_v7"
+    },
+    "seed_readback": {
+      "active_snapshot_id": null,
+      "available": true,
+      "comparison_snapshot_id": null,
+      "schema_version": "peekly-legacy-state.v1",
+      "seed_attempt_id": "legacy-seed-17",
+      "snapshots": [
+        {
+          "account_sha256": "d3a9cb66b6e4e094776153196c0f4c302d5d7951a9c1ce3eb5238aa75ca0e1c9",
+          "id": "peekly_legacy_unknown_v6",
+          "included_files": [
+            "followers",
+            "following"
+          ],
+          "is_sample": false,
+          "list_completeness": "unknown"
+        }
+      ],
+      "storage_sha256": "d273e2664b286d305c32341a40beb35c31ec02877b97275807b8bbcb29f121db"
+    }
+  },
+  "visual_limitations": [
+    "The missing-list rejection text is in the actual admitted DOM; PNG10/11 show the retry file chooser but not the entire error paragraph in the captured viewport. Their screenshots have the same SHA while their upload attempts/fixture hashes are distinct."
+  ],
+  "visually_inspected_artifact_ids": [
+    "png-5-0",
+    "png-7-0",
+    "png-10-0",
+    "png-17-0"
+  ]
+}
