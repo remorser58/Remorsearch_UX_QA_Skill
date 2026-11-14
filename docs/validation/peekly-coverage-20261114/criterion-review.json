@@ -427,6 +427,118 @@
       "baseline_rows_excluded": [
         "NR-37"
       ]
+    },
+    {
+      "job_id": "S-ebhioimecepninpkpdilghkk",
+      "persona_id": "PER-PEEKLY-V2-026",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-RESULT-SEARCH",
+      "oldstatus": "failed",
+      "newstatus": "passed",
+      "classification": "judge_search_control_mismatch_with_exercised_query",
+      "severity": "P1",
+      "reason": "The imported search fixture produced exactly 12 correctly sorted outgoing rows with a visible enabled input[type=search]. A real type action retained the exact expected query (matching SHA), and the subsequent observation in the same import attempt and storage scope showed only synthetic_search_outgoing_05. The old native evaluator incorrectly demanded the MatrixTab placeholder. The separate DELETE failure remains; session outcome and executed-criterion credit are unchanged.",
+      "evidencefiles": [
+        "agent-observation-5.json",
+        "agent-observation-6.json",
+        "agent-observation-7.json"
+      ],
+      "resultsha": "e95e5355eee53677ab1cd817cd0694b5e1b69381ec2d3f0af0d20770230f9beb",
+      "baseline_rows_excluded": [],
+      "baseline_rows_reclassified": [
+        "NR-12",
+        "NR-39"
+      ]
+    },
+    {
+      "job_id": "S-lpghnnmpbapicjbemjpnjmdk",
+      "persona_id": "PER-PEEKLY-V2-027",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-RESULT-SEARCH",
+      "oldstatus": "failed",
+      "newstatus": "passed",
+      "classification": "judge_search_control_mismatch_with_exercised_query",
+      "severity": "P1",
+      "reason": "The imported search fixture produced exactly 12 correctly sorted outgoing rows with a visible enabled input[type=search]. A real type action retained the exact expected query (matching SHA), and the subsequent observation in the same import attempt and storage scope showed only synthetic_search_outgoing_05. The old native evaluator incorrectly demanded the MatrixTab placeholder. The separate DELETE failure remains; session outcome and executed-criterion credit are unchanged.",
+      "evidencefiles": [
+        "agent-observation-4.json",
+        "agent-observation-5.json",
+        "agent-observation-6.json"
+      ],
+      "resultsha": "f87021408221ab63db3e0ab1122ae2af5793231db0322e273e4bc2fa6305d391",
+      "baseline_rows_excluded": [],
+      "baseline_rows_reclassified": [
+        "NR-14"
+      ]
+    },
+    {
+      "job_id": "S-kaknpddcajkpeekbgjeiahmd",
+      "persona_id": "PER-PEEKLY-V2-028",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-RESULT-SEARCH",
+      "oldstatus": "failed",
+      "newstatus": "passed",
+      "classification": "judge_search_control_mismatch_with_exercised_query",
+      "severity": "P1",
+      "reason": "The imported search fixture produced exactly 12 correctly sorted outgoing rows with a visible enabled input[type=search]. A real type action retained the exact expected query (matching SHA), and the subsequent observation in the same import attempt and storage scope showed only synthetic_search_outgoing_05. The old native evaluator incorrectly demanded the MatrixTab placeholder. The separate DELETE failure remains; session outcome and executed-criterion credit are unchanged.",
+      "evidencefiles": [
+        "agent-observation-6.json",
+        "agent-observation-7.json",
+        "agent-observation-8.json"
+      ],
+      "resultsha": "be73f02056ee27e56e17a3bb1648f798adf1c307cb08b7552d617500b112c5db",
+      "baseline_rows_excluded": [],
+      "baseline_rows_reclassified": []
+    },
+    {
+      "job_id": "S-eoddcjbgpjchiikdllkckjcf",
+      "persona_id": "PER-PEEKLY-V2-015",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-IMPORT-SIZE",
+      "oldstatus": "failed",
+      "newstatus": "passed",
+      "classification": "judge_size_alert_evidence_omission",
+      "severity": "P1",
+      "reason": "The own upload attempts at obs8/9/10 explicitly show the 128MB ZIP, 32MB single-file and 64MB aggregate rejection messages and preserve the saved baseline from obs4; obs26 repeats the 32MB boundary. The five actual fixture files match the frozen manifest bytes/SHA. The raw model failure overlooked its own cited alerts, and the native branch omitted the sanitized group aliases. The multi-file group has no aggregate fixture SHA; its three member hashes were verified separately. SAVE-FAIL and the failed session are unchanged; baseline execution credit does not increase.",
+      "evidencefiles": [
+        "agent-observation-4.json",
+        "agent-observation-8.json",
+        "agent-observation-9.json",
+        "agent-observation-10.json",
+        "agent-observation-26.json"
+      ],
+      "resultsha": "798bc8a0fec90b2f6a02ce180af3b660507b077da13eb3177042c70fb761ae49",
+      "baseline_rows_excluded": [],
+      "baseline_rows_reclassified": []
+    },
+    {
+      "job_id": "S-lienlcpnibobddnaaekmmami",
+      "persona_id": "PER-PEEKLY-V2-025",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-PRIVACY-DELETE",
+      "oldstatus": "passed",
+      "newstatus": "failed",
+      "classification": "judge_delete_key_absence_misread",
+      "severity": "P1",
+      "reason": "The final confirmed deletion was actually dispatched and hit-tested. The saved digest returned from imported data to the initial empty-state digest, but final storage_keys and storage_snapshot.keys still contain peekly_state_v7. Prior relationship data was cleared; the failure is the pinned PRD's final key-absence contract, not retained personal data. This preserves the original failed session when combined with the independently corrected SEARCH not_run; baseline execution credit is unchanged.",
+      "evidencefiles": [
+        "agent-observation-1.json",
+        "agent-observation-5.json",
+        "agent-observation-12.json",
+        "agent-observation-13.json",
+        "agent-observation-14.json",
+        "agent-observation-15.json"
+      ],
+      "resultsha": "65a77074cd29788022599df8d446d67c879313d0dcc9f03e9dd61e4ada4aa81a",
+      "baseline_rows_excluded": [],
+      "baseline_rows_reclassified": [
+        "NR-38"
+      ]
     }
   ],
   "expected_relationship_scope_effect": {
@@ -455,5 +567,17 @@
     "baseline_rows_excluded": [
       "NR-37"
     ]
+  },
+  "expected_search_exercised_effect": {
+    "criterion_failed_to_passed": 3,
+    "baseline_46_execution_credit_delta": 0
+  },
+  "expected_size_exercised_effect": {
+    "criterion_failed_to_passed": 1,
+    "baseline_46_execution_credit_delta": 0
+  },
+  "expected_delete_key_absence_effect": {
+    "criterion_passed_to_failed": 1,
+    "baseline_46_execution_credit_delta": 0
   }
 }

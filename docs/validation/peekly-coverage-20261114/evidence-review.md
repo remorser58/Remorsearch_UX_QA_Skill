@@ -130,3 +130,63 @@ PRD가 제외하도록 요구하는 것은 목록이 실제로 비었는지 알 
 - baseline:`NR-37`은 실제 검색 실행 감소 성과에서 제외한다.
 
 026–028에는 실제 입력·필터링 기록이 있으므로025와 별도로 감사한다. 검색 입력을 찾는 판정 조건은 격리 작업 트리에서 수정 중이며, 이번 원본 영수증은 보존한다.
+
+### 026·027·028에서는 실제 검색 완료 확인
+
+세 세션에는025와 달리 실제 type가 각각1회 있고, 같은 import attempt와 저장 상태에 연결된12행→1행 변화가 있다. 누적 typed_input_checks의 반복 관측을 새 입력 횟수로 세지 않았다.
+
+| 페르소나 | import → 정렬12행 → 검색1행 관측 | 검토 판정 | baseline 대응 |
+| --- | --- | --- | --- |
+|026|obs5 → obs6 → obs7|SEARCH failed→passed|NR-12, NR-39|
+|027|obs4 → obs5 → obs6|SEARCH failed→passed|NR-14|
+|028|obs6 → obs7 → obs8|SEARCH failed→passed|없음|
+
+검색 fixture SHA는 `c1901b1151716053a5fc31ec9eb9dee7d51cbb3c665dbf8d7607849fdea8e6e2`, 실제 query SHA는 `cf12574baf4b6af9bc8ac4133367ad0e89ab059a2f32775053d92e6624c30dd5`다. 원래 목록은 `synthetic_search_outgoing_00`부터 `_11`까지 아이디 순이며, 보이는 활성 search 입력에서 query가 유지되고 결과가 `synthetic_search_outgoing_05` 하나로 좁혀졌다.
+
+전체49개 관측과 등록 artifact98개의 해시를 확인했다. 각 job/result SHA와 근거 파일은 criterion-review.json에 별도로 고정했다. **이미 실행된 실패를 통과로 정정하므로 baseline 실행 감소 성과 증가는0**이다. 다음 DELETE 실패는 유지해 세션 결과도 세 건 모두 failed 그대로다.
+
+## P3 제품 계약 불일치 — 모두 지우기 후 빈 저장 키 재생성
+
+026·027·028의 마지막 모두 지우기는 실제 dispatched/hit_test=true다. 이후 welcome 화면과 삭제 완료 안내가 나타났고, 저장 상태 SHA는 각각 최초 빈 상태와 같은 `7b3f3a770f0ac89471a660ccfe9a54f5de96b387ebb22d307e06fadb84f77355`로 돌아왔다. 이전 관계 데이터가 남은 증거는 없다.
+
+그러나 고정 PRD §10은 `peekly_state_v7`을 포함한 로컬 키 삭제를 요구한다. 제품은 clearAllPersistedData로 키를 지운 다음 초기 빈 appState를 설정하고, 상태 저장 effect가 그 빈 상태를 v7에 다시 저장한다. **최종 키 부재라는 계약과의 불일치**로 DELETE 실패를 유지한다. 개인정보 잔존이나 이전 관계 데이터 미삭제라는 주장으로 확대하지 않는다.
+
+| 페르소나 | job | 최종 삭제 관측 |
+| --- | --- | --- |
+|026|`S-ebhioimecepninpkpdilghkk`|`agent-observation-17.json`|
+|027|`S-lpghnnmpbapicjbemjpnjmdk`|`agent-observation-15.json`|
+|028|`S-kaknpddcajkpeekbgjeiahmd`|`agent-observation-17.json`|
+
+파일은 공통 `stage-32/sessions/<job>/evidence/<job>/1/` 아래다. 고정 제품51110f4의 `docs/PRD.md` §10, `src/storage/snapshotStore.ts`의 clearAllPersistedData, `src/App.tsx`의 삭제 처리 및 appState 저장 effect와 대조했다. 제품 코드는 이번 실행기 개선 작업에서 수정하지 않았다.
+
+## P1 크기 판정 오판 — 015의 실제 거절 안내 누락
+
+015, job`S-eoddcjbgpjchiikdllkckjcf`의 SIZE success index1은 실패로 기록됐지만, 그 판정이 직접 인용한 obs8/9/10에128MB·32MB·64MB 거절 안내가 각각 있다. 정상 baseline은obs4이며 모든 거절 시도의 before/after/current 저장 SHA가 `7509f5e365a5c4dbac83578292fc66d42fd0a2599a4fd3adba698f9117d09730`으로 같다. obs26은32MB 경계 재확인이다.
+
+| 관측 | 실제 입력 | 거절 |
+| --- | --- | --- |
+|obs8|ZIP134,217,729bytes(128MiB+1)|최대128MB|
+|obs9·26|loose 단일파일33,554,433bytes(32MiB+1)|파일 하나 최대32MB|
+|obs10|23,068,672bytes×3=69,206,016bytes(66MiB)|모두 합쳐 최대64MB|
+
+실제5개 fixture의 바이트와SHA를 동결v7 manifest와 대조했고, receipt등록artifact54개의 해시도 모두 일치했다. ZIP구조가 읽히지 않는다는 host 진단은 제품의 구조 검사보다 먼저 실행되는128MiB 크기 검사 결과를 무효로 만들지 않는다. 다중 그룹의 단일 fixture SHA는null이며, 세 멤버의 SHA를 별도로 확인했을 뿐 합성한 그룹 SHA를 주장하지 않는다.
+
+native SIZE분기는 원래 `@group:peekly-loose-…` 이름을 찾지만 관측에서는 `[handle]:peekly-loose-…`로 정제되어 진입하지 못했다. 모델도 자기 증거의 안내를 놓쳤다. 감사에서는 **SIZE failed→passed**로 정정한다. 이 페르소나의 SIZE는 baseline46에 없어 감소 성과는0이고, 실제 SAVE-FAIL과 세션failed는 유지한다. 원본 result SHA와5개 근거 관측은 criterion-review.json에 기록했다.
+
+## 029·030의 남은 PAYWALL 미실행
+
+029(`S-anpbnklkcflofcaenaoomigf`)와030(`S-ipidfpgaeilfhhpahjldfaco`)은 SAMPLEEXPORT·RETENTION 통과와 PAYWALL 미실행을 그대로 유지한다. 각각52턴·49턴,1,062초·753초에 자발적으로final을 반환했다. 설정 상한은64턴·2,880초이며 상한에 의한 중단이 아니다.
+
+두 세션 모두obs5에서 샘플 복사/저장 버튼의 비활성 및 제한 설명을 확인했고,obs9/12/…/39에서11개 retention fixture를 실제로 가져와obs42에서10개 기록을 확인했다. 이후previous/current는obs45/48이다.
+
+029는obs50기록 화면→obs51모달67px스크롤로 기간 비교 탭이 보이게 했으나 클릭하지 않고 끝났다.030은pair import 직후 끝났다. 전체51개·48개 관측에 비교 이름 목록, 날짜 선택기, Pro 설명이 없어 PAYWALL은 여전히미실행이다. 등록artifact198개와관측99개의 대응·해시는 일치했다.
+
+history_open이 본문 대신 접근성label에만 존재하는 문제를 고쳐도 이 누락된 필수 단계를 대체할 수 없다. **후속 과제 미도달·이른 종료**로 분류하며 제품 실패로 올리지 않는다.
+
+## 025 DELETE의 false PASS도 같은 계약으로 정정
+
+025의 마지막obs15에서도 최종 모두 지우기가 실제로dispatch/hit-test되었고, 저장 digest가 초기 빈 상태로 돌아왔다. 그러나`storage_keys`와`storage_snapshot.keys`에v7키가 남았다. 관측obs1/5/12/13/14/15와등록artifact30개를 독립적으로 대조했다.
+
+따라서 이 사람의 success index2 PRIVACY-DELETE는 **passed→failed**로 정정한다. 분류는 `judge_delete_key_absence_misread`이며, baseline`NR-38`도통과→실패로 바뀌지만 실제 실행 성과는 늘지 않는다. 원본 result SHA는SEARCH와 같은`65a77074cd29788022599df8d446d67c879313d0dcc9f03e9dd61e4ada4aa81a`다.
+
+025의 SEARCH를not_run으로바꾸는것만으로는세션이미결론이되지만, 이DELETE실패까지함께적용하면원본과같이실패다. 같은job의여러기준변경을세션변화의단순합으로계산하지않는다. 제품결함의반복관측범위는025–028이며, 모두이전관계데이터삭제와빈키재생성을구분한다.
