@@ -1,7 +1,9 @@
 """Coverage planning regressions use only owned offline fixtures."""
+import asyncio
 import copy
 import importlib.util
 import json
+import sqlite3
 from pathlib import Path
 from types import SimpleNamespace
 import tempfile
@@ -14,8 +16,8 @@ from uxpersonas.scale_entry import ScaleLimits, criterion_checklist, required_fi
 from uxpersonas import swarm
 from uxpersonas.scale_report import completed_receipt_summary
 from uxpersonas.scale_run import ScaleExecution, _criterion_progress, _validated_observation_facts
-from uxpersonas.swarm_queue import Queue
-from uxresearch.canonical import EngineError, byte_digest
+from uxpersonas.swarm_queue import Queue, checkpoint_data, CHECKPOINT_METADATA_BYTES, CHECKPOINT_OBSERVATION_BYTES
+from uxresearch.canonical import EngineError, byte_digest, canonical
 
 ENTRY = Path(__file__).resolve().parents[1] / "skills/remorsearch-ux-qa/scripts/live_scale_browser.py"
 SPEC = importlib.util.spec_from_file_location("coverage_live_entry", ENTRY)
@@ -197,25 +199,60 @@ class BoundedLongJourneyTests(unittest.IsolatedAsyncioTestCase):
     run_scale = support.ScaleRunTests.run_scale
 
     async def test_extended_budget_finishes_long_owned_fixture_but_rejects_unbounded_plan(self):
+        loop = asyncio.get_running_loop()
+        self.addCleanup(setattr, loop, "slow_callback_duration", loop.slow_callback_duration)
+        loop.slow_callback_duration = 2.0
         plan = json.loads(json.dumps(self.queue.plan))
-        plan["limits"].update(turns=64, max_model_calls=130)
+        plan["limits"].update(turns=64, max_model_calls=130, task_seconds=180)
         self.queue = Queue.create(self.root / "long-scale", plan)
         original = self.host.result
+        fixture_catalog = [f"peekly-retention-owned-fixture-{i:03d}.zip" for i in range(543)]
+        controls = [{"selector": f"#owned-control-{i}", "label": "현재 기록 확인 " + str(i),
+                     "visible": True, "enabled": True, "type": "button"} for i in range(36)]
+        payload_sizes = []
         async def result(kind, request):
-            if kind == "model" and len(request["payload"]["observations"]) < 27:
-                self.host.states.setdefault(request["context_id"], dict(stage="empty", note="", saved="", retained=None))
-                return {"kind": "tool", "tool": "inspect", "arguments": {},
-                        "decision": "Inspect the next owned prerequisite."}
+            if kind in {"model", "review"}:
+                payload_sizes.append(len(canonical(request["payload"])))
+                if kind == "model" and len(request["payload"]["observations"]) < 59:
+                    self.host.states.setdefault(request["context_id"], dict(stage="empty", note="", saved="", retained=None))
+                    return {"kind": "tool", "tool": "inspect", "arguments": {},
+                            "decision": "Inspect the next owned prerequisite."}
             response = await original(kind, request)
             if kind == "tool":
+                response["text"] += " 현재 저장한 합성 기록을 확인하고 다음 단계로 이동합니다." * 20
+                response["facts"].update(available_fixtures=fixture_catalog, controls=controls,
+                    file_inputs=[{"selector": "#owned-file", "multiple": True}],
+                    fixture_uploads=[f"peekly-retention-snapshot-{i:02d}.zip" for i in range(1, 12)],
+                    fixture_validation=[], list_rows=[{"key": f"synthetic_row_{i}", "text": "합성 관계 항목"} for i in range(12)])
                 response["facts"]["storage_snapshot"] = {
                     "available": True, "sha256": "a" + "1234567890123456" + "b" * 47}
+                self.assertLess(len(canonical({k: response[k] for k in ("text", "facts", "checks")})), 65536)
             return response
         self.host.result = result
         report = await self.run_scale()
-        self.assertEqual(report["counts"]["complete"], 2, report)
-        self.assertGreater(report["authored_model_calls"], 48)
+        self.assertEqual(report["counts"]["complete"], 2,
+                         {"counts": report["counts"], "calls": report["authored_model_calls"],
+                          "problems": [(row["job_id"], row.get("problem")) for row in report["tasks"]]})
+        self.assertEqual(report["authored_model_calls"], 130)
         self.assertEqual(report["completed_receipt_summary"]["assessed_completed_sessions"], 2)
+        self.assertLessEqual(max(payload_sizes), 262144)
+        self.assertEqual(len(payload_sizes), 130)
+        with sqlite3.connect(self.queue.path.as_uri() + "?mode=ro", uri=True) as db:
+            checkpoints = db.execute("SELECT checkpoint FROM jobs ORDER BY ordinal").fetchall()
+        for (raw,) in checkpoints:
+            self.assertGreater(len(raw.encode()), 1024 * 1024)
+            state = json.loads(raw)
+            self.assertEqual(state["turn"], 64)
+            self.assertEqual(len(state["observations"]), 63)
+            for observation in state["observations"]:
+                self.assertEqual(observation["facts"]["available_fixtures"], fixture_catalog)
+                self.assertEqual(observation["facts"]["controls"], controls)
+        # Full files remain unchanged after projection, checkpointing and final
+        # admission; the durable receipt still binds every original byte.
+        for row in report["tasks"]:
+            evidence_root = Path(row["result"]["evidence_root"])
+            for artifact in row["result"]["receipt"]["artifacts"]:
+                self.assertEqual(byte_digest((evidence_root / artifact["path"]).read_bytes()), artifact["sha256"])
         invalid = copy.deepcopy(plan)
         invalid["limits"]["turns"] = 65
         with self.assertRaises(Exception):
@@ -227,3 +264,27 @@ class BoundedLongJourneyTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(live.live_limits(32).max_model_calls, 32 * 17)
         self.assertEqual(live.live_limits(32, 64).max_model_calls, 32 * 65)
         self.assertEqual(live.live_limits(32, 64).budget_microusd, 0)
+
+    async def test_checkpoint_budget_does_not_expand_other_envelopes_or_observation_count(self):
+        plan = copy.deepcopy(self.queue.plan)
+        plan["limits"].update(turns=64, max_model_calls=130)
+        queue = Queue.create(self.root / "bounded-checkpoint-scale", plan)
+        claim = queue.claim("checkpoint-regression")
+        valid = {"turn": 64, "observations": [{"text": "Owned observation", "facts": {}, "checks": []}] * 64}
+        queue.checkpoint(claim, valid)
+        stored = queue.assert_claim(claim)["checkpoint"]
+        for invalid in (
+                {"observations": valid["observations"] + [valid["observations"][0]]},
+                {"observations": [{"text": "owned", "facts": {"large": "x" * 65536}, "checks": []}]},
+                {"observations": ["x" * CHECKPOINT_OBSERVATION_BYTES]},
+                {"metadata": "x" * CHECKPOINT_METADATA_BYTES},
+                {"observations": [], "metadata": float("nan")}):
+            with self.assertRaises(EngineError):
+                queue.checkpoint(claim, invalid)
+            self.assertEqual(queue.assert_claim(claim)["checkpoint"], stored)
+        with self.assertRaises(EngineError):
+            queue.begin(claim, "model", "large-request", {"large": "x" * 262144})
+        with self.assertRaises(EngineError):
+            queue.complete(claim, {"large": "x" * CHECKPOINT_METADATA_BYTES})
+        with self.assertRaises(EngineError):
+            checkpoint_data(valid, 63)

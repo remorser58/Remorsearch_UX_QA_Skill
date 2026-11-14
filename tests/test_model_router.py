@@ -7,7 +7,7 @@ from unittest.mock import patch
 from urllib.error import HTTPError
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills/remorsearch-ux-qa"))
 from uxpersonas.model_router import ModelRoute, ModelRouter, RoutedScaleProvider
-from uxpersonas.swarm_providers import ProviderSpec
+from uxpersonas.swarm_providers import ProviderSpec, ProviderUncertain
 
 class Response:
     status = 200
@@ -223,6 +223,6 @@ class RouterTests(unittest.TestCase):
         with self.assertRaises(ValueError): ModelRouter("https://remote.invalid/v1",[ModelRoute("x","m")])
         router=ModelRouter("http://127.0.0.1:10100/v1",[ModelRoute("x","m")],
             opener=lambda *a,**k: Response({"choices":[{"message":{"content":"ok"}}]}),max_retries=0)
-        with self.assertRaises(RuntimeError): router.complete([{"role":"user","content":"x"}])
+        with self.assertRaises(ProviderUncertain): router.complete([{"role":"user","content":"x"}])
 
 if __name__ == "__main__": unittest.main()

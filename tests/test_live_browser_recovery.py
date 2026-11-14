@@ -14,7 +14,7 @@ import _paths
 from uxpersonas import swarm
 from uxpersonas.model_router import ModelRoute, ModelRouter, RoutedScaleProvider
 from uxpersonas.scale_browser_host import ScaleBrowserHost
-from uxpersonas.swarm_providers import ProviderSpec
+from uxpersonas.swarm_providers import ProviderSpec, ProviderUncertain
 
 
 class CaptureRecoveryTests(unittest.IsolatedAsyncioTestCase):
@@ -115,7 +115,7 @@ class ProtocolRecoveryTests(unittest.TestCase):
             self.assertEqual(limits.validate()["call_seconds"], 180)
             self.assertEqual(limits.max_model_calls, count * 17)
             self.assertEqual(limits.budget_microusd, 0)
-            self.assertLess(3 * 50 + 2 + 4 + 6, limits.call_seconds)
+            self.assertLess(150, limits.call_seconds)
 
     def test_expired_deadline_does_not_dispatch_or_count_an_attempt(self):
         calls = []
@@ -142,7 +142,7 @@ class ProtocolRecoveryTests(unittest.TestCase):
             [ModelRoute("TOKENMAXX", "TOKENMAXX/deepseek-v4.1-flash-free")],
             opener=lambda *args, **kw: Response(), max_retries=0)
         with patch.dict(os.environ, {"PROXY_API_KEY": "offline-test-key"}):
-            with self.assertRaises(RuntimeError):
+            with self.assertRaises(ProviderUncertain):
                 router.complete([{"role": "user", "content": "test"}])
         event = router.report()["events"][0]
         self.assertEqual(event["native_tool_names"], ["unknown_tool"])

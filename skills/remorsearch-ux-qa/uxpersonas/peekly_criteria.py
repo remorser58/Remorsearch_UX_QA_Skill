@@ -337,6 +337,7 @@ def _save_failure_check(rows):
     attempts = list(_import_attempts(rows, "upload_save_failure"))
     if not attempts:
         return "not_run", "Use the bounded upload_save_failure tool with a saved synthetic baseline, then verify the visible retry action and its persisted result."
+    passed = False
     for position, row, attempt in attempts:
         fault = attempt.get("storage_fault", {})
         before, after = attempt.get("storage_before"), attempt.get("storage_after")
@@ -345,14 +346,23 @@ def _save_failure_check(rows):
                 and "peekly_state_v7" in before["keys"]):
             continue
         related = _attempt_rows(rows, position, attempt["attempt_id"])
-        error_rows = [item for item in related
-                      if _contains(item["text"], ["결과를 저장하지 못했어요", "다시 저장"])]
+        error_rows = [item for item in related if any(
+            _contains(item["text"], [message]) for message in (
+                "결과를 저장하지 못했어요", "저장 공간이 부족해서 저장하지 못했어요"))]
         if not error_rows:
             continue
         if _storage_available(after) and not _same_storage(before, after):
             return "failed", "The injected save failure displayed an error but changed the previously persisted state."
         if not _same_storage(before, after):
             continue
+        for error_row in error_rows:
+            controls = _controls(error_row)
+            complete_controls = 0 < len(controls) < 100
+            picker = any(c.get("visible") is True and c.get("disabled") is not True
+                         and _contains(c.get("label", ""), ["다른 파일 고르기"]) for c in controls)
+            retry_control = any(_contains(c.get("label", ""), ["다시 저장"]) for c in controls)
+            if complete_controls and picker and not retry_control:
+                return "failed", "The write-failure notice and unchanged persisted state were observed, but the PRD-required direct save-retry control was absent; only file re-selection was offered."
         retry_seen = False
         for item in related:
             current_facts = item.get("facts", {})
@@ -369,11 +379,12 @@ def _save_failure_check(rows):
             snapshot = item.get("facts", {}).get("storage_snapshot")
             saved = (_storage_available(snapshot) and "peekly_state_v7" in snapshot["keys"]
                      and snapshot["sha256"] != before["sha256"])
-            if (retry_seen and saved and not _contains(item["text"], ["결과를 저장하지 못했어요"])
+            if (retry_seen and saved and not any(_contains(item["text"], [message]) for message in (
+                    "결과를 저장하지 못했어요", "저장 공간이 부족해서 저장하지 못했어요"))
                     and (_contains(item["text"], ["결과를 불러왔어요"])
                          or _category_counts(item["text"]) is not None)):
-                return "passed", None
-    return "not_run", "The consumed/restored fault, original-result preservation, actual retry click and successful new persisted result were not all observed for the same upload attempt."
+                passed = True
+    return ("passed", None) if passed else ("not_run", "The consumed/restored fault, original-result preservation, actual retry click and successful new persisted result were not all observed for the same upload attempt.")
 
 
 def evaluate(task, facts, text, uploaded_fixtures=(), history=()):

@@ -152,6 +152,41 @@ class CoverageEvidenceTests(unittest.TestCase):
         rows[0]["facts"]["import_attempt"]["storage_after"] = snapshot("c")
         self.assertEqual(status("PRD-IMPORT-SAVE-FAIL", rows), "failed")
 
+    def missing_retry_rows(self):
+        rows = self.save_failure_rows()[:1]
+        rows[0]["text"] = "저장 공간이 부족해서 저장하지 못했어요. 지금 결과는 그대로 있어요. 공간을 비운 뒤 다시 불러와 주세요."
+        rows[0]["facts"]["controls"] = [
+            {"tag": "button", "label": "다른 파일 고르기", "visible": True, "disabled": False}
+        ]
+        return rows
+
+    def test_observed_write_failure_without_required_retry_is_executed_failure(self):
+        self.assertEqual(status("PRD-IMPORT-SAVE-FAIL", self.missing_retry_rows()), "failed")
+
+    def test_error_wording_without_consumed_fault_is_not_execution_evidence(self):
+        rows = self.missing_retry_rows()
+        rows[0]["facts"]["import_attempt"]["storage_fault"]["consumed"] = False
+        self.assertEqual(status("PRD-IMPORT-SAVE-FAIL", rows), "not_run")
+
+    def test_transitional_or_truncated_controls_cannot_prove_missing_retry(self):
+        for controls in ([], [{"label": "다른 파일 고르기", "visible": True}] * 100,
+                         [{"label": "다른 파일 고르기", "visible": False}]):
+            rows = self.missing_retry_rows()
+            rows[0]["facts"]["controls"] = controls
+            self.assertEqual(status("PRD-IMPORT-SAVE-FAIL", rows), "not_run")
+
+    def test_reupload_workaround_does_not_erase_missing_direct_retry(self):
+        rows = self.missing_retry_rows()
+        rows.append(observation("결과를 불러왔어요.", import_attempt_id="upload-8",
+                                last_action="upload", storage_snapshot=snapshot("b")))
+        self.assertEqual(status("PRD-IMPORT-SAVE-FAIL", rows), "failed")
+
+    def test_visible_write_error_after_retry_cannot_become_a_pass(self):
+        rows = self.save_failure_rows()
+        rows[0]["text"] = "저장 공간이 부족해서 저장하지 못했어요. 다시 저장"
+        rows[1]["text"] = "저장 공간이 부족해서 저장하지 못했어요. 나를 맞팔 안 한 사람 1명 내가 맞팔 안 한 사람 1명 맞팔 중인 사람 0명"
+        self.assertEqual(status("PRD-IMPORT-SAVE-FAIL", rows), "not_run")
+
     def test_identity_first_record_preview_cannot_be_failed_for_missing_comparison_copy(self):
         self.assertEqual(status("PRD-IDENTITY-LIMIT", [
             observation("다음에 새로 확인하면 달라진 관계를 비교해요. 변화 기록 보기")

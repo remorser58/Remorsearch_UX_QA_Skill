@@ -23,15 +23,17 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / "skills/remorsearch-ux-qa"
 MODEL = "TOKENMAXX/deepseek-v4.1-flash-free"
+DELIVERY_POLICY = dict(uncertain_resends=0, known_reply_retries=2,
+                       timeout_seconds=150, durable_call_id_guard=True)
 BUILD = Path("/Volumes/SanDisk2TB/m4mini/CodeProjects/insta-tracker/.omo/worktrees/peekly-import-ux-20261113/.ux-loop/peekly-build-manifest.json")
 BUILD_SHA256 = "d5755c8912660cf80c0c9f48d18cc8952a3e7b46fe04e82e673f1eaa96b10beb"
 ALL_IDS = tuple(f"PER-PEEKLY-V2-{i:03d}" for i in range(1, 33))
 SMOKE_IDS = ("PER-PEEKLY-V2-016", "PER-PEEKLY-V2-029")
 SMOKE_BASELINE_NOT_RUN = 3
 SMOKE_SUCCESS_UNITS = 6
-DEFAULT_SMOKE = ROOT / ".ux-loop/peekly-coverage-smoke-20261114"
+DEFAULT_SMOKE = ROOT / ".ux-loop/peekly-coverage-smoke-r2-20261114"
 DEFAULT_COHORT = ROOT / ".ux-loop/peekly-coverage32-20261114"
-DEFAULT_FIXTURES = ROOT / ".ux-loop/peekly-coverage-fixtures-v6-20261114"
+DEFAULT_FIXTURES = ROOT / ".ux-loop/peekly-coverage-fixtures-v7-20261114"
 LIBRARY = ROOT / ".ux-loop/peekly-persona-library-v3"
 
 
@@ -156,7 +158,89 @@ def require_same_freeze(before, after):
         raise RuntimeError("coverage_inputs_changed:" + ",".join(changed))
 
 
-def smoke_gate(summary, report):
+def router_delivery_audit(ledger):
+    """Audit persisted receipt order per call ID, without dispatching anything."""
+    errors, violations = [], []
+    ledger = ledger if isinstance(ledger, dict) else {}
+    guard = ledger.get("call_delivery")
+    guard_valid = isinstance(guard, dict) and all(
+        isinstance(key, str) and key and isinstance(value, str)
+        and value in {"intent", "reply_received", "uncertain"}
+        for key, value in guard.items())
+    if not guard_valid:
+        errors.append("router_call_delivery_guard_invalid")
+        guard = {}
+    events = ledger.get("events")
+    if not isinstance(events, list):
+        errors.append("router_events_invalid")
+        events = []
+    attempts, uncertain_at, quality_pending = Counter(), {}, set()
+    known_retries, quality_repairs = Counter(), Counter()
+    diagnostics = 0
+    statuses = {"success", "served_model_mismatch", "http_error",
+                "transport_or_protocol_error", "delivery_uncertain", "quality_rejected"}
+    for index, event in enumerate(events):
+        if not isinstance(event, dict):
+            errors.append("router_event_invalid")
+            continue
+        call_id, status = event.get("call_id"), event.get("status")
+        if not isinstance(call_id, str) or not call_id:
+            errors.append("router_event_call_id_invalid")
+            continue
+        if call_id not in guard:
+            errors.append("router_event_without_delivery_guard")
+        if not isinstance(status, str) or status not in statuses:
+            errors.append("router_event_status_invalid")
+        http_status = event.get("http_status")
+        if http_status is not None and (type(http_status) is not int or not 100 <= http_status <= 599):
+            errors.append("router_http_status_invalid")
+        uncertain = (status in ("transport_or_protocol_error", "delivery_uncertain")
+                     or event.get("delivery_state") == "uncertain" or http_status == 408
+                     or (type(http_status) is int and 500 <= http_status <= 599))
+        # quality_rejected duplicates an already-recorded response receipt;
+        # it is diagnostic evidence, never another provider attempt.
+        if status == "quality_rejected":
+            diagnostics += 1
+            if not attempts[call_id] or call_id in uncertain_at or uncertain:
+                errors.append("router_quality_diagnostic_without_known_reply")
+            else:
+                quality_pending.add(call_id)
+            if uncertain:
+                uncertain_at.setdefault(call_id, index)
+            continue
+        if call_id in uncertain_at:
+            violations.append(dict(call_id=call_id, uncertain_event_index=uncertain_at[call_id],
+                                   later_attempt_event_index=index, later_status=status))
+        elif attempts[call_id]:
+            known_retries[call_id] += 1
+            if call_id in quality_pending:
+                quality_repairs[call_id] += 1
+        attempts[call_id] += 1
+        quality_pending.discard(call_id)
+        if uncertain:
+            uncertain_at.setdefault(call_id, index)
+    if any(guard.get(call_id) == "reply_received" for call_id in uncertain_at):
+        errors.append("router_guard_did_not_preserve_uncertainty")
+    if any(value == "reply_received" and call_id not in attempts for call_id, value in guard.items()):
+        errors.append("router_guard_reply_without_receipt")
+    uncertain_ids = sorted(key for key, value in guard.items() if value == "uncertain")
+    intent_ids = sorted(key for key, value in guard.items() if value == "intent")
+    return dict(schema_version="peekly-router-delivery-audit.v1", valid=not errors,
+        errors=sorted(set(errors)), call_delivery_guard_valid=guard_valid,
+        event_count=len(events), actual_attempt_receipts=sum(attempts.values()),
+        attempted_call_ids=sorted(attempts), attempted_call_count=len(attempts),
+        attempts_by_call_id=dict(sorted(attempts.items())), quality_diagnostic_count=diagnostics,
+        known_reply_retry_count=sum(known_retries.values()),
+        known_quality_repair_count=sum(quality_repairs.values()),
+        known_quality_repair_call_ids=sorted(quality_repairs),
+        uncertain_event_call_ids=sorted(uncertain_at),
+        uncertain_guard_call_ids=uncertain_ids, in_flight_guard_call_ids=intent_ids,
+        unsettled_guard_call_count=len(uncertain_ids) + len(intent_ids),
+        uncertain_resend_violations=len(violations),
+        violation_call_ids=sorted({row["call_id"] for row in violations}), violations=violations)
+
+
+def smoke_gate(summary, report, delivery_audit=None, *, router_ledger_sha256=None):
     """Coverage gate: failed product criteria count as executed; N/A cannot hide them."""
     reasons = []
     counts = report.get("counts", {})
@@ -214,9 +298,21 @@ def smoke_gate(summary, report):
         reasons.append("free_route_mismatch")
     if summary.get("browser_shutdown_confirmed") is not True:
         reasons.append("browser_shutdown_unconfirmed")
+    if summary.get("delivery_policy") != DELIVERY_POLICY:
+        reasons.append("router_delivery_policy_mismatch")
+    if not isinstance(delivery_audit, dict) or delivery_audit.get("valid") is not True:
+        reasons.append("router_delivery_audit_invalid_or_missing")
+    if isinstance(delivery_audit, dict):
+        if delivery_audit.get("actual_attempt_receipts", 0) == 0:
+            reasons.append("router_attempt_receipts_missing")
+        if delivery_audit.get("uncertain_resend_violations") != 0:
+            reasons.append("router_uncertain_resend_violation")
+        if delivery_audit.get("unsettled_guard_call_count") != 0:
+            reasons.append("router_unsettled_delivery_guard")
     return dict(pass_gate=not reasons, reasons=sorted(set(reasons)), persona_ids=list(SMOKE_IDS),
                 baseline_success_not_run=SMOKE_BASELINE_NOT_RUN, success_criteria=success,
-                completed_receipt_summary=completed, host_protocol_count=host)
+                completed_receipt_summary=completed, host_protocol_count=host,
+                router_delivery_audit=delivery_audit, router_ledger_sha256=router_ledger_sha256)
 
 
 def require_passed_smoke(smoke_root, freeze):
@@ -228,13 +324,19 @@ def require_passed_smoke(smoke_root, freeze):
     require_same_freeze(provenance["freeze"], freeze)
     stage = smoke_root / "stage-2"
     if any(digest_file(stage / name) != status.get(key) for name, key in
-           (("report.json", "report_sha256"), ("stage-summary.json", "summary_sha256"))):
+           (("report.json", "report_sha256"), ("stage-summary.json", "summary_sha256"),
+            ("model-router-ledger.json", "router_ledger_sha256"))):
         raise RuntimeError("smoke_evidence_changed")
-    gate = smoke_gate(read_json(stage / "stage-summary.json"), read_json(stage / "report.json"))
+    audit = router_delivery_audit(read_json(stage / "model-router-ledger.json"))
+    if audit != status.get("router_delivery_audit"):
+        raise RuntimeError("smoke_delivery_audit_changed")
+    gate = smoke_gate(read_json(stage / "stage-summary.json"), read_json(stage / "report.json"), audit,
+                      router_ledger_sha256=status["router_ledger_sha256"])
     if not gate["pass_gate"]:
         raise RuntimeError("smoke_coverage_gate_failed:" + ",".join(gate["reasons"]))
     return dict(run_root=str(smoke_root.resolve()), report_sha256=status["report_sha256"],
-                summary_sha256=status["summary_sha256"], gate=gate)
+                summary_sha256=status["summary_sha256"], router_ledger_sha256=status["router_ledger_sha256"],
+                router_delivery_audit=audit, gate=gate)
 
 
 def load_live():
@@ -310,19 +412,29 @@ async def run(args):
         require_same_freeze(freeze, capture_freeze())
         stage_root = run_root / ("stage-" + str(len(ids)))
         report = read_json(stage_root / "report.json")
+        router_audit = router_delivery_audit(read_json(stage_root / "model-router-ledger.json"))
         state.update(finished_at=now(), counts=report.get("counts"),
                      completed_receipt_summary=report.get("completed_receipt_summary"),
                      report_sha256=digest_file(stage_root / "report.json"),
-                     summary_sha256=digest_file(stage_root / "stage-summary.json"))
+                     summary_sha256=digest_file(stage_root / "stage-summary.json"),
+                     router_ledger_sha256=digest_file(stage_root / "model-router-ledger.json"),
+                     router_delivery_audit=router_audit)
         if args.stage == "smoke":
-            gate = smoke_gate(summary, report)
+            gate = smoke_gate(summary, report, router_audit,
+                              router_ledger_sha256=state["router_ledger_sha256"])
             write_json(run_root / "smoke-gate.json", gate)
             state["state"] = "smoke_passed" if gate["pass_gate"] else "smoke_failed"
             state["gate_reasons"] = gate["reasons"]
             code = 0 if gate["pass_gate"] else 2
         else:
+            if router_audit["valid"] is not True or router_audit["uncertain_resend_violations"]:
+                raise RuntimeError("router_delivery_audit_failed_preserved")
+            if summary.get("delivery_policy") != DELIVERY_POLICY:
+                raise RuntimeError("router_delivery_policy_mismatch")
             complete = report.get("completed_receipt_summary", {}).get("assessed_completed_sessions", 0)
-            state["state"] = "complete" if complete == 32 and report.get("counts", {}).get("complete") == 32 else "incomplete_preserved"
+            state["state"] = "complete" if (complete == 32 and report.get("counts", {}).get("complete") == 32
+                and router_audit["actual_attempt_receipts"] > 0
+                and router_audit["unsettled_guard_call_count"] == 0) else "incomplete_preserved"
             code = 0 if state["state"] == "complete" else 2
         write_json(run_root / "run-status.json", state)
         print(json.dumps(state, ensure_ascii=False), flush=True)

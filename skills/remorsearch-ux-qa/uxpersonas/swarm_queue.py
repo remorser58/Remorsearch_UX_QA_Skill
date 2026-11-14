@@ -21,6 +21,9 @@ from uxresearch.storage import atomic, read_json, safe_path, sync_dir
 
 SCHEMA = "ux-persona-queue.v1"
 ACTIVE = ("intent", "uncertain")
+CHECKPOINT_METADATA_BYTES = 1024 * 1024
+CHECKPOINT_OBSERVATION_BYTES = 128 * 1024
+OBSERVATION_CONTENT_BYTES = 65536
 
 
 def fail(code, reason):
@@ -41,6 +44,36 @@ def data(value, limit=262144):
         return json.loads(raw)
     except (ValueError, TypeError, RecursionError):
         fail("queue_input", "Queue data must be bounded finite JSON.")
+
+
+def checkpoint_data(state, turns):
+    """Bound durable history separately from a single model/tool request.
+
+    Execution admits at most one observation per approved model turn. Its
+    text/facts/checks retain the existing 64 KiB bound; a 128 KiB full envelope
+    also accommodates the bounded action and duplicate artifact references.
+    Receipt previews, judgments and all other state share the existing 1 MiB
+    metadata allowance. No request, response or final-result limit is raised.
+    """
+    bounded(turns, 1, 64, "checkpoint turns")
+    state = data(state, CHECKPOINT_METADATA_BYTES
+                 + turns * (CHECKPOINT_OBSERVATION_BYTES + 1) + 32)
+    if not isinstance(state, dict):
+        fail("queue_input", "A checkpoint must be an object.")
+    observations = state.get("observations", [])
+    if not isinstance(observations, list) or len(observations) > turns:
+        fail("queue_input", "Checkpoint history exceeds the approved observation count.")
+    data({key: value for key, value in state.items() if key != "observations"},
+         CHECKPOINT_METADATA_BYTES)
+    for observation in observations:
+        data(observation, CHECKPOINT_OBSERVATION_BYTES)
+        # The queue also supports opaque checkpoint entries; the execution
+        # layer owns their schema. Recheck the known browser content envelope
+        # so storing history cannot enlarge the per-observation allowance.
+        if isinstance(observation, dict) and all(key in observation for key in ("text", "facts", "checks")):
+            data({key: observation[key] for key in ("text", "facts", "checks")},
+                 OBSERVATION_CONTENT_BYTES)
+    return state
 
 
 def quote(spec, inputs=None, outputs=None):
@@ -525,7 +558,7 @@ class Queue:
             self._event(db, "definitely_not_sent", dict(operation_id=operation_id, reason=str(code)[:160]))
 
     def checkpoint(self, claim, state):
-        state = data(state, 1024 * 1024)
+        state = checkpoint_data(state, self.plan["limits"]["turns"])
         with self._db(write=True) as db:
             self._claim(db, claim)
             if db.execute("SELECT 1 FROM operations WHERE job_id=? AND state IN ('intent','uncertain')", (claim["job_id"],)).fetchone():

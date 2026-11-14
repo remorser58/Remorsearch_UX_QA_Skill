@@ -7,6 +7,7 @@ from email.utils import parsedate_to_datetime
 from pathlib import Path
 from hashlib import sha256
 from . import swarm
+from .swarm_providers import DefinitelyNotSent, ProviderUncertain
 
 
 def _clean_decision(result):
@@ -56,7 +57,7 @@ class ModelRouter:
         self.timeout, self.max_retries = timeout, max_retries
         self.backoff_initial, self.backoff_max = backoff_initial, backoff_max
         self.opener, self.sleep = opener or urllib.request.urlopen, sleep
-        self.ledger_path = ledger_path
+        self.ledger_path = Path(ledger_path) if ledger_path is not None else None
         self.respect_rpm = bool(respect_rpm)
         self.lock = threading.RLock()
         self.stats = {r.model: RouteStats() for r in routes}
@@ -64,6 +65,76 @@ class ModelRouter:
         self.conversations = {}
         self.next_allowed = {r.model: 0.0 for r in routes}
         self.cooldown_until = {r.model: 0.0 for r in routes}
+        self.call_delivery = {}
+        self._load_ledger()
+    def _load_ledger(self):
+        if self.ledger_path is None or not self.ledger_path.exists():
+            return
+        try:
+            saved = json.loads(self.ledger_path.read_text())
+            if (not isinstance(saved, dict) or saved.get("fallback_order") != [r.model for r in self.routes]
+                    or set(saved.get("routes", {})) != set(self.stats)
+                    or not isinstance(saved.get("events"), list)):
+                raise ValueError()
+            delivery = saved.get("call_delivery", {})
+            if not isinstance(delivery, dict) or any(
+                    not isinstance(key, str) or not key or value not in {"intent", "reply_received", "uncertain"}
+                    for key, value in delivery.items()):
+                raise ValueError()
+            self.stats = {name: RouteStats(**value) for name, value in saved["routes"].items()}
+            self.events = saved["events"]
+            self.call_delivery = dict(delivery)
+            # Legacy ledgers may contain a timeout followed by a retried reply.
+            # A later reply never retroactively authorizes that uncertain send.
+            for event in self.events:
+                call_id = event.get("call_id")
+                if not call_id:
+                    continue
+                if not isinstance(call_id, str):
+                    raise ValueError()
+                http_status = event.get("http_status")
+                uncertain = (event.get("status") in {"transport_or_protocol_error", "delivery_uncertain"}
+                             or http_status == 408 or (type(http_status) is int and 500 <= http_status <= 599))
+                if uncertain:
+                    self.call_delivery[call_id] = "uncertain"
+                else:
+                    self.call_delivery.setdefault(call_id, "reply_received")
+        except (OSError, ValueError, TypeError, AttributeError) as exc:
+            raise RuntimeError("model_router_ledger_invalid") from exc
+
+    def _assert_dispatchable(self, call_id):
+        if call_id is not None and (not isinstance(call_id, str) or not call_id):
+            raise ValueError("model_router_call_id_invalid")
+        if call_id is not None and self.call_delivery.get(call_id) in {"intent", "uncertain"}:
+            raise ProviderUncertain("model_delivery_uncertain")
+
+    def _dispatch_intent(self, call_id):
+        with self.lock:
+            self._assert_dispatchable(call_id)
+            if call_id is not None:
+                self.call_delivery[call_id] = "intent"
+                try:
+                    self._persist()
+                except Exception:
+                    # No opener call has occurred; retain the fail-closed guard.
+                    raise DefinitelyNotSent("model_ledger_before_dispatch") from None
+
+    def _known_reply(self, call_id):
+        if call_id is not None and self.call_delivery.get(call_id) != "uncertain":
+            self.call_delivery[call_id] = "reply_received"
+
+    def _uncertain(self, call_id, receipt):
+        with self.lock:
+            if call_id is not None:
+                self.call_delivery[call_id] = "uncertain"
+            receipt.update(delivery_state="uncertain", can_retry=False)
+            self.events.append(receipt)
+            try:
+                self._persist()
+            except Exception:
+                # The pre-dispatch intent remains durable if the later write fails.
+                pass
+        raise ProviderUncertain("model_delivery_uncertain") from None
     def _throttle(self, route, deadline=None):
         if not self.respect_rpm:
             return
@@ -96,6 +167,7 @@ class ModelRouter:
         started = time.monotonic()
         prompt = completion = None
         data, usage, message = {}, {}, {}
+        self._dispatch_intent(call_id)
         try:
             with self.lock:
                 self.stats[route.model].attempts += 1
@@ -130,6 +202,7 @@ class ModelRouter:
                     "output_tokens":completion,"provider_cost_microusd":None,"cost_basis":"unknown",
                     "elapsed_seconds":round(elapsed,4),"status":"served_model_mismatch"}
                 with self.lock:
+                    self._known_reply(call_id)
                     self.events.append(receipt); self._persist()
                 return None, receipt
             choices = data.get("choices")
@@ -196,6 +269,7 @@ class ModelRouter:
                 "finish_reason": choices[0].get("finish_reason"),
                 "elapsed_seconds": round(elapsed, 4), "status": "success"}
             with self.lock:
+                self._known_reply(call_id)
                 self.events.append(receipt)
                 self._persist()
             return content, receipt
@@ -222,26 +296,36 @@ class ModelRouter:
                 "http_status": exc.code, "retry_after": retry_after,
                 "input_tokens": prompt, "output_tokens": completion,
                 "elapsed_seconds": round(time.monotonic() - started, 4)}
-            with self.lock: self.events.append(receipt); self._persist()
+            if exc.code == 408 or 500 <= exc.code <= 599:
+                self._uncertain(call_id, receipt)
+            with self.lock:
+                self._known_reply(call_id)
+                self.events.append(receipt); self._persist()
             return None, receipt
-        except (urllib.error.URLError, TimeoutError, OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        except Exception as exc:
             stat = self.stats[route.model]
             with self.lock:
                 stat.failures += 1
                 if type(prompt) is int and type(completion) is int:
                     stat.input_tokens += prompt; stat.output_tokens += completion
+            data = data if isinstance(data, dict) else {}
+            usage = usage if isinstance(usage, dict) else {}
+            message = message if isinstance(message, dict) else {}
+            calls = message.get("tool_calls")
+            calls = calls if isinstance(calls, list) else []
             receipt = {"call_id": call_id, "provider": route.provider, "requested_model": route.model,
                 "status": "transport_or_protocol_error", "error_type": type(exc).__name__, "error_reason": str(exc)[:120],
                 "served_model": data.get("model"), "response_id": data.get("id"),
                 "provider_reported_cost": usage.get("cost"),
                 "billing_source": usage.get("billing_source"),
-                "native_tool_names": [call.get("function", {}).get("name")
-                    for call in (message.get("tool_calls") or []) if isinstance(call, dict)],
+                "native_tool_names": [call["function"].get("name")
+                    for call in calls if isinstance(call, dict) and isinstance(call.get("function"), dict)],
                 "input_tokens": prompt, "output_tokens": completion,
                 "elapsed_seconds": round(time.monotonic() - started, 4)}
-            with self.lock: self.events.append(receipt); self._persist()
-            return None, receipt
+            self._uncertain(call_id, receipt)
     def complete(self, messages, *, max_tokens=512, temperature=0.1, quality_check=None, call_id=None, deadline=None):
+        with self.lock:
+            self._assert_dispatchable(call_id)
         errors = []
         for route in self.routes:
             for attempt in range(self.max_retries + 1):
@@ -273,7 +357,7 @@ class ModelRouter:
                     self.sleep(min(self.backoff_max, self.backoff_initial * (2 ** attempt)))
                     continue
                 errors.append(receipt)
-                retryable = receipt.get("http_status") in (408, 429, 500, 502, 503, 504) or receipt.get("status") == "transport_or_protocol_error"
+                retryable = receipt.get("http_status") == 429
                 if not retryable or attempt >= self.max_retries: break
                 if receipt.get("http_status") == 429:
                     if not self.respect_rpm:
@@ -286,14 +370,18 @@ class ModelRouter:
         if self.ledger_path is not None:
             self.ledger_path.parent.mkdir(parents=True, exist_ok=True)
             tmp = self.ledger_path.with_name(self.ledger_path.name + ".tmp")
-            tmp.write_text(json.dumps(self.report(), ensure_ascii=False, indent=2))
-            os.chmod(tmp, 0o600)
+            with tmp.open("w") as stream:
+                os.chmod(tmp, 0o600)
+                stream.write(json.dumps(self.report(), ensure_ascii=False, indent=2))
+                stream.flush()
+                os.fsync(stream.fileno())
             os.replace(tmp, self.ledger_path)
 
     def report(self):
         with self.lock:
             return {"routes": {model: vars(stats).copy() for model, stats in self.stats.items()},
-                    "events": list(self.events), "fallback_order": [r.model for r in self.routes]}
+                    "events": list(self.events), "fallback_order": [r.model for r in self.routes],
+                    "call_delivery": dict(self.call_delivery)}
 
 
 class RoutedScaleProvider:

@@ -31,6 +31,9 @@ RETENTION = tuple(f"peekly-retention-snapshot-{i:02d}.zip" for i in range(1, 12)
 REQUIRED = {*SAMPLES, PROGRESS, "peekly-format-json.zip",
             "peekly-empty-previous.zip", "peekly-account-mismatch.zip"}
 PROGRESS_HANDLES = tuple(f"synthetic_progress_{i:02d}" for i in range(16))
+PROGRESS_FOLLOWER_ROWS = 300_000
+PROGRESS_FOLLOWING_ROWS = 120_000
+MAX_RECOGNIZED_JSON_BYTES = 64 * MIB
 
 
 class FixtureBuildError(ValueError):
@@ -268,11 +271,22 @@ def _progress_layout(follower_rows, following_rows, chunk_rows):
     sizes = {name: n * (row_size + 1) + 2 for name, n in layout}
     if any(size >= 32 * MIB for size in sizes.values()):
         raise FixtureBuildError("progress_member_limit_exceeded")
+    if sum(sizes.values()) > MAX_RECOGNIZED_JSON_BYTES:
+        raise FixtureBuildError("progress_recognized_json_total_limit_exceeded")
     # Conservative ZIP headers plus the small personal-information member.
     projected = sum(sizes.values()) + sum(2 * len(name) + 256 for name in sizes) + 4096
     if projected >= 128 * MIB:
         raise FixtureBuildError("progress_archive_limit_exceeded")
     return templates, layout, sizes
+
+
+def _progress_json_bytes(sizes, owner):
+    # Pinned product 51110f4 zipParser accumulates every recognized JSON member,
+    # including personal information, and rejects strictly above 64 MiB.
+    total = sum(sizes.values()) + len(_json_bytes(_personal(owner)))
+    if total > MAX_RECOGNIZED_JSON_BYTES:
+        raise FixtureBuildError("progress_recognized_json_total_limit_exceeded")
+    return total
 
 
 def _write_progress(path, owner, templates, layout):
@@ -313,8 +327,8 @@ def _copy_verified(source, destination, row):
         raise FixtureBuildError("source_changed_during_copy:" + row["name"])
 
 
-def build_fixtures(source, destination, *, progress_follower_rows=600_000,
-                   progress_following_rows=200_000, progress_chunk_rows=100_000):
+def build_fixtures(source, destination, *, progress_follower_rows=PROGRESS_FOLLOWER_ROWS,
+                   progress_following_rows=PROGRESS_FOLLOWING_ROWS, progress_chunk_rows=100_000):
     source, destination = Path(source), Path(destination)
     if source.is_symlink():
         raise FixtureBuildError("source_directory_symlink")
@@ -333,6 +347,7 @@ def build_fixtures(source, destination, *, progress_follower_rows=600_000,
                  for name in (*SAMPLES, "peekly-format-json.zip",
                               "peekly-empty-previous.zip", "peekly-account-mismatch.zip")}
     owner = _owner_document(inspected["peekly-format-json.zip"])[2]
+    progress_json_bytes = _progress_json_bytes(sizes, owner)
     if _owner_document(inspected["peekly-empty-previous.zip"])[2] != owner:
         raise FixtureBuildError("reference_fixture_accounts_disagree")
     mismatch_owner = _owner_document(inspected["peekly-account-mismatch.zip"])[2]
@@ -424,6 +439,9 @@ def build_fixtures(source, destination, *, progress_follower_rows=600_000,
         "progress": {"fixture": PROGRESS, "compression": "ZIP_STORED",
                      "recognized_relationship_members": len(layout),
                      "member_rows": dict(layout), "member_bytes": sizes,
+                     "recognized_json_bytes": progress_json_bytes,
+                     "recognized_json_limit_bytes": MAX_RECOGNIZED_JSON_BYTES,
+                     "personal_information_bytes": len(_json_bytes(_personal(owner))),
                      "row_counts": {"followers": progress_follower_rows,
                                     "following": progress_following_rows},
                      "expected_counts": progress_counts,
@@ -453,8 +471,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", type=Path)
     parser.add_argument("destination", type=Path)
-    parser.add_argument("--progress-followers", type=int, default=600_000)
-    parser.add_argument("--progress-following", type=int, default=200_000)
+    parser.add_argument("--progress-followers", type=int, default=PROGRESS_FOLLOWER_ROWS)
+    parser.add_argument("--progress-following", type=int, default=PROGRESS_FOLLOWING_ROWS)
     parser.add_argument("--progress-chunk-rows", type=int, default=100_000)
     args = parser.parse_args()
     try:

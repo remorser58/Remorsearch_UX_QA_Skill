@@ -176,7 +176,6 @@ export async function runCancellationAttempt(io) {
       phases.push({elapsed_ms:io.now()-started,text:state.phase});
     if(state.complete){terminal='already_completed';break;}
     if(state.active && state.analysis && state.cancel){
-      await io.captureActive();
       const current=await io.readPhase();last=current;
       if(!current.active || !current.analysis || !current.cancel){
         if(current.complete){terminal='already_completed';break;}
@@ -383,7 +382,6 @@ async function act(input) {
         const cancellation=await runCancellationAttempt({
           readPhase:()=>evaluate('('+pageImportState.toString()+')()'),
           dispatchCancel:target=>guardedClick(target.selector,target.label,true),
-          captureActive:async()=>{if(extraCaptures.length<2)extraCaptures.push(await screenshot());},
           pause:ms=>new Promise(resolve=>setTimeout(resolve,ms)),now:()=>Date.now()
         });
         Object.assign(importAttempt,cancellation);

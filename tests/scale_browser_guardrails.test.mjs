@@ -98,7 +98,33 @@ test('compound cancellation observes both phases and dispatches only while activ
   const result=await runCancellationAttempt(fixture.io);
   assert.equal(clicks,1);assert.equal(result.cancel_active,true);assert.equal(result.cancel_dispatched,true);
   assert.deepEqual(result.phase_samples.map(x=>x.text),[reading.phase,analyzing.phase]);
-  assert.equal(result.terminal_state,'inactive_after_cancel');assert.equal(fixture.captures(),1);
+  assert.equal(result.terminal_state,'inactive_after_cancel');assert.equal(fixture.captures(),0);
+});
+test('capture latency cannot consume the real active cancellation window',async()=>{
+  let clock=0,cancelled=false,clicks=0,captures=0;
+  const result=await runCancellationAttempt({
+    now:()=>clock,pause:async ms=>{clock+=ms;},
+    readPhase:async()=>{
+      clock+=2;
+      if(cancelled)return inactive;
+      if(clock<5)return reading;
+      if(clock<40)return analyzing;
+      return {...inactive,phase:'결과를 불러왔어요.',complete:true};
+    },
+    captureActive:async()=>{captures++;clock+=100;},
+    dispatchCancel:async()=>{assert.ok(clock<40);clicks++;cancelled=true;}
+  });
+  assert.equal(clicks,1);assert.equal(captures,0);
+  assert.equal(result.cancel_active,true);assert.equal(result.cancel_dispatched,true);
+  assert.deepEqual(result.phase_samples.map(x=>x.text),[reading.phase,analyzing.phase]);
+  assert.equal(result.terminal_state,'inactive_after_cancel');
+});
+test('completion between active observation and recheck prevents dispatch',async()=>{
+  let clicks=0;
+  const fixture=cancellationIO([analyzing,{...inactive,phase:'결과를 불러왔어요.',complete:true}],async()=>{clicks++;});
+  const result=await runCancellationAttempt(fixture.io);
+  assert.equal(clicks,0);assert.equal(result.cancel_dispatched,false);
+  assert.equal(result.terminal_state,'already_completed');
 });
 test('fast completion remains an untested window rather than a cancelled result',async()=>{
   let clicks=0;const fixture=cancellationIO([reading,{...inactive,phase:'결과를 불러왔어요.',complete:true}],async()=>{clicks++;});

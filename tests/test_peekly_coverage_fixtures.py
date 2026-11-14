@@ -211,10 +211,43 @@ class CoverageFixtureTests(unittest.TestCase):
             self.assertLess(size, 32 * 1024 * 1024)
             self.assertEqual(len(json.loads(data[name])), meta["member_rows"][name])
         self.assertEqual(meta["archive_bytes"], (self.dest / PROGRESS).stat().st_size)
+        self.assertEqual(meta["recognized_json_bytes"], sum(len(raw) for raw in data.values()))
+        self.assertEqual(meta["recognized_json_limit_bytes"], 64 * 1024 * 1024)
         self.assertFalse(meta["latency_guaranteed"])
         with zipfile.ZipFile(self.dest / PROGRESS) as archive:
             self.assertTrue(all(i.compress_type == zipfile.ZIP_STORED
                                 for i in archive.infolist()))
+
+    def test_default_progress_stays_below_recognized_json_aggregate_limit(self):
+        build_fixtures(self.source, self.dest)
+        manifest = json.loads((self.dest / "fixture-manifest.json").read_text())
+        meta = manifest["coverage"]["progress"]
+        self.assertEqual(meta["row_counts"], {"followers": 300_000, "following": 120_000})
+        with zipfile.ZipFile(self.dest / PROGRESS) as archive:
+            infos = archive.infolist()
+            self.assertTrue(all(info.filename.endswith(".json") for info in infos))
+            total = sum(info.file_size for info in infos)
+            self.assertEqual(total, meta["recognized_json_bytes"])
+            self.assertLessEqual(total, 64 * 1024 * 1024)
+            self.assertGreater(total, 50 * 1024 * 1024)
+            self.assertTrue(all(info.file_size < 32 * 1024 * 1024 for info in infos))
+        self.assertLess((self.dest / PROGRESS).stat().st_size, 128 * 1024 * 1024)
+
+    def test_exact_64_mib_plus_one_recognized_bytes_rejected_before_write(self):
+        # 35 relationship arrays plus the 85-byte personal-information JSON:
+        # each compact relationship row plus its comma occupies 138 bytes.
+        followers, following, parts = 340_000, 146_295, 34
+        personal_bytes = (json.dumps(personal(OWNER), ensure_ascii=False,
+                                    sort_keys=True, separators=(",", ":")) + "\n").encode()
+        row_bytes = json.dumps(row("synthetic_progress_00"), ensure_ascii=False,
+                              sort_keys=True, separators=(",", ":")).encode()
+        recognized_bytes = ((followers + following) * (len(row_bytes) + 1)
+                            + 2 * (parts + 1) + len(personal_bytes))
+        self.assertEqual(recognized_bytes, 64 * 1024 * 1024 + 1)
+        with self.assertRaisesRegex(FixtureBuildError, "recognized_json_total"):
+            build_fixtures(self.source, self.dest, progress_follower_rows=followers,
+                           progress_following_rows=following, progress_chunk_rows=10_000)
+        self.assertFalse(self.dest.exists())
 
     def test_identical_inputs_produce_identical_manifests_and_zip_bytes(self):
         self.build()

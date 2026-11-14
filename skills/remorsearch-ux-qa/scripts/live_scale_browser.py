@@ -71,7 +71,7 @@ def _route(ledger_path=None):
             raise RuntimeError("tokenmaxx_deepseek_v4_1_flash_free_not_in_local_catalog_or_provider_config")
     routes = [ModelRoute("TOKENMAXX", primary, "0", "0", 30,
         ("TOKENMAXX/deepseek-v4.1-flash-free", "deepseek-v4.1-flash-free", "deepseek-v4.1-flash"))]
-    router = ModelRouter(BASE_URL, routes, timeout=50, max_retries=2,
+    router = ModelRouter(BASE_URL, routes, timeout=150, max_retries=2,
         backoff_initial=2, backoff_max=30, ledger_path=ledger_path)
     # ProviderSpec's internal identifier intentionally excludes '/' while the
     # router retains and sends the exact catalog model ID above.
@@ -230,6 +230,8 @@ async def run_stage(args, persona_ids, index):
         "provider_usage":usage,"budget":report["budget"],
         "fallback_model_attempts":0,
         "model_attempts":route_stats,"configured_routes":configured_routes,
+        "delivery_policy":{"uncertain_resends":0,"known_reply_retries":router.max_retries,
+            "timeout_seconds":router.timeout,"durable_call_id_guard":router.ledger_path is not None},
         "fixture_manifest_sha256":byte_digest(read_bytes(args.fixtures / "fixture-manifest.json")),
         "browser_shutdown_confirmed":stopped,
         "current_evidence_validation":report.get("evidence_validation"),
