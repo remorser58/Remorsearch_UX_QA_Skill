@@ -1,0 +1,329 @@
+{
+  "schema_version": "peekly-independent-criterion-review.v1",
+  "stage_root": ".ux-loop/peekly-coverage32-20261114/stage-32",
+  "runtime_commit": "43e3b143cdfee0a8ae23f68808ebf850e99008bb",
+  "evidence_base_format": "{stage_root}/sessions/{job_id}/evidence/{job_id}/1/",
+  "source": "Read-only completed queue rows and registered observation JSON; fixed product PRD 51110f4.",
+  "scope": "Only listed changes are independently adjudicated; all other stored criteria are preserved. Recheck result SHA, binding, all registered artifact hashes and complete/current-valid status before aggregation.",
+  "raw_receipts_modified": false,
+  "new_model_calls": 0,
+  "new_browser_calls": 0,
+  "changes": [
+    {
+      "job_id": "S-jmpokhjegennajnihcaemagh",
+      "persona_id": "PER-PEEKLY-V2-017",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-RESULT-RECIPROCITY",
+      "oldstatus": "passed",
+      "newstatus": "not_run",
+      "classification": "task_and_judge_scope",
+      "severity": "P1",
+      "reason": "All 18 saved observations were inspected. The category list appears only in sample obs-4; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "evidencefiles": [
+        "agent-observation-4.json",
+        "agent-observation-13.json",
+        "agent-observation-16.json",
+        "agent-observation-17.json",
+        "agent-observation-18.json"
+      ],
+      "resultsha": "0ce48eb2ea993433f63c1951f50053aac12a7a11e0a4d953d434286dd2babd78",
+      "baseline_rows_excluded": [
+        "NR-21"
+      ]
+    },
+    {
+      "job_id": "S-jmpokhjegennajnihcaemagh",
+      "persona_id": "PER-PEEKLY-V2-017",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-RESULT-REVERSE",
+      "oldstatus": "passed",
+      "newstatus": "not_run",
+      "classification": "task_and_judge_scope",
+      "severity": "P1",
+      "reason": "All 18 saved observations were inspected. The category list appears only in sample obs-6; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "evidencefiles": [
+        "agent-observation-6.json",
+        "agent-observation-13.json",
+        "agent-observation-16.json",
+        "agent-observation-17.json",
+        "agent-observation-18.json"
+      ],
+      "resultsha": "0ce48eb2ea993433f63c1951f50053aac12a7a11e0a4d953d434286dd2babd78",
+      "baseline_rows_excluded": []
+    },
+    {
+      "job_id": "S-jmpokhjegennajnihcaemagh",
+      "persona_id": "PER-PEEKLY-V2-017",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-RESULT-MUTUAL",
+      "oldstatus": "passed",
+      "newstatus": "not_run",
+      "classification": "task_and_judge_scope",
+      "severity": "P1",
+      "reason": "All 18 saved observations were inspected. The category list appears only in sample obs-8; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "evidencefiles": [
+        "agent-observation-8.json",
+        "agent-observation-13.json",
+        "agent-observation-16.json",
+        "agent-observation-17.json",
+        "agent-observation-18.json"
+      ],
+      "resultsha": "0ce48eb2ea993433f63c1951f50053aac12a7a11e0a4d953d434286dd2babd78",
+      "baseline_rows_excluded": [
+        "NR-22"
+      ]
+    },
+    {
+      "job_id": "S-pmfcniapopnnebacajhibjbh",
+      "persona_id": "PER-PEEKLY-V2-018",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-RESULT-RECIPROCITY",
+      "oldstatus": "passed",
+      "newstatus": "not_run",
+      "classification": "task_and_judge_scope",
+      "severity": "P1",
+      "reason": "All 18 saved observations were inspected. The category list appears only in sample obs-4; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "evidencefiles": [
+        "agent-observation-4.json",
+        "agent-observation-13.json",
+        "agent-observation-16.json",
+        "agent-observation-17.json",
+        "agent-observation-18.json"
+      ],
+      "resultsha": "5b7abd2f6b8c2833dfc7a5d9850122a1acb296998371a82dfb73f1d17b135070",
+      "baseline_rows_excluded": []
+    },
+    {
+      "job_id": "S-pmfcniapopnnebacajhibjbh",
+      "persona_id": "PER-PEEKLY-V2-018",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-RESULT-REVERSE",
+      "oldstatus": "passed",
+      "newstatus": "not_run",
+      "classification": "task_and_judge_scope",
+      "severity": "P1",
+      "reason": "All 18 saved observations were inspected. The category list appears only in sample obs-6; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "evidencefiles": [
+        "agent-observation-6.json",
+        "agent-observation-13.json",
+        "agent-observation-16.json",
+        "agent-observation-17.json",
+        "agent-observation-18.json"
+      ],
+      "resultsha": "5b7abd2f6b8c2833dfc7a5d9850122a1acb296998371a82dfb73f1d17b135070",
+      "baseline_rows_excluded": []
+    },
+    {
+      "job_id": "S-pmfcniapopnnebacajhibjbh",
+      "persona_id": "PER-PEEKLY-V2-018",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-RESULT-MUTUAL",
+      "oldstatus": "passed",
+      "newstatus": "not_run",
+      "classification": "task_and_judge_scope",
+      "severity": "P1",
+      "reason": "All 18 saved observations were inspected. The category list appears only in sample obs-8; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "evidencefiles": [
+        "agent-observation-8.json",
+        "agent-observation-13.json",
+        "agent-observation-16.json",
+        "agent-observation-17.json",
+        "agent-observation-18.json"
+      ],
+      "resultsha": "5b7abd2f6b8c2833dfc7a5d9850122a1acb296998371a82dfb73f1d17b135070",
+      "baseline_rows_excluded": []
+    },
+    {
+      "job_id": "S-jbeffobgjfbgkhkfmfepeohi",
+      "persona_id": "PER-PEEKLY-V2-019",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-RESULT-RECIPROCITY",
+      "oldstatus": "passed",
+      "newstatus": "not_run",
+      "classification": "task_and_judge_scope",
+      "severity": "P1",
+      "reason": "All 23 saved observations were inspected. The category list appears only in sample obs-7; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "evidencefiles": [
+        "agent-observation-7.json",
+        "agent-observation-16.json",
+        "agent-observation-19.json",
+        "agent-observation-22.json",
+        "agent-observation-23.json"
+      ],
+      "resultsha": "f2e5b232570cbcc7e384c5d6de66b799cc96931ba70f0dd4ec3e499d707443da",
+      "baseline_rows_excluded": []
+    },
+    {
+      "job_id": "S-jbeffobgjfbgkhkfmfepeohi",
+      "persona_id": "PER-PEEKLY-V2-019",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-RESULT-REVERSE",
+      "oldstatus": "passed",
+      "newstatus": "not_run",
+      "classification": "task_and_judge_scope",
+      "severity": "P1",
+      "reason": "All 23 saved observations were inspected. The category list appears only in sample obs-9; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "evidencefiles": [
+        "agent-observation-9.json",
+        "agent-observation-16.json",
+        "agent-observation-19.json",
+        "agent-observation-22.json",
+        "agent-observation-23.json"
+      ],
+      "resultsha": "f2e5b232570cbcc7e384c5d6de66b799cc96931ba70f0dd4ec3e499d707443da",
+      "baseline_rows_excluded": [
+        "NR-25"
+      ]
+    },
+    {
+      "job_id": "S-jbeffobgjfbgkhkfmfepeohi",
+      "persona_id": "PER-PEEKLY-V2-019",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-RESULT-MUTUAL",
+      "oldstatus": "passed",
+      "newstatus": "not_run",
+      "classification": "task_and_judge_scope",
+      "severity": "P1",
+      "reason": "All 23 saved observations were inspected. The category list appears only in sample obs-11; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "evidencefiles": [
+        "agent-observation-11.json",
+        "agent-observation-16.json",
+        "agent-observation-19.json",
+        "agent-observation-22.json",
+        "agent-observation-23.json"
+      ],
+      "resultsha": "f2e5b232570cbcc7e384c5d6de66b799cc96931ba70f0dd4ec3e499d707443da",
+      "baseline_rows_excluded": [
+        "NR-26"
+      ]
+    },
+    {
+      "job_id": "S-efdkbjaecbikgofacjhaaena",
+      "persona_id": "PER-PEEKLY-V2-020",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-RESULT-RECIPROCITY",
+      "oldstatus": "passed",
+      "newstatus": "not_run",
+      "classification": "task_and_judge_scope",
+      "severity": "P1",
+      "reason": "All 18 saved observations were inspected. The category list appears only in sample obs-4; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "evidencefiles": [
+        "agent-observation-4.json",
+        "agent-observation-13.json",
+        "agent-observation-16.json",
+        "agent-observation-17.json",
+        "agent-observation-18.json"
+      ],
+      "resultsha": "759e018f1dcba530fd94ce68b056f046f559d1b893ad552fa849fb857a6b4882",
+      "baseline_rows_excluded": [
+        "NR-28"
+      ]
+    },
+    {
+      "job_id": "S-efdkbjaecbikgofacjhaaena",
+      "persona_id": "PER-PEEKLY-V2-020",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-RESULT-REVERSE",
+      "oldstatus": "passed",
+      "newstatus": "not_run",
+      "classification": "task_and_judge_scope",
+      "severity": "P1",
+      "reason": "All 18 saved observations were inspected. The category list appears only in sample obs-6; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "evidencefiles": [
+        "agent-observation-6.json",
+        "agent-observation-13.json",
+        "agent-observation-16.json",
+        "agent-observation-17.json",
+        "agent-observation-18.json"
+      ],
+      "resultsha": "759e018f1dcba530fd94ce68b056f046f559d1b893ad552fa849fb857a6b4882",
+      "baseline_rows_excluded": [
+        "NR-06",
+        "NR-29"
+      ]
+    },
+    {
+      "job_id": "S-efdkbjaecbikgofacjhaaena",
+      "persona_id": "PER-PEEKLY-V2-020",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-RESULT-MUTUAL",
+      "oldstatus": "passed",
+      "newstatus": "not_run",
+      "classification": "task_and_judge_scope",
+      "severity": "P1",
+      "reason": "All 18 saved observations were inspected. The category list appears only in sample obs-8; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "evidencefiles": [
+        "agent-observation-8.json",
+        "agent-observation-13.json",
+        "agent-observation-16.json",
+        "agent-observation-17.json",
+        "agent-observation-18.json"
+      ],
+      "resultsha": "759e018f1dcba530fd94ce68b056f046f559d1b893ad552fa849fb857a6b4882",
+      "baseline_rows_excluded": [
+        "NR-07",
+        "NR-30"
+      ]
+    },
+    {
+      "job_id": "S-pdalpdmknheojnhkkichdfbm",
+      "persona_id": "PER-PEEKLY-V2-011",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-IMPORT-HTML",
+      "oldstatus": "not_run",
+      "newstatus": "passed",
+      "classification": "judge_rejection_phrase_mismatch",
+      "severity": "P2",
+      "reason": "The named malformed HTML upload was actually rejected with the internal filename and an unreadable-list error; the same-attempt saved digest stayed unchanged. The PRD does not require the evaluator's exact Korean phrase.",
+      "evidencefiles": [
+        "agent-observation-10.json",
+        "agent-observation-11.json",
+        "agent-observation-14.json"
+      ],
+      "resultsha": "ceec6c68aac9d4e9ecedc5b9ad22b1c5aa7ab9057a8c3411c270d5163891cbf6",
+      "baseline_rows_excluded": []
+    },
+    {
+      "job_id": "S-pdalpdmknheojnhkkichdfbm",
+      "persona_id": "PER-PEEKLY-V2-011",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-IMPORT-ACCOUNT",
+      "oldstatus": "not_run",
+      "newstatus": "passed",
+      "classification": "judge_rejection_phrase_mismatch",
+      "severity": "P2",
+      "reason": "The named account-mismatch upload was actually rejected because its owner differs from the saved account; the same-attempt saved digest stayed unchanged. The evaluator's accepted phrases omitted this observed PRD-compliant rejection.",
+      "evidencefiles": [
+        "agent-observation-11.json",
+        "agent-observation-15.json"
+      ],
+      "resultsha": "ceec6c68aac9d4e9ecedc5b9ad22b1c5aa7ab9057a8c3411c270d5163891cbf6",
+      "baseline_rows_excluded": []
+    }
+  ],
+  "expected_relationship_scope_effect": {
+    "criterion_passed_to_not_run": 12,
+    "session_passed_to_inconclusive": 4,
+    "baseline_weighted_rows_excluded": 9,
+    "baseline_unique_persona_requirement_keys_excluded": 7
+  },
+  "expected_rejection_phrase_effect": {
+    "criterion_not_run_to_passed": 2,
+    "session_inconclusive_to_passed": 1,
+    "baseline_46_effect": 0
+  }
+}
