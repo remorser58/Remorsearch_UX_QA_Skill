@@ -20,7 +20,13 @@ The user authorizes implementation, regression, owned isolated test contexts, sm
 - The old uncertain 009/010/012 remain preserved. The new requested cohort uses new jobs and call IDs.
 - Original 46 weighted mapping at 65f: 20 passed / 8 failed / 18 not_run; 32 unique mappings: 13 / 6 / 13.
 
-## Current phase — R3 preserved; lifecycle fixes and independent R4 preparation
+## Current phase — independent R4 smoke running on fixed lifecycle source
+
+- Source `4a0f3bbbf610132798d8edb8ad343637f7e4d82d` committed/pushed, exact remote SHA and clean worktree verified before launch. R4 launched at `2026-11-14T18:51:27.742143+00:00` (04:51 Asia/Seoul), detached PID 49840. Root `.ux-loop/peekly-completion-smoke-r4-20261115`; 024 job `S-iikjgdifekagbjlmmogeoldg`, 032 job `S-imkegjkfkgiilkafipmeibkj`.
+- Read-only checkpoint at 04:52: both jobs running, turn 3, three admitted observations each; six completed model and six completed tool operations, no recorded problem. New startup has produced real observations in both contexts. This is progress, not a passed smoke or completed-session coverage. No 32-person run has started.
+- Keep runtime/fixtures/library/product bytes fixed through R4 and the subsequent cohort. Preserve every old queue and uncertainty. Only documentation may be updated while execution runs.
+
+### R3 preservation and R4 prelaunch validation (historical)
 
 - R3 launched `2026-11-14T18:24:30.812452+00:00` (03:24 Asia/Seoul), detached PID 32659, source `054342d099648104fd23aae29953f9a6399f3e73` committed/pushed with exact remote SHA and clean tree verified. Root `.ux-loop/peekly-completion-smoke-r3-20261115`; jobs `S-obfofmpdpeibgbipcfgdlcoa` (023) and `S-nebbkpjgckcjdeeachjcglag` (030).
 - R3 ended at 03:26 Asia/Seoul with `stopped_preserved` / `browser_shutdown_unconfirmed`: both first tool operations timed out, both jobs uncertain, zero admitted observations and no completed receipt. The two model replies were received; model uncertainty and tool uncertainty are distinct. Six success plus two recovery criteria are unassessed, not not_run/product failures; no old-23 improvement credit.
