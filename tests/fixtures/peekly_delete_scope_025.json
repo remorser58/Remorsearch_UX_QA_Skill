@@ -1,0 +1,362 @@
+{
+  "schema_version": "peekly-observation-projection.v1",
+  "description": "Minimal saved 025 deletion evidence. Text contains selected unchanged lines and controls are limited to deletion. Initial and final result-state digests match while the v7 key remains. The theme key is outside the PRD deletion-key list. No raw stored values are included.",
+  "source_job": "S-lienlcpnibobddnaaekmmami",
+  "source_context_id": "ctx-9403064ee8a7396cdf01d0efe3c894b7c2dcef30",
+  "requirement_ids": [
+    "PRD-RESULT-SEARCH",
+    "PRD-PRIVACY-LOCAL",
+    "PRD-PRIVACY-DELETE"
+  ],
+  "sources": [
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-lienlcpnibobddnaaekmmami/evidence/S-lienlcpnibobddnaaekmmami/1/agent-observation-1.json",
+      "sha256": "db6056ba24042a41f89834ebf6bc6c980891b9f10d9b4e3ba149e8f499984b50"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-lienlcpnibobddnaaekmmami/evidence/S-lienlcpnibobddnaaekmmami/1/agent-observation-5.json",
+      "sha256": "e7a4dd839707a55760eec63137de5f0627ebf4225e3766de2356d50058740a83"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-lienlcpnibobddnaaekmmami/evidence/S-lienlcpnibobddnaaekmmami/1/agent-observation-12.json",
+      "sha256": "13a58570b6d0941b79947fc6a55337f6130dfc30a8cb064daed54eab78858ee8"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-lienlcpnibobddnaaekmmami/evidence/S-lienlcpnibobddnaaekmmami/1/agent-observation-13.json",
+      "sha256": "41d1e52575ee1385feea1cb8d0466e9fc8bf805b5615f7b4cc5037c389fc8676"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-lienlcpnibobddnaaekmmami/evidence/S-lienlcpnibobddnaaekmmami/1/agent-observation-14.json",
+      "sha256": "22bd27837ad52631c6ed75c5dd7281cf91bc49ee844fb88f66eb9934e6afe00a"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-lienlcpnibobddnaaekmmami/evidence/S-lienlcpnibobddnaaekmmami/1/agent-observation-15.json",
+      "sha256": "9c24e8c6ef6141f2ffe8809d70aac4cb72364ef65d20ebf55a848b13762763ee"
+    }
+  ],
+  "host_provenance": {
+    "file": "skills/remorsearch-ux-qa/uxpersonas/scale_browser_host.py",
+    "sha256": "db6e58e8ef0c9268f8ceaa67bcead006ac4b3e81d1a1b0db2103e70dbebd5774",
+    "contract": "The reviewed host creates a fresh evidence/browser-profile directory per context, then admits observations from that context only."
+  },
+  "observations": [
+    {
+      "id": "obs-1",
+      "text": "내 팔로우 관계를\n로그인하고 내 팔로우 목록을 확인해요.",
+      "facts": {
+        "fixture_uploads": [],
+        "storage_keys": [
+          "peekly_state_v7",
+          "peekly_theme_preference"
+        ],
+        "storage_access": "available",
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "7b3f3a770f0ac89471a660ccfe9a54f5de96b387ebb22d307e06fadb84f77355"
+        },
+        "controls": []
+      },
+      "checks": []
+    },
+    {
+      "id": "obs-5",
+      "text": "결과를 불러왔어요.",
+      "facts": {
+        "last_action": "upload",
+        "fixture_uploads": [
+          "peekly-search-ready.zip"
+        ],
+        "uploaded_fixture": "peekly-search-ready.zip",
+        "import_attempt_id": "upload-42",
+        "import_attempt": {
+          "attempt_id": "upload-42",
+          "cancel_active": false,
+          "cancel_dispatched": false,
+          "fixture": "peekly-search-ready.zip",
+          "fixture_sha256": "c1901b1151716053a5fc31ec9eb9dee7d51cbb3c665dbf8d7607849fdea8e6e2",
+          "persistence_unchanged": false,
+          "phase_samples": [
+            {
+              "elapsed_ms": 1,
+              "text": "파일을 읽고 있어요"
+            },
+            {
+              "elapsed_ms": 28,
+              "text": "결과를 불러왔어요."
+            }
+          ],
+          "schema_version": "peekly-import-attempt.v1",
+          "storage_after": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "29fe25eff90e28f1882b2fe1b7265005a4bc884e30b56c1ce70c23af42f6df70"
+          },
+          "storage_before": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "7b3f3a770f0ac89471a660ccfe9a54f5de96b387ebb22d307e06fadb84f77355"
+          },
+          "tool": "upload"
+        },
+        "storage_keys": [
+          "peekly_state_v7",
+          "peekly_theme_preference"
+        ],
+        "storage_access": "available",
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "29fe25eff90e28f1882b2fe1b7265005a4bc884e30b56c1ce70c23af42f6df70"
+        },
+        "controls": []
+      },
+      "checks": [
+        {
+          "index": 1,
+          "kind": "success",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "id": "obs-12",
+      "text": "개인정보 처리방침, 이용약관, 기록 모두 지우기\n데이터 삭제\n이 기기의 기록 모두 지우기\n기록 모두 지우기",
+      "facts": {
+        "last_action": "click",
+        "last_action_label": "데이터 삭제",
+        "fixture_uploads": [
+          "peekly-search-ready.zip"
+        ],
+        "import_attempt_id": "upload-42",
+        "storage_keys": [
+          "peekly_state_v7",
+          "peekly_theme_preference"
+        ],
+        "storage_access": "available",
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "29fe25eff90e28f1882b2fe1b7265005a4bc884e30b56c1ce70c23af42f6df70"
+        },
+        "click_dispatch": {
+          "dispatched": true,
+          "hit_test": true,
+          "label": "데이터 삭제",
+          "requested_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(1)>button:nth-of-type(3)",
+          "verified_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(1)>button:nth-of-type(3)"
+        },
+        "controls": [
+          {
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(1)>button:nth-of-type(3)",
+            "tag": "button",
+            "type": "button",
+            "label": "데이터 삭제",
+            "visible": true,
+            "disabled": false
+          },
+          {
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(2)>button:nth-of-type(1)",
+            "tag": "button",
+            "type": "button",
+            "label": "기록 모두 지우기",
+            "visible": false,
+            "disabled": false
+          }
+        ]
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "reason": "A relationship list with at least nine rows was observed without the current PRD search input.",
+          "status": "failed"
+        },
+        {
+          "index": 1,
+          "kind": "success",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "id": "obs-13",
+      "text": "개인정보 처리방침, 이용약관, 기록 모두 지우기\n데이터 삭제\n이 기기의 기록 모두 지우기\n기록 모두 지우기",
+      "facts": {
+        "last_action": "scroll",
+        "fixture_uploads": [
+          "peekly-search-ready.zip"
+        ],
+        "import_attempt_id": "upload-42",
+        "storage_keys": [
+          "peekly_state_v7",
+          "peekly_theme_preference"
+        ],
+        "storage_access": "available",
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "29fe25eff90e28f1882b2fe1b7265005a4bc884e30b56c1ce70c23af42f6df70"
+        },
+        "controls": [
+          {
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(1)>button:nth-of-type(3)",
+            "tag": "button",
+            "type": "button",
+            "label": "데이터 삭제",
+            "visible": false,
+            "disabled": false
+          },
+          {
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(2)>button:nth-of-type(1)",
+            "tag": "button",
+            "type": "button",
+            "label": "기록 모두 지우기",
+            "visible": true,
+            "disabled": false
+          }
+        ]
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "reason": "A relationship list with at least nine rows was observed without the current PRD search input.",
+          "status": "failed"
+        },
+        {
+          "index": 1,
+          "kind": "success",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "id": "obs-14",
+      "text": "개인정보 처리방침, 이용약관, 기록 모두 지우기\n데이터 삭제\n이 기기의 기록 모두 지우기\n정말 모두 지울까요?\n지운 기록은 되돌릴 수 없어요. 구매한 이용권은 그대로 남아요.\n취소\n모두 지우기",
+      "facts": {
+        "last_action": "click",
+        "last_action_label": "기록 모두 지우기",
+        "fixture_uploads": [
+          "peekly-search-ready.zip"
+        ],
+        "import_attempt_id": "upload-42",
+        "storage_keys": [
+          "peekly_state_v7",
+          "peekly_theme_preference"
+        ],
+        "storage_access": "available",
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "29fe25eff90e28f1882b2fe1b7265005a4bc884e30b56c1ce70c23af42f6df70"
+        },
+        "click_dispatch": {
+          "dispatched": true,
+          "hit_test": true,
+          "label": "기록 모두 지우기",
+          "requested_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(2)>button:nth-of-type(1)",
+          "verified_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(2)>button:nth-of-type(1)"
+        },
+        "controls": [
+          {
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(1)>button:nth-of-type(3)",
+            "tag": "button",
+            "type": "button",
+            "label": "데이터 삭제",
+            "visible": false,
+            "disabled": false
+          },
+          {
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(2)>div:nth-of-type(1)>div:nth-of-type(1)>button:nth-of-type(1)",
+            "tag": "button",
+            "type": "button",
+            "label": "취소",
+            "visible": true,
+            "disabled": false
+          },
+          {
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(2)>div:nth-of-type(1)>div:nth-of-type(1)>button:nth-of-type(2)",
+            "tag": "button",
+            "type": "button",
+            "label": "모두 지우기",
+            "visible": true,
+            "disabled": false
+          }
+        ]
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "reason": "A relationship list with at least nine rows was observed without the current PRD search input.",
+          "status": "failed"
+        },
+        {
+          "index": 1,
+          "kind": "success",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "id": "obs-15",
+      "text": "내 팔로우 관계를\n로그인하고 내 팔로우 목록을 확인해요.\n이 기기에 저장된 기록과 로그인을 모두 지웠어요.",
+      "facts": {
+        "last_action": "click",
+        "last_action_label": "모두 지우기",
+        "fixture_uploads": [
+          "peekly-search-ready.zip"
+        ],
+        "import_attempt_id": "upload-42",
+        "storage_keys": [
+          "peekly_state_v7",
+          "peekly_theme_preference"
+        ],
+        "storage_access": "available",
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "7b3f3a770f0ac89471a660ccfe9a54f5de96b387ebb22d307e06fadb84f77355"
+        },
+        "click_dispatch": {
+          "dispatched": true,
+          "hit_test": true,
+          "label": "모두 지우기",
+          "requested_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(2)>div:nth-of-type(1)>div:nth-of-type(1)>button:nth-of-type(2)",
+          "verified_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(2)>div:nth-of-type(1)>div:nth-of-type(1)>button:nth-of-type(2)"
+        },
+        "controls": []
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "reason": "A relationship list with at least nine rows was observed without the current PRD search input.",
+          "status": "failed"
+        },
+        {
+          "index": 1,
+          "kind": "success",
+          "status": "passed"
+        }
+      ]
+    }
+  ]
+}

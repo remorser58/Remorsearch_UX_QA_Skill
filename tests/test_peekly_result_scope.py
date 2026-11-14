@@ -5,6 +5,7 @@ Actual 026 includes a saved positive search. Authored variants and unit PNGs are
 explicitly synthetic contract inputs; these tests run no browser/model process.
 """
 import copy
+import hashlib
 import json
 from pathlib import Path
 import tempfile
@@ -17,8 +18,9 @@ from uxpersonas.agent_run import Execution
 from uxpersonas.peekly_criteria import (
     CRITERIA, LEGACY_UNKNOWN_REASON, LEGACY_UNKNOWN_REQUIREMENT,
     RESULT_CURRENT_FIXTURE, RESULT_CURRENT_SHA256, RESULT_SCOPE_KEYS,
-    SEARCH_KEYS, SEARCH_QUERY, SEARCH_QUERY_SHA256, SEARCH_REQUIREMENT,
+    SEARCH_FIXTURE, SEARCH_KEYS, SEARCH_QUERY, SEARCH_QUERY_SHA256, SEARCH_REQUIREMENT,
     SIZE_REQUIREMENT, evaluate, result_scope_evidence, search_scope_evidence, size_scope_evidence,
+    DELETE_REQUIRED_KEYS, DELETE_REQUIREMENT, delete_scope_evidence,
 )
 from uxpersonas.scale_run import Evidence
 from uxresearch.canonical import EngineError, byte_digest
@@ -415,6 +417,44 @@ class ReceiptScopeTests(unittest.TestCase):
             self.assertEqual(receipt["criteria"][1]["status"], "not_run")
 
 
+
+    def test_actual_025_confirmed_delete_fails_only_key_absence_in_both_receipts(self):
+        self.search_task()
+        observed = self.admit(golden("peekly_delete_scope_025.json"))
+        expected = [artifact["id"] for index in (0, 1, 4, 5)
+                    for artifact in observed[index]["artifacts"]]
+        for judgment in (None, self.judgment(["not_run", "passed", "passed"]),
+                         self.judgment(["not_run", "passed", "not_run"])):
+            for receipt in self.receipts(judgment):
+                self.assertEqual([c["status"] for c in receipt["criteria"]],
+                                 ["not_run", "passed", "failed"])
+                self.assertEqual(receipt["criteria"][2]["evidence_ids"], expected)
+                self.assertIn("key presence only", receipt["criteria"][2]["observation"])
+
+    def test_before_delete_confirmation_model_pass_remains_not_run(self):
+        self.search_task()
+        self.admit(golden("peekly_delete_scope_025.json")[:-1])
+        for receipt in self.receipts(self.judgment(["not_run", "passed", "passed"])):
+            self.assertEqual(receipt["criteria"][2]["status"], "not_run")
+            self.assertEqual(receipt["criteria"][2]["evidence_ids"], [])
+
+    def test_actual_delete_failure_survives_later_import_and_model_pass(self):
+        self.search_task()
+        rows = golden("peekly_delete_scope_025.json")
+        rows[-1]["checks"].append({"kind": "success", "index": 2, "status": "failed"})
+        self.admit([*rows, copy.deepcopy(rows[1])])
+        for receipt in self.receipts(self.judgment(["not_run", "passed", "passed"])):
+            self.assertEqual(receipt["criteria"][2]["status"], "failed")
+
+    def test_delete_outcome_requires_a_capture_for_the_own_post_confirmation(self):
+        self.search_task()
+        observed = self.admit(golden("peekly_delete_scope_025.json"))
+        observed[-1]["artifacts"] = []
+        judgment = self.judgment(["not_run", "passed", "passed"])
+        for receipt in self.receipts(judgment):
+            self.assertEqual(receipt["criteria"][2]["status"], "not_run")
+
+
 class LegacyUnknownScopeTests(unittest.TestCase):
     def test_actual_021_known_empty_then_normal_pair_does_not_exercise_legacy_unknown(self):
         rows = golden("peekly_legacy_unknown_021.json")
@@ -765,6 +805,102 @@ class SizeScopeTests(unittest.TestCase):
             accepted = RejectionWordingScopeTests.synthetic_acceptance(boundary)
             accepted["facts"]["import_attempt"]["storage_after"]["available"] = False
             self.assert_size([accepted], "not_run")
+
+
+
+class DeleteScopeTests(unittest.TestCase):
+    def assert_delete(self, rows, status):
+        self.assertEqual(delete_scope_evidence(rows)["status"], status)
+        self.assertEqual(statuses(rows, [DELETE_REQUIREMENT]), {0: status})
+
+    @staticmethod
+    def confirm_control(rows):
+        return next(control for control in rows[-2]["facts"]["controls"]
+                    if " ".join(control["label"].split()) == "모두 지우기")
+
+    @staticmethod
+    def synthetic_removed_keys():
+        rows = golden("peekly_delete_scope_025.json")
+        facts = rows[-1]["facts"]
+        facts["storage_keys"] = ["peekly_theme_preference"]
+        facts["storage_snapshot"] = {"available": True, "keys": [],
+                                    "sha256": hashlib.sha256(b"[]").hexdigest()}
+        return rows
+
+    def test_actual_025_empty_state_key_recreation_is_not_key_absence(self):
+        rows = golden("peekly_delete_scope_025.json")
+        self.assertEqual(rows[0]["facts"]["storage_snapshot"], rows[-1]["facts"]["storage_snapshot"])
+        self.assertNotEqual(rows[1]["facts"]["storage_snapshot"], rows[-1]["facts"]["storage_snapshot"])
+        self.assertIn("peekly_state_v7", rows[-1]["facts"]["storage_keys"])
+        self.assertNotIn("peekly_theme_preference", DELETE_REQUIRED_KEYS)
+        self.assertEqual(delete_scope_evidence(rows)["indices"], [0, 1, 4, 5])
+        self.assert_delete(rows, "failed")
+
+    def test_authored_key_absence_can_pass_desktop_scope_with_theme_preserved(self):
+        rows = self.synthetic_removed_keys()
+        self.assert_delete(rows, "passed")
+        self.assertIn("native iOS", CRITERIA[DELETE_REQUIREMENT]["value"])
+        self.assertEqual(CRITERIA[DELETE_REQUIREMENT]["scope"], "desktop-partial+native-ios")
+        rows[-1]["facts"]["storage_keys"].append("peekly_onboarding_v1")
+        self.assert_delete(rows, "failed")
+
+    def test_visible_final_confirm_dispatch_is_required(self):
+        for name, mutate in (
+            ("hidden", lambda rows: self.confirm_control(rows).update(visible=False)),
+            ("disabled", lambda rows: self.confirm_control(rows).update(disabled=True)),
+            ("ambiguous", lambda rows: rows[-2]["facts"]["controls"].append(copy.deepcopy(self.confirm_control(rows)))),
+            ("not dispatched", lambda rows: rows[-1]["facts"]["click_dispatch"].update(dispatched=False)),
+            ("no hit", lambda rows: rows[-1]["facts"]["click_dispatch"].update(hit_test=False)),
+            ("wrong selector", lambda rows: rows[-1]["facts"]["click_dispatch"].update(verified_selector="#unrelated")),
+            ("cancel", lambda rows: rows[-1]["facts"].update(last_action_label="취소")),
+            ("open only", lambda rows: rows[-1]["facts"].update(last_action_label="기록 모두 지우기")),
+        ):
+            with self.subTest(case=name):
+                rows = golden("peekly_delete_scope_025.json")
+                mutate(rows)
+                self.assert_delete(rows, "not_run")
+        self.assert_delete(golden("peekly_delete_scope_025.json")[:-1], "not_run")
+
+    def test_initial_owned_fixture_and_same_saved_import_scope_are_required(self):
+        original_rows = golden("peekly_delete_scope_025.json")
+        self.assert_delete(original_rows[1:], "not_run")
+        self.assert_delete([original_rows[0], *original_rows[2:]], "not_run")
+        for name, mutate in (
+            ("wrong fixture", lambda rows: rows[1]["facts"].update(uploaded_fixture="peekly-sample-current.zip")),
+            ("wrong sha", lambda rows: rows[1]["facts"]["import_attempt"].update(fixture_sha256="a" * 64)),
+            ("different starting state", lambda rows: rows[1]["facts"]["import_attempt"]["storage_before"].update(sha256="a" * 64)),
+            ("different confirm attempt", lambda rows: rows[-1]["facts"].update(import_attempt_id="upload-other")),
+            ("changed pre-confirm state", lambda rows: rows[-2]["facts"]["storage_snapshot"].update(sha256="a" * 64)),
+        ):
+            with self.subTest(case=name):
+                rows = golden("peekly_delete_scope_025.json")
+                mutate(rows)
+                self.assert_delete(rows, "not_run")
+
+    def test_unavailable_or_inconsistent_storage_is_not_a_product_verdict(self):
+        for name, mutate in (
+            ("denied", lambda rows: rows[-1]["facts"].update(storage_access="denied")),
+            ("unavailable", lambda rows: rows[-1]["facts"]["storage_snapshot"].update(available=False)),
+            ("missing keys", lambda rows: rows[-1]["facts"].pop("storage_keys")),
+            ("key disagreement", lambda rows: rows[-1]["facts"]["storage_snapshot"].update(keys=[])),
+            ("unavailable before", lambda rows: rows[-2]["facts"]["storage_snapshot"].update(available=False)),
+        ):
+            with self.subTest(case=name):
+                rows = golden("peekly_delete_scope_025.json")
+                mutate(rows)
+                self.assert_delete(rows, "not_run")
+
+    def test_stale_ack_and_later_import_cannot_supply_delete_evidence(self):
+        for name, mutate in (
+            ("observe only", lambda rows: rows[-1]["facts"].update(last_action="observe")),
+            ("no current ack", lambda rows: rows[-1].update(text="내 팔로우 관계를 한눈에 확인해요")),
+            ("stale prior ack", lambda rows: rows[-2].update(text=rows[-2]["text"] + "\n" + rows[-1]["text"])),
+            ("later import", lambda rows: rows[-1]["facts"].update(last_action="upload", uploaded_fixture=SEARCH_FIXTURE)),
+        ):
+            with self.subTest(case=name):
+                rows = golden("peekly_delete_scope_025.json")
+                mutate(rows)
+                self.assert_delete(rows, "not_run")
 
 
 if __name__ == "__main__":

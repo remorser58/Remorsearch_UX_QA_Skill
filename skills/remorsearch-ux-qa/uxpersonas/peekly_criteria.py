@@ -723,6 +723,85 @@ def size_scope_evidence(rows):
     return missing
 
 
+DELETE_REQUIREMENT = "PRD-PRIVACY-DELETE"
+DELETE_REQUIRED_KEYS = {
+    "peekly_state_v7", "peekly_state_v6", "instapulse_state_v6", "instapulse_state_v2",
+    "peekly_onboarding_v1", "peekly_folder_sync_v1", "peekly_connection_step_v1",
+    "peekly_instagram_connected_v1", "peekly_instagram_session_v1", "peekly_instagram_refresh_v1",
+}
+DELETE_DIGEST_KEYS = {"peekly_state_v7", "peekly_state_v6", "peekly_state"}
+
+
+def delete_scope_evidence(rows):
+    """Check deletion only within one host-owned profile's pinned synthetic import.
+
+    The reviewed host creates a fresh profile per context. Its initial observation,
+    import, visible confirmation, and same-action post-storage must all be bound.
+    This is web-key evidence; no native iOS cleanup or stored contents are inferred.
+    """
+    missing = {"status": "not_run", "indices": [],
+               "reason": "The owned initial profile, pinned synthetic import, visible final confirmation, verified click, completion notice, and available post-storage keys were not all bound."}
+    initial = anchor = passed = failed = None
+
+    def available_keys(facts):
+        keys, snapshot = facts.get("storage_keys"), facts.get("storage_snapshot")
+        if (facts.get("storage_access") != "available" or not isinstance(keys, list)
+                or any(not isinstance(key, str) for key in keys)
+                or not _storage_available(snapshot)
+                or any(not isinstance(key, str) for key in snapshot["keys"])
+                or set(snapshot["keys"]) != set(keys) & DELETE_DIGEST_KEYS):
+            return None
+        return set(keys)
+
+    for index, row in enumerate(rows):
+        facts = row.get("facts", {})
+        if (initial is None and not _row_uploads(row) and not facts.get("import_attempt_id")
+                and available_keys(facts) is not None
+                and _contains(row.get("text", ""), ["로그인하고 내 팔로우 목록을 확인해요"])):
+            initial = {"index": index, "storage": facts["storage_snapshot"]}
+        if facts.get("last_action") in {"upload", "upload_cancel", "upload_save_failure"}:
+            anchor = None
+            if (initial and _accepted_named_import(row, SEARCH_FIXTURE)
+                    and _same_storage(facts["import_attempt"]["storage_before"], initial["storage"])):
+                anchor = {"index": index, "attempt": facts["import_attempt_id"],
+                          "storage": facts["storage_snapshot"]}
+            continue
+        if anchor is None or not index:
+            continue
+        previous = rows[index - 1]
+        before = previous.get("facts", {})
+        click = facts.get("click_dispatch")
+        if not (facts.get("last_action") == "click"
+                and " ".join(str(facts.get("last_action_label", "")).split()) == "모두 지우기"
+                and isinstance(click, dict) and click.get("dispatched") is True
+                and click.get("hit_test") is True and click.get("label") == "모두 지우기"
+                and isinstance(click.get("requested_selector"), str)
+                and click.get("requested_selector") == click.get("verified_selector")
+                and facts.get("import_attempt_id") == before.get("import_attempt_id") == anchor["attempt"]
+                and _same_storage(before.get("storage_snapshot"), anchor["storage"])):
+            continue
+        controls = [control for control in _controls(previous)
+                    if control.get("tag") == "button" and control.get("visible") is True
+                    and control.get("disabled") is False
+                    and " ".join(str(control.get("label", "")).split()) == "모두 지우기"
+                    and control.get("selector") == click["verified_selector"]]
+        after_keys = available_keys(facts)
+        if (len(controls) != 1 or available_keys(before) is None or after_keys is None
+                or not _contains(previous.get("text", ""), ["정말 모두 지울까요?", "지운 기록은 되돌릴 수 없어요"])
+                or _contains(previous.get("text", ""), ["이 기기에 저장된 기록과 로그인을 모두 지웠어요"])
+                or not _contains(row.get("text", ""), ["이 기기에 저장된 기록과 로그인을 모두 지웠어요"])):
+            continue
+        indices = [initial["index"], anchor["index"], index - 1, index]
+        if after_keys & DELETE_REQUIRED_KEYS:
+            failed = {"status": "failed", "indices": indices,
+                      "reason": "The verified deletion reached its completion notice, but required local-storage keys remained or were recreated. This check evaluates key presence only."}
+        else:
+            passed = {"status": "passed", "indices": indices,
+                      "summary": "After the verified confirmation in the owned synthetic profile, all required web-storage keys were absent. Native iOS cleanup was outside this desktop test."}
+        anchor = None
+    return failed or passed or missing
+
+
 LEGACY_UNKNOWN_REQUIREMENT = "PRD-IMPORT-SNAPSHOT-UNKNOWN"
 LEGACY_UNKNOWN_REASON = (
     "No approved host capability configured a legacy snapshot without includedFiles. "
@@ -756,6 +835,7 @@ def guard_peekly_scope(task, criteria, observations):
     its historical placeholder-only failure is replaced by scoped DOM evidence.
     Size uses its three bound rejection/preservation attempts, with acceptance
     failure taking priority over any model decision or successful rejections.
+    Delete requires a visible final confirmation and its own post-storage keys.
     Both receipt paths use this after native merges and normal validation.
     """
     requirements = task.get("requirement_ids", [])
@@ -768,12 +848,14 @@ def guard_peekly_scope(task, criteria, observations):
         index = criterion.get("index")
         if (criterion.get("kind") != "success"
                 or not isinstance(index, int) or index < 0 or index >= len(requirements)
-                or requirements[index] not in {*RESULT_SCOPE_KEYS, SEARCH_REQUIREMENT, SIZE_REQUIREMENT}):
+                or requirements[index] not in {*RESULT_SCOPE_KEYS, SEARCH_REQUIREMENT, SIZE_REQUIREMENT, DELETE_REQUIREMENT}):
             continue
         if requirements[index] == SEARCH_REQUIREMENT:
             proof = search_scope_evidence(observations)
         elif requirements[index] == SIZE_REQUIREMENT:
             proof = size_scope_evidence(observations)
+        elif requirements[index] == DELETE_REQUIREMENT:
+            proof = delete_scope_evidence(observations)
         else:
             if criterion.get("status") != "passed":
                 continue
@@ -922,6 +1004,9 @@ def evaluate(task, facts, text, uploaded_fixtures=(), history=()):
                     emit(index, "not_run", "Each missing-list fixture needs its own observed rejection; one fixture's message cannot establish both outcomes.")
         elif rid == SIZE_REQUIREMENT:
             proof = size_scope_evidence(rows)
+            emit(index, proof["status"], proof.get("reason"))
+        elif rid == DELETE_REQUIREMENT:
+            proof = delete_scope_evidence(rows)
             emit(index, proof["status"], proof.get("reason"))
         elif rid == LEGACY_UNKNOWN_REQUIREMENT:
             emit(index, "not_run", LEGACY_UNKNOWN_REASON)
