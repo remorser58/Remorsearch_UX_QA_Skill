@@ -323,8 +323,8 @@ class Execution:
                     or check["status"] not in {"passed", "failed", "not_run"}):
                 fail("observation_invalid", "Native criterion observation is invalid.")
             if "reason" in check:
-                if check["status"] != "not_run" or not isinstance(check["reason"], str) or not check["reason"].strip() or len(check["reason"]) > 320:
-                    fail("observation_invalid", "Only a bounded not_run criterion may carry an execution reason.")
+                if check["status"] not in {"not_run", "failed"} or not isinstance(check["reason"], str) or not check["reason"].strip() or len(check["reason"]) > 320:
+                    fail("observation_invalid", "Only a bounded not_run or failed criterion may carry a diagnostic reason.")
                 swarm.text(check["reason"])
         raw = canonical(dict(schema_version="ux-agent-observation.v1",
                              context_id=worker["context_id"], binding=worker["claim"]["binding"], observation=obs))

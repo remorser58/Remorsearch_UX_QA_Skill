@@ -69,6 +69,19 @@ class ChecklistTests(unittest.TestCase):
         self.assertEqual(row["missing_fixture_keys"], ["peekly-search-ready.zip"])
         self.assertEqual(_criterion_progress(task, [], [])[0]["observed_status"], "unobserved")
 
+    def test_sample_import_navigation_preserves_visibility_and_task_bounds(self):
+        ids = ["PRD-SAMPLE-EXPORT", "PRD-SNAPSHOT-RETENTION", "PRD-PAYWALL-BOUNDARY"]
+        checklist = criterion_checklist(ids)
+        self.assertIn("When a later criterion requires import", checklist[0]["steps"][-1])
+        self.assertIn("do not add a separate 샘플 닫기 prerequisite", checklist[0]["steps"][-1])
+        goal = _persona_journey_goal("Inspect the owned sample then import the reviewed fixtures.", ids)
+        self.assertEqual(swarm.clean(goal), goal)
+        self.assertLessEqual(len(goal), 8000)
+        self.assertIn("모달이 없고 현재 More 관측", goal)
+        self.assertIn("scroll(delta=-400) 후 반환된 최신 관측", goal)
+        self.assertIn("필요하면 한 번 더 반복하고 visible:true가 확인된 뒤에만 클릭", goal)
+        self.assertIn("모달이 열렸으면 먼저 보이는 닫기 control", goal)
+
     def test_sixty_four_observations_fit_model_envelope_and_preserve_checks(self):
         observations = []
         for i in range(64):

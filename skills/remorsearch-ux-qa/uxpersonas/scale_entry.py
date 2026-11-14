@@ -69,7 +69,7 @@ _PEEKLY_STEPS = {
     "PRD-RESULT-SNAPSHOT": ("Import peekly-sample-previous.zip, reopen the import entry, then import peekly-sample-current.zip.", "Open the latest comparison and its departed-follower list; inspect both count and names."),
     "PRD-IDENTITY-LIMIT": ("Import both complete previous/current snapshots and open the latest comparison explanation.", "Inspect the username-change limitation there; the first-record preview is not this screen."),
     "PRD-RESULT-SEARCH": ("Import peekly-search-ready.zip and open a relationship list with at least nine rows.", "Check unfiltered username order, enter an exact observed row key in the visible search input, and verify only that row remains."),
-    "PRD-SAMPLE-EXPORT": ("Enter sample mode before importing real synthetic snapshots.", "Open More > 관계 목록 (MatrixTab); inspect both copy/save disabled states and sample titles. Do not click disabled controls."),
+    "PRD-SAMPLE-EXPORT": ("Enter sample mode before importing real synthetic snapshots.", "Open More > 관계 목록 (MatrixTab); inspect both copy/save disabled states and sample titles. Do not click disabled controls.", "When a later criterion requires import, proceed directly to the More import entry after recording export evidence; do not add a separate 샘플 닫기 prerequisite."),
     "PRD-SNAPSHOT-RETENTION": ("Verify all eleven manifest keys before executing any retention step.", "For each snapshot 01 through11: open the current import entry, upload that one ZIP, inspect completion; never mix ZIPs.", "After the eleventh import open saved history and inspect retained count/oldest record; do not substitute repeated imports of the same ZIP."),
     "PRD-PAYWALL-BOUNDARY": ("Import the complete previous/current pair and inspect free latest comparison names.", "Open history, inspect both date selectors and Pro restrictions; inspect timeline/person-history entry without purchasing."),
     "PRD-IMPORT-PROGRESS": ("First save a small baseline with peekly-sample-current.zip if no actual saved snapshot exists; sample mode alone is insufficient.", "Open the current file input and use reviewed upload_cancel with peekly-progress-sample.zip; inspect captured reading and analysis phases, real stop dispatch and unchanged saved-result digest.", "Only if the cancel attempt lacks a required phase, try normal upload of that fixture to observe the missing phase within the remaining budget; never require a large completed import before cancellation."),
@@ -168,6 +168,7 @@ def _persona_journey_goal(base_goal, requirement_ids):
         "필수 fixture나 하위 흐름을 건너뛰고 최종 판단하지 않는다. 성공 기준을 실행하지 않았거나 전제조건이 확인되지 않으면 not_run으로 남기고 다음 실행 행동을 먼저 시도한다. "
         "조건부 복구 기준은 실제 실패가 발생했을 때만 실행하며 실패가 전혀 발생하지 않았으면 not_applicable로 남긴다. 실행하지 않은 조건을 failed로 판정하지 않는다. "
         "현재 관측에서 visible:true인 control만 클릭한다. 모달이 열렸으면 먼저 보이는 닫기 control로 닫고 새 관측에서 다음 대상을 찾는다. "
+        "모달이 없고 현재 More 관측에 '이미 받은 자료로 확인하기'가 있으나 visible:false이면, 다른 탭으로 이동하지 말고 scroll(delta=-400) 후 반환된 최신 관측을 확인한다. 필요하면 한 번 더 반복하고 visible:true가 확인된 뒤에만 클릭한다. "
         "체크리스트 순서로 남은 기준을 하나씩 처리하며, 완료한 경로를 반복하지 않는다. 샘플 export는 데이터 import 전에, 데이터 삭제는 마지막에 한다. "
         "행동 도구가 이미 최신 DOM을 반환했으면 같은 화면의 observe를 반복하지 않는다. 파일 이름/selector는 현재 fixture_catalog와 controls에서만 고른다.")
 
