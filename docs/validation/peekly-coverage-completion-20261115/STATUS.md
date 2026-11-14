@@ -20,7 +20,14 @@ The user authorizes implementation, regression, owned isolated test contexts, sm
 - The old uncertain 009/010/012 remain preserved. The new requested cohort uses new jobs and call IDs.
 - Original 46 weighted mapping at 65f: 20 passed / 8 failed / 18 not_run; 32 unique mappings: 13 / 6 / 13.
 
-## Current phase — R5 preserved; preparing the fresh R6 gate
+## Current phase — R6 actual smoke running on frozen source
+
+- R6 launched at `2026-11-14T20:29:49.518011Z` (05:29 Asia/Seoul), detached PID 6800; actual run started at `20:29:57.521366Z`. Runtime source `f50d082a197e683b5961d17919fe219dc48c4d55` was committed/pushed with exact remote SHA and clean worktree verified before launch.
+- Root `.ux-loop/peekly-completion-smoke-r6-20261115`; 024 job `S-mfopimglobkoejplhjkbgpkj`, 032 job `S-ecklphmclceoijfnndjiekic`. The exclusive launch intent, launcher log and PID file are saved beside that root. No old job or uncertain operation is resumed.
+- At `20:30:58Z`, both jobs were running at turn 5 / five admitted observations, with no recorded problem. The independent read of 024 confirms observe first, then the validated legacy seed as its first mutation, actual reload/migration, one UNKNOWN snapshot and null active/comparison selections. This is partial precondition evidence, not completed-session coverage or a passed smoke.
+- Keep the 17 runtime files, fixtures, library and product fixed through R6 and the subsequent cohort if its gate passes. Both current-valid complete receipts, all six executed success criteria, actual UNKNOWN/PAYWALL evidence, zero uncertainty, confirmed closure and before/after integrity checks remain required. No 32-person execution has started.
+
+### R5 preservation and R6 prelaunch validation (historical)
 
 - Mac mini execution/read access was verified again at `2026-11-14T20:10:59Z` (05:10 Asia/Seoul). Main HEAD is `9e6b30bd7d40d43ba7d656f85fa2e0dc82b73b28`; the only untracked entry is the owned isolated action-deadline worktree. R6 and the new 32-person root do not exist yet.
 - R5 ended at `2026-11-14T19:35:20.869439Z` (04:35 Asia/Seoul), `smoke_failed`, complete 0 / uncertain 2 / queued 0 / running 0. Preserve both jobs and every original operation. Six success plus two recovery criteria are unassessed on the completed-session basis, with zero old-23 execution credit.
