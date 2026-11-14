@@ -47,6 +47,19 @@ class CompletionGateTests(unittest.TestCase):
         self.assertFalse(result["pass_gate"])
         self.assertIn("target_not_exercised:PRD-IMPORT-SNAPSHOT-UNKNOWN", result["reasons"])
 
+    def test_prior_smoke_personas_cannot_substitute_for_fresh_pair(self):
+        summary, report = completion_evidence()
+        prior = ["PER-PEEKLY-V2-021", "PER-PEEKLY-V2-029"]
+        summary["persona_ids"] = prior
+        for value in (summary["completed_receipt_summary"], report["completed_receipt_summary"]):
+            value["persona_ids"] = prior
+        for row, pid in zip(report["tasks"], prior):
+            row["persona_id"] = pid
+        result = completion.smoke_gate(summary, report,
+            completion.base.router_delivery_audit(clean_ledger()))
+        self.assertFalse(result["pass_gate"])
+        self.assertTrue(all(not row["executed"] for row in result["targeted_flows"]))
+
     def test_non_target_not_run_also_blocks(self):
         self.assertFalse(gate(("not_run", "passed", "passed", "passed", "passed", "passed"))["pass_gate"])
 

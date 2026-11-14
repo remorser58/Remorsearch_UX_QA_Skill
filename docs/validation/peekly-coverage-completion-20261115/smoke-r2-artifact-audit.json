@@ -1,0 +1,92 @@
+{
+  "artifact_bytes": 952649,
+  "artifact_kinds": {
+    "execution_log": 17,
+    "screenshot": 17
+  },
+  "assessed_sessions": 1,
+  "audit_passed": true,
+  "audited_at": "2026-11-14T18:18:25.288150+00:00",
+  "checkpoint_seals_checked": 2,
+  "completed_first_judgment_seals_checked": 1,
+  "distinct_artifact_files": 34,
+  "excluded_attempts": [
+    {
+      "current_valid": true,
+      "job_id": "S-ikjnkcfnpkaooaeedahemnmk",
+      "operational_completed": null,
+      "persona_id": "PER-PEEKLY-V2-029",
+      "problem": "model_delivery_uncertain",
+      "queue_status": "uncertain"
+    }
+  ],
+  "jobs": [
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "0a68d9d800e08afaa26e9d83228c43bcb6982b98b6927f77e8368264cebb84e6",
+      "checkpoint_sha256": "5aacd6ac14cde802ff9da1b15043bc726bc71a8e9357b683c3337f2ff68dc2e3",
+      "first_judgment_sha256": "64de06d311bd6c02369c9cdff9e722fad9902fc991265e4f6038641fc03b5a3c",
+      "job_id": "S-beegcnopeblnnfadcbmfpcbk",
+      "persona_id": "PER-PEEKLY-V2-021",
+      "registered_artifacts": 34,
+      "result_sha256": "e5be554ec26c0a074070024db799b229af7ac66422cbab3a666084bb9fb502fd"
+    }
+  ],
+  "limitations": [
+    "Hash equality proves stored bytes, not independent visual correctness.",
+    "Excluded attempts are not credited as evaluated sessions or criteria."
+  ],
+  "mismatches": 0,
+  "new_browser_calls": 0,
+  "new_model_calls": 0,
+  "prior_queues_unchanged": true,
+  "queue_counts": {
+    "complete": 1,
+    "uncertain": 1
+  },
+  "queue_writes": 0,
+  "registered_artifact_references": 34,
+  "result_seals_checked": 1,
+  "schema_version": "peekly-artifact-byte-audit.v1",
+  "scope": "All registered artifacts of assessed completed receipts, plus all stored result/checkpoint seals.",
+  "source_files_unchanged": true,
+  "sources": [
+    {
+      "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/queue.sqlite",
+      "sha256": "43f0230911a65c7c851b5fbdbd91007151f53b13eb7949d51086b5cd9b5ae600"
+    },
+    {
+      "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/plan.json",
+      "sha256": "2c5e3c82966002357787af3121baa4d633623b260f12f1b5e9ae2388201c38d9"
+    },
+    {
+      "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/report.json",
+      "sha256": "b98a267eedbffb2392604379df73c2d3e3c8212aeb616e78457edcda9aca740f"
+    },
+    {
+      "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/stage-summary.json",
+      "sha256": "8d8d80b055c70977f9cadc59c659ce2e80e74909ff67160a2768ed7c2b100ebf"
+    },
+    {
+      "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/model-router-ledger.json",
+      "sha256": "8cc3cfe79aff501c6bd5c8cb1be8a7ddaa29537dbbe8398a8661d30e7274eb71"
+    },
+    {
+      "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/run-status.json",
+      "sha256": "a99c752e8da2d5ca04b25bcb826f13a53e9f0b88792c8dadae889f687d282c29"
+    },
+    {
+      "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/input-provenance.json",
+      "sha256": "c300d5d340c0d41566cc0d36a326a4a155b74e32417b8870778b2e4415e1971c"
+    },
+    {
+      "path": "docs/validation/peekly-coverage-20261114/audit_final_artifacts.py",
+      "sha256": "78a7bce46cd9b6b2587e8df1446e7054397a31c11395f52baed3cdd4c2d2e310"
+    },
+    {
+      "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/queue.sqlite-wal",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "stage": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2"
+}

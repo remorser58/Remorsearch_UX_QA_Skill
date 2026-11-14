@@ -1,0 +1,173 @@
+{
+  "actual_model_attempts": 72,
+  "artifact_mismatches": 0,
+  "audited_completed_artifact_files": 34,
+  "browser_shutdown_confirmed": true,
+  "cohort_started": false,
+  "counts": {
+    "blocked": 0,
+    "cancelled": 0,
+    "complete": 1,
+    "queued": 0,
+    "running": 0,
+    "uncertain": 1
+  },
+  "gate_passed": false,
+  "gate_reasons": [
+    "completed_personas_or_exclusions_mismatch",
+    "completed_valid_receipts_required",
+    "invalid_or_partial_receipt",
+    "queue_completion_mismatch",
+    "router_unsettled_delivery_guard",
+    "success_denominator_mismatch",
+    "target_not_exercised:PRD-PAYWALL-BOUNDARY",
+    "unsettled_operation_preserved",
+    "unsettled_or_excluded_sessions"
+  ],
+  "limitations": [
+    "029 is unassessed; its partial observations do not earn completed-session coverage.",
+    "The audited artifact count covers the one completed receipt; both checkpoint seals were checked.",
+    "Raw judgments remain unchanged; the IDENTITY false pass is recorded separately.",
+    "Only the user-authorized free model was requested; provider invoices/costs were not independently returned."
+  ],
+  "policy_cost_usd": 0,
+  "prior_queues_unchanged": true,
+  "provider_cost_missing_responses": 72,
+  "provider_invoice_verified": false,
+  "raw_assessed": {
+    "assessed_completed_sessions": 1,
+    "completed_sessions": 1,
+    "criteria_all": {
+      "failed": 0,
+      "not_applicable": 0,
+      "not_run": 0,
+      "passed": 4
+    },
+    "criteria_by_kind": {
+      "recovery": {
+        "failed": 0,
+        "not_applicable": 0,
+        "not_run": 0,
+        "passed": 1
+      },
+      "success": {
+        "failed": 0,
+        "not_applicable": 0,
+        "not_run": 0,
+        "passed": 3
+      }
+    },
+    "distinct_completed_personas": 1,
+    "excluded_attempt_statuses": {
+      "uncertain": 1
+    },
+    "host_protocol_on_completed_receipts": 0,
+    "persona_ids": [
+      "PER-PEEKLY-V2-021"
+    ],
+    "session_outcomes": {
+      "blocked": 0,
+      "failed": 0,
+      "inconclusive": 0,
+      "passed": 1,
+      "skipped": 0
+    }
+  },
+  "reviewed_021_counts": {
+    "raw": {
+      "recovery": {
+        "failed": 0,
+        "not_applicable": 0,
+        "not_run": 0,
+        "passed": 1
+      },
+      "success": {
+        "failed": 0,
+        "not_applicable": 0,
+        "not_run": 0,
+        "passed": 3
+      }
+    },
+    "reviewed": {
+      "recovery": {
+        "failed": 0,
+        "not_applicable": 0,
+        "not_run": 0,
+        "passed": 1
+      },
+      "success": {
+        "failed": 1,
+        "not_applicable": 0,
+        "not_run": 0,
+        "passed": 2
+      }
+    }
+  },
+  "reviewed_021_session": "failed",
+  "route_names": [
+    "TOKENMAXX/deepseek-v4.1-flash-free"
+  ],
+  "run_root": ".ux-loop/peekly-completion-smoke-pinned-20261115",
+  "runtime_source_commit": "1939f32ccef5bf2eae2edb2e0c51d6fba10dd0d5",
+  "same_runtime_inputs_verified": true,
+  "schema_version": "peekly-completion-smoke-review.v1",
+  "served_target_before_after_verified": true,
+  "source_refs": [
+    {
+      "bytes": 12675,
+      "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/run-status.json",
+      "sha256": "a99c752e8da2d5ca04b25bcb826f13a53e9f0b88792c8dadae889f687d282c29"
+    },
+    {
+      "bytes": 156373,
+      "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/input-provenance.json",
+      "sha256": "c300d5d340c0d41566cc0d36a326a4a155b74e32417b8870778b2e4415e1971c"
+    },
+    {
+      "bytes": 11230,
+      "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/smoke-gate.json",
+      "sha256": "b40737b02bd70102baf235c881295945f25a2ba2aa42a666decb8544bc16cc62"
+    },
+    {
+      "bytes": 195706,
+      "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/report.json",
+      "sha256": "b98a267eedbffb2392604379df73c2d3e3c8212aeb616e78457edcda9aca740f"
+    },
+    {
+      "bytes": 3876,
+      "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/stage-summary.json",
+      "sha256": "8d8d80b055c70977f9cadc59c659ce2e80e74909ff67160a2768ed7c2b100ebf"
+    },
+    {
+      "bytes": 38048,
+      "path": ".ux-loop/peekly-completion-smoke-pinned-20261115/stage-2/model-router-ledger.json",
+      "sha256": "8cc3cfe79aff501c6bd5c8cb1be8a7ddaa29537dbbe8398a8661d30e7274eb71"
+    },
+    {
+      "bytes": 3557,
+      "path": "docs/validation/peekly-coverage-completion-20261115/smoke-r2-artifact-audit.json",
+      "sha256": "a0683979282887fc1d63a2d81d981baca307a04c3a31d0a47ce958230a2361b4"
+    },
+    {
+      "bytes": 26884,
+      "path": "docs/validation/peekly-coverage-completion-20261115/smoke-r2-021-review.json",
+      "sha256": "843bda59f682e51be0f01fed5bcf395dfc79919d38221239e4937ec626902f29"
+    }
+  ],
+  "state": "smoke_failed",
+  "uncertain_operation": {
+    "call_id": "op-f52816c286aa230cea3c061f5e4eee78205f3be0",
+    "can_retry": false,
+    "delivery_state": "uncertain",
+    "elapsed_seconds": 20.6087,
+    "http_status": 502,
+    "input_tokens": null,
+    "output_tokens": null,
+    "provider": "TOKENMAXX",
+    "requested_model": "TOKENMAXX/deepseek-v4.1-flash-free",
+    "retry_after": 0,
+    "status": "http_error"
+  },
+  "uncertain_persona": "PER-PEEKLY-V2-029",
+  "uncertain_resends": 0
+}

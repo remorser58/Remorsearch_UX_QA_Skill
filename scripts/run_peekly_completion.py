@@ -36,9 +36,11 @@ LIBRARY = ROOT / ".ux-loop/peekly-persona-library-v4-pinned-20261115"
 LIBRARY_SHA256 = "02c728a1b750d86164e035d88c096ffa7feca42f363cb68ed697a3beec7fa616"
 SOURCE_TREE_SHA256 = "fa8c54630cfdef4260230d7b41a6a8a54405a97079961f66d2d43b47bd70c99e"
 HISTORICAL_INDEX_SHA256 = "848b334a6affa5c6a578911819aaf127da34bc2e6ae2f04899022872b7d0f6f5"
-SMOKE_IDS = ("PER-PEEKLY-V2-021", "PER-PEEKLY-V2-029")
+# R2's 029 HTTP-502 call stays quarantined. This independent pair has the
+# same six obligations and matched two-not-run baseline; it never resumes R2.
+SMOKE_IDS = ("PER-PEEKLY-V2-023", "PER-PEEKLY-V2-030")
 SMOKE_BASELINE_NOT_RUN = 2
-DEFAULT_SMOKE = ROOT / ".ux-loop/peekly-completion-smoke-pinned-20261115"
+DEFAULT_SMOKE = ROOT / ".ux-loop/peekly-completion-smoke-r3-20261115"
 DEFAULT_COHORT = ROOT / ".ux-loop/peekly-completion32-pinned-20261115"
 FIXTURES = ROOT / ".ux-loop/peekly-coverage-fixtures-v8-20261115"
 FIXTURE_MANIFEST_SHA = "9654fa6b07da5d443fbc97df16ab8885e170084ceda23399a36fbbd721997941"
