@@ -17,6 +17,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import finalize_peekly_completion as finalizer
+from test_peekly_completion_target import authored_target
 
 
 def write(path, value):
@@ -35,6 +36,12 @@ class FinalizerTests(unittest.TestCase):
         self.output = self.repo / finalizer.OUTPUT
         self.log = self.repo / "authored-events.jsonl"
         self.freeze = dict(fixtures=dict(manifest_sha256="a" * 64), engine_manifest={"owned.py": "b" * 64})
+        target, data = authored_target()
+        target["build_sha256"] = finalizer.completion.BUILD_SHA256
+        self.freeze["product_target"] = target
+        fetch = lambda url, maximum: data[url.removeprefix(finalizer.completion.TARGET_URL) or "index.html"]
+        before = finalizer.completion.verify_served_target(target, "before", fetch=fetch)
+        self.target_after = finalizer.completion.verify_served_target(target, "after", fetch=fetch)
         self.fixtures, self.library, self.build = (self.repo / name for name in ("fixtures", "library", "build.json"))
         self.prior = self.repo / ".ux-loop/old-authored/stage-32/queue.sqlite"
         self.prior.parent.mkdir(parents=True)
@@ -48,8 +55,9 @@ class FinalizerTests(unittest.TestCase):
             prior_queues_opened_read_only=True, uncertain_resend_authorized=False,
             persona_ids=list(finalizer.base.ALL_IDS), job_ids=["job-" + str(i) for i in range(32)],
             forbidden_job_ids=["old-job"], prior_queues=prior, freeze=self.freeze,
+            target_url=finalizer.completion.TARGET_URL, target_before=before,
             fixtures=str(self.fixtures), library=str(self.library),
-            build=dict(artifact_path=str(self.build)))
+            build=dict(artifact_path=str(self.build), sha256=finalizer.completion.BUILD_SHA256))
         provider = dict(mode="live",
             spec=dict(model="tokenmaxx-deepseek-v4-1-flash-free",
                       input_price_per_million=0, output_price_per_million=0),
@@ -94,8 +102,8 @@ class FinalizerTests(unittest.TestCase):
         for patcher in (
                 mock.patch.object(finalizer.completion, "capture_freeze", side_effect=lambda: copy.deepcopy(self.freeze)),
                 mock.patch.object(finalizer.completion, "FIXTURES", self.fixtures),
-                mock.patch.object(finalizer.base, "LIBRARY", self.library),
-                mock.patch.object(finalizer.base, "BUILD", self.build)):
+                mock.patch.object(finalizer.completion, "LIBRARY", self.library),
+                mock.patch.object(finalizer.completion, "BUILD", self.build)):
             patcher.start()
             self.addCleanup(patcher.stop)
 
@@ -106,6 +114,7 @@ class FinalizerTests(unittest.TestCase):
         write(self.stage / "stage-summary.json", self.summary)
         write(self.stage / "model-router-ledger.json", self.ledger)
         status = dict(state=self.state, counts=self.counts,
+            target_after=self.target_after,
             router_delivery_audit=finalizer.base.router_delivery_audit(self.ledger),
             **finalizer.base.prior_queue_integrity(self.provenance["prior_queues"]))
         for field, path in (
@@ -185,6 +194,7 @@ class FinalizerTests(unittest.TestCase):
         self.assertEqual(outcome["semantic_review_status"], "pending_manual_review")
         self.assertIsNone(outcome["coverage_target_met"])
         self.assertFalse(outcome["automatic_verdict_overrides"])
+        self.assertTrue(outcome["product_target"]["served_bytes_verified_before_and_after"])
         before = {name: (self.output / name).read_bytes() for name in finalizer.FILES}
         self.assertEqual(finalizer.generate(self.repo, self.output, bundle, self.log), outcome)
         self.assertEqual(before, {name: (self.output / name).read_bytes() for name in finalizer.FILES})
@@ -217,6 +227,22 @@ class FinalizerTests(unittest.TestCase):
         with sqlite3.connect(self.prior) as db:
             db.execute("UPDATE jobs SET status='complete'")
         with self.assertRaisesRegex(finalizer.FinalizerError, "prior_queue_snapshot_changed"):
+            self.inspect()
+
+    def test_old_paths_or_missing_changed_postrun_target_proof_fail_closed(self):
+        self.provenance["library"] = str(finalizer.base.LIBRARY)
+        self.seal()
+        with self.assertRaisesRegex(finalizer.FinalizerError, "frozen_input_path_mismatch"):
+            self.inspect()
+        self.provenance["library"] = str(self.library)
+        self.target_after["files"]["assets/main.js"]["sha256"] = "0" * 64
+        self.seal()
+        with self.assertRaisesRegex(RuntimeError, "served_target_receipt_missing_or_changed:after"):
+            self.inspect()
+        status = finalizer.read_json(self.run_root / "run-status.json")
+        status.pop("target_after")
+        write(self.run_root / "run-status.json", status)
+        with self.assertRaisesRegex(RuntimeError, "served_target_receipt_missing_or_changed:after"):
             self.inspect()
 
     def test_unapproved_route_or_nonzero_cost_is_not_published_as_free(self):

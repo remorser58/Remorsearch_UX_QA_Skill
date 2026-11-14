@@ -1,0 +1,739 @@
+{
+  "build": {
+    "artifact": "source/dist/index.html",
+    "assets": [
+      {
+        "bytes": 9187,
+        "path": "assets/DashboardTab-CMYoce0B.js",
+        "sha256": "6d1173c9b26ae0fc14463158cd28ff8b951bf6ca5ed40ef187d00c10ee7e0306"
+      },
+      {
+        "bytes": 15938,
+        "path": "assets/RelationshipHistorySheet-CU7VMEaY.js",
+        "sha256": "9aca4fe357f6fac649574e50a25385bf1de6020b5cf6eb5aa77f8fcac9b42688"
+      },
+      {
+        "bytes": 4057,
+        "path": "assets/RelationshipHistorySheet-ZKRDndQm.css",
+        "sha256": "2c645cec156b4a6e6743ab662860f1690f8bb7fc9fb49d999e11d55b33750940"
+      },
+      {
+        "bytes": 15493,
+        "path": "assets/archive-vendor-BATU2G-a.js",
+        "sha256": "fcb29b367e242d3606b20aefdba8a1b2ef93ea153f3b241727ad72d6dddcc45d"
+      },
+      {
+        "bytes": 24316,
+        "path": "assets/brand-mark-YuYvTQpp.png",
+        "sha256": "dc0587362993a1d57576b35c90aaf2627cfb4b0d499ff5b082330124e57d75a0"
+      },
+      {
+        "bytes": 223223,
+        "path": "assets/framework-DJiRVR1m.js",
+        "sha256": "80a07b38c101af898203676f203afe3259a2df18ef03566b52005a51c609539f"
+      },
+      {
+        "bytes": 18013,
+        "path": "assets/icons-D9ychLUQ.js",
+        "sha256": "445ec2fc23b757522a47a41502c79ce4d2f6b040b61525e6a54bf78799b1a55b"
+      },
+      {
+        "bytes": 24260,
+        "path": "assets/importWorker-CtVZDxYW.js",
+        "sha256": "8697d1db1b3112f59347c805bb028e129b830c8ac4d33df1f8d740fe9b7e5f5c"
+      },
+      {
+        "bytes": 277387,
+        "path": "assets/index-BCjS_bZI.js",
+        "sha256": "1d71b85b39a82283e909ba6c08b4333d6cdd9501051920717a9347501e2dafdf"
+      },
+      {
+        "bytes": 52134,
+        "path": "assets/index-nL-lPl6d.css",
+        "sha256": "c9e7d114c80a6d15588fe7f0c733bb10c6c2e5a444aaba12ca9d61353a3e6e20"
+      },
+      {
+        "bytes": 5055,
+        "path": "assets/sampleData-D7y7KoQc.js",
+        "sha256": "9e8dc5d1c2428616fa75c312c90774f6ba9302c53e58d25d6dc94c6abc91c39f"
+      },
+      {
+        "bytes": 739,
+        "path": "index.html",
+        "sha256": "848b334a6affa5c6a578911819aaf127da34bc2e6ae2f04899022872b7d0f6f5"
+      },
+      {
+        "bytes": 2128,
+        "path": "ota-ruleset.json",
+        "sha256": "204c34fc0415222fbe41ae4fca0856ec18e0b16498bb55cc5e104c916387384b"
+      }
+    ],
+    "build": "peekly-web-51110f4-isolated-20261115",
+    "dist_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-pinned-product-51110f4-20261115/source/dist",
+    "main_asset": {
+      "bytes": 277387,
+      "path": "assets/index-BCjS_bZI.js",
+      "sha256": "1d71b85b39a82283e909ba6c08b4333d6cdd9501051920717a9347501e2dafdf"
+    },
+    "provenance": {
+      "bytes": 2703,
+      "path": "build-provenance.json",
+      "sha256": "5cde3d5a03ef0542ff29416ec559cbe7bf6d8aed8bd3d42a5c07f9bd219a77db"
+    },
+    "sha256": "848b334a6affa5c6a578911819aaf127da34bc2e6ae2f04899022872b7d0f6f5",
+    "source_commit": "51110f4c569673faa8d242d5b85c4b47afb54cbb",
+    "source_manifest": {
+      "bytes": 68649,
+      "path": "source-manifest.json",
+      "sha256": "9ce11a5c0486813db91072d27d540f60d386ceb24501cfd1bca08f38953dff8b"
+    },
+    "source_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-pinned-product-51110f4-20261115/source",
+    "target_url": "http://127.0.0.1:4175/"
+  },
+  "build_provenance": {
+    "commands": [
+      {
+        "command": [
+          "/Users/m4mini/.aside/runtime/bin/node",
+          "node_modules/typescript/bin/tsc",
+          "-b",
+          "--force"
+        ],
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "/Users/m4mini/.aside/runtime/bin/node",
+          "node_modules/vite/bin/vite.js",
+          "build"
+        ],
+        "exit_code": 0
+      }
+    ],
+    "dependencies": {
+      "bytes": 903,
+      "path": "dependencies-provenance.json",
+      "sha256": "45dedf8964c6ec9376410137f9bd16aebdd428191667cf587ea75a4673ef9d2c"
+    },
+    "expected_historical_index_sha256": "848b334a6affa5c6a578911819aaf127da34bc2e6ae2f04899022872b7d0f6f5",
+    "historical_index_reproduced": true,
+    "node_binary": "/Users/m4mini/.aside/runtime/bin/node",
+    "node_version": "v26.5.0",
+    "original_preview_4174_modified": false,
+    "original_product_worktree_written": false,
+    "outputs": [
+      {
+        "bytes": 9187,
+        "path": "assets/DashboardTab-CMYoce0B.js",
+        "sha256": "6d1173c9b26ae0fc14463158cd28ff8b951bf6ca5ed40ef187d00c10ee7e0306"
+      },
+      {
+        "bytes": 15938,
+        "path": "assets/RelationshipHistorySheet-CU7VMEaY.js",
+        "sha256": "9aca4fe357f6fac649574e50a25385bf1de6020b5cf6eb5aa77f8fcac9b42688"
+      },
+      {
+        "bytes": 4057,
+        "path": "assets/RelationshipHistorySheet-ZKRDndQm.css",
+        "sha256": "2c645cec156b4a6e6743ab662860f1690f8bb7fc9fb49d999e11d55b33750940"
+      },
+      {
+        "bytes": 15493,
+        "path": "assets/archive-vendor-BATU2G-a.js",
+        "sha256": "fcb29b367e242d3606b20aefdba8a1b2ef93ea153f3b241727ad72d6dddcc45d"
+      },
+      {
+        "bytes": 24316,
+        "path": "assets/brand-mark-YuYvTQpp.png",
+        "sha256": "dc0587362993a1d57576b35c90aaf2627cfb4b0d499ff5b082330124e57d75a0"
+      },
+      {
+        "bytes": 223223,
+        "path": "assets/framework-DJiRVR1m.js",
+        "sha256": "80a07b38c101af898203676f203afe3259a2df18ef03566b52005a51c609539f"
+      },
+      {
+        "bytes": 18013,
+        "path": "assets/icons-D9ychLUQ.js",
+        "sha256": "445ec2fc23b757522a47a41502c79ce4d2f6b040b61525e6a54bf78799b1a55b"
+      },
+      {
+        "bytes": 24260,
+        "path": "assets/importWorker-CtVZDxYW.js",
+        "sha256": "8697d1db1b3112f59347c805bb028e129b830c8ac4d33df1f8d740fe9b7e5f5c"
+      },
+      {
+        "bytes": 277387,
+        "path": "assets/index-BCjS_bZI.js",
+        "sha256": "1d71b85b39a82283e909ba6c08b4333d6cdd9501051920717a9347501e2dafdf"
+      },
+      {
+        "bytes": 52134,
+        "path": "assets/index-nL-lPl6d.css",
+        "sha256": "c9e7d114c80a6d15588fe7f0c733bb10c6c2e5a444aaba12ca9d61353a3e6e20"
+      },
+      {
+        "bytes": 5055,
+        "path": "assets/sampleData-D7y7KoQc.js",
+        "sha256": "9e8dc5d1c2428616fa75c312c90774f6ba9302c53e58d25d6dc94c6abc91c39f"
+      },
+      {
+        "bytes": 739,
+        "path": "index.html",
+        "sha256": "848b334a6affa5c6a578911819aaf127da34bc2e6ae2f04899022872b7d0f6f5"
+      },
+      {
+        "bytes": 2128,
+        "path": "ota-ruleset.json",
+        "sha256": "204c34fc0415222fbe41ae4fca0856ec18e0b16498bb55cc5e104c916387384b"
+      }
+    ],
+    "prd_sha256": "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b",
+    "schema_version": "peekly-pinned-build.v1",
+    "source_commit": "51110f4c569673faa8d242d5b85c4b47afb54cbb",
+    "source_manifest": {
+      "bytes": 68649,
+      "path": "source-manifest.json",
+      "sha256": "9ce11a5c0486813db91072d27d540f60d386ceb24501cfd1bca08f38953dff8b"
+    }
+  },
+  "library_rebinding": {
+    "api": "Library context manager -> import_profiles -> list/get normal revalidation; no raw library edits",
+    "binding_note": "profile_sha256 covers the full profile body including context.prd_path, so all32 binding hashes changed; profile-content-only digests are unchanged. New-library revision1 does not replace old-library revision2.",
+    "changed_context_fields": [
+      "prd_path"
+    ],
+    "cited_requirements": 25,
+    "created_at": "2026-11-14T16:31:25.318317+00:00",
+    "identical_reimport_changed_library": false,
+    "import_input_sha256": "116a337bba7ae5c2ff7061c10f713ddfd15d7fcfb5e75285e34a20a1212bf133",
+    "library": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-persona-library-v4-pinned-20261115",
+    "library_file_sha256": "02c728a1b750d86164e035d88c096ffa7feca42f363cb68ed697a3beec7fa616",
+    "new_browser_calls": 0,
+    "new_model_calls": 0,
+    "new_network_calls": 0,
+    "new_revisions": [
+      1
+    ],
+    "old_scale_goals_registry_copied": false,
+    "personas": [
+      {
+        "persona_id": "PER-PEEKLY-V2-001",
+        "previous_binding_sha256": "ef8d62d95bec2658c7ba2a8686c31a2562c343304c4746aea3ca84866b98a7c9",
+        "previous_revision": 2,
+        "profile_sha256": "e9305d1351b17d63345edbc04ab91909ef630a8676453e1d9ae51eb8b401f5f1",
+        "requirement_ids": [
+          "PRD-START-SAMPLE",
+          "PRD-START-IMPORT",
+          "PRD-PRIVACY-LOCAL"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "24f50eb65e7677be646977e85ce320d3c6d99d30c912217af243e80ab1bd46ec"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-002",
+        "previous_binding_sha256": "6a072d1f683e6c87c06be7c0715c8ff800ae3097e6a75c981328f9d27b1498d2",
+        "previous_revision": 2,
+        "profile_sha256": "f6fbd21cefffa54e567becb9ce2b5dc3e678ad8e8f2e8a6f06ebc140571a7096",
+        "requirement_ids": [
+          "PRD-START-SAMPLE",
+          "PRD-START-IMPORT",
+          "PRD-PRIVACY-LOCAL"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "c34522d4022977e8d07e67c86ad4888121203cf7a1fa5200cc395baeccce4ab2"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-003",
+        "previous_binding_sha256": "e93748a1a8f6b49c8dc240c17a42dfe44347a9432ddba509167eab127f3b8215",
+        "previous_revision": 2,
+        "profile_sha256": "9bbf407b47247c42c7266ad179f3f8e34a9eb10bb8a658bc73661156ea41d223",
+        "requirement_ids": [
+          "PRD-START-SAMPLE",
+          "PRD-START-IMPORT",
+          "PRD-PRIVACY-LOCAL"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "397fbb082fe2de5970ea1e173b4769bbf08566bc2a99809eef80a4289bcb606c"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-004",
+        "previous_binding_sha256": "6f6e8fbb687f7b799250eb8d2573a7f87700eacc67a34cbac6d918f83678eb22",
+        "previous_revision": 2,
+        "profile_sha256": "ce4fadace8704d339dc61ee0c067cf79371997f882b13ac67d367ed862b7f7b2",
+        "requirement_ids": [
+          "PRD-START-SAMPLE",
+          "PRD-START-IMPORT",
+          "PRD-PRIVACY-LOCAL"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "37b8f96818c3a31dd3eceb954e331c135c60d03b355249fdfeeaa507b3d60a1b"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-005",
+        "previous_binding_sha256": "b0cf3c4f17560ff1c8cf811a3d7c9feb446acf1bd4068a581d7b3cb5e4329237",
+        "previous_revision": 2,
+        "profile_sha256": "327bc95b645726eab1a476fef0605cd54dd0d56cc2efca4dea20fb31772e813b",
+        "requirement_ids": [
+          "PRD-START-IMPORT",
+          "PRD-START-SKIP",
+          "PRD-IMPORT-FORMATS"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "261e09a60ec841c0178341f459150bb6d7d1add2ea60ac6d68931deb36b0fbe8"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-006",
+        "previous_binding_sha256": "0c30dbd3866c225b99ab89e8ed92010097319c95b3d09e67c111dbdd18bdb6c7",
+        "previous_revision": 2,
+        "profile_sha256": "36a000f3e693487741fc04b8a03aff42f25fb3646c2bd1a9aeafd94c13e55596",
+        "requirement_ids": [
+          "PRD-START-IMPORT",
+          "PRD-START-SKIP",
+          "PRD-IMPORT-FORMATS"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "2a58dacb1c9fd72ee51cee1bc08cdd827657597564fb1ea90e42bf84acc2e147"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-007",
+        "previous_binding_sha256": "dd71c1aa09a9adf9ad9a4da62fea9cdebdfaae7e5adf8dc5b60e8f83cad8c7da",
+        "previous_revision": 2,
+        "profile_sha256": "33e02498ae20d62ccdfd1705fb2630f1745a03f215ee3ace1b4fb5fc6d4385a7",
+        "requirement_ids": [
+          "PRD-START-IMPORT",
+          "PRD-START-SKIP",
+          "PRD-IMPORT-FORMATS"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "593571bef43ac9806fcdcba1ffd100edceb4162e093a36712fe0004206edf214"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-008",
+        "previous_binding_sha256": "1c40ea3c7c637ba980d5e496a67b7914fb64749c31f240bdea7ebc9ffc269d1b",
+        "previous_revision": 2,
+        "profile_sha256": "19aed6e48fdb53d6a27e17277270312068f6025b6216fa1ea29fd6040784ba69",
+        "requirement_ids": [
+          "PRD-START-IMPORT",
+          "PRD-START-SKIP",
+          "PRD-IMPORT-FORMATS"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "e5c8332f6d38a179d381d69f7a4fb25e707a0c43ff936f23ab34d9baf694a1da"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-009",
+        "previous_binding_sha256": "8d51e115c5942ce5b082992edec07a34cf3258eb06c9a5b549cafdee8643540f",
+        "previous_revision": 2,
+        "profile_sha256": "8d1fb4e20bbb5629e1147819972883ed8397df2c322ca7f6010316c039f1e42a",
+        "requirement_ids": [
+          "PRD-IMPORT-FORMATS",
+          "PRD-IMPORT-HTML",
+          "PRD-IMPORT-MISSING",
+          "PRD-IMPORT-ACCOUNT"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "ba74ec8acd29cadcfaf129aa82c6832feed02add062741c23a1e7aa998baebf4"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-010",
+        "previous_binding_sha256": "e6dad4caa9937c2edb37aea91d41ba9fea71ef31dfd26a3095da94f41ca890db",
+        "previous_revision": 2,
+        "profile_sha256": "2725dc340fe63a917c836a9235791421de15d90ca3cbc3c6542793c70c96987c",
+        "requirement_ids": [
+          "PRD-IMPORT-FORMATS",
+          "PRD-IMPORT-HTML",
+          "PRD-IMPORT-MISSING",
+          "PRD-IMPORT-ACCOUNT"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "dae666d77bf6623d7275248f8cd7efff10256f4f00b594dfc7b7b16bd5f94036"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-011",
+        "previous_binding_sha256": "b609157289bd6ff5d7430efde86369f6834323e23ff3fbe17c35fb3ac402f2eb",
+        "previous_revision": 2,
+        "profile_sha256": "5a19b70f77d4c0921969175acda8c3e532d98a8ead069dcb2ec9d84da43fd8cb",
+        "requirement_ids": [
+          "PRD-IMPORT-FORMATS",
+          "PRD-IMPORT-HTML",
+          "PRD-IMPORT-MISSING",
+          "PRD-IMPORT-ACCOUNT"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "5ee916c7ad161a16455737b27ff68d5a5b7be982785d57280aa2a427f2360e00"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-012",
+        "previous_binding_sha256": "94752a4321c0d566ee7acc240da1291adefda1c753a1464f631eb709aa38de5a",
+        "previous_revision": 2,
+        "profile_sha256": "ae75230fe5ea17f6f365c55c859f9058b31c91d2a3947f042902ef71eaeb49e9",
+        "requirement_ids": [
+          "PRD-IMPORT-FORMATS",
+          "PRD-IMPORT-HTML",
+          "PRD-IMPORT-MISSING",
+          "PRD-IMPORT-ACCOUNT"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "04207a311e08b3809f5036452a1ec2e8f8df44fa6ea2a9f603432a8925d58ee3"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-013",
+        "previous_binding_sha256": "53bc38fb455d17ed3907c5fc0813696dc678bcdd77237555f9ff7669db3c3924",
+        "previous_revision": 2,
+        "profile_sha256": "a9bd8aedc31e0a81aa817aa1267d8eb325cc7098cad30102f1347f00e3cbc650",
+        "requirement_ids": [
+          "PRD-IMPORT-PROGRESS",
+          "PRD-IMPORT-SIZE",
+          "PRD-IMPORT-SAVE-FAIL"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "0176eaf44f2cd9b7e67a809e8c2e5c6c9f6e223e47ca5de360676aea19a3890d"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-014",
+        "previous_binding_sha256": "da00b71177ee0a3bd175dde4d53073e18a6719872f715972c0e159ab96d6e91d",
+        "previous_revision": 2,
+        "profile_sha256": "452e2935ed65a3f1b0d1590543584f0a89380e44ebaa4dd57817f1d96eae3257",
+        "requirement_ids": [
+          "PRD-IMPORT-PROGRESS",
+          "PRD-IMPORT-SIZE",
+          "PRD-IMPORT-SAVE-FAIL"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "a1ef3074b962a541390ab561ac2b21bc7ea30e9b468fc6a940017ccbbd2ea14a"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-015",
+        "previous_binding_sha256": "f29fd0a57d7416d3427c82afdb67c65b48426b718a170cf2250ece0685cc228d",
+        "previous_revision": 2,
+        "profile_sha256": "f3cb6cc964de7e487f824b23593b7da495ed1d8469e5184c171d182a59eb05a2",
+        "requirement_ids": [
+          "PRD-IMPORT-PROGRESS",
+          "PRD-IMPORT-SIZE",
+          "PRD-IMPORT-SAVE-FAIL"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "7a107d60b79c4fc5a4485de37507db6ea0059b82b919a91866fde9ede9adc66f"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-016",
+        "previous_binding_sha256": "b7e465914b9ef03d954476aa5664d68d94d5228af0e63ef4ebaa7a253eb4a074",
+        "previous_revision": 2,
+        "profile_sha256": "468335d68677a8a671b38d4413968d4ca9c632685ec9df78905a4404e849a6cf",
+        "requirement_ids": [
+          "PRD-IMPORT-PROGRESS",
+          "PRD-IMPORT-SIZE",
+          "PRD-IMPORT-SAVE-FAIL"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "5b37c1ff2c50d9c5c7dae51233cb0d00ec7712fbbd38c332edcae73e2e2e5183"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-017",
+        "previous_binding_sha256": "298063a2a126b6bce62d3af3559c276923889567bf18478f652b68868dba3f7f",
+        "previous_revision": 2,
+        "profile_sha256": "0336704c8aa44c11bcb03850bf8715a024c70fb7c1525a11b15eac9260ef811b",
+        "requirement_ids": [
+          "PRD-RESULT-RECIPROCITY",
+          "PRD-RESULT-REVERSE",
+          "PRD-RESULT-MUTUAL",
+          "PRD-RESULT-SNAPSHOT"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "b441f29a17727d463631380768e7884cc98f497c06e44847fb75b0f219f12e15"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-018",
+        "previous_binding_sha256": "45579c87642a8b81f18d7cbffaa6206b61e1a81e9407fc4f0be4a4d899a64dbe",
+        "previous_revision": 2,
+        "profile_sha256": "c559aa0c60aa0cc0fe8e9903f2d9140ac6d43b64af7d4b37e183157ec8f170aa",
+        "requirement_ids": [
+          "PRD-RESULT-RECIPROCITY",
+          "PRD-RESULT-REVERSE",
+          "PRD-RESULT-MUTUAL",
+          "PRD-RESULT-SNAPSHOT"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "d53d287e54c7e93417d42251de5fd5199af9a7be9b9c14345a46f98151b46981"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-019",
+        "previous_binding_sha256": "4039bc467ea6d977948138dd77f5d8f2898c1222ebc83118c709235d1dc5968a",
+        "previous_revision": 2,
+        "profile_sha256": "44935d1c08971ef14d54846f5e6f53cc8cb8ef4ffbea5f090eac1a556dcec4b8",
+        "requirement_ids": [
+          "PRD-RESULT-RECIPROCITY",
+          "PRD-RESULT-REVERSE",
+          "PRD-RESULT-MUTUAL",
+          "PRD-RESULT-SNAPSHOT"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "ea1973401a566c1ba533d6cba1237ca5a06b2e349856495d1c3fb9198062cb06"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-020",
+        "previous_binding_sha256": "750d7f111f9ad226b7abfddec0ae56f180c12a1dcbeae9e0788cb79c79d620ea",
+        "previous_revision": 2,
+        "profile_sha256": "c5f3a00edd8d7e4ab0e2dfab5547ae9fedcca84948013e66ac6be72ae7f1efaf",
+        "requirement_ids": [
+          "PRD-RESULT-RECIPROCITY",
+          "PRD-RESULT-REVERSE",
+          "PRD-RESULT-MUTUAL",
+          "PRD-RESULT-SNAPSHOT"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "172d94e3e2aefa957e428333b2731e2f5fa84faf9033c538d639276950c030fa"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-021",
+        "previous_binding_sha256": "98034191bcb3d3cb2d5c094f4d1da665bb4699de7d23656a2563063bfaab202b",
+        "previous_revision": 2,
+        "profile_sha256": "453e6278a159c40d1c128c70d74eb85f36ef528773511cf007ece870d1878ce2",
+        "requirement_ids": [
+          "PRD-IMPORT-MISSING",
+          "PRD-IDENTITY-LIMIT",
+          "PRD-IMPORT-SNAPSHOT-UNKNOWN"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "de25ca89f1952b1be3f1fce661f07968e0ff6f59ab6812b274dfe42d8aebb673"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-022",
+        "previous_binding_sha256": "3eb5bc5c809cb04c7d0b0df54e9aea364be5e6525d39c984535b159616cfce7e",
+        "previous_revision": 2,
+        "profile_sha256": "dc997a81822d6d77c705795ede852ede13a103e8d214b40e8b7b65c4d220df26",
+        "requirement_ids": [
+          "PRD-IMPORT-MISSING",
+          "PRD-IDENTITY-LIMIT",
+          "PRD-IMPORT-SNAPSHOT-UNKNOWN"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "4b1121681e2b457db9b4485ee3ad211a0f548a8ca3096aec0357cccaf2cad1e2"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-023",
+        "previous_binding_sha256": "013dca3b6381dcc9fdcf8ecc6acd2ad20a381350d96e29c1a426e5995f75e0cb",
+        "previous_revision": 2,
+        "profile_sha256": "5543454d547152174327499077dfce490a216d14edc58fd8feadb183a3bc3590",
+        "requirement_ids": [
+          "PRD-IMPORT-MISSING",
+          "PRD-IDENTITY-LIMIT",
+          "PRD-IMPORT-SNAPSHOT-UNKNOWN"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "2b7def229b43ca3723fbdf4449f7d0d891c49adc9447609887506dba8dd983af"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-024",
+        "previous_binding_sha256": "f025180cb1137b50d61843b7b01f554c8f0aea9d3ee2e74b61dfc72739973182",
+        "previous_revision": 2,
+        "profile_sha256": "1513b20a0904c715df26a27cdf13bb26ac492c5fdb3dee1edc91c9ac0169ab6c",
+        "requirement_ids": [
+          "PRD-IMPORT-MISSING",
+          "PRD-IDENTITY-LIMIT",
+          "PRD-IMPORT-SNAPSHOT-UNKNOWN"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "6a06fa667ad30e0accaf0ee9b6342a153eda76757b69475d3eae587a08b5b104"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-025",
+        "previous_binding_sha256": "c36c0fafdd48db2d45402549738e1998f4c4a281ab915238242310e7129f0f8a",
+        "previous_revision": 2,
+        "profile_sha256": "c837500b6448b65bae7f72405684691089ae115a0ea9e6bc513d70fcb181f36f",
+        "requirement_ids": [
+          "PRD-PRIVACY-LOCAL",
+          "PRD-PRIVACY-DELETE",
+          "PRD-RESULT-SEARCH"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "3823248ec0ec893c8c6c174edf243b93f6c36bbb1cfffb11e20411045f93210a"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-026",
+        "previous_binding_sha256": "3f3707c56eb2c4041d34aa15fc21645112f79271daa79177d3942a45788470d9",
+        "previous_revision": 2,
+        "profile_sha256": "cd2a4132cf1552a0bfb77e5ae837f433e7f64ca6d99fed4a83ddf98217dffbde",
+        "requirement_ids": [
+          "PRD-PRIVACY-LOCAL",
+          "PRD-PRIVACY-DELETE",
+          "PRD-RESULT-SEARCH"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "21f89480c196655d92e70bbd95ae80293f43b9666bd3dd02c767196c8fd2ecac"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-027",
+        "previous_binding_sha256": "520cf200826fd5dab0a779ca66b6e1ef228c3dfa5f85f804cbf924e6d71bfc3e",
+        "previous_revision": 2,
+        "profile_sha256": "950238c1c2d8e309816f570c16d11c001d143cf7e1aab9c0ab7a2b9e155a0518",
+        "requirement_ids": [
+          "PRD-PRIVACY-LOCAL",
+          "PRD-PRIVACY-DELETE",
+          "PRD-RESULT-SEARCH"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "e014ac41b2fb93999e877c32a547dd36aa4f7da0a1d25ab947aafcf60791e7b5"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-028",
+        "previous_binding_sha256": "d4bf81c96c3f21fb28b2ccb1e2313fad6af468e8b996da613bdf6d1ba00d9cbe",
+        "previous_revision": 2,
+        "profile_sha256": "616a4e0619bb79e4885c999332754071e5bd2c475b06f6b190ad9e45aec2f966",
+        "requirement_ids": [
+          "PRD-PRIVACY-LOCAL",
+          "PRD-PRIVACY-DELETE",
+          "PRD-RESULT-SEARCH"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "58b198dd324703eecb3644fefc571a08d4ba1e0865fce0fc27671107afca568a"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-029",
+        "previous_binding_sha256": "6359ae0d64bb50ab63eaf49092fd58e21145d95bd6c97e04bf9872fe4b418264",
+        "previous_revision": 2,
+        "profile_sha256": "833ad2de23deeb8c15b46a4fe8ecd8d1d021008a7a832a017e73992c8fa33b2a",
+        "requirement_ids": [
+          "PRD-SNAPSHOT-RETENTION",
+          "PRD-PAYWALL-BOUNDARY",
+          "PRD-SAMPLE-EXPORT"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "3ddec2799660e57e47eb958aedfaa676096a73e3a56b00703079306886ecb5b7"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-030",
+        "previous_binding_sha256": "7b1addfa6ff878040167265f3f7e0a4e0546ec05657c31f7dd846f9ebf0e8e6d",
+        "previous_revision": 2,
+        "profile_sha256": "6efec52667589fcf70ab72beb55a57de93894abe7b891c0e51130df8ab126260",
+        "requirement_ids": [
+          "PRD-SNAPSHOT-RETENTION",
+          "PRD-PAYWALL-BOUNDARY",
+          "PRD-SAMPLE-EXPORT"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "8aaea0bbaf9fa47acd5271a31740e8d2975c02893b4df950c5994fb33278e281"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-031",
+        "previous_binding_sha256": "7297a9ff71c36824955948169e5f121eeb237ee8f50eec78f7a126c52a57c468",
+        "previous_revision": 2,
+        "profile_sha256": "f380157b348b760778bd9fd0c2c8f5c842b230bd05922841a07d0f5509e447f7",
+        "requirement_ids": [
+          "PRD-SNAPSHOT-RETENTION",
+          "PRD-PAYWALL-BOUNDARY",
+          "PRD-SAMPLE-EXPORT"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "aa40019185941ddf50f8356bd316fde21899603064ac478100894303d87084d9"
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-032",
+        "previous_binding_sha256": "28c68f18d16750c7dcd52bf9e353472b1735f622ac578ab6d3c13ccde35c3e34",
+        "previous_revision": 2,
+        "profile_sha256": "09506ecac317692bd1c0eba798a2a24e6b5b262ec670680f8642ac9684ace5f9",
+        "requirement_ids": [
+          "PRD-SNAPSHOT-RETENTION",
+          "PRD-PAYWALL-BOUNDARY",
+          "PRD-SAMPLE-EXPORT"
+        ],
+        "revision": 1,
+        "unchanged_profile_content_sha256": "ebbf34009d24530072bc642268e3d5f27afd6c4a4626697566f02e3527287573"
+      }
+    ],
+    "prd_path": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-pinned-product-51110f4-20261115/source/docs/PRD.md",
+    "prd_sha256": "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b",
+    "previous_files_sha256": {
+      "engine.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "library.json": "0db442a44b9f1b21c3c4e4454b58261fa111f0b02240af4162065740c775bc42",
+      "scale-goals.json": "1d2735110bf9d1722cb499d897099d65d1040fd551881498e59d636044395740"
+    },
+    "previous_files_unchanged": true,
+    "previous_library": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-persona-library-v3",
+    "previous_prd_path": "/Volumes/SanDisk2TB/m4mini/CodeProjects/insta-tracker/.omo/worktrees/peekly-import-ux-20261113/docs/PRD.md",
+    "previous_revisions": [
+      2
+    ],
+    "product_commit": "51110f4c569673faa8d242d5b85c4b47afb54cbb",
+    "reusable_personas": 32,
+    "same_32_ids": true,
+    "same_profile_contents": true,
+    "same_requirement_ids_and_citations": true,
+    "schema_version": "peekly-pinned-persona-import.v1",
+    "stale_original_context_rejected": "stale_prd"
+  },
+  "schema_version": "peekly-pinned-inputs.v1",
+  "scope": "Preparation and provenance only; no new live UX coverage is claimed.",
+  "server": {
+    "browser_calls": 0,
+    "build_manifest": {
+      "bytes": 2811,
+      "path": "build-manifest.json",
+      "sha256": "c8adccb882b4bba6592e11f3792b8779809f771e66ea169118b5db84a7100d17"
+    },
+    "command": "/Users/m4mini/.aside/runtime/node/bin/node /Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-pinned-product-51110f4-20261115/source/node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4175 --strictPort",
+    "listener": "COMMAND   PID   USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME\nnode    78876 m4mini   16u  IPv4 0xf185a059378a76d5      0t0  TCP 127.0.0.1:4175 (LISTEN)\n",
+    "local_loopback_only": true,
+    "model_calls": 0,
+    "pid": 78876,
+    "schema_version": "peekly-owned-preview.v1",
+    "served": [
+      {
+        "bytes": 739,
+        "path": "index.html",
+        "sha256": "848b334a6affa5c6a578911819aaf127da34bc2e6ae2f04899022872b7d0f6f5",
+        "status": 200,
+        "url": "http://127.0.0.1:4175/"
+      },
+      {
+        "bytes": 277387,
+        "path": "assets/index-BCjS_bZI.js",
+        "sha256": "1d71b85b39a82283e909ba6c08b4333d6cdd9501051920717a9347501e2dafdf",
+        "status": 200,
+        "url": "http://127.0.0.1:4175/assets/index-BCjS_bZI.js"
+      }
+    ],
+    "url": "http://127.0.0.1:4175/",
+    "verified_at": "2026-11-14T16:32:57.956893+00:00",
+    "working_directory": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-pinned-product-51110f4-20261115/source"
+  },
+  "source": {
+    "archive_sha256": "90f1a165589cb094a60566878c02eefe5ab5694bd8f7e80c09711a6cac5d05bf",
+    "file_count": 319,
+    "git_tree_object": "8a8c377895a2c39b083e14535435ad4934f7cd43",
+    "preparation": "read-only git archive; no product worktree checkout or metadata mutation",
+    "schema_version": "peekly-pinned-source.v1",
+    "source_commit": "51110f4c569673faa8d242d5b85c4b47afb54cbb",
+    "source_origin": "/Volumes/SanDisk2TB/m4mini/CodeProjects/insta-tracker/.omo/worktrees/peekly-import-ux-20261113",
+    "source_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-pinned-product-51110f4-20261115/source",
+    "source_tree_sha256": "fa8c54630cfdef4260230d7b41a6a8a54405a97079961f66d2d43b47bd70c99e"
+  },
+  "source_refs": [
+    {
+      "bytes": 2811,
+      "path": ".ux-loop/peekly-pinned-product-51110f4-20261115/build-manifest.json",
+      "sha256": "c8adccb882b4bba6592e11f3792b8779809f771e66ea169118b5db84a7100d17"
+    },
+    {
+      "bytes": 68649,
+      "path": ".ux-loop/peekly-pinned-product-51110f4-20261115/source-manifest.json",
+      "sha256": "9ce11a5c0486813db91072d27d540f60d386ceb24501cfd1bca08f38953dff8b"
+    },
+    {
+      "bytes": 2703,
+      "path": ".ux-loop/peekly-pinned-product-51110f4-20261115/build-provenance.json",
+      "sha256": "5cde3d5a03ef0542ff29416ec559cbe7bf6d8aed8bd3d42a5c07f9bd219a77db"
+    },
+    {
+      "bytes": 1431,
+      "path": ".ux-loop/peekly-pinned-product-51110f4-20261115/server-provenance.json",
+      "sha256": "1cf61885f1533dcbd8e1603d664fcaedb69d074ed715348b0f4b3988fd8e2bf0"
+    },
+    {
+      "bytes": 16250,
+      "path": ".ux-loop/peekly-persona-library-v4-pinned-20261115/import-provenance.json",
+      "sha256": "3e96e486c1283ae4ed5e2a6d98c87a330d81053347ad2d3f308e5d8924f195e7"
+    }
+  ]
+}

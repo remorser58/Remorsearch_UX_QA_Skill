@@ -136,9 +136,10 @@ def fixture_freeze(fixtures):
     return dict(manifest_sha256=digest_file(manifest_path), files=hashes)
 
 
-def capture_freeze(fixtures=DEFAULT_FIXTURES, library=LIBRARY, build=BUILD):
+def capture_freeze(fixtures=DEFAULT_FIXTURES, library=LIBRARY, build=BUILD,
+                   *, expected_build_sha256=BUILD_SHA256):
     from uxpersonas.scale_entry import engine_manifest
-    if not Path(build).is_file() or digest_file(build) != BUILD_SHA256:
+    if not Path(build).is_file() or digest_file(build) != expected_build_sha256:
         raise RuntimeError("pinned_product_build_artifact_missing_or_changed")
     extra_sources = (
         "scripts/run_peekly_coverage.py",

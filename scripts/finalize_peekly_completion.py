@@ -201,10 +201,12 @@ def free_delivery(plan, summary, ledger):
 
 def frozen_inputs(repo, provenance, status):
     require(Path(provenance.get("fixtures", "")).resolve() == completion.FIXTURES.resolve()
-            and Path(provenance.get("library", "")).resolve() == base.LIBRARY.resolve()
-            and provenance.get("build", {}).get("artifact_path") == str(base.BUILD.resolve()),
+            and Path(provenance.get("library", "")).resolve() == completion.LIBRARY.resolve()
+            and provenance.get("build", {}).get("artifact_path") == str(completion.BUILD.resolve())
+            and provenance.get("build", {}).get("sha256") == completion.BUILD_SHA256,
             "frozen_input_path_mismatch")
     base.require_same_freeze(provenance["freeze"], completion.capture_freeze())
+    completion.require_target_receipts(provenance, status)
     prior = provenance.get("prior_queues")
     require(isinstance(prior, list) and prior, "prior_queue_snapshots_required")
     for row in prior:
@@ -369,6 +371,10 @@ def generate(repo, output, bundle, log):
         run_root=bundle["run_root"].relative_to(repo).as_posix(),
         run_state=bundle["values"]["status"]["state"], queue_counts=bundle["counts"],
         source_hashes=bundle["hashes"],
+        product_target=dict(frozen=bundle["values"]["provenance"]["freeze"]["product_target"],
+            before=bundle["values"]["provenance"]["target_before"],
+            after=bundle["values"]["status"]["target_after"],
+            served_bytes_verified_before_and_after=True),
         postprocess_status="raw_report_and_byte_audit_completed",
         semantic_review_status="pending_manual_review", coverage_target_met=None,
         publication_status="Recorded separately in the ignored finalizer event ledger.",
