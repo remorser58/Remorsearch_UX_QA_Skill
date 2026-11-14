@@ -1,0 +1,1030 @@
+{
+  "baseline_commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+  "counting_rule": "Distinct persona, requirement and criterion kind; no N/A credit.",
+  "rows": [
+    {
+      "evidence": [],
+      "id": "NR65-01",
+      "job": "S-pggllnfpmomgbiaefciinnlo",
+      "kind": "recovery",
+      "persona": "PER-PEEKLY-V2-013",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "A save failure occurred, but the required retry control was absent, so no safe retry recovery could be executed or verified.",
+      "requirement": "CONDITIONAL-RECOVERY",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-013,kind=recovery,index=0]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [
+        {
+          "bytes": 23846,
+          "id": "log-4",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-4.json",
+          "sha256": "6c782df70582bbad1cfeafbb59bdb5fd5da42d0b741632b3500a88f2b1f165e7"
+        },
+        {
+          "bytes": 21201,
+          "id": "log-13",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-13.json",
+          "sha256": "7e6bb24481c0948f9a1f1ddb13a48c6b2b31b756b3a23bb3649c48a34b1d83a2"
+        },
+        {
+          "bytes": 21016,
+          "id": "log-16",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-16.json",
+          "sha256": "cbd8ac13a16de748d0a20c60a9fa1b0aaaff6bd35951b9cfd2f7108b7baaac79"
+        },
+        {
+          "bytes": 20991,
+          "id": "log-17",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-17.json",
+          "sha256": "9976a543a58a0409bfba6d33baaec5cf4018e8206ce05d4a0ef59adaa5d05406"
+        },
+        {
+          "bytes": 24465,
+          "id": "log-18",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-18.json",
+          "sha256": "7cd8b438c97088c5598a19891d0131d90a3699fe08458ac69ea0879abfc9802f"
+        }
+      ],
+      "id": "NR65-02",
+      "job": "S-jmpokhjegennajnihcaemagh",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-017",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "All 18 saved observations were inspected. The category list appears only in sample obs-4; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "requirement": "PRD-RESULT-RECIPROCITY",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-017,kind=success,index=0]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [
+        {
+          "bytes": 22503,
+          "id": "log-6",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-6.json",
+          "sha256": "2c802a801f12f4c2405b8c60550e13e904abee497c6726fe98cbb73d90f5f654"
+        },
+        {
+          "bytes": 21201,
+          "id": "log-13",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-13.json",
+          "sha256": "7e6bb24481c0948f9a1f1ddb13a48c6b2b31b756b3a23bb3649c48a34b1d83a2"
+        },
+        {
+          "bytes": 21016,
+          "id": "log-16",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-16.json",
+          "sha256": "cbd8ac13a16de748d0a20c60a9fa1b0aaaff6bd35951b9cfd2f7108b7baaac79"
+        },
+        {
+          "bytes": 20991,
+          "id": "log-17",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-17.json",
+          "sha256": "9976a543a58a0409bfba6d33baaec5cf4018e8206ce05d4a0ef59adaa5d05406"
+        },
+        {
+          "bytes": 24465,
+          "id": "log-18",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-18.json",
+          "sha256": "7cd8b438c97088c5598a19891d0131d90a3699fe08458ac69ea0879abfc9802f"
+        }
+      ],
+      "id": "NR65-03",
+      "job": "S-jmpokhjegennajnihcaemagh",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-017",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "All 18 saved observations were inspected. The category list appears only in sample obs-6; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "requirement": "PRD-RESULT-REVERSE",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-017,kind=success,index=1]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [
+        {
+          "bytes": 23830,
+          "id": "log-8",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-8.json",
+          "sha256": "5eed4b945330f033fcd7e2956028aa3372f132a0185e960917694619a3169497"
+        },
+        {
+          "bytes": 21201,
+          "id": "log-13",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-13.json",
+          "sha256": "7e6bb24481c0948f9a1f1ddb13a48c6b2b31b756b3a23bb3649c48a34b1d83a2"
+        },
+        {
+          "bytes": 21016,
+          "id": "log-16",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-16.json",
+          "sha256": "cbd8ac13a16de748d0a20c60a9fa1b0aaaff6bd35951b9cfd2f7108b7baaac79"
+        },
+        {
+          "bytes": 20991,
+          "id": "log-17",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-17.json",
+          "sha256": "9976a543a58a0409bfba6d33baaec5cf4018e8206ce05d4a0ef59adaa5d05406"
+        },
+        {
+          "bytes": 24465,
+          "id": "log-18",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-18.json",
+          "sha256": "7cd8b438c97088c5598a19891d0131d90a3699fe08458ac69ea0879abfc9802f"
+        }
+      ],
+      "id": "NR65-04",
+      "job": "S-jmpokhjegennajnihcaemagh",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-017",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "All 18 saved observations were inspected. The category list appears only in sample obs-8; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "requirement": "PRD-RESULT-MUTUAL",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-017,kind=success,index=2]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [
+        {
+          "bytes": 23836,
+          "id": "log-4",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-pmfcniapopnnebacajhibjbh/evidence/S-pmfcniapopnnebacajhibjbh/1/agent-observation-4.json",
+          "sha256": "5f9fbf164cbb4867a543f87a91b87a3363c90648e66029d29caa9e16fe4ddf12"
+        },
+        {
+          "bytes": 21231,
+          "id": "log-13",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-pmfcniapopnnebacajhibjbh/evidence/S-pmfcniapopnnebacajhibjbh/1/agent-observation-13.json",
+          "sha256": "a3b2990fe71dd269a04ec891fe7d20336a2500813ecc2eeb851b2ca130a834be"
+        },
+        {
+          "bytes": 21007,
+          "id": "log-16",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-pmfcniapopnnebacajhibjbh/evidence/S-pmfcniapopnnebacajhibjbh/1/agent-observation-16.json",
+          "sha256": "5bc96580d273f52f078daed381f7fc2154e8a801e85864208a1cf80e0347be0b"
+        },
+        {
+          "bytes": 21005,
+          "id": "log-17",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-pmfcniapopnnebacajhibjbh/evidence/S-pmfcniapopnnebacajhibjbh/1/agent-observation-17.json",
+          "sha256": "5a37f88ed0c56a81e5fd02e24bc971afe8499e5cac44ecb602066b0759a152b4"
+        },
+        {
+          "bytes": 24485,
+          "id": "log-18",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-pmfcniapopnnebacajhibjbh/evidence/S-pmfcniapopnnebacajhibjbh/1/agent-observation-18.json",
+          "sha256": "b585ccc7b27725fea35a7e48a9226b0d23a827cc783889e9baaab6464bdf9908"
+        }
+      ],
+      "id": "NR65-05",
+      "job": "S-pmfcniapopnnebacajhibjbh",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-018",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "All 18 saved observations were inspected. The category list appears only in sample obs-4; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "requirement": "PRD-RESULT-RECIPROCITY",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-018,kind=success,index=0]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [
+        {
+          "bytes": 22504,
+          "id": "log-6",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-pmfcniapopnnebacajhibjbh/evidence/S-pmfcniapopnnebacajhibjbh/1/agent-observation-6.json",
+          "sha256": "f00ad89ec0307c7ff2ca4a59c4fd97d26dbb9c0f79c611b83d2a08c10901d6b1"
+        },
+        {
+          "bytes": 21231,
+          "id": "log-13",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-pmfcniapopnnebacajhibjbh/evidence/S-pmfcniapopnnebacajhibjbh/1/agent-observation-13.json",
+          "sha256": "a3b2990fe71dd269a04ec891fe7d20336a2500813ecc2eeb851b2ca130a834be"
+        },
+        {
+          "bytes": 21007,
+          "id": "log-16",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-pmfcniapopnnebacajhibjbh/evidence/S-pmfcniapopnnebacajhibjbh/1/agent-observation-16.json",
+          "sha256": "5bc96580d273f52f078daed381f7fc2154e8a801e85864208a1cf80e0347be0b"
+        },
+        {
+          "bytes": 21005,
+          "id": "log-17",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-pmfcniapopnnebacajhibjbh/evidence/S-pmfcniapopnnebacajhibjbh/1/agent-observation-17.json",
+          "sha256": "5a37f88ed0c56a81e5fd02e24bc971afe8499e5cac44ecb602066b0759a152b4"
+        },
+        {
+          "bytes": 24485,
+          "id": "log-18",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-pmfcniapopnnebacajhibjbh/evidence/S-pmfcniapopnnebacajhibjbh/1/agent-observation-18.json",
+          "sha256": "b585ccc7b27725fea35a7e48a9226b0d23a827cc783889e9baaab6464bdf9908"
+        }
+      ],
+      "id": "NR65-06",
+      "job": "S-pmfcniapopnnebacajhibjbh",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-018",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "All 18 saved observations were inspected. The category list appears only in sample obs-6; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "requirement": "PRD-RESULT-REVERSE",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-018,kind=success,index=1]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [
+        {
+          "bytes": 23783,
+          "id": "log-8",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-pmfcniapopnnebacajhibjbh/evidence/S-pmfcniapopnnebacajhibjbh/1/agent-observation-8.json",
+          "sha256": "71f8085a66b4060b0a6cd2e2bc1dba9b6e297ea29c75f5c462e59af0bed83e15"
+        },
+        {
+          "bytes": 21231,
+          "id": "log-13",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-pmfcniapopnnebacajhibjbh/evidence/S-pmfcniapopnnebacajhibjbh/1/agent-observation-13.json",
+          "sha256": "a3b2990fe71dd269a04ec891fe7d20336a2500813ecc2eeb851b2ca130a834be"
+        },
+        {
+          "bytes": 21007,
+          "id": "log-16",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-pmfcniapopnnebacajhibjbh/evidence/S-pmfcniapopnnebacajhibjbh/1/agent-observation-16.json",
+          "sha256": "5bc96580d273f52f078daed381f7fc2154e8a801e85864208a1cf80e0347be0b"
+        },
+        {
+          "bytes": 21005,
+          "id": "log-17",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-pmfcniapopnnebacajhibjbh/evidence/S-pmfcniapopnnebacajhibjbh/1/agent-observation-17.json",
+          "sha256": "5a37f88ed0c56a81e5fd02e24bc971afe8499e5cac44ecb602066b0759a152b4"
+        },
+        {
+          "bytes": 24485,
+          "id": "log-18",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-pmfcniapopnnebacajhibjbh/evidence/S-pmfcniapopnnebacajhibjbh/1/agent-observation-18.json",
+          "sha256": "b585ccc7b27725fea35a7e48a9226b0d23a827cc783889e9baaab6464bdf9908"
+        }
+      ],
+      "id": "NR65-07",
+      "job": "S-pmfcniapopnnebacajhibjbh",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-018",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "All 18 saved observations were inspected. The category list appears only in sample obs-8; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "requirement": "PRD-RESULT-MUTUAL",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-018,kind=success,index=2]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [
+        {
+          "bytes": 23812,
+          "id": "log-7",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jbeffobgjfbgkhkfmfepeohi/evidence/S-jbeffobgjfbgkhkfmfepeohi/1/agent-observation-7.json",
+          "sha256": "605ceb24bb3fcdf666b9b4b770a03babbdae0717326e63da4aded7ad3f76487b"
+        },
+        {
+          "bytes": 21224,
+          "id": "log-16",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jbeffobgjfbgkhkfmfepeohi/evidence/S-jbeffobgjfbgkhkfmfepeohi/1/agent-observation-16.json",
+          "sha256": "4a00c2a56b88e1315aeb2d39d2cc440a0e44b70e1f148f38b850fa433f000fa3"
+        },
+        {
+          "bytes": 20988,
+          "id": "log-19",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jbeffobgjfbgkhkfmfepeohi/evidence/S-jbeffobgjfbgkhkfmfepeohi/1/agent-observation-19.json",
+          "sha256": "aab5228e07537cb830a42fd47e2b2d2144d4c4e77bb0f27da5458f450806874a"
+        },
+        {
+          "bytes": 24455,
+          "id": "log-22",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jbeffobgjfbgkhkfmfepeohi/evidence/S-jbeffobgjfbgkhkfmfepeohi/1/agent-observation-22.json",
+          "sha256": "1ccab05db66f61cfd68ef16cfbcb02bffcf850f66ce577696ea723792e0345d6"
+        },
+        {
+          "bytes": 20538,
+          "id": "log-23",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jbeffobgjfbgkhkfmfepeohi/evidence/S-jbeffobgjfbgkhkfmfepeohi/1/agent-observation-23.json",
+          "sha256": "7a6eef9594d3f703207739e276fbbad2c704161b6b98b0f0e21f6b73a44127b0"
+        }
+      ],
+      "id": "NR65-08",
+      "job": "S-jbeffobgjfbgkhkfmfepeohi",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-019",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "All 23 saved observations were inspected. The category list appears only in sample obs-7; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "requirement": "PRD-RESULT-RECIPROCITY",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-019,kind=success,index=0]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [
+        {
+          "bytes": 22499,
+          "id": "log-9",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jbeffobgjfbgkhkfmfepeohi/evidence/S-jbeffobgjfbgkhkfmfepeohi/1/agent-observation-9.json",
+          "sha256": "9f5c211f86263e519e793c8f6aa3a33e3b32753f9c3ff1ff00a3b5ad9b665278"
+        },
+        {
+          "bytes": 21224,
+          "id": "log-16",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jbeffobgjfbgkhkfmfepeohi/evidence/S-jbeffobgjfbgkhkfmfepeohi/1/agent-observation-16.json",
+          "sha256": "4a00c2a56b88e1315aeb2d39d2cc440a0e44b70e1f148f38b850fa433f000fa3"
+        },
+        {
+          "bytes": 20988,
+          "id": "log-19",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jbeffobgjfbgkhkfmfepeohi/evidence/S-jbeffobgjfbgkhkfmfepeohi/1/agent-observation-19.json",
+          "sha256": "aab5228e07537cb830a42fd47e2b2d2144d4c4e77bb0f27da5458f450806874a"
+        },
+        {
+          "bytes": 24455,
+          "id": "log-22",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jbeffobgjfbgkhkfmfepeohi/evidence/S-jbeffobgjfbgkhkfmfepeohi/1/agent-observation-22.json",
+          "sha256": "1ccab05db66f61cfd68ef16cfbcb02bffcf850f66ce577696ea723792e0345d6"
+        },
+        {
+          "bytes": 20538,
+          "id": "log-23",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jbeffobgjfbgkhkfmfepeohi/evidence/S-jbeffobgjfbgkhkfmfepeohi/1/agent-observation-23.json",
+          "sha256": "7a6eef9594d3f703207739e276fbbad2c704161b6b98b0f0e21f6b73a44127b0"
+        }
+      ],
+      "id": "NR65-09",
+      "job": "S-jbeffobgjfbgkhkfmfepeohi",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-019",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "All 23 saved observations were inspected. The category list appears only in sample obs-9; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "requirement": "PRD-RESULT-REVERSE",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-019,kind=success,index=1]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [
+        {
+          "bytes": 23794,
+          "id": "log-11",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jbeffobgjfbgkhkfmfepeohi/evidence/S-jbeffobgjfbgkhkfmfepeohi/1/agent-observation-11.json",
+          "sha256": "8a7cd819801bc77fcd5b3649b2390b15f379051df5503022d7bbbc16e4d842ef"
+        },
+        {
+          "bytes": 21224,
+          "id": "log-16",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jbeffobgjfbgkhkfmfepeohi/evidence/S-jbeffobgjfbgkhkfmfepeohi/1/agent-observation-16.json",
+          "sha256": "4a00c2a56b88e1315aeb2d39d2cc440a0e44b70e1f148f38b850fa433f000fa3"
+        },
+        {
+          "bytes": 20988,
+          "id": "log-19",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jbeffobgjfbgkhkfmfepeohi/evidence/S-jbeffobgjfbgkhkfmfepeohi/1/agent-observation-19.json",
+          "sha256": "aab5228e07537cb830a42fd47e2b2d2144d4c4e77bb0f27da5458f450806874a"
+        },
+        {
+          "bytes": 24455,
+          "id": "log-22",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jbeffobgjfbgkhkfmfepeohi/evidence/S-jbeffobgjfbgkhkfmfepeohi/1/agent-observation-22.json",
+          "sha256": "1ccab05db66f61cfd68ef16cfbcb02bffcf850f66ce577696ea723792e0345d6"
+        },
+        {
+          "bytes": 20538,
+          "id": "log-23",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jbeffobgjfbgkhkfmfepeohi/evidence/S-jbeffobgjfbgkhkfmfepeohi/1/agent-observation-23.json",
+          "sha256": "7a6eef9594d3f703207739e276fbbad2c704161b6b98b0f0e21f6b73a44127b0"
+        }
+      ],
+      "id": "NR65-10",
+      "job": "S-jbeffobgjfbgkhkfmfepeohi",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-019",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "All 23 saved observations were inspected. The category list appears only in sample obs-11; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "requirement": "PRD-RESULT-MUTUAL",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-019,kind=success,index=2]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [
+        {
+          "bytes": 23812,
+          "id": "log-4",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-efdkbjaecbikgofacjhaaena/evidence/S-efdkbjaecbikgofacjhaaena/1/agent-observation-4.json",
+          "sha256": "161844546b9d8ee4f369d912d0088ca0fa8cb8e042d5111f929b6c872bdae257"
+        },
+        {
+          "bytes": 21199,
+          "id": "log-13",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-efdkbjaecbikgofacjhaaena/evidence/S-efdkbjaecbikgofacjhaaena/1/agent-observation-13.json",
+          "sha256": "740d8ff38a4990087cf55e254adb168468d7a14295c195b4769c5a76b8d38e6b"
+        },
+        {
+          "bytes": 21024,
+          "id": "log-16",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-efdkbjaecbikgofacjhaaena/evidence/S-efdkbjaecbikgofacjhaaena/1/agent-observation-16.json",
+          "sha256": "ce769e05cb4124c800b108609379210ffd5b419bd66c1bc0a4be9bec6ac493e7"
+        },
+        {
+          "bytes": 20976,
+          "id": "log-17",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-efdkbjaecbikgofacjhaaena/evidence/S-efdkbjaecbikgofacjhaaena/1/agent-observation-17.json",
+          "sha256": "d2ac56f993c00c6e15c98ac9f7d0064af2b8a31a2f6c48c2c44e20562cee71d7"
+        },
+        {
+          "bytes": 24485,
+          "id": "log-18",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-efdkbjaecbikgofacjhaaena/evidence/S-efdkbjaecbikgofacjhaaena/1/agent-observation-18.json",
+          "sha256": "5bdc00ddf45708b552005c1c2df36bf854cf795c76b583746220e072c7fb4111"
+        }
+      ],
+      "id": "NR65-11",
+      "job": "S-efdkbjaecbikgofacjhaaena",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-020",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "All 18 saved observations were inspected. The category list appears only in sample obs-4; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "requirement": "PRD-RESULT-RECIPROCITY",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-020,kind=success,index=0]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [
+        {
+          "bytes": 22511,
+          "id": "log-6",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-efdkbjaecbikgofacjhaaena/evidence/S-efdkbjaecbikgofacjhaaena/1/agent-observation-6.json",
+          "sha256": "5e6556d4c340851014595a331995411366895ab2b3ed2335ac7dafcc4106c0b8"
+        },
+        {
+          "bytes": 21199,
+          "id": "log-13",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-efdkbjaecbikgofacjhaaena/evidence/S-efdkbjaecbikgofacjhaaena/1/agent-observation-13.json",
+          "sha256": "740d8ff38a4990087cf55e254adb168468d7a14295c195b4769c5a76b8d38e6b"
+        },
+        {
+          "bytes": 21024,
+          "id": "log-16",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-efdkbjaecbikgofacjhaaena/evidence/S-efdkbjaecbikgofacjhaaena/1/agent-observation-16.json",
+          "sha256": "ce769e05cb4124c800b108609379210ffd5b419bd66c1bc0a4be9bec6ac493e7"
+        },
+        {
+          "bytes": 20976,
+          "id": "log-17",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-efdkbjaecbikgofacjhaaena/evidence/S-efdkbjaecbikgofacjhaaena/1/agent-observation-17.json",
+          "sha256": "d2ac56f993c00c6e15c98ac9f7d0064af2b8a31a2f6c48c2c44e20562cee71d7"
+        },
+        {
+          "bytes": 24485,
+          "id": "log-18",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-efdkbjaecbikgofacjhaaena/evidence/S-efdkbjaecbikgofacjhaaena/1/agent-observation-18.json",
+          "sha256": "5bdc00ddf45708b552005c1c2df36bf854cf795c76b583746220e072c7fb4111"
+        }
+      ],
+      "id": "NR65-12",
+      "job": "S-efdkbjaecbikgofacjhaaena",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-020",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "All 18 saved observations were inspected. The category list appears only in sample obs-6; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "requirement": "PRD-RESULT-REVERSE",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-020,kind=success,index=1]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [
+        {
+          "bytes": 23808,
+          "id": "log-8",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-efdkbjaecbikgofacjhaaena/evidence/S-efdkbjaecbikgofacjhaaena/1/agent-observation-8.json",
+          "sha256": "fdbeacade6372baf5ac0c3cc1f5b7b5e92ac8362c94e8c5d7b813ea6f00ee4ed"
+        },
+        {
+          "bytes": 21199,
+          "id": "log-13",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-efdkbjaecbikgofacjhaaena/evidence/S-efdkbjaecbikgofacjhaaena/1/agent-observation-13.json",
+          "sha256": "740d8ff38a4990087cf55e254adb168468d7a14295c195b4769c5a76b8d38e6b"
+        },
+        {
+          "bytes": 21024,
+          "id": "log-16",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-efdkbjaecbikgofacjhaaena/evidence/S-efdkbjaecbikgofacjhaaena/1/agent-observation-16.json",
+          "sha256": "ce769e05cb4124c800b108609379210ffd5b419bd66c1bc0a4be9bec6ac493e7"
+        },
+        {
+          "bytes": 20976,
+          "id": "log-17",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-efdkbjaecbikgofacjhaaena/evidence/S-efdkbjaecbikgofacjhaaena/1/agent-observation-17.json",
+          "sha256": "d2ac56f993c00c6e15c98ac9f7d0064af2b8a31a2f6c48c2c44e20562cee71d7"
+        },
+        {
+          "bytes": 24485,
+          "id": "log-18",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-efdkbjaecbikgofacjhaaena/evidence/S-efdkbjaecbikgofacjhaaena/1/agent-observation-18.json",
+          "sha256": "5bdc00ddf45708b552005c1c2df36bf854cf795c76b583746220e072c7fb4111"
+        }
+      ],
+      "id": "NR65-13",
+      "job": "S-efdkbjaecbikgofacjhaaena",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-020",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "All 18 saved observations were inspected. The category list appears only in sample obs-8; subsequent valid imports have cards but no post-import list for this category. The departed list is a different category.",
+      "requirement": "PRD-RESULT-MUTUAL",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-020,kind=success,index=2]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [
+        {
+          "bytes": 21446,
+          "id": "log-7",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-injjambjkacdigcmpjaogaap/evidence/S-injjambjkacdigcmpjaogaap/1/agent-observation-7.json",
+          "sha256": "8a8e15b2dabc9b180355c8870d56c3d50d3bb5e30b46c952043931578958985c"
+        },
+        {
+          "bytes": 21324,
+          "id": "log-10",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-injjambjkacdigcmpjaogaap/evidence/S-injjambjkacdigcmpjaogaap/1/agent-observation-10.json",
+          "sha256": "573ad3f096d79d2595a52fa70abb26b4c5bfced3dfe051d1e1d2a423596d8c46"
+        },
+        {
+          "bytes": 21672,
+          "id": "log-15",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-injjambjkacdigcmpjaogaap/evidence/S-injjambjkacdigcmpjaogaap/1/agent-observation-15.json",
+          "sha256": "ad422371d4601acbcd8c0e57f75d43d596d9bd24c2c4fcb386269941ba99b22d"
+        },
+        {
+          "bytes": 21701,
+          "id": "log-18",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-injjambjkacdigcmpjaogaap/evidence/S-injjambjkacdigcmpjaogaap/1/agent-observation-18.json",
+          "sha256": "ea473f1fc0b6ebe23580b193a915e7b8e5e3e7e35a5c7270f06420f197e0f46a"
+        },
+        {
+          "bytes": 25005,
+          "id": "log-21",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-injjambjkacdigcmpjaogaap/evidence/S-injjambjkacdigcmpjaogaap/1/agent-observation-21.json",
+          "sha256": "b1a3d2f33d206d777d9857fc353747babfd18757ae4bf95eacadd885830be88f"
+        }
+      ],
+      "id": "NR65-14",
+      "job": "S-injjambjkacdigcmpjaogaap",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-021",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "The ZIP contains recognized explicit empty lists, not unknown legacy history. Native failed first appears after a different previous/current pair because cumulative text matched an unrelated unfollow label. The required legacy prerequisite was never created.",
+      "requirement": "PRD-IMPORT-SNAPSHOT-UNKNOWN",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-021,kind=success,index=2]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [],
+      "id": "NR65-15",
+      "job": "S-mnemkabchmofljkacpjkooai",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-022",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "Open the actual latest comparison explanation and its account list; a first-record preview or loading screen cannot establish this disclosure criterion.",
+      "requirement": "PRD-IDENTITY-LIMIT",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-022,kind=success,index=1]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [
+        {
+          "bytes": 21412,
+          "id": "log-6",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-mnemkabchmofljkacpjkooai/evidence/S-mnemkabchmofljkacpjkooai/1/agent-observation-6.json",
+          "sha256": "55dfdbde5b9b3b09f603a87a8d61312df829f1c6d18bd425e1d4417abc05f4e0"
+        },
+        {
+          "bytes": 21310,
+          "id": "log-9",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-mnemkabchmofljkacpjkooai/evidence/S-mnemkabchmofljkacpjkooai/1/agent-observation-9.json",
+          "sha256": "a8a5713a82e2da15966ed6383ecb97ca2ab0a62abcb9356343cf01753b160514"
+        },
+        {
+          "bytes": 21685,
+          "id": "log-18",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-mnemkabchmofljkacpjkooai/evidence/S-mnemkabchmofljkacpjkooai/1/agent-observation-18.json",
+          "sha256": "5d0fab7439aea0636cec8d39cb18d277dff79acb3ef462da993c1c960d4e415f"
+        },
+        {
+          "bytes": 21651,
+          "id": "log-21",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-mnemkabchmofljkacpjkooai/evidence/S-mnemkabchmofljkacpjkooai/1/agent-observation-21.json",
+          "sha256": "5254088ab76b1d02ea9bb81cbede3dcadd34f4fade87c31803811c99138f1ecd"
+        },
+        {
+          "bytes": 18020,
+          "id": "log-44",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-mnemkabchmofljkacpjkooai/evidence/S-mnemkabchmofljkacpjkooai/1/agent-observation-44.json",
+          "sha256": "2e66797118ba07730350149a387694007e02a8a84c04bbe6f3b41777e924056b"
+        },
+        {
+          "bytes": 26830,
+          "id": "log-45",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-mnemkabchmofljkacpjkooai/evidence/S-mnemkabchmofljkacpjkooai/1/agent-observation-45.json",
+          "sha256": "96196dbae426594d81e4f4eb376090ffd53f078778a1a43d1ec3be50b630e145"
+        },
+        {
+          "bytes": 27822,
+          "id": "log-46",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-mnemkabchmofljkacpjkooai/evidence/S-mnemkabchmofljkacpjkooai/1/agent-observation-46.json",
+          "sha256": "bbe6d85f800621838a573c76bd8d96bb531d54ec6f9c088d8987ca249600ed96"
+        }
+      ],
+      "id": "NR65-16",
+      "job": "S-mnemkabchmofljkacpjkooai",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-022",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "No legacy state was created: the empty ZIP has recognized lists. Native UNKNOWN stayed not_run through obs44, then failed at obs45 when a different normal pair's relationship detail included an unfollow label. The original IDENTITY-LIMIT not_run is preserved.",
+      "requirement": "PRD-IMPORT-SNAPSHOT-UNKNOWN",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-022,kind=success,index=2]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [
+        {
+          "bytes": 21413,
+          "id": "log-7",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-lpcmlkbehhmjifejlcbplfll/evidence/S-lpcmlkbehhmjifejlcbplfll/1/agent-observation-7.json",
+          "sha256": "57146e8398fc93ab549e6bfc6e6b422a86da07160e91fcade4092d7502632355"
+        },
+        {
+          "bytes": 21368,
+          "id": "log-10",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-lpcmlkbehhmjifejlcbplfll/evidence/S-lpcmlkbehhmjifejlcbplfll/1/agent-observation-10.json",
+          "sha256": "3dc288cbecff51e949b320909852d66bfd1fe661cb93dd2aca72355693fc52d4"
+        },
+        {
+          "bytes": 21516,
+          "id": "log-13",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-lpcmlkbehhmjifejlcbplfll/evidence/S-lpcmlkbehhmjifejlcbplfll/1/agent-observation-13.json",
+          "sha256": "f4c8ae602b3e697302bd975fce472da9850555df5fe26354816f4ce80cf75df2"
+        },
+        {
+          "bytes": 21685,
+          "id": "log-19",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-lpcmlkbehhmjifejlcbplfll/evidence/S-lpcmlkbehhmjifejlcbplfll/1/agent-observation-19.json",
+          "sha256": "607a4fcc56367c9fcd847802914c154d47adade4539f6931ad82ba353fc28a04"
+        },
+        {
+          "bytes": 21641,
+          "id": "log-22",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-lpcmlkbehhmjifejlcbplfll/evidence/S-lpcmlkbehhmjifejlcbplfll/1/agent-observation-22.json",
+          "sha256": "d250caf7452bc160baba7ae87fbd8e1db28664b57e99072c1e5dba5dc67bc535"
+        },
+        {
+          "bytes": 25010,
+          "id": "log-24",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-lpcmlkbehhmjifejlcbplfll/evidence/S-lpcmlkbehhmjifejlcbplfll/1/agent-observation-24.json",
+          "sha256": "71d5efd4b0f30e1022d402200427badd1d7c8a25cb2dda9a448abe511cd95a82"
+        }
+      ],
+      "id": "NR65-17",
+      "job": "S-lpcmlkbehhmjifejlcbplfll",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-023",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "The recognized empty ZIP creates known-empty history. Its actual zero-departure list was opened at obs13. The unknown native check failed only at obs24 after a different normal pair's unfollow list; no legacy-unknown prerequisite was created.",
+      "requirement": "PRD-IMPORT-SNAPSHOT-UNKNOWN",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-023,kind=success,index=2]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [
+        {
+          "bytes": 21430,
+          "id": "log-8",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-bhipnijdghjoompcjcokbceh/evidence/S-bhipnijdghjoompcjcokbceh/1/agent-observation-8.json",
+          "sha256": "0557bd09f72ba829557c87c783ef2824837575ff7f93e2120bd8e1c88cf0c493"
+        },
+        {
+          "bytes": 21353,
+          "id": "log-11",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-bhipnijdghjoompcjcokbceh/evidence/S-bhipnijdghjoompcjcokbceh/1/agent-observation-11.json",
+          "sha256": "02b8ec662ab198737e207dfeec857eae4502b34b29c3899232141de648bea366"
+        },
+        {
+          "bytes": 21551,
+          "id": "log-13",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-bhipnijdghjoompcjcokbceh/evidence/S-bhipnijdghjoompcjcokbceh/1/agent-observation-13.json",
+          "sha256": "fdfce6b657ea9a6454e59c7611016d293e3e33a854b734ee8c4e27e7c6ed8ea8"
+        },
+        {
+          "bytes": 30620,
+          "id": "log-16",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-bhipnijdghjoompcjcokbceh/evidence/S-bhipnijdghjoompcjcokbceh/1/agent-observation-16.json",
+          "sha256": "ff12e8cd33d637da9ae38fa7a182d84e0846a710e9db1e8d111ead922bb355fe"
+        },
+        {
+          "bytes": 21678,
+          "id": "log-30",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-bhipnijdghjoompcjcokbceh/evidence/S-bhipnijdghjoompcjcokbceh/1/agent-observation-30.json",
+          "sha256": "2446aa86f4062abd5be0e0cfd6db659a7fc2c9e00601b1065185100df9e0d1b8"
+        },
+        {
+          "bytes": 21704,
+          "id": "log-33",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-bhipnijdghjoompcjcokbceh/evidence/S-bhipnijdghjoompcjcokbceh/1/agent-observation-33.json",
+          "sha256": "ff1b3120425b6f35d521f4ef3920a9421de4c4f7b7caf9078d35d1a63d380551"
+        },
+        {
+          "bytes": 25053,
+          "id": "log-35",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-bhipnijdghjoompcjcokbceh/evidence/S-bhipnijdghjoompcjcokbceh/1/agent-observation-35.json",
+          "sha256": "6ddd1a3f097e03522907a6f7498c30f51c8115b8dd1d2b496d8f76a23bbf2ca8"
+        }
+      ],
+      "id": "NR65-18",
+      "job": "S-bhipnijdghjoompcjcokbceh",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-024",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "The empty ZIP creates recognized known-empty history. The actual zero-departure list was opened at obs13 and history showed two normal records at obs16. Native UNKNOWN remained not_run through obs34, then failed at obs35 after a different normal pair's departed-six list. No legacy-unknown prerequisite was created.",
+      "requirement": "PRD-IMPORT-SNAPSHOT-UNKNOWN",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-024,kind=success,index=2]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [
+        {
+          "bytes": 27511,
+          "id": "log-6",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-lienlcpnibobddnaaekmmami/evidence/S-lienlcpnibobddnaaekmmami/1/agent-observation-6.json",
+          "sha256": "9956d75294321ca79a02ccb4fc5b61dae2c446a6254eaa62e06484cef9bda918"
+        },
+        {
+          "bytes": 20825,
+          "id": "log-7",
+          "kind": "execution_log",
+          "path": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-lienlcpnibobddnaaekmmami/evidence/S-lienlcpnibobddnaaekmmami/1/agent-observation-7.json",
+          "sha256": "56ce59a49f6b8147eecca0f50ba4c92f3fb7cade582705f12c8742fe001690f6"
+        }
+      ],
+      "id": "NR65-19",
+      "job": "S-lienlcpnibobddnaaekmmami",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-025",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "The actual imported 12-row result list has a visible enabled input[type=search] labeled 이름 또는 아이디 찾기. Native evaluation incorrectly demanded another screen's placeholder 아이디나 이름으로 찾기 and the list was then closed. All 15 saved observations have empty typed_input_checks, so the required query and narrowing were not exercised.",
+      "requirement": "PRD-RESULT-SEARCH",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-025,kind=success,index=0]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [],
+      "id": "NR65-20",
+      "job": "S-anpbnklkcflofcaenaoomigf",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-029",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "The latest free comparison, history controls and Pro feature explanation were not all observed.",
+      "requirement": "PRD-PAYWALL-BOUNDARY",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-029,kind=success,index=2]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [],
+      "id": "NR65-21",
+      "job": "S-ipidfpgaeilfhhpahjldfaco",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-030",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "The latest free comparison, history controls and Pro feature explanation were not all observed.",
+      "requirement": "PRD-PAYWALL-BOUNDARY",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-030,kind=success,index=2]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [],
+      "id": "NR65-22",
+      "job": "S-jcbmmflngenhiaonjnpggfdi",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-031",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "The latest free comparison, history controls and Pro feature explanation were not all observed.",
+      "requirement": "PRD-PAYWALL-BOUNDARY",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-031,kind=success,index=2]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    },
+    {
+      "evidence": [],
+      "id": "NR65-23",
+      "job": "S-cceilcdlaojmdnjfhjfhcpal",
+      "kind": "success",
+      "persona": "PER-PEEKLY-V2-032",
+      "queue": ".ux-loop/peekly-coverage32-20261114/stage-32",
+      "reason": "The latest free comparison, history controls and Pro feature explanation were not all observed.",
+      "requirement": "PRD-PAYWALL-BOUNDARY",
+      "source_ref": {
+        "bytes": 1105243,
+        "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+        "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+        "selector": "candidate.criteria[persona_id=PER-PEEKLY-V2-032,kind=success,index=2]",
+        "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+      }
+    }
+  ],
+  "schema_version": "peekly-remaining-baseline.v1",
+  "source_ref": {
+    "bytes": 1105243,
+    "commit": "65f52f78918d097c39ac8eb5ec49ed6daea537bc",
+    "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+    "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+  }
+}

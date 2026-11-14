@@ -1,0 +1,233 @@
+{
+  "automatic_verdict_overrides": false,
+  "coverage_target_met": null,
+  "created_at": "2026-11-14T22:15:04.469419+00:00",
+  "generated_files": {
+    "artifact-audit.json": "7483eca3a48afac5341a7db63e6d0ac93a37a1ed2bdc962e9ffd23db4951640d",
+    "comparison.md": "0cc6a18cb8196cbd932dd1b7881174e5a126a30c4e76564e4a1dacf25b21b4cc",
+    "not-run-23-baseline.json": "66823c35e27e6af1c5017c2ed89678c5b1e128bbb09c5ca838eea5dd0fe6fa0a",
+    "summary.json": "95c043fdd25492bc73772b26fd1c15e0bc9770c24f8caa6c810469db0341c9ac"
+  },
+  "limitations": [
+    "Byte/seal checks do not independently establish visual or semantic correctness.",
+    "All new counts are raw receipts pending manual review; no near-zero or product-success claim is made.",
+    "Uncertain, absent and N/A matches receive no executed-coverage credit.",
+    "Prior queue integrity is the launcher's read-only job/status/pending-operation snapshot.",
+    "Free routing and policy zero do not verify provider invoices; missing billed costs remain missing."
+  ],
+  "new_browser_calls": 0,
+  "new_model_calls": 0,
+  "postprocess_status": "raw_report_and_byte_audit_completed",
+  "product_target": {
+    "after": {
+      "build_sha256": "c8adccb882b4bba6592e11f3792b8779809f771e66ea169118b5db84a7100d17",
+      "checked_at": "2026-11-14T22:14:57.359835+00:00",
+      "entry_assets": [
+        "assets/archive-vendor-BATU2G-a.js",
+        "assets/framework-DJiRVR1m.js",
+        "assets/icons-D9ychLUQ.js",
+        "assets/index-BCjS_bZI.js",
+        "assets/index-nL-lPl6d.css"
+      ],
+      "files": {
+        "assets/archive-vendor-BATU2G-a.js": {
+          "bytes": 15493,
+          "sha256": "fcb29b367e242d3606b20aefdba8a1b2ef93ea153f3b241727ad72d6dddcc45d"
+        },
+        "assets/framework-DJiRVR1m.js": {
+          "bytes": 223223,
+          "sha256": "80a07b38c101af898203676f203afe3259a2df18ef03566b52005a51c609539f"
+        },
+        "assets/icons-D9ychLUQ.js": {
+          "bytes": 18013,
+          "sha256": "445ec2fc23b757522a47a41502c79ce4d2f6b040b61525e6a54bf78799b1a55b"
+        },
+        "assets/index-BCjS_bZI.js": {
+          "bytes": 277387,
+          "sha256": "1d71b85b39a82283e909ba6c08b4333d6cdd9501051920717a9347501e2dafdf"
+        },
+        "assets/index-nL-lPl6d.css": {
+          "bytes": 52134,
+          "sha256": "c9e7d114c80a6d15588fe7f0c733bb10c6c2e5a444aaba12ca9d61353a3e6e20"
+        },
+        "index.html": {
+          "bytes": 739,
+          "sha256": "848b334a6affa5c6a578911819aaf127da34bc2e6ae2f04899022872b7d0f6f5"
+        }
+      },
+      "phase": "after",
+      "schema_version": "peekly-served-target-check.v1",
+      "source_commit": "51110f4c569673faa8d242d5b85c4b47afb54cbb",
+      "source_tree_sha256": "fa8c54630cfdef4260230d7b41a6a8a54405a97079961f66d2d43b47bd70c99e",
+      "target_url": "http://127.0.0.1:4175/"
+    },
+    "before": {
+      "build_sha256": "c8adccb882b4bba6592e11f3792b8779809f771e66ea169118b5db84a7100d17",
+      "checked_at": "2026-11-14T20:54:59.700186+00:00",
+      "entry_assets": [
+        "assets/archive-vendor-BATU2G-a.js",
+        "assets/framework-DJiRVR1m.js",
+        "assets/icons-D9ychLUQ.js",
+        "assets/index-BCjS_bZI.js",
+        "assets/index-nL-lPl6d.css"
+      ],
+      "files": {
+        "assets/archive-vendor-BATU2G-a.js": {
+          "bytes": 15493,
+          "sha256": "fcb29b367e242d3606b20aefdba8a1b2ef93ea153f3b241727ad72d6dddcc45d"
+        },
+        "assets/framework-DJiRVR1m.js": {
+          "bytes": 223223,
+          "sha256": "80a07b38c101af898203676f203afe3259a2df18ef03566b52005a51c609539f"
+        },
+        "assets/icons-D9ychLUQ.js": {
+          "bytes": 18013,
+          "sha256": "445ec2fc23b757522a47a41502c79ce4d2f6b040b61525e6a54bf78799b1a55b"
+        },
+        "assets/index-BCjS_bZI.js": {
+          "bytes": 277387,
+          "sha256": "1d71b85b39a82283e909ba6c08b4333d6cdd9501051920717a9347501e2dafdf"
+        },
+        "assets/index-nL-lPl6d.css": {
+          "bytes": 52134,
+          "sha256": "c9e7d114c80a6d15588fe7f0c733bb10c6c2e5a444aaba12ca9d61353a3e6e20"
+        },
+        "index.html": {
+          "bytes": 739,
+          "sha256": "848b334a6affa5c6a578911819aaf127da34bc2e6ae2f04899022872b7d0f6f5"
+        }
+      },
+      "phase": "before",
+      "schema_version": "peekly-served-target-check.v1",
+      "source_commit": "51110f4c569673faa8d242d5b85c4b47afb54cbb",
+      "source_tree_sha256": "fa8c54630cfdef4260230d7b41a6a8a54405a97079961f66d2d43b47bd70c99e",
+      "target_url": "http://127.0.0.1:4175/"
+    },
+    "frozen": {
+      "build_provenance_sha256": "5cde3d5a03ef0542ff29416ec559cbe7bf6d8aed8bd3d42a5c07f9bd219a77db",
+      "build_sha256": "c8adccb882b4bba6592e11f3792b8779809f771e66ea169118b5db84a7100d17",
+      "dist_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-pinned-product-51110f4-20261115/source/dist",
+      "entry_assets": [
+        "assets/archive-vendor-BATU2G-a.js",
+        "assets/framework-DJiRVR1m.js",
+        "assets/icons-D9ychLUQ.js",
+        "assets/index-BCjS_bZI.js",
+        "assets/index-nL-lPl6d.css"
+      ],
+      "files": {
+        "assets/DashboardTab-CMYoce0B.js": {
+          "bytes": 9187,
+          "sha256": "6d1173c9b26ae0fc14463158cd28ff8b951bf6ca5ed40ef187d00c10ee7e0306"
+        },
+        "assets/RelationshipHistorySheet-CU7VMEaY.js": {
+          "bytes": 15938,
+          "sha256": "9aca4fe357f6fac649574e50a25385bf1de6020b5cf6eb5aa77f8fcac9b42688"
+        },
+        "assets/RelationshipHistorySheet-ZKRDndQm.css": {
+          "bytes": 4057,
+          "sha256": "2c645cec156b4a6e6743ab662860f1690f8bb7fc9fb49d999e11d55b33750940"
+        },
+        "assets/archive-vendor-BATU2G-a.js": {
+          "bytes": 15493,
+          "sha256": "fcb29b367e242d3606b20aefdba8a1b2ef93ea153f3b241727ad72d6dddcc45d"
+        },
+        "assets/brand-mark-YuYvTQpp.png": {
+          "bytes": 24316,
+          "sha256": "dc0587362993a1d57576b35c90aaf2627cfb4b0d499ff5b082330124e57d75a0"
+        },
+        "assets/framework-DJiRVR1m.js": {
+          "bytes": 223223,
+          "sha256": "80a07b38c101af898203676f203afe3259a2df18ef03566b52005a51c609539f"
+        },
+        "assets/icons-D9ychLUQ.js": {
+          "bytes": 18013,
+          "sha256": "445ec2fc23b757522a47a41502c79ce4d2f6b040b61525e6a54bf78799b1a55b"
+        },
+        "assets/importWorker-CtVZDxYW.js": {
+          "bytes": 24260,
+          "sha256": "8697d1db1b3112f59347c805bb028e129b830c8ac4d33df1f8d740fe9b7e5f5c"
+        },
+        "assets/index-BCjS_bZI.js": {
+          "bytes": 277387,
+          "sha256": "1d71b85b39a82283e909ba6c08b4333d6cdd9501051920717a9347501e2dafdf"
+        },
+        "assets/index-nL-lPl6d.css": {
+          "bytes": 52134,
+          "sha256": "c9e7d114c80a6d15588fe7f0c733bb10c6c2e5a444aaba12ca9d61353a3e6e20"
+        },
+        "assets/sampleData-D7y7KoQc.js": {
+          "bytes": 5055,
+          "sha256": "9e8dc5d1c2428616fa75c312c90774f6ba9302c53e58d25d6dc94c6abc91c39f"
+        },
+        "index.html": {
+          "bytes": 739,
+          "sha256": "848b334a6affa5c6a578911819aaf127da34bc2e6ae2f04899022872b7d0f6f5"
+        },
+        "ota-ruleset.json": {
+          "bytes": 2128,
+          "sha256": "204c34fc0415222fbe41ae4fca0856ec18e0b16498bb55cc5e104c916387384b"
+        }
+      },
+      "generated_build_metadata": {
+        "tsconfig.tsbuildinfo": "8627799cb0b7efe956563ee0a498c21099667c1c2c643a3d167bc15f9f0d6449"
+      },
+      "historical_comparison": {
+        "full_historical_dist_byte_identity": "not_established",
+        "historical_main_asset_hash_available": false,
+        "index_bytes_match": true,
+        "source_commit_matches": true
+      },
+      "main_asset": {
+        "bytes": 277387,
+        "path": "assets/index-BCjS_bZI.js",
+        "sha256": "1d71b85b39a82283e909ba6c08b4333d6cdd9501051920717a9347501e2dafdf"
+      },
+      "prd_sha256": "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b",
+      "source_commit": "51110f4c569673faa8d242d5b85c4b47afb54cbb",
+      "source_file_count": 319,
+      "source_manifest_sha256": "9ce11a5c0486813db91072d27d540f60d386ceb24501cfd1bca08f38953dff8b",
+      "source_root": "/Volumes/SanDisk2TB/m4mini/CodeProjects/Remorsearch_UX_QA_Skill/.worktrees/peekly-ux-findings-20261113/.worktrees/peekly-verdict-quality-20261113/.ux-loop/peekly-pinned-product-51110f4-20261115/source",
+      "source_tree_sha256": "fa8c54630cfdef4260230d7b41a6a8a54405a97079961f66d2d43b47bd70c99e",
+      "target_url": "http://127.0.0.1:4175/"
+    },
+    "served_bytes_verified_before_and_after": true
+  },
+  "publication_status": "Recorded separately in the ignored finalizer event ledger.",
+  "queue_counts": {
+    "blocked": 0,
+    "cancelled": 0,
+    "complete": 28,
+    "queued": 0,
+    "running": 0,
+    "uncertain": 4
+  },
+  "queue_writes": 0,
+  "raw_baseline_23_mapping": {
+    "failed": 0,
+    "not_run": 0,
+    "passed": 20,
+    "unassessed": 3
+  },
+  "raw_candidate": {
+    "assessed_sessions": 27,
+    "criteria_all": {
+      "failed": 6,
+      "not_applicable": 21,
+      "not_run": 0,
+      "passed": 88
+    }
+  },
+  "run_root": ".ux-loop/peekly-completion32-pinned-20261115",
+  "run_state": "incomplete_preserved",
+  "schema_version": "peekly-completion-automated-outcome.v1",
+  "semantic_review_status": "pending_manual_review",
+  "source_hashes": {
+    "envelope": "660406bc74f05921184be02549ad9ee39a456c33e820283ead5b5476a2d76213",
+    "ledger": "15ed29997181435272f3217ebbd19fb3969fa3bec0b7c1408500c6ce9cfca775",
+    "provenance": "c530faba1c2d91190b068308cc71adaa37edafa10e77726a71c7f1dabffb4468",
+    "report": "14838cef25d4e90b4ea84a78392e409e2d5b4c13b8fb2fa5b05c22b4ffa96a7e",
+    "status": "1494cada48f976b0fd15eebc3347f045a510e392bfa0a049f5a50d33aaf45f95",
+    "summary": "90272fb8b4263426c91c4e156f42813ad2a13d9ed4555f5d3a91139da619b2f5"
+  },
+  "uncertain_attempts_excluded": true
+}

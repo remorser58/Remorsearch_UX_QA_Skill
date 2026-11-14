@@ -1,0 +1,384 @@
+{
+  "artifact_bytes": 22414369,
+  "artifact_kinds": {
+    "execution_log": 419,
+    "screenshot": 425
+  },
+  "assessed_sessions": 27,
+  "audit_passed": true,
+  "audited_at": "2026-11-14T22:15:04.450996+00:00",
+  "checkpoint_seals_checked": 32,
+  "completed_first_judgment_seals_checked": 27,
+  "distinct_artifact_files": 844,
+  "excluded_attempts": [
+    {
+      "current_valid": true,
+      "job_id": "S-blhfedhpoafgojkcabihgadl",
+      "operational_completed": null,
+      "persona_id": "PER-PEEKLY-V2-011",
+      "problem": "host_execution_failed:legacy_seed_task_not_authorized",
+      "queue_status": "uncertain"
+    },
+    {
+      "current_valid": true,
+      "job_id": "S-ndgicogijfhmlolgkninpofi",
+      "operational_completed": null,
+      "persona_id": "PER-PEEKLY-V2-014",
+      "problem": "host_execution_failed:browser_action_failed:cdp_timeout:DOM.getDocument",
+      "queue_status": "uncertain"
+    },
+    {
+      "current_valid": true,
+      "job_id": "S-ocglonedchibimababmanahg",
+      "operational_completed": null,
+      "persona_id": "PER-PEEKLY-V2-025",
+      "problem": "model_delivery_uncertain",
+      "queue_status": "uncertain"
+    },
+    {
+      "current_valid": true,
+      "job_id": "S-cmkbfkbjcjonakfbhgkpeaod",
+      "operational_completed": null,
+      "persona_id": "PER-PEEKLY-V2-029",
+      "problem": "model_delivery_uncertain",
+      "queue_status": "uncertain"
+    },
+    {
+      "current_valid": true,
+      "job_id": "S-dhjdnlebpigdchpmkmnblafj",
+      "operational_completed": false,
+      "persona_id": "PER-PEEKLY-V2-030",
+      "problem": null,
+      "queue_status": "complete"
+    }
+  ],
+  "jobs": [
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "2354c15055c21e23ca1c868dd1586096234ca73aa05eb4bd0d676a9f7bb3bda2",
+      "checkpoint_sha256": "67b330a5d3d9c086fb8ad458b20755ca65b38e4c3947b8ef050588f4d66bc4cf",
+      "first_judgment_sha256": "4fc03eafbdaaf196c58fd9a4687a03bf455ce7aa7e108999ceba44ea75fda869",
+      "job_id": "S-ljlmeakahgnhmnnffbajmljk",
+      "persona_id": "PER-PEEKLY-V2-001",
+      "registered_artifacts": 6,
+      "result_sha256": "f64e43772606974fa898ec26885c4ab6738f3f04c82586da7cb897a7af90099c"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "61252674ba39252ffc90b779b2d5e23980ec2ca2d95b718d57ebf09b59c83dd1",
+      "checkpoint_sha256": "609b98609c8934b3a7f104f171a6c4fed272fa86eaa4170b23b1df738b829eca",
+      "first_judgment_sha256": "4f0eb7460f1e7c70382f9a33cd54249011dbf7317700f8da3fae17866fb2044f",
+      "job_id": "S-ljffmnkkgdhopplfbhhegkma",
+      "persona_id": "PER-PEEKLY-V2-002",
+      "registered_artifacts": 6,
+      "result_sha256": "8ed0f9b6a989ca0a26202a8bfa398703c44f28a5f900074a01a5c77d34913de4"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "6af348b7247eb901b06dd6baee29075c43ae7d8d3eb8f953699305ccc98577b4",
+      "checkpoint_sha256": "f6d53a285510cc0a9a4ff1210a62f2ffc33b0850eb2935591e196c50d516773b",
+      "first_judgment_sha256": "1ec578a5161eb43818248ecc0901ee5a3332b3147e73d82b49484f8d58bff7fe",
+      "job_id": "S-gimbpjkdealchomaigbnfkap",
+      "persona_id": "PER-PEEKLY-V2-003",
+      "registered_artifacts": 6,
+      "result_sha256": "6f9f22da65d8dacb6c2468028bfb8a73d369e4a859747a4b2dac831f182a9397"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "e58b8060a4658df6d9d7a251a8631d077df9bdbcf2ac4fcd05a55abd423b5036",
+      "checkpoint_sha256": "754b4480cfd146eb4481251522887955a95558d4f650b31c37df400e47995328",
+      "first_judgment_sha256": "58434a5e78dd7dd53bf5f128b7cc5a2dd7387fd689d9be37753ed46bbfa346bd",
+      "job_id": "S-gppbnocdodpcpfackcopdgal",
+      "persona_id": "PER-PEEKLY-V2-004",
+      "registered_artifacts": 6,
+      "result_sha256": "d757666a4a56bd0a7d1470afc89a60f882d8c78a70146b5e20cd76522699a563"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "d9decd5dd5b39027648831177cedb6393a76550553f657e78479b1568da3af70",
+      "checkpoint_sha256": "bfbbaf9aadd0a37784031bb6229ff9df6ed8fbcf9f2ed072c355e942c1ba596e",
+      "first_judgment_sha256": "76d922547333651b14a3ce57a9118999e15fd9fff2d8444b241dd8e1263cb3be",
+      "job_id": "S-ahigmmpldbffjlajeimgmmhg",
+      "persona_id": "PER-PEEKLY-V2-005",
+      "registered_artifacts": 16,
+      "result_sha256": "440cff05513438b3d97c44d80abea13885a21a1dd801987d888cda61986e6178"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "da22439d3de5d004f4a13aea06fb081cae71d2572b773897324b698055bade3e",
+      "checkpoint_sha256": "3689423a82086d355e2444985d47b405bbb6aa34bb9961217ef0b306f286c8f6",
+      "first_judgment_sha256": "a60313412c6cbf3736549400824ee5d0e7a60e92c115e5313c8f7f3a185edf84",
+      "job_id": "S-eaimebeeijnlneijkfognapa",
+      "persona_id": "PER-PEEKLY-V2-006",
+      "registered_artifacts": 14,
+      "result_sha256": "e9861f5e2024de88aa0c1174c9b801351a88568c8df0178fa5d6c8266d12ee69"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "dab1121ec90337a4f16d448d2de4f8d8d9e5e47b33767fcab3fb93333ce6a308",
+      "checkpoint_sha256": "ec068a074f0ff2c78703d4dbfd9f52dcd10376253843c3f10b1235f7d5a65184",
+      "first_judgment_sha256": "dc0fdfdab93baab3e489f7b03a1ad339cac48da77a3cc7c6e674a0b04a7b4bdd",
+      "job_id": "S-dhklecmcppmmgkgiknilflkl",
+      "persona_id": "PER-PEEKLY-V2-007",
+      "registered_artifacts": 14,
+      "result_sha256": "21ba5c5db0132684aed6fe92add0e7b6bc80101d8276b56fb1fe810587dbcc81"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "660d957dedd901a572edc46f4f0f6881de8cc8c3f31bdd7a75bcf591d94f540a",
+      "checkpoint_sha256": "28f15e07830ea29b3b4d534bd051177a3f3cb97343e98dd65b9cb801b0bc47eb",
+      "first_judgment_sha256": "b57605f043bb8f3f869c8d936c1c52f3ac6beb5390e61434fb5d8d870c024f5e",
+      "job_id": "S-bjhjihfccjkbmdiedidhoncf",
+      "persona_id": "PER-PEEKLY-V2-008",
+      "registered_artifacts": 14,
+      "result_sha256": "ed234648e280228f50160325a10f3c2b306f1d2c42befcdd7542c3db7f29c13a"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "5e583f2e43384c67c5f82abc85963c6e9eb458670cc060f51db719ee9735676e",
+      "checkpoint_sha256": "884adfa605038a68532ec4b3f9e40291f1daee618cc41de39a23ea720e15161c",
+      "first_judgment_sha256": "58eeebc57966a10f4b6210ea1abbacd798b048da4c2eb7602bc2c0f431200e6e",
+      "job_id": "S-pblkjnfjnefpmkcnmhghnikb",
+      "persona_id": "PER-PEEKLY-V2-009",
+      "registered_artifacts": 32,
+      "result_sha256": "f6e58ec63e724e54d66357f296cdf6d634e6bfd4757baa36771e295b8bb5bf63"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "4645aa3addc35f458ed390f70d8df34b3b7c69f40d8a470788d054890bebe36e",
+      "checkpoint_sha256": "2666124d2ce1083ba33b87c882339ef90f939ef8f9c6460ca7dbbb95962a3a67",
+      "first_judgment_sha256": "dc6e0ffa5e606640f0dd8e53bd4c98c64a579b162ad750dcff4f7430341c3b41",
+      "job_id": "S-cijopeodbceldieicjneaaji",
+      "persona_id": "PER-PEEKLY-V2-010",
+      "registered_artifacts": 30,
+      "result_sha256": "778efeea04a12b711aa170048adc3216281b497189626fc2125c4df077d136cf"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "75086052eb9e5573e02e9ddc686cb27e8390f2d2403df76e87fbdeabb214e070",
+      "checkpoint_sha256": "b8f4eef09d02082e0d02abcd2b2cf0bb6e72184675ac80fa5dc08cc8b69fcb63",
+      "first_judgment_sha256": "84de8a43d7711e7ffec308b13097def16d26b271d0bc858f64e86516556b74f0",
+      "job_id": "S-galdkhommdhbgkalkcfmmefk",
+      "persona_id": "PER-PEEKLY-V2-012",
+      "registered_artifacts": 34,
+      "result_sha256": "b19e9aa546e32fd90f85c520f5122864f23529af418081de50ff9e056df15101"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "075b024da21bb90b8aec8a223cc8b14dbcc5ecc8aa629bb3db96d3a1baf91ce8",
+      "checkpoint_sha256": "5096dcc677905127e85b4eb76d37ce0d0e71384211db2b2d296635a6f8d13976",
+      "first_judgment_sha256": "1fddc76aafaf041c78a945412b8990853f174b1dad1cd26832f43ba31679f673",
+      "job_id": "S-eghkdbdagmmiacobmdheghfg",
+      "persona_id": "PER-PEEKLY-V2-013",
+      "registered_artifacts": 28,
+      "result_sha256": "2d92908c7b17f4d1dbfed676265d444d58295c9dd9f7f2f7fe60c8946b7d9a0f"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "7eec182b57224185bd72679c9af8e5561da17b818085a676b6363dfc86663c3f",
+      "checkpoint_sha256": "bd80b0ec1ccbc32ad526560f3fa96221236d5d635e708950db970b921f9af4c6",
+      "first_judgment_sha256": "45a6a9b215d9c223a45eb2c9daec47431a98c94402f3dce4db38cf753b85b69b",
+      "job_id": "S-jjlepgjfpnolfggebebihpij",
+      "persona_id": "PER-PEEKLY-V2-015",
+      "registered_artifacts": 30,
+      "result_sha256": "b2c78a26376232e7d1e26c3c325ad2ae961204b69d3b05074579fd0daed9feed"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "ac01885bca03ecf6ce8b930b6c1dfc40bfbff6165aab6cd57747531644ac7e1a",
+      "checkpoint_sha256": "e0062d181c302429159d006c51ce8c7eff53d125e8eddc877c965914b263dea8",
+      "first_judgment_sha256": "1b87837281990cb79ef822f456baaa242cafd2a22c1424893a33c80a7526b82e",
+      "job_id": "S-ekcpeodledhmeheieecnhdee",
+      "persona_id": "PER-PEEKLY-V2-016",
+      "registered_artifacts": 28,
+      "result_sha256": "22a301ce66fbb807c25688ee6c7427a624ceb8ceb94b636c226b67a227beb39b"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "c99792f44f568ff849b7770e5e52c3f9596e2486da9cb3728bcae9c0d4e89691",
+      "checkpoint_sha256": "3beac525b02142bf9902b0188d9a7621896fd69b9644d22ea50bb4eb83af66ee",
+      "first_judgment_sha256": "75ad282ff37441475ff5b6f9bc18c7dbb224bac1e85efcb5524f90934d4f69e4",
+      "job_id": "S-aiidkoilmlhfjinghfbgbnjf",
+      "persona_id": "PER-PEEKLY-V2-017",
+      "registered_artifacts": 34,
+      "result_sha256": "355660544f87364b6c3f96d57c0ac8150a6ab0692b6d1d7d6dbf23ea3dc2cc8b"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "3e214336c8982d1af8151a93f72092a83b0c129fb656aefd56d49af7baef4d39",
+      "checkpoint_sha256": "b9ab869b84bbefb167cd78f0ce10dfd85b83a1c2e60b5f3e5d19c2fb43ef9211",
+      "first_judgment_sha256": "52d79b85c3817ef3ef3a28fe3834dcc5e361f06378ad2c072521907a3023fc3b",
+      "job_id": "S-eijmndepmkoldnjffcibcchh",
+      "persona_id": "PER-PEEKLY-V2-018",
+      "registered_artifacts": 32,
+      "result_sha256": "f9674665f4fdbb0b3e1f76a196aba820ba906eae580a42eb58a459dec23558e6"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "a64e29b7b983bf868b2c8b46bf1a51467481d2a0bd2d4053b42c6e94b668c17b",
+      "checkpoint_sha256": "e43c0f9783986282d59ba49eb59d7ae9341a3e279d1d2d368d4d0c8c926e0617",
+      "first_judgment_sha256": "3788f161cda7b9b02c356b8c8e4c880b455384b1195d268d01bb19bde5aab4c0",
+      "job_id": "S-accbhomandanakneabadnkem",
+      "persona_id": "PER-PEEKLY-V2-019",
+      "registered_artifacts": 32,
+      "result_sha256": "48c41d21ab0b7599aece798a7a928a3557633d55db8369495cf57e2ebf06509e"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "9972e6ee0f8b6821000f9abd2f3d3c9e77ee440233abf02316baa58fff3c8155",
+      "checkpoint_sha256": "dc5b72c738b7ae33d678e32171294c46700ff04dc61763dd53dfed5a171a3430",
+      "first_judgment_sha256": "b90d98f610652286f12f862881b15df35467e1d598256c2d174ef64f5152263c",
+      "job_id": "S-flmilpmkbnekbambkncmlajo",
+      "persona_id": "PER-PEEKLY-V2-020",
+      "registered_artifacts": 32,
+      "result_sha256": "3bd6ab6f5a3d798838a65a79e8a8a8d9d092d04f3714f3caca7a50fa54bf52d4"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "ba37afdcaa42e5f6155228c6c536c7ff485c1c7855cb0b0858b427ee56be0204",
+      "checkpoint_sha256": "c0c3ab4d1746f12880f82db3334c1617146d2f3f2ce2671ba391a13811c6c851",
+      "first_judgment_sha256": "0b001675964faedcaf32a7b8b719aac9c95bd98c245ac8be7a01381f19094500",
+      "job_id": "S-piofceocafbdlopejgfplabf",
+      "persona_id": "PER-PEEKLY-V2-021",
+      "registered_artifacts": 28,
+      "result_sha256": "0a4b3e6bb5d849c0aca9056463a6c4c5c9028411f07c52268466b8ababd464ae"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "c35b00549897fef0f57cd7c5c021680e73dc4a1d34eac2254e08f5ffb0693067",
+      "checkpoint_sha256": "2e5860762bbb7224c6e940509310061686f730b67d52fba343a3aebb171c31bd",
+      "first_judgment_sha256": "b498c5975ba4ec036ca3d396c475f1a4d9e066d3194bc403b01c75d9658d439e",
+      "job_id": "S-amagkkfaamjiaedfeobnkibo",
+      "persona_id": "PER-PEEKLY-V2-022",
+      "registered_artifacts": 28,
+      "result_sha256": "9852c5a4d4d56d1162efd121f3e61fc35c3501162c73b9ba4f47b6af6815d4b7"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "07929ca9ad179f600c12c1fff9e73c8c9c81f1ea4467b0a8e7e16d83b45dd730",
+      "checkpoint_sha256": "4a50978fe7bdb78871ef1ecb94ea07c5c295e33ec1a3f632c0e8e9e6ea5c1007",
+      "first_judgment_sha256": "5064cebe87ac4b999ae77bd88fa679ec83c3da22d68b1bca9fecf6edd7d54383",
+      "job_id": "S-cknakkjhlkhdkmajbbhgconh",
+      "persona_id": "PER-PEEKLY-V2-023",
+      "registered_artifacts": 28,
+      "result_sha256": "b2a28e014af1cc091a7027e3cfece7e9e5bbd348ba30f0d774ecfa9f68f82161"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "802e7f6925961dc042ff981fa7695e60cd16a9a614d889e508e3022334133ded",
+      "checkpoint_sha256": "306691972b5d0be47a7bbb3184ae80dfc44d37271ead384e7be68b5917e818e8",
+      "first_judgment_sha256": "014e1edcd6569e01d65fc07d3f2218185ce449eec299be47c67777dc8e8b308c",
+      "job_id": "S-beikkhpkhpdnflofalopgodk",
+      "persona_id": "PER-PEEKLY-V2-024",
+      "registered_artifacts": 30,
+      "result_sha256": "b3360d3f353f8bac9f53bade1de8902fa77e21ec358ff67e298acec2f7e40348"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "ccbe452a59772498f954f4064d435c2d98d92984e880ae1bf05d5464d8e2577c",
+      "checkpoint_sha256": "c0679f6e10677006326d2b5b97ba3401c10ea77e9bae50596e46d3e93155a172",
+      "first_judgment_sha256": "50ec25b1c4c57e4f86af4eb4aaa0e12b1b7dbc26353ddbf9e92534b1c44632a2",
+      "job_id": "S-fcdfflmjpojkfdegbldhmpac",
+      "persona_id": "PER-PEEKLY-V2-026",
+      "registered_artifacts": 32,
+      "result_sha256": "f0d8543cf576116d4229478b04d8e964591cc3b28d0cc56b18482efdca103392"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "bcd0eeb842768e8777b7db967f1c8c8881358e7b7232a27aa5435197cbc95b12",
+      "checkpoint_sha256": "7be24a554265136a31d20f751496cfb8ddda34649e6c4dcbd01b4aa2199e9cee",
+      "first_judgment_sha256": "93f2f5db29a539165713ccfd3fc82fa111ab26f2066e55ede75e497fb1849735",
+      "job_id": "S-noaaccdboboeobgidckidpei",
+      "persona_id": "PER-PEEKLY-V2-027",
+      "registered_artifacts": 30,
+      "result_sha256": "8c37f2dbc59ee7157d2ebc46e2295671b9890813bf0daef08339f975d7a250fb"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "2f0a36fffa23337f8332b78ab95727715d1e02745255f42bcb61ffc80d2dc130",
+      "checkpoint_sha256": "fad2379bc3998e84eebe1c92aaa4bd6b1b781b3ab5421e5e56149c24e1b3ac47",
+      "first_judgment_sha256": "a3bce5637037015adc5184d02f704cb4259f21d5610fc25d55aa1a7b41e57f05",
+      "job_id": "S-glflnkckgjoefhkcefjfjhih",
+      "persona_id": "PER-PEEKLY-V2-028",
+      "registered_artifacts": 34,
+      "result_sha256": "78cfaa5eb794778c35600c84aa69ca630faec4346b4e0f5effb4459763de8584"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "b2826562d4c244045dd8d180c8f1758f254a454f6022c638fa241af42463c0b9",
+      "checkpoint_sha256": "64553766b2a4d73e22e935c83feaf2021999f1f7926bd10b1275e8c817c93f07",
+      "first_judgment_sha256": "47eab5a591555628ac16a14455533f36c584182f9977d7374b7873be47c74908",
+      "job_id": "S-gmlckefolmkmffoakngahepj",
+      "persona_id": "PER-PEEKLY-V2-031",
+      "registered_artifacts": 120,
+      "result_sha256": "a7418579b99d1fa97b8826d96c15c95da9a481126ed6e21de304ec98658914eb"
+    },
+    {
+      "all_registered_artifacts_checked": true,
+      "artifact_manifest_sha256": "d09696d7c0f2b61ac3c5834a47884bc381647d9864ff569cb115c4f97d7025b3",
+      "checkpoint_sha256": "682d7e4f47f27079ac8c1ee4b781dd01a3596df776cf94f633794c96a02cc463",
+      "first_judgment_sha256": "fb4e3f148b7cbeb0b7606b529d8d34858916fbee7363b679a53f7e9ccfb4ab52",
+      "job_id": "S-bpnodpobeeifandgemhfnlae",
+      "persona_id": "PER-PEEKLY-V2-032",
+      "registered_artifacts": 120,
+      "result_sha256": "ec579a986d96b3b361b8269775e7c5ab8e97616629d4abae6453c4bc82a5933f"
+    }
+  ],
+  "limitations": [
+    "Hash equality proves stored bytes, not independent visual correctness.",
+    "Excluded attempts are not credited as evaluated sessions or criteria."
+  ],
+  "mismatches": 0,
+  "new_browser_calls": 0,
+  "new_model_calls": 0,
+  "prior_queues_unchanged": true,
+  "queue_counts": {
+    "complete": 28,
+    "uncertain": 4
+  },
+  "queue_writes": 0,
+  "registered_artifact_references": 844,
+  "result_seals_checked": 28,
+  "schema_version": "peekly-artifact-byte-audit.v1",
+  "scope": "All registered artifacts of assessed completed receipts, plus all stored result/checkpoint seals.",
+  "source_files_unchanged": true,
+  "sources": [
+    {
+      "path": ".ux-loop/peekly-completion32-pinned-20261115/stage-32/queue.sqlite",
+      "sha256": "8274a20c7aae52e1720885facb17e95d40e22317d32bc2e2c670b2e5cf06e8e3"
+    },
+    {
+      "path": ".ux-loop/peekly-completion32-pinned-20261115/stage-32/plan.json",
+      "sha256": "660406bc74f05921184be02549ad9ee39a456c33e820283ead5b5476a2d76213"
+    },
+    {
+      "path": ".ux-loop/peekly-completion32-pinned-20261115/stage-32/report.json",
+      "sha256": "14838cef25d4e90b4ea84a78392e409e2d5b4c13b8fb2fa5b05c22b4ffa96a7e"
+    },
+    {
+      "path": ".ux-loop/peekly-completion32-pinned-20261115/stage-32/stage-summary.json",
+      "sha256": "90272fb8b4263426c91c4e156f42813ad2a13d9ed4555f5d3a91139da619b2f5"
+    },
+    {
+      "path": ".ux-loop/peekly-completion32-pinned-20261115/stage-32/model-router-ledger.json",
+      "sha256": "15ed29997181435272f3217ebbd19fb3969fa3bec0b7c1408500c6ce9cfca775"
+    },
+    {
+      "path": ".ux-loop/peekly-completion32-pinned-20261115/run-status.json",
+      "sha256": "1494cada48f976b0fd15eebc3347f045a510e392bfa0a049f5a50d33aaf45f95"
+    },
+    {
+      "path": ".ux-loop/peekly-completion32-pinned-20261115/input-provenance.json",
+      "sha256": "c530faba1c2d91190b068308cc71adaa37edafa10e77726a71c7f1dabffb4468"
+    },
+    {
+      "path": "docs/validation/peekly-coverage-20261114/audit_final_artifacts.py",
+      "sha256": "78a7bce46cd9b6b2587e8df1446e7054397a31c11395f52baed3cdd4c2d2e310"
+    },
+    {
+      "path": ".ux-loop/peekly-completion32-pinned-20261115/stage-32/queue.sqlite-wal",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "stage": ".ux-loop/peekly-completion32-pinned-20261115/stage-32"
+}
