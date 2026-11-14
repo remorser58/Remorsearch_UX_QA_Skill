@@ -20,7 +20,18 @@ The user authorizes implementation, regression, owned isolated test contexts, sm
 - The old uncertain 009/010/012 remain preserved. The new requested cohort uses new jobs and call IDs.
 - Original 46 weighted mapping at 65f: 20 passed / 8 failed / 18 not_run; 32 unique mappings: 13 / 6 / 13.
 
-## Current phase — R2 preserved after HTTP 502; independent R3 preparation
+## Current phase — R3 preserved; lifecycle fixes and independent R4 preparation
+
+- R3 launched `2026-11-14T18:24:30.812452+00:00` (03:24 Asia/Seoul), detached PID 32659, source `054342d099648104fd23aae29953f9a6399f3e73` committed/pushed with exact remote SHA and clean tree verified. Root `.ux-loop/peekly-completion-smoke-r3-20261115`; jobs `S-obfofmpdpeibgbipcfgdlcoa` (023) and `S-nebbkpjgckcjdeeachjcglag` (030).
+- R3 ended at 03:26 Asia/Seoul with `stopped_preserved` / `browser_shutdown_unconfirmed`: both first tool operations timed out, both jobs uncertain, zero admitted observations and no completed receipt. The two model replies were received; model uncertainty and tool uncertainty are distinct. Six success plus two recovery criteria are unassessed, not not_run/product failures; no old-23 improvement credit.
+- User restored the Mac tunnel at 18:38Z. Source and remote `054342d099648104fd23aae29953f9a6399f3e73` matched. Independent R3 audit verified both checkpoint seals, plan seal, four request-payload seals, two model-reply seals and all 34 prior queues unchanged. See `smoke-r3-diagnostics.json` / `.md`.
+- A surviving R3-owned headless Chrome PID 33010 was reverified against its exact 030 profile and terminated with SIGTERM only. Post-cleanup independent process inventory found no matching R3 profile. This postmortem cleanup does not rewrite the historical failed-shutdown receipt or uncertain operations.
+- Confirmed runner defects: fixed 25-second startup timeout, unbounded CDP discovery/WebSocket waits, reuse of a timed-out response channel, teardown without waiting for process exit, premature loss of ownership, incorrect signal-exit handling, and failure reports omitted after shutdown failure. Implementing bounded startup/teardown, complete asynchronous fixture validation, poisoned-channel quarantine, owned process-group cleanup with observed exit, and durable failure diagnostics. Product/fixture/library bytes remain pinned.
+- NEW independent R4 smoke is predeclared as 024 + 032 in `.ux-loop/peekly-completion-smoke-r4-20261115`. Neither was used in completion smoke R1/R2/R3. Exact same ordered success/recovery requirements and PRD context as 021/029; each old result is P/P/NR, preserving the six-success/two-not-run baseline. No old uncertain request is resumed or resent.
+- No R4 or 32-person cohort has started at this checkpoint. Finish regression and source commit, run the new strict two-session gate, then freeze identical inputs for the new 32 cohort. No failed smoke can authorize expansion.
+- Lifecycle repair is now complete and independently reviewed: final Python regression 88/88 and Node suite 61/61 passed, zero failures/skips. A separate actual owned-browser probe made zero model calls, admitted one observation and confirmed the entire owned process group closed (fallback used), with unchanged input freeze and six served files. Offline R4 preflight passed with 35 old queues / 333 excluded jobs / 43 old uncertain rows. Details and hashes: `lifecycle-validation.md`.
+
+### R2 terminal audit and predeclared R3 selection
 
 - R2 ended `2026-11-14T18:14:22.256268+00:00`: 021 complete, 029 uncertain at model turn 52 after HTTP 502. The exact call `op-f52816c286aa230cea3c061f5e4eee78205f3be0` has one attempt, `can_retry=false`, and remains quarantined. 72 actual attempts: 71 replies and one uncertainty; zero resends, zero known-quality retries, only the authorized TOKENMAXX route. Provider cost fields were missing, so policy cost zero is not an independently verified invoice.
 - The R2 gate failed and no cohort started. Both queues are terminal; browser shutdown, source/input freeze, six served-target after hashes and prior-queue integrity passed. Completed receipt's 34 artifact files have no mismatch; both checkpoint seals were checked. See `smoke-r2-summary.json` and `smoke-r2-artifact-audit.json`. The 029 partial observations earn no completed-session coverage.
@@ -134,8 +145,8 @@ The reference to 3 legacy UNKNOWN prerequisites was the repeated original-46 map
 
 ## Completion still required
 
-1. Commit/push the verified pinned-source launch checkpoint; source/library/build preparation and served-asset pre/post gates are complete.
-2. Fresh actual two-person smoke; inspect seed and PAYWALL evidence before expansion.
+1. Finish and review the R3 lifecycle fixes/regressions, record results, and commit/push before new execution.
+2. Fresh independent R4 two-person smoke (024/032); inspect seed and PAYWALL evidence and all strict gates before expansion.
 3. Only after passed smoke, launch fresh 32 once in background and monitor with short read-only checks.
 4. Terminal raw aggregation, full byte/seal/source/ledger audit, independent semantic review. Compare pinned remaining 23 and original 46 without N/A or unassessed credit.
 5. Update historical comparison, STATUS and findings, commit/push, verify exact remote SHA and clean worktree.

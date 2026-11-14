@@ -1,0 +1,212 @@
+{
+  "schema_version": "peekly-completion-smoke-r3-diagnostics.v1",
+  "audited_at": "2026-11-14T18:41:46.030913+00:00",
+  "source_revision": "054342d099648104fd23aae29953f9a6399f3e73",
+  "run_root": ".ux-loop/peekly-completion-smoke-r3-20261115",
+  "scope": "Read-only independent audit of preserved R3 queue, live router ledger, saved provenance and postmortem owned-process cleanup. No Queue constructor, replay, model/browser launch, queue edit or process signal by the auditor.",
+  "run": {
+    "state": "stopped_preserved",
+    "started_at": "2026-11-14T18:25:03.588148+00:00",
+    "finished_at": "2026-11-14T18:26:04.332247+00:00",
+    "reason": "browser_shutdown_unconfirmed",
+    "normal_final_report_present": false,
+    "normal_stage_summary_present": false,
+    "final_router_ledger_present": false
+  },
+  "jobs": [
+    {
+      "persona_id": "PER-PEEKLY-V2-023",
+      "job_id": "S-obfofmpdpeibgbipcfgdlcoa",
+      "status": "uncertain",
+      "phase": "tool",
+      "turn": 1,
+      "observations": 0,
+      "problem": "host_execution_failed:TimeoutError",
+      "checkpoint_sha256": "b5cfb2b84c8a7d065b1b2b983c98fba49bb8933e51050a3a199a77e365ce0afb",
+      "checkpoint_seal_matches": true,
+      "result_present": false,
+      "model_call_id": "op-3510337bf4e3e66829dea75703a22255196fb7a8",
+      "model_delivery": "reply_received",
+      "uncertain_tool_id": "op-3ba32f4897a66bec981367f358c2b1a3d5186a3c"
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-030",
+      "job_id": "S-nebbkpjgckcjdeeachjcglag",
+      "status": "uncertain",
+      "phase": "tool",
+      "turn": 1,
+      "observations": 0,
+      "problem": "host_execution_failed:TimeoutError",
+      "checkpoint_sha256": "248e1a8496573c5cda7e173429b2d2fa300cf99f34c2d918577c211177396cfa",
+      "checkpoint_seal_matches": true,
+      "result_present": false,
+      "model_call_id": "op-9f2ed999c3a1240efa24e701038489a04968e45e",
+      "model_delivery": "reply_received",
+      "uncertain_tool_id": "op-4a8f4f91da2b964b03fa1f93b740f55307666371"
+    }
+  ],
+  "operations": {
+    "model_done": 2,
+    "tool_uncertain": 2,
+    "request_payload_seals_checked": 4,
+    "request_payload_seals_match": 4,
+    "received_reply_seals_checked": 2,
+    "received_reply_seals_match": 2,
+    "uncertain_tool_replies": 0,
+    "uncertain_operations_resent": 0
+  },
+  "router": {
+    "requested_route": "TOKENMAXX/deepseek-v4.1-flash-free",
+    "served_model": "deepseek-v4.1-flash",
+    "attempts": 2,
+    "unique_call_ids": 2,
+    "successes": 2,
+    "uncertain_model_deliveries": 0,
+    "rate_limits": 0,
+    "paid_fallbacks": 0,
+    "input_tokens": 17044,
+    "output_tokens": 87,
+    "provider_cost_missing_responses": 2,
+    "policy_budget_microusd": 0,
+    "provider_invoice_verified": false
+  },
+  "assessment": {
+    "completed_sessions": 0,
+    "assessed_success_criteria": 0,
+    "assessed_recovery_criteria": 0,
+    "unassessed_success_criteria": 6,
+    "unassessed_recovery_criteria": 2,
+    "not_run_count": null,
+    "product_failure_count": null,
+    "old_23_reduction_credit": 0,
+    "counting_note": "No completed receipt or observation exists. These eight criteria are unassessed, not eight failures or six not_run."
+  },
+  "integrity": {
+    "plan_seal_matches": true,
+    "plan_sha256": "676082bf91b079508a0d8e8b0855b239fd7f6b4367af6000202208a2c67b890c",
+    "provenance_sha_matches_run_status": true,
+    "prior_queues_checked": 34,
+    "prior_queues_unchanged": true,
+    "prior_snapshot_sha256": "73d8a2ac24755069abc4110bca52357d87b91ba64b2e6c831b87ac3eb3b29f8d",
+    "prior_queue_check_method": "Fresh mode=ro SQLite metadata snapshots, PRAGMA query_only=ON and read transactions; exact launcher snapshot algorithm reproduced.",
+    "target_before_and_after_saved": true,
+    "served_target_files_checked_by_launcher": 6,
+    "target_url": "http://127.0.0.1:4175/",
+    "current_runtime_freeze_revalidated": false,
+    "current_runtime_note": "The preserved launch/after receipts belong to R3. Runtime repair after terminal R3 must obtain a fresh freeze and smoke; this audit does not certify modified current source against R3."
+  },
+  "browser_shutdown": {
+    "historical_confirmed": false,
+    "orphan_main_pid_observed": 33010,
+    "orphan_main_ppid": 1,
+    "owned_profile": ".ux-loop/peekly-completion-smoke-r3-20261115/stage-2/sessions/S-nebbkpjgckcjdeeachjcglag/evidence/S-nebbkpjgckcjdeeachjcglag/1/browser-profile",
+    "orphan_helpers_observed": [
+      33035,
+      33038,
+      33041,
+      33044,
+      33054,
+      33205
+    ],
+    "postmortem_cleanup_by_parent": {
+      "receipt": ".ux-loop/peekly-r3-postmortem-20261115/owned-chrome-cleanup.json",
+      "sha256": "232a0e2f2f04761465d2615f81d0c38f83e2a23d42af88356caa00f1f2edcfe4",
+      "term_sent": true,
+      "kill_sent": false,
+      "pid_absent_after": true
+    },
+    "independent_post_cleanup_check": {
+      "checked_at": "2026-11-14T18:41:03.272529+00:00",
+      "exact_r3_profile_process_matches": 0
+    },
+    "historical_shutdown_receipt_changed": false
+  },
+  "gate": {
+    "eligible_for_cohort": false,
+    "reasons": [
+      "zero_valid_complete_sessions",
+      "two_uncertain_tool_operations",
+      "historical_browser_shutdown_unconfirmed"
+    ],
+    "new_32_started": false
+  },
+  "next_smoke_recommendation": {
+    "personas": [
+      "PER-PEEKLY-V2-024",
+      "PER-PEEKLY-V2-032"
+    ],
+    "r1_r2_r3_completion_smoke_unused": true,
+    "matched_baseline_success_not_run": 2,
+    "success_denominator": 6,
+    "ordered_old_success_recovery_and_requirement_records_match_original_pair": true,
+    "current_prd_context_and_profile_requirement_ids_match_original_pair": true,
+    "bindings": [
+      {
+        "persona_id": "PER-PEEKLY-V2-024",
+        "revision": 1,
+        "status": "active",
+        "profile_sha256": "1513b20a0904c715df26a27cdf13bb26ac492c5fdb3dee1edc91c9ac0169ab6c",
+        "baseline_job": "S-bhipnijdghjoompcjcokbceh",
+        "baseline_success": [
+          "passed",
+          "passed",
+          "not_run"
+        ]
+      },
+      {
+        "persona_id": "PER-PEEKLY-V2-032",
+        "revision": 1,
+        "status": "active",
+        "profile_sha256": "09506ecac317692bd1c0eba798a2a24e6b5b262ec670680f8642ac9684ace5f9",
+        "baseline_job": "S-cceilcdlaojmdnjfhjfhcpal",
+        "baseline_success": [
+          "passed",
+          "passed",
+          "not_run"
+        ]
+      }
+    ],
+    "conditions": "Predeclare fresh root/identities after lifecycle repair; keep the full strict six-success-criteria smoke gate. Preserve every R3 operation and do not combine R2 and a new smoke to manufacture a passing pair."
+  },
+  "limitations": [
+    "Initial startup versus first-action timeout phase cannot be reconstructed from the saved evidence; no phase diagnostic exists.",
+    "The observed orphan is an execution cleanup defect, not proof of a Peekly product defect.",
+    "No provider billing amount was returned; free-route policy is not an independently verified zero invoice."
+  ],
+  "sources": [
+    {
+      "path": ".ux-loop/peekly-completion-smoke-r3-20261115/run-status.json",
+      "bytes": 2478,
+      "sha256": "e43ae6394a88bf9d132e583b81e36b6eae13565b5d0ed5fce6d942367a6609a0"
+    },
+    {
+      "path": ".ux-loop/peekly-completion-smoke-r3-20261115/input-provenance.json",
+      "bytes": 157499,
+      "sha256": "560071d48a0a1968dc5c2d721ed74891d3acf29198aac3198f929d4820d6d248"
+    },
+    {
+      "path": ".ux-loop/peekly-completion-smoke-r3-20261115/stage-2/model-router-ledger.live.json",
+      "bytes": 1703,
+      "sha256": "1b7ff6c0f05c5b7c3174f74f833ce36b539bb1ba97126e6ba69a2916133e49c4"
+    },
+    {
+      "path": ".ux-loop/peekly-completion-smoke-r3-20261115/stage-2/plan.json",
+      "bytes": 34430,
+      "sha256": "ccbd3eacde2d258ab757c76abdb27cb330b07a7e015d3fbe63a592a489e8f2c1"
+    },
+    {
+      "path": ".ux-loop/peekly-completion-smoke-r3-20261115/stage-2/approval.json",
+      "bytes": 186,
+      "sha256": "a539d3bdb92f0296d0fb85009be78db2ac47ccebfba23a83792a420a14cc4f83"
+    },
+    {
+      "path": ".ux-loop/peekly-completion-smoke-r3-20261115/stage-2/preview.json",
+      "bytes": 976,
+      "sha256": "96d6205c6d7b1a8ff6ffffb17d710f2e30ffcd1727eab4d01e748d574af48a09"
+    },
+    {
+      "path": "docs/validation/peekly-coverage-20261114/reviewed-summary.json",
+      "sha256": "f803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc"
+    }
+  ]
+}

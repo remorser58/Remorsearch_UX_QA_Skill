@@ -12,11 +12,12 @@ import json
 import os
 from pathlib import Path
 import re
+import signal
 import time
 import zipfile
 
-from uxresearch.canonical import byte_digest
-from uxresearch.storage import safe_path
+from uxresearch.canonical import byte_digest, canonical
+from uxresearch.storage import safe_path, atomic
 from . import swarm
 from .peekly_criteria import evaluate as evaluate_peekly_criteria
 
@@ -76,6 +77,10 @@ def _authorize_legacy_seed(task, arguments, uploads, attempted):
 
 
 class ScaleBrowserHost:
+    EXCHANGE_TIMEOUTS = {"start": 70, "act": 25, "close": 12}
+    TERMINATE_SECONDS = 4
+    KILL_SECONDS = 3
+
     def __init__(self, *, target_url, chrome, node, driver_path, adapter_path, fixtures_path, parallel_safe=True):
         from urllib.parse import urlsplit
         parsed = urlsplit(target_url)
@@ -108,6 +113,10 @@ class ScaleBrowserHost:
         self.context_observations = {}
         self.context_fixture_validation = {}
         self.context_seed_attempts = {}
+        self.owned_groups = {}
+        self.poisoned = set()
+        self.closed_contexts = set()
+        self.lifecycle = {}
 
     def _validate_fixture_upload(self, fixture_name):
         """Expose bounded fixture-shape metadata without leaking fixture contents."""
@@ -147,11 +156,78 @@ class ScaleBrowserHost:
 
     def can_resume(self, context_id, observations):
         process = self.processes.get(context_id)
-        return bool(process and process.returncode is None)
+        return bool(process and process.returncode is None
+                    and context_id not in self.poisoned
+                    and context_id not in self.closed_contexts)
+
+    def _record_lifecycle(self, context, phase, **details):
+        process = self.processes.get(context)
+        record = dict(self.lifecycle.get(context, {}), schema_version="owned-browser-host.v1",
+                      context_id=context, phase=phase, recorded_at=time.time(),
+                      node_pid=process.pid if process else None,
+                      owned_pgid=self.owned_groups.get(context),
+                      profile_path=self.context_paths.get(context),
+                      channel_poisoned=context in self.poisoned, **details)
+        self.lifecycle[context] = record
+        profile = self.context_paths.get(context)
+        # Ownership and exceptional/terminal transitions are durable. Ordinary
+        # command progress stays in memory to avoid two fsyncs per browser action.
+        if profile and phase not in {"dispatching", "reply_received"}:
+            try:
+                atomic(Path(profile).parent / "browser-host-lifecycle.json", canonical(record))
+            except (OSError, ValueError) as exc:
+                # Retain ownership in memory even if the evidence volume stalls/fails.
+                record["diagnostic_write_error"] = type(exc).__name__
+
+    def _group_alive(self, context):
+        pgid = self.owned_groups.get(context)
+        if pgid is None:
+            return True  # Missing ownership is never evidence of closure.
+        try:
+            os.killpg(pgid, 0)
+            return True
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return True
+
+    async def _wait_owned_exit(self, context, seconds):
+        process = self.processes[context]
+        deadline = time.monotonic() + seconds
+        while time.monotonic() < deadline:
+            if process.returncode is not None and not self._group_alive(context):
+                return True
+            await asyncio.sleep(.05)
+        return process.returncode is not None and not self._group_alive(context)
+
+    async def _terminate_owned(self, context):
+        """Signal only a new session created by this host; verify the whole group."""
+        process = self.processes.get(context)
+        pgid = self.owned_groups.get(context)
+        if process is None or pgid is None or pgid != process.pid:
+            return False
+        if await self._wait_owned_exit(context, .05):
+            return True
+        for sig, seconds in ((signal.SIGTERM, self.TERMINATE_SECONDS),
+                             (signal.SIGKILL, self.KILL_SECONDS)):
+            self._record_lifecycle(context, "terminating", signal=sig.name)
+            try:
+                os.killpg(pgid, sig)
+            except ProcessLookupError:
+                pass
+            except PermissionError:
+                return False
+            if await self._wait_owned_exit(context, seconds):
+                return True
+        return False
 
     async def _exchange(self, context_id, kind, payload):
         lock = self.locks.setdefault(context_id, asyncio.Lock())
         async with lock:
+            if context_id in self.closed_contexts:
+                raise RuntimeError("browser_context_closed")
+            if context_id in self.poisoned:
+                raise RuntimeError("browser_context_transport_uncertain")
             process = self.processes.get(context_id)
             if kind == "start" and process is None:
                 evidence = safe_path(payload["evidence_path"])
@@ -162,21 +238,39 @@ class ScaleBrowserHost:
                 process = await asyncio.create_subprocess_exec(
                     self.node, str(self.driver), cwd=str(evidence),
                     stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.DEVNULL)
+                    stderr=asyncio.subprocess.DEVNULL, start_new_session=True)
                 self.processes[context_id] = process
                 self.context_paths[context_id] = str(profile)
+                self.owned_groups[context_id] = process.pid
+                self._record_lifecycle(context_id, "spawned")
             if process is None or process.returncode is not None:
                 raise RuntimeError("browser_context_not_running")
             ident = self.serials.get(context_id, 0) + 1
             self.serials[context_id] = ident
             packet = json.dumps({"id": ident, "kind": kind, "payload": payload}, ensure_ascii=False, separators=(",", ":"))
-            process.stdin.write(packet.encode() + b"\n")
-            await process.stdin.drain()
-            raw = await asyncio.wait_for(process.stdout.readline(), timeout=25)
-            if not raw or len(raw) > 65536:
-                raise RuntimeError("browser_transport_closed")
-            reply = json.loads(raw)
-            if reply.get("id") != ident or reply.get("error") or "result" not in reply:
+            self._record_lifecycle(context_id, "dispatching", command=kind, command_id=ident)
+            try:
+                # Once bytes may have left the process, a timeout/cancel/protocol
+                # failure poisons this channel. Never consume a late reply as a
+                # later command's response, and never resend the original action.
+                async with asyncio.timeout(self.EXCHANGE_TIMEOUTS[kind]):
+                    process.stdin.write(packet.encode() + b"\n")
+                    await process.stdin.drain()
+                    raw = await process.stdout.readline()
+                if not raw or len(raw) > 65536:
+                    raise RuntimeError("browser_transport_closed")
+                reply = json.loads(raw)
+                if not isinstance(reply, dict) or reply.get("id") != ident:
+                    raise RuntimeError("browser_reply_identity_mismatch")
+                if not reply.get("error") and "result" not in reply:
+                    raise RuntimeError("browser_reply_result_missing")
+            except BaseException as exc:
+                self.poisoned.add(context_id)
+                self._record_lifecycle(context_id, "transport_uncertain",
+                                       error_type=type(exc).__name__)
+                raise
+            self._record_lifecycle(context_id, "reply_received")
+            if reply.get("error"):
                 raise RuntimeError("browser_action_failed:" + str(reply.get("error", "unknown"))[:120])
             return reply["result"]
 
@@ -194,20 +288,32 @@ class ScaleBrowserHost:
                 return {"operation_id":request["operation_id"],"context_id":context,
                     "request_sha256":request["request_sha256"],"trace_id":"browser-close-empty",
                     "result":{"stopped":True}}
-            try:
-                result = await self._exchange(context, "close", {})
-                await asyncio.wait_for(process.wait(), timeout=5)
-            except Exception:
-                if process.returncode is None:
-                    process.terminate()
-                result = {"stopped":False}
-            self.processes.pop(context, None)
-            self.context_paths.pop(context, None)
-            self.context_tasks.pop(context, None)
-            self.context_uploads.pop(context, None)
-            self.context_observations.pop(context, None)
-            self.context_fixture_validation.pop(context, None)
-            self.context_seed_attempts.pop(context, None)
+            graceful = False
+            close_error = None
+            if context not in self.poisoned and process.returncode is None:
+                try:
+                    reply = await asyncio.wait_for(self._exchange(context, "close", {}), timeout=13)
+                    graceful = reply.get("stopped") is True
+                    await asyncio.wait_for(process.wait(), timeout=3)
+                except Exception as exc:
+                    close_error = type(exc).__name__
+                    self.poisoned.add(context)
+            stopped = await self._wait_owned_exit(context, .1)
+            forced = not stopped
+            if not stopped:
+                stopped = await self._terminate_owned(context)
+            result = {"stopped": stopped, "driver_shutdown_confirmed": graceful,
+                      "owned_group_exit_confirmed": stopped, "forced_cleanup": forced}
+            if close_error:
+                result["close_error_type"] = close_error
+            self._record_lifecycle(context, "closed" if stopped else "shutdown_unconfirmed",
+                                   shutdown=result)
+            if stopped:
+                self.closed_contexts.add(context)
+                for mapping in (self.processes, self.context_paths, self.owned_groups,
+                                self.context_tasks, self.context_uploads, self.context_observations,
+                                self.context_fixture_validation, self.context_seed_attempts):
+                    mapping.pop(context, None)
             return {"operation_id":request["operation_id"],"context_id":context,
                 "request_sha256":request["request_sha256"],"trace_id":"browser-close-"+context[-12:],
                 "result":result}
@@ -294,6 +400,6 @@ class ScaleBrowserHost:
     async def shutdown(self):
         outcomes = await asyncio.gather(*[
             self.call("close", {"operation_id":"shutdown-"+key[-12:],"context_id":key,
-                "request_sha256":"0"*64,"deadline":time.time()+10,"payload":{}})
+                "request_sha256":"0"*64,"deadline":time.time()+30,"payload":{}})
             for key in list(self.processes)], return_exceptions=True)
         return all(isinstance(x,dict) and x.get("result",{}).get("stopped") is True for x in outcomes)

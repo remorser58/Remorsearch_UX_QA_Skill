@@ -8,17 +8,140 @@ import readline from 'node:readline';
 import http from 'node:http';
 import { pathToFileURL } from 'node:url';
 let chrome, ws, proxy, targetOrigin, pageUrl, sequence = 0, pending = new Map(), profileDir, evidenceDir, fixturesDir, fixtureManifest, typedInputs = new Map(), proxyBlockedRequests = 0;
+let startupController=null, startupSignal=null, closePromise=null, chromeSpawnFailed=false;
+let lifecycleInitialized=false, proxyListenPending=false;
+const proxyConnections=new Set();
 const hash = b => crypto.createHash('sha256').update(b).digest('hex');
-const safeDir = p => {
-  if (!path.isAbsolute(p) || fs.realpathSync(p) !== p || !fs.statSync(p).isDirectory() || (fs.statSync(p).mode & 0o077)) throw new Error('private_directory');
+// The parent owns this Node process group. Every child inherits that group;
+// there is no detached child and no attachment to an existing browser.
+export async function runBounded(operation,timeoutMs,code,signal) {
+  const controller=new AbortController();
+  const abort=()=>controller.abort(signal?.reason||new Error(code));
+  if(signal?.aborted)abort();
+  else signal?.addEventListener('abort',abort,{once:true});
+  let rejectAbort;
+  const aborted=new Promise((resolve,reject)=>{rejectAbort=reject;});
+  const stop=()=>rejectAbort(controller.signal.reason instanceof Error
+    ?controller.signal.reason:new Error(code));
+  controller.signal.addEventListener('abort',stop,{once:true});
+  const timer=setTimeout(()=>controller.abort(new Error(code)),timeoutMs);
+  try {
+    if(controller.signal.aborted)throw controller.signal.reason;
+    return await Promise.race([
+      Promise.resolve().then(()=>{controller.signal.throwIfAborted();return operation(controller.signal);}),aborted,
+    ]);
+  } finally {
+    clearTimeout(timer);signal?.removeEventListener('abort',abort);
+    controller.signal.removeEventListener('abort',stop);
+  }
+}
+const startupIO=(operation,signal)=>runBounded(operation,60000,'browser_start_timeout',signal);
+const safeDir = async (p,signal) => {
+  if(!path.isAbsolute(p))throw new Error('private_directory');
+  const real=await startupIO(()=>fs.promises.realpath(p),signal);
+  const stat=await startupIO(()=>fs.promises.stat(p),signal);
+  if(real!==p||!stat.isDirectory()||(stat.mode&0o077))throw new Error('private_directory');
   return p;
 };
+export async function validateFixtureFiles(manifest,directory,signal,io=fs.promises) {
+  for(const row of manifest.files) {
+    signal?.throwIfAborted();
+    if(!row||typeof row.name!=='string'||path.basename(row.name)!==row.name
+        ||!/^[a-zA-Z0-9._-]+$/.test(row.name)||!/^[a-f0-9]{64}$/.test(row.sha256)
+        ||!Number.isSafeInteger(row.bytes)||row.bytes<0||row.bytes>134217729)
+      throw new Error('fixture_manifest_entry');
+    const filename=path.join(directory,row.name);
+    const stat=await startupIO(()=>io.lstat(filename),signal);
+    const real=await startupIO(()=>io.realpath(filename),signal);
+    if(!stat.isFile()||stat.isSymbolicLink()||real!==filename||stat.size!==row.bytes)
+      throw new Error('fixture_integrity');
+    const bytes=await startupIO(inner=>io.readFile(filename,{signal:inner}),signal);
+    if(bytes.length!==row.bytes||hash(bytes)!==row.sha256)throw new Error('fixture_integrity');
+  }
+}
+export async function fetchJsonBounded(url,{signal,timeoutMs=5000,fetcher=fetch}={}) {
+  return await runBounded(async inner=>{
+    const response=await fetcher(url,{signal:inner,redirect:'error'});
+    if(!response.ok)throw new Error('cdp_discovery_http');
+    return await response.json();
+  },timeoutMs,'cdp_discovery_timeout',signal);
+}
+export async function openSocketBounded(socket,{signal,timeoutMs=5000}={}) {
+  let opened,failed,closed;
+  const opening=new Promise((resolve,reject)=>{
+    opened=()=>resolve();failed=()=>reject(new Error('cdp_websocket_error'));
+    closed=()=>reject(new Error('cdp_websocket_closed_before_open'));
+    socket.addEventListener('open',opened,{once:true});
+    socket.addEventListener('error',failed,{once:true});
+    socket.addEventListener('close',closed,{once:true});
+  });
+  // A parent abort can win before runBounded invokes its operation. The
+  // disposal close event must still have a rejection observer in that case.
+  void opening.catch(()=>{});
+  try {await runBounded(()=>opening,timeoutMs,'cdp_websocket_open_timeout',signal);}
+  catch(error){try{socket.close();}catch{}throw error;}
+  finally {
+    socket.removeEventListener('open',opened);socket.removeEventListener('error',failed);
+    socket.removeEventListener('close',closed);
+  }
+}
+export function childHasExited(child) {
+  return !child||(child.exitCode!==null&&child.exitCode!==undefined)
+    ||(child.signalCode!==null&&child.signalCode!==undefined);
+}
+function waitChildExit(child,timeoutMs,signalName) {
+  if(childHasExited(child))return Promise.resolve(true);
+  return new Promise(resolve=>{
+    let timer;
+    const finish=value=>{clearTimeout(timer);child.removeListener('exit',exited);resolve(value);};
+    const exited=()=>finish(true);
+    child.once('exit',exited);
+    timer=setTimeout(()=>finish(childHasExited(child)),timeoutMs);
+    // Subscribe before signalling: a synchronous/very fast exit must not be lost.
+    try {child.kill(signalName);}catch{finish(childHasExited(child));}
+  });
+}
+export async function terminateOwnedChild(child,{termMs=3000,killMs=2000}={}) {
+  if(childHasExited(child))return true;
+  if(await waitChildExit(child,termMs,'SIGTERM'))return true;
+  return await waitChildExit(child,killMs,'SIGKILL');
+}
+export async function closeOwnedProxy(server,connections,{timeoutMs=2000,isListenPending=()=>false}={}) {
+  if(!server)return true;
+  for(const connection of connections){try{connection.destroy();}catch{}}
+  try {server.closeAllConnections?.();}catch{}
+  try {
+    await runBounded(()=>new Promise((resolve,reject)=>{
+      server.close(error=>error&&error.code!=='ERR_SERVER_NOT_RUNNING'?reject(error):resolve());
+    }),timeoutMs,'proxy_close_timeout');
+    return !isListenPending()&&server.listening!==true;
+  }catch{return false;}
+}
+async function lifecycle(phase,extra={}) {
+  if(!evidenceDir)return;
+  const row={schema_version:'scale-browser-lifecycle.v1',at:new Date().toISOString(),phase,
+    node_pid:process.pid,chrome_pid:chrome?.pid??null,profile_dir:profileDir??null,...extra};
+  try {
+    await runBounded(signal=>fs.promises.appendFile(path.join(evidenceDir,'browser-driver-lifecycle.jsonl'),
+      JSON.stringify(row)+'\n',{mode:0o600,flag:lifecycleInitialized?'a':'wx',signal}),1000,'lifecycle_write_timeout');
+    lifecycleInitialized=true;
+  }catch{/* Host ownership metadata remains authoritative when disk I/O is unavailable. */}
+}
 function send(method, params = {}) {
   const id = ++sequence;
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => { pending.delete(id); reject(new Error('cdp_timeout:'+method)); }, 10000);
-    pending.set(id, {resolve, reject, timer});
-    ws.send(JSON.stringify({id, method, params}));
+    const signal=startupSignal;
+    let timer;
+    const finish=(error,value)=>{
+      clearTimeout(timer);pending.delete(id);signal?.removeEventListener('abort',aborted);
+      error?reject(error):resolve(value);
+    };
+    const aborted=()=>finish(signal.reason||new Error('browser_start_aborted'));
+    if(signal?.aborted){aborted();return;}
+    timer=setTimeout(()=>finish(new Error('cdp_timeout:'+method)),10000);
+    pending.set(id,{resolve:value=>finish(null,value),reject:error=>finish(error),timer});
+    signal?.addEventListener('abort',aborted,{once:true});
+    try {ws.send(JSON.stringify({id, method, params}));}catch(error){finish(error);}
   });
 }
 
@@ -513,18 +636,36 @@ async function guardedClick(selector,label,requireActiveImport=false) {
 }
 
 async function start(input) {
-  if (chrome || process.versions.node.split('.')[0] !== '26') throw new Error('node_runtime');
+  if (chrome || closePromise || process.versions.node.split('.')[0] !== '26') throw new Error('node_runtime');
+  startupController=new AbortController();
+  try {
+    return await runBounded(async signal=>{
+      startupSignal=signal;
+      return await startWithinBudget(input,signal);
+    },60000,'browser_start_timeout',startupController.signal);
+  } catch(error) {
+    await lifecycle('start_failed',{error:String(error?.message||'browser_start_failed').slice(0,120)});
+    throw error;
+  } finally {startupController=null;startupSignal=null;}
+}
+async function startWithinBudget(input,signal) {
   const url = new URL(input.url);
   if (url.protocol !== 'http:' || !['127.0.0.1','localhost','[::1]'].includes(url.hostname) || url.username || url.password) throw new Error('target_must_be_loopback_http');
   targetOrigin = url.origin; pageUrl = url.href; typedInputs = new Map(); proxyBlockedRequests = 0;
-  profileDir = safeDir(input.profile_dir); evidenceDir = safeDir(input.evidence_path);
-  freshOwnedProfile=requireFreshOwnedProfile(profileDir,evidenceDir);
+  evidenceDir=await safeDir(input.evidence_path,signal);
+  profileDir=await safeDir(input.profile_dir,signal);
+  if(path.dirname(profileDir)!==evidenceDir||path.basename(profileDir)!=='browser-profile'
+      ||(await startupIO(()=>fs.promises.readdir(profileDir),signal)).length)
+    throw new Error('legacy_seed_profile_not_fresh_owned');
+  freshOwnedProfile=true;
+  await lifecycle('profile_validated');signal.throwIfAborted();
   legacySeedAllowed=input.legacy_seed_allowed===true;
-  fixturesDir = safeDir(input.fixtures_dir);
+  fixturesDir = await safeDir(input.fixtures_dir,signal);
   const manifestPath = path.join(fixturesDir, 'fixture-manifest.json');
-  const manifestStat = fs.lstatSync(manifestPath);
-  if (!manifestStat.isFile() || manifestStat.isSymbolicLink() || fs.realpathSync(manifestPath)!==manifestPath) throw new Error('fixture_manifest_invalid');
-  fixtureManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  const manifestStat = await startupIO(()=>fs.promises.lstat(manifestPath),signal);
+  const manifestReal = await startupIO(()=>fs.promises.realpath(manifestPath),signal);
+  if (!manifestStat.isFile() || manifestStat.isSymbolicLink() || manifestReal!==manifestPath) throw new Error('fixture_manifest_invalid');
+  fixtureManifest = JSON.parse(await startupIO(inner=>fs.promises.readFile(manifestPath,{encoding:'utf8',signal:inner}),signal));
   if (fixtureManifest.schema_version !== 'peekly-synthetic-fixtures.v1' || !Array.isArray(fixtureManifest.files)) throw new Error('fixture_manifest_schema');
   if (fixtureManifest.groups !== undefined) {
     if (!fixtureManifest.groups || typeof fixtureManifest.groups !== 'object' || Array.isArray(fixtureManifest.groups)) throw new Error('fixture_manifest_groups');
@@ -532,13 +673,13 @@ async function start(input) {
       if (!/^[a-zA-Z0-9._-]{1,80}$/.test(group) || !Array.isArray(names) || !names.length || names.length>513 || names.some(name=>typeof name!=='string'||path.basename(name)!==name)) throw new Error('fixture_manifest_group_entry');
     }
   }
-  for (const row of fixtureManifest.files) {
-    if (!row || typeof row.name !== 'string' || path.basename(row.name)!==row.name || !/^[a-zA-Z0-9._-]+$/.test(row.name) || !/^[a-f0-9]{64}$/.test(row.sha256) || !Number.isSafeInteger(row.bytes) || row.bytes<0 || row.bytes>134217729) throw new Error('fixture_manifest_entry');
-    const filename=path.join(fixturesDir,row.name), st=fs.lstatSync(filename);
-    if (!st.isFile() || st.isSymbolicLink() || fs.realpathSync(filename)!==filename || st.size!==row.bytes || hash(fs.readFileSync(filename))!==row.sha256) throw new Error('fixture_integrity');
-  }
+  await lifecycle('fixtures_validating');signal.throwIfAborted();
+  await validateFixtureFiles(fixtureManifest,fixturesDir,signal);
+  await lifecycle('fixtures_validated',{fixture_count:fixtureManifest.files.length});signal.throwIfAborted();
   const binary = input.chrome;
-  if (!path.isAbsolute(binary) || !fs.existsSync(binary)) throw new Error('chrome_binary');
+  if(!path.isAbsolute(binary))throw new Error('chrome_binary');
+  const binaryStat=await startupIO(()=>fs.promises.stat(binary),signal);
+  if(!binaryStat.isFile())throw new Error('chrome_binary');
   const proxyHost = url.hostname === 'localhost' ? '127.0.0.1' : url.hostname;
   const proxyPort = Number(url.port || 80);
   proxy = http.createServer((req,res) => {
@@ -554,14 +695,23 @@ async function start(input) {
         res.writeHead(response.statusCode || 502, response.headers);
         response.pipe(res);
       });
+    proxyConnections.add(upstream);upstream.once('close',()=>proxyConnections.delete(upstream));
     upstream.on('error',()=>{ if(!res.headersSent) res.writeHead(502); res.end(); });
     req.pipe(upstream);
   });
-  proxy.on('connection',socket=>socket.on('error',()=>{}));
+  proxy.on('connection',socket=>{
+    proxyConnections.add(socket);socket.once('close',()=>proxyConnections.delete(socket));
+    socket.on('error',()=>{});
+  });
   proxy.on('clientError',(error,socket)=>{if(socket.writable)socket.end('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n');});
   proxy.on('connect',(req,socket)=>{proxyBlockedRequests+=1;socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');});
   proxy.on('upgrade',(req,socket)=>{proxyBlockedRequests+=1;socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');});
-  await new Promise((resolve,reject)=>{proxy.once('error',reject);proxy.listen(0,'127.0.0.1',resolve);});
+  await runBounded(()=>new Promise((resolve,reject)=>{
+    proxyListenPending=true;
+    proxy.once('error',error=>{proxyListenPending=false;reject(error);});
+    proxy.listen(0,'127.0.0.1',()=>{proxyListenPending=false;resolve();});
+  }),5000,'proxy_listen_timeout',signal);
+  await lifecycle('proxy_listening');signal.throwIfAborted();
   const proxyPortLocal = proxy.address().port;
   chrome = spawn(binary, ['--headless=new','--disable-gpu','--no-first-run','--no-default-browser-check',
     '--disable-background-networking','--disable-component-update','--disable-sync','--disable-extensions',
@@ -569,28 +719,47 @@ async function start(input) {
     '--proxy-server=http://127.0.0.1:'+proxyPortLocal,'--proxy-bypass-list=<-loopback>',
     '--remote-debugging-port=0','--remote-allow-origins=*','--user-data-dir='+profileDir,'about:blank'],
     {stdio:'ignore'});
+  chrome.once('error',()=>{chromeSpawnFailed=!Number.isSafeInteger(chrome.pid);});
+  await lifecycle('chrome_spawned');signal.throwIfAborted();
   const activeFile = path.join(profileDir,'DevToolsActivePort');
-  const deadline = Date.now()+15000;
-  while (Date.now()<deadline && !fs.existsSync(activeFile) && chrome.exitCode===null) await new Promise(r=>setTimeout(r,100));
-  if (!fs.existsSync(activeFile)) throw new Error('chrome_start_failed');
-  const port = Number(fs.readFileSync(activeFile,'utf8').split('\n')[0]);
-  const targets = await (await fetch('http://127.0.0.1:'+port+'/json/list')).json();
+  const port=await runBounded(async inner=>{
+    while(!childHasExited(chrome)&&!chromeSpawnFailed) {
+      inner.throwIfAborted();
+      try {
+        const text=await startupIO(readSignal=>fs.promises.readFile(activeFile,{encoding:'utf8',signal:readSignal}),inner);
+        const value=Number(text.split('\n')[0]);
+        if(!Number.isInteger(value)||value<1||value>65535)throw new Error('chrome_debug_port_invalid');
+        return value;
+      }catch(error){if(error.code!=='ENOENT')throw error;}
+      await runBounded(()=>new Promise(resolve=>setTimeout(resolve,100)),1000,'chrome_start_failed',inner);
+    }
+    throw new Error('chrome_start_failed');
+  },15000,'chrome_start_timeout',signal);
+  await lifecycle('cdp_discovery');signal.throwIfAborted();
+  const targets = await fetchJsonBounded('http://127.0.0.1:'+port+'/json/list',{signal});
+  if(!Array.isArray(targets))throw new Error('chrome_targets_invalid');
   const page = targets.find(x=>x.type==='page');
   if (!page?.webSocketDebuggerUrl) throw new Error('chrome_page_missing');
+  const socketUrl=new URL(page.webSocketDebuggerUrl);
+  if(socketUrl.protocol!=='ws:'||socketUrl.hostname!=='127.0.0.1'||Number(socketUrl.port)!==port
+      ||socketUrl.username||socketUrl.password)throw new Error('chrome_socket_not_owned_loopback');
   ws = new WebSocket(page.webSocketDebuggerUrl);
-  await new Promise((resolve,reject)=>{ ws.addEventListener('open',resolve,{once:true}); ws.addEventListener('error',reject,{once:true}); });
+  await openSocketBounded(ws,{signal});
   ws.addEventListener('error',()=>{ for(const [id,item] of pending){clearTimeout(item.timer);item.reject(new Error('cdp_websocket_error'));pending.delete(id);} });
   ws.addEventListener('close',()=>{ for(const [id,item] of pending){clearTimeout(item.timer);item.reject(new Error('cdp_websocket_closed'));pending.delete(id);} });
   ws.addEventListener('message',event=>{
     let m; try {m=JSON.parse(event.data);} catch {return;}
     if (m.id && pending.has(m.id)) { const p=pending.get(m.id); pending.delete(m.id); clearTimeout(p.timer); m.error?p.reject(new Error(m.error.message||'cdp_error')):p.resolve(m.result||{}); }
   });
+  await lifecycle('websocket_open');signal.throwIfAborted();
   await send('Page.enable'); await send('Runtime.enable'); await send('Network.enable');
   await send('Network.setBlockedURLs',{urls:['ws://*','wss://*','ftp://*','file://*']});
+  await lifecycle('page_navigate');signal.throwIfAborted();
   await send('Page.navigate',{url:pageUrl});
-  await new Promise(r=>setTimeout(r,700));
+  await runBounded(()=>new Promise(r=>setTimeout(r,700)),1000,'page_settle_timeout',signal);
   const snap=await observe();
   initialFreshStorage=await evaluate('('+pageFreshStorage.toString()+')()');
+  await lifecycle('started');signal.throwIfAborted();
   return {started:true,url:snap.url,title:snap.title,origin:targetOrigin,available_fixtures:fixtureManifest.files.map(row=>row.name)};
 }
 async function evaluate(expression) {
@@ -820,25 +989,49 @@ async function act(input) {
     captures:[...extraCaptures,capture],checks:[]};
 }
 async function close() {
-  try { if(ws) ws.close(); } catch {}
-  if(chrome && chrome.exitCode===null) { chrome.kill('SIGTERM'); await new Promise(resolve=>{const t=setTimeout(()=>{if(chrome.exitCode===null) chrome.kill('SIGKILL');resolve();},3000);chrome.once('exit',()=>{clearTimeout(t);resolve();});}); }
-  try { if(proxy) await new Promise(resolve=>proxy.close(resolve)); } catch {}
-  return {stopped:!chrome||chrome.exitCode!==null};
+  if(closePromise)return await closePromise;
+  startupController?.abort(new Error('browser_shutdown_requested'));
+  closePromise=(async()=>{
+    await lifecycle('close_started');
+    for(const item of pending.values())item.reject(new Error('browser_shutdown_requested'));
+    try {ws?.close();}catch{}
+    const browserStopped=chromeSpawnFailed||await terminateOwnedChild(chrome);
+    const proxyStopped=await closeOwnedProxy(proxy,proxyConnections,{isListenPending:()=>proxyListenPending});
+    const result={stopped:browserStopped&&proxyStopped,browser_stopped:browserStopped,proxy_stopped:proxyStopped};
+    await lifecycle(result.stopped?'closed':'close_unconfirmed',result);
+    // Retain references and ownership diagnostics even when exit is unconfirmed.
+    return result;
+  })();
+  return await closePromise;
 }
 export async function main() {
 process.umask(0o077);
 const input = readline.createInterface({input:process.stdin});
-for await (const line of input) {
-  if(line.length>65536) break;
-  let m; try {m=JSON.parse(line);let result;
-    if(m.kind==='start') result=await start(m.payload);
-    else if(m.kind==='close') result=await close();
-    else result=await act(m.payload);
-    process.stdout.write(JSON.stringify({id:m.id,result})+'\n');
-    if(m.kind==='close') break;
-  } catch (err) { process.stdout.write(JSON.stringify({id:m?.id,error:String(err?.message||'browser_tool_failed').slice(0,160)})+'\n'); if(m?.kind==='act') continue; if(chrome&&chrome.exitCode===null) chrome.kill('SIGTERM'); break; }
+const stop=()=>{
+  startupController?.abort(new Error('host_shutdown_signal'));
+  input.close();
+  void close().then(result=>process.exit(result.stopped?0:1),()=>process.exit(1));
+};
+process.once('SIGTERM',stop);process.once('SIGINT',stop);
+try {
+  for await (const line of input) {
+    if(line.length>65536) break;
+    let m; try {m=JSON.parse(line);let result;
+      if(m.kind==='start') result=await start(m.payload);
+      else if(m.kind==='close') result=await close();
+      else result=await act(m.payload);
+      process.stdout.write(JSON.stringify({id:m.id,result})+'\n');
+      if(m.kind==='close') break;
+    } catch (err) {
+      process.stdout.write(JSON.stringify({id:m?.id,error:String(err?.message||'browser_tool_failed').slice(0,160)})+'\n');
+      if(m?.kind==='act'&&!closePromise)continue;
+      break;
+    }
+  }
+} finally {
+  input.close();
+  await close().catch(()=>{});
+  process.removeListener('SIGTERM',stop);process.removeListener('SIGINT',stop);
 }
-input.close();
-await close().catch(()=>{});
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) await main();

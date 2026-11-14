@@ -147,6 +147,55 @@ def _reject_forbidden_jobs(job_ids, forbidden_job_ids):
     if overlap:
         raise RuntimeError("prior_job_identity_overlap:" + str(len(overlap)))
 
+async def _execute_with_shutdown(run_root, providers, host, router):
+    """Preserve delivery and teardown evidence even when the stage cannot pass."""
+    report = None
+    execution_error = None
+    shutdown_error = None
+    try:
+        report = await execute_scale(run_root, providers, host, reviewed=True, max_idle_seconds=30)
+    except BaseException as exc:
+        execution_error = exc
+    try:
+        stopped = await host.shutdown()
+    except BaseException as exc:
+        stopped = False
+        shutdown_error = exc
+    write_errors = []
+    documents = [("model-router-ledger.json", router.report())]
+    if report is not None:
+        documents.append(("report.json", report))
+    for name, value in documents:
+        try:
+            atomic(run_root / name, canonical(value))
+        except (OSError, ValueError) as exc:
+            write_errors.append(name + ":" + type(exc).__name__)
+    diagnostics = {
+        "schema_version": "owned-browser-shutdown.v1",
+        "browser_shutdown_confirmed": stopped,
+        "execution_error": ({"type": type(execution_error).__name__,
+                             "reason": str(execution_error)[:240]} if execution_error else None),
+        "shutdown_error": ({"type": type(shutdown_error).__name__,
+                            "reason": str(shutdown_error)[:240]} if shutdown_error else None),
+        "contexts": getattr(host, "lifecycle", {}),
+        "unclosed_contexts": sorted(getattr(host, "processes", {})),
+        "diagnostic_write_errors": list(write_errors),
+    }
+    try:
+        atomic(run_root / "browser-lifecycle-summary.json", canonical(diagnostics))
+    except (OSError, ValueError) as exc:
+        write_errors.append("browser-lifecycle-summary.json:" + type(exc).__name__)
+    if execution_error is not None:
+        raise execution_error
+    if shutdown_error is not None and not isinstance(shutdown_error, Exception):
+        raise shutdown_error
+    if not stopped:
+        raise RuntimeError("browser_shutdown_unconfirmed")
+    if write_errors:
+        raise RuntimeError("browser_diagnostics_not_persisted:" + ",".join(write_errors))
+    return report, stopped
+
+
 async def run_stage(args, persona_ids, index):
     run_root = safe_path(args.run_root / ("stage-"+str(index)))
     if run_root.exists():
@@ -202,14 +251,7 @@ async def run_stage(args, persona_ids, index):
     queue.control("resume")
     atomic(run_root / "approval.json", canonical({"approval_id":approval,"plan_sha256":queue.plan_sha256,
         "budget_microusd":limits.budget_microusd,"expires_in_seconds":approval_seconds}))
-    try:
-        report = await execute_scale(run_root, providers, host, reviewed=True, max_idle_seconds=30)
-    finally:
-        stopped = await host.shutdown()
-    if not stopped:
-        raise RuntimeError("browser_shutdown_unconfirmed")
-    atomic(run_root / "model-router-ledger.json", canonical(router.report()))
-    atomic(run_root / "report.json", canonical(report))
+    report, stopped = await _execute_with_shutdown(run_root, providers, host, router)
     usage = report.get("provider_usage", [])
     route_stats = router.report()["routes"]
     route_stats = {model: dict(stats, failure_rate=((stats["failures"]+stats["quality_rejections"]) / stats["attempts"] if stats["attempts"] else 0.0))
