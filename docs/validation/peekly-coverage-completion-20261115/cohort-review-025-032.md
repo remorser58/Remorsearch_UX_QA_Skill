@@ -11,9 +11,10 @@ This fragment reviews saved evidence from fresh `stage-32`, canonical plan `59f2
 | 027 | P → P | P → NR | F → F | N/A → N/A | Completed sealed receipt |
 | 028 | P → P | P → NR | F → F | P → P | Completed sealed receipt |
 | 029 | Unassessed | Unassessed | Unassessed | Unassessed | Review delivery uncertain; no completed-session credit |
-| 030–032 | Pending | Pending | Pending | Pending | Await eligible completed receipts |
+| 030 | Unassessed | Unassessed | Unassessed | Unassessed | Queue complete; operationally incomplete, local host protocol bound |
+| 031–032 | Pending | Pending | Pending | Pending | Await eligible completed receipts |
 
-Current reviewed subset: **12 decisions** — success P3/F3/NR3/N/A0; recovery P1/F0/NR0/N/A2.025 and029 each have four unassessed criteria outside that assessed subtotal. No old23 SEARCH credit is assigned to025 and no old23 PAYWALL credit to029. Partial execution does not create a completed receipt.
+Current reviewed subset: **12 decisions** — success P3/F3/NR3/N/A0; recovery P1/F0/NR0/N/A2.025,029 and030 each have four unassessed criteria outside that assessed subtotal. No old23 SEARCH credit is assigned to025 and no old23 PAYWALL credit to029 or030. Partial execution does not create a completed receipt.
 
 ## Case-specific evidence for026–028
 
@@ -71,6 +72,34 @@ Job `S-cmkbfkbjcjonakfbhgkpeaod` is uncertain at review phase, turn64, with **62
 - No close operation has completed for this job at this checkpoint; owned closure remains pending the stage’s terminal audit. No cleanup or resend was performed.
 
 The live ledger snapshot hash `d918232eaf029142e36eedf55e65d84e14db8f8152ac27c86974de9f726bc479` is preserved as an audit-time receipt; it is not substituted for the eventual terminal ledger pin.
+
+## 030 — terminal diagnostic result, all criteria unassessed
+
+Job `S-dhjdnlebpigdchpmkmnblafj` has queue status `complete`, but its sealed result has **`operational_completed=false`, `problem=host_protocol`, outcome `inconclusive`**. There is no first/final judgment and no review operation. All three success criteria and recovery remain **unassessed**; this case contributes no helper decision and no old23 PAYWALL credit. The raw fallback success labels P/P/NR and recovery NR remain preserved without coverage credit.
+
+The failure is a known local runner request-size bound, established from saved evidence and frozen source:
+
+| Payload measurement | Canonical UTF-8 bytes |
+| --- | --- |
+| Last dispatched model payload, with observations1–67 | 261,027 |
+| Model-payload bound | 262,144 |
+| Derived next payload, with observations1–68 | 265,147 |
+| Excess | 3,003 |
+
+The reconstruction for observations1–67 is byte-for-byte equal to the saved last request before deriving the next payload. The derived next payload SHA-256 is `0d80bb191059128da8a65c3702f4ee0859771682498697e71ae0adf9bd8c0d30`. **It was never sent, and no next model operation was created.** This was not the turn limit: 68 of80 turns were used, leaving12. The largest individual projected facts and text/action/check values were12,397 and3,175 bytes, below their separate65,536-byte bounds.
+
+Frozen `skills/remorsearch-ux-qa/uxpersonas/scale_run.py:590` bounds the whole model payload during worker argument construction at691–692, before dispatch calls `q.begin` at594. `agent_run.py:62–63` raises `host_protocol` when the payload exceeds the bound. The worker’s exception path at783–803 preserves the code and closes the known context; finalization at765/776 seals this diagnostic result with operational completion false. The persisted record stores only the `host_protocol` code; the specific payload-bound cause comes from this frozen-source branch and byte-exact reconstruction. All three source files used for the projection match frozen runtime `f50d082a197e683b5961d17919fe219dc48c4d55`; exact source hashes and the canonical reconstruction method are recorded in JSON. No queue constructor, provider callback, replay, new execution, or test runner was used.
+
+The last actual model operation `op-34a8b26a1424e301722359ba1561420c932e38a9` returned one valid scroll decision. Tool operation `op-45953a84d3abb66d53577a56d922f555498a16ce` completed and admitted observation68 with its capture. No Pro-sheet opening followed. The next payload failed locally before dispatch, so this terminal failure is separate from model-delivery uncertainty.
+
+The ledger contains **68 logical model calls and70 successful received attempts**, plus **two quality diagnostic markers**. Earlier known replies at model slots9 and51 required quality repair: an invalid generic upload selector became a valid More click; a malformed proposed final became a wait action. The invalid proposed actions/final were rejected before admission. All68 admitted model results are tool decisions, all68 delivery states are `reply_received`, and every030 operation is done. `completion_attempts=[]` and `completion_guard={}` therefore do not show an accepted-final continuation. There was no uncertain resend or paid fallback. Exact operation IDs and frozen router-source references are retained in JSON.
+
+Terminal preservation and closure:
+
+- Result SHA-256 `204b3b42d12402b6235f4cfbf722518994f1584896ee19699a19596984c5c98e`; checkpoint SHA-256 `263e446abe61e93b3a8e6d004e41a01d19a8019e915e88a132da9f9a91d1c216`. Both canonical seals match. The absent first judgment is not claimed as seal corruption.
+- **136 fallback-receipt artifacts / 3,646,674 bytes** —68 execution logs and68 PNGs— were rehashed; every hash and admitted observation binding matches. Every actual artifact hash is retained in `partial_artifact_preservation`, with no completed-session credit.
+- The sealed close operation `op-71e4ab4051bc61ec4118e5e406554bd503096d85` returns `stopped:true`. The driver records `browser_stopped:true` and `proxy_stopped:true`. The owned host records confirmed driver shutdown and owned-group exit, with `forced_cleanup:false` and `channel_poisoned:false`.
+- Both lifecycle files are separately hashed in JSON. No cleanup or resend was performed by this review.
 
 ## Bindings and validation
 
