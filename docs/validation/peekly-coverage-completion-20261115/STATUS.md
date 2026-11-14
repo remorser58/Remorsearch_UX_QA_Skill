@@ -2,6 +2,12 @@
 
 Updated: 2026-11-15 (Asia/Seoul).
 
+## Final closeout — 2026-11-15 (Asia/Seoul)
+
+[findings.md](findings.md) records the final exclusion reasons and exact evidence paths without a new run. 025 SEARCH and 029 PAYWALL each retain their single original review request: TimeoutError after 150.0059 / 150.6345 seconds, uncertain delivery, can_retry=false, no reply/final result and no later operation for that job. Their underlying provider/network cause remains unknown. 030 PAYWALL failed locally before dispatch: 265,147B exceeds 262,144B by 3,003B, with 12 turns left; no model slot 68 or review operation exists. Its artifacts are current-valid but operational completion and the first judgment are absent. All three targets remain unassessed.
+
+The exact eight not_run rows are 001–004 privacy success/2, 026–028 privacy success/1, and 015 recovery/0. Their individual reasons, registered log paths and SHA-256 values are recorded in findings.md. Final endpoint comparison remains **0 passed / 2 failed / 30 inconclusive across 32 assessed → 13 / 10 / 4 across 27 assessed**, with 21 separate unassessed obligations. The quantitative review JSON and all four historical columns stay unchanged from the verified 17d78c6 publication; only final documentation is extended. No model/browser invocation, uncertain resend, runtime change or queue mutation was performed in this closeout.
+
 ## Current state — fresh cohort terminal; complete eligible-criterion review
 
 The requested fresh 32-person cohort finished at **2026-11-14T22:14:57.374160Z**, with run state `incomplete_preserved`: **28 queue-complete / 4 uncertain / 0 running / 0 queued**. Persona 030 is queue-complete but operationally incomplete after a local pre-dispatch payload limit. Its current artifact validation passes; the missing operational completion and final judgment exclude it. Thus **27 eligible sessions and all 115 assigned criteria** were independently reviewed; five excluded sessions retain **21 unassessed obligations** from the 136-row plan.
