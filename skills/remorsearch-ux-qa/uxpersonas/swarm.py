@@ -18,6 +18,11 @@ from uxresearch.storage import Store, atomic, read_bytes, read_json, safe_path
 from uxresearch.privacy import scrub
 
 SCHEMA = "ux-persona-swarm-input.v1"
+# Eighty owned-browser observations can each register one JSON log plus the
+# before/after PNG pair used by bounded compound actions (240 artifacts).
+# This shared count applies to both receipt writers and historical readback;
+# per-file bytes, PNG decoding, paths, hashes, prose and reference caps remain.
+MAX_RECEIPT_ARTIFACTS = 256
 LIMITATIONS = [
     "Synthetic behavioral scenarios are not independent real users.",
     "Receipts and file hashes establish recorded evidence integrity, not source authenticity.",
@@ -407,7 +412,7 @@ def receipt_starter(library, run_path, claim_packet):
 
 def _artifacts(root, entry, receipt):
     artifacts = receipt.get("artifacts", [])
-    if not isinstance(artifacts, list) or len(artifacts) > 128:
+    if not isinstance(artifacts, list) or len(artifacts) > MAX_RECEIPT_ARTIFACTS:
         fail("Artifact list exceeds its limit.")
     result = {}
     base = root / "evidence" / entry["task"]["id"] / str(entry["attempts"])
