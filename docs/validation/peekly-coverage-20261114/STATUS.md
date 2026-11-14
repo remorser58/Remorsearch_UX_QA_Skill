@@ -14,43 +14,33 @@ Reduce the 46 success-criterion not_run records in the ee4b145 r4/r6 completed-s
 - Base and original remote verified: ee4b14571930af428d5a52e0e133deebedba485d
 - Product/PRD: existing owned Peekly build 51110f4; do not change product UX in this runner-focused task.
 
-## Current state — FINAL32 is running; never launch, resume or resend it again
+## Current state — TERMINAL; never restart or resend this cohort
 
-- Latest observed at2026-11-14T08:03:34Z: **27complete /2running /0queued /3uncertain**. Ordinals30/31 (personas031/032) are running.009/010/012 remain delivery-uncertain and outside the assessed denominator. Their uncertain operations must not be resent.
-- Root:.ux-loop/peekly-coverage32-20261114; stage:stage-32; PID97160; started_at2026-11-14T06:14:43Z. Exactly saved personas001–032, no duplicates. Only TOKENMAXX/deepseek-v4.1-flash-free, concurrency2, budget0.
-- Frozen runtime:43e3b143cdfee0a8ae23f68808ebf850e99008bb; launch HEAD78810f048b8069e4307f165c4cd128899768b3f9 was docs-only. Earlier durable checkpoint6145ffb36b7db949f08f01fab12f6d44720da05e was pushed and its remote SHA verified. No main runtime/fixture/library edits have occurred.
--31 prior queues,295 forbidden prior job IDs and36 historical uncertain rows are protected. Do not modify/reuse them. Final provenance audit must verify this again.
-- Passed r4 smoke:2validcomplete; success not_run **3→1** on the same two personas; success4passed/1failed/1not_run. Expansion was gated on that completed smoke, not on r1/r2/r3.
-- Baseline46 cause groups:28task/observation,11fixture,4runner fault-harness,3judge normalization. The detailed46 rows and32 unique persona/requirement keys are in not-run-baseline.json/md.
+- Ended2026-11-14T08:15:08.160360Z, state=incomplete_preserved. Queue:29complete,3uncertain,0running,0queued. Completed/current-valid denominator:29distinct personas.009/010/012 remain unassessed; no uncertain operation was resent.
+- Cohort root:.ux-loop/peekly-coverage32-20261114; stage:stage-32. Saved personas001–032 exactly once. Frozen execution runtime43e3b143cdfee0a8ae23f68808ebf850e99008bb, product51110f4, fixturev7 manifest4df650d58c2105bc67ca3eec27c826b1f8129f8f1a846b396a4eb9e53c48f44a.
+- Final reviewed outcome:9passed/8failed/12inconclusive. Success62passed/8failed/22not_run/0N/A; recovery9passed/0failed/1not_run/19N/A; total71/8/23/19. Completed host_protocol0.
+- Original46weighted baseline rows now20passed/8failed/18not_run/0unassessed:28executed,60.9% reduction.32unique persona/requirement keys now13passed/6failed/13not_run:19executed,59.4% reduction. Do not confuse mapped18 with whole-cohort23.
+- Raw outcome is preserved:12passed/12failed/5inconclusive; totalcriteria78/16/8/19. Exactly24independently evidenced criterion changes are listed in criterion-review.json.025's SEARCH/DELETE interaction is handled globally.
+- Remaining mapped18:post-import3category lists9; legacyUNKNOWN prerequisite3; PAYWALLearlyfinal5;025queryunattempted1. Whole cohort additionally includes022comparisonexplanationNR and013conditionalrecoveryNR.
+- Confirmed product defects: P2missing direct save retry(013–016); P3emptyv7key recreation after actualdata deletion(025–028). Prior relationdata was cleared. Productsource unchanged.
+- All4PAYWALLsessions029–032 were audited after completion:sampleexport/retentionpassed; required names/date selectors/Pro explanation not all attempted. They ended49–52turns below64/2880sec, nothardlimits.
+- Free TOKENMAXX/deepseek-v4.1-flash-free route only; fallback0.716actualattemptreceipts,13knowncompleted-response quality repairs,0uncertainresendviolations,3preserveduncertainguards. Owned browser shutdown confirmed.31priorqueues/295jobIDs/36historicaluncertainrows preserved.
+- Artifact audit passed:1186registered/distinctfiles(589logs+597PNGs),31398261bytes,0hashmismatch;29result seals/32checkpointseals/29completedfirstseals; source/priorqueue bytes unchanged. Auditmade0modelcalls/0browsercalls/0queuewrites.
+- Independent SQLite+plan+24override counts, including every46mapped row and32unique keys, exactly match summary.json/reviewed-summary.json. The independent count did not call the report generator's aggregation functions.
+- Rawreport,artifactaudit,reviewedreport were generated in that order BEFORE integrating source changes. Completed raw receipts/observations/screenshots were never rewritten.
 
-## Evidence review and isolated corrective work
+## Integrated source fixes and regression
 
-- Raw completed receipts remain immutable. The final main comparison will identify a separately reviewed fourth column; raw summary/comparison will remain available beside it.
-- Independently confirmed adjustments currently saved in criterion-review.json:12sample-only RESULT PASS→not_run(017–020);2actual rejection not_run→PASS(011);4unsupported legacy UNKNOWN failed→not_run(021–024);1SEARCH falseFAIL→not_run(025);3actually exercised SEARCH failed→passed(026–028);1SIZE failed→passed(015). 1DELETE passed→failed(025). Total24 explicit changes. Each binds exact job/result SHA, criterion index, saved evidence and old baseline mapping.
--026–028 actual search/import/type/sort/filter proofs are independently verified, including98registeredartifact hashes. Their DELETE remainsfailed: prior data is removed but an emptyv7key is recreated contrary to PRD§10.025 was independently confirmed to have the same emptyv7key issue; its raw DELETEpass becomesfailed. Its SEARCH→not_run and DELETE→failed interact, so session deltas are recomputed globally.
-- The sample-scope issue removes9weighted baseline rows/7unique keys from reduction credit; unsupported UNKNOWN removes3rows/2keys;025 SEARCH removesNR-37. These are corrections to measurement, not newly executed tests.
-- Product defects: P2missing direct 다시 저장 after actual savefailure(013–016,one defect type); P3emptyv7key recreated after delete(025–028,prior relationdata is removed). Do not report retained personaldata.015's SIZEfailure is a judge error: all128/32/64MB alerts and preservedstorage were confirmed.
-- Isolated sibling worktree:.worktrees/peekly-coverage-scopefix-20261114, branch rem/peekly-coverage-scopefix-20261114. Commit **ef8834ec6fd6354cf665baec63982de21bbbc8dd** fixes imported-result prerequisites, scoped receipt guards,011 rejection wording, unsupported legacy UNKNOWN semantics and task ordering. No main source integration yet.
-- Full regression for ef8834e:1752tests,1731passed/21optional skips/0failures,227.286s. Log:.ux-loop/scopefix-full-regression-20261114.log; SHA4f11769a638c75a4fda06d15ffe339ab9fdb686ec598b1c63a7d35a1e193f4c4.
-- A subsequent isolated acceptance-priority fix prevents an earlier correct rejection from hiding a later bad-fixture acceptance.85focused tests passed, no skips/failures; log:.ux-loop/scopefix-acceptance-20261114/tests.log; SHA667a10d721f0ea5d9f3e685140f7288b4496e7db5862c32dd23b0599f5d38e57. This fix and SEARCH were committed together as37e2e8d after98focused tests passed.
-- Isolated SEARCH+acceptance commit37e2e8d is complete: actual search input, same import/storage, fresh exactquery and one matching row; known actualfailure wins. Focused98/98passed, log .ux-loop/scopefix-search-20261114/tests.log SHA4105ecb619d1a588beeda8829bd7b22029ece57b868ee7de09f219e7f6098b1e. The parent reviewed and committed the diff; no main integration.
-- SIZE isolated fix was committed as c010505: only two sanitized group aliases, own-attempt boundary alerts/preservedstorage, no fabricated aggregateSHA, actualfailure priority. Focused110/110passed; log .ux-loop/scopefix-size-20261114/final/tests.log SHA226cadc1d1ce1625bbe8e96e6c19d388131705c4c823e0bd2db5a1f80b48edf8.
--029/030 finished52/49turns with sampleexport/retentionpassed andPAYWALLnot_run, before64turn/2880sec limits. Their missing downstream steps are task nonreach/earlyfinal, notproductfailure. Task-only A/B/C next-action checklist committed a903ece; no newmodelretry or fixture/API. Existing15plan regressions were included in the passing17test run;2new mirror-text tests were removed withoutrerun. All32finalplan goals pass sanitation, max6679<8000. Actual reduction from this task wording remains untested.
-- A final isolated DELETE guard is in progress: bind the actual confirmed click to the pinned synthetic import and available post-storage keys; never treat an empty recreatedkey as retained relationshipdata. No productcodechanges.
-- Reviewed reporter is ready for24explicitchanges, AST/staticcontractcheckedonly; final SHA d53648efb76c8da1d6205420acc507b0d674828155e56584cf675e92fde0351e. All output generation waits for terminal state.
-- No new browser/model/persona runs are planned for any post-cohort repair. Their offline regression cannot prove new real execution coverage.
-- Current runtime's original regression remains1718tests/1697passed/21optional skips/0failures. Do not describe later isolated regression as validation of a newly executed cohort.
+- The isolated sibling branch rem/peekly-coverage-scopefix-20261114 was integrated only after terminal verification and artifact/report generation. Main source/tests exactly match isolated final5bee89a; docs differ.
+- Main commits:a807951(importscope/rejections/legacy),b49c282(search+acceptancepriority),38fc79d(sizealiases/ownattempttriad),270b270(PAYWALLA/B/C),ddbef7d(confirmeddelete/keyabsence).
+- Original cohort runtime regression1718total/1697pass/21optionaldependency skips/0fail. Initial isolated scopefix regression1752total/1731pass/21skips/0fail.
+- Final focused native/receipt regressions120/120pass,0skip/fail. Log isolated .ux-loop/scopefix-delete-20261114/tests.log SHAec8c0abe8ac65ecad46c0c0ba8783fb5225e378baa827a1cf7e3cbb1f2d40635.
+- Existing15planning regressions passed in the earlier17test run;2new mirror-text tests were removed, not rerun. Actual32goals pass sanitation32/32,maximum6679<8000.
+- No newmodel/browser/persona execution was used for these additional fixes. Their real effect on unfinished task execution is unverified. A validated legacy-state seed capability is still absent.
+- Report outputs:README.md,comparison-reviewed.md,reviewed-summary.json,comparison.md,summary.json,artifact-audit.json. RawsummarySHAe958af0066496a4a6dc3196fd64aa29978ec8d3e8f7139e238cddd6ba1d754a8; reviewedSHAf803cd44fcad79d203c826d36ee2f8e1409538e6f67ae06a240e8c634c21b4dc; auditSHA18f249b296c0bd6d6a11b56ff1e6723d0a4004d8f4cd57d848edd48def30bbe0.
+- Branch for delivery:rem/peekly-coverage-20261114. Earlier docs checkpoints6145ffb ande1efd70 were pushed and exactremoteSHA verified. Final report delivery verifies origin equals the final local commit; use gitHEAD/ls-remote for that self-referential commit identity.
 
-## Terminal completion steps
-
-1. Confirm queue has no queued/running rows, root run-status is terminal, owned browsers are closed, input hashes/prior queues remain unchanged, and free-route ledger records no uncertain resends. Preserve009/010/012 as unassessed.
-2. Before integrating source changes, run scripts/report_peekly_coverage.py on stage-32 into this directory (--requested32). It creates summary.json and comparison.md and refuses overwrite.
-3. Run audit_final_artifacts.py on stage-32 with output artifact-audit.json. It validates canonical result/checkpoint/first seals, plan/DB/report bindings, all registered artifact bytes and terminal input provenance through read-only SQLite.
-4. Complete individual criterion-review entries, then run review_coverage_results.py on stage-32 and this directory. It creates reviewed-summary.json and comparison-reviewed.md, verifies raw totals and artifact audit, and applies only explicit independently evidenced changes.
-5. Report remaining gaps and distinguish product, runner/task/fixture and judge defects. Integrate isolated committed fixes only after source freeze no longer serves a running cohort. Preserve runtime43e3b14 in provenance.
-6. Update final Korean README and the old explicit-success report pointer/table, commit/push rem/peekly-coverage-20261114 and verify exact remote SHA. No extra cohort is authorized by these completion steps.
-
-Use PYTHONDONTWRITEBYTECODE=1 and /Users/m4mini/.local/bin/python3.11. All final output files above remain absent until terminal processing. The first smoke's historical5internal uncertain resends remain disclosed in smoke-r1-diagnostics.md; do not claim the whole project's lifetime resend count is zero.
+The following sections preserve historical checkpoints. Any running/planned language inside them describes that dated checkpoint, not the terminal state above.
 
 ## Passed r4 smoke — preserved pre-expansion evidence
 
@@ -136,12 +126,6 @@ Use PYTHONDONTWRITEBYTECODE=1 and /Users/m4mini/.local/bin/python3.11. All final
 - Launcher defaults now v7 and .ux-loop/peekly-coverage-smoke-r2-20261114. Its old-job rejection includes original smoke jobs. Cohort stays .ux-loop/peekly-coverage32-20261114.
 - Actual pinned product parser acceptedv7 offline: .ux-loop/peekly-parser-offline-v7-20261114/parser-result.json and raw-validation.json. Raw420000 rows ->16/16 deduplicated accounts; same owner ascurrent/empty; no browser timing guarantee.
 
-## Next checkpoints
+## Completed handoff
 
-1. Inspect the ALREADY RUNNING32 cohort with short readonly SQLite/jq calls. Never launch a second copy or resume any old job. Runtime stays frozen.
-2. Preserve all uncertain/incomplete attempts outside the assessed denominator; no resend. Final router audit must distinguish known complete-response repairs from uncertain retransmission.
-3. After cohort terminal, run the existing reporter once with --requested 32. Keep46 weighted baseline rows and32 unique persona/requirement keys; N/A and unassessed receive no coverage credit.
-4. Hash-check registered evidence files of assessed receipts, confirm result/queue/report consistency, classify product/runner/judge findings and remaining not_run causes.
-5. Update four-column comparison and final report, commit/push, verify exact remote SHA and clean worktree.
-
-If interrupted, read this file and durable queues before doing anything. R1/r2/r3/r4 smokes are stopped and preserved. The final32 cohort has already launched at06:14:39Z with PID97160; inspect its durable state, never start another copy. Existing uncertain operations are never replayed.
+The32-person attempt cohort and all four smokes are terminal and preserved. The final4-column report, rawcounterpart,24explicit reviews and1186-file audit are saved in this directory. No execution or evaluation remains pending for this run. Future work must begin from the completed README and must never resume the preserved uncertain calls. Source fixes after runtime43e3b14 have offline regression only; do not describe them as a newly executed cohort.

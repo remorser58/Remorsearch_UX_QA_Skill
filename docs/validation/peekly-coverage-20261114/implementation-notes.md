@@ -1,6 +1,6 @@
 # 미실행 감소를 위한 변경과 검증
 
-이 문서는 최종 코호트의 집계 전에 확정한 변경 내역이다. 현재 실행 상태는 [STATUS.md](STATUS.md), 기존 46개 행의 원본 대응은 [not-run-baseline.json](not-run-baseline.json), 확대 직전 검증은 [smoke-r4-summary.md](smoke-r4-summary.md)에 있다.
+이 문서는 코호트 실행 전에 확정한 구현 기록이다. 완료된 결과와 이후 추가 보강은 [최종 보고서](README.md)에 있다. 현재 인수인계는 [STATUS.md](STATUS.md), 기존 46개 행의 대응은 [not-run-baseline.json](not-run-baseline.json), 확대 직전 검증은 [smoke-r4-summary.md](smoke-r4-summary.md)에 보존했다.
 
 ## 무엇을 줄이는가
 
@@ -63,4 +63,4 @@ r4의 SIZE 스크린샷 5개는 같은 해시였다. 경계별 근거는 저장�
 
 **첫 스모크에서 기존 라우터의 내부 타임아웃 재전송 5건(4개 call ID)이 발견됐다.** 해당 실행은 중단·보존했으며 확대 근거로 사용하지 않았다. 사용자에게 알리고 영구 delivery guard와 회귀를 추가했다. 따라서 이 작업 전체가 처음부터 재전송 0이었다고 보고하지 않는다.
 
-수정 후 r2·r3·r4 원장에서는 불확실 재전송 0을 확인했다. 최종 32명 원장 감사는 코호트 종료 후 별도 수행한다. 각 스모크 원본과 진단은 [r1](smoke-r1-diagnostics.md), [r2](smoke-r2-diagnostics.md), [r3](smoke-r3-diagnostics.md), [r4](smoke-r4-summary.md)에 보존했다.
+수정 후 r2·r3·r4 및 최종 32명 원장에서 불확실 재전송 0을 확인했다. 최종 코호트는 29명 완료·3명 불확실로 종료했고, 실제 전송 시도 716회와 완료 응답 품질 복구 13회를 불확실 재전송과 구분했다. 각 스모크 원본과 진단은 [r1](smoke-r1-diagnostics.md), [r2](smoke-r2-diagnostics.md), [r3](smoke-r3-diagnostics.md), [r4](smoke-r4-summary.md)에 보존했다.
