@@ -29,7 +29,12 @@ Reduce the 46 success-criterion not_run records in the ee4b145 r4/r6 completed-s
 - Actual launcher offline preflight passed: 27 existing queues, 287 forbidden distinct job IDs, 36 historical uncertain job rows; all543 fixture byte/hash pairs and all32 reusable saved persona IDs verified. No model/browser calls occurred during this preflight.
 - Owned preview HTTP200 and served/local index SHA256 both match pinned artifact: 848b334a6affa5c6a578911819aaf127da34bc2e6ae2f04899022872b7d0f6f5.
 
-## Current state — r2 verified, ready to commit and launch
+## Current state — r2 smoke running, never launch it again
+
+- Frozen implementation: fb0c6666bde5e969a6b479ec94ccf875a5f3aac5. Pushed to origin/rem/peekly-coverage-20261114 and remote SHA verified equal.
+- New smoke launched detached2026-11-14T04:48:43Z, PID78522, exact016/029.
+- Current root: .ux-loop/peekly-coverage-smoke-r2-20261114; queue stage-2/queue.sqlite; launch log .ux-loop/peekly-coverage-smoke-r2-launch-20261114.log.
+- Initial check:running2, model done2, tool done1. Read current queue/run-status for newer progress. Do not edit frozen source/fixture/library/build during this run.
 
 - First smoke ended with a checkpoint size error. Its evidence is preserved and is ineligible for expansion. See smoke-r1-diagnostics.md, including the disclosed five internal timeout resends across four call IDs.
 - All r2 runtime source edits are complete/frozen. Final full regression:1708 tests,1687 passed,21 optional dependency skips, zero failures,197.137s. Log .ux-loop/peekly-coverage-r2-regression-final-20261114.log; SHA2563004b7f0fdc7e6c980a0a9255a0a344d1e9bebdde2b0b2bb454a610625819d7f. The previous1697-test run had one stale exception expectation, now corrected without removing diagnostic assertions.
@@ -37,7 +42,7 @@ Reduce the 46 success-criterion not_run records in the ee4b145 r4/r6 completed-s
 - Checkpoint planning11 and queue28 tests pass. Two realistic sessions reached finalturn64 with63 full observations each, >1MiB durable history, all artifacts unchanged and model envelopes<=256KiB.
 - Parent focused79 tests pass: verdict25, criterion23, driver3 (18 Node cases), fixture15 and reporter13.
 - Launcher17 and reporter17 tests pass. Actual ledger audit and SHA bind expansion/reporting; even an apparent32-complete report is rejected when a later request follows uncertainty. Known response repairs are counted separately.
-- Final offline preflight passed:28 preserved queues,289 forbidden job IDs,36 prior uncertain job rows. No r2 live calls yet.
+- Final offline preflight passed before launch:28 preserved queues,289 forbidden job IDs,36 prior uncertain job rows.
 - Reporter code is ready: scripts/report_peekly_coverage.py STAGE OUTPUT --requested 32. It preserves46 weighted baseline rows and32 unique persona/requirement keys; incomplete/N/A outcomes cannot count as coverage improvements.
 
 ## Preserved first smoke — never resume
@@ -49,7 +54,7 @@ Reduce the 46 success-criterion not_run records in the ee4b145 r4/r6 completed-s
 - Ended itself at2026-11-14T04:18:20Z: stopped_preserved, Queue data must be bounded finite JSON. Process66763 no longer exists; owned smoke Chrome processes0.
 - Preserved queue:016 complete at18 turns,029 running with42 stored observations/phase tool turn43. No operations remain unresolved; the next done tool result could not fit the old checkpoint. Do not interpret the running row as an active worker.
 - prior_queues_unchanged=true. Original27 queues were preserved. Router delivery uncertainty is a separate incident and is documented explicitly.
-- No r2 smoke or32 cohort has launched yet.
+- r2 is now running as described above. No32 cohort has launched yet.
 
 ## Applied r2 fixes and new inputs
 
@@ -63,10 +68,10 @@ Reduce the 46 success-criterion not_run records in the ee4b145 r4/r6 completed-s
 
 ## Next checkpoints
 
-1. Finish full regression and offline preflight, commit/freeze r2 implementation, then detach a NEW smoke using scripts/run_peekly_coverage.py smoke.
+1. Inspect the ALREADY RUNNING r2 smoke. Never launch smoke again or resume r1.
 2. Inspect r2 via short readonly SQLite/jq calls. Confirm freeze unchanged, prior_queues_unchanged and no router resend after uncertainty before expansion.
 3. Latest r6 same-person baseline has3 success not_run. Expansion requires2 valid complete receipts, no host_protocol, zero success N/A and fewer than3 success not_run.
 4. If completed receipts demonstrate not_run reduction, launch fresh32 once, preserve every uncertain send; periodically inspect.
 5. Update four-column comparison, report commit/push, verify remote SHA and clean worktree.
 
-If interrupted, read this file and durable queues before doing anything. Existing uncertain operations are never replayed; completed outputs are read back. First smoke is stopped and preserved. Check whether r2 exists before launching anything.
+If interrupted, read this file and durable queues before doing anything. Existing uncertain operations are never replayed; completed outputs are read back. First smoke is stopped and preserved. R2 has already launched; inspect it, never restart its root.
