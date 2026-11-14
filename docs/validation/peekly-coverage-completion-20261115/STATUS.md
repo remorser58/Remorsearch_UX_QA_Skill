@@ -20,7 +20,17 @@ The user authorizes implementation, regression, owned isolated test contexts, sm
 - The old uncertain 009/010/012 remain preserved. The new requested cohort uses new jobs and call IDs.
 - Original 46 weighted mapping at 65f: 20 passed / 8 failed / 18 not_run; 32 unique mappings: 13 / 6 / 13.
 
-## Current phase — integration complete; fresh actual smoke next
+## Current phase — first actual smoke running; seed setup rejection preserved
+
+- Published pre-run HEAD: `02bdd95cd9817af396e11036c8386b37a805c6aa`; exact remote SHA verified.
+- Actual smoke started `2026-11-14T15:41:05.164088+00:00`, launcher PID 24410. Root: `.ux-loop/peekly-completion-smoke-20261115`.
+- 021 job `S-cadepflpaecgloopgfjkohof`: uncertain at turn 2, `host_execution_failed:browser_action_failed:legacy_seed_profile_not_fresh_owned`. No resend or resume.
+- 029 job `S-jopolnkkaipimlidlnlnjcoh` is still running; last check turn 15, retention fixture 03. Let it finish to inspect PAYWALL evidence.
+- Exact seed failure: product startup stores the default `peekly_theme_preference=system`. The guard required only the empty v7 key and rejected this legitimate default preference. Initial storage matched; seed status rejected before storage write, before/after snapshot digest identical; reload/migration were not attempted.
+- Full `facts.storage_keys` includes v7 plus the theme preference; filtered `storage_snapshot.keys` includes only snapshot keys. Do not confuse those two inventories.
+- A separate worktree `.worktrees/peekly-seed-theme-fix-20261115` on `rem/peekly-seed-theme-fix-20261115` is preparing the minimal fix/tests. Main runtime remains byte-identical while 029 runs. Allow only optional theme preference exactly `system`, preserve it, keep empty-v7/full initial digest/owned-profile/no-prior-mutation/one-shot checks, deny other values and keys.
+- After this stage is terminal: audit and preserve it; integrate the reviewed fix; use a NEW smoke result root. This failed two-person gate does not authorize cohort expansion.
+- Isolated fix ready: `3b7125119d884cc6070912e23247b775fb13e72b`, driver + Node tests only. Exact failed storage reproduced 3 failures before the fix; 14 legacy Node cases and the 44-case combined guardrail/scroll/legacy suite passed afterward. Main runtime has not yet integrated it while 029 is running.
 
 - Runtime source revision: `125b7325ed60cdafa52546fee39492cb0279a3ce`.
 - Full discovery: 1,834 tests, 1,813 passed, 21 optional skips, zero failures. Prepared agent runtime separately passed 25/25 without skips.
