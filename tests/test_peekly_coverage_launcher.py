@@ -157,10 +157,11 @@ class RouterDeliveryAuditTests(unittest.TestCase):
 
 
 class ProvenanceTests(unittest.TestCase):
-    def test_default_smoke_uses_fresh_r3_and_cohort_references_it(self):
-        self.assertEqual(launcher.DEFAULT_SMOKE.name, "peekly-coverage-smoke-r3-20261114")
+    def test_default_smoke_uses_fresh_r4_and_cohort_references_it(self):
+        self.assertEqual(launcher.DEFAULT_SMOKE.name, "peekly-coverage-smoke-r4-20261114")
         self.assertNotIn(launcher.DEFAULT_SMOKE.name,
-                         ("peekly-coverage-smoke-20261114", "peekly-coverage-smoke-r2-20261114"))
+                         ("peekly-coverage-smoke-20261114", "peekly-coverage-smoke-r2-20261114",
+                          "peekly-coverage-smoke-r3-20261114"))
         self.assertEqual(launcher.parse_args(["cohort"]).smoke_root, launcher.DEFAULT_SMOKE)
 
     def test_prior_queues_are_opened_read_only_and_uncertain_is_preserved(self):

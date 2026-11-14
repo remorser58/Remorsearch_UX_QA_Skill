@@ -80,7 +80,59 @@ class ChecklistTests(unittest.TestCase):
         self.assertIn("모달이 없고 현재 More 관측", goal)
         self.assertIn("scroll(delta=-400) 후 반환된 최신 관측", goal)
         self.assertIn("필요하면 한 번 더 반복하고 visible:true가 확인된 뒤에만 클릭", goal)
-        self.assertIn("모달이 열렸으면 먼저 보이는 닫기 control", goal)
+        self.assertIn("다음 대상이 열린 모달 밖에 있을 때만", goal)
+        self.assertIn("모달 안의 탭·날짜 선택기·Pro 설명을 확인할 때는 모달을 유지", goal)
+
+    def test_paywall_dependencies_keep_indices_and_do_not_repeat_retention_seed(self):
+        for ids in (["PRD-PAYWALL-BOUNDARY", "PRD-RESULT-SNAPSHOT", "PRD-SNAPSHOT-RETENTION"],
+                    ["PRD-SNAPSHOT-RETENTION", "PRD-PAYWALL-BOUNDARY", "PRD-RESULT-SNAPSHOT"],
+                    ["PRD-IDENTITY-LIMIT", "PRD-RESULT-SNAPSHOT", "PRD-PAYWALL-BOUNDARY",
+                     "PRD-SNAPSHOT-RETENTION"]):
+            with self.subTest(ids=ids):
+                rows = criterion_checklist(ids)
+                self.assertEqual(rows[0]["requirement_id"], "PRD-SNAPSHOT-RETENTION")
+                self.assertEqual([r["index"] for r in rows],
+                                 [ids.index(r["requirement_id"]) for r in rows])
+                paywall = next(r for r in rows if r["requirement_id"] == "PRD-PAYWALL-BOUNDARY")
+                self.assertIn("First complete PRD-SNAPSHOT-RETENTION", paywall["steps"][0])
+                self.assertIn("Reuse that older history", paywall["steps"][0])
+                self.assertIn("Do not import the pair before retention or repeat it", paywall["steps"][0])
+                self.assertNotIn("Import peekly-retention-snapshot-01.zip", paywall["steps"][0])
+                for dependent in (r for r in rows if r["requirement_id"] in
+                                  {"PRD-RESULT-SNAPSHOT", "PRD-IDENTITY-LIMIT"}):
+                    self.assertLess(rows.index(paywall), rows.index(dependent))
+                    self.assertIn("reuse it without another upload", dependent["steps"][0])
+                self.assertEqual(len(required_fixture_keys(ids)), 13)
+        # Combined planning must not mutate the standalone paywall checklist.
+        standalone = criterion_checklist(["PRD-PAYWALL-BOUNDARY"])[0]
+        self.assertEqual(standalone["required_fixtures"],
+                         ["peekly-retention-snapshot-01.zip", "peekly-sample-previous.zip",
+                          "peekly-sample-current.zip"])
+        self.assertTrue(standalone["steps"][0].startswith("Import peekly-retention-snapshot-01.zip"))
+        shared = criterion_checklist(["PRD-RESULT-SNAPSHOT", "PRD-PAYWALL-BOUNDARY"])
+        self.assertEqual(shared[0]["requirement_id"], "PRD-PAYWALL-BOUNDARY")
+        self.assertTrue(shared[0]["steps"][0].startswith("Import peekly-retention-snapshot-01.zip"))
+        self.assertIn("reuse it without another upload", shared[1]["steps"][0])
+
+    def test_history_navigation_and_no_movement_escape_fit_bounded_goal(self):
+        for ids in (["PRD-PAYWALL-BOUNDARY"],
+                    ["PRD-SAMPLE-EXPORT", "PRD-PAYWALL-BOUNDARY", "PRD-SNAPSHOT-RETENTION"],
+                    ["PRD-SNAPSHOT-RETENTION", "PRD-RESULT-SNAPSHOT", "PRD-PAYWALL-BOUNDARY"]):
+            with self.subTest(ids=ids):
+                goal = _persona_journey_goal("Inspect the owned history and preserve unresolved evidence.", ids)
+                self.assertEqual(swarm.clean(goal), goal)
+                self.assertLessEqual(len(goal), 8000)
+                self.assertIn("scroll(delta=400) in the active modal body", goal)
+                self.assertIn("Select the visible 기간 비교 tab", goal)
+                self.assertIn("비교 시작 기록 / 비교 종료 기록", goal)
+                self.assertIn("With older history present", goal)
+                self.assertIn("2회 연속 그대로면 더 반복하지 않는다", goal)
+                self.assertIn("해당 기준의 not_run을 남기고 다른 미완료 기준", goal)
+                self.assertIn("같은 모달을 닫고 다시 열어도 횟수는 초기화하지 않", goal)
+                self.assertIn("선행조건이나 화면 상태가 바뀐 뒤에만 재시도", goal)
+                if "PRD-SNAPSHOT-RETENTION" in ids:
+                    self.assertLess(goal.index("서로 다른 유효 합성 스냅샷 11개"),
+                                    goal.index("그 뒤 previous/current pair"))
 
     def test_sixty_four_observations_fit_model_envelope_and_preserve_checks(self):
         observations = []
@@ -139,6 +191,38 @@ class ChecklistTests(unittest.TestCase):
 
 
 class FixtureGateTests(unittest.IsolatedAsyncioTestCase):
+    async def test_paywall_pair_without_older_history_blocks_before_route(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fixtures = root / "fixtures"
+            fixtures.mkdir()
+            rows = []
+            for name in ("peekly-sample-previous.zip", "peekly-sample-current.zip"):
+                data = ("owned-fixture:" + name).encode()
+                (fixtures / name).write_bytes(data)
+                rows.append(dict(name=name, bytes=len(data), sha256=byte_digest(data)))
+            manifest = dict(schema_version="peekly-synthetic-fixtures.v1", files=rows, groups={})
+            manifest_path = fixtures / "fixture-manifest.json"
+            manifest_path.write_text(json.dumps(manifest))
+            args = SimpleNamespace(run_root=root / "new-run", library=root / "library",
+                                   product_id="peekly", fixtures=fixtures, turns=64)
+            with patch.object(live, "Library") as library, patch.object(live, "_route") as route:
+                context = library.return_value.__enter__.return_value
+                context.list.return_value = {"personas": [{"persona_id": "PER-one", "revision": 2, "reusable": True}]}
+                context.get.return_value = {"profile": {"requirement_ids": ["PRD-PAYWALL-BOUNDARY"]}}
+                with self.assertRaisesRegex(RuntimeError, "required_fixture_missing:peekly-retention-snapshot-01.zip"):
+                    await live.run_stage(args, ["PER-one"], 2)
+                route.assert_not_called()
+                self.assertFalse(args.run_root.exists())
+            name = "peekly-retention-snapshot-01.zip"
+            data = b"owned-older-same-account-fixture"
+            (fixtures / name).write_bytes(data)
+            rows.append(dict(name=name, bytes=len(data), sha256=byte_digest(data)))
+            manifest_path.write_text(json.dumps(manifest))
+            checked = live.fixture_preflight(fixtures, ["PRD-PAYWALL-BOUNDARY"])
+            self.assertEqual(checked["required_file_count"], 3)
+            self.assertEqual(set(checked["required_fixture_keys"]), {r["name"] for r in rows})
+
     async def test_tampered_required_fixture_blocks_before_provider_route(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

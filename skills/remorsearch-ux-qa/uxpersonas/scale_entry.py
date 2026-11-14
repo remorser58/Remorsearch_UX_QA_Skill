@@ -56,7 +56,7 @@ PEEKLY_FIXTURE_REQUIREMENTS = {
     "PRD-IMPORT-SAVE-FAIL": ("peekly-sample-previous.zip", "peekly-sample-current.zip"),
     "PRD-IMPORT-SNAPSHOT-UNKNOWN": ("peekly-empty-previous.zip", "peekly-sample-current.zip"),
     "PRD-RESULT-SNAPSHOT": ("peekly-sample-previous.zip", "peekly-sample-current.zip"),
-    "PRD-PAYWALL-BOUNDARY": ("peekly-sample-previous.zip", "peekly-sample-current.zip"),
+    "PRD-PAYWALL-BOUNDARY": ("peekly-retention-snapshot-01.zip", "peekly-sample-previous.zip", "peekly-sample-current.zip"),
     "PRD-IDENTITY-LIMIT": ("peekly-sample-previous.zip", "peekly-sample-current.zip"),
     "PRD-RESULT-SEARCH": ("peekly-search-ready.zip",),
     "PRD-SNAPSHOT-RETENTION": tuple(f"peekly-retention-snapshot-{i:02d}.zip" for i in range(1, 12)),
@@ -71,7 +71,7 @@ _PEEKLY_STEPS = {
     "PRD-RESULT-SEARCH": ("Import peekly-search-ready.zip and open a relationship list with at least nine rows.", "Check unfiltered username order, enter an exact observed row key in the visible search input, and verify only that row remains."),
     "PRD-SAMPLE-EXPORT": ("Enter sample mode before importing real synthetic snapshots.", "Open More > 관계 목록 (MatrixTab); inspect both copy/save disabled states and sample titles. Do not click disabled controls.", "When a later criterion requires import, proceed directly to the More import entry after recording export evidence; do not add a separate 샘플 닫기 prerequisite."),
     "PRD-SNAPSHOT-RETENTION": ("Verify all eleven manifest keys before executing any retention step.", "For each snapshot 01 through11: open the current import entry, upload that one ZIP, inspect completion; never mix ZIPs.", "After the eleventh import open saved history and inspect retained count/oldest record; do not substitute repeated imports of the same ZIP."),
-    "PRD-PAYWALL-BOUNDARY": ("Import the complete previous/current pair and inspect free latest comparison names.", "Open history, inspect both date selectors and Pro restrictions; inspect timeline/person-history entry without purchasing."),
+    "PRD-PAYWALL-BOUNDARY": ("Import peekly-retention-snapshot-01.zip as older same-account history, then peekly-sample-previous.zip and peekly-sample-current.zip once; inspect free latest comparison names.", "Open 변화 기록. If tabs are below the record-count overview, scroll(delta=400) in the active modal body and inspect the returned observation.", "Select the visible 기간 비교 tab and inspect both 비교 시작 기록 / 비교 종료 기록 selectors, including their disabled free-state restrictions; do not click disabled controls.", "With older history present, open the visible Pro 기능 보기 explanation and inspect timeline/person-history restrictions without purchasing."),
     "PRD-IMPORT-PROGRESS": ("First save a small baseline with peekly-sample-current.zip if no actual saved snapshot exists; sample mode alone is insufficient.", "Open the current file input and use reviewed upload_cancel with peekly-progress-sample.zip; inspect captured reading and analysis phases, real stop dispatch and unchanged saved-result digest.", "Only if the cancel attempt lacks a required phase, try normal upload of that fixture to observe the missing phase within the remaining budget; never require a large completed import before cancellation."),
     "PRD-IMPORT-SAVE-FAIL": ("Preserve an actual small saved baseline; if absent, import peekly-sample-previous.zip.", "Reopen the file input and use upload_save_failure with the distinct snapshot: current after previous, or previous after current. Inspect consumed fault, prior-result preservation and the visible 다시 저장 action.", "Click the visible retry after the one-shot fault clears, and inspect successful save. Without the reviewed capability report not_run; never simulate a pass."),
 }
@@ -80,18 +80,29 @@ _PEEKLY_STEPS = {
 def criterion_checklist(requirement_ids):
     """Return an ordered execution checklist, never a fabricated verdict."""
     rows = []
+    has_paywall = "PRD-PAYWALL-BOUNDARY" in requirement_ids
+    has_retention = "PRD-SNAPSHOT-RETENTION" in requirement_ids
     for index, rid in enumerate(requirement_ids):
         spec = PEEKLY_CRITERIA.get(rid)
         if spec is None:
             continue
+        steps = list(_PEEKLY_STEPS.get(rid, (spec["action"],)))
+        if rid == "PRD-PAYWALL-BOUNDARY" and has_retention:
+            steps[0] = ("First complete PRD-SNAPSHOT-RETENTION: all eleven distinct imports and retention inspection. "
+                        "Reuse that older history, then import peekly-sample-previous.zip and peekly-sample-current.zip once; "
+                        "inspect free latest comparison names. Do not import the pair before retention or repeat it.")
+        elif has_paywall and rid in {"PRD-RESULT-SNAPSHOT", "PRD-IDENTITY-LIMIT"}:
+            steps[0] = ("After PRD-PAYWALL-BOUNDARY establishes the previous/current pair, reuse it without another upload "
+                        "and open the latest comparison explanation.")
         rows.append(dict(kind="success", index=index, requirement_id=rid,
             precondition=spec["precondition"], scope=spec["scope"],
             required_fixtures=list(PEEKLY_FIXTURE_REQUIREMENTS.get(rid, ())),
-            steps=list(_PEEKLY_STEPS.get(rid, (spec["action"],)))))
+            steps=steps))
     priority = {"PRD-SAMPLE-EXPORT": 0, "PRD-START-SAMPLE": 1,
                 "PRD-START-IMPORT": 2, "PRD-START-SKIP": 2,
-                "PRD-SNAPSHOT-RETENTION": 30, "PRD-RESULT-SNAPSHOT": 40,
-                "PRD-PAYWALL-BOUNDARY": 45, "PRD-IDENTITY-LIMIT": 45,
+                "PRD-SNAPSHOT-RETENTION": 3 if has_paywall else 30,
+                "PRD-RESULT-SNAPSHOT": 40,
+                "PRD-PAYWALL-BOUNDARY": 35, "PRD-IDENTITY-LIMIT": 45,
                 "PRD-PRIVACY-DELETE": 100}
     return sorted(rows, key=lambda row: (priority.get(row["requirement_id"], 20), row["index"]))
 
@@ -115,12 +126,19 @@ def _persona_journey_goal(base_goal, requirement_ids):
     """
     actions = []
     ids = set(requirement_ids)
+    if "PRD-SAMPLE-EXPORT" in ids:
+        actions.append("샘플 둘러보기에서 More > 관계 목록(MatrixTab)을 실제로 연다. 목록 복사와 목록 저장 버튼의 disabled 상태와 샘플 전용 title 안내를 확인한다. 비활성 버튼을 억지로 클릭하지 않으며, 실데이터 목록의 활성 버튼을 샘플 기준 실패로 판정하지 않는다.")
+    if "PRD-SNAPSHOT-RETENTION" in ids:
+        actions.append("서로 다른 유효 합성 스냅샷 11개를 개별 import하고 기록 목록에서 최대 10개 보관을 확인한다. 저장 공간 압박으로 더 적게 보관되면 최신 두 기록 보존을 확인한다. PAYWALL도 있으면 이 단계를 이전/최신 pair보다 먼저 끝낸다. 고정 turn budget으로 끝내지 못하면 retention은 not_run으로 남기고 통과/실패를 만들지 않는다.")
     if ids & {"PRD-START-SAMPLE", "PRD-RESULT-RECIPROCITY", "PRD-RESULT-REVERSE", "PRD-RESULT-MUTUAL"}:
         actions.append("샘플로 둘러보기를 열고 요구된 관계 카드의 설명·숫자를 확인한다. 목록이 해당 기준에 포함되면 직접 열어 목록도 확인한다.")
     if ids & {"PRD-START-IMPORT", "PRD-START-SKIP"}:
         actions.append("현재 PRD 기준으로 More 첫 화면의 '이미 받은 자료로 확인하기'를 눌러 실제 파일 선택 단계까지 이동한다. 별도의 요청 안내 shortcut '이미 파일을 받았어요'는 현재 PRD 요구가 아니므로 찾거나 실패로 판정하지 않는다.")
     if "PRD-RESULT-SNAPSHOT" in ids:
-        actions.append("동일 계정의 두 완전한 합성 스냅샷을 이전→최신 순서로 가져온다. 무료 결과 화면에서 '팔로워에서 빠진 사람'의 숫자와 이름 목록을 확인하고, 목록 변화만으로 원인을 단정하지 않는지 확인한다.")
+        setup = ("PAYWALL 선행 단계에서 가져온 previous/current pair를 재업로드 없이 재사용한다."
+                 if "PRD-PAYWALL-BOUNDARY" in ids else
+                 "동일 계정의 두 완전한 합성 스냅샷을 이전→최신 순서로 가져온다.")
+        actions.append(setup + " 무료 결과 화면에서 '팔로워에서 빠진 사람'의 숫자와 이름 목록을 확인하고, 목록 변화만으로 원인을 단정하지 않는지 확인한다.")
     if "PRD-IMPORT-FORMATS" in ids:
         actions.append("HTML 형식과 JSON 형식의 동등성이 기준이면 두 fixture를 각각 가져와 결과 범주와 수를 대조한다. HTML fixture의 complete html/body 문서 검증이 실패하면 fixture 결함으로 기록하고 제품 실패로 판정하지 않는다.")
     if "PRD-IMPORT-MISSING" in ids:
@@ -137,12 +155,11 @@ def _persona_journey_goal(base_goal, requirement_ids):
         actions.append("현재 PRD의 자체 서버 없음·기기 내 처리 고지를 확인한다. 결과 공유는 사용자가 고른 목적지로 전달될 수 있고 샘플 공유는 비활성화된다는 경계를 구분한다. desktop 브라우저의 외부 요청 차단은 테스트 격리 정책이지 제품 자체의 데이터 흐름 증거라고 주장하지 않는다.")
     if "PRD-PRIVACY-DELETE" in ids:
         actions.append("합성 데이터만 든 별도 브라우저 프로필에서 데이터 삭제 확인 단계를 실행하고 localStorage 앱 상태·onboarding 키 제거를 확인한다. iOS 알림 취소와 WKWebView/cookie 삭제는 desktop 검증 범위 밖이므로 N/A로 기록한다.")
-    if "PRD-SAMPLE-EXPORT" in ids:
-        actions.append("샘플 둘러보기에서 More > 관계 목록(MatrixTab)을 실제로 연다. 목록 복사와 목록 저장 버튼의 disabled 상태와 샘플 전용 title 안내를 확인한다. 비활성 버튼을 억지로 클릭하지 않으며, 실데이터 목록의 활성 버튼을 샘플 기준 실패로 판정하지 않는다.")
-    if "PRD-SNAPSHOT-RETENTION" in ids:
-        actions.append("서로 다른 유효 합성 스냅샷 11개를 개별 import하고 기록 목록에서 최대 10개 보관을 확인한다. 저장 공간 압박으로 더 적게 보관되면 최신 두 기록 보존을 확인한다. 고정 turn budget으로 11회 import를 끝낼 수 없으면 retention은 not_run으로 남기고 통과/실패를 만들지 않는다.")
     if "PRD-PAYWALL-BOUNDARY" in ids:
-        actions.append("동일 계정 두 스냅샷의 현재 관계 목록과 최신 두 기록 비교 이름까지 무료로 보이는지 확인한다. 두 기록 미만이면 upsell을 요구하지 않는다. 여러 기록 timeline·두 날짜 선택·사람별 이력만 Pro 경계로 확인하고 결제는 누르지 않는다.")
+        setup = ("RETENTION 11개 import와 보관 검사를 먼저 끝내고 그 이전 기록을 재사용한다."
+                 if "PRD-SNAPSHOT-RETENTION" in ids else
+                 "peekly-retention-snapshot-01.zip을 동일 계정의 더 오래된 세 번째 기록으로 먼저 가져온다.")
+        actions.append(setup + " 그 뒤 previous/current pair를 한 번만 가져와 무료 최신 비교의 이름을 확인한다. 변화 기록의 기간 비교 탭을 직접 선택하고 날짜 선택기 두 개의 무료 제한과 이전 이력의 Pro 기능 보기 설명을 확인한다. 두 기록만으로 Pro 설명을 찾지 않으며 결제는 누르지 않는다.")
     if "PRD-IMPORT-MULTI" in ids:
         actions.append("파일 선택에서 manifest group peekly-mixed-loose-valid의 정확한 catalog key를 실제 input[type=file][multiple]에 넣고, 512개 허용·513개 거절 및 ZIP+loose 혼합 거절 group을 각각 실행한다.")
     if "PRD-IMPORT-SIZE" in ids:
@@ -167,8 +184,9 @@ def _persona_journey_goal(base_goal, requirement_ids):
         "기계 판정 checks가 존재하면 그 결과를 반드시 따른다. 기계 판정이 없는 기준은 관측 ID와 스크린샷을 인용한다. "
         "필수 fixture나 하위 흐름을 건너뛰고 최종 판단하지 않는다. 성공 기준을 실행하지 않았거나 전제조건이 확인되지 않으면 not_run으로 남기고 다음 실행 행동을 먼저 시도한다. "
         "조건부 복구 기준은 실제 실패가 발생했을 때만 실행하며 실패가 전혀 발생하지 않았으면 not_applicable로 남긴다. 실행하지 않은 조건을 failed로 판정하지 않는다. "
-        "현재 관측에서 visible:true인 control만 클릭한다. 모달이 열렸으면 먼저 보이는 닫기 control로 닫고 새 관측에서 다음 대상을 찾는다. "
+        "현재 관측에서 visible:true인 control만 클릭한다. 다음 대상이 열린 모달 밖에 있을 때만 보이는 닫기 control로 닫고 새 관측에서 찾는다. 모달 안의 탭·날짜 선택기·Pro 설명을 확인할 때는 모달을 유지한다. "
         "모달이 없고 현재 More 관측에 '이미 받은 자료로 확인하기'가 있으나 visible:false이면, 다른 탭으로 이동하지 말고 scroll(delta=-400) 후 반환된 최신 관측을 확인한다. 필요하면 한 번 더 반복하고 visible:true가 확인된 뒤에만 클릭한다. "
+        "같은 영역·방향으로 scroll한 결과 위치와 가시 control이 2회 연속 그대로면 더 반복하지 않는다. 막힌 이유와 해당 기준의 not_run을 남기고 다른 미완료 기준을 실행한다. 같은 모달을 닫고 다시 열어도 횟수는 초기화하지 않으며, 선행조건이나 화면 상태가 바뀐 뒤에만 재시도한다. "
         "체크리스트 순서로 남은 기준을 하나씩 처리하며, 완료한 경로를 반복하지 않는다. 샘플 export는 데이터 import 전에, 데이터 삭제는 마지막에 한다. "
         "행동 도구가 이미 최신 DOM을 반환했으면 같은 화면의 observe를 반복하지 않는다. 파일 이름/selector는 현재 fixture_catalog와 controls에서만 고른다.")
 

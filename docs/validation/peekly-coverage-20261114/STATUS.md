@@ -14,14 +14,22 @@ Reduce the 46 success-criterion not_run records in the ee4b145 r4/r6 completed-s
 - Base and original remote verified: ee4b14571930af428d5a52e0e133deebedba485d
 - Product/PRD: existing owned Peekly build 51110f4; do not change product UX in this runner-focused task.
 
-## Current state — r3 is running, never launch it again
+## Current state — r4 repair frozen and fully validated, not launched
 
-- Frozen runtime commit:18a4c0af8cee17e6af73984eaebfa4a5595720e4. Pushed to origin/rem/peekly-coverage-20261114; exact remote SHA verified.
+- R3 runtime commit:18a4c0af8cee17e6af73984eaebfa4a5595720e4. Pushed and remote SHA verified; docs-only de7692192636bf1083425d2a9db9c8eb33d22c54 was also pushed and verified.
 - Fresh detached launch2026-11-14T05:19:15Z, PID84778; durable started_at05:19:18Z. Exact personas016/029.
 - Run root:.ux-loop/peekly-coverage-smoke-r3-20261114; stage-2/queue.sqlite; launch log:.ux-loop/peekly-coverage-smoke-r3-launch-20261114.log.
-- Initial queue inspection:running2,016turn3/029turn1, no problem. Read current queue/run-status for newer progress.
-- Source, fixtures and saved persona library are frozen. Do not edit them during this run. Docs-only updates are allowed.
-- R1/r2 are preserved and cannot authorize expansion. No32-person cohort has launched. After r3 passes the stored gate, use the existing cohort launcher once; it verifies the exact same freeze and excludes all prior job IDs.
+- R3 ended2026-11-14T05:35:49Z:smoke_passed numerically,2 valid complete,0 queued/running/uncertain. Sessions0passed/1failed/1inconclusive; success3passed/1failed/2not_run/0N/A; recovery1passed/1N/A. Prior queues unchanged, browser shutdown confirmed.
+- Final r3 ledger audit valid:49 requests/47 call IDs,2 known completed-response repairs,0 uncertain resends/0 unsettled guards. Only free TOKENMAXX route, fallback0. No persona run is currently active; runtime edits began only after r3 ended.
+- R1/r2 are preserved. No32-person cohort has launched. R3 has exposed a new deterministic scroll-target defect; do NOT expand from r3 even if its numerical gate later passes. Repair and verify this known blocker before a new smoke/32 cohort.
+- R3 persona016:valid operational_completed=true, failed session, success passed2/failed1/not_run0; direct missing-save-retry failure is now admitted.029 ended at31 turns with sample export passed and retention/paywall not_run.
+- Newly confirmed r3 blocker:driver mouseWheel is hard-coded to(500,400), outside the saved history modal at viewport756x413/modal roughlyx118..638,y96..318. Four scrolls(+300,-400x3) left identical PNGsobs19–23, SHAe029fa773bb6ce590fe595e6733014d0c712307a391df72fc820e3d3c2169b08. Closing at24 worked. Scroll targeting is a runner defect; possible zero-height modal body is still being checked against product source.
+- Product source resolves the apparent missing body:at756x413 desktop CSS leaves a221px sheet with approximately84px scrollable body; the tabs are below the visible overview. There is no established zero-height product defect. Pro explanation additionally requires an older comparable period beyond the latest pair.
+- After r3 terminal confirmation, driver agent was authorized to fix actual modal scroll targeting/movement evidence and run a local-only owned Chrome fixture regression; task agent to fix retention/paywall prerequisites, no-movement escape and r4 root. No model calls, product edits or old queue writes. Keep production viewport unchanged. R4 has NOT launched; no32 cohort yet.
+- Both agents have now finished and frozen source edits. Task/fixture/launcher31 tests pass; driver/evidence/admission31 Python tests pass, including30 Node guardrail cases. All32 saved-persona goals pass privacy/8000-character bounds; longest6057 with conservative787-character base goal.
+- Actual local Chrome fixture regression passed with one temporary profile, zero page network requests and profile removed. An84px body moved0→67 after requested400 was capped67, a below-fold control became visible/hit-testable, background did not move. Old fixed point did not move; zero-height/fitting/covered targets did not dispatch. Production viewport remains implicit/unmodified; isolated test measured756x432.
+- Evidence:.ux-loop/peekly-scroll-regression-20261114-dE8wr9/result.json (SHA256c95c02368b957b045a481e1cc6092da9d5fe51e5e1d9729b5e87ecf1e3f0fee9), before.png, after.png, focused-tests.log. Verified driver SHA256dcddb4069f3103da5c66ed3da3a3927eee83c1d5759c648d5521de664de8b4a5.
+- Parent full regression completed:1718 tests,1697 passed,21 optional dependency skips,0 failures,198.965s. Log .ux-loop/peekly-coverage-r4-regression-20261114.log SHA256909b3b9362a540f3baf4df48232cd0dbfa9f2e077613ef0164a3a15f0e799983. No repeat needed. Actual r4 offline preflight passed:30 prior queues,293 forbidden job IDs,36 historical uncertain rows. New default smoke root:.ux-loop/peekly-coverage-smoke-r4-20261114; it does not exist yet.
 
 ## Initial implementation before r1 (historical)
 
@@ -83,10 +91,10 @@ Reduce the 46 success-criterion not_run records in the ee4b145 r4/r6 completed-s
 
 ## Next checkpoints
 
-1. Inspect the ALREADY RUNNING r3 smoke. Never launch it again or resume r1/r2.
-2. Use short readonly SQLite/jq calls. Confirm valid completed receipts, frozen inputs, prior_queues_unchanged and no router resend after uncertainty before expansion.
+1. Inspect/stage and commit the fully verified repair and docs. Never resume r1/r2/r3. Do not repeat the actual browser fixture regression or full suite unnecessarily; both passed against the current frozen source.
+2. Commit and push the verified repair, then launch a fresh r4 smoke once. Confirm valid receipts, frozen inputs, prior_queues_unchanged and no router resend after uncertainty before expansion.
 3. Latest r6 same-person baseline has3 success not_run. Expansion requires2 valid complete receipts, no host_protocol, zero success N/A and fewer than3 success not_run.
 4. If completed receipts demonstrate not_run reduction, launch fresh32 once, preserve every uncertain send; periodically inspect.
 5. Update four-column comparison, report commit/push, verify remote SHA and clean worktree.
 
-If interrupted, read this file and durable queues before doing anything. Existing uncertain operations are never replayed; completed outputs are read back. R1 and r2 are stopped and preserved. R3 has already launched; inspect its state, never start a second copy.
+If interrupted, read this file and durable queues before doing anything. Existing uncertain operations are never replayed; completed outputs are read back. R1/r2/r3 are stopped and preserved. R4 source is frozen and fully validated; no new persona run has launched at this checkpoint. Inspect root existence before any launch.

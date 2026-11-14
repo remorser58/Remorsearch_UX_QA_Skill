@@ -90,6 +90,149 @@ export async function dispatchVerifiedClick(resolveTarget, verifyTarget, emit) {
   return box;
 }
 
+// Read-only DOM planning. A wheel is never aimed at a fixed viewport coordinate
+// or a background page while an active modal owns the interaction.
+export function pageScrollTarget(delta, expected = null) {
+  const modalQuery='[role="dialog"][aria-modal="true"],[role="alertdialog"][aria-modal="true"],dialog[open]';
+  const viewport={width:innerWidth,height:innerHeight};
+  const selector=e=>{
+    if(e===document.documentElement)return 'html';
+    if(e===document.body)return 'body';
+    const parts=[];
+    while(e&&e.nodeType===1&&e!==document.body){
+      let n=1;for(let p=e.previousElementSibling;p;p=p.previousElementSibling)if(p.tagName===e.tagName)n++;
+      parts.unshift(e.tagName.toLowerCase()+':nth-of-type('+n+')');e=e.parentElement;
+    }
+    return 'body>'+parts.join('>');
+  };
+  const shown=e=>{const s=getComputedStyle(e);return s.display!=='none'&&s.visibility!=='hidden'&&s.visibility!=='collapse';};
+  const clip=r=>({left:Math.max(0,r.left),right:Math.min(innerWidth,r.right),
+    top:Math.max(0,r.top),bottom:Math.min(innerHeight,r.bottom)});
+  const area=r=>Math.max(0,r.right-r.left)*Math.max(0,r.bottom-r.top);
+  const points=r=>area(r)>0?[ [.5,.5],[.25,.25],[.75,.25],[.25,.75],[.75,.75] ]
+    .map(([x,y])=>({x:r.left+(r.right-r.left)*x,y:r.top+(r.bottom-r.top)*y})):[];
+  const modalAt=p=>document.elementFromPoint(p.x,p.y)?.closest(modalQuery)||null;
+  const modals=[...document.querySelectorAll(modalQuery)].filter(shown);
+  const base={viewport,document_scroll:{x:window.scrollX,y:window.scrollY},blocked_areas:[]};
+  if(modals.length>8)return {...base,status:'modal_scan_limit',target:null};
+  const visible=modals.filter(e=>area(clip(e.getBoundingClientRect()))>0), beneath=new Set();
+  for(const a of visible)for(const b of visible){
+    if(a===b)continue;
+    const ar=clip(a.getBoundingClientRect()),br=clip(b.getBoundingClientRect());
+    const overlap={left:Math.max(ar.left,br.left),right:Math.min(ar.right,br.right),
+      top:Math.max(ar.top,br.top),bottom:Math.min(ar.bottom,br.bottom)};
+    if(points(overlap).some(p=>modalAt(p)===b))beneath.add(a);
+  }
+  let exposed=visible.filter(e=>!beneath.has(e)&&points(clip(e.getBoundingClientRect())).some(p=>modalAt(p)===e));
+  if(exposed.length>1){
+    const focused=document.activeElement?.closest(modalQuery);
+    exposed=focused&&exposed.includes(focused)?[focused]:[];
+  }
+  if(modals.length&&exposed.length!==1)
+    return {...base,status:visible.length?'modal_not_uniquely_exposed':'modal_has_no_usable_area',target:null};
+  const modal=exposed[0]||null,scope=modal||document.body;
+  const scopeSelector=modal?selector(modal):null;
+  Object.assign(base,{scope:modal?'modal':'page',modal_selector:scopeSelector,
+    modal_bounds:modal?{...clip(modal.getBoundingClientRect())}:null});
+  const nodes=[scope,...scope.querySelectorAll('*')];
+  if(!modal&&document.scrollingElement&&!nodes.includes(document.scrollingElement))nodes.unshift(document.scrollingElement);
+  if(nodes.length>1500)return {...base,status:'scroll_scan_limit',target:null};
+  const metrics=e=>{
+    const s=getComputedStyle(e),r=clip(e.getBoundingClientRect());
+    return {selector:selector(e),scroll_top:e.scrollTop,scroll_height:e.scrollHeight,client_height:e.clientHeight,
+      content_height:Math.max(0,e.clientHeight-(parseFloat(s.paddingTop)||0)-(parseFloat(s.paddingBottom)||0)),
+      max_scroll_top:Math.max(0,e.scrollHeight-e.clientHeight),overflow_y:s.overflowY,
+      bounds:r,visible_area:area(r)};
+  };
+  const styled=e=>{
+    if(!e||!shown(e))return false;
+    const overflow=getComputedStyle(e).overflowY;
+    return ['auto','scroll','overlay'].includes(overflow)||
+      (!modal&&e===document.scrollingElement&&!['hidden','clip'].includes(overflow));
+  };
+  const usable=e=>{
+    if(!styled(e))return false;
+    const m=metrics(e);
+    return m.client_height>0&&m.content_height>0&&m.visible_area>0&&m.max_scroll_top>1;
+  };
+  const receiver=hit=>{
+    for(let e=hit;e&&e.nodeType===1;e=e.parentElement){
+      if(usable(e))return e;
+      if(modal&&e===modal)break;
+    }
+    return null;
+  };
+  const hitTarget=(e,p)=>{
+    const r=clip(e.getBoundingClientRect());
+    if(p.x<r.left||p.x>=r.right||p.y<r.top||p.y>=r.bottom)return false;
+    const hit=document.elementFromPoint(p.x,p.y);
+    return !!hit&&(hit===e||e.contains(hit))&&(!modal||hit.closest(modalQuery)===modal)&&receiver(hit)===e;
+  };
+  const describe=(e,p)=>{
+    const m=metrics(e),canMove=delta>0?m.scroll_top<m.max_scroll_top-1:m.scroll_top>1;
+    return {...base,status:delta===0?'zero_delta':canMove?'ready':'at_boundary',target:{...m,point:p}};
+  };
+  base.blocked_areas=nodes.filter(styled).map(metrics)
+    .filter(m=>m.client_height<=0||m.content_height<=0||m.visible_area<=0).slice(0,8);
+  if(expected){
+    if(expected.modal_selector!==scopeSelector)return {...base,status:'active_scope_changed',target:null};
+    let e;try{e=document.querySelector(expected.selector);}catch{}
+    if(!e||!nodes.includes(e)||!usable(e)||!hitTarget(e,expected.point))
+      return {...base,status:'target_not_visible_or_scrollable',target:null};
+    return describe(e,expected.point);
+  }
+  const candidates=nodes.filter(usable).sort((a,b)=>metrics(b).visible_area-metrics(a).visible_area);
+  for(const e of candidates){
+    const point=points(clip(e.getBoundingClientRect())).find(p=>hitTarget(e,p));
+    if(point)return describe(e,point);
+  }
+  return {...base,status:base.blocked_areas.length?'scroll_area_has_no_usable_height':
+    candidates.length?'scroll_target_occluded':'no_scrollable_area',target:null};
+}
+
+export async function runScrollAttempt(io, requestedDelta) {
+  if(!Number.isInteger(requestedDelta))throw new Error('scroll_delta_invalid');
+  const delta=Math.max(-900,Math.min(900,requestedDelta)),started=io.now();
+  const selected=await io.inspect(delta,null);
+  const result={schema_version:'owned-scroll-attempt.v1',requested_delta:requestedDelta,delta:0,
+    viewport:selected.viewport,scope:selected.scope||null,modal_selector:selected.modal_selector||null,
+    modal_bounds:selected.modal_bounds||null,blocked_areas:selected.blocked_areas||[],
+    dispatched:false,moved:false,outcome:selected.status,before:selected.target,after:null,
+    document_before:selected.document_scroll,document_after:null};
+  if(selected.status!=='ready'||!selected.target)return result;
+  const expected={selector:selected.target.selector,modal_selector:selected.modal_selector,
+    point:selected.target.point};
+  await io.move(expected.point);
+  const verified=await io.inspect(delta,expected);
+  if(verified.status!=='ready'||!verified.target)
+    return {...result,outcome:verified.status,before:verified.target,blocked_areas:verified.blocked_areas||[]};
+  result.before=verified.target;result.document_before=verified.document_scroll;
+  result.viewport=verified.viewport;result.modal_bounds=verified.modal_bounds||null;
+  // Keep overlap in short panes so a just-below-fold control is not skipped.
+  const visibleHeight=Math.min(verified.target.client_height,
+    verified.target.bounds.bottom-verified.target.bounds.top);
+  result.delta=Math.sign(delta)*Math.min(Math.abs(delta),Math.max(1,Math.floor(visibleHeight*.8)));
+  // Any exception after this send propagates as uncertainty. Never replay a wheel.
+  await io.wheel(expected.point,result.delta);result.dispatched=true;
+  const settleStarted=io.now();
+  for(let sample=0;sample<12&&io.now()-settleStarted<300;sample++){
+    await io.pause(25);
+    const observed=await io.inspect(delta,expected);
+    result.document_after=observed.document_scroll;
+    if(!observed.target){result.outcome='target_changed_after_dispatch';break;}
+    result.after=observed.target;
+    const movement=result.after.scroll_top-result.before.scroll_top;
+    result.observed_delta=movement;
+    if(movement!==0){result.moved=true;result.outcome='scrolled';break;}
+    result.outcome='no_movement';
+  }
+  result.background_moved=!!result.document_after&&(
+    result.document_after.x!==result.document_before.x||result.document_after.y!==result.document_before.y);
+  if(result.scope==='modal'&&result.background_moved)result.outcome='background_moved';
+  result.observation_window_ms=io.now()-started;
+  return result;
+}
+
 export function pageImportState() {
   const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
   const phase=norm(document.querySelector('[role=status][aria-live=polite]')?.textContent);
@@ -332,7 +475,7 @@ export function approvedCancelFixture(entries) {
 }
 async function act(input) {
   const name=input.name, args=input.arguments||{};
-  let uploadedFixture=null, uploadProgressSamples=[], importAttempt=null, clickDispatch=null;
+  let uploadedFixture=null, uploadProgressSamples=[], importAttempt=null, clickDispatch=null, scrollAttempt=null;
   const extraCaptures=[];
   if (name==='observe') {
     const state=await observe(); const capture=await screenshot();
@@ -420,8 +563,12 @@ async function act(input) {
     await send('Input.insertText',{text:value});
     typedInputs.set(selector,hash(Buffer.from(value,'utf8')));
   } else if (name==='scroll') {
-    const delta=Math.max(-900,Math.min(900,args.delta));
-    await send('Input.dispatchMouseEvent',{type:'mouseWheel',x:500,y:400,deltaX:0,deltaY:delta});
+    scrollAttempt=await runScrollAttempt({
+      inspect:(delta,expected)=>evaluate('('+pageScrollTarget.toString()+')('+JSON.stringify(delta)+','+JSON.stringify(expected)+')'),
+      move:point=>send('Input.dispatchMouseEvent',{type:'mouseMoved',...point}),
+      wheel:(point,delta)=>send('Input.dispatchMouseEvent',{type:'mouseWheel',...point,deltaX:0,deltaY:delta}),
+      pause:ms=>new Promise(resolve=>setTimeout(resolve,ms)),now:()=>Date.now(),
+    },args.delta);
   } else if (name==='wait') {
     const ms=Math.max(0,Math.min(3000,args.ms)); await new Promise(r=>setTimeout(r,ms));
   } else throw new Error('unknown_tool');
@@ -435,8 +582,11 @@ async function act(input) {
     if(name==='upload_save_failure')importAttempt.terminal_state=importAttempt.storage_fault?.consumed
       ? 'storage_fault_consumed' : 'storage_fault_not_consumed';
   }
-  return {text:'Action '+name+' completed.\nURL '+state.url+'\nTitle '+state.title+'\n'+state.text,
+  const actionText=scrollAttempt?'Scroll '+scrollAttempt.outcome+'; wheel dispatched='+scrollAttempt.dispatched+
+    ', observed movement='+(scrollAttempt.observed_delta||0)+'.':'Action '+name+' completed.';
+  return {text:actionText+'\nURL '+state.url+'\nTitle '+state.title+'\n'+state.text,
     facts:{...state,last_action:name,...(name==='click'?{last_action_label:args.label,click_dispatch:clickDispatch}:{}),
+      ...(scrollAttempt?{scroll_attempt:scrollAttempt}:{}),
       ...(uploadedFixture?{uploaded_fixture:uploadedFixture,upload_progress_samples:uploadProgressSamples,import_attempt:importAttempt}:{})},
     captures:[...extraCaptures,capture],checks:[]};
 }

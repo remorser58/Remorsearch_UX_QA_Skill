@@ -47,5 +47,8 @@ obs10–15의 Results↔More 왕복은 과제 문구를 개선할 근거다. sam
 - Report SHA-256 `ad2eab7355b243caf150299c122f07b1656fecb41ca4621c8c7eab93335cd5c5`; stage-summary SHA-256 `c2b1b5d2431e0eeb8997676961e2e11b48d6603f72ab4e4bbe74676e96a88843`.
 - 이전 큐 무변경과 격리 브라우저 종료가 확인됐다. 사용 route는 `TOKENMAXX/deepseek-v4.1-flash-free` 한 개이며 fallback0이다.
 - 016의 저장 결과 해시 및 증거27개의 실제 파일 해시를 독립 대조했고 불일치0이었다. 결과 SHA-256은 `7ddf2088be466650b49add6a6069b31fb2d5a9af7801f69412c3938b0c451158`다.
+- 029의 등록 증거122개(JSON61/PNG61)도 독립 대조해 누락·해시 불일치0을 확인했다. 11개 파일 각각에서 manifest 해시 일치, 저장 digest 변경, 성공 안내와 서로 다른 결과(팔로워13→23/팔로잉12)가 관측됐다.
+- obs52의 이력 시작13:55·최신 비교14:05→14:06(KST)은 저장 operation의 snapshot02 13:55:18,10 14:05:26,11 14:06:23과 일치한다. 첫01은13:53:43이었다. 고정 제품의 RelationshipHistorySheet가 시작 시각을 정렬된 첫 기록의 observedAt으로 표시하므로, 화면상 가장 오래된01이 빠지고 최신10개가 남았다는 추가 근거다. 전체 내부 snapshot ID 목록은 보존하지 않아 저장소의 물리적 삭제 자체를 직접 검증한 것은 아니다.
+- obs49 SHA-256 `03d836dd315d18a10bd0ea3a81204c708f08094d81e2494895769ba0bd242629`; obs52 SHA-256 `afa04455e58881476e710d5d1bc04ed49edf1396dcc94de4f8bbefeddd6889cc`. 029의 공통 증거 위치는 `stage-2/sessions/S-gpnddknljnlgfgabohhngibn/evidence/S-gpnddknljnlgfgabohhngibn/1/`이다.
 
 종료 후 수정은 failed/not_run의 제한된 진단 이유 수용, 샘플 종료 우회와 가시성에 따른 스크롤 안내, 새 r3 루트 지정뿐이다. 새 실패 증거 회귀5개·체크리스트7개·launcher18개가 모두 통과했다. 관련 기존85개 검증은65개 통과·선택 LangGraph 의존성20개 건너뜀·실패0개다. 실제 r3 사전 점검은29개 이전 큐와291개 job ID의 재사용 차단을 확인했다.
