@@ -1,102 +1,79 @@
-# Peekly explicit-success verification — 2026-11-14
+# Peekly 실행 결과 최종 집계 — 2026-11-14
 
-> Latest queue reconciliation: see [final cohort audit — 2026-11-14](final-cohort-audit-20261114.md). It documents the initial queue-state discrepancy and why a trustworthy 32-persona aggregate cannot yet be published.
+**최종 결과는 24개 완료 세션, 고유 페르소나 15명이다.** 저장된 세션 판정은 **통과 1 / 실패 6 / 미결론 17**, 기준 전체는 **통과 35 / 실패 6 / 미실행 46 / N/A 17**, 완료 영수증의 `host_protocol`은 **0건**이다. 불확실 전송 **5건**과 대기 **1건**은 이 24세션 밖의 미평가 실행 기록으로 유지한다.
 
-## Decision and scope
+이번 작업은 기존 저장 증거의 집계·보고·커밋·푸시에 한정했다. 새 페르소나 실행, 모델 호출, 브라우저 호출은 모두 0회다. 원본 큐·영수증·관측·스크린샷·엔진·제품 코드는 수정하지 않았다.
 
-This report uses the current Peekly PRD from product commit `51110f4` (SHA-256 `a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b`) and the 32 saved personas re-derived against that PRD. It does **not** start another persona journey. The final queue state is frozen at 23 operationally completed sessions, one blocked session and one uncertain model send. The uncertain send is preserved and was not replayed.
+## 3열 비교표
 
-The final queue's original `resume-report-r1.json` is retained unchanged. The additive `resume-report-rules-r1.json` is a stored-evidence-only overlay. It reads existing observation JSON, screenshot references and the frozen synthetic fixture archive; it does not dispatch a browser action, model decision or review call. Re-judgment ledger: 16 criterion changes; 0 model calls; 0 browser calls. The original observations and screenshots are not rewritten.
-
-The comparison below distinguishes session outcomes from criterion-unit counts. `N/A / 미평가` means no valid UX verdict could be issued (blocked, uncertain or unassessed); it is not a product failure. Recovery criteria are shown separately because `not_applicable` is permitted only for a conditional recovery that had no trigger.
-
-## Three-run comparison
-
-| Measure | First run — `696dbe3` | Verdict revision — `cb0188d` | Current — stored-evidence re-judgment |
+| 지표 | 최초 `696dbe3` | 재판정 `cb0188d` | 최종 r4 + r6 완료 세션 |
 | --- | ---: | ---: | ---: |
-| Distinct personas in cohort | 32 | 32 | 25 queue entries (23 complete, 2 not assessed) |
-| Session UX pass | 0 | 4 | 0 |
-| Session UX fail | 2 | 0 | 0 |
-| Session UX inconclusive | 30 | 7 | 23 |
-| N/A / 미평가 | 0 | 21 | 2 (1 blocked, 1 uncertain) |
-| Success criteria — passed | Not recorded in 696dbe3 index | 22 | 2 |
-| Success criteria — failed | Not recorded in 696dbe3 index; 3 model-failed candidates were separately listed for review | 0 | 0 |
-| Success criteria — not run | Not recorded in 696dbe3 index | 6 | 74 |
-| Success criteria — N/A | Not recorded in 696dbe3 index | 0 | 0 |
-| Recovery criteria — passed | Not recorded in 696dbe3 index | 2 | 1 |
-| Recovery criteria — not run | Not recorded in 696dbe3 index | 0 | 22 |
-| Recovery criteria — N/A | Not recorded in 696dbe3 index | Not separately itemized in the old summary | 0 |
+| 집계한 완료 세션 | 32 | 32 | **24** |
+| 고유 페르소나 | 32 | 32 | **15** |
+| 세션 통과 | 0 | 6 | **1** |
+| 세션 실패 | 2 | 4 | **6** |
+| 세션 미결론 | 30 | 22 | **17** |
+| 기준 전체 통과 | 미기록 | 56 | **35** |
+| 기준 전체 실패 | 미기록 | 4 | **6** |
+| 기준 전체 미실행 | 미기록 | 42 | **46** |
+| 기준 전체 N/A | 미기록 | 34 | **17** |
+| 완료 영수증의 `host_protocol` | 별도 집계 없음 | 별도 집계 없음 | **0** |
 
-**Reading the comparison:** the first run's 32 sessions were operationally complete, but its two failed model verdicts were not two confirmed functional defects. The prior independent review explicitly rejected the obsolete import-shortcut criterion as a product defect and did not independently confirm the former-mutual copy failure. The `cb0188d` attempt is dominated by 21 `engine_conflict` blocks; its four passes and seven inconclusives are the 11 assessed sessions, not a 32-persona product pass. The current 23 completed sessions remain inconclusive because most applicable criteria were not fully executed and 22 completed receipts still carry `host_protocol` execution issues. The two unassessed sessions are not silently counted as UX failures.
+기준 전체는 성공 기준과 조건부 복구 기준의 합계다. `cb0188d`의 N/A 34는 native 공유 미리보기 7 + 조건부 복구 27이며, 최종 N/A 17은 전부 조건부 복구다. 최종 성공 기준의 native 전용 미검증 부분은 기존 영수증의 `not_run`을 보존했다. N/A를 통과에 더하지 않았다.
 
-The first-run machine index does not retain a complete success/recovery criterion-unit ledger. Those cells are deliberately `Not recorded`, rather than reconstructed from session totals. Its indexed evidence does record three model-failed criteria for independent review and one manually reviewed finding.
+이전 `e638375` 보고서가 `cb0188d`로 표기한 4 / 0 / 7 / 미평가 21은 초기 큐의 일부 기록이었다. 해당 커밋의 `verdict-quality-summary.json.after` 및 32명 evidence index를 직접 확인해 **6 / 4 / 22**로 정정했다. 최초 `run-summary-32.json`의 마지막 단계 16명과 전체 32명도 구분했다.
 
-## Current queue and stored-evidence re-judgment
+두 과거 기준은 제품 `58214441`, 최종 큐는 PRD `51110f4` 및 재도출 기준이다. 집계 범위·기준·반복 세션 수가 달라 통과율 변화로 제품 개선 효과를 단정하지 않는다.
 
-Final queue counts from `stage-25/resume-report-r1.json`:
+## 완료 세션·불확실 실행 분리
 
-- 23 complete; 1 blocked (`PER-PEEKLY-V2-031`, `tool_context_unavailable`); 1 uncertain (`PER-PEEKLY-V2-011`, TOKENMAXX route failure after a persisted send intent).
-- Of the 23 complete entries, 22 carry a `host_protocol` execution problem and one has no recorded problem. These are execution/protocol limitations, not 22 additional product defects.
-- No new model or browser calls were made for re-judgment.
+| 큐 | 완료 | 통과 / 실패 / 미결론 | 불확실 | 대기 | host_protocol |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| r4 | 12 | 1 / 4 / 7 | 3 | 1 | 0 |
+| r6 | 12 | 0 / 2 / 10 | 2 | 0 | 0 |
+| 합계 | **24** | **1 / 6 / 17** | **5** | **1** | **0** |
 
-Sixteen stored criterion statuses changed under the current-PRD deterministic rules:
+r4와 r6의 완료 페르소나 중 **016·017·018·019·020·023·026·029·030, 9명이 겹친다.** 따라서 24세션을 24명 또는 32명 완료로 표시하지 않는다. r5의 031 재관측은 r6의 031과 중복이어서 추가하지 않았다.
 
-| Change | Count | Interpretation |
-| --- | ---: | --- |
-| failed → passed | 1 | The current More > `이미 받은 자료로 확인하기` path reached the file-selection view; the obsolete request-guide phrase is not required by the current PRD. |
-| failed → not_run | 12 | A failure had been inferred without the criterion's own required precondition/fixture/result. This includes malformed HTML/account/missing-list fixture criteria and the sample-export check on a real-data list rather than the sample MatrixTab. |
-| passed → not_run | 3 | HTML/JSON parity had been marked passed even though the frozen HTML fixture is not a complete HTML document. The fixture cannot support either a product pass or product failure. |
+불확실 5건은 r4 021·022·025와 r6 022·027의 **전송/실행 기록**이다. r4의 대기 031도 그대로 유지한다. 같은 페르소나가 다른 큐에서 완료됐더라도 기존 불확실 기록을 완료로 덮어쓰지 않는다. 이번 작업에서는 재전송하지 않았다.
 
-The frozen `peekly-format-html.zip` contains fragmentary `followers.html` / `following.html` content without a complete `<html><body>…</body></html>` document. Its SHA-256 is `23d5efe57558a95f13ae00615b1a5b8ccc8c597c1b59b877da5e40d8071ae63d`. This is a test-fixture defect. The parser's rejection of this invalid fixture is not evidence of a product parser defect. A valid, complete HTML fixture is required before HTML/JSON parity can be judged.
+| 범위 | 통과 | 실패 | 미실행 | N/A | 합계 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 성공 기준 | 28 | 6 | 46 | 0 | 80 |
+| 조건부 복구 기준 | 7 | 0 | 0 | 17 | 24 |
+| 전체 기준 | **35** | **6** | **46** | **17** | **104** |
 
-The corrected rules also bind malformed-HTML, account-mismatch and missing-list outcomes to the exact fixture actually uploaded and its own result observation. A result left over from a previous valid import can no longer make a different criterion fail. `not_run` carries a reason and evidence link in the overlay; it is not promoted to pass.
+## 대표 UX 항목과 원인 분류
 
-## Defect classification — keep the causes separate
+| 분류 | 심각도 | 항목 | 이번 보고의 결론 |
+| --- | --- | --- | --- |
+| 제품 UX, 이전 확인 항목 | P3 | 주요 관계 설명에서 과거 맞팔 포함 의미가 드러나지 않음 | 기존 `UX-03-RELATION-MEANING` 리뷰를 보존. 같은 짧은 문구가 r6 관측에도 있음. 최신 v3 발췌만으로 현재 PRD 위반을 새로 확정하지 않음. |
+| 실행기·판정 한계 | P2 | 가져오기 진행/취소 실패 판정 4건 | 51~104ms 완료 및 업로드 도구 내부 polling으로 진행 중 취소를 실제 시험하지 못함. 제품 기능 부재로 확정할 수 없음. |
+| 실행기·판정 오귀속 | P2 | 맞팔 목록 대신 계정 상세가 열렸다는 실패 1건 | r4 019의 직전 관측에서 대상 버튼 `visible:false`. 모달 뒤 좌표 클릭 및 대상 검증 누락이 확인되어 제품 맞팔 계산 결함으로 집계하지 않음. |
+| 판정기 오판 | P2 | 이름 변경 가능성 안내 누락 실패 1건 | r6 023은 비교 화면을 열지 않은 첫 기록/비교 예고 화면을 봄. 비교 안내 기준의 선행조건이 불충족. |
+| 보고 집계 결함 | P1 | 미완료를 valid/inconclusive로 포함, 큐 간 중복 인원 합산 | SQLite complete + 완료 영수증으로 집계를 바로잡음. 엔진 구현은 이번 범위에서 변경하지 않음. |
 
-### Product UX defects
+**원본 판정상 실패 6건은 독립 확정된 제품 결함 6건이 아니다.** 판정값은 수정하지 않고, 위 원인 분류와 한계를 별도 기록했다. 과거 결과 화면 위치·가져오기 진입 발견성 P2 항목은 역사적 관측으로 남기며 이번에 새 결함으로 더하지 않는다.
 
-**P3 — The main relationship hint omits the former-mutual inclusion rule (still present in current source).** The PRD definition includes people who used to follow back but no longer do. The visible hint still says only `내가 팔로우하는데 나를 팔로우하지 않아요`, which does not explain that inclusion. The current product worktree at `51110f4` still contains this copy in `src/components/ResultsTab.tsx:272`; the current PRD definition is in `docs/PRD.md` §4. This is a content-accuracy/discoverability gap, not a calculation defect. The earlier persona-020 observation is in `evidence-index-32.json` (`PER-PEEKLY-V2-020`, `obs-2`, screenshot `browser-00019.png`, SHA-256 `af7e9524110ed26fceb8e6deff6023fe2595614fd6542e3ec6feef9939abcdd0`). The finding is still statically reproducible in the current source; this turn did not re-run a browser journey for it.
+각 항목의 정확한 관측·스크린샷 경로와 판단 근거는 [최종 감사 보고서](final-cohort-audit-20261114.md)에 있다.
 
-**Historical P2 — Imported result summary below the visible viewport.** The 2026-11-13 evidence review observed this in 29/32 journeys at 756×413. The current source now calls `heading.scrollIntoView({ block: 'start', behavior: 'instant' })` in `src/components/ResultsTab.tsx:164`, so the old finding appears addressed in code. Current-build runtime behavior was not re-run in this turn; do not claim a new live pass.
+## 검증 및 산출물
 
-**Historical P2 — Manual import entry discoverability.** The earlier 32-persona evidence observed the old disclosure below the fold and repeated More-tab searches. The current PRD/build now exposes `이미 받은 자료로 확인하기` on More. Current persona-007 observations 2–3 show the More entry and its click opening the file-selection flow; see the private evidence path below. This path is confirmed for the observed desktop journey, not certified across all viewports or iOS.
+- SQLite를 read-only로 열어 queue / report / stage-summary의 상태와 plan / report / DB의 job·persona 대응을 대조했다.
+- 완료 결과 24건의 저장 SHA-256, 영수증 outcome·criteria 일치, 증거 참조 822건의 SHA-256을 확인했다.
+- r4/r6에 기록된 엔진 manifest 10개 항목과 제품 build hash가 동일하다.
+- 실행하지 않은 과제, 불확실 전송, 조건부 N/A를 통과나 제품 실패로 옮기지 않았다.
+- 보고서 JSON·합계·참조와 `git diff --check`만 검증했다. 이번에는 제품/엔진 회귀나 여정을 재실행하지 않았다.
 
-No current 23-session stored-evidence re-judgment remains a confirmed functional product failure. That does not establish product readiness: 74 success criteria remain `not_run`, and the P3 copy issue remains.
+| 파일 | 내용 |
+| --- | --- |
+| [final-cohort-audit-20261114.md](final-cohort-audit-20261114.md) | 집계 방법, 중복·미평가 대조, 실패 6건 검토, 정확한 증거 경로 |
+| [summary.json](summary.json) | 정정된 3열 비교와 기계 판독 요약 |
+| [final-session-ledger-20261114.json](final-session-ledger-20261114.json) | 24개 완료 세션별 persona/job/outcome/기준, 원본 파일 해시, 미평가 실행 |
+| [criteria-matrix.md](criteria-matrix.md), [persona-prd-diff-v3.json](persona-prd-diff-v3.json) | 기존 PRD 기준 카탈로그와 persona v3 변경 기록; 이번에 수정하지 않음 |
 
-### Execution / runner defects
+## 이전 판정 규칙 작업과 한계
 
-- `cb0188d`: 21 of 32 jobs were blocked by `engine_conflict` after the reviewed engine manifest no longer matched. Those jobs are unassessed, not product failures.
-- Current queue: 22 completed receipts still record `host_protocol`; one session is blocked because the owned browser context could not be resumed (`tool_context_unavailable`); one model send is uncertain. The uncertain intent was preserved and not resent.
-- The 22 `host_protocol` receipts can still contain useful admitted screenshots/observations, but they cannot be upgraded to full persona passes while the final judgment/host envelope remains unresolved.
+`51d871f`의 저장 증거 재판정(16개 기준 변경, 23개 완료 세션, host_protocol 22건)은 과거 자료다. 이 자료를 이번 r4/r6 24세션에 더하지 않는다. 당시의 원본/overlay 경로와 회귀 기록은 Git `e638375` 버전의 이 보고서에 보존되며, 이번 검증 실적으로 재사용하지 않았다.
 
-### Verdict / criterion misjudgments
-
-- The prior `696dbe3` evidence index lists the obsolete `이미 파일을 받았어요` criterion as a failed model judgment even though the then-current control `받은 파일 바로 넣기` navigated to the file selection step. The prior reviewer marked it not independently confirmed as a product defect.
-- Current stored evidence had the same class of obsolete-string failure, plus invalid fixture attribution and a sample-export criterion applied to a real-data MatrixTab. The 16 changes above correct only these affected criterion records; no model decision was regenerated.
-- `PRD-SAMPLE-EXPORT` is only judged after entering sample mode and opening More > 관계 목록 (MatrixTab). A real-data list with active `목록 복사` / `목록 저장` controls is not evidence that sample restrictions are broken.
-- Product privacy is judged from the product's own visible local-processing notice, not from the test host's external-network block. Search uses the current `아이디나 이름으로 찾기` text input rather than an obsolete `type=search`/placeholder assumption.
-
-## Representative current evidence anchors
-
-All paths below are local private evidence under the worktree's `.ux-loop`; the original bytes were preserved and are not committed to this report.
-
-- Current More entry visible: `.ux-loop/peekly-explicit-success-retry-final-20261114/stage-25/sessions/S-onpcmjcamnllineodknelimf/evidence/S-onpcmjcamnllineodknelimf/1/agent-observation-2.json`.
-- Current More entry clicked and file input opened: same directory, `agent-observation-3.json`.
-- Current sample-export misclassification: `.ux-loop/peekly-explicit-success-retry-final-20261114/stage-25/sessions/S-eiempjpglicmbhkndcehglln/evidence/S-eiempjpglicmbhkndcehglln/1/agent-observation-13.json`; it shows the ordinary imported relationship list, not a sample-mode MatrixTab.
-- HTML fixture rejection and subsequent JSON result: persona-007 session above, `agent-observation-8.json` through `agent-observation-10.json`.
-- Full per-session stored-evidence overlay: `.ux-loop/peekly-explicit-success-retry-final-20261114/stage-25/resume-report-rules-r1.json` (SHA-256 `d6436cf3f68c96faa39c1b8e17b1f96a85006042572c618eb8803b00bca4c506`). The pre-overlay report remains `resume-report-r1.json` (SHA-256 `b43f6a8b60e5cd001bc57f1928430e6e4b8af585cea1983a2e84b7d31d6a6866`).
-
-## Validation of the verdict-rule patch
-
-- `PYTHONDONTWRITEBYTECODE=1 /Users/m4mini/.local/bin/python3.11 -m unittest discover -s tests -v` — **1,604 passed, 21 skipped, 0 failed**. The skipped tests require the optional pinned LangGraph runtime, which is not installed in this environment.
-- Focused `test_verdict_quality.py` — **21 passed**.
-- `skills/remorsearch-ux-qa/scripts/smoke_loop.py` — **passed**, 18 expected command outcomes.
-- `skills/remorsearch-ux-qa/examples/research/run_fixture.py` — **passed**; fixture-only merge/gate/report workflow.
-- `git diff --check` — passed before the verdict-rule commit.
-- No Peekly persona re-execution, no browser dispatch, no model call, no Instagram login, no iOS runtime test, no purchase and no deployment.
-
-## Commits and limitations
-
-- Verdict-rule implementation/test commit: `51d871f75a6c6e4bc35e5c90f919452a37ca5da1` (`fix: align Peekly verdicts with current PRD evidence`).
-- This report and its machine-readable summary are committed separately so the judgment-rule change and its audit record remain distinct.
-- Synthetic personas are PRD hypotheses, not research participants. The runs do not establish real-user prevalence, satisfaction, iOS behavior, accessibility conformance or product readiness. The 23 completed current sessions are operationally complete, not UX passes.
+합성 페르소나·합성 자료의 저장 증거 집계이며 실제 사용자 조사, 실제 Instagram 로그인, 실기기 iOS, 구매, 배포 또는 제품 출시 준비 완료를 입증하지 않는다.

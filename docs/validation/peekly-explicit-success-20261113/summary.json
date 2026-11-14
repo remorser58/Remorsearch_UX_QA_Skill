@@ -1,60 +1,487 @@
 {
-  "schema_version": "peekly-explicit-success-comparison.v1",
+  "schema_version": "peekly-explicit-success-comparison.v2",
   "date": "2026-11-14",
+  "timezone": "Asia/Seoul",
+  "source_revision": "e638375fca8e7c3b76990ac0131eec5f3972a954",
   "product_commit": "51110f4",
   "product_prd_sha256": "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b",
+  "counting_unit": "completed session attempts; final r4+r6 includes repeated persona identities",
   "runs": [
     {
       "name": "first-32-persona",
       "reference_commit": "696dbe3",
-      "sessions": {"total": 32, "passed": 0, "failed": 2, "inconclusive": 30, "not_assessed": 0},
-      "success_criteria_units": {"passed": null, "failed": null, "not_run": null, "not_applicable": null, "note": "The committed evidence index does not retain a complete criterion-unit counter."},
-      "review_notes": {"model_failed_candidates_for_review": 3, "independently_confirmed_functional_defects_from_those": 0, "historical_product_findings": 3}
+      "product_commit": "58214441",
+      "completed_sessions": 32,
+      "distinct_personas": 32,
+      "session_ux_outcomes": {
+        "passed": 0,
+        "failed": 2,
+        "inconclusive": 30
+      },
+      "criteria_all": {
+        "passed": null,
+        "failed": null,
+        "not_run": null,
+        "not_applicable": null
+      },
+      "host_protocol_on_completed_receipts": null,
+      "provenance": [
+        "696dbe3:docs/validation/peekly-ux-findings-20261113/run-summary-32.json",
+        "696dbe3:docs/validation/peekly-ux-findings-20261113/evidence-index-32.json",
+        "696dbe3:docs/validation/peekly-ux-findings-20261113/README.md#supplemental-final-32-persona-cohort-and-third-finding"
+      ],
+      "note": "The run-summary final-stage outcome covers only the last 16; the README supplemental and cb0188d.before establish whole-cohort 0/2/30. Complete criterion ledger is not retained."
     },
     {
-      "name": "verdict-quality-revision",
+      "name": "verdict-quality-final-cohort",
       "reference_commit": "cb0188d",
-      "sessions": {"total": 32, "passed": 4, "failed": 0, "inconclusive": 7, "not_assessed": 21},
-      "success_criteria_units": {"passed": 22, "failed": 0, "not_run": 6, "not_applicable": 0},
-      "recovery_criteria_units": {"passed": 2, "failed": 0, "not_run": 0, "not_applicable": 7},
-      "execution_notes": {"engine_conflict_blocked": 21, "uncertain": 2}
+      "product_commit": "58214441",
+      "completed_sessions": 32,
+      "distinct_personas": 32,
+      "session_ux_outcomes": {
+        "passed": 6,
+        "failed": 4,
+        "inconclusive": 22
+      },
+      "criteria_all": {
+        "passed": 56,
+        "failed": 4,
+        "not_run": 42,
+        "not_applicable": 34
+      },
+      "success_criteria_units": {
+        "passed": 51,
+        "failed": 4,
+        "not_run": 42,
+        "not_applicable_desktop": 7
+      },
+      "recovery_criteria_units": {
+        "passed": 5,
+        "failed": 0,
+        "not_run": 0,
+        "not_applicable": 27
+      },
+      "raw_not_run": 49,
+      "host_protocol_on_completed_receipts": null,
+      "engine_conflicts": {
+        "historical_attempts": 21,
+        "remaining_in_final_cohort": 0
+      },
+      "provenance": [
+        "cb0188d:docs/validation/peekly-verdict-quality-20261113/verdict-quality-summary.json",
+        "cb0188d:docs/validation/peekly-verdict-quality-20261113/evidence-index-32.json"
+      ],
+      "note": "Corrects the e638375 report's obsolete initial-slice 4/0/7/21. Seven native share-sheet criteria are explicitly scoped N/A in the baseline summary."
     },
     {
-      "name": "current-stored-evidence-rejudgment",
-      "reference_commit": "51d871f75a6c6e4bc35e5c90f919452a37ca5da1",
-      "queue_sessions": {"total": 25, "complete": 23, "blocked": 1, "uncertain": 1},
-      "session_ux_outcomes": {"passed": 0, "failed": 0, "inconclusive": 23, "not_assessed": 2},
-      "success_criteria_units": {"passed": 2, "failed": 0, "not_run": 74, "not_applicable": 0},
-      "recovery_criteria_units": {"passed": 1, "failed": 0, "not_run": 22, "not_applicable": 0},
-      "stored_evidence_rejudgment": {"criteria_changed": 16, "failed_to_passed": 1, "failed_to_not_run": 12, "passed_to_not_run": 3, "model_calls": 0, "browser_calls": 0},
-      "execution_notes": {"host_protocol_on_completed_receipts": 22, "blocked_tool_context_unavailable": 1, "uncertain_model_send": 1, "uncertain_send_replayed": false}
+      "name": "final-r4-r6-completed-sessions",
+      "reference_commit": "e638375fca8e7c3b76990ac0131eec5f3972a954",
+      "completed_sessions": 24,
+      "distinct_personas": 15,
+      "session_ux_outcomes": {
+        "passed": 1,
+        "failed": 6,
+        "inconclusive": 17
+      },
+      "criteria_all": {
+        "passed": 35,
+        "failed": 6,
+        "not_run": 46,
+        "not_applicable": 17
+      },
+      "success_criteria_units": {
+        "passed": 28,
+        "failed": 6,
+        "not_run": 46,
+        "not_applicable": 0
+      },
+      "recovery_criteria_units": {
+        "passed": 7,
+        "failed": 0,
+        "not_run": 0,
+        "not_applicable": 17
+      },
+      "host_protocol_on_completed_receipts": 0,
+      "unassessed_attempts": {
+        "uncertain": 5,
+        "queued": 1
+      },
+      "duplicate_completed_persona_ids": [
+        "PER-PEEKLY-V2-016",
+        "PER-PEEKLY-V2-017",
+        "PER-PEEKLY-V2-018",
+        "PER-PEEKLY-V2-019",
+        "PER-PEEKLY-V2-020",
+        "PER-PEEKLY-V2-023",
+        "PER-PEEKLY-V2-026",
+        "PER-PEEKLY-V2-029",
+        "PER-PEEKLY-V2-030"
+      ],
+      "ledger": "final-session-ledger-20261114.json",
+      "note": "Recorded receipt verdicts, not an assertion of six independently confirmed product defects. No current stored verdict was overwritten."
     }
   ],
-  "current_product_findings": [
-    {"severity": "P3", "id": "RELATIONSHIP-INCLUSION-COPY", "status": "confirmed-in-current-source", "file": "src/components/ResultsTab.tsx", "line": 272},
-    {"severity": "P2", "id": "POST-IMPORT-RESULT-VIEWPORT", "status": "historical-finding-source-scroll-fix-present-runtime-not-retested", "file": "src/components/ResultsTab.tsx", "line": 164},
-    {"severity": "P2", "id": "MANUAL-IMPORT-DISCOVERY", "status": "historical-finding-current-more-entry-observed-working", "evidence": "PER-PEEKLY-V2-007 observations 2-3"}
+  "queue_slices": [
+    {
+      "queue": "r4",
+      "path": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33",
+      "counts": {
+        "complete": 12,
+        "queued": 1,
+        "uncertain": 3
+      },
+      "completed_persona_ids": [
+        "PER-PEEKLY-V2-014",
+        "PER-PEEKLY-V2-015",
+        "PER-PEEKLY-V2-016",
+        "PER-PEEKLY-V2-017",
+        "PER-PEEKLY-V2-018",
+        "PER-PEEKLY-V2-019",
+        "PER-PEEKLY-V2-020",
+        "PER-PEEKLY-V2-023",
+        "PER-PEEKLY-V2-026",
+        "PER-PEEKLY-V2-027",
+        "PER-PEEKLY-V2-029",
+        "PER-PEEKLY-V2-030"
+      ],
+      "session_outcomes": {
+        "failed": 4,
+        "inconclusive": 7,
+        "passed": 1
+      },
+      "criteria_by_kind": {
+        "success": {
+          "failed": 4,
+          "not_run": 19,
+          "passed": 17
+        },
+        "recovery": {
+          "not_applicable": 9,
+          "passed": 3
+        }
+      },
+      "criteria_all": {
+        "failed": 4,
+        "not_applicable": 9,
+        "not_run": 19,
+        "passed": 20
+      },
+      "host_protocol_on_completed_receipts": 0,
+      "report_unfiltered_ux_outcomes": {
+        "blocked": 0,
+        "failed": 4,
+        "inconclusive": 11,
+        "passed": 1,
+        "skipped": 0
+      },
+      "artifact_hashes_verified": 484,
+      "plan_sha256": "12e14f08b120061d983acb880245dc81b1da25c815d6a72983d1bfc0fe9ce155"
+    },
+    {
+      "queue": "r6",
+      "path": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33",
+      "counts": {
+        "complete": 12,
+        "uncertain": 2
+      },
+      "completed_persona_ids": [
+        "PER-PEEKLY-V2-016",
+        "PER-PEEKLY-V2-017",
+        "PER-PEEKLY-V2-018",
+        "PER-PEEKLY-V2-019",
+        "PER-PEEKLY-V2-020",
+        "PER-PEEKLY-V2-021",
+        "PER-PEEKLY-V2-023",
+        "PER-PEEKLY-V2-025",
+        "PER-PEEKLY-V2-026",
+        "PER-PEEKLY-V2-029",
+        "PER-PEEKLY-V2-030",
+        "PER-PEEKLY-V2-031"
+      ],
+      "session_outcomes": {
+        "failed": 2,
+        "inconclusive": 10
+      },
+      "criteria_by_kind": {
+        "success": {
+          "failed": 2,
+          "not_run": 27,
+          "passed": 11
+        },
+        "recovery": {
+          "not_applicable": 8,
+          "passed": 4
+        }
+      },
+      "criteria_all": {
+        "failed": 2,
+        "not_applicable": 8,
+        "not_run": 27,
+        "passed": 15
+      },
+      "host_protocol_on_completed_receipts": 0,
+      "report_unfiltered_ux_outcomes": {
+        "blocked": 0,
+        "failed": 2,
+        "inconclusive": 12,
+        "passed": 0,
+        "skipped": 0
+      },
+      "artifact_hashes_verified": 338,
+      "plan_sha256": "5f8e517557350f77e2ba788075979b21fcc54a60dd396cc944798e65cce966ff"
+    }
   ],
-  "verdict_rejudgment": {
-    "method": "deterministic current-PRD rules applied to saved observation JSON and frozen fixture metadata only",
-    "source_report_sha256": "b43f6a8b60e5cd001bc57f1928430e6e4b8af585cea1983a2e84b7d31d6a6866",
-    "overlay_report_sha256": "d6436cf3f68c96faa39c1b8e17b1f96a85006042572c618eb8803b00bca4c506",
-    "invalid_html_fixture_sha256": "23d5efe57558a95f13ae00615b1a5b8ccc8c597c1b59b877da5e40d8071ae63d",
-    "model_calls": 0,
-    "browser_calls": 0
+  "unassessed_attempts": [
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-021",
+      "job_id": "S-plicdikpohnnejkdcgaikgfh",
+      "status": "uncertain",
+      "problem_code": "host_execution_failed"
+    },
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-022",
+      "job_id": "S-ggmhldipofnolcjlnleodflf",
+      "status": "uncertain",
+      "problem_code": "host_execution_failed"
+    },
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-025",
+      "job_id": "S-eiaeedlhipjocfgjoappiija",
+      "status": "uncertain",
+      "problem_code": "host_execution_failed"
+    },
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-031",
+      "job_id": "S-kgmolpibhpcagimpdlbaajin",
+      "status": "queued",
+      "problem_code": null
+    },
+    {
+      "queue": "r6",
+      "persona_id": "PER-PEEKLY-V2-022",
+      "job_id": "S-lgdbhgjohjcmhfpnnplhmnil",
+      "status": "uncertain",
+      "problem_code": "host_execution_failed"
+    },
+    {
+      "queue": "r6",
+      "persona_id": "PER-PEEKLY-V2-027",
+      "job_id": "S-kigjbodgmdkadcbgbbpdckal",
+      "status": "uncertain",
+      "problem_code": "host_execution_failed"
+    }
+  ],
+  "r5_excluded": {
+    "counts": {
+      "blocked": 0,
+      "cancelled": 0,
+      "complete": 1,
+      "queued": 0,
+      "running": 0,
+      "uncertain": 0
+    },
+    "tasks": [
+      {
+        "job_id": "S-flojkpnlcanpiajnjempledi",
+        "persona_id": "PER-PEEKLY-V2-031",
+        "status": "complete",
+        "outcome": "inconclusive"
+      }
+    ],
+    "reason": "Persona 031 has a completed r6 receipt; r5 is not added to the requested r4+r6 session aggregate."
+  },
+  "source_files": [
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/queue.sqlite",
+      "size_bytes": 55726080,
+      "sha256": "dd2a9200ae10310d327d993fad88aeba0fe4688e4f24062ee95f6722d7774455"
+    },
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/queue.sqlite-wal",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "size_bytes": 921088,
+      "sha256": "677ce09d7daa7d6b83b3e0000d88235995c6296ae1bc79f07cd91b3d6ac96705"
+    },
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/stage-summary.json",
+      "size_bytes": 5885,
+      "sha256": "5a4036182be128b0fd85fac7a7a1ceb24bed2d772c9f826f0723e87fdbcee41f"
+    },
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/plan.json",
+      "size_bytes": 118470,
+      "sha256": "861c5fdce87a7a4c2d1fbc3abfb9e3028bf30660db3ab0c88edd63587db02ab9"
+    },
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/queue.sqlite",
+      "size_bytes": 28770304,
+      "sha256": "f84f2fb244e020113f6d936065315b7a0f042b77f0423e8ca87e5e4f3850ab6d"
+    },
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/queue.sqlite-wal",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "size_bytes": 577074,
+      "sha256": "64fac8d674b9b65a7e223be089559994760283325a09a5af67a7656a75af4c9e"
+    },
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/stage-summary.json",
+      "size_bytes": 4424,
+      "sha256": "8d3b1f3eadf738454ec0db9a46526bc3ce4c24c7e23c6e327608a8dad92b0313"
+    },
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/plan.json",
+      "size_bytes": 95148,
+      "sha256": "5f20b3a36bea699f1a0a9a1c9cfe42dda480b2f4069bddbc8b8c9402f0fa78bf"
+    }
+  ],
+  "findings": [
+    {
+      "id": "UX-03-RELATION-MEANING",
+      "category": "product_ux_historical",
+      "severity": "P3",
+      "status": "historical-review-preserved-not-new-current-prd-failure",
+      "summary": "주요 관계 설명에 과거 맞팔 계정도 포함된다는 설명이 없다는 기존 문구 개선 항목. 동일한 짧은 문구는 r6 저장 관측에도 보인다. 최신 v3 발췌만으로 현재 PRD 위반을 다시 확정하지 않는다.",
+      "evidence": [
+        "696dbe3:docs/validation/peekly-ux-findings-20261113/evidence-index-32.json#manual_reviewed_findings/UX-03-RELATION-MEANING",
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-ckpllpaipicenconelndnpji/evidence/S-ckpllpaipicenconelndnpji/1/agent-observation-9.json"
+      ],
+      "raw_failed_criteria_in_final_24": 0
+    },
+    {
+      "id": "RUNNER-UPLOAD-CANCEL-WINDOW",
+      "category": "runner_and_verdict",
+      "severity": "P2",
+      "status": "stored-failures-not-confirmed-product-defect",
+      "summary": "진행·취소 실패 4건. 51~104ms 완료와 업로드 도구 내부 50ms polling 때문에 호출이 반환된 뒤 진행 중 취소를 실제 실행할 기회가 입증되지 않았다. 관찰하지 못한 중간 상태와 실행하지 못한 취소를 제품 기능 부재로 확정할 수 없다.",
+      "affected_sessions": [
+        "r4:014",
+        "r4:015",
+        "r4:016",
+        "r6:016"
+      ],
+      "evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-ckpllpaipicenconelndnpji/evidence/S-ckpllpaipicenconelndnpji/1/agent-observation-9.json",
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-ckpllpaipicenconelndnpji/evidence/S-ckpllpaipicenconelndnpji/1/agent-observation-12.json",
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-ckpllpaipicenconelndnpji/evidence/S-ckpllpaipicenconelndnpji/1/browser-00107.png",
+        "skills/remorsearch-ux-qa/drivers/web/scale_browser_cdp.mjs#upload"
+      ],
+      "raw_failed_criteria_in_final_24": 4
+    },
+    {
+      "id": "RUNNER-OCCLUDED-CLICK-ATTRIBUTION",
+      "category": "runner_and_verdict",
+      "severity": "P2",
+      "status": "confirmed-stored-evidence-and-static-driver-gap",
+      "summary": "r4 019의 모달 뒤 맞팔 버튼은 직전 관측에서 visible:false였다. 다음 클릭은 계정 상세를 열었고 판정은 이를 맞팔 목록 오류로 해석했다. 현재 실행기 click 경로에는 클릭 좌표의 hit-test가 없고 last_action_label은 요청 라벨이므로 실제 수신 요소를 증명하지 않는다.",
+      "affected_sessions": [
+        "r4:019"
+      ],
+      "evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-efceebljpmeelhejldcenakm/evidence/S-efceebljpmeelhejldcenakm/1/agent-observation-13.json",
+        ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-efceebljpmeelhejldcenakm/evidence/S-efceebljpmeelhejldcenakm/1/agent-observation-14.json",
+        ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-efceebljpmeelhejldcenakm/evidence/S-efceebljpmeelhejldcenakm/1/browser-00126.png",
+        "skills/remorsearch-ux-qa/drivers/web/scale_browser_cdp.mjs#click"
+      ],
+      "raw_failed_criteria_in_final_24": 1
+    },
+    {
+      "id": "VERDICT-IDENTITY-PRECONDITION",
+      "category": "verdict",
+      "severity": "P2",
+      "status": "wrong-screen-precondition-false-positive",
+      "summary": "r6 023은 자세히 보기의 첫 기록/비교 예고 화면을 보고 이름 변경 고지가 없다고 실패 처리했다. 비교 설명 또는 변화 기록 보기를 실제로 연 증거가 없어 비교 안내 누락이라는 제품 결론은 성립하지 않는다.",
+      "affected_sessions": [
+        "r6:023"
+      ],
+      "evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-pcmnpelhjaeccidlnociacoh/evidence/S-pcmnpelhjaeccidlnociacoh/1/agent-observation-13.json",
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-pcmnpelhjaeccidlnociacoh/evidence/S-pcmnpelhjaeccidlnociacoh/1/agent-observation-14.json",
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-pcmnpelhjaeccidlnociacoh/evidence/S-pcmnpelhjaeccidlnociacoh/1/browser-00143.png",
+        "docs/validation/peekly-explicit-success-20261113/persona-prd-diff-v3.json#PER-PEEKLY-V2-023"
+      ],
+      "raw_failed_criteria_in_final_24": 1
+    },
+    {
+      "id": "REPORT-UNFINISHED-AS-VALID",
+      "category": "reporting",
+      "severity": "P1",
+      "status": "confirmed-source-report-aggregation-defect",
+      "summary": "r4/r6의 unfiltered evidence_validation은 완료 영수증이 없는 불확실/대기 기록까지 valid 및 inconclusive로 집계한다. SQLite complete와 완료 영수증의 교집합으로 최종 24세션을 산출했다.",
+      "evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json"
+      ],
+      "excluded_attempts": 6
+    },
+    {
+      "id": "REPORT-COHORT-OVERLAP",
+      "category": "reporting",
+      "severity": "P1",
+      "status": "confirmed-persona-id-overlap",
+      "summary": "r4와 r6의 완료 페르소나 9명이 겹쳐 24세션은 15명이다. r5 031도 r6와 겹치므로 추가하지 않는다.",
+      "evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/plan.json",
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/plan.json",
+        ".ux-loop/peekly-host-protocol-followup16-r5-20261114/stage-33/report.json"
+      ]
+    }
+  ],
+  "historical_stored_evidence_overlay": {
+    "reference_commit": "51d871f75a6c6e4bc35e5c90f919452a37ca5da1",
+    "queue": "peekly-explicit-success-retry-final-20261114/stage-25",
+    "completed_sessions": 23,
+    "session_ux_outcomes": {
+      "passed": 0,
+      "failed": 0,
+      "inconclusive": 23
+    },
+    "host_protocol_on_completed_receipts": 22,
+    "success_criteria_units": {
+      "passed": 2,
+      "failed": 0,
+      "not_run": 74,
+      "not_applicable": 0
+    },
+    "recovery_criteria_units": {
+      "passed": 1,
+      "failed": 0,
+      "not_run": 22,
+      "not_applicable": 0
+    },
+    "criteria_changed": 16,
+    "note": "Historical evidence only. Not added to the selected r4+r6 aggregate; original details remain at e638375."
   },
   "validation": {
-    "python": "3.11",
-    "unittest_total": 1604,
-    "unittest_skipped": 21,
-    "unittest_failed": 0,
-    "focused_verdict_tests": 21,
-    "smoke_loop": "passed (18 expected command outcomes)",
-    "research_fixture": "passed"
+    "queue_stage_report_status_match": true,
+    "plan_report_sqlite_job_sets_match": true,
+    "result_sha256_verified": 24,
+    "receipt_outcomes_match": true,
+    "criterion_records_match": true,
+    "artifact_sha256_entries_verified": 822,
+    "evidence_files_mutated": false,
+    "product_or_runner_code_modified": false,
+    "new_persona_runs": 0,
+    "new_model_calls": 0,
+    "new_browser_calls": 0
   },
   "limitations": [
-    "No further persona rerun was performed.",
-    "No iOS runtime, real Instagram account, real-user study, accessibility certification or product-readiness claim is made.",
-    "The first 696dbe3 evidence index does not expose complete criterion-unit totals."
+    "24 completed sessions cover 15 unique saved personas; 17 of the target 32 have no completed session in these selected queues.",
+    "Five uncertain sends and one queued attempt remain unassessed. They are attempts, not six additional unique people.",
+    "The two baseline builds and criteria differ from the current PRD 51110f4; this table is not a controlled product-improvement estimate.",
+    "Final N/A=17 refers only to conditional recovery. No unexecuted desktop-success criterion is silently converted to N/A or pass.",
+    "Raw six failed criteria are preserved; stored-evidence review finds four timing/coverage limitations, one occluded-click attribution problem and one wrong-screen precondition error.",
+    "No model/browser dispatch, new run, code fix, live account, iOS test, real-user study or product-readiness certification was performed in this reporting turn."
   ]
 }

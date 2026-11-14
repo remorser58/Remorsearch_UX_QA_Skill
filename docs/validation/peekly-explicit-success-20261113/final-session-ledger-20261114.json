@@ -1,0 +1,1360 @@
+{
+  "audit_mode": "stored-evidence-only",
+  "new_model_calls": 0,
+  "new_browser_calls": 0,
+  "queues": [
+    {
+      "queue": "r4",
+      "path": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33",
+      "counts": {
+        "complete": 12,
+        "queued": 1,
+        "uncertain": 3
+      },
+      "completed_persona_ids": [
+        "PER-PEEKLY-V2-014",
+        "PER-PEEKLY-V2-015",
+        "PER-PEEKLY-V2-016",
+        "PER-PEEKLY-V2-017",
+        "PER-PEEKLY-V2-018",
+        "PER-PEEKLY-V2-019",
+        "PER-PEEKLY-V2-020",
+        "PER-PEEKLY-V2-023",
+        "PER-PEEKLY-V2-026",
+        "PER-PEEKLY-V2-027",
+        "PER-PEEKLY-V2-029",
+        "PER-PEEKLY-V2-030"
+      ],
+      "session_outcomes": {
+        "failed": 4,
+        "inconclusive": 7,
+        "passed": 1
+      },
+      "criteria_by_kind": {
+        "success": {
+          "failed": 4,
+          "not_run": 19,
+          "passed": 17
+        },
+        "recovery": {
+          "not_applicable": 9,
+          "passed": 3
+        }
+      },
+      "criteria_all": {
+        "failed": 4,
+        "not_applicable": 9,
+        "not_run": 19,
+        "passed": 20
+      },
+      "host_protocol_on_completed_receipts": 0,
+      "report_unfiltered_ux_outcomes": {
+        "blocked": 0,
+        "failed": 4,
+        "inconclusive": 11,
+        "passed": 1,
+        "skipped": 0
+      },
+      "artifact_hashes_verified": 484,
+      "plan_sha256": "12e14f08b120061d983acb880245dc81b1da25c815d6a72983d1bfc0fe9ce155"
+    },
+    {
+      "queue": "r6",
+      "path": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33",
+      "counts": {
+        "complete": 12,
+        "uncertain": 2
+      },
+      "completed_persona_ids": [
+        "PER-PEEKLY-V2-016",
+        "PER-PEEKLY-V2-017",
+        "PER-PEEKLY-V2-018",
+        "PER-PEEKLY-V2-019",
+        "PER-PEEKLY-V2-020",
+        "PER-PEEKLY-V2-021",
+        "PER-PEEKLY-V2-023",
+        "PER-PEEKLY-V2-025",
+        "PER-PEEKLY-V2-026",
+        "PER-PEEKLY-V2-029",
+        "PER-PEEKLY-V2-030",
+        "PER-PEEKLY-V2-031"
+      ],
+      "session_outcomes": {
+        "failed": 2,
+        "inconclusive": 10
+      },
+      "criteria_by_kind": {
+        "success": {
+          "failed": 2,
+          "not_run": 27,
+          "passed": 11
+        },
+        "recovery": {
+          "not_applicable": 8,
+          "passed": 4
+        }
+      },
+      "criteria_all": {
+        "failed": 2,
+        "not_applicable": 8,
+        "not_run": 27,
+        "passed": 15
+      },
+      "host_protocol_on_completed_receipts": 0,
+      "report_unfiltered_ux_outcomes": {
+        "blocked": 0,
+        "failed": 2,
+        "inconclusive": 12,
+        "passed": 0,
+        "skipped": 0
+      },
+      "artifact_hashes_verified": 338,
+      "plan_sha256": "5f8e517557350f77e2ba788075979b21fcc54a60dd396cc944798e65cce966ff"
+    }
+  ],
+  "sources": [
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/queue.sqlite",
+      "size_bytes": 55726080,
+      "sha256": "dd2a9200ae10310d327d993fad88aeba0fe4688e4f24062ee95f6722d7774455"
+    },
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/queue.sqlite-wal",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "size_bytes": 921088,
+      "sha256": "677ce09d7daa7d6b83b3e0000d88235995c6296ae1bc79f07cd91b3d6ac96705"
+    },
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/stage-summary.json",
+      "size_bytes": 5885,
+      "sha256": "5a4036182be128b0fd85fac7a7a1ceb24bed2d772c9f826f0723e87fdbcee41f"
+    },
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/plan.json",
+      "size_bytes": 118470,
+      "sha256": "861c5fdce87a7a4c2d1fbc3abfb9e3028bf30660db3ab0c88edd63587db02ab9"
+    },
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/queue.sqlite",
+      "size_bytes": 28770304,
+      "sha256": "f84f2fb244e020113f6d936065315b7a0f042b77f0423e8ca87e5e4f3850ab6d"
+    },
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/queue.sqlite-wal",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "size_bytes": 577074,
+      "sha256": "64fac8d674b9b65a7e223be089559994760283325a09a5af67a7656a75af4c9e"
+    },
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/stage-summary.json",
+      "size_bytes": 4424,
+      "sha256": "8d3b1f3eadf738454ec0db9a46526bc3ce4c24c7e23c6e327608a8dad92b0313"
+    },
+    {
+      "path": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/plan.json",
+      "size_bytes": 95148,
+      "sha256": "5f20b3a36bea699f1a0a9a1c9cfe42dda480b2f4069bddbc8b8c9402f0fa78bf"
+    }
+  ],
+  "completed_sessions": [
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-014",
+      "job_id": "S-cdfkaillgggnoifejjmahlnd",
+      "status": "complete",
+      "outcome": "failed",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "failed",
+          "requirement_id": "PRD-IMPORT-PROGRESS"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "requirement_id": "PRD-IMPORT-SIZE"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-IMPORT-SAVE-FAIL"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "43a905973dc98d1766aa6e3789905d346dbe8a9a564b12ddc7e745f6ab97a2d5",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-cdfkaillgggnoifejjmahlnd",
+      "artifact_count": 30
+    },
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-015",
+      "job_id": "S-kannanoaknpgcdfcpnjipcpp",
+      "status": "complete",
+      "outcome": "failed",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "failed",
+          "requirement_id": "PRD-IMPORT-PROGRESS"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "requirement_id": "PRD-IMPORT-SIZE"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-IMPORT-SAVE-FAIL"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "00cb2c36587f00b111d755ae2054d88796985ff2848856f7369fd50c843ca280",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-kannanoaknpgcdfcpnjipcpp",
+      "artifact_count": 30
+    },
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-016",
+      "job_id": "S-mejjecmbmlhcmokgfkhfmlki",
+      "status": "complete",
+      "outcome": "failed",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "failed",
+          "requirement_id": "PRD-IMPORT-PROGRESS"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "requirement_id": "PRD-IMPORT-SIZE"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-IMPORT-SAVE-FAIL"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "passed",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "09ab9f2fbbd5a46aa7ef3296f761a16df8350dc4911ddcad90f92dbd15c77e06",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-mejjecmbmlhcmokgfkhfmlki",
+      "artifact_count": 42
+    },
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-017",
+      "job_id": "S-llicafnbijihpafhdnkgabki",
+      "status": "complete",
+      "outcome": "inconclusive",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "requirement_id": "PRD-RESULT-RECIPROCITY"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "requirement_id": "PRD-RESULT-REVERSE"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "passed",
+          "requirement_id": "PRD-RESULT-MUTUAL"
+        },
+        {
+          "kind": "success",
+          "index": 3,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-SNAPSHOT"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "passed",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "2ccc8534ae4cbacf44def1cecaa96eb9af49864c6f07604942f4f10fb24050a5",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-llicafnbijihpafhdnkgabki",
+      "artifact_count": 44
+    },
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-018",
+      "job_id": "S-gmjclhccfllepkecklhejcjk",
+      "status": "complete",
+      "outcome": "passed",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "requirement_id": "PRD-RESULT-RECIPROCITY"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "requirement_id": "PRD-RESULT-REVERSE"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "passed",
+          "requirement_id": "PRD-RESULT-MUTUAL"
+        },
+        {
+          "kind": "success",
+          "index": 3,
+          "status": "passed",
+          "requirement_id": "PRD-RESULT-SNAPSHOT"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "9f7c6794c22f5470e6cb879633398b2408d4d72a80f0efa34baf7c8f0c04211e",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-gmjclhccfllepkecklhejcjk",
+      "artifact_count": 42
+    },
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-019",
+      "job_id": "S-efceebljpmeelhejldcenakm",
+      "status": "complete",
+      "outcome": "failed",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "requirement_id": "PRD-RESULT-RECIPROCITY"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "requirement_id": "PRD-RESULT-REVERSE"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "failed",
+          "requirement_id": "PRD-RESULT-MUTUAL"
+        },
+        {
+          "kind": "success",
+          "index": 3,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-SNAPSHOT"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "1d9ede97452c28498deeb72321ebaf66839361090ab4461044712e1bdd63cbd6",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-efceebljpmeelhejldcenakm",
+      "artifact_count": 44
+    },
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-020",
+      "job_id": "S-igkhcbhpllgaaeefcnghhbdm",
+      "status": "complete",
+      "outcome": "inconclusive",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "requirement_id": "PRD-RESULT-RECIPROCITY"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-REVERSE"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-MUTUAL"
+        },
+        {
+          "kind": "success",
+          "index": 3,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-SNAPSHOT"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "12bf8b161f8bea4717c89eff8be0b9b69821e897d30cd19715db20bdb81884fb",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-igkhcbhpllgaaeefcnghhbdm",
+      "artifact_count": 44
+    },
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-023",
+      "job_id": "S-dnpghpjkkefmnpbbfahadiia",
+      "status": "complete",
+      "outcome": "inconclusive",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "not_run",
+          "requirement_id": "PRD-IMPORT-MISSING"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "requirement_id": "PRD-IDENTITY-LIMIT"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-IMPORT-SNAPSHOT-UNKNOWN"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "7828c06b87c5638f87c5614b63d5c945a7d9c24dbd59b3ef711d04c9aaed7125",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-dnpghpjkkefmnpbbfahadiia",
+      "artifact_count": 38
+    },
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-026",
+      "job_id": "S-hbccokhbajdlhklgphonlfjo",
+      "status": "complete",
+      "outcome": "inconclusive",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-SEARCH"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "requirement_id": "PRD-PRIVACY-LOCAL"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-PRIVACY-DELETE"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "da27964bac69fac6bb8eee9d6b60be6d101b22e81f3d117ee88db85aaa0b41bc",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-hbccokhbajdlhklgphonlfjo",
+      "artifact_count": 44
+    },
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-027",
+      "job_id": "S-bmomdjabkgmnmopbhjeiaecm",
+      "status": "complete",
+      "outcome": "inconclusive",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-SEARCH"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "requirement_id": "PRD-PRIVACY-LOCAL"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-PRIVACY-DELETE"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "passed",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "e56a8f60267c71c5c2016014824c338a98f75a113eeaf59b5b7bc384270dd6e4",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-bmomdjabkgmnmopbhjeiaecm",
+      "artifact_count": 44
+    },
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-029",
+      "job_id": "S-gobjinmilfaceenedbhopbnc",
+      "status": "complete",
+      "outcome": "inconclusive",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "requirement_id": "PRD-SAMPLE-EXPORT"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "requirement_id": "PRD-SNAPSHOT-RETENTION"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-PAYWALL-BOUNDARY"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "88d342c21c7b64d1c5349734b3d02aa4a16d7156b8d57633818578b8ed72fc0f",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-gobjinmilfaceenedbhopbnc",
+      "artifact_count": 44
+    },
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-030",
+      "job_id": "S-aamdholooghglmdiceajhfda",
+      "status": "complete",
+      "outcome": "inconclusive",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "requirement_id": "PRD-SAMPLE-EXPORT"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "requirement_id": "PRD-SNAPSHOT-RETENTION"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-PAYWALL-BOUNDARY"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "d3cfb9090f9d809b19483329f4e8a54284db790555b5540ee5c7ab89e667e8da",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-aamdholooghglmdiceajhfda",
+      "artifact_count": 38
+    },
+    {
+      "queue": "r6",
+      "persona_id": "PER-PEEKLY-V2-016",
+      "job_id": "S-ckpllpaipicenconelndnpji",
+      "status": "complete",
+      "outcome": "failed",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "failed",
+          "requirement_id": "PRD-IMPORT-PROGRESS"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "requirement_id": "PRD-IMPORT-SIZE"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-IMPORT-SAVE-FAIL"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "c75de06f800ff2e0597f51cf2848a121dd35d0b3d9fad0427c121b74b6c8816c",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-ckpllpaipicenconelndnpji",
+      "artifact_count": 26
+    },
+    {
+      "queue": "r6",
+      "persona_id": "PER-PEEKLY-V2-017",
+      "job_id": "S-fejkgbjagdokoghgelfmbcaj",
+      "status": "complete",
+      "outcome": "inconclusive",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-RECIPROCITY"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "requirement_id": "PRD-RESULT-REVERSE"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-MUTUAL"
+        },
+        {
+          "kind": "success",
+          "index": 3,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-SNAPSHOT"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "81245ddd36a11b8f08d5c41fd81099d618b18bff95b20f55fb2ecd27e9f50ff6",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-fejkgbjagdokoghgelfmbcaj",
+      "artifact_count": 28
+    },
+    {
+      "queue": "r6",
+      "persona_id": "PER-PEEKLY-V2-018",
+      "job_id": "S-mdmgdeapcgabkflegfcojikl",
+      "status": "complete",
+      "outcome": "inconclusive",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "requirement_id": "PRD-RESULT-RECIPROCITY"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "requirement_id": "PRD-RESULT-REVERSE"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "passed",
+          "requirement_id": "PRD-RESULT-MUTUAL"
+        },
+        {
+          "kind": "success",
+          "index": 3,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-SNAPSHOT"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "8fddbe2f68df28161f7b8f3eca5cd4064f57b591c223670f037862b723056f89",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-mdmgdeapcgabkflegfcojikl",
+      "artifact_count": 30
+    },
+    {
+      "queue": "r6",
+      "persona_id": "PER-PEEKLY-V2-019",
+      "job_id": "S-ikonfnebadpmafejfdbhlbfi",
+      "status": "complete",
+      "outcome": "inconclusive",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "requirement_id": "PRD-RESULT-RECIPROCITY"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-REVERSE"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-MUTUAL"
+        },
+        {
+          "kind": "success",
+          "index": 3,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-SNAPSHOT"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "passed",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "27535c647b3d172be9c9a1ef0ecbfaea161edfcd1498ab31a860cda0854ccbe5",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-ikonfnebadpmafejfdbhlbfi",
+      "artifact_count": 28
+    },
+    {
+      "queue": "r6",
+      "persona_id": "PER-PEEKLY-V2-020",
+      "job_id": "S-njlobmghmcclimglglabhnif",
+      "status": "complete",
+      "outcome": "inconclusive",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-RECIPROCITY"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-REVERSE"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-MUTUAL"
+        },
+        {
+          "kind": "success",
+          "index": 3,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-SNAPSHOT"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "967f4c9e52d0509765376d9e446d0803caab4c23b468ab519fa83dbf4a21013e",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-njlobmghmcclimglglabhnif",
+      "artifact_count": 28
+    },
+    {
+      "queue": "r6",
+      "persona_id": "PER-PEEKLY-V2-021",
+      "job_id": "S-bhggnhhmcfoefpkldhlgmnmo",
+      "status": "complete",
+      "outcome": "inconclusive",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "not_run",
+          "requirement_id": "PRD-IMPORT-MISSING"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "requirement_id": "PRD-IDENTITY-LIMIT"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-IMPORT-SNAPSHOT-UNKNOWN"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "passed",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "60920fa96b98b4841865cb9154442d3714eab205611a096aed02fc25ea0f52f3",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-bhggnhhmcfoefpkldhlgmnmo",
+      "artifact_count": 28
+    },
+    {
+      "queue": "r6",
+      "persona_id": "PER-PEEKLY-V2-023",
+      "job_id": "S-pcmnpelhjaeccidlnociacoh",
+      "status": "complete",
+      "outcome": "failed",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "not_run",
+          "requirement_id": "PRD-IMPORT-MISSING"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "failed",
+          "requirement_id": "PRD-IDENTITY-LIMIT"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-IMPORT-SNAPSHOT-UNKNOWN"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "3112101799e7c07d858eb52d4875c8107008c6dc2986e915a6606455da9daf55",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-pcmnpelhjaeccidlnociacoh",
+      "artifact_count": 28
+    },
+    {
+      "queue": "r6",
+      "persona_id": "PER-PEEKLY-V2-025",
+      "job_id": "S-lbijbjanebieoogdafhnojoj",
+      "status": "complete",
+      "outcome": "inconclusive",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-SEARCH"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "requirement_id": "PRD-PRIVACY-LOCAL"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-PRIVACY-DELETE"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "2be8ea33e7533483fe53f560e9e6401b75a5703b6beb33ad244fc0ddbd185cf9",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-lbijbjanebieoogdafhnojoj",
+      "artifact_count": 28
+    },
+    {
+      "queue": "r6",
+      "persona_id": "PER-PEEKLY-V2-026",
+      "job_id": "S-lahjbaojphfmlebjabngdodi",
+      "status": "complete",
+      "outcome": "inconclusive",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "not_run",
+          "requirement_id": "PRD-RESULT-SEARCH"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "passed",
+          "requirement_id": "PRD-PRIVACY-LOCAL"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-PRIVACY-DELETE"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "fe0b170e41ae900cd2162fae33d57bd80870a76d0b48dc6f1003a88fcea1ca2d",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-lahjbaojphfmlebjabngdodi",
+      "artifact_count": 30
+    },
+    {
+      "queue": "r6",
+      "persona_id": "PER-PEEKLY-V2-029",
+      "job_id": "S-dlfbcbfdnididdofcbnkiiie",
+      "status": "complete",
+      "outcome": "inconclusive",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "requirement_id": "PRD-SAMPLE-EXPORT"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "requirement_id": "PRD-SNAPSHOT-RETENTION"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-PAYWALL-BOUNDARY"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "passed",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "e87163fd1bcbcbc9f9715e4e9f36d1b319da8e0ad9306f49d5f6fe96d1302983",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-dlfbcbfdnididdofcbnkiiie",
+      "artifact_count": 28
+    },
+    {
+      "queue": "r6",
+      "persona_id": "PER-PEEKLY-V2-030",
+      "job_id": "S-dgoedmkboghanafhpfnjhjao",
+      "status": "complete",
+      "outcome": "inconclusive",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "requirement_id": "PRD-SAMPLE-EXPORT"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "requirement_id": "PRD-SNAPSHOT-RETENTION"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-PAYWALL-BOUNDARY"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "not_applicable",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "218b47f281196b340302f4274e20b97b7c86d43de8f98464e2ce4f25613f2981",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-dgoedmkboghanafhpfnjhjao",
+      "artifact_count": 28
+    },
+    {
+      "queue": "r6",
+      "persona_id": "PER-PEEKLY-V2-031",
+      "job_id": "S-ckljgonbkoljgjojfnhffoae",
+      "status": "complete",
+      "outcome": "inconclusive",
+      "host_protocol": false,
+      "criteria": [
+        {
+          "kind": "success",
+          "index": 0,
+          "status": "passed",
+          "requirement_id": "PRD-SAMPLE-EXPORT"
+        },
+        {
+          "kind": "success",
+          "index": 1,
+          "status": "not_run",
+          "requirement_id": "PRD-SNAPSHOT-RETENTION"
+        },
+        {
+          "kind": "success",
+          "index": 2,
+          "status": "not_run",
+          "requirement_id": "PRD-PAYWALL-BOUNDARY"
+        },
+        {
+          "kind": "recovery",
+          "index": 0,
+          "status": "passed",
+          "requirement_id": "CONDITIONAL-RECOVERY"
+        }
+      ],
+      "result_sha256": "e0e95233c1da0b39fbdc340a049525c7a9823785efa966269c4b9d1997bd6d15",
+      "evidence_root": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-ckljgonbkoljgjojfnhffoae",
+      "artifact_count": 28
+    }
+  ],
+  "unassessed_attempts": [
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-021",
+      "job_id": "S-plicdikpohnnejkdcgaikgfh",
+      "status": "uncertain",
+      "problem_code": "host_execution_failed"
+    },
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-022",
+      "job_id": "S-ggmhldipofnolcjlnleodflf",
+      "status": "uncertain",
+      "problem_code": "host_execution_failed"
+    },
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-025",
+      "job_id": "S-eiaeedlhipjocfgjoappiija",
+      "status": "uncertain",
+      "problem_code": "host_execution_failed"
+    },
+    {
+      "queue": "r4",
+      "persona_id": "PER-PEEKLY-V2-031",
+      "job_id": "S-kgmolpibhpcagimpdlbaajin",
+      "status": "queued",
+      "problem_code": null
+    },
+    {
+      "queue": "r6",
+      "persona_id": "PER-PEEKLY-V2-022",
+      "job_id": "S-lgdbhgjohjcmhfpnnplhmnil",
+      "status": "uncertain",
+      "problem_code": "host_execution_failed"
+    },
+    {
+      "queue": "r6",
+      "persona_id": "PER-PEEKLY-V2-027",
+      "job_id": "S-kigjbodgmdkadcbgbbpdckal",
+      "status": "uncertain",
+      "problem_code": "host_execution_failed"
+    }
+  ],
+  "aggregate": {
+    "completed_sessions": 24,
+    "distinct_completed_personas": 15,
+    "session_outcomes": {
+      "failed": 6,
+      "inconclusive": 17,
+      "passed": 1
+    },
+    "criteria_all": {
+      "failed": 6,
+      "not_applicable": 17,
+      "not_run": 46,
+      "passed": 35
+    },
+    "criteria_by_kind": {
+      "success": {
+        "failed": 6,
+        "not_run": 46,
+        "passed": 28
+      },
+      "recovery": {
+        "not_applicable": 17,
+        "passed": 7
+      }
+    },
+    "host_protocol_on_completed_receipts": 0,
+    "artifact_hashes_verified": 822,
+    "uncertain_attempts": 5,
+    "queued_attempts": 1,
+    "completed_persona_ids": [
+      "PER-PEEKLY-V2-014",
+      "PER-PEEKLY-V2-015",
+      "PER-PEEKLY-V2-016",
+      "PER-PEEKLY-V2-017",
+      "PER-PEEKLY-V2-018",
+      "PER-PEEKLY-V2-019",
+      "PER-PEEKLY-V2-020",
+      "PER-PEEKLY-V2-021",
+      "PER-PEEKLY-V2-023",
+      "PER-PEEKLY-V2-025",
+      "PER-PEEKLY-V2-026",
+      "PER-PEEKLY-V2-027",
+      "PER-PEEKLY-V2-029",
+      "PER-PEEKLY-V2-030",
+      "PER-PEEKLY-V2-031"
+    ],
+    "repeated_completed_persona_ids": [
+      "PER-PEEKLY-V2-016",
+      "PER-PEEKLY-V2-017",
+      "PER-PEEKLY-V2-018",
+      "PER-PEEKLY-V2-019",
+      "PER-PEEKLY-V2-020",
+      "PER-PEEKLY-V2-023",
+      "PER-PEEKLY-V2-026",
+      "PER-PEEKLY-V2-029",
+      "PER-PEEKLY-V2-030"
+    ],
+    "no_completed_session_in_selected_queues": [
+      "PER-PEEKLY-V2-001",
+      "PER-PEEKLY-V2-002",
+      "PER-PEEKLY-V2-003",
+      "PER-PEEKLY-V2-004",
+      "PER-PEEKLY-V2-005",
+      "PER-PEEKLY-V2-006",
+      "PER-PEEKLY-V2-007",
+      "PER-PEEKLY-V2-008",
+      "PER-PEEKLY-V2-009",
+      "PER-PEEKLY-V2-010",
+      "PER-PEEKLY-V2-011",
+      "PER-PEEKLY-V2-012",
+      "PER-PEEKLY-V2-013",
+      "PER-PEEKLY-V2-022",
+      "PER-PEEKLY-V2-024",
+      "PER-PEEKLY-V2-028",
+      "PER-PEEKLY-V2-032"
+    ]
+  },
+  "engine_manifest_equal": true,
+  "product_build_hashes": {
+    "r4": "d5755c8912660cf80c0c9f48d18cc8952a3e7b46fe04e82e673f1eaa96b10beb",
+    "r6": "d5755c8912660cf80c0c9f48d18cc8952a3e7b46fe04e82e673f1eaa96b10beb"
+  },
+  "r5_excluded": {
+    "counts": {
+      "blocked": 0,
+      "cancelled": 0,
+      "complete": 1,
+      "queued": 0,
+      "running": 0,
+      "uncertain": 0
+    },
+    "tasks": [
+      {
+        "job_id": "S-flojkpnlcanpiajnjempledi",
+        "persona_id": "PER-PEEKLY-V2-031",
+        "status": "complete",
+        "outcome": "inconclusive"
+      }
+    ],
+    "reason": "Persona 031 has a completed r6 receipt; r5 is not added to the requested r4+r6 session aggregate."
+  },
+  "schema_version": "peekly-final-session-audit.v1",
+  "audit_date": "2026-11-14",
+  "timezone": "Asia/Seoul",
+  "source_revision": "e638375fca8e7c3b76990ac0131eec5f3972a954",
+  "selection_rule": "Only jobs with SQLite status=complete, matching plan/report identity, operational_completed=true and a final receipt. Aggregate r4+r6 session attempts; never label them 24 distinct personas.",
+  "findings": [
+    {
+      "id": "UX-03-RELATION-MEANING",
+      "category": "product_ux_historical",
+      "severity": "P3",
+      "status": "historical-review-preserved-not-new-current-prd-failure",
+      "summary": "주요 관계 설명에 과거 맞팔 계정도 포함된다는 설명이 없다는 기존 문구 개선 항목. 동일한 짧은 문구는 r6 저장 관측에도 보인다. 최신 v3 발췌만으로 현재 PRD 위반을 다시 확정하지 않는다.",
+      "evidence": [
+        "696dbe3:docs/validation/peekly-ux-findings-20261113/evidence-index-32.json#manual_reviewed_findings/UX-03-RELATION-MEANING",
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-ckpllpaipicenconelndnpji/evidence/S-ckpllpaipicenconelndnpji/1/agent-observation-9.json"
+      ],
+      "raw_failed_criteria_in_final_24": 0
+    },
+    {
+      "id": "RUNNER-UPLOAD-CANCEL-WINDOW",
+      "category": "runner_and_verdict",
+      "severity": "P2",
+      "status": "stored-failures-not-confirmed-product-defect",
+      "summary": "진행·취소 실패 4건. 51~104ms 완료와 업로드 도구 내부 50ms polling 때문에 호출이 반환된 뒤 진행 중 취소를 실제 실행할 기회가 입증되지 않았다. 관찰하지 못한 중간 상태와 실행하지 못한 취소를 제품 기능 부재로 확정할 수 없다.",
+      "affected_sessions": [
+        "r4:014",
+        "r4:015",
+        "r4:016",
+        "r6:016"
+      ],
+      "evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-ckpllpaipicenconelndnpji/evidence/S-ckpllpaipicenconelndnpji/1/agent-observation-9.json",
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-ckpllpaipicenconelndnpji/evidence/S-ckpllpaipicenconelndnpji/1/agent-observation-12.json",
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-ckpllpaipicenconelndnpji/evidence/S-ckpllpaipicenconelndnpji/1/browser-00107.png",
+        "skills/remorsearch-ux-qa/drivers/web/scale_browser_cdp.mjs#upload"
+      ],
+      "raw_failed_criteria_in_final_24": 4
+    },
+    {
+      "id": "RUNNER-OCCLUDED-CLICK-ATTRIBUTION",
+      "category": "runner_and_verdict",
+      "severity": "P2",
+      "status": "confirmed-stored-evidence-and-static-driver-gap",
+      "summary": "r4 019의 모달 뒤 맞팔 버튼은 직전 관측에서 visible:false였다. 다음 클릭은 계정 상세를 열었고 판정은 이를 맞팔 목록 오류로 해석했다. 현재 실행기 click 경로에는 클릭 좌표의 hit-test가 없고 last_action_label은 요청 라벨이므로 실제 수신 요소를 증명하지 않는다.",
+      "affected_sessions": [
+        "r4:019"
+      ],
+      "evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-efceebljpmeelhejldcenakm/evidence/S-efceebljpmeelhejldcenakm/1/agent-observation-13.json",
+        ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-efceebljpmeelhejldcenakm/evidence/S-efceebljpmeelhejldcenakm/1/agent-observation-14.json",
+        ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-efceebljpmeelhejldcenakm/evidence/S-efceebljpmeelhejldcenakm/1/browser-00126.png",
+        "skills/remorsearch-ux-qa/drivers/web/scale_browser_cdp.mjs#click"
+      ],
+      "raw_failed_criteria_in_final_24": 1
+    },
+    {
+      "id": "VERDICT-IDENTITY-PRECONDITION",
+      "category": "verdict",
+      "severity": "P2",
+      "status": "wrong-screen-precondition-false-positive",
+      "summary": "r6 023은 자세히 보기의 첫 기록/비교 예고 화면을 보고 이름 변경 고지가 없다고 실패 처리했다. 비교 설명 또는 변화 기록 보기를 실제로 연 증거가 없어 비교 안내 누락이라는 제품 결론은 성립하지 않는다.",
+      "affected_sessions": [
+        "r6:023"
+      ],
+      "evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-pcmnpelhjaeccidlnociacoh/evidence/S-pcmnpelhjaeccidlnociacoh/1/agent-observation-13.json",
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-pcmnpelhjaeccidlnociacoh/evidence/S-pcmnpelhjaeccidlnociacoh/1/agent-observation-14.json",
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-pcmnpelhjaeccidlnociacoh/evidence/S-pcmnpelhjaeccidlnociacoh/1/browser-00143.png",
+        "docs/validation/peekly-explicit-success-20261113/persona-prd-diff-v3.json#PER-PEEKLY-V2-023"
+      ],
+      "raw_failed_criteria_in_final_24": 1
+    },
+    {
+      "id": "REPORT-UNFINISHED-AS-VALID",
+      "category": "reporting",
+      "severity": "P1",
+      "status": "confirmed-source-report-aggregation-defect",
+      "summary": "r4/r6의 unfiltered evidence_validation은 완료 영수증이 없는 불확실/대기 기록까지 valid 및 inconclusive로 집계한다. SQLite complete와 완료 영수증의 교집합으로 최종 24세션을 산출했다.",
+      "evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json"
+      ],
+      "excluded_attempts": 6
+    },
+    {
+      "id": "REPORT-COHORT-OVERLAP",
+      "category": "reporting",
+      "severity": "P1",
+      "status": "confirmed-persona-id-overlap",
+      "summary": "r4와 r6의 완료 페르소나 9명이 겹쳐 24세션은 15명이다. r5 031도 r6와 겹치므로 추가하지 않는다.",
+      "evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/plan.json",
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/plan.json",
+        ".ux-loop/peekly-host-protocol-followup16-r5-20261114/stage-33/report.json"
+      ]
+    }
+  ],
+  "validation": {
+    "queue_stage_report_status_match": true,
+    "plan_report_sqlite_job_sets_match": true,
+    "result_sha256_verified": 24,
+    "receipt_outcomes_match": true,
+    "criterion_records_match": true,
+    "artifact_sha256_entries_verified": 822,
+    "evidence_files_mutated": false,
+    "product_or_runner_code_modified": false,
+    "new_persona_runs": 0,
+    "new_model_calls": 0,
+    "new_browser_calls": 0
+  }
+}
