@@ -39,7 +39,7 @@ class CompletionGateTests(unittest.TestCase):
     def test_both_targeted_flows_and_all_six_executed(self):
         result = gate()
         self.assertTrue(result["pass_gate"])
-        self.assertEqual(result["baseline_success_not_run"], 3)
+        self.assertEqual(result["baseline_success_not_run"], 2)
         self.assertTrue(all(row["executed"] for row in result["targeted_flows"]))
 
     def test_one_remaining_target_blocks_even_if_aggregate_decreases(self):
@@ -47,8 +47,8 @@ class CompletionGateTests(unittest.TestCase):
         self.assertFalse(result["pass_gate"])
         self.assertIn("target_not_exercised:PRD-IMPORT-SNAPSHOT-UNKNOWN", result["reasons"])
 
-    def test_prior_smoke_personas_cannot_substitute_for_fresh_pair(self):
-        for numbers in (("021", "029"), ("023", "030"), ("024", "032")):
+    def test_other_smoke_personas_cannot_substitute_for_selected_pair(self):
+        for numbers in (("021", "029"), ("023", "030"), ("022", "031")):
             with self.subTest(prior=numbers):
                 summary, report = completion_evidence()
                 prior = ["PER-PEEKLY-V2-" + number for number in numbers]
@@ -61,6 +61,15 @@ class CompletionGateTests(unittest.TestCase):
                     completion.base.router_delivery_audit(clean_ledger()))
                 self.assertFalse(result["pass_gate"])
                 self.assertTrue(all(not row["executed"] for row in result["targeted_flows"]))
+
+    def test_failed_prior_smoke_with_same_personas_cannot_authorize_cohort(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "run-status.json").write_text(json.dumps({"state": "smoke_failed"}))
+            (root / "input-provenance.json").write_text(json.dumps({
+                "stage": "smoke", "persona_ids": list(completion.SMOKE_IDS)}))
+            with self.assertRaisesRegex(RuntimeError, "passed_completion_smoke_required"):
+                completion.require_passed_smoke(root, {})
 
     def test_non_target_not_run_also_blocks(self):
         self.assertFalse(gate(("not_run", "passed", "passed", "passed", "passed", "passed"))["pass_gate"])

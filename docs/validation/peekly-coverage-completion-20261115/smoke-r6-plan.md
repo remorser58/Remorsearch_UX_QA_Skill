@@ -6,6 +6,8 @@ The action correction is prepared and tested in a separate worktree while R5's r
 
 ## Predeclared pair and matched baseline
 
+Before R6 launch, R5 terminated with both sessions uncertain and no completed receipt. The source is additionally being strengthened so only `Page.captureScreenshot` receives a 30-second CDP response window; other CDP methods retain 10 seconds and the entire action remains bounded at 80 seconds. Actual pending-response, monotonic-deadline, abort and no-resend behavior must pass regression and independent review. R5's two requests remain quarantined; a longer limit does not retroactively acknowledge either response or establish the underlying stall cause.
+
 New root: `.ux-loop/peekly-completion-smoke-r6-20261115`. Use **024 + 032** in new independent jobs, contexts, and call IDs. Their earlier R4 evaluation was deliberately paused after all in-flight responses settled, with zero uncertain operations and confirmed context closure. R4 stays paused and immutable. This is a new evaluation of the corrected runtime, not a continuation of R4. Every prior job ID is excluded.
 
 | Persona | Current profile SHA-256 | Old 65f job | Old success results |
