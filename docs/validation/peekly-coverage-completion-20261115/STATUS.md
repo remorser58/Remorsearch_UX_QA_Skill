@@ -20,7 +20,13 @@ The user authorizes implementation, regression, owned isolated test contexts, sm
 - The old uncertain 009/010/012 remain preserved. The new requested cohort uses new jobs and call IDs.
 - Original 46 weighted mapping at 65f: 20 passed / 8 failed / 18 not_run; 32 unique mappings: 13 / 6 / 13.
 
-## Current phase — isolated R2 ready for fresh actual smoke
+## Current phase — isolated R2 actual smoke running
+
+- Actual R2 started `2026-11-14T17:55:51.441018+00:00` (2026-11-15 02:55 Asia/Seoul), detached launcher PID 11609, on committed and remotely verified source `1939f32ccef5bf2eae2edb2e0c51d6fba10dd0d5`. Worktree was clean at launch.
+- Root `.ux-loop/peekly-completion-smoke-pinned-20261115`, stage `stage-2`; jobs `S-beegcnopeblnnfadcbmfpcbk` and `S-ikjnkcfnpkaooaeedahemnmk` initially running. Initial read-only checkpoint: 4 completed model operations and 4 completed tool operations, 2 model intents. Input provenance SHA `c300d5d340c0d41566cc0d36a326a4a155b74e32417b8870778b2e4415e1971c`.
+- Runtime, fixtures, library, source and dist are frozen. No 32-person run yet. Inspect actual smoke evidence and require its full gate before starting the new cohort. Initial counts are progress only, not completed-session coverage.
+
+### Recovery and pre-launch checkpoint (historical)
 
 - Host/tool recovery confirmed on 2026-11-15. Git and ordinary file access respond normally. The pending nine-file change set is intact on `a360b85`; no R2/cohort directory or active completion launcher was present. The earlier smoke-start wrapper failed at its first import before spawning a child; it created no model/browser operation.
 - Recovery verification: 61/61 regression tests passed again (0.545 seconds, no skip/failure); normal CLI preflight passed with 33 preserved queues / 329 old job IDs / 40 old uncertain rows. Actual archive/library freeze and six-file HTTP verification passed again. Proceed with the already authorized fresh smoke, then cohort only after the gate; do not resend any old uncertain request.
