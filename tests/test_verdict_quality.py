@@ -117,7 +117,7 @@ class VerdictQualityTests(unittest.TestCase):
             self.assertIn(expected, goal)
         self.assertIn("not_applicable", goal)
         self.assertIn("not_run", goal)
-        self.assertIn("아이디나 이름으로 찾기", _persona_journey_goal("Use Peekly.", ["PRD-RESULT-SEARCH"]))
+        self.assertIn("이름 또는 아이디 찾기", _persona_journey_goal("Use Peekly.", ["PRD-RESULT-SEARCH"]))
         self.assertIn("MatrixTab", _persona_journey_goal("Use Peekly.", ["PRD-SAMPLE-EXPORT"]))
         self.assertIn("not_run", _persona_journey_goal("Use Peekly.", ["PRD-SNAPSHOT-RETENTION"]))
 
@@ -218,7 +218,7 @@ class VerdictQualityTests(unittest.TestCase):
                            sample_text, (), history)
         self.assertEqual(missing[0]["status"], "failed")
 
-    def test_search_uses_current_text_input_placeholder(self):
+    def test_unscoped_matrix_placeholder_and_retained_flag_cannot_prove_search(self):
         task = {"requirement_ids": ["PRD-RESULT-SEARCH"]}
         large = {"text": "관계 목록", "facts": {
             "controls": [{"tag": "input", "type": "text", "placeholder": "아이디나 이름으로 찾기"}],
@@ -228,7 +228,7 @@ class VerdictQualityTests(unittest.TestCase):
             "list_rows": [{"key": "synthetic_user"}],
             "typed_input_checks": [{"retained": True}]}}
         checks = evaluate(task, filtered["facts"], filtered["text"], (), [large])
-        self.assertEqual(checks[0]["status"], "passed")
+        self.assertEqual(checks[0]["status"], "not_run")
 
     def test_retention_requires_eleven_distinct_uploads_and_current_history_count(self):
         task = {"requirement_ids": ["PRD-SNAPSHOT-RETENTION"]}

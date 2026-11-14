@@ -1,8 +1,8 @@
-"""Offline regressions for actual 017/021 evidence and authored scope positives.
+"""Offline regressions for saved Peekly evidence and authored scope positives.
 
 Golden JSON is a minimal, hash-referenced projection of saved observations.
-Positive cases and PNGs below are explicitly synthetic contract inputs; no
-browser/model process or product success is asserted by these tests.
+Actual 026 includes a saved positive search. Authored variants and unit PNGs are
+explicitly synthetic contract inputs; these tests run no browser/model process.
 """
 import copy
 import json
@@ -17,7 +17,8 @@ from uxpersonas.agent_run import Execution
 from uxpersonas.peekly_criteria import (
     CRITERIA, LEGACY_UNKNOWN_REASON, LEGACY_UNKNOWN_REQUIREMENT,
     RESULT_CURRENT_FIXTURE, RESULT_CURRENT_SHA256, RESULT_SCOPE_KEYS,
-    evaluate, result_scope_evidence,
+    SEARCH_KEYS, SEARCH_QUERY, SEARCH_QUERY_SHA256, SEARCH_REQUIREMENT,
+    evaluate, result_scope_evidence, search_scope_evidence,
 )
 from uxpersonas.scale_run import Evidence
 from uxresearch.canonical import EngineError, byte_digest
@@ -307,6 +308,66 @@ class ReceiptScopeTests(unittest.TestCase):
                 self.assertEqual(unknown["observation"], LEGACY_UNKNOWN_REASON)
 
 
+
+    def search_task(self):
+        self.worker["claim"]["task"].update(
+            requirement_ids=[SEARCH_REQUIREMENT, "PRD-PRIVACY-LOCAL", "PRD-PRIVACY-DELETE"],
+            success_criteria=["Search ordered imported list", "Local notice", "Owned data deletion"])
+
+    def test_actual_025_missing_query_vetoes_both_model_and_legacy_native_decisions(self):
+        self.search_task()
+        self.admit(golden("peekly_search_scope_025.json"))
+        for judgment in (None, *(self.judgment([status, "passed", "not_run"])
+                                 for status in ("passed", "failed", "not_run"))):
+            for receipt in self.receipts(judgment):
+                self.assertEqual([c["status"] for c in receipt["criteria"]],
+                                 ["not_run", "passed", "not_run"])
+                self.assertEqual(receipt["criteria"][0]["evidence_ids"], [])
+
+    def test_actual_026_exact_query_corrects_legacy_placeholder_failure_in_both_receipts(self):
+        self.search_task()
+        observed = self.admit(golden("peekly_search_scope_026.json"))
+        expected = [artifact["id"] for row in observed for artifact in row["artifacts"]]
+        for judgment in (None, *(self.judgment([status, "passed", "not_run"])
+                                 for status in ("passed", "failed", "not_run"))):
+            for receipt in self.receipts(judgment):
+                self.assertEqual([c["status"] for c in receipt["criteria"]],
+                                 ["passed", "passed", "not_run"])
+                self.assertEqual(receipt["criteria"][0]["evidence_ids"], expected)
+
+    def test_search_bound_filter_failure_cannot_be_erased_by_a_model_pass(self):
+        self.search_task()
+        rows = golden("peekly_search_scope_026.json")
+        rows[-1]["facts"]["list_rows"] = [{"key": "synthetic_wrong_account"}]
+        self.admit(rows)
+        for judgment in (None, self.judgment(["passed", "passed", "not_run"])):
+            for receipt in self.receipts(judgment):
+                self.assertEqual(receipt["criteria"][0]["status"], "failed")
+
+    def test_search_positive_requires_png_for_import_list_and_type(self):
+        self.search_task()
+        observed = self.admit(golden("peekly_search_scope_026.json"))
+        for missing in range(3):
+            with self.subTest(missing=missing):
+                saved = observed[missing]["artifacts"]
+                observed[missing]["artifacts"] = []
+                judgment = self.judgment(["passed", "passed", "not_run"])
+                for criterion in judgment["criteria"][:2]:
+                    criterion["observation_ids"] = [observed[(missing + 1) % 3]["id"]]
+                for receipt in self.receipts(judgment):
+                    self.assertEqual(receipt["criteria"][0]["status"], "not_run")
+                observed[missing]["artifacts"] = saved
+
+    def test_search_correction_does_not_exempt_unrelated_native_failures(self):
+        self.search_task()
+        rows = golden("peekly_search_scope_026.json")
+        rows[-1]["checks"].append({"kind": "success", "index": 2, "status": "failed"})
+        self.admit(rows)
+        with self.assertRaises(EngineError) as error:
+            list(self.receipts(self.judgment(["passed", "passed", "passed"])))
+        self.assertEqual(error.exception.issue["code"], "erased_failure")
+
+
 class LegacyUnknownScopeTests(unittest.TestCase):
     def test_actual_021_known_empty_then_normal_pair_does_not_exercise_legacy_unknown(self):
         rows = golden("peekly_legacy_unknown_021.json")
@@ -331,6 +392,81 @@ class LegacyUnknownScopeTests(unittest.TestCase):
 
 class RejectionWordingScopeTests(unittest.TestCase):
     IDS = ["PRD-IMPORT-HTML", "PRD-IMPORT-ACCOUNT"]
+
+    @staticmethod
+    def synthetic_acceptance(rejected):
+        """Authored second attempt with a real completion/new-save contract."""
+        accepted = copy.deepcopy(rejected)
+        accepted["id"] = "synthetic-accepted-import"
+        accepted["text"] = "결과를 불러왔어요."
+        accepted["checks"] = []
+        facts = accepted["facts"]
+        new_state = copy.deepcopy(facts["import_attempt"]["storage_after"])
+        new_state["sha256"] = "c" * 64
+        facts["import_attempt_id"] = "upload-synthetic-accepted"
+        facts["storage_snapshot"] = copy.deepcopy(new_state)
+        facts["import_attempt"].update(
+            attempt_id=facts["import_attempt_id"], persistence_unchanged=False,
+            storage_after=new_state,
+            phase_samples=[{"text": "파일을 읽고 있어요"}, {"text": "결과를 불러왔어요."}])
+        return accepted
+
+    def test_bound_acceptance_overrides_rejection_in_both_orders(self):
+        rows = golden("peekly_rejection_wording_011.json")
+        for rid, rejected in zip(self.IDS, (rows[1], rows[2])):
+            accepted = self.synthetic_acceptance(rejected)
+            for observations in ([accepted], [rejected, accepted], [accepted, rejected]):
+                with self.subTest(requirement=rid, order=[row["id"] for row in observations]):
+                    self.assertEqual(statuses(observations, [rid]), {0: "failed"})
+
+    def test_stale_success_copy_without_same_attempt_completion_and_new_save_is_nr(self):
+        rows = golden("peekly_rejection_wording_011.json")
+        for rid, rejected in zip(self.IDS, (rows[1], rows[2])):
+            stale = copy.deepcopy(rejected)
+            stale["text"] = "결과를 불러왔어요."
+            stale["checks"] = []
+            with self.subTest(requirement=rid):
+                self.assertEqual(statuses([stale], [rid]), {0: "not_run"})
+                bare = {"text": "결과를 불러왔어요.", "facts": {
+                    "last_action": "upload", "uploaded_fixture": rejected["facts"]["uploaded_fixture"]}}
+                self.assertEqual(statuses([bare], [rid]), {0: "not_run"})
+
+    def test_acceptance_requires_its_own_fixture_attempt_completion_and_current_saved_digest(self):
+        rows = golden("peekly_rejection_wording_011.json")
+        mutations = (
+            lambda r: r["facts"].update(uploaded_fixture="peekly-sample-current.zip"),
+            lambda r: r["facts"]["import_attempt"].update(fixture="peekly-sample-current.zip"),
+            lambda r: r["facts"]["import_attempt"].update(fixture_sha256="f" * 64),
+            lambda r: r["facts"].update(import_attempt_id="upload-unrelated"),
+            lambda r: r["facts"]["import_attempt"].update(phase_samples=[{"text": "파일을 읽고 있어요"}]),
+            lambda r: r["facts"]["import_attempt"].update(persistence_unchanged=True),
+            lambda r: r["facts"]["import_attempt"].update(cancel_dispatched=True),
+            lambda r: r["facts"]["import_attempt"]["storage_before"].update(available=False),
+            lambda r: r["facts"]["import_attempt"]["storage_after"].update(available=False),
+            lambda r: r["facts"]["storage_snapshot"].update(sha256="f" * 64),
+        )
+        for rid, rejected in zip(self.IDS, (rows[1], rows[2])):
+            for number, mutate in enumerate(mutations):
+                accepted = self.synthetic_acceptance(rejected)
+                mutate(accepted)
+                with self.subTest(requirement=rid, case=number):
+                    self.assertEqual(statuses([accepted], [rid]), {0: "not_run"})
+                    self.assertEqual(statuses([rejected, accepted], [rid]), {0: "passed"})
+            accepted = self.synthetic_acceptance(rejected)
+            accepted["facts"]["import_attempt"]["storage_before"] = copy.deepcopy(
+                accepted["facts"]["import_attempt"]["storage_after"])
+            self.assertEqual(statuses([accepted], [rid]), {0: "not_run"})
+
+    def test_unrelated_or_separate_attempt_success_cannot_supply_completion(self):
+        rows = golden("peekly_rejection_wording_011.json")
+        for rid, rejected in zip(self.IDS, (rows[1], rows[2])):
+            unrelated = self.synthetic_acceptance(rejected)
+            unrelated["facts"]["uploaded_fixture"] = "peekly-sample-current.zip"
+            later = self.synthetic_acceptance(rejected)
+            later["facts"]["import_attempt"]["phase_samples"] = [{"text": "파일을 읽고 있어요"}]
+            with self.subTest(requirement=rid):
+                self.assertEqual(statuses([unrelated, later], [rid]), {0: "not_run"})
+                self.assertEqual(statuses([rejected, unrelated, later], [rid]), {0: "passed"})
 
     def test_actual_011_nbsp_rejections_pass_with_their_own_preserved_attempt(self):
         rows = golden("peekly_rejection_wording_011.json")
@@ -375,6 +511,110 @@ class RejectionWordingScopeTests(unittest.TestCase):
         account["text"] = "계정의 파일이에요. 다른 파일 고르기"
         self.assertEqual(statuses([html], [self.IDS[0]]), {0: "not_run"})
         self.assertEqual(statuses([account], [self.IDS[1]]), {0: "not_run"})
+
+
+
+class SearchScopeTests(unittest.TestCase):
+    def assert_search(self, rows, status):
+        self.assertEqual(search_scope_evidence(rows)["status"], status)
+        self.assertEqual(statuses(rows, [SEARCH_REQUIREMENT]), {0: status})
+
+    def test_saved_025_has_an_actual_search_field_but_no_query(self):
+        rows = golden("peekly_search_scope_025.json")
+        field = rows[1]["facts"]["controls"][0]
+        self.assertEqual((field["type"], field["label"], field["visible"], field["disabled"]),
+                         ("search", "이름 또는 아이디 찾기", True, False))
+        self.assertEqual(len(rows[1]["facts"]["list_rows"]), 12)
+        self.assertEqual(rows[-1]["facts"]["typed_input_checks"], [])
+        self.assertEqual(rows[-1]["checks"][0]["status"], "failed")  # Historical bug retained.
+        self.assert_search(rows, "not_run")
+
+    def test_saved_026_import_list_and_fresh_exact_query_pass(self):
+        rows = golden("peekly_search_scope_026.json")
+        self.assertEqual([r["key"] for r in rows[1]["facts"]["list_rows"]], list(SEARCH_KEYS))
+        self.assertEqual(rows[2]["facts"]["typed_input_checks"][0]["actual_sha256"], SEARCH_QUERY_SHA256)
+        self.assertEqual(search_scope_evidence(rows)["indices"], [0, 1, 2])
+        self.assert_search(rows, "passed")
+
+    def test_synthetic_search_does_not_require_a_particular_placeholder(self):
+        rows = golden("peekly_search_scope_026.json")
+        for row in rows:
+            row["checks"] = []
+            row["id"] = "synthetic-" + row["id"]
+            for control in row["facts"]["controls"]:
+                control.update(label="관계 검색", placeholder="검색할 계정")
+        self.assert_search(rows, "passed")
+        self.assertEqual(CRITERIA[SEARCH_REQUIREMENT]["selector"], "input[type='search']")
+
+    def test_wrong_field_hidden_disabled_or_ambiguous_input_does_not_count(self):
+        for name, mutate in (
+            ("wrong field", lambda rows: rows[-1]["facts"]["typed_input_checks"][0].update(selector="#other-field")),
+            ("hidden baseline", lambda rows: rows[1]["facts"]["controls"][0].update(visible=False)),
+            ("hidden query", lambda rows: rows[-1]["facts"]["controls"][0].update(visible=False)),
+            ("disabled", lambda rows: rows[-1]["facts"]["controls"][0].update(disabled=True)),
+            ("readonly", lambda rows: rows[-1]["facts"]["controls"][0].update(readonly=True)),
+            ("other input type", lambda rows: rows[-1]["facts"]["controls"][0].update(type="text")),
+            ("ambiguous input", lambda rows: rows[-1]["facts"]["controls"].append(
+                dict(rows[-1]["facts"]["controls"][0], selector="#other-search"))),
+        ):
+            with self.subTest(case=name):
+                rows = golden("peekly_search_scope_026.json")
+                mutate(rows)
+                self.assert_search(rows, "not_run")
+
+    def test_retained_hash_without_a_fresh_exact_query_is_not_execution(self):
+        for name, mutate in (
+            ("observe only", lambda rows: rows[-1]["facts"].update(last_action="observe")),
+            ("wrong expected query", lambda rows: rows[-1]["facts"]["typed_input_checks"][0].update(expected_sha256="a" * 64)),
+            ("wrong actual query", lambda rows: rows[-1]["facts"]["typed_input_checks"][0].update(actual_sha256="a" * 64)),
+            ("not retained", lambda rows: rows[-1]["facts"]["typed_input_checks"][0].update(retained=False)),
+            ("no checks", lambda rows: rows[-1]["facts"].update(typed_input_checks=[])),
+            ("stale retained query", lambda rows: rows[1]["facts"].update(
+                typed_input_checks=copy.deepcopy(rows[-1]["facts"]["typed_input_checks"]))),
+            ("missing prior checks", lambda rows: rows[1]["facts"].pop("typed_input_checks")),
+        ):
+            with self.subTest(case=name):
+                rows = golden("peekly_search_scope_026.json")
+                mutate(rows)
+                rows[-1]["text"] += "\n검색 성공: " + SEARCH_QUERY
+                self.assert_search(rows, "not_run")
+
+    def test_import_attempt_fixture_and_saved_state_cannot_be_borrowed(self):
+        for name, mutate in (
+            ("wrong fixture hash", lambda rows: rows[0]["facts"]["import_attempt"].update(fixture_sha256="a" * 64)),
+            ("wrong uploaded fixture", lambda rows: rows[0]["facts"].update(uploaded_fixture="peekly-sample-current.zip")),
+            ("no import completion", lambda rows: rows[0]["facts"]["import_attempt"].update(phase_samples=[])),
+            ("unchanged saved state", lambda rows: rows[0]["facts"]["import_attempt"].update(persistence_unchanged=True)),
+            ("other query attempt", lambda rows: rows[-1]["facts"].update(import_attempt_id="upload-unrelated")),
+            ("changed saved state", lambda rows: rows[-1]["facts"]["storage_snapshot"].update(sha256="a" * 64)),
+            ("unavailable saved state", lambda rows: rows[-1]["facts"]["storage_snapshot"].update(available=False)),
+            ("sample mode", lambda rows: rows[1].update(text="샘플을 보고 있어요")),
+        ):
+            with self.subTest(case=name):
+                rows = golden("peekly_search_scope_026.json")
+                mutate(rows)
+                self.assert_search(rows, "not_run")
+        self.assert_search(golden("peekly_search_scope_026.json")[1:], "not_run")
+
+    def test_closed_list_cannot_supply_a_baseline_for_a_later_unrelated_type(self):
+        rows = golden("peekly_search_scope_026.json")
+        closed = copy.deepcopy(rows[1])
+        closed["facts"].update(controls=[], list_rows=[], last_action="click", last_action_label="닫기")
+        self.assert_search([*rows[:2], closed, rows[2]], "not_run")
+
+    def test_actual_query_can_fail_order_or_filter_and_later_pass_does_not_erase_it(self):
+        for name, mutate in (
+            ("unordered baseline", lambda rows: rows[1]["facts"]["list_rows"].reverse()),
+            ("wrong account", lambda rows: rows[-1]["facts"].update(list_rows=[{"key": "synthetic_wrong_account"}])),
+            ("no match", lambda rows: rows[-1]["facts"].update(list_rows=[])),
+            ("not filtered", lambda rows: rows[-1]["facts"].update(
+                list_rows=copy.deepcopy(rows[1]["facts"]["list_rows"]))),
+        ):
+            with self.subTest(case=name):
+                rows = golden("peekly_search_scope_026.json")
+                mutate(rows)
+                self.assert_search(rows, "failed")
+                self.assert_search(rows + golden("peekly_search_scope_026.json"), "failed")
 
 
 if __name__ == "__main__":

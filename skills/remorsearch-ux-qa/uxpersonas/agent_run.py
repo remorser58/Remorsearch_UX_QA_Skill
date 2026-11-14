@@ -18,7 +18,7 @@ from typing import TypedDict
 from uxresearch.canonical import EngineError, byte_digest, canonical, digest
 from uxresearch.storage import Store, atomic, read_bytes, read_json, safe_path
 from . import swarm
-from .peekly_criteria import guard_peekly_scope, unsupported_legacy_criterion
+from .peekly_criteria import guard_peekly_scope, unsupported_native_failure
 
 PINNED = {"langgraph": "1.2.20", "langgraph-checkpoint-sqlite": "3.1.3"}
 SCHEMA = "ux-agent-execution.v1"
@@ -400,7 +400,8 @@ class Execution:
             receipt["criteria"] = self.criteria(worker, judgment, observations)
             # Later recovery/review cannot erase an earlier native failed check.
             failed = {(c["kind"], c["index"]) for o in observations for c in o["checks"]
-                      if c["status"] == "failed" and not unsupported_legacy_criterion(worker["claim"]["task"], c)}
+                      if c["status"] == "failed"
+                      and not unsupported_native_failure(worker["claim"]["task"], c, observations)}
             if any((c["kind"], c["index"]) in failed and c["status"] != "failed" for c in receipt["criteria"]):
                 fail("erased_failure", "The judgment erases an earlier observed failed checkpoint.")
             statuses = {c["status"] for c in receipt["criteria"]}

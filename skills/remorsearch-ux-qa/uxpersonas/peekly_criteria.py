@@ -7,6 +7,7 @@ never silently promoted to a pass or converted to a failure.
 """
 from __future__ import annotations
 
+import hashlib
 import re
 
 PEEKLY_PRD_SHA256 = "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b"
@@ -104,8 +105,8 @@ CRITERIA = {
         "action": "upload peekly-sample-previous.zip then peekly-sample-current.zip and open comparison",
         "timeout_seconds": 120, "scope": "desktop"},
     "PRD-RESULT-SEARCH": {
-        "screen": "relationship list", "selector": "input[placeholder='아이디나 이름으로 찾기']",
-        "text": ["아이디나 이름으로 찾기"], "value": "rows are ordered by username/ID; the text input appears for >8 rows and an exact synthetic handle narrows to one row",
+        "screen": "results relationship list", "selector": "input[type='search']",
+        "text": ["이름 또는 아이디 찾기"], "value": "rows are ordered by username/ID; a visible enabled search input appears for >8 rows and an actual exact synthetic handle query narrows to one matching row",
         "precondition": "import peekly-search-ready.zip then open 나를 맞팔 안 한 사람 with 12 rows", "action": "type exact synthetic handle synthetic_search_outgoing_05 and observe one matching row",
         "timeout_seconds": 45, "scope": "desktop"},
     "PRD-SAMPLE-EXPORT": {
@@ -282,31 +283,62 @@ def _same_storage(before, after):
             and sorted(before["keys"]) == sorted(after["keys"]))
 
 
-REJECTION_FIXTURE_SHA256 = {
+NAMED_IMPORT_FIXTURE_SHA256 = {
     "peekly-malformed-html.zip": "9bc5fdf9bc926f3fada2b986508ab93bb018f450cd5bb597d407b998677e190d",
     "peekly-account-mismatch.zip": "a0fa22372bb16645faed613d09c962ccc7611421dd7f934d54bb32c59aaad795",
+    "peekly-search-ready.zip": "c1901b1151716053a5fc31ec9eb9dee7d51cbb3c665dbf8d7607849fdea8e6e2",
 }
 
 
-def _preserved_named_rejection(row, fixture):
-    """New rejection wording requires its own pinned upload and unchanged state."""
+def _named_import_attempt(row, fixture):
+    """Bind a named fixture to its own reviewed upload, never nearby copy."""
     facts = row.get("facts", {})
     attempt = facts.get("import_attempt")
-    if not isinstance(attempt, dict):
-        return False
+    if not isinstance(attempt, dict) or fixture not in NAMED_IMPORT_FIXTURE_SHA256:
+        return None
     attempt_id = attempt.get("attempt_id")
-    before, after = attempt.get("storage_before"), attempt.get("storage_after")
-    return (
+    if (
         facts.get("last_action") == "upload" and facts.get("uploaded_fixture") == fixture
         and attempt.get("tool") == "upload"
         and attempt.get("schema_version") == "peekly-import-attempt.v1"
         and attempt.get("fixture") == fixture
-        and attempt.get("fixture_sha256") == REJECTION_FIXTURE_SHA256.get(fixture)
+        and attempt.get("fixture_sha256") == NAMED_IMPORT_FIXTURE_SHA256.get(fixture)
         and isinstance(attempt_id, str) and bool(attempt_id)
         and facts.get("import_attempt_id") == attempt_id
-        and attempt.get("persistence_unchanged") is True
+    ):
+        return attempt
+    return None
+
+
+def _preserved_named_rejection(row, fixture):
+    """New rejection wording requires its own pinned upload and unchanged state."""
+    attempt = _named_import_attempt(row, fixture)
+    if attempt is None:
+        return False
+    before, after = attempt.get("storage_before"), attempt.get("storage_after")
+    return (
+        attempt.get("persistence_unchanged") is True
         and _same_storage(before, after)
-        and _same_storage(after, facts.get("storage_snapshot"))
+        and _same_storage(after, row["facts"].get("storage_snapshot"))
+    )
+
+
+def _accepted_named_import(row, fixture):
+    """Acceptance needs completion and a new saved state in the same attempt."""
+    attempt = _named_import_attempt(row, fixture)
+    if attempt is None:
+        return False
+    before, after = attempt.get("storage_before"), attempt.get("storage_after")
+    phases = attempt.get("phase_samples", [])
+    complete = isinstance(phases, list) and any(
+        isinstance(phase, dict) and _contains(phase.get("text", ""), ["결과를 불러왔어요"])
+        for phase in phases)
+    return (
+        complete and attempt.get("persistence_unchanged") is False
+        and attempt.get("cancel_dispatched") is not True
+        and _storage_available(before) and _storage_available(after)
+        and not _same_storage(before, after)
+        and _same_storage(after, row["facts"].get("storage_snapshot"))
     )
 
 
@@ -538,6 +570,93 @@ def result_scope_evidence(rows, requirement_id):
     return failed or passed or missing
 
 
+SEARCH_REQUIREMENT = "PRD-RESULT-SEARCH"
+SEARCH_FIXTURE = "peekly-search-ready.zip"
+SEARCH_QUERY = "synthetic_search_outgoing_05"
+SEARCH_KEYS = tuple(f"synthetic_search_outgoing_{index:02d}" for index in range(12))
+SEARCH_QUERY_SHA256 = hashlib.sha256(SEARCH_QUERY.encode("utf-8")).hexdigest()
+
+
+def search_scope_evidence(rows):
+    """Observe ResultsTab's actual field and one fresh exact-query/filter step."""
+    missing = {
+        "status": "not_run", "indices": [],
+        "reason": "The owned 12-row list, visible enabled search input, and an actual exact-query/filter observation in the same list attempt were not all captured.",
+    }
+    anchor = baseline = passed = failed = None
+
+    def search_field(row):
+        fields = [control for control in _controls(row)
+                  if control.get("tag") == "input" and control.get("type") == "search"
+                  and control.get("visible") is True and control.get("disabled") is False
+                  and control.get("readonly") is not True
+                  and isinstance(control.get("selector"), str) and control["selector"]]
+        return fields[0] if len(fields) == 1 else None
+
+    def signature(facts, selector):
+        checks = facts.get("typed_input_checks")
+        if not isinstance(checks, list):
+            return None
+        matches = [check for check in checks if isinstance(check, dict)
+                   and check.get("selector") == selector]
+        if len(matches) != 1:
+            return None
+        check = matches[0]
+        return (check.get("retained") is True, check.get("expected_sha256"), check.get("actual_sha256"))
+
+    expected_signature = (True, SEARCH_QUERY_SHA256, SEARCH_QUERY_SHA256)
+    for index, row in enumerate(rows):
+        facts = row.get("facts", {})
+        if facts.get("last_action") == "upload":
+            anchor = baseline = None
+            if _accepted_named_import(row, SEARCH_FIXTURE):
+                anchor = {"index": index, "attempt": facts["import_attempt_id"],
+                          "storage": facts["storage_snapshot"]}
+            continue
+        if (anchor is None or facts.get("import_attempt_id") != anchor["attempt"]
+                or not _same_storage(facts.get("storage_snapshot"), anchor["storage"])
+                or _contains(row.get("text", ""), ["샘플을 보고 있어요"])):
+            anchor = baseline = None
+            continue
+        field = search_field(row)
+        people = facts.get("list_rows")
+        keys = [person.get("key") for person in people if isinstance(person, dict)] if isinstance(people, list) else None
+        if (field is None or keys is None or len(keys) != len(people)
+                or any(not isinstance(key, str) or not key for key in keys)
+                or SEARCH_FIXTURE not in _row_uploads(row)):
+            baseline = None
+            continue
+        action, selector = facts.get("last_action"), field["selector"]
+        if baseline and (facts["import_attempt_id"] != baseline["attempt"]
+                or not _same_storage(facts["storage_snapshot"], baseline["storage"])
+                or selector != baseline["selector"]):
+            baseline = None
+        if action == "type":
+            previous = rows[index - 1].get("facts", {}) if index else {}
+            # A retained value from an old/wrong-field action cannot stand in for
+            # this type event. The reviewed driver adds/updates this selector's
+            # expected hash only when it actually dispatches that text input.
+            if (baseline and isinstance(previous.get("typed_input_checks"), list)
+                    and signature(facts, selector) == expected_signature
+                    and signature(previous, selector) != expected_signature):
+                indices = [anchor["index"], baseline["index"], index]
+                if baseline["ordered"] and keys == [SEARCH_QUERY]:
+                    passed = {"status": "passed", "indices": indices,
+                              "summary": "Verified ordered 12-row ResultsTab list, visible enabled search field, actual exact-query input, and the one matching account."}
+                else:
+                    failed = {"status": "failed", "indices": indices,
+                              "reason": "The exact query was entered into the observed search field, but the original list order or the one-account filtering result did not match the fixture."}
+            baseline = None
+            continue
+        if len(keys) == 12 and set(keys) == set(SEARCH_KEYS):
+            baseline = {"index": index, "selector": selector,
+                        "attempt": facts["import_attempt_id"], "storage": facts["storage_snapshot"],
+                        "ordered": keys == list(SEARCH_KEYS)}
+        elif action not in {"observe", "wait", "scroll"}:
+            baseline = None
+    return failed or passed or missing
+
+
 LEGACY_UNKNOWN_REQUIREMENT = "PRD-IMPORT-SNAPSHOT-UNKNOWN"
 LEGACY_UNKNOWN_REASON = (
     "No approved host capability configured a legacy snapshot without includedFiles. "
@@ -552,13 +671,24 @@ def unsupported_legacy_criterion(task, criterion):
             and requirements[index] == LEGACY_UNKNOWN_REQUIREMENT)
 
 
-def guard_peekly_scope(task, criteria, observations):
-    """Veto unsupported relationship passes and the unconfigured legacy criterion.
+def unsupported_native_failure(task, criterion, observations):
+    """Limit historical native-failure corrections to two explicit scope errors."""
+    if unsupported_legacy_criterion(task, criterion):
+        return True
+    requirements, index = task.get("requirement_ids", []), criterion.get("index")
+    return (criterion.get("kind") == "success" and isinstance(requirements, list)
+            and isinstance(index, int) and 0 <= index < len(requirements)
+            and requirements[index] == SEARCH_REQUIREMENT
+            and search_scope_evidence(observations)["status"] != "failed")
 
-    Relationship failures and all unrelated criterion decisions remain untouched.
-    Legacy-unknown has no supported setup; both historical pass/fail are not_run.
-    Both receipt paths use this after native merges as well as normal validation,
-    so a legacy/synthetic native pass cannot restore a sample-only model pass.
+
+def guard_peekly_scope(task, criteria, observations):
+    """Bind only the explicitly reviewed Peekly requirements to their prerequisites.
+
+    Relationship failures and unrelated criterion decisions remain untouched.
+    Legacy-unknown has no configured setup. Search requires a fresh exact query;
+    its historical placeholder-only failure is replaced by scoped DOM evidence.
+    Both receipt paths use this after native merges and normal validation.
     """
     requirements = task.get("requirement_ids", [])
     if not isinstance(requirements, list):
@@ -568,11 +698,15 @@ def guard_peekly_scope(task, criteria, observations):
             criterion.update(status="not_run", evidence_ids=[], observation=LEGACY_UNKNOWN_REASON)
             continue
         index = criterion.get("index")
-        if (criterion.get("kind") != "success" or criterion.get("status") != "passed"
+        if (criterion.get("kind") != "success"
                 or not isinstance(index, int) or index < 0 or index >= len(requirements)
-                or requirements[index] not in RESULT_SCOPE_KEYS):
+                or requirements[index] not in {*RESULT_SCOPE_KEYS, SEARCH_REQUIREMENT}):
             continue
-        proof = result_scope_evidence(observations, requirements[index])
+        is_search = requirements[index] == SEARCH_REQUIREMENT
+        if not is_search and criterion.get("status") != "passed":
+            continue
+        proof = (search_scope_evidence(observations) if is_search
+                 else result_scope_evidence(observations, requirements[index]))
         sources = [observations[i] for i in proof["indices"]]
         captures_bound = bool(sources) and all(
             any(artifact.get("kind") == "screenshot" for artifact in source.get("artifacts", []))
@@ -580,11 +714,11 @@ def guard_peekly_scope(task, criteria, observations):
         if proof["status"] == "not_run" or not captures_bound:
             criterion.update(
                 status="not_run", evidence_ids=[],
-                observation=proof.get("reason") or "The imported category evidence has no bound screenshot for every required step.")
+                observation=proof.get("reason") or "The scoped criterion evidence has no bound screenshot for every required step.")
         else:
             criterion.update(
                 status=proof["status"],
-                observation=proof.get("reason") or "Verified current-fixture import, subsequent category click, and matching count/account list in the same attempt.",
+                observation=proof.get("reason") or proof.get("summary") or "Verified current-fixture import, subsequent category click, and matching count/account list in the same attempt.",
                 evidence_ids=list(dict.fromkeys(
                     artifact["id"] for source in sources for artifact in source["artifacts"])))
     return criteria
@@ -670,10 +804,10 @@ def evaluate(task, facts, text, uploaded_fixtures=(), history=()):
                     _preserved_named_rejection(row, "peekly-malformed-html.zip")
                     and _contains(row["text"], ["[followers.html] 파일에서 팔로워·팔로잉 목록을 읽지 못해 불러오지 않았어요."])
                     for row in attempts)
-                if current_rejection or "파일에서 팔로워·팔로잉 목록을 읽지 못했어요" in attempted_text or "파일을 읽지 못했어요" in attempted_text:
+                if any(_accepted_named_import(row, "peekly-malformed-html.zip") for row in attempts):
+                    emit(index, "failed", "The pinned malformed HTML fixture completed and saved a new result in its own import attempt.")
+                elif current_rejection or "파일에서 팔로워·팔로잉 목록을 읽지 못했어요" in attempted_text or "파일을 읽지 못했어요" in attempted_text:
                     emit(index, "passed")
-                elif "결과를 불러왔어요" in attempted_text:
-                    emit(index, "failed", "The explicitly malformed HTML fixture was accepted as a result.")
                 else:
                     emit(index, "not_run", "The malformed-HTML upload was observed but its own result state was not captured.")
         elif rid == "PRD-IMPORT-PROGRESS":
@@ -692,10 +826,10 @@ def evaluate(task, facts, text, uploaded_fixtures=(), history=()):
                     _preserved_named_rejection(row, "peekly-account-mismatch.zip")
                     and _contains(row["text"], ["계정의 파일이에요.", "지금 기록된 계정은", "같은 계정의 파일을 골라 주세요."])
                     for row in attempts)
-                if current_rejection or "여러 계정의 정보가 섞여 있어요" in attempted_text or "파일 이름과 내용의 계정이 달라요" in attempted_text:
+                if any(_accepted_named_import(row, "peekly-account-mismatch.zip") for row in attempts):
+                    emit(index, "failed", "The pinned account-mismatch fixture completed and saved a new result in its own import attempt.")
+                elif current_rejection or "여러 계정의 정보가 섞여 있어요" in attempted_text or "파일 이름과 내용의 계정이 달라요" in attempted_text:
                     emit(index, "passed")
-                elif "결과를 불러왔어요" in attempted_text:
-                    emit(index, "failed", "The explicitly mismatched-account fixture was accepted as a result.")
                 else:
                     emit(index, "not_run", "The account-mismatch upload was observed but its own result state was not captured.")
         elif rid == "PRD-IMPORT-MISSING":
@@ -769,24 +903,9 @@ def evaluate(task, facts, text, uploaded_fixtures=(), history=()):
         elif rid in RESULT_SCOPE_KEYS:
             proof = result_scope_evidence(rows, rid)
             emit(index, proof["status"], proof.get("reason"))
-        elif rid == "PRD-RESULT-SEARCH":
-            list_rows = [(row, row["facts"].get("list_rows", [])) for row in rows
-                         if isinstance(row["facts"].get("list_rows"), list)]
-            large_list = any(len(items) >= 9 for _, items in list_rows)
-            search_visible = any(c.get("tag") == "input"
-                and c.get("placeholder") == "아이디나 이름으로 찾기"
-                for row in rows for c in _controls(row))
-            typed_retained = any(check.get("retained") is True
-                for row in rows for check in (row["facts"].get("typed_input_checks", []) or [])
-                if isinstance(check, dict))
-            latest_rows = next((items for _, items in reversed(list_rows) if items), [])
-            names = [str(row.get("key", "")) for row in latest_rows]
-            if large_list and not search_visible:
-                emit(index, "failed", "A relationship list with at least nine rows was observed without the current PRD search input.")
-            elif large_list and search_visible and len(latest_rows) == 1 and names == sorted(names, key=lambda value: value.casefold()) and typed_retained:
-                emit(index, "passed")
-            elif large_list:
-                emit(index, "not_run", "The search control was present, but an exact-handle filtering observation was not captured.")
+        elif rid == SEARCH_REQUIREMENT:
+            proof = search_scope_evidence(rows)
+            emit(index, proof["status"], proof.get("reason"))
         elif rid == "PRD-RESULT-SNAPSHOT":
             if {"peekly-sample-previous.zip", "peekly-sample-current.zip"} <= uploads:
                 if any(_comparison_with_names(row) for row in rows):

@@ -18,7 +18,7 @@ from . import swarm
 from .agent_run import Execution, Tool, _data, _host_info, _validated_observation_facts, _validated_observation_content
 from .library import Library
 from .model_router import _clean_decision
-from .peekly_criteria import guard_peekly_scope, unsupported_legacy_criterion
+from .peekly_criteria import guard_peekly_scope, unsupported_native_failure
 from .swarm_providers import DefinitelyNotSent, ProviderUncertain
 from .swarm_queue import Queue
 
@@ -175,7 +175,7 @@ class Evidence:
                         evidence_ids=[])
             failed = {(c["kind"], c["index"]) for o in observations
                       for c in o["checks"] if c["status"] == "failed"
-                      and not unsupported_legacy_criterion(task, c)}
+                      and not unsupported_native_failure(task, c, observations)}
             if any((c["kind"], c["index"]) in failed and c["status"] != "failed"
                    for c in criteria):
                 fail("erased_failure", "A later judgment cannot erase an admitted native failure.")

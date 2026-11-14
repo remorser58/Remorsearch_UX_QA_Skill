@@ -1,0 +1,233 @@
+{
+  "schema_version": "peekly-search-scope-golden.v1",
+  "description": "Read-only projection of actual persona026 import, ResultsTab search list and next action; original wrong-placeholder native failure is preserved.",
+  "source_job": "S-ebhioimecepninpkpdilghkk",
+  "requirement_ids": [
+    "PRD-RESULT-SEARCH",
+    "PRD-PRIVACY-LOCAL",
+    "PRD-PRIVACY-DELETE"
+  ],
+  "sources": [
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-ebhioimecepninpkpdilghkk/evidence/S-ebhioimecepninpkpdilghkk/1/agent-observation-5.json",
+      "sha256": "a456dd421828f520f26dc40c8ee7e8b5b09d6c89a6e52a3725ecec2ff1d6d916"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-ebhioimecepninpkpdilghkk/evidence/S-ebhioimecepninpkpdilghkk/1/agent-observation-6.json",
+      "sha256": "9b0991d3099a9f4693713175021a2fe28910b9badc6c115a79f9179b96aa91f5"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-ebhioimecepninpkpdilghkk/evidence/S-ebhioimecepninpkpdilghkk/1/agent-observation-7.json",
+      "sha256": "bcf826cd1cd2a4b044ddd33c079050d4a2f968fba6e8a7c7c4b8883ed9a27c83"
+    }
+  ],
+  "observations": [
+    {
+      "id": "obs-5",
+      "text": "2026년 11월 14일 기준 · 팔로워 20명 · 팔로잉 28명\n나를 맞팔 안 한 사람\n12\n명\n내가 맞팔 안 한 사람\n4명\n맞팔 중인 사람\n16명\n결과를 불러왔어요.",
+      "facts": {
+        "last_action": "upload",
+        "uploaded_fixture": "peekly-search-ready.zip",
+        "fixture_uploads": [
+          "peekly-search-ready.zip"
+        ],
+        "import_attempt_id": "upload-42",
+        "import_attempt": {
+          "attempt_id": "upload-42",
+          "cancel_active": false,
+          "cancel_dispatched": false,
+          "fixture": "peekly-search-ready.zip",
+          "fixture_sha256": "c1901b1151716053a5fc31ec9eb9dee7d51cbb3c665dbf8d7607849fdea8e6e2",
+          "persistence_unchanged": false,
+          "phase_samples": [
+            {
+              "elapsed_ms": 1,
+              "text": "파일을 읽고 있어요"
+            },
+            {
+              "elapsed_ms": 29,
+              "text": "결과를 불러왔어요."
+            }
+          ],
+          "schema_version": "peekly-import-attempt.v1",
+          "storage_after": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "f5a8f614fadb5e79c7247858d1ad159a3e0749cc1ad3ef75af711088a56fb8a2"
+          },
+          "storage_before": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "7b3f3a770f0ac89471a660ccfe9a54f5de96b387ebb22d307e06fadb84f77355"
+          },
+          "tool": "upload"
+        },
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "f5a8f614fadb5e79c7247858d1ad159a3e0749cc1ad3ef75af711088a56fb8a2"
+        },
+        "typed_input_checks": [],
+        "list_rows": [],
+        "controls": []
+      },
+      "checks": [
+        {
+          "index": 1,
+          "kind": "success",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "id": "obs-6",
+      "text": "2026년 11월 14일 기준 · 팔로워 20명 · 팔로잉 28명\n나를 맞팔 안 한 사람\n12\n명\n내가 맞팔 안 한 사람\n4명\n맞팔 중인 사람\n16명\n나를 맞팔 안 한 사람 12명",
+      "facts": {
+        "last_action": "click",
+        "last_action_label": "나를 맞팔 안 한 사람\n12\n명\n내가 팔로우하는데 나를 팔로우하지 않아요",
+        "fixture_uploads": [
+          "peekly-search-ready.zip"
+        ],
+        "import_attempt_id": "upload-42",
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "f5a8f614fadb5e79c7247858d1ad159a3e0749cc1ad3ef75af711088a56fb8a2"
+        },
+        "click_dispatch": {
+          "dispatched": true,
+          "hit_test": true,
+          "label": "나를 맞팔 안 한 사람 12 명 내가 팔로우하는데 나를 팔로우하지 않아요",
+          "requested_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>button:nth-of-type(1)",
+          "verified_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>button:nth-of-type(1)"
+        },
+        "typed_input_checks": [],
+        "list_rows": [
+          {
+            "key": "synthetic_search_outgoing_00"
+          },
+          {
+            "key": "synthetic_search_outgoing_01"
+          },
+          {
+            "key": "synthetic_search_outgoing_02"
+          },
+          {
+            "key": "synthetic_search_outgoing_03"
+          },
+          {
+            "key": "synthetic_search_outgoing_04"
+          },
+          {
+            "key": "synthetic_search_outgoing_05"
+          },
+          {
+            "key": "synthetic_search_outgoing_06"
+          },
+          {
+            "key": "synthetic_search_outgoing_07"
+          },
+          {
+            "key": "synthetic_search_outgoing_08"
+          },
+          {
+            "key": "synthetic_search_outgoing_09"
+          },
+          {
+            "key": "synthetic_search_outgoing_10"
+          },
+          {
+            "key": "synthetic_search_outgoing_11"
+          }
+        ],
+        "controls": [
+          {
+            "tag": "input",
+            "type": "search",
+            "label": "이름 또는 아이디 찾기",
+            "placeholder": "이름 또는 아이디 찾기",
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>label:nth-of-type(1)>input:nth-of-type(1)",
+            "visible": true,
+            "disabled": false
+          }
+        ]
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "reason": "A relationship list with at least nine rows was observed without the current PRD search input.",
+          "status": "failed"
+        },
+        {
+          "index": 1,
+          "kind": "success",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "id": "obs-7",
+      "text": "2026년 11월 14일 기준 · 팔로워 20명 · 팔로잉 28명\n나를 맞팔 안 한 사람\n12\n명\n내가 맞팔 안 한 사람\n4명\n맞팔 중인 사람\n16명\n나를 맞팔 안 한 사람 12명",
+      "facts": {
+        "last_action": "type",
+        "fixture_uploads": [
+          "peekly-search-ready.zip"
+        ],
+        "import_attempt_id": "upload-42",
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "f5a8f614fadb5e79c7247858d1ad159a3e0749cc1ad3ef75af711088a56fb8a2"
+        },
+        "typed_input_checks": [
+          {
+            "actual_sha256": "cf12574baf4b6af9bc8ac4133367ad0e89ab059a2f32775053d92e6624c30dd5",
+            "expected_sha256": "cf12574baf4b6af9bc8ac4133367ad0e89ab059a2f32775053d92e6624c30dd5",
+            "retained": true,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>label:nth-of-type(1)>input:nth-of-type(1)"
+          }
+        ],
+        "list_rows": [
+          {
+            "key": "synthetic_search_outgoing_05"
+          }
+        ],
+        "controls": [
+          {
+            "tag": "input",
+            "type": "search",
+            "label": "이름 또는 아이디 찾기",
+            "placeholder": "이름 또는 아이디 찾기",
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>label:nth-of-type(1)>input:nth-of-type(1)",
+            "visible": true,
+            "disabled": false
+          }
+        ]
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "reason": "A relationship list with at least nine rows was observed without the current PRD search input.",
+          "status": "failed"
+        },
+        {
+          "index": 1,
+          "kind": "success",
+          "status": "passed"
+        }
+      ]
+    }
+  ]
+}
