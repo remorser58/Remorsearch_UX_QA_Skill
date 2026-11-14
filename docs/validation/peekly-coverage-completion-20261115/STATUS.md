@@ -2,6 +2,22 @@
 
 Updated: 2026-11-15 (Asia/Seoul).
 
+## Current state — fresh cohort terminal; complete eligible-criterion review
+
+The requested fresh 32-person cohort finished at **2026-11-14T22:14:57.374160Z**, with run state `incomplete_preserved`: **28 queue-complete / 4 uncertain / 0 running / 0 queued**. Persona 030 is queue-complete but operationally incomplete after a local pre-dispatch payload limit. Its current artifact validation passes; the missing operational completion and final judgment exclude it. Thus **27 eligible sessions and all 115 assigned criteria** were independently reviewed; five excluded sessions retain **21 unassessed obligations** from the 136-row plan.
+
+- Final sessions: **13 passed / 10 failed / 4 inconclusive**.
+- Final success criteria: **71 passed / 10 failed / 7 not_run / 0 N/A**. Recovery: **12 / 0 / 1 / 14**. Combined: **83 / 10 / 8 / 14**, plus the separate 21 unassessed.
+- Matched old23: **20 passed / 0 failed / 0 not_run / 0 N/A / 3 unassessed**. The unassessed rows are 025 SEARCH, 029 PAYWALL and 030 PAYWALL. No N/A or partial uncertain evidence earns executed credit. The eight current not_run rows are outside old23: privacy exposure for001–004/026–028 and recovery for015.
+- Original46 weighted: **22 passed / 13 failed / 0 not_run / 11 unassessed**; unique32: **17 / 8 / 0 / 7**. Weighted execution is35/46; unique execution25/32. Neither denominator is fully evaluated.
+- `host_protocol`: **0 among27 assessed sessions, plus1 excluded queue-complete attempt030**. The raw `all_completed_receipts` metric first requires operational completion; it also excludes030.
+- The authoritative `criterion-review.json` has115 unique keys exactly matching all eligible raw criteria, pins the terminal raw/audit bytes and all three source fragments, and records18 status corrections. The application helper completed with exit0 and wrote `reviewed-summary.json`, `comparison-reviewed.md` and `evidence-review.md` without changing raw files or the four historical columns.
+- Raw five-file publication is committed and remotely verified at **`3248e54fd3e0990a5004de18a2decc6a7f140da0`**. Its `pending_manual_review` is the immutable raw checkpoint state; the subsequent authoritative review is `listed_criteria_reviewed` with every eligible criterion included. Fragment null global pins remain acquisition-history metadata, resolved by the authoritative merged file.
+- All32 owned groups are closed and absent from an independent process inventory. Driver acknowledgments31; forced cleanup012/018;014 lacks driver acknowledgment but has confirmed group exit. All38 historical queue metadata snapshots and frozen runtime/fixture/product/HTTP pins match.
+- The actual run used642 logical model calls/651 attempts on the approved free route only, with9 known-received-response quality repairs, zero paid fallback and **zero uncertain resend**. Two model timeouts and two tool uncertainties remain preserved. Semantic review made no model/browser calls or queue writes.
+
+Final human-readable findings, exact comparison and remaining gaps are in [final-review.md](final-review.md), [comparison-reviewed.md](comparison-reviewed.md), and [terminal-cohort-integrity-review.md](terminal-cohort-integrity-review.md). Runtime stays frozen at `f50d082a197e683b5961d17919fe219dc48c4d55`; product stays `51110f4c569673faa8d242d5b85c4b47afb54cbb`. R5 preservation, screenshot-deadline regression, the fresh024/032 R6 gate, the single fresh32 cohort and its full eligible review are complete. No further smoke or cohort has been launched. Outstanding implementation work includes actual privacy exposure,015 recovery reachability, and the diagnosed030 aggregate payload bound; these have no new live validation claimed here.
+
 ## Authorized goal
 
 From verified `65f52f78918d097c39ac8eb5ec49ed6daea537bc`, implement a validated legacy-state seed, prove actual coverage with a fresh two-person smoke, then run all 32 saved personas in a new background cohort. Use only `TOKENMAXX/deepseek-v4.1-flash-free`, concurrency 2, zero paid fallback, and never resend an uncertain operation.
@@ -20,7 +36,7 @@ The user authorizes implementation, regression, owned isolated test contexts, sm
 - The old uncertain 009/010/012 remain preserved. The new requested cohort uses new jobs and call IDs.
 - Original 46 weighted mapping at 65f: 20 passed / 8 failed / 18 not_run; 32 unique mappings: 13 / 6 / 13.
 
-## Current phase — R6 independently passed; fresh 32-person cohort running
+## Historical live checkpoints — R6 gate and fresh cohort
 
 - R6 finished at `2026-11-14T20:46:51.072684Z` (05:46 Asia/Seoul), `smoke_passed`: two current-valid completed sessions, six passed success criteria, zero success not_run/N/A and zero uncertainty. The matched two-not-run smoke baseline is now zero. The separate 32-person cohort started after the independent gate audit described below.
 - Independent gate audit at `20:49:36Z` confirmed all 152 registered artifacts / 4,177,050 bytes, receipt/checkpoint/result/first-judgment seals, all 159 request/reply seals and the 325-event chain. All 17 runtime files match frozen provenance and `f50d082a197e683b5961d17919fe219dc48c4d55`; 37 prior queues, fixtures, library, product source/dist and six HTTP before/after receipts match. Both owned groups closed normally; the process inventory is empty. All 81 model attempts received replies on the approved free route, with zero repair/fallback/uncertain resend.

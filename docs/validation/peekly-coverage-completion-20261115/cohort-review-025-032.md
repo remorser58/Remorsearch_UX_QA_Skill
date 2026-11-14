@@ -1,6 +1,6 @@
 # Cohort review — personas025–032
 
-## Draft checkpoint
+## Completed review snapshot — global pins pending
 
 This fragment reviews saved evidence from fresh `stage-32`, canonical plan `59f2c770425f85dd834542349f1915f084ca8fc6129c421cc907b4127d0212d8`. Global raw-summary and artifact-audit hashes are **pending**. Reconcile the draft against the terminal eligible report before application. Raw receipts and queues are unchanged; new model/browser calls and queue writes: **0**.
 
@@ -12,9 +12,10 @@ This fragment reviews saved evidence from fresh `stage-32`, canonical plan `59f2
 | 028 | P → P | P → NR | F → F | P → P | Completed sealed receipt |
 | 029 | Unassessed | Unassessed | Unassessed | Unassessed | Review delivery uncertain; no completed-session credit |
 | 030 | Unassessed | Unassessed | Unassessed | Unassessed | Queue complete; operationally incomplete, local host protocol bound |
-| 031–032 | Pending | Pending | Pending | Pending | Await eligible completed receipts |
+| 031 | P → P | P → P | P → P | N/A → N/A | Eligible completed sealed receipt |
+| 032 | P → P | P → P | P → P | N/A → P | Eligible completed sealed receipt |
 
-Current reviewed subset: **12 decisions** — success P3/F3/NR3/N/A0; recovery P1/F0/NR0/N/A2.025,029 and030 each have four unassessed criteria outside that assessed subtotal. No old23 SEARCH credit is assigned to025 and no old23 PAYWALL credit to029 or030. Partial execution does not create a completed receipt.
+Current reviewed subset: **20 decisions across five eligible cases** — success P9/F3/NR3/N/A0; recovery P2/F0/NR0/N/A3.025,029 and030 each have four unassessed criteria outside that assessed subtotal. No old23 SEARCH credit is assigned to025 and no old23 PAYWALL credit to029 or030. Partial execution does not create a completed receipt.031 and032 each earn fresh old23 PAYWALL credit; the partition therefore has five reviewed old23 passes and three unassessed cases. All assigned personas have terminal states; raw/audit pin reconciliation remains pending.
 
 ## Case-specific evidence for026–028
 
@@ -45,6 +46,61 @@ The filtered storage digest after deletion is `7b3f3a770f0ac89471a660ccfe9a54f5d
 026 and027 each have one successful import and no triggering recoverable browser/import failure. Their later deletion assertion failure alone is not such a trigger.
 
 028 has two actual, definitely rejected browser actions. Obs3 and6 explicitly state that the click was **not dispatched** because the target was not allowed or visible. Their returned current observations expose the correct visible enabled controls and preserve state. Corrected clicks at4 and7 succeed. The import at5 changes persisted state; the list/query at8 is usable and correct. This supports the literal recovery criterion and preserves raw P. No uncertain operation was resent.
+
+## Case-specific evidence for031–032
+
+Both fresh jobs are operationally completed, with a sealed first/final judgment and no result problem. Each has61 model decisions,60 admitted browser observations, one completed review and one completed owned close. Result, checkpoint and first-judgment seals, fresh receipt identity, all120 registered artifact hashes and all observation-log bindings match for each case. No verdict is transferred from an earlier job.
+
+| Evidence stage | 031 | 032 |
+| --- | --- | --- |
+| Sample export controls before first import | obs5: both visible and disabled, each with its own sample-restriction title | obs5: same independently admitted facts |
+| Eleven distinct retention imports | obs9/12/15/18/21/24/27/30/33/36/39 | obs9/12/15/18/21/24/27/30/33/36/39 |
+| Actual ten-record history before pinned pair | obs42; oldest shown06:58 | obs42; oldest shown07:00 |
+| Pinned previous import | obs45, `upload-469` | obs45, `upload-466` |
+| Pinned current import | obs48, `upload-501` | obs48, `upload-498` |
+| PAYWALL-A: actual free comparison names | obs50 | obs50 |
+| PAYWALL-B: both named selects visible and disabled together | obs57 | obs57 |
+| PAYWALL-C: actual Pro-sheet opening | obs60 | obs60 |
+| Recovery | N/A retained | N/A → P |
+
+### Sample and retention: four confirmed passes
+
+Both `목록 복사` and `목록 저장` are visibly exposed gray controls at obs5, each with `visible=true` and `disabled=true`. Their admitted titles explain that the sample list cannot be copied or saved. No disabled export button is clicked. This occurs before the first real synthetic import at obs9.
+
+All eleven retention fixture keys are available in the initial observation. Snapshots01–11 are uploaded individually in order with eleven distinct file hashes. Every import records completion and changes persisted state; each next import starts from the preceding saved digest. Obs42 then shows the **actual ten-record history count** and oldest timestamp, before the pinned PAYWALL pair is imported. Its PNG corroborates the count. No storage-pressure condition is triggered, so forced pressure eviction is not claimed.
+
+### PAYWALL: two fresh passes with explicit visibility limits
+
+Each case imports pinned `peekly-sample-previous.zip` and then `peekly-sample-current.zip` exactly once after retention. Their file hashes are `b06f0fd115ab74703087e11f0c025df3791a09664cd03922a9fe182760fdc823` and `938514f0010f47ace5c2a2fdae17d2c237fd82838cedd78829e0915d367ca186`.
+
+**A:** Obs50 performs a hit-tested click into the latest free comparison. It admits six actual row keys and the explanation that the prior/current list difference can also reflect a changed ID or deleted account. The PNG visibly exposes the first full name and part of the next row; all six rows are present in admitted DOM data. No purchase is required.
+
+**B:** At obs57, `비교 시작 기록` and `비교 종료 기록` are both **visible=true and disabled=true in the same observation**. The PNG shows both controls together, partly clipped at the top of the modal body. The observed selector labels and disabled state are recorded exactly in JSON.
+
+**C:** Obs60 actually clicks `Pro 기능 보기` and opens the Pro sheet. The returned sheet includes all three heading/explanation pairs: chronological changes, comparison of two chosen dates, and one person’s relationship history. Its visible close and confirm controls and distinct sheet are corroborated by the PNG. **The short756×413 capture does not expose all feature text**; those explanations are admitted sheet DOM evidence. Modal scrolls55–59 each report actual67-pixel movement, so the short view is not treated as unreachable content.
+
+A/B/C retain the same current import and storage within each case:
+
+- 031: `upload-501`; storage `7c0826a2c3e9082756fcccb491075dc8f61b2700196ca83e9340a55de6b3be48`.
+- 032: `upload-498`; storage `e2739b00fe6a0810b93b73d7d86447962e01b18c651a18f06c2474d596efb6a4`.
+
+Each first one-record import at obs9 also produces current results without a required upsell. Neither case purchases anything or bypasses a disabled control.
+
+### Recovery:031 N/A;032 corrected to P
+
+031’s60 admitted logs contain no reported browser/import failure. All thirteen real imports complete and persist. Its conditional N/A stands.
+
+032 obs3 explicitly reports a **failed, non-dispatched click** on the stale sample-entry target. The earlier acknowledged entry action had meanwhile activated sample mode. The failed-action reply returns that current state and a visible enabled More control. Obs4 uses that returned control; obs5 uses the newly returned visible enabled MatrixTab control. Both clicks are hit-tested, dispatched and verified by the resulting sample list.
+
+The sample-state digest `9d059cd2c5f3b8f30e5ccde822447682dad61334b5d44a7cf020a781ee112f48` remains identical across obs3/4/5/8. The valid first import at obs9 then completes and persists changed digest `4b05f1d30f7384257cbc2b2c1fbedfd8f277c4dd5f0aa06fa470388e7219319f`. This proves safe recovery under the literal browser/import-failure condition. Raw N/A becomes P with `judge_missed_execution`; no uncertain operation is resent.
+
+### Separate causal-label observation
+
+Both fresh obs50 row lists give `언팔로우` to `evt_ina.archive` and `evt_junho.jeong`, despite the surrounding snapshot limitation explanation. These causal badges are recorded from **admitted DOM rows**, below the PNG crop. This is a separate finding outside these personas’ assigned criteria. It does not alter their PAYWALL decisions and does not reuse an earlier identity verdict.
+
+### Owned completion
+
+Each case accepts its final at model turn61 after actual obs60, with19 turns remaining and no prior completion-attempt continuation. Both owned close replies return `stopped:true`; lifecycle records confirm driver shutdown and owned-group exit, with no forced cleanup or poisoned channel. Exact operation and lifecycle hashes are retained in JSON.
 
 ## 025 — preserved transport uncertainty, all criteria unassessed
 
@@ -108,5 +164,7 @@ Terminal preservation and closure:
 | 026 | `f0d8543cf576116d4229478b04d8e964591cc3b28d0cc56b18482efdca103392` | 32 / 846154 |
 | 027 | `8c37f2dbc59ee7157d2ebc46e2295671b9890813bf0daef08339f975d7a250fb` | 30 / 797267 |
 | 028 | `78cfaa5eb794778c35600c84aa69ca630faec4346b4e0f5effb4459763de8584` | 34 / 889271 |
+| 031 | `a7418579b99d1fa97b8826d96c15c95da9a481126ed6e21de304ec98658914eb` | 120 / 3285946 |
+| 032 | `ec579a986d96b3b361b8269775e7c5ab8e97616629d4abae6453c4bc82a5933f` | 120 / 3286342 |
 
 All registered artifacts in these completed cases were rehashed with no mismatch. Result/checkpoint/first-judgment seals and receipt identity bindings match. Saved observation logs match their admitted checkpoint bodies and fresh bindings. Exact receipt-relative paths, hashes, observation IDs, requirement IDs and setup/action/result/context purposes are in `cohort-review-025-032.json`; every decision cites a registered result-purpose execution log. Terminal eligibility and shared raw/audit pin reconciliation remain pending.
