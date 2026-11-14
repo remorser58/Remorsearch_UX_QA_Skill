@@ -106,7 +106,12 @@ export async function pageFreshStorage() {
         ?Object.fromEntries(Object.entries(item).sort(([a],[b])=>a<b?-1:a>b?1:0)):item;
     });
     const raw=localStorage.getItem('peekly_state_v7');
-    const fresh=keys.length===1&&keys[0]==='peekly_state_v7'&&typeof raw==='string'
+    // App.tsx persists this exact default on first mount, even without a click.
+    // It is retained, never cleared; any user choice or other key is rejected.
+    const theme=localStorage.getItem('peekly_theme_preference');
+    const allowedKeys=keys.includes('peekly_state_v7')&&keys.every(key=>
+      key==='peekly_state_v7'||key==='peekly_theme_preference');
+    const fresh=allowedKeys&&(theme===null||theme==='system')&&typeof raw==='string'
       &&raw.length<4096&&ordered(JSON.parse(raw))===ordered(expected);
     return {available:true,fresh,sha256,keys};
   }catch{return {available:false,fresh:false,sha256:null,keys:[]};}
@@ -120,7 +125,10 @@ export async function pageApplyLegacySeed(raw,fixtureSha,initialSha,origin) {
   const keys=Object.keys(localStorage).sort();
   const serialized=JSON.stringify(keys.map(key=>[key,localStorage.getItem(key)]));
   const before=await digest(serialized);
-  if(before!==initialSha||keys.length!==1||keys[0]!=='peekly_state_v7'
+  const theme=localStorage.getItem('peekly_theme_preference');
+  const allowedKeys=keys.includes('peekly_state_v7')&&keys.every(key=>
+    key==='peekly_state_v7'||key==='peekly_theme_preference');
+  if(before!==initialSha||!allowedKeys||(theme!==null&&theme!=='system')
       ||await digest(raw)!==fixtureSha)throw new Error('legacy_seed_storage_changed');
   if(JSON.stringify(Object.keys(localStorage).sort().map(key=>[key,localStorage.getItem(key)]))!==serialized)
     throw new Error('legacy_seed_storage_changed');

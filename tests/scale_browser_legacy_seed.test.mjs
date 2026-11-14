@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {createHash,webcrypto} from 'node:crypto';
 import {validateLegacySeedFixture,requireFreshOwnedProfile,requireLegacySeedReady,
-  pageFreshStorage,pageApplyLegacySeed,pageReadLegacyState,isValidatedLegacyMigration,observationResult,
+  pageFreshStorage,pageStorageSnapshot,pageApplyLegacySeed,pageReadLegacyState,isValidatedLegacyMigration,observationResult,
 } from '../skills/remorsearch-ux-qa/drivers/web/scale_browser_cdp.mjs';
 
 const FILE='peekly-legacy-unknown-state.json',ID='peekly_legacy_unknown_v6';
@@ -109,6 +109,87 @@ test('fresh check rejects any unrelated saved key or nondefault snapshot',async(
     assert.equal((await pageFreshStorage()).fresh,false);
   }finally{restore();}
 });
+test('observed fresh product theme default is allowed and preserved by the seed',async()=>{
+  const storage=new Storage();storage.setItem('peekly_state_v7',JSON.stringify(empty()));
+  storage.setItem('peekly_theme_preference','system');
+  const restore=page(storage),input=fixture();
+  try {
+    // The failed 021 smoke had exactly this initial snapshot digest and key pair.
+    const snapshot=await pageStorageSnapshot(),before=await pageFreshStorage();
+    assert.equal(snapshot.sha256,'7b3f3a770f0ac89471a660ccfe9a54f5de96b387ebb22d307e06fadb84f77355');
+    assert.deepEqual(snapshot.keys,['peekly_state_v7']);
+    assert.deepEqual(before.keys,['peekly_state_v7','peekly_theme_preference']);
+    assert.notEqual(before.sha256,snapshot.sha256);
+    assert.equal(before.fresh,true);
+    requireLegacySeedReady({allowed:true,owned:true,consumed:false,mutations:0,initial:before,current:before});
+    await pageApplyLegacySeed(input.bytes.toString(),input.descriptor.fixture_sha256,
+      before.sha256,'http://127.0.0.1:4174');
+    assert.deepEqual(Object.keys(storage).sort(),['peekly_state_v6','peekly_theme_preference']);
+    assert.equal(storage.getItem('peekly_theme_preference'),'system');
+    assert.equal(storage.getItem('peekly_state_v6'),input.bytes.toString());
+  }finally{restore();}
+});
+test('theme defaults never permit nondefault preferences or unrelated stored keys',async()=>{
+  for(const [key,value] of [['peekly_theme_preference','dark'],['peekly_theme_preference','light'],
+    ['peekly_theme_preference',''],['peekly_theme_preference','SYSTEM'],['peekly_theme','light'],
+    ['unrelated','private']]) {
+    const storage=new Storage();storage.setItem('peekly_state_v7',JSON.stringify(empty()));
+    storage.setItem(key,value);const restore=page(storage),input=fixture();
+    try {
+      const before=await pageFreshStorage(),original=JSON.stringify(storage);
+      assert.equal(before.fresh,false,key+'='+value);
+      await assert.rejects(pageApplyLegacySeed(input.bytes.toString(),input.descriptor.fixture_sha256,
+        before.sha256,'http://127.0.0.1:4174'),/storage_changed/);
+      assert.equal(JSON.stringify(storage),original);
+    }finally{restore();}
+  }
+});
+test('an otherwise allowed theme change still violates the full initial storage digest',async()=>{
+  const storage=new Storage();storage.setItem('peekly_state_v7',JSON.stringify(empty()));
+  storage.setItem('peekly_theme_preference','system');const restore=page(storage),input=fixture();
+  try {
+    const initial=await pageFreshStorage();
+    storage.removeItem('peekly_theme_preference');
+    const current=await pageFreshStorage();
+    assert.equal(initial.fresh,true);assert.equal(current.fresh,true);
+    assert.notEqual(initial.sha256,current.sha256);
+    assert.throws(()=>requireLegacySeedReady({allowed:true,owned:true,consumed:false,mutations:0,
+      initial,current}),/not_fresh_owned/);
+    await assert.rejects(pageApplyLegacySeed(input.bytes.toString(),input.descriptor.fixture_sha256,
+      initial.sha256,'http://127.0.0.1:4174'),/storage_changed/);
+    assert.equal(storage.getItem('peekly_state_v6'),null);
+  }finally{restore();}
+});
+test('theme tampering during asynchronous fixture hashing is detected before either storage write',async()=>{
+  const storage=new Storage();const original=JSON.stringify(empty());
+  storage.setItem('peekly_state_v7',original);storage.setItem('peekly_theme_preference','system');
+  const restore=page(storage),input=fixture();
+  const originalDigest=webcrypto.subtle.digest;
+  try {
+    const before=await pageFreshStorage();assert.equal(before.fresh,true);
+    let calls=0;
+    webcrypto.subtle.digest=async function(...args){
+      const result=await originalDigest.apply(this,args);
+      if(++calls===2)storage.setItem('peekly_theme_preference','dark');
+      return result;
+    };
+    await assert.rejects(pageApplyLegacySeed(input.bytes.toString(),input.descriptor.fixture_sha256,
+      before.sha256,'http://127.0.0.1:4174'),/storage_changed/);
+    assert.equal(calls,2);
+    assert.equal(storage.getItem('peekly_state_v7'),original);
+    assert.equal(storage.getItem('peekly_state_v6'),null);
+    assert.equal(storage.getItem('peekly_theme_preference'),'dark');
+  }finally{webcrypto.subtle.digest=originalDigest;restore();}
+});
+test('theme alone or a theme with nonempty snapshots never qualifies as fresh',async()=>{
+  const storage=new Storage();storage.setItem('peekly_theme_preference','system');
+  const restore=page(storage);
+  try {
+    assert.equal((await pageFreshStorage()).fresh,false);
+    storage.setItem('peekly_state_v7',JSON.stringify(source()));
+    assert.equal((await pageFreshStorage()).fresh,false);
+  }finally{restore();}
+});
 test('bounded seed writes only v6 and removes the verified empty v7 once',async()=>{
   const storage=new Storage();storage.setItem('peekly_state_v7',JSON.stringify(empty()));
   const restore=page(storage),input=fixture();
@@ -142,10 +223,13 @@ test('readback exposes persisted selections and hashes without raw account or li
   const input=fixture(),state=source(),storage=new Storage();
   Object.assign(state.snapshots[0],{includedFiles:['followers','following'],listCompleteness:'unknown'});
   state.activeSnapshotId=null;state.comparisonSnapshotId=null;
-  storage.setItem('peekly_state_v7',JSON.stringify(state));const restore=page(storage);
+  storage.setItem('peekly_state_v7',JSON.stringify(state));
+  storage.setItem('peekly_theme_preference','system');const restore=page(storage);
   try {
     const actual=await pageReadLegacyState('legacy-seed-1');
     assert.equal(isValidatedLegacyMigration(actual,input.descriptor),true);
+    assert.equal(actual.storage_sha256,(await pageStorageSnapshot()).sha256);
+    assert.equal(storage.getItem('peekly_theme_preference'),'system');
     assert.equal(JSON.stringify(actual).includes('peekly_fixture_owner'),false);
     assert.equal(JSON.stringify(actual).includes('synthetic_a'),false);
     const changed={...actual,comparison_snapshot_id:ID};
