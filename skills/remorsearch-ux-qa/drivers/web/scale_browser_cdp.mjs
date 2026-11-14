@@ -13,6 +13,7 @@ let lifecycleInitialized=false, proxyListenPending=false;
 const proxyConnections=new Set();
 const hash = b => crypto.createHash('sha256').update(b).digest('hex');
 export const DRIVER_DEADLINES_MS=Object.freeze({start:60000,act:80000,reply:5000});
+export const CDP_DEADLINES_MS=Object.freeze({default:10000,screenshot:30000});
 // The parent owns this Node process group. Every child inherits that group;
 // there is no detached child and no attachment to an existing browser.
 export async function runBounded(operation,timeoutMs,code,signal) {
@@ -209,23 +210,42 @@ async function lifecycle(phase,extra={}) {
     lifecycleInitialized=true;
   }catch{/* Host ownership metadata remains authoritative when disk I/O is unavailable. */}
 }
-function send(method, params = {}) {
-  actionBudget.check();
-  const id = ++sequence;
+export function sendCdpRequest({socket,pending,id,method,params={},signal,
+    check=()=>{},now=()=>performance.now(),setTimer=setTimeout,clearTimer=clearTimeout}) {
+  const timeoutMs=method==='Page.captureScreenshot'?CDP_DEADLINES_MS.screenshot:CDP_DEADLINES_MS.default;
+  const deadline=now()+timeoutMs;
   return new Promise((resolve, reject) => {
-    const signal=actionBudget.signal||startupSignal;
-    let timer;
+    let timer,settled=false;
+    const current=()=>{
+      // The enclosing action deadline wins even when its timer is delayed.
+      check();signal?.throwIfAborted();
+      if(now()>=deadline)throw new Error('cdp_timeout:'+method);
+    };
     const finish=(error,value)=>{
-      clearTimeout(timer);pending.delete(id);signal?.removeEventListener('abort',aborted);
+      if(settled)return;
+      settled=true;
+      if(timer!==undefined)clearTimer(timer);
+      pending.delete(id);signal?.removeEventListener('abort',aborted);
+      // A response callback may run before an overdue timer callback.
+      try {current();}catch(reason){error=reason;}
       error?reject(error):resolve(value);
     };
     const aborted=()=>finish(signal.reason||new Error('browser_start_aborted'));
-    if(signal?.aborted){aborted();return;}
-    timer=setTimeout(()=>finish(new Error('cdp_timeout:'+method)),10000);
-    pending.set(id,{resolve:value=>finish(null,value),reject:error=>finish(error),timer});
-    signal?.addEventListener('abort',aborted,{once:true});
-    try {ws.send(JSON.stringify({id, method, params}));}catch(error){finish(error);}
+    try {
+      current();
+      const packet=JSON.stringify({id,method,params});
+      current();
+      pending.set(id,{resolve:value=>finish(null,value),reject:error=>finish(error)});
+      signal?.addEventListener('abort',aborted,{once:true});
+      timer=setTimer(()=>finish(new Error('cdp_timeout:'+method)),Math.max(0,deadline-now()));
+      current();socket.send(packet);
+    }catch(error){finish(error);}
   });
+}
+function send(method, params = {}) {
+  actionBudget.check();
+  return sendCdpRequest({socket:ws,pending,id:++sequence,method,params,
+    signal:actionBudget.signal||startupSignal,check:()=>actionBudget.check()});
 }
 
 const CLICK_REJECTED = 'click_target_not_allowed_or_visible';
@@ -828,11 +848,11 @@ async function startWithinBudget(input,signal) {
       ||socketUrl.username||socketUrl.password)throw new Error('chrome_socket_not_owned_loopback');
   ws = new WebSocket(page.webSocketDebuggerUrl);
   await openSocketBounded(ws,{signal});
-  ws.addEventListener('error',()=>{ for(const [id,item] of pending){clearTimeout(item.timer);item.reject(new Error('cdp_websocket_error'));pending.delete(id);} });
-  ws.addEventListener('close',()=>{ for(const [id,item] of pending){clearTimeout(item.timer);item.reject(new Error('cdp_websocket_closed'));pending.delete(id);} });
+  ws.addEventListener('error',()=>{ for(const item of pending.values())item.reject(new Error('cdp_websocket_error')); });
+  ws.addEventListener('close',()=>{ for(const item of pending.values())item.reject(new Error('cdp_websocket_closed')); });
   ws.addEventListener('message',event=>{
     let m; try {m=JSON.parse(event.data);} catch {return;}
-    if (m.id && pending.has(m.id)) { const p=pending.get(m.id); pending.delete(m.id); clearTimeout(p.timer); m.error?p.reject(new Error(m.error.message||'cdp_error')):p.resolve(m.result||{}); }
+    if (m.id && pending.has(m.id)) { const p=pending.get(m.id); m.error?p.reject(new Error(m.error.message||'cdp_error')):p.resolve(m.result||{}); }
   });
   await lifecycle('websocket_open');signal.throwIfAborted();
   await send('Page.enable'); await send('Runtime.enable'); await send('Network.enable');

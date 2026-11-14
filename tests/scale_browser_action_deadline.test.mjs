@@ -4,8 +4,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import {getEventListeners} from 'node:events';
 import {
-  ActionBudget, DRIVER_DEADLINES_MS, validateFixtureFiles, writeCaptureBytes, writeReplyOnce,
+  ActionBudget, DRIVER_DEADLINES_MS, CDP_DEADLINES_MS, sendCdpRequest,
+  validateFixtureFiles, writeCaptureBytes, writeReplyOnce,
 } from '../skills/remorsearch-ux-qa/drivers/web/scale_browser_cdp.mjs';
 
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -22,6 +24,117 @@ function captureHandle({permissions=0o600,write=async()=>{}}={}) {
     writeFile:async(bytes,options)=>{writes++;await write(options.signal);size=bytes.length;},
     close:async()=>{closed++;}};
 }
+
+function cdpHarness() {
+  let now=0,nextId=0,nextTimer=0;
+  const packets=[],pending=new Map(),timers=new Map();
+  return {packets,pending,timers,get now(){return now;},set now(value){now=value;},
+    send:(method,options={})=>sendCdpRequest({
+      socket:{send:bytes=>packets.push(JSON.parse(bytes))},pending,id:++nextId,method,
+      now:()=>now,setTimer:(callback,delay)=>{const id=++nextTimer;timers.set(id,{callback,delay});return id;},
+      clearTimer:id=>timers.delete(id),...options,
+    }),
+    // This is the same pending entry used by the production websocket handler.
+    reply:(id,result)=>pending.get(id)?.resolve(result),
+  };
+}
+
+test('one screenshot reply after the former ten-second cap completes within thirty seconds without replay',async()=>{
+  const h=cdpHarness(),controller=new AbortController();
+  assert.deepEqual(CDP_DEADLINES_MS,{default:10000,screenshot:30000});
+  const running=h.send('Page.captureScreenshot',{params:{format:'png'},signal:controller.signal});
+  assert.equal(h.timers.values().next().value.delay,30000);
+  assert.equal(h.pending.size,1);
+  h.now=15000;h.reply(1,{data:'authored screenshot response'});
+  assert.deepEqual(await running,{data:'authored screenshot response'});
+  assert.deepEqual(h.packets,[{id:1,method:'Page.captureScreenshot',params:{format:'png'}}]);
+  assert.equal(h.pending.size,0);assert.equal(h.timers.size,0);
+  assert.equal(getEventListeners(controller.signal,'abort').length,0);
+  h.reply(1,{data:'late duplicate'});assert.equal(h.packets.length,1);
+});
+test('ordinary CDP methods retain a ten-second deadline and dispatch only once',async()=>{
+  for(const method of ['Runtime.evaluate','Page.navigate','DOM.setFileInputFiles']) {
+    const h=cdpHarness(),running=h.send(method),timer=h.timers.values().next().value;
+    assert.equal(timer.delay,10000);h.now=10000;timer.callback();
+    await assert.rejects(running,error=>error.message==='cdp_timeout:'+method);
+    assert.equal(h.packets.length,1);assert.equal(h.pending.size,0);assert.equal(h.timers.size,0);
+  }
+});
+test('a response at its monotonic deadline is rejected before a delayed timer callback',async()=>{
+  for(const [method,deadline] of [['Page.captureScreenshot',30000],['Runtime.evaluate',10000]]) {
+    const h=cdpHarness(),running=h.send(method),timer=h.timers.values().next().value;
+    h.now=deadline;h.reply(1,{late:true});
+    await assert.rejects(running,error=>error.message==='cdp_timeout:'+method);
+    timer.callback();h.reply(1,{late:true});
+    assert.equal(h.packets.length,1);assert.equal(h.pending.size,0);assert.equal(h.timers.size,0);
+  }
+});
+test('a pre-aborted screenshot request sends zero packets and creates no pending work',async()=>{
+  const h=cdpHarness(),controller=new AbortController();
+  controller.abort(new Error('host_shutdown_signal'));
+  await assert.rejects(h.send('Page.captureScreenshot',{signal:controller.signal}),/host_shutdown_signal/);
+  assert.equal(h.packets.length,0);assert.equal(h.pending.size,0);assert.equal(h.timers.size,0);
+  assert.equal(getEventListeners(controller.signal,'abort').length,0);
+});
+test('abort after screenshot dispatch removes pending work and ignores a late response without replay',async()=>{
+  const h=cdpHarness(),controller=new AbortController();
+  const running=h.send('Page.captureScreenshot',{signal:controller.signal}),entry=h.pending.get(1);
+  assert.equal(h.packets.length,1);assert.equal(getEventListeners(controller.signal,'abort').length,1);
+  controller.abort(new Error('browser_action_aborted'));
+  await assert.rejects(running,/browser_action_aborted/);
+  assert.equal(h.pending.size,0);assert.equal(h.timers.size,0);
+  assert.equal(getEventListeners(controller.signal,'abort').length,0);
+  entry.resolve({late:true});h.reply(1,{late:true});
+  assert.equal(h.packets.length,1);assert.equal(h.pending.size,0);
+});
+test('the overall eighty-second action deadline dominates a screenshot with fifteen seconds remaining',async()=>{
+  const h=cdpHarness(),budget=new ActionBudget({now:()=>h.now});
+  let dispatched,entry;
+  const ready=new Promise(resolve=>{dispatched=resolve;});
+  const running=budget.run(18,'observe',async current=>{
+    h.now=65000;
+    return await h.send('Page.captureScreenshot',{signal:current.signal,check:()=>current.check(),
+      socket:{send:bytes=>{h.packets.push(JSON.parse(bytes));entry=h.pending.get(1);dispatched();}}});
+  });
+  await ready;
+  assert.equal(h.timers.values().next().value.delay,30000);
+  h.now=80000;h.reply(1,{tooLateForAction:true});
+  await assert.rejects(running,/browser_action_timeout/);
+  assert.equal(budget.poisoned,true);assert.equal(budget.signal.aborted,true);
+  assert.equal(h.pending.size,0);assert.equal(h.timers.size,0);
+  entry.resolve({late:true});
+  await assert.rejects(budget.run(19,'observe',()=>h.send('Page.captureScreenshot')),/transport_uncertain/);
+  assert.equal(h.packets.length,1);
+});
+test('an already elapsed action deadline prevents screenshot dispatch before its CDP timer begins',async()=>{
+  const h=cdpHarness(),budget=new ActionBudget({now:()=>h.now});
+  await assert.rejects(budget.run(20,'observe',current=>{
+    h.now=80000;
+    return h.send('Page.captureScreenshot',{signal:current.signal,check:()=>current.check()});
+  }),/browser_action_timeout/);
+  assert.equal(budget.poisoned,true);assert.equal(h.packets.length,0);
+  assert.equal(h.pending.size,0);assert.equal(h.timers.size,0);
+});
+test('a synchronous socket send failure clears the pending timer and abort listener without retry',async()=>{
+  const h=cdpHarness(),controller=new AbortController();let sends=0;
+  await assert.rejects(h.send('Page.captureScreenshot',{signal:controller.signal,
+    socket:{send:()=>{sends++;throw new Error('socket_send_failed');}}}),/socket_send_failed/);
+  assert.equal(sends,1);assert.equal(h.pending.size,0);assert.equal(h.timers.size,0);
+  assert.equal(getEventListeners(controller.signal,'abort').length,0);
+});
+test('websocket error and close reject every pending request and leave no timers or abort listeners',async()=>{
+  for(const reason of ['cdp_websocket_error','cdp_websocket_closed']) {
+    const h=cdpHarness(),controller=new AbortController();
+    const first=h.send('Page.captureScreenshot',{signal:controller.signal});
+    const second=h.send('Runtime.evaluate',{signal:controller.signal});
+    const rejected=Promise.all([assert.rejects(first,error=>error.message===reason),
+      assert.rejects(second,error=>error.message===reason)]);
+    for(const entry of h.pending.values())entry.reject(new Error(reason));
+    await rejected;
+    assert.equal(h.packets.length,2);assert.equal(h.pending.size,0);assert.equal(h.timers.size,0);
+    assert.equal(getEventListeners(controller.signal,'abort').length,0);
+  }
+});
 
 test('a delayed single action response completes within its declared budget once',async()=>{
   const events=[],budget=new ActionBudget({timeoutMs:90,record:async(phase,detail)=>events.push({phase,...detail})});
