@@ -1,5 +1,6 @@
 """Coverage planning regressions use only owned offline fixtures."""
 import asyncio
+import ast
 import copy
 import importlib.util
 import json
@@ -26,6 +27,61 @@ SPEC.loader.exec_module(live)
 
 
 class ChecklistTests(unittest.TestCase):
+    def test_save_failure_recovery_requires_definite_restored_failure_and_keeps_product_failure(self):
+        rid = "PRD-IMPORT-SAVE-FAIL"
+        ids = ["PRD-IMPORT-PROGRESS", "PRD-IMPORT-SIZE", rid]
+        rows = criterion_checklist(ids)
+        row = next(item for item in rows if item["requirement_id"] == rid)
+        self.assertEqual(row["index"], ids.index(rid))
+        self.assertEqual(set(row["required_fixtures"]),
+                         {"peekly-sample-previous.zip", "peekly-sample-current.zip"})
+        fallback = row["steps"][-1]
+        for condition in ("only after a completed response", "consumed=true", "restored=true",
+                          "visible save error", "unchanged storage", "If 다시 저장 is absent",
+                          "retain product FAIL", "observed 다른 파일 고르기/file input",
+                          "one normal upload of the failed fixture", "verify saved state",
+                          "general recovery, not direct retry", "Never reinject or repeat uncertain delivery"):
+            self.assertIn(condition, fallback)
+        self.assertTrue(any("If 다시 저장 is visible" in step for step in row["steps"]))
+        self.assertTrue(all("General recovery fallback:" not in step
+                            for other in rows if other is not row for step in other["steps"]))
+        goal = _persona_journey_goal("Inspect the owned result.", ids)
+        self.assertEqual(goal.count("General recovery fallback:"), 1)
+        self.assertEqual(swarm.clean(goal), goal)
+
+    def test_all_saved_32_requirement_scopes_keep_goal_bound_privacy_and_recovery_scope(self):
+        # Current v3 Library requirement sets, four independently saved personas each.
+        blocks = (
+            ("PRD-START-SAMPLE", "PRD-START-IMPORT", "PRD-PRIVACY-LOCAL"),
+            ("PRD-START-IMPORT", "PRD-START-SKIP", "PRD-IMPORT-FORMATS"),
+            ("PRD-IMPORT-FORMATS", "PRD-IMPORT-HTML", "PRD-IMPORT-MISSING", "PRD-IMPORT-ACCOUNT"),
+            ("PRD-IMPORT-PROGRESS", "PRD-IMPORT-SIZE", "PRD-IMPORT-SAVE-FAIL"),
+            ("PRD-RESULT-RECIPROCITY", "PRD-RESULT-REVERSE", "PRD-RESULT-MUTUAL", "PRD-RESULT-SNAPSHOT"),
+            ("PRD-IMPORT-MISSING", "PRD-IDENTITY-LIMIT", "PRD-IMPORT-SNAPSHOT-UNKNOWN"),
+            ("PRD-PRIVACY-LOCAL", "PRD-PRIVACY-DELETE", "PRD-RESULT-SEARCH"),
+            ("PRD-SNAPSHOT-RETENTION", "PRD-PAYWALL-BOUNDARY", "PRD-SAMPLE-EXPORT"),
+        )
+        # Read the launcher's actual goal expression without importing/executing
+        # its runner or opening a Library, queue, browser or model.
+        source = Path(__file__).resolve().parents[1] / "scripts/run_peekly_completion.py"
+        runner = next(node for node in ast.parse(source.read_text()).body
+                      if isinstance(node, ast.AsyncFunctionDef) and node.name == "run")
+        goal_expr = next(node.value for node in runner.body if isinstance(node, ast.Assign)
+                         and any(isinstance(target, ast.Name) and target.id == "goal" for target in node.targets))
+        fallback_personas = []
+        for number in range(1, 33):
+            ids = list(blocks[(number - 1) // 4])
+            with self.subTest(persona=number):
+                base_goal = eval(compile(ast.Expression(goal_expr), str(source), "eval"),
+                                 {"args": SimpleNamespace(stage="cohort"),
+                                  "root": Path("peekly-completion32-r2-20261115")})
+                goal = _persona_journey_goal(base_goal, ids)
+                self.assertLessEqual(len(goal), 8000)
+                self.assertEqual(swarm.clean(goal), goal)
+                if "General recovery fallback:" in goal:
+                    fallback_personas.append(number)
+        self.assertEqual(fallback_personas, [13, 14, 15, 16])
+
     def test_only_reviewed_typed_hash_paths_bypass_prose_redaction(self):
         digest = "a" + "1234567890123456" + "b" * 47
         facts = {"storage_snapshot": {"available": True, "sha256": digest},
