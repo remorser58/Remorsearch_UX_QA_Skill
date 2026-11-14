@@ -313,6 +313,120 @@
       ],
       "resultsha": "ceec6c68aac9d4e9ecedc5b9ad22b1c5aa7ab9057a8c3411c270d5163891cbf6",
       "baseline_rows_excluded": []
+    },
+    {
+      "job_id": "S-injjambjkacdigcmpjaogaap",
+      "persona_id": "PER-PEEKLY-V2-021",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-IMPORT-SNAPSHOT-UNKNOWN",
+      "oldstatus": "failed",
+      "newstatus": "not_run",
+      "classification": "fixture_semantics_and_judge_cross_attempt_attribution",
+      "severity": "P1",
+      "reason": "The ZIP contains recognized explicit empty lists, not unknown legacy history. Native failed first appears after a different previous/current pair because cumulative text matched an unrelated unfollow label. The required legacy prerequisite was never created.",
+      "evidencefiles": [
+        "agent-observation-7.json",
+        "agent-observation-10.json",
+        "agent-observation-15.json",
+        "agent-observation-18.json",
+        "agent-observation-21.json"
+      ],
+      "resultsha": "4783928f842e7028d56ea25587229eaae176a781a97cc189708b86760b15e0af",
+      "baseline_rows_excluded": [
+        "NR-34"
+      ]
+    },
+    {
+      "job_id": "S-lpcmlkbehhmjifejlcbplfll",
+      "persona_id": "PER-PEEKLY-V2-023",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-IMPORT-SNAPSHOT-UNKNOWN",
+      "oldstatus": "failed",
+      "newstatus": "not_run",
+      "classification": "fixture_semantics_and_judge_cross_attempt_attribution",
+      "severity": "P1",
+      "reason": "The recognized empty ZIP creates known-empty history. Its actual zero-departure list was opened at obs13. The unknown native check failed only at obs24 after a different normal pair's unfollow list; no legacy-unknown prerequisite was created.",
+      "evidencefiles": [
+        "agent-observation-7.json",
+        "agent-observation-10.json",
+        "agent-observation-13.json",
+        "agent-observation-19.json",
+        "agent-observation-22.json",
+        "agent-observation-24.json"
+      ],
+      "resultsha": "303f3661604108f54126a43a8d67bdf1bc0238c8379d7446e768cc97be9954f3",
+      "baseline_rows_excluded": [
+        "NR-11",
+        "NR-36"
+      ]
+    },
+    {
+      "job_id": "S-mnemkabchmofljkacpjkooai",
+      "persona_id": "PER-PEEKLY-V2-022",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-IMPORT-SNAPSHOT-UNKNOWN",
+      "oldstatus": "failed",
+      "newstatus": "not_run",
+      "classification": "fixture_semantics_and_judge_cross_attempt_attribution",
+      "severity": "P1",
+      "reason": "No legacy state was created: the empty ZIP has recognized lists. Native UNKNOWN stayed not_run through obs44, then failed at obs45 when a different normal pair's relationship detail included an unfollow label. The original IDENTITY-LIMIT not_run is preserved.",
+      "evidencefiles": [
+        "agent-observation-6.json",
+        "agent-observation-9.json",
+        "agent-observation-18.json",
+        "agent-observation-21.json",
+        "agent-observation-44.json",
+        "agent-observation-45.json",
+        "agent-observation-46.json"
+      ],
+      "resultsha": "f98582bbe60f8b46e4aa5845e085434809bfff512c692754c6767e530c41ca70",
+      "baseline_rows_excluded": []
+    },
+    {
+      "job_id": "S-bhipnijdghjoompcjcokbceh",
+      "persona_id": "PER-PEEKLY-V2-024",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-IMPORT-SNAPSHOT-UNKNOWN",
+      "oldstatus": "failed",
+      "newstatus": "not_run",
+      "classification": "fixture_semantics_and_judge_cross_attempt_attribution",
+      "severity": "P1",
+      "reason": "The empty ZIP creates recognized known-empty history. The actual zero-departure list was opened at obs13 and history showed two normal records at obs16. Native UNKNOWN remained not_run through obs34, then failed at obs35 after a different normal pair's departed-six list. No legacy-unknown prerequisite was created.",
+      "evidencefiles": [
+        "agent-observation-8.json",
+        "agent-observation-11.json",
+        "agent-observation-13.json",
+        "agent-observation-16.json",
+        "agent-observation-30.json",
+        "agent-observation-33.json",
+        "agent-observation-35.json"
+      ],
+      "resultsha": "29d0ecc451b3f3f12172fb32d5455f63b09790992c4cc323c0c44067d3892141",
+      "baseline_rows_excluded": []
+    },
+    {
+      "job_id": "S-lienlcpnibobddnaaekmmami",
+      "persona_id": "PER-PEEKLY-V2-025",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-RESULT-SEARCH",
+      "oldstatus": "failed",
+      "newstatus": "not_run",
+      "classification": "judge_search_control_mismatch",
+      "severity": "P1",
+      "reason": "The actual imported 12-row result list has a visible enabled input[type=search] labeled 이름 또는 아이디 찾기. Native evaluation incorrectly demanded another screen's placeholder 아이디나 이름으로 찾기 and the list was then closed. All 15 saved observations have empty typed_input_checks, so the required query and narrowing were not exercised.",
+      "evidencefiles": [
+        "agent-observation-6.json",
+        "agent-observation-7.json"
+      ],
+      "resultsha": "65a77074cd29788022599df8d446d67c879313d0dcc9f03e9dd61e4ada4aa81a",
+      "baseline_rows_excluded": [
+        "NR-37"
+      ]
     }
   ],
   "expected_relationship_scope_effect": {
@@ -325,5 +439,21 @@
     "criterion_not_run_to_passed": 2,
     "session_inconclusive_to_passed": 1,
     "baseline_46_effect": 0
+  },
+  "expected_unknown_precondition_effect": {
+    "criterion_failed_to_not_run": 4,
+    "criterion_passed_to_not_run": 0,
+    "baseline_rows_excluded": [
+      "NR-11",
+      "NR-34",
+      "NR-36"
+    ]
+  },
+  "expected_search_control_effect": {
+    "criterion_failed_to_not_run": 1,
+    "criterion_failed_to_passed": 0,
+    "baseline_rows_excluded": [
+      "NR-37"
+    ]
   }
 }

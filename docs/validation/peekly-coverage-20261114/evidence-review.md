@@ -40,7 +40,7 @@ PRD §3은 잘못된 HTML을 **파일 이름이 있는 오류로 중단**하고,
 - `stage-32/sessions/S-pdalpdmknheojnhkkichdfbm/evidence/S-pdalpdmknheojnhkkichdfbm/1/agent-observation-10.json`.
 - 같은 디렉터리의 `agent-observation-14.json`, `agent-observation-15.json`.
 
-011은 기존 46행의 페르소나 집합에 포함되지 않는다. 이 두 건을 기존 46개 감소 성과에 추가하지 않는다. 동결된 최종 실행의 비교표에는 저장된 `not_run`을 유지하고, 실제 실행된 오판 사례라는 검토 결과를 함께 제시한다.
+011은 기존 46행의 페르소나 집합에 포함되지 않는다. 이 두 건을 기존 46개 감소 성과에 추가하지 않는다. 원본 비교표에는 저장된 `not_run`을 유지한다. 별도의 증거 감사 비교표에서는 이 두 항목을 통과로 바로잡고 원본과의 차이를 명시한다.
 
 ## P1 검증 범위 오판 — 017의 샘플 목록을 import 후 검증으로 인정
 
@@ -85,4 +85,48 @@ PRD §3은 잘못된 HTML을 **파일 이름이 있는 오류로 중단**하고,
 - 019 job: `S-jbeffobgjfbgkhkfmfepeohi`, result SHA `f2e5b232570cbcc7e384c5d6de66b799cc96931ba70f0dd4ec3e499d707443da`.
 - 020 job: `S-efdkbjaecbikgofacjhaaena`, result SHA `759e018f1dcba530fd94ce68b056f046f559d1b893ad552fa849fb857a6b4882`.
 
-전체 14건의 판정 차이(관계 범위 12건과 011의 잘못된 미실행 2건)는 [criterion-review.json](criterion-review.json)에 원본 result SHA, 기준 index, 근거 파일, 이전·검토 상태, baseline 대응을 저장했다.
+최초 14건의 판정 차이(관계 범위 12건과 011의 잘못된 미실행 2건)는 [criterion-review.json](criterion-review.json)에 원본 result SHA, 기준 index, 근거 파일, 이전·검토 상태, baseline 대응을 저장했다.
+
+## P1 fixture·판정기 오귀속 — 021의 known-empty를 unknown 과거 기록으로 취급
+
+`peekly-empty-previous.zip`은 445bytes이며 manifest와 일치하는 SHA는 `8585fbfdf08af2287d7ca2ae4b51c883fc41b8b409e08aa5f7a49b881784e1ac`다. `personal_information.json`, `followers.json=[]`, `following.json=[]`를 포함한다. 고정 제품 parser는 두 빈 배열을 정상 목록으로 인식하며 두 파일 종류를 새 snapshot의 `includedFiles`에 기록한다. 이는 빈 것이 확인되는 정상 기록이다.
+
+PRD가 제외하도록 요구하는 것은 목록이 실제로 비었는지 알 수 없는 과거 기록이다. 제품의 `src/storage/snapshotStore.ts`와 `src/types/instagram.ts`에서는 `includedFiles` 도입 이전의 저장 기록을 unknown으로 다룬다. 따라서 새 known-empty ZIP으로 legacy unknown 선행조건을 구성했다고 볼 수 없다.
+
+021의 obs7은 empty import 후0/0의 첫 기록 안내이고, obs10은 current import 후7/10 및 정상 empty 기록 대비 departed0명이다. unknown 제외 안내가 없다는 이유로 제품 실패를 만들 근거가 없다.
+
+더구나 이 기준의 native 실패가 처음 생긴 시점은 obs21이다. 그전에 obs15/18에서 **다른 정상 previous/current pair**를 가져왔고, obs21은 그 pair의 departed6명 목록이다. 누적 `all_text`의 `언팔`·`명`을 사용하던 판정기가 이 후속 문구를 앞선 unknown 시험의 실패로 잘못 귀속했다.
+
+- job: `S-injjambjkacdigcmpjaogaap`, success index2.
+- 원본 result SHA: `4783928f842e7028d56ea25587229eaae176a781a97cc189708b86760b15e0af`.
+- 증거 디렉터리: `stage-32/sessions/S-injjambjkacdigcmpjaogaap/evidence/S-injjambjkacdigcmpjaogaap/1/`.
+- 파일: `agent-observation-7.json`, `agent-observation-10.json`, `agent-observation-15.json`, `agent-observation-18.json`, `agent-observation-21.json`.
+
+독립 판정은 **failed→not_run**이다. 실제 legacy unknown을 준비하지 못했으므로 PASS로도 바꾸지 않는다. baseline **NR-34**를 실행된 제품 실패라는 감소 성과에서 제외한다. 이15번째 판정 차이도 criterion-review.json에 추가했다.022·023·024의 같은 기준은 각각의 완료 증거를 확인해 따로 처리한다.
+
+격리 수정에서는 현재 지원되지 않는 legacy 선행조건을 명시적으로 미실행 처리한다. known-empty를 대용으로 실행시키거나 후속 비교 문구로 실패를 생성하지 않는다. 실제 legacy seed 실행 능력을 검증했다는 주장은 하지 않는다.
+
+## 022·023·024 UNKNOWN 개별 확인
+
+각 완료 세션의 저장 관측과 등록 파일 해시를 별도로 확인했다. 모두 legacy unknown 선행조건이 없으며 정상 empty 또는 다른 정상 pair의 결과를 UNKNOWN 실패로 오귀속했다. success index2만 failed→not_run으로 검토하며 다른 기준은 유지한다.
+
+| 페르소나 | job | 핵심 관측 | baseline 제외 |
+| --- | --- | --- | --- |
+|022|`S-mnemkabchmofljkacpjkooai`|obs6/9/18/21/44/45/46; obs44까지not_run, 다른 pair의 관계 상세obs45에서실패생성|없음|
+|023|`S-lpcmlkbehhmjifejlcbplfll`|obs7/10/13/19/22/24; 정상empty대비0명목록obs13, 다른pair의departed6목록obs24에서실패|NR-11, NR-36|
+|024|`S-bhipnijdghjoompcjcokbceh`|obs8/11/13/16/30/33/35; 정상0명목록obs13, 정상기록2개obs16, 다른pair의목록obs35에서실패|없음|
+
+021–024 합계4개 기준을 미실행으로 분리한다. baseline에서는3가중행·2고유조합이 감소 성과에서 제외된다. 실제 legacy 상태를 주입하는 fixture/harness는 이번 실행에 없었고, 이를 지원한다고 주장하지 않는다.
+
+## P1 검색 판정기 오판 — 025의 다른 화면 placeholder 요구
+
+고정 PRD110은 목록8명초과에서 검색 입력과 아이디 정렬을 요구하며 특정 placeholder 문구를 요구하지 않는다. 실제 ResultsTab에는 `input[type=search]`, label/placeholder `이름 또는 아이디 찾기`가 있다. 판정기는 MatrixTab의 `아이디나 이름으로 찾기`를 요구해 실제 입력이 없다고 잘못 실패시켰다.
+
+025의 obs6은 검색 fixture를 가져온 실제12행 목록이며 입력은 visible=true, disabled=false다. 다음obs7에서 목록을 닫았다. 저장 관측15개 전체에서 typed_input_checks가 비어 있으므로 검색어 입력과 결과 축소까지 수행한 증거는 없다. 따라서 **failed→not_run**이며PASS가 아니다.
+
+- job:`S-lienlcpnibobddnaaekmmami`, success index0, PRD-RESULT-SEARCH.
+- result SHA:`65a77074cd29788022599df8d446d67c879313d0dcc9f03e9dd61e4ada4aa81a`.
+- 증거:`stage-32/sessions/S-lienlcpnibobddnaaekmmami/evidence/S-lienlcpnibobddnaaekmmami/1/agent-observation-6.json`, 같은 디렉터리의`agent-observation-7.json`, 등록 캡처`browser-00060.png`.
+- baseline:`NR-37`은 실제 검색 실행 감소 성과에서 제외한다.
+
+026–028에는 실제 입력·필터링 기록이 있으므로025와 별도로 감사한다. 검색 입력을 찾는 판정 조건은 격리 작업 트리에서 수정 중이며, 이번 원본 영수증은 보존한다.
