@@ -20,14 +20,19 @@ The user authorizes implementation, regression, owned isolated test contexts, sm
 - The old uncertain 009/010/012 remain preserved. The new requested cohort uses new jobs and call IDs.
 - Original 46 weighted mapping at 65f: 20 passed / 8 failed / 18 not_run; 32 unique mappings: 13 / 6 / 13.
 
-## Current phase — first smoke stopped and preserved; R2 corrections in progress
+## Current phase — R2 source isolation after external target drift
 
 - R1 ended `2026-11-14T16:04:40.926388+00:00` with `stopped_preserved`: 029 reached tool turn 65 and exceeded the old 128-artifact receipt cap. Its DB row remains interrupted/running with 64 admitted observations; it is not a valid completed session. No resume or queue rewrite.
 - Normal report/stage-summary files are absent. Launcher PID 24410 and matching owned main Chrome processes are gone; no normal browser-shutdown completion receipt is claimed.
 - Live ledger: 67 actual requests, audit valid, all reply_received, 0 uncertain resends, 0 unsettled model guards. Separate tool uncertainty: the pre-write seed rejection. Prior queues and runtime/fixture/library hashes remained unchanged.
 - Detailed evidence, hashes, actual Pro copy mismatch and navigation cause: `smoke-r1-diagnostics.md`.
 - Ready isolated commits: theme `3b7125119d884cc6070912e23247b775fb13e72b`; conditional safe SAVE-FAIL recovery `d9493da718959f0d87bd8fefba9c20d641923e78`; grounded History navigation `e85b242c80199b454d48d2f466fad27e4d683aa4`.
-- Separate isolated artifact-budget and actual Pro-copy corrections are under test. No R2 or 32-person run has launched.
+- Main integrated theme `a0f20bd`, safe recovery `f1641da`, History navigation `90ed8ea`, shared 256-artifact budget `7554298`, and actual Pro-copy/visible-sheet judgment `2e41a0b`. No R2 or 32-person run has launched.
+- Artifact regression now completes 80 real tool observations with 240 registered JSON/PNG artifacts through receipt preview, Queue finalization and current-report revalidation; 39 affected tests passed, 256/257 boundary and all existing byte/hash/path/privacy/reference caps enforced.
+- The merged source `2e41a0b` passed all 245 affected regression tests, with no skips or failures (72.098 seconds). Log: `.ux-loop/peekly-completion-r2-regression-20261115.log`, SHA `6043c3058727ecf396a106653c3d99e5986b90965d64dc4d305bbe8613d31b5a`. The rebuilt 282-file bundle verifies with zero problems, payload SHA `44185f5a989a39b054278a9da407c194e89bd6535da9c173e9dd31405b70688e`; the earlier Node 22 release limitation is still unresolved.
+- R2 preflight then correctly refused all 32 saved personas with `stale_prd`. Another task changed the original product worktree after R1 stopped: `src/App.tsx` at 01:12:13, `docs/PRD.md` at 01:17:39, and `dist/index.html` at 01:19:35 (2026-11-15 Asia/Seoul). R1 stopped at 01:04:40. The old 4174 preview now serves index SHA `b5911db7d651e3c68dca42233427cf0e2baef11971f92280d266ea427b14bce3`; its unchanged old build manifest still claims `848b334a6affa5c6a578911819aaf127da34bc2e6ae2f04899022872b7d0f6f5`.
+- Preserve that other task's product files and server. Create a separate read-only-archive source snapshot of product commit `51110f4c569673faa8d242d5b85c4b47afb54cbb` under `.ux-loop/peekly-pinned-product-51110f4-20261115`, build from prepared local dependencies, and serve it on a separate owned port. Create a fresh legitimately bound persona library from the original 32 saved profiles and archived PRD; do not rewrite the old library or bypass its stale-binding gate.
+- Archive verification has matched all 319 tracked source file Git blob hashes. The archived PRD SHA is `a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b`. New launcher gates must bind archive provenance and actual served index/assets rather than infer a product Git HEAD from the nested archive directory.
 - NEW R2 root: `.ux-loop/peekly-completion-smoke-r2-20261115`. After its successful gate the 32 launch must explicitly use `--smoke-root .ux-loop/peekly-completion-smoke-r2-20261115`.
 - Durable post-run reporter/publisher is implemented in new `scripts/finalize_peekly_completion.py`; 14 offline tests pass, and the real prior 716-request ledger passes its free-route/no-resend validation. It has not been started. It preserves raw/unreviewed labels and only publishes the five owned generated documents after terminal integrity gates.
 
@@ -69,7 +74,7 @@ The user authorizes implementation, regression, owned isolated test contexts, sm
 | PAYWALL downstream stages not attempted, 029–032 | 4 | Same-pair import/comparison/locked selectors/Pro sequence; ARIA labels; 80-turn ceiling |
 | SEARCH025 actual query absent | 1 | Explicit actual search action, pinned search fixture, continuation |
 | IDENTITY022 comparison explanation unreached | 1 | Actual departed-list control and comparison pair reused |
-| RECOVERY013 direct retry unavailable | 1 | Preserve observed product blocker; no forced pass or N/A credit |
+| RECOVERY013 direct retry unavailable | 1 | Preserve direct-retry product failure; after a confirmed consumed/restored fault only, exercise ordinary reselect/reimport recovery once; no uncertain resend or N/A credit |
 
 The reference to 3 legacy UNKNOWN prerequisites was the repeated original-46 mapping; the prior whole-cohort remaining-23 set has 4 UNKNOWN criteria. Both mappings will be retained.
 
@@ -90,7 +95,7 @@ The reference to 3 legacy UNKNOWN prerequisites was the repeated original-46 map
 ## Execution and judgment controls
 
 - All ordinary Peekly tasks: at most 64 model turns. RETENTION + PAYWALL tasks 029–032: at most 80. Lower approved ceilings remain effective.
-- Exactly 28 tasks use 64 and 4 use 80. Actual launcher goals: all 32 privacy-clean and <= 8000 characters; maximum 7053.
+- Exactly 28 tasks use 64 and 4 use 80. After the R1 task corrections, all 32 launcher goals were privacy-clean and <= 8000 characters; maximum 7359. The new pinned-source/library preflight must recheck the final configured goals.
 - A known completed final response may be continued only when native normalization leaves a targeted criterion unattempted and a currently observed safe next action exists.
 - The original final stays in the operation ledger. Continuation uses a new normal turn/call ID, at most 2 per criterion and at most once per unchanged page.
 - Actual failures, disabled controls, repeated no-movement scrolling, rejected actions, time limits and uncertainty are preserved. Conditional recovery is never forced.
@@ -108,7 +113,7 @@ The reference to 3 legacy UNKNOWN prerequisites was the repeated original-46 map
 
 ## Completion still required
 
-1. Finish source commit and comprehensive integration check; record revision, commands, failures and skips.
+1. Finish isolated pinned-product build, fresh persona-library binding and served-asset pre/post gates; record actual hashes, regression results and remaining release limitations, then commit/push the launch checkpoint.
 2. Fresh actual two-person smoke; inspect seed and PAYWALL evidence before expansion.
 3. Only after passed smoke, launch fresh 32 once in background and monitor with short read-only checks.
 4. Terminal raw aggregation, full byte/seal/source/ledger audit, independent semantic review. Compare pinned remaining 23 and original 46 without N/A or unassessed credit.
