@@ -14,14 +14,24 @@ Reduce the 46 success-criterion not_run records in the ee4b145 r4/r6 completed-s
 - Base and original remote verified: ee4b14571930af428d5a52e0e133deebedba485d
 - Product/PRD: existing owned Peekly build 51110f4; do not change product UX in this runner-focused task.
 
-## Current state — r4 is running, never launch it again
+## Current state — FINAL32 cohort is running, never launch it again
+
+- Frozen runtime source:43e3b143cdfee0a8ae23f68808ebf850e99008bb; launch HEAD78810f048b8069e4307f165c4cd128899768b3f9 differs only by handoff docs. Both commits were pushed and remote SHAs verified.
+- Fresh cohort launched2026-11-14T06:14:39Z, PID97160; durable started_at06:14:43Z. Exactly saved personas001–032, no duplicates.
+- Root:.ux-loop/peekly-coverage32-20261114; queue stage-32/queue.sqlite; launch log:.ux-loop/peekly-coverage32-launch-20261114.log; PID file same prefix.pid.
+- Initial check:running2/queued30. At06:21Z:8 complete, all8 operational_completed=true/passed/problem=null; running2/queued22, uncertain0. Offline gates and passed r4 report/summary/router hashes were revalidated before execution.31 historical queues/295 old job IDs are protected;36 historical uncertain rows remain preserved.
+- Do not edit runtime, fixture files or saved library during this cohort. No uncertain request may be resent or resumed. Source/code regressions are already complete; only readonly monitoring and docs/report work are needed.
+- Once terminal, run: PYTHONDONTWRITEBYTECODE=1 /Users/m4mini/.local/bin/python3.11 scripts/report_peekly_coverage.py .ux-loop/peekly-coverage32-20261114/stage-32 docs/validation/peekly-coverage-20261114 --requested 32. The summary.json/comparison.md outputs do not exist yet and the reporter refuses overwrite.
+- Independently verify completed receipt artifact bytes, classify remaining gaps/failures, update the four-column comparison and original report pointer/table, commit/push and verify final remote SHA. Keep smoke cohorts separate from final32 counts.
+
+## Passed r4 smoke — preserved pre-expansion evidence
 
 - Frozen runtime commit:43e3b143cdfee0a8ae23f68808ebf850e99008bb. Pushed to origin/rem/peekly-coverage-20261114 and exact remote SHA verified.
 - Detached launch2026-11-14T05:56:47Z, PID93473; durable run started_at05:56:51Z. Exact016/029.
 - Root:.ux-loop/peekly-coverage-smoke-r4-20261114; queue stage-2/queue.sqlite; launch log:.ux-loop/peekly-coverage-smoke-r4-launch-20261114.log; PID file same prefix.pid.
-- Initial check:running2, bothturn4, no problem. Inspect current durable state for newer progress. Do not start a second smoke or resume any older queue.
-- Runtime, fixtures and saved persona library are frozen. Docs-only updates are permitted. No32 cohort has launched.
-- After r4 completes, inspect the two valid receipts, not_run reduction, actual modal-scroll evidence, zero uncertain resends/unsettled guards and prior queue integrity. If gate passes, launch scripts/run_peekly_coverage.py cohort once in a new .ux-loop/peekly-coverage32-20261114 root.
+- R4 ended2026-11-14T06:11:35Z, smoke_passed.2 valid complete; sessions0passed/1failed/1inconclusive. Success4passed/1failed/1not_run/0N/A; recovery1passed/1N/A. Same-person baseline not_run3→1. Remaining gap is029 PAYWALL; do not relabel it.
+- Actual Peekly modal scroll atobs44 moved67px with background_moved=false. Retention11 imports/count10 passed.016 progress and all three size boundaries passed; missing direct save-retry is failed. Independent SIZE audit confirmed actual128/32/64MB messages, matching fixture byte/hash data and unchanged persisted digest; an intermediate model claim about missing128MB text was inaccurate.
+- Final ledger audit valid:77 requests,1 known completed-response repair,0 uncertain resends/0 unsettled guards. Prior queues unchanged; browser shutdown confirmed. This passed gate authorized the current cohort.
 
 ## Preserved r3 result and r4 prelaunch verification
 
@@ -100,10 +110,10 @@ Reduce the 46 success-criterion not_run records in the ee4b145 r4/r6 completed-s
 
 ## Next checkpoints
 
-1. Inspect the ALREADY RUNNING r4 smoke. Never launch it again or resume r1/r2/r3. Do not repeat the actual browser fixture regression or full suite; both passed against the current frozen source.
-2. Confirm valid receipts, real modal movement, frozen inputs, prior_queues_unchanged and no router resend after uncertainty before expansion.
-3. Latest r6 same-person baseline has3 success not_run. Expansion requires2 valid complete receipts, no host_protocol, zero success N/A and fewer than3 success not_run.
-4. If completed receipts demonstrate not_run reduction, launch fresh32 once, preserve every uncertain send; periodically inspect.
-5. Update four-column comparison, report commit/push, verify remote SHA and clean worktree.
+1. Inspect the ALREADY RUNNING32 cohort with short readonly SQLite/jq calls. Never launch a second copy or resume any old job. Runtime stays frozen.
+2. Preserve all uncertain/incomplete attempts outside the assessed denominator; no resend. Final router audit must distinguish known complete-response repairs from uncertain retransmission.
+3. After cohort terminal, run the existing reporter once with --requested 32. Keep46 weighted baseline rows and32 unique persona/requirement keys; N/A and unassessed receive no coverage credit.
+4. Hash-check registered evidence files of assessed receipts, confirm result/queue/report consistency, classify product/runner/judge findings and remaining not_run causes.
+5. Update four-column comparison and final report, commit/push, verify exact remote SHA and clean worktree.
 
-If interrupted, read this file and durable queues before doing anything. Existing uncertain operations are never replayed; completed outputs are read back. R1/r2/r3 are stopped and preserved. R4 is already running with frozen validated source; never launch a second copy. No32 cohort has started at this checkpoint.
+If interrupted, read this file and durable queues before doing anything. R1/r2/r3/r4 smokes are stopped and preserved. The final32 cohort has already launched at06:14:39Z with PID97160; inspect its durable state, never start another copy. Existing uncertain operations are never replayed.
