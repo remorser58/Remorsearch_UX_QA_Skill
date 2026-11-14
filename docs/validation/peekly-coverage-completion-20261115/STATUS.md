@@ -20,7 +20,12 @@ The user authorizes implementation, regression, owned isolated test contexts, sm
 - The old uncertain 009/010/012 remain preserved. The new requested cohort uses new jobs and call IDs.
 - Original 46 weighted mapping at 65f: 20 passed / 8 failed / 18 not_run; 32 unique mappings: 13 / 6 / 13.
 
-## Current phase — source ready, integration gate next; no new persona run yet
+## Current phase — integration complete; fresh actual smoke next
+
+- Runtime source revision: `125b7325ed60cdafa52546fee39492cb0279a3ce`.
+- Full discovery: 1,834 tests, 1,813 passed, 21 optional skips, zero failures. Prepared agent runtime separately passed 25/25 without skips.
+- Release checker passed 18/20 entries; ready=false because default Node 24 fails the packaged Node 22 gate and its Playwright check was skipped. This does not establish release readiness. See `implementation-validation.md` for exact commands and hashes.
+- Loop smoke 18 expected outcomes and research fixture passed with no network requests. Actual Peekly CDP behavior will be evaluated in the new smoke.
 
 - New smoke: `.ux-loop/peekly-completion-smoke-20261115`.
 - New 32: `.ux-loop/peekly-completion32-20261115`.
@@ -76,7 +81,7 @@ The reference to 3 legacy UNKNOWN prerequisites was the repeated original-46 map
 - Launcher/checkpoint boundary: 9 pass; prior launcher: 18 pass.
 - Prepared optional agent environment: 25 / 25 pass with `REMORSEARCH_REQUIRE_AGENT_RUNTIME=1 .ux-loop/peekly-agent-venv/bin/python`.
 - Offline actual-product load/save oracle plus driver-readback → host → agent admission → native guard integration passed. This is synthetic/offline validation, not actual UX improvement.
-- Comprehensive check: `PYTHONDONTWRITEBYTECODE=1 /Users/m4mini/.local/bin/python3.11 scripts/check_release.py --output dist/peekly-completion-check-20261115` is next; it runs full unittest discovery and packaging/relocation/synthetic checks. Node/dependency availability must be reported honestly.
+- Comprehensive check completed on source 125b732; full results and explicit Node 22 limitation are recorded in `implementation-validation.md`.
 
 ## Completion still required
 
