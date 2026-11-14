@@ -1,0 +1,2755 @@
+{
+  "schema_version": "peekly-completion-criterion-review.v1",
+  "stage_root": ".ux-loop/peekly-completion32-pinned-20261115/stage-32",
+  "plan_sha256": "59f2c770425f85dd834542349f1915f084ca8fc6129c421cc907b4127d0212d8",
+  "plan_file_sha256": "660406bc74f05921184be02549ad9ee39a456c33e820283ead5b5476a2d76213",
+  "raw_summary_sha256": null,
+  "artifact_audit_sha256": null,
+  "scope": "Independent saved-evidence semantic review for personas 001-012 only. Eleven completed receipted candidates; uncertain 011 excluded. Every assigned success and recovery criterion for the eleven complete candidates is covered. Final current-valid audit and global raw hashes remain the parent terminal reconciliation gate.",
+  "fragment_status": "ready_for_terminal_reconciliation; global raw hashes pending",
+  "raw_receipts_modified": false,
+  "new_model_calls": 0,
+  "new_browser_calls": 0,
+  "queue_writes": 0,
+  "runtime_revision": "f50d082a197e683b5961d17919fe219dc48c4d55",
+  "receipt_sha256_method": "SHA-256 of UTF-8 json.dumps(receipt,sort_keys=True,separators=(',',':'),ensure_ascii=False)",
+  "verification": {
+    "sqlite_mode": "ro",
+    "complete_candidates": 11,
+    "observations_checked": 89,
+    "registered_artifact_bytes_rehashed": 178,
+    "all_checked_artifact_hashes_match": true,
+    "all_execution_log_observation_projections_match": true,
+    "all_execution_log_binding_and_context_match": true,
+    "all_stored_result_and_checkpoint_hashes_match": true,
+    "recovery_operation_replies_match_admitted_facts_text_checks_and_captures": true,
+    "png_policy": "Cited PNG pixels inspected directly or byte-identical to an inspected registered PNG after this session file was independently rehashed. Findings remain bound to each session and observation.",
+    "global_current_valid_audit_pending": true
+  },
+  "summary": {
+    "success_decisions": 36,
+    "recovery_decisions": 11,
+    "total_decisions": 47,
+    "raw_counts": {
+      "passed": 39,
+      "failed": 0,
+      "not_run": 0,
+      "not_applicable": 8
+    },
+    "reviewed_counts": {
+      "passed": 36,
+      "failed": 0,
+      "not_run": 4,
+      "not_applicable": 7
+    },
+    "changed_decisions": 5,
+    "excluded_assigned_criteria": 5
+  },
+  "session_bindings": [
+    {
+      "persona_id": "PER-PEEKLY-V2-001",
+      "job_id": "S-ljlmeakahgnhmnnffbajmljk",
+      "binding": {
+        "persona_id": "PER-PEEKLY-V2-001",
+        "prd_sha256": "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b",
+        "profile_sha256": "e9305d1351b17d63345edbc04ab91909ef630a8676453e1d9ae51eb8b401f5f1",
+        "revision": 1
+      },
+      "context_id": "ctx-488c55901cba202f9297b9a5720eaa811be1d713",
+      "result_sha256": "f64e43772606974fa898ec26885c4ab6738f3f04c82586da7cb897a7af90099c",
+      "receipt_sha256": "905191593ef26d658c93c3a7c98b8c86ced4f71faabae9bdcf5a8e671dc38a60",
+      "checkpoint_sha256": "67b330a5d3d9c086fb8ad458b20755ca65b38e4c3947b8ef050588f4d66bc4cf",
+      "observation_count": 3
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-002",
+      "job_id": "S-ljffmnkkgdhopplfbhhegkma",
+      "binding": {
+        "persona_id": "PER-PEEKLY-V2-002",
+        "prd_sha256": "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b",
+        "profile_sha256": "f6fbd21cefffa54e567becb9ce2b5dc3e678ad8e8f2e8a6f06ebc140571a7096",
+        "revision": 1
+      },
+      "context_id": "ctx-a1b55fb1292990766fd04fc70936904767f0bacf",
+      "result_sha256": "8ed0f9b6a989ca0a26202a8bfa398703c44f28a5f900074a01a5c77d34913de4",
+      "receipt_sha256": "be583994151832ec67159c74213a3c9d0e9f35a4995f4a7dd4965f4c8c27bed4",
+      "checkpoint_sha256": "609b98609c8934b3a7f104f171a6c4fed272fa86eaa4170b23b1df738b829eca",
+      "observation_count": 3
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-003",
+      "job_id": "S-gimbpjkdealchomaigbnfkap",
+      "binding": {
+        "persona_id": "PER-PEEKLY-V2-003",
+        "prd_sha256": "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b",
+        "profile_sha256": "9bbf407b47247c42c7266ad179f3f8e34a9eb10bb8a658bc73661156ea41d223",
+        "revision": 1
+      },
+      "context_id": "ctx-8ef1c12455bfd6cbba0a10ef37c479ba53fdebb5",
+      "result_sha256": "6f9f22da65d8dacb6c2468028bfb8a73d369e4a859747a4b2dac831f182a9397",
+      "receipt_sha256": "a743ac7281b0074ae3227675695a703cfe2fd9e7b0366ede726b138da942740a",
+      "checkpoint_sha256": "f6d53a285510cc0a9a4ff1210a62f2ffc33b0850eb2935591e196c50d516773b",
+      "observation_count": 3
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-004",
+      "job_id": "S-gppbnocdodpcpfackcopdgal",
+      "binding": {
+        "persona_id": "PER-PEEKLY-V2-004",
+        "prd_sha256": "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b",
+        "profile_sha256": "ce4fadace8704d339dc61ee0c067cf79371997f882b13ac67d367ed862b7f7b2",
+        "revision": 1
+      },
+      "context_id": "ctx-463b0af201c9c29e5d026ace281faa2c80408cf5",
+      "result_sha256": "d757666a4a56bd0a7d1470afc89a60f882d8c78a70146b5e20cd76522699a563",
+      "receipt_sha256": "73a1c1ffafd5261897f710359fba768546a984b05995862259b9af40559b6828",
+      "checkpoint_sha256": "754b4480cfd146eb4481251522887955a95558d4f650b31c37df400e47995328",
+      "observation_count": 3
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-005",
+      "job_id": "S-ahigmmpldbffjlajeimgmmhg",
+      "binding": {
+        "persona_id": "PER-PEEKLY-V2-005",
+        "prd_sha256": "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b",
+        "profile_sha256": "327bc95b645726eab1a476fef0605cd54dd0d56cc2efca4dea20fb31772e813b",
+        "revision": 1
+      },
+      "context_id": "ctx-e21d567d66acc90d8af83fcd7d8ec6123ce0d9c4",
+      "result_sha256": "440cff05513438b3d97c44d80abea13885a21a1dd801987d888cda61986e6178",
+      "receipt_sha256": "59e665d3a90e23fa66fcec52f8c0906727a7f1f373cf159c2e404c1412c82898",
+      "checkpoint_sha256": "bfbbaf9aadd0a37784031bb6229ff9df6ed8fbcf9f2ed072c355e942c1ba596e",
+      "observation_count": 8
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-006",
+      "job_id": "S-eaimebeeijnlneijkfognapa",
+      "binding": {
+        "persona_id": "PER-PEEKLY-V2-006",
+        "prd_sha256": "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b",
+        "profile_sha256": "36a000f3e693487741fc04b8a03aff42f25fb3646c2bd1a9aeafd94c13e55596",
+        "revision": 1
+      },
+      "context_id": "ctx-04fa572accd2a23d2f128be5c08ce21a60a27fa1",
+      "result_sha256": "e9861f5e2024de88aa0c1174c9b801351a88568c8df0178fa5d6c8266d12ee69",
+      "receipt_sha256": "4bac6798453fcbee58a8e71137ed73474682d618c5042d2192b7d8c16993643b",
+      "checkpoint_sha256": "3689423a82086d355e2444985d47b405bbb6aa34bb9961217ef0b306f286c8f6",
+      "observation_count": 7
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-007",
+      "job_id": "S-dhklecmcppmmgkgiknilflkl",
+      "binding": {
+        "persona_id": "PER-PEEKLY-V2-007",
+        "prd_sha256": "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b",
+        "profile_sha256": "33e02498ae20d62ccdfd1705fb2630f1745a03f215ee3ace1b4fb5fc6d4385a7",
+        "revision": 1
+      },
+      "context_id": "ctx-03c36c1cdd08e9ca6b101c8d2a226477f8b01ee6",
+      "result_sha256": "21ba5c5db0132684aed6fe92add0e7b6bc80101d8276b56fb1fe810587dbcc81",
+      "receipt_sha256": "12de88e136beb1b01c1f94a9ce85535b17f35b8400d12da242eecc0576fb76bc",
+      "checkpoint_sha256": "ec068a074f0ff2c78703d4dbfd9f52dcd10376253843c3f10b1235f7d5a65184",
+      "observation_count": 7
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-008",
+      "job_id": "S-bjhjihfccjkbmdiedidhoncf",
+      "binding": {
+        "persona_id": "PER-PEEKLY-V2-008",
+        "prd_sha256": "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b",
+        "profile_sha256": "19aed6e48fdb53d6a27e17277270312068f6025b6216fa1ea29fd6040784ba69",
+        "revision": 1
+      },
+      "context_id": "ctx-e9c2871b65f383db97b1c0e2e3e4067dbcf13ee3",
+      "result_sha256": "ed234648e280228f50160325a10f3c2b306f1d2c42befcdd7542c3db7f29c13a",
+      "receipt_sha256": "4bb29b6d0dde964e1251ba393ea0a14b20df2ff639052b3f1e09fc92dc2085f5",
+      "checkpoint_sha256": "28f15e07830ea29b3b4d534bd051177a3f3cb97343e98dd65b9cb801b0bc47eb",
+      "observation_count": 7
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-009",
+      "job_id": "S-pblkjnfjnefpmkcnmhghnikb",
+      "binding": {
+        "persona_id": "PER-PEEKLY-V2-009",
+        "prd_sha256": "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b",
+        "profile_sha256": "8d1fb4e20bbb5629e1147819972883ed8397df2c322ca7f6010316c039f1e42a",
+        "revision": 1
+      },
+      "context_id": "ctx-947e82abe44a96049c8a66a30051b84b81be21c4",
+      "result_sha256": "f6e58ec63e724e54d66357f296cdf6d634e6bfd4757baa36771e295b8bb5bf63",
+      "receipt_sha256": "b24d99cc75e455135227007dadca53641bfccaabd57441d91a18c6d0e3030e3a",
+      "checkpoint_sha256": "884adfa605038a68532ec4b3f9e40291f1daee618cc41de39a23ea720e15161c",
+      "observation_count": 16
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-010",
+      "job_id": "S-cijopeodbceldieicjneaaji",
+      "binding": {
+        "persona_id": "PER-PEEKLY-V2-010",
+        "prd_sha256": "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b",
+        "profile_sha256": "2725dc340fe63a917c836a9235791421de15d90ca3cbc3c6542793c70c96987c",
+        "revision": 1
+      },
+      "context_id": "ctx-c55bcecaf53c9b85cd87a4871ee4c58ad8191ede",
+      "result_sha256": "778efeea04a12b711aa170048adc3216281b497189626fc2125c4df077d136cf",
+      "receipt_sha256": "e98f6036b1cdf0d9991909e3a1dc8af6b0841e3bfc33cd4518ef136bebb0393c",
+      "checkpoint_sha256": "2666124d2ce1083ba33b87c882339ef90f939ef8f9c6460ca7dbbb95962a3a67",
+      "observation_count": 15
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-012",
+      "job_id": "S-galdkhommdhbgkalkcfmmefk",
+      "binding": {
+        "persona_id": "PER-PEEKLY-V2-012",
+        "prd_sha256": "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b",
+        "profile_sha256": "ae75230fe5ea17f6f365c55c859f9058b31c91d2a3947f042902ef71eaeb49e9",
+        "revision": 1
+      },
+      "context_id": "ctx-c517e64be3bd2a9757459a186e22ef1855862b7d",
+      "result_sha256": "b19e9aa546e32fd90f85c520f5122864f23529af418081de50ff9e056df15101",
+      "receipt_sha256": "a738df39de59981d87eb8c8f49527a4d508985d163b144441dae730969f686a3",
+      "checkpoint_sha256": "b8f4eef09d02082e0d02abcd2b2cf0bb6e72184675ac80fa5dc08cc8b69fcb63",
+      "observation_count": 17
+    }
+  ],
+  "evidence_limits": [
+    "DOM membership alone does not prove privacy-notice visibility; 001-004 have no notice-exposing scroll/view.",
+    "The first-screen sample card is only partially exposed; no claim that both sample/login labels are readable in the PNG.",
+    "Imported 1/1/0 counts and detailed negative-import errors use registered DOM/storage proof; not all counts or error copy are visible in the captured viewport.",
+    "Expected negative-input errors are actual recoverable failures; the conditional criterion is existential, with no every-failure quantifier. Later negative-import recovery is unattempted in 009/010/012.",
+    "No cancel or large-file criterion is assigned to 001-012. These sessions do not prove a retest of the earlier 51-104 ms cancellation window.",
+    "No old-run overrides or raw receipt changes; no whole-cohort or product-readiness claim."
+  ],
+  "excluded_jobs": [
+    {
+      "job_id": "S-blhfedhpoafgojkcabihgadl",
+      "persona_id": "PER-PEEKLY-V2-011",
+      "queue_status": "uncertain",
+      "problem": "host_execution_failed:legacy_seed_task_not_authorized",
+      "assessment": "All four success criteria and one recovery criterion are unassessed and excluded; no helper decisions.",
+      "assigned_requirement_ids": [
+        "PRD-IMPORT-FORMATS",
+        "PRD-IMPORT-HTML",
+        "PRD-IMPORT-ACCOUNT",
+        "PRD-IMPORT-MISSING"
+      ],
+      "result_sha256": null,
+      "receipt_sha256": null,
+      "checkpoint_sha256": "60c903e17657d252f7f03e18314e2c345bacc062652b0bb448b21ec1ffb185b0",
+      "operation_id": "op-fcc559b12e7d408c0dc7405eb73d5d309172b743",
+      "request_sha256": "6bd1f723068bb648e945bec8b7085b361a36f74cbfd71ff6815ef845b68de8e1",
+      "original_tool_request": {
+        "arguments": {
+          "file": "peekly-legacy-unknown-state.json"
+        },
+        "name": "seed_legacy_unknown"
+      },
+      "operation_state": "uncertain",
+      "operation_reply": null,
+      "operation_reply_sha256": null,
+      "classification": "model/tool-selection error reaching a runner authorization guard; not a product failure",
+      "known_boundary": "Frozen ScaleBrowserHost._authorize_legacy_seed runs before any _exchange. This task lacks PRD-IMPORT-SNAPSHOT-UNKNOWN, so legacy_seed_task_not_authorized is a known pre-dispatch rejection.",
+      "cleanup_status_at_review": "Closure pending stage finalization. The active stage owner retains shutdown responsibility; no leak conclusion or external cleanup attempt.",
+      "cleanup_review_snapshot": {
+        "host_lifecycle_path": "evidence/S-blhfedhpoafgojkcabihgadl/1/browser-host-lifecycle.json",
+        "host_lifecycle_sha256": "586c27bae61771dae948c58a52dc90b5a8ff295a1d0a336463e1732bde7ac2e8",
+        "host_phase": "spawned",
+        "driver_lifecycle_path": "evidence/S-blhfedhpoafgojkcabihgadl/1/browser-driver-lifecycle.jsonl",
+        "driver_lifecycle_sha256": "3bc16cd476852dfb5d8daf0d76f9a13e673c1f7aa083a48d6711bed856ad781a",
+        "last_record_at": "2026-11-14T21:04:25.183Z",
+        "last_phase": "reply_written",
+        "last_command_id": 6,
+        "node_pid": 40509,
+        "chrome_pid": 40545
+      }
+    }
+  ],
+  "decisions": [
+    {
+      "job_id": "S-ljlmeakahgnhmnnffbajmljk",
+      "persona_id": "PER-PEEKLY-V2-001",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-START-SAMPLE",
+      "assigned_criterion": "첫 화면에는 인스타그램으로 로그인 버튼과 샘플로 먼저 둘러보기 링크가 있다. [PRD-START-SAMPLE] sample entry is visible without a file picker",
+      "result_sha256": "f64e43772606974fa898ec26885c4ab6738f3f04c82586da7cb897a7af90099c",
+      "receipt_sha256": "905191593ef26d658c93c3a7c98b8c86ced4f71faabae9bdcf5a8e671dc38a60",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "Fresh first-screen DOM contains product login/sample copy, the admitted sample control is visible, and no file input exists. The PNG partly exposes the sample card. Retained against the assigned sample-entry-without-picker clause; sample/login labels are not both readable in the captured pixels, so this does not establish full first-viewport text visibility.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-ljlmeakahgnhmnnffbajmljk/1/agent-observation-1.json",
+          "sha256": "e022292823a647ef470853300fe8b082764d8c1693975ae215bb116e38d6eb32",
+          "observation_id": "obs-1",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-1-0",
+          "path": "evidence/S-ljlmeakahgnhmnnffbajmljk/1/browser-00014.png",
+          "sha256": "bdd0b8b7514ec9249498d858a4ffab440aacb2fbe5f3e7d32e87a181212115df",
+          "observation_id": "obs-1",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-ljlmeakahgnhmnnffbajmljk",
+      "persona_id": "PER-PEEKLY-V2-001",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-START-IMPORT",
+      "assigned_criterion": "이미 Instagram 자료를 받은 사용자는 더보기 첫 화면의 **이미 받은 자료로 확인하기**에서 직접 가져오기 흐름을 바로 연다. [PRD-START-IMPORT] the current More entry for users who already have Instagram files is visible and opens the saved-file import flow",
+      "result_sha256": "f64e43772606974fa898ec26885c4ab6738f3f04c82586da7cb897a7af90099c",
+      "receipt_sha256": "905191593ef26d658c93c3a7c98b8c86ced4f71faabae9bdcf5a8e671dc38a60",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The More view exposes the current existing-files row at obs-2. A hit-tested, dispatched click at obs-3 opens the received-file import guide, with enabled file input and a visible File picker button. More and guide PNGs agree with the admitted controls.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-ljlmeakahgnhmnnffbajmljk/1/agent-observation-2.json",
+          "sha256": "89f3022ffdc45d7a9901e2ebd51c8fca65d460a4c8966f8e9ce8498489286dc5",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "png-2-0",
+          "path": "evidence/S-ljlmeakahgnhmnnffbajmljk/1/browser-00024.png",
+          "sha256": "6ecd5167c7af31507e2f0df2e95ed41f6078c97d7d2efb9a5d77ca74389f7a10",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-ljlmeakahgnhmnnffbajmljk/1/agent-observation-3.json",
+          "sha256": "97a0a5cfecf20be60fcdedc4d337411630af2be4ea5663ca7d03dfa801a7f97a",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-3-0",
+          "path": "evidence/S-ljlmeakahgnhmnnffbajmljk/1/browser-00034.png",
+          "sha256": "75dc0b4d79d13fcbb9313db077831396f99e8ea74111af894978fa189f09d7f1",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-ljlmeakahgnhmnnffbajmljk",
+      "persona_id": "PER-PEEKLY-V2-001",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-PRIVACY-LOCAL",
+      "assigned_criterion": "직접 연결·파일에서 받은 관계 목록과 기록 비교는 기기 안에서 처리한다. [PRD-PRIVACY-LOCAL] the product's own local-processing and no-send notice is visible; a host-enforced network block is not product privacy evidence",
+      "result_sha256": "f64e43772606974fa898ec26885c4ab6738f3f04c82586da7cb897a7af90099c",
+      "receipt_sha256": "905191593ef26d658c93c3a7c98b8c86ced4f71faabae9bdcf5a8e671dc38a60",
+      "expected_raw_status": "passed",
+      "reviewed_status": "not_run",
+      "reason": "The exact assigned clause requires the product local-processing/no-send notice to be visible. Notice copy exists in the obs-3 DOM, but the captured guide viewport does not expose it. This session has only obs-1/2/3 and no admitted scroll or later view of that notice. Downgrade the unsupported visible-notice pass to not_run: an execution/visibility gap, not missing product copy or a product privacy failure. Host network blocking is not product evidence.",
+      "classifications": [
+        "judge_false_pass",
+        "judge_unfounded_execution",
+        "runner_limitation"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-ljlmeakahgnhmnnffbajmljk/1/agent-observation-1.json",
+          "sha256": "e022292823a647ef470853300fe8b082764d8c1693975ae215bb116e38d6eb32",
+          "observation_id": "obs-1",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "png-1-0",
+          "path": "evidence/S-ljlmeakahgnhmnnffbajmljk/1/browser-00014.png",
+          "sha256": "bdd0b8b7514ec9249498d858a4ffab440aacb2fbe5f3e7d32e87a181212115df",
+          "observation_id": "obs-1",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-ljlmeakahgnhmnnffbajmljk/1/agent-observation-2.json",
+          "sha256": "89f3022ffdc45d7a9901e2ebd51c8fca65d460a4c8966f8e9ce8498489286dc5",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "png-2-0",
+          "path": "evidence/S-ljlmeakahgnhmnnffbajmljk/1/browser-00024.png",
+          "sha256": "6ecd5167c7af31507e2f0df2e95ed41f6078c97d7d2efb9a5d77ca74389f7a10",
+          "observation_id": "obs-2",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-ljlmeakahgnhmnnffbajmljk/1/agent-observation-3.json",
+          "sha256": "97a0a5cfecf20be60fcdedc4d337411630af2be4ea5663ca7d03dfa801a7f97a",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-3-0",
+          "path": "evidence/S-ljlmeakahgnhmnnffbajmljk/1/browser-00034.png",
+          "sha256": "75dc0b4d79d13fcbb9313db077831396f99e8ea74111af894978fa189f09d7f1",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-ljlmeakahgnhmnnffbajmljk",
+      "persona_id": "PER-PEEKLY-V2-001",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "assigned_criterion": "If a recoverable browser/import failure actually occurs, perform the safe recovery and verify it. If no triggering failure occurs, report not_applicable; do not manufacture a failure.",
+      "result_sha256": "f64e43772606974fa898ec26885c4ab6738f3f04c82586da7cb897a7af90099c",
+      "receipt_sha256": "905191593ef26d658c93c3a7c98b8c86ced4f71faabae9bdcf5a8e671dc38a60",
+      "expected_raw_status": "not_applicable",
+      "reviewed_status": "not_applicable",
+      "reason": "The complete three-observation session contains successful observation/navigation and no rejected browser action or import failure. No triggering failure occurs; recovery is correctly not_applicable. Merely opening a guide does not manufacture recovery.",
+      "classifications": [
+        "conditional_not_applicable",
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-ljlmeakahgnhmnnffbajmljk/1/agent-observation-1.json",
+          "sha256": "e022292823a647ef470853300fe8b082764d8c1693975ae215bb116e38d6eb32",
+          "observation_id": "obs-1",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-ljlmeakahgnhmnnffbajmljk/1/agent-observation-2.json",
+          "sha256": "89f3022ffdc45d7a9901e2ebd51c8fca65d460a4c8966f8e9ce8498489286dc5",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-ljlmeakahgnhmnnffbajmljk/1/agent-observation-3.json",
+          "sha256": "97a0a5cfecf20be60fcdedc4d337411630af2be4ea5663ca7d03dfa801a7f97a",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-ljffmnkkgdhopplfbhhegkma",
+      "persona_id": "PER-PEEKLY-V2-002",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-START-SAMPLE",
+      "assigned_criterion": "첫 화면에는 인스타그램으로 로그인 버튼과 샘플로 먼저 둘러보기 링크가 있다. [PRD-START-SAMPLE] sample entry is visible without a file picker",
+      "result_sha256": "8ed0f9b6a989ca0a26202a8bfa398703c44f28a5f900074a01a5c77d34913de4",
+      "receipt_sha256": "be583994151832ec67159c74213a3c9d0e9f35a4995f4a7dd4965f4c8c27bed4",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "Fresh first-screen DOM contains product login/sample copy, the admitted sample control is visible, and no file input exists. The PNG partly exposes the sample card. Retained against the assigned sample-entry-without-picker clause; sample/login labels are not both readable in the captured pixels, so this does not establish full first-viewport text visibility.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-ljffmnkkgdhopplfbhhegkma/1/agent-observation-1.json",
+          "sha256": "34361db413525a5874a27e968ef805f556c5732fe45944bdafc850bc669b7812",
+          "observation_id": "obs-1",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-1-0",
+          "path": "evidence/S-ljffmnkkgdhopplfbhhegkma/1/browser-00014.png",
+          "sha256": "bdd0b8b7514ec9249498d858a4ffab440aacb2fbe5f3e7d32e87a181212115df",
+          "observation_id": "obs-1",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-ljffmnkkgdhopplfbhhegkma",
+      "persona_id": "PER-PEEKLY-V2-002",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-START-IMPORT",
+      "assigned_criterion": "이미 Instagram 자료를 받은 사용자는 더보기 첫 화면의 **이미 받은 자료로 확인하기**에서 직접 가져오기 흐름을 바로 연다. [PRD-START-IMPORT] the current More entry for users who already have Instagram files is visible and opens the saved-file import flow",
+      "result_sha256": "8ed0f9b6a989ca0a26202a8bfa398703c44f28a5f900074a01a5c77d34913de4",
+      "receipt_sha256": "be583994151832ec67159c74213a3c9d0e9f35a4995f4a7dd4965f4c8c27bed4",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The More view exposes the current existing-files row at obs-2. A hit-tested, dispatched click at obs-3 opens the received-file import guide, with enabled file input and a visible File picker button. More and guide PNGs agree with the admitted controls.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-ljffmnkkgdhopplfbhhegkma/1/agent-observation-2.json",
+          "sha256": "2428eb172c6927c1749b378b8e7136e73d95754febc3d2d7218d68593620ffd8",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "png-2-0",
+          "path": "evidence/S-ljffmnkkgdhopplfbhhegkma/1/browser-00024.png",
+          "sha256": "dc3c8eefff6e3fe955ad005d21685378b981a620f8c3ebd6681c582abdbbfe95",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-ljffmnkkgdhopplfbhhegkma/1/agent-observation-3.json",
+          "sha256": "c736929fe01dfb2ce9a7dbfe9f9f4c7018c85f315c86a19162b377e9c522ba14",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-3-0",
+          "path": "evidence/S-ljffmnkkgdhopplfbhhegkma/1/browser-00034.png",
+          "sha256": "75dc0b4d79d13fcbb9313db077831396f99e8ea74111af894978fa189f09d7f1",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-ljffmnkkgdhopplfbhhegkma",
+      "persona_id": "PER-PEEKLY-V2-002",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-PRIVACY-LOCAL",
+      "assigned_criterion": "직접 연결·파일에서 받은 관계 목록과 기록 비교는 기기 안에서 처리한다. [PRD-PRIVACY-LOCAL] the product's own local-processing and no-send notice is visible; a host-enforced network block is not product privacy evidence",
+      "result_sha256": "8ed0f9b6a989ca0a26202a8bfa398703c44f28a5f900074a01a5c77d34913de4",
+      "receipt_sha256": "be583994151832ec67159c74213a3c9d0e9f35a4995f4a7dd4965f4c8c27bed4",
+      "expected_raw_status": "passed",
+      "reviewed_status": "not_run",
+      "reason": "The exact assigned clause requires the product local-processing/no-send notice to be visible. Notice copy exists in the obs-3 DOM, but the captured guide viewport does not expose it. This session has only obs-1/2/3 and no admitted scroll or later view of that notice. Downgrade the unsupported visible-notice pass to not_run: an execution/visibility gap, not missing product copy or a product privacy failure. Host network blocking is not product evidence.",
+      "classifications": [
+        "judge_false_pass",
+        "judge_unfounded_execution",
+        "runner_limitation"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-ljffmnkkgdhopplfbhhegkma/1/agent-observation-1.json",
+          "sha256": "34361db413525a5874a27e968ef805f556c5732fe45944bdafc850bc669b7812",
+          "observation_id": "obs-1",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "png-1-0",
+          "path": "evidence/S-ljffmnkkgdhopplfbhhegkma/1/browser-00014.png",
+          "sha256": "bdd0b8b7514ec9249498d858a4ffab440aacb2fbe5f3e7d32e87a181212115df",
+          "observation_id": "obs-1",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-ljffmnkkgdhopplfbhhegkma/1/agent-observation-2.json",
+          "sha256": "2428eb172c6927c1749b378b8e7136e73d95754febc3d2d7218d68593620ffd8",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "png-2-0",
+          "path": "evidence/S-ljffmnkkgdhopplfbhhegkma/1/browser-00024.png",
+          "sha256": "dc3c8eefff6e3fe955ad005d21685378b981a620f8c3ebd6681c582abdbbfe95",
+          "observation_id": "obs-2",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-ljffmnkkgdhopplfbhhegkma/1/agent-observation-3.json",
+          "sha256": "c736929fe01dfb2ce9a7dbfe9f9f4c7018c85f315c86a19162b377e9c522ba14",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-3-0",
+          "path": "evidence/S-ljffmnkkgdhopplfbhhegkma/1/browser-00034.png",
+          "sha256": "75dc0b4d79d13fcbb9313db077831396f99e8ea74111af894978fa189f09d7f1",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-ljffmnkkgdhopplfbhhegkma",
+      "persona_id": "PER-PEEKLY-V2-002",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "assigned_criterion": "If a recoverable browser/import failure actually occurs, perform the safe recovery and verify it. If no triggering failure occurs, report not_applicable; do not manufacture a failure.",
+      "result_sha256": "8ed0f9b6a989ca0a26202a8bfa398703c44f28a5f900074a01a5c77d34913de4",
+      "receipt_sha256": "be583994151832ec67159c74213a3c9d0e9f35a4995f4a7dd4965f4c8c27bed4",
+      "expected_raw_status": "not_applicable",
+      "reviewed_status": "not_applicable",
+      "reason": "The complete three-observation session contains successful observation/navigation and no rejected browser action or import failure. No triggering failure occurs; recovery is correctly not_applicable. Merely opening a guide does not manufacture recovery.",
+      "classifications": [
+        "conditional_not_applicable",
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-ljffmnkkgdhopplfbhhegkma/1/agent-observation-1.json",
+          "sha256": "34361db413525a5874a27e968ef805f556c5732fe45944bdafc850bc669b7812",
+          "observation_id": "obs-1",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-ljffmnkkgdhopplfbhhegkma/1/agent-observation-2.json",
+          "sha256": "2428eb172c6927c1749b378b8e7136e73d95754febc3d2d7218d68593620ffd8",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-ljffmnkkgdhopplfbhhegkma/1/agent-observation-3.json",
+          "sha256": "c736929fe01dfb2ce9a7dbfe9f9f4c7018c85f315c86a19162b377e9c522ba14",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-gimbpjkdealchomaigbnfkap",
+      "persona_id": "PER-PEEKLY-V2-003",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-START-SAMPLE",
+      "assigned_criterion": "첫 화면에는 인스타그램으로 로그인 버튼과 샘플로 먼저 둘러보기 링크가 있다. [PRD-START-SAMPLE] sample entry is visible without a file picker",
+      "result_sha256": "6f9f22da65d8dacb6c2468028bfb8a73d369e4a859747a4b2dac831f182a9397",
+      "receipt_sha256": "a743ac7281b0074ae3227675695a703cfe2fd9e7b0366ede726b138da942740a",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "Fresh first-screen DOM contains product login/sample copy, the admitted sample control is visible, and no file input exists. The PNG partly exposes the sample card. Retained against the assigned sample-entry-without-picker clause; sample/login labels are not both readable in the captured pixels, so this does not establish full first-viewport text visibility.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-gimbpjkdealchomaigbnfkap/1/agent-observation-1.json",
+          "sha256": "a8266f499fb9df74efeb79157ffe377628e60b98641fece3e3c2751db901b95a",
+          "observation_id": "obs-1",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-1-0",
+          "path": "evidence/S-gimbpjkdealchomaigbnfkap/1/browser-00014.png",
+          "sha256": "bdd0b8b7514ec9249498d858a4ffab440aacb2fbe5f3e7d32e87a181212115df",
+          "observation_id": "obs-1",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-gimbpjkdealchomaigbnfkap",
+      "persona_id": "PER-PEEKLY-V2-003",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-START-IMPORT",
+      "assigned_criterion": "이미 Instagram 자료를 받은 사용자는 더보기 첫 화면의 **이미 받은 자료로 확인하기**에서 직접 가져오기 흐름을 바로 연다. [PRD-START-IMPORT] the current More entry for users who already have Instagram files is visible and opens the saved-file import flow",
+      "result_sha256": "6f9f22da65d8dacb6c2468028bfb8a73d369e4a859747a4b2dac831f182a9397",
+      "receipt_sha256": "a743ac7281b0074ae3227675695a703cfe2fd9e7b0366ede726b138da942740a",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The More view exposes the current existing-files row at obs-2. A hit-tested, dispatched click at obs-3 opens the received-file import guide, with enabled file input and a visible File picker button. More and guide PNGs agree with the admitted controls.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-gimbpjkdealchomaigbnfkap/1/agent-observation-2.json",
+          "sha256": "01849727069496dcf172bb365ddd11093c41c4603fbd653e613dcfb4ea2d5f01",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "png-2-0",
+          "path": "evidence/S-gimbpjkdealchomaigbnfkap/1/browser-00024.png",
+          "sha256": "6ecd5167c7af31507e2f0df2e95ed41f6078c97d7d2efb9a5d77ca74389f7a10",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-gimbpjkdealchomaigbnfkap/1/agent-observation-3.json",
+          "sha256": "12dad02f4e3cab6d1bd834848dcb08d89c77567f08119a5b680a318d00dd2365",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-3-0",
+          "path": "evidence/S-gimbpjkdealchomaigbnfkap/1/browser-00034.png",
+          "sha256": "b6b7eba8b31b1fb714a839c7e176f2deb229c974b66ff9fbeec2491778776790",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-gimbpjkdealchomaigbnfkap",
+      "persona_id": "PER-PEEKLY-V2-003",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-PRIVACY-LOCAL",
+      "assigned_criterion": "직접 연결·파일에서 받은 관계 목록과 기록 비교는 기기 안에서 처리한다. [PRD-PRIVACY-LOCAL] the product's own local-processing and no-send notice is visible; a host-enforced network block is not product privacy evidence",
+      "result_sha256": "6f9f22da65d8dacb6c2468028bfb8a73d369e4a859747a4b2dac831f182a9397",
+      "receipt_sha256": "a743ac7281b0074ae3227675695a703cfe2fd9e7b0366ede726b138da942740a",
+      "expected_raw_status": "passed",
+      "reviewed_status": "not_run",
+      "reason": "The exact assigned clause requires the product local-processing/no-send notice to be visible. Notice copy exists in the obs-3 DOM, but the captured guide viewport does not expose it. This session has only obs-1/2/3 and no admitted scroll or later view of that notice. Downgrade the unsupported visible-notice pass to not_run: an execution/visibility gap, not missing product copy or a product privacy failure. Host network blocking is not product evidence.",
+      "classifications": [
+        "judge_false_pass",
+        "judge_unfounded_execution",
+        "runner_limitation"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-gimbpjkdealchomaigbnfkap/1/agent-observation-1.json",
+          "sha256": "a8266f499fb9df74efeb79157ffe377628e60b98641fece3e3c2751db901b95a",
+          "observation_id": "obs-1",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "png-1-0",
+          "path": "evidence/S-gimbpjkdealchomaigbnfkap/1/browser-00014.png",
+          "sha256": "bdd0b8b7514ec9249498d858a4ffab440aacb2fbe5f3e7d32e87a181212115df",
+          "observation_id": "obs-1",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-gimbpjkdealchomaigbnfkap/1/agent-observation-2.json",
+          "sha256": "01849727069496dcf172bb365ddd11093c41c4603fbd653e613dcfb4ea2d5f01",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "png-2-0",
+          "path": "evidence/S-gimbpjkdealchomaigbnfkap/1/browser-00024.png",
+          "sha256": "6ecd5167c7af31507e2f0df2e95ed41f6078c97d7d2efb9a5d77ca74389f7a10",
+          "observation_id": "obs-2",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-gimbpjkdealchomaigbnfkap/1/agent-observation-3.json",
+          "sha256": "12dad02f4e3cab6d1bd834848dcb08d89c77567f08119a5b680a318d00dd2365",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-3-0",
+          "path": "evidence/S-gimbpjkdealchomaigbnfkap/1/browser-00034.png",
+          "sha256": "b6b7eba8b31b1fb714a839c7e176f2deb229c974b66ff9fbeec2491778776790",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-gimbpjkdealchomaigbnfkap",
+      "persona_id": "PER-PEEKLY-V2-003",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "assigned_criterion": "If a recoverable browser/import failure actually occurs, perform the safe recovery and verify it. If no triggering failure occurs, report not_applicable; do not manufacture a failure.",
+      "result_sha256": "6f9f22da65d8dacb6c2468028bfb8a73d369e4a859747a4b2dac831f182a9397",
+      "receipt_sha256": "a743ac7281b0074ae3227675695a703cfe2fd9e7b0366ede726b138da942740a",
+      "expected_raw_status": "not_applicable",
+      "reviewed_status": "not_applicable",
+      "reason": "The complete three-observation session contains successful observation/navigation and no rejected browser action or import failure. No triggering failure occurs; recovery is correctly not_applicable. Merely opening a guide does not manufacture recovery.",
+      "classifications": [
+        "conditional_not_applicable",
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-gimbpjkdealchomaigbnfkap/1/agent-observation-1.json",
+          "sha256": "a8266f499fb9df74efeb79157ffe377628e60b98641fece3e3c2751db901b95a",
+          "observation_id": "obs-1",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-gimbpjkdealchomaigbnfkap/1/agent-observation-2.json",
+          "sha256": "01849727069496dcf172bb365ddd11093c41c4603fbd653e613dcfb4ea2d5f01",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-gimbpjkdealchomaigbnfkap/1/agent-observation-3.json",
+          "sha256": "12dad02f4e3cab6d1bd834848dcb08d89c77567f08119a5b680a318d00dd2365",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-gppbnocdodpcpfackcopdgal",
+      "persona_id": "PER-PEEKLY-V2-004",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-START-SAMPLE",
+      "assigned_criterion": "첫 화면에는 인스타그램으로 로그인 버튼과 샘플로 먼저 둘러보기 링크가 있다. [PRD-START-SAMPLE] sample entry is visible without a file picker",
+      "result_sha256": "d757666a4a56bd0a7d1470afc89a60f882d8c78a70146b5e20cd76522699a563",
+      "receipt_sha256": "73a1c1ffafd5261897f710359fba768546a984b05995862259b9af40559b6828",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "Fresh first-screen DOM contains product login/sample copy, the admitted sample control is visible, and no file input exists. The PNG partly exposes the sample card. Retained against the assigned sample-entry-without-picker clause; sample/login labels are not both readable in the captured pixels, so this does not establish full first-viewport text visibility.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-gppbnocdodpcpfackcopdgal/1/agent-observation-1.json",
+          "sha256": "ccb30c7f70e199c81dd9bde0081a0f2821643aef6093bb4ffe9cf63262adaad5",
+          "observation_id": "obs-1",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-1-0",
+          "path": "evidence/S-gppbnocdodpcpfackcopdgal/1/browser-00014.png",
+          "sha256": "bdd0b8b7514ec9249498d858a4ffab440aacb2fbe5f3e7d32e87a181212115df",
+          "observation_id": "obs-1",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-gppbnocdodpcpfackcopdgal",
+      "persona_id": "PER-PEEKLY-V2-004",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-START-IMPORT",
+      "assigned_criterion": "이미 Instagram 자료를 받은 사용자는 더보기 첫 화면의 **이미 받은 자료로 확인하기**에서 직접 가져오기 흐름을 바로 연다. [PRD-START-IMPORT] the current More entry for users who already have Instagram files is visible and opens the saved-file import flow",
+      "result_sha256": "d757666a4a56bd0a7d1470afc89a60f882d8c78a70146b5e20cd76522699a563",
+      "receipt_sha256": "73a1c1ffafd5261897f710359fba768546a984b05995862259b9af40559b6828",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The More view exposes the current existing-files row at obs-2. A hit-tested, dispatched click at obs-3 opens the received-file import guide, with enabled file input and a visible File picker button. More and guide PNGs agree with the admitted controls.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-gppbnocdodpcpfackcopdgal/1/agent-observation-2.json",
+          "sha256": "4aae3aba5ca0db577eb8976e00cff1b8fa2c92eae76a4ae41485a979037ceb57",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "png-2-0",
+          "path": "evidence/S-gppbnocdodpcpfackcopdgal/1/browser-00024.png",
+          "sha256": "89881692be8fdb1fcf6f2840af9e299fa99fbb1b8e03bc385c7d9cf3520593c7",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-gppbnocdodpcpfackcopdgal/1/agent-observation-3.json",
+          "sha256": "91fc6f7853a577ec33a3e516910dc73a67537810e31148af92298b6ccd55369d",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-3-0",
+          "path": "evidence/S-gppbnocdodpcpfackcopdgal/1/browser-00034.png",
+          "sha256": "75dc0b4d79d13fcbb9313db077831396f99e8ea74111af894978fa189f09d7f1",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-gppbnocdodpcpfackcopdgal",
+      "persona_id": "PER-PEEKLY-V2-004",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-PRIVACY-LOCAL",
+      "assigned_criterion": "직접 연결·파일에서 받은 관계 목록과 기록 비교는 기기 안에서 처리한다. [PRD-PRIVACY-LOCAL] the product's own local-processing and no-send notice is visible; a host-enforced network block is not product privacy evidence",
+      "result_sha256": "d757666a4a56bd0a7d1470afc89a60f882d8c78a70146b5e20cd76522699a563",
+      "receipt_sha256": "73a1c1ffafd5261897f710359fba768546a984b05995862259b9af40559b6828",
+      "expected_raw_status": "passed",
+      "reviewed_status": "not_run",
+      "reason": "The exact assigned clause requires the product local-processing/no-send notice to be visible. Notice copy exists in the obs-3 DOM, but the captured guide viewport does not expose it. This session has only obs-1/2/3 and no admitted scroll or later view of that notice. Downgrade the unsupported visible-notice pass to not_run: an execution/visibility gap, not missing product copy or a product privacy failure. Host network blocking is not product evidence.",
+      "classifications": [
+        "judge_false_pass",
+        "judge_unfounded_execution",
+        "runner_limitation"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-gppbnocdodpcpfackcopdgal/1/agent-observation-1.json",
+          "sha256": "ccb30c7f70e199c81dd9bde0081a0f2821643aef6093bb4ffe9cf63262adaad5",
+          "observation_id": "obs-1",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "png-1-0",
+          "path": "evidence/S-gppbnocdodpcpfackcopdgal/1/browser-00014.png",
+          "sha256": "bdd0b8b7514ec9249498d858a4ffab440aacb2fbe5f3e7d32e87a181212115df",
+          "observation_id": "obs-1",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-gppbnocdodpcpfackcopdgal/1/agent-observation-2.json",
+          "sha256": "4aae3aba5ca0db577eb8976e00cff1b8fa2c92eae76a4ae41485a979037ceb57",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "png-2-0",
+          "path": "evidence/S-gppbnocdodpcpfackcopdgal/1/browser-00024.png",
+          "sha256": "89881692be8fdb1fcf6f2840af9e299fa99fbb1b8e03bc385c7d9cf3520593c7",
+          "observation_id": "obs-2",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-gppbnocdodpcpfackcopdgal/1/agent-observation-3.json",
+          "sha256": "91fc6f7853a577ec33a3e516910dc73a67537810e31148af92298b6ccd55369d",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-3-0",
+          "path": "evidence/S-gppbnocdodpcpfackcopdgal/1/browser-00034.png",
+          "sha256": "75dc0b4d79d13fcbb9313db077831396f99e8ea74111af894978fa189f09d7f1",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-gppbnocdodpcpfackcopdgal",
+      "persona_id": "PER-PEEKLY-V2-004",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "assigned_criterion": "If a recoverable browser/import failure actually occurs, perform the safe recovery and verify it. If no triggering failure occurs, report not_applicable; do not manufacture a failure.",
+      "result_sha256": "d757666a4a56bd0a7d1470afc89a60f882d8c78a70146b5e20cd76522699a563",
+      "receipt_sha256": "73a1c1ffafd5261897f710359fba768546a984b05995862259b9af40559b6828",
+      "expected_raw_status": "not_applicable",
+      "reviewed_status": "not_applicable",
+      "reason": "The complete three-observation session contains successful observation/navigation and no rejected browser action or import failure. No triggering failure occurs; recovery is correctly not_applicable. Merely opening a guide does not manufacture recovery.",
+      "classifications": [
+        "conditional_not_applicable",
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-gppbnocdodpcpfackcopdgal/1/agent-observation-1.json",
+          "sha256": "ccb30c7f70e199c81dd9bde0081a0f2821643aef6093bb4ffe9cf63262adaad5",
+          "observation_id": "obs-1",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-gppbnocdodpcpfackcopdgal/1/agent-observation-2.json",
+          "sha256": "4aae3aba5ca0db577eb8976e00cff1b8fa2c92eae76a4ae41485a979037ceb57",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-gppbnocdodpcpfackcopdgal/1/agent-observation-3.json",
+          "sha256": "91fc6f7853a577ec33a3e516910dc73a67537810e31148af92298b6ccd55369d",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-ahigmmpldbffjlajeimgmmhg",
+      "persona_id": "PER-PEEKLY-V2-005",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-START-IMPORT",
+      "assigned_criterion": "이미 Instagram 자료를 받은 사용자는 더보기 첫 화면의 **이미 받은 자료로 확인하기**에서 직접 가져오기 흐름을 바로 연다. [PRD-START-IMPORT] the current More entry for users who already have Instagram files is visible and opens the saved-file import flow",
+      "result_sha256": "440cff05513438b3d97c44d80abea13885a21a1dd801987d888cda61986e6178",
+      "receipt_sha256": "59e665d3a90e23fa66fcec52f8c0906727a7f1f373cf159c2e404c1412c82898",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The admitted More view at obs-2 exposes the existing-files row. A hit-tested dispatched click at obs-4 opens the saved-file import guide and visible picker, executing the current task entry.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-ahigmmpldbffjlajeimgmmhg/1/agent-observation-2.json",
+          "sha256": "68f0e2abbcea85caa331246137adbed42b4417d272e4d5af0c8df90edb12e874",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "png-2-0",
+          "path": "evidence/S-ahigmmpldbffjlajeimgmmhg/1/browser-00024.png",
+          "sha256": "6ecd5167c7af31507e2f0df2e95ed41f6078c97d7d2efb9a5d77ca74389f7a10",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-ahigmmpldbffjlajeimgmmhg/1/agent-observation-4.json",
+          "sha256": "7b9f7925eaec697b43616bbbcfc6d912305bdd738d82be7086b349fdd97d5cf4",
+          "observation_id": "obs-4",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-4-0",
+          "path": "evidence/S-ahigmmpldbffjlajeimgmmhg/1/browser-00039.png",
+          "sha256": "75dc0b4d79d13fcbb9313db077831396f99e8ea74111af894978fa189f09d7f1",
+          "observation_id": "obs-4",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-ahigmmpldbffjlajeimgmmhg",
+      "persona_id": "PER-PEEKLY-V2-005",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-START-SKIP",
+      "assigned_criterion": "1단계에는 **이미 파일을 받았어요** 링크가 있어 3단계로 바로 갈 수 있다. [PRD-START-SKIP] the current PRD requires the More entry to open the existing-file import flow; a separate request-guide shortcut labelled '이미 파일을 받았어요' is not required",
+      "result_sha256": "440cff05513438b3d97c44d80abea13885a21a1dd801987d888cda61986e6178",
+      "receipt_sha256": "59e665d3a90e23fa66fcec52f8c0906727a7f1f373cf159c2e404c1412c82898",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The assigned current-behavior clause explicitly does not require a separate legacy shortcut labelled '이미 파일을 받았어요'. More -> existing-files -> import guide is actually executed at obs-2/obs-4; the guide opens directly at the result/file-selection step. No missing-shortcut defect is invented.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-ahigmmpldbffjlajeimgmmhg/1/agent-observation-2.json",
+          "sha256": "68f0e2abbcea85caa331246137adbed42b4417d272e4d5af0c8df90edb12e874",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-ahigmmpldbffjlajeimgmmhg/1/agent-observation-4.json",
+          "sha256": "7b9f7925eaec697b43616bbbcfc6d912305bdd738d82be7086b349fdd97d5cf4",
+          "observation_id": "obs-4",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-4-0",
+          "path": "evidence/S-ahigmmpldbffjlajeimgmmhg/1/browser-00039.png",
+          "sha256": "75dc0b4d79d13fcbb9313db077831396f99e8ea74111af894978fa189f09d7f1",
+          "observation_id": "obs-4",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-ahigmmpldbffjlajeimgmmhg",
+      "persona_id": "PER-PEEKLY-V2-005",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-IMPORT-FORMATS",
+      "assigned_criterion": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다. [PRD-IMPORT-FORMATS] each valid complete Instagram HTML and JSON fixture produces counts 1, 1, 0; an incomplete HTML test fixture is not product evidence",
+      "result_sha256": "440cff05513438b3d97c44d80abea13885a21a1dd801987d888cda61986e6178",
+      "receipt_sha256": "59e665d3a90e23fa66fcec52f8c0906727a7f1f373cf159c2e404c1412c82898",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "Ordinary uploads at obs-5 (archive-valid, complete Instagram HTML) and obs-8 (JSON) each return the three required result headings with counts 1, 1, 0 and the loaded-result message. Each available storage snapshot changes; HTML-after equals JSON-before, proving persisted results in this session. PNGs show the result page and first count; lower counts are established by returned DOM, not a claim that all three cards fit in the viewport. No incomplete positive HTML fixture is used.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-ahigmmpldbffjlajeimgmmhg/1/agent-observation-4.json",
+          "sha256": "7b9f7925eaec697b43616bbbcfc6d912305bdd738d82be7086b349fdd97d5cf4",
+          "observation_id": "obs-4",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-ahigmmpldbffjlajeimgmmhg/1/agent-observation-5.json",
+          "sha256": "42adb72bc445b356acbb8aaa46ad824cf286d867ba37249c05e1fb9d0962d263",
+          "observation_id": "obs-5",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-5-0",
+          "path": "evidence/S-ahigmmpldbffjlajeimgmmhg/1/browser-00051.png",
+          "sha256": "221fbae5562b8fceb1c0a8346cd3b12a501af2d79642ef71bffc4a56cb978ea8",
+          "observation_id": "obs-5",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-ahigmmpldbffjlajeimgmmhg/1/agent-observation-7.json",
+          "sha256": "bf46393aa5d84974cf434a1e7a07f53c2b5f6ac81085066c0a988b392bb71e53",
+          "observation_id": "obs-7",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-8",
+          "path": "evidence/S-ahigmmpldbffjlajeimgmmhg/1/agent-observation-8.json",
+          "sha256": "583229c96300e7fb7fd4b3d62b8808210ad7db756c35314638315adf79eec5fe",
+          "observation_id": "obs-8",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-8-0",
+          "path": "evidence/S-ahigmmpldbffjlajeimgmmhg/1/browser-00083.png",
+          "sha256": "fdb9cd45e4dc81563683bf3e7662f06acfe44e9175f16b6a6b1c90fc7c1f9d19",
+          "observation_id": "obs-8",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-ahigmmpldbffjlajeimgmmhg",
+      "persona_id": "PER-PEEKLY-V2-005",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "assigned_criterion": "If a recoverable browser/import failure actually occurs, perform the safe recovery and verify it. If no triggering failure occurs, report not_applicable; do not manufacture a failure.",
+      "result_sha256": "440cff05513438b3d97c44d80abea13885a21a1dd801987d888cda61986e6178",
+      "receipt_sha256": "59e665d3a90e23fa66fcec52f8c0906727a7f1f373cf159c2e404c1412c82898",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "Obs-3 acknowledges the existing-files click was not dispatched or automatically retried, then returns fresh controls. Obs-4 corrects the short label to the full row label on the same selector, passes hit_test, dispatches, and opens the guide. Obs-5 produces a changed persisted valid HTML result through that recovered flow. This is direct safe browser recovery after a model/tool-selection mismatch, not an import failure or product defect.",
+      "classifications": [
+        "confirmed_raw_verdict",
+        "runner_limitation"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-ahigmmpldbffjlajeimgmmhg/1/agent-observation-3.json",
+          "sha256": "f3240afcc3f7be162f7202ae527ad01662d8900a9dc14a041ced242ae8d22378",
+          "observation_id": "obs-3",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "png-3-0",
+          "path": "evidence/S-ahigmmpldbffjlajeimgmmhg/1/browser-00029.png",
+          "sha256": "c687326055688a1f79d90f1d72e417f274581a8915637b6bbee2abab33240271",
+          "observation_id": "obs-3",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-ahigmmpldbffjlajeimgmmhg/1/agent-observation-4.json",
+          "sha256": "7b9f7925eaec697b43616bbbcfc6d912305bdd738d82be7086b349fdd97d5cf4",
+          "observation_id": "obs-4",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-4-0",
+          "path": "evidence/S-ahigmmpldbffjlajeimgmmhg/1/browser-00039.png",
+          "sha256": "75dc0b4d79d13fcbb9313db077831396f99e8ea74111af894978fa189f09d7f1",
+          "observation_id": "obs-4",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-ahigmmpldbffjlajeimgmmhg/1/agent-observation-5.json",
+          "sha256": "42adb72bc445b356acbb8aaa46ad824cf286d867ba37249c05e1fb9d0962d263",
+          "observation_id": "obs-5",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-5-0",
+          "path": "evidence/S-ahigmmpldbffjlajeimgmmhg/1/browser-00051.png",
+          "sha256": "221fbae5562b8fceb1c0a8346cd3b12a501af2d79642ef71bffc4a56cb978ea8",
+          "observation_id": "obs-5",
+          "purpose": "result"
+        }
+      ],
+      "operation_bindings": [
+        {
+          "observation_id": "obs-3",
+          "operation_id": "op-9c4ea63608ca4c6b89cfdc4bf810741c8cf76c88",
+          "request_sha256": "7d7c39461594fcefe04b754b4c27072664d55b84b0ef80ffae305c33827dde04",
+          "reply_sha256": "89db78bb61207f9f25e0c6b7a19174778654434c6875a478c007eb475dd2f65d",
+          "tool": "click",
+          "arguments": {
+            "label": "이미 받은 자료로 확인하기",
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(1)>button:nth-of-type(1)"
+          },
+          "reply_facts_text_checks_and_capture_bytes_match_checkpoint": true
+        },
+        {
+          "observation_id": "obs-4",
+          "operation_id": "op-ef1c7ecf4b4c03062b3559e03377f200ced0e5a1",
+          "request_sha256": "6d826b71993f92f51ba55d4af3900af8045b449c9b2f464ae2a97b8d32d22afd",
+          "reply_sha256": "14133eeae9bc316b0a7fbeb4243833e004ddc9ca85b4b39f8824ff76c6095832",
+          "tool": "click",
+          "arguments": {
+            "label": "이미 받은 자료로 확인하기\n인스타그램에서 받은 파일을 골라 바로 결과를 봐요",
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(1)>button:nth-of-type(1)"
+          },
+          "reply_facts_text_checks_and_capture_bytes_match_checkpoint": true
+        }
+      ]
+    },
+    {
+      "job_id": "S-eaimebeeijnlneijkfognapa",
+      "persona_id": "PER-PEEKLY-V2-006",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-START-IMPORT",
+      "assigned_criterion": "이미 Instagram 자료를 받은 사용자는 더보기 첫 화면의 **이미 받은 자료로 확인하기**에서 직접 가져오기 흐름을 바로 연다. [PRD-START-IMPORT] the current More entry for users who already have Instagram files is visible and opens the saved-file import flow",
+      "result_sha256": "e9861f5e2024de88aa0c1174c9b801351a88568c8df0178fa5d6c8266d12ee69",
+      "receipt_sha256": "4bac6798453fcbee58a8e71137ed73474682d618c5042d2192b7d8c16993643b",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The admitted More view at obs-2 exposes the existing-files row. A hit-tested dispatched click at obs-3 opens the saved-file import guide and visible picker, executing the current task entry.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/agent-observation-2.json",
+          "sha256": "e59bd9516499f401f1fc1cfa9fa7184cfd0aa6f94c227448b102a95bd9d19d1b",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "png-2-0",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/browser-00024.png",
+          "sha256": "6ecd5167c7af31507e2f0df2e95ed41f6078c97d7d2efb9a5d77ca74389f7a10",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/agent-observation-3.json",
+          "sha256": "55a40a415ed27d955ad53d8354b44474ecd4a60fb3bda8697867331a3f5023ba",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-3-0",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/browser-00034.png",
+          "sha256": "75dc0b4d79d13fcbb9313db077831396f99e8ea74111af894978fa189f09d7f1",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-eaimebeeijnlneijkfognapa",
+      "persona_id": "PER-PEEKLY-V2-006",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-START-SKIP",
+      "assigned_criterion": "1단계에는 **이미 파일을 받았어요** 링크가 있어 3단계로 바로 갈 수 있다. [PRD-START-SKIP] the current PRD requires the More entry to open the existing-file import flow; a separate request-guide shortcut labelled '이미 파일을 받았어요' is not required",
+      "result_sha256": "e9861f5e2024de88aa0c1174c9b801351a88568c8df0178fa5d6c8266d12ee69",
+      "receipt_sha256": "4bac6798453fcbee58a8e71137ed73474682d618c5042d2192b7d8c16993643b",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The assigned current-behavior clause explicitly does not require a separate legacy shortcut labelled '이미 파일을 받았어요'. More -> existing-files -> import guide is actually executed at obs-2/obs-3; the guide opens directly at the result/file-selection step. No missing-shortcut defect is invented.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/agent-observation-2.json",
+          "sha256": "e59bd9516499f401f1fc1cfa9fa7184cfd0aa6f94c227448b102a95bd9d19d1b",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/agent-observation-3.json",
+          "sha256": "55a40a415ed27d955ad53d8354b44474ecd4a60fb3bda8697867331a3f5023ba",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-3-0",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/browser-00034.png",
+          "sha256": "75dc0b4d79d13fcbb9313db077831396f99e8ea74111af894978fa189f09d7f1",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-eaimebeeijnlneijkfognapa",
+      "persona_id": "PER-PEEKLY-V2-006",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-IMPORT-FORMATS",
+      "assigned_criterion": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다. [PRD-IMPORT-FORMATS] each valid complete Instagram HTML and JSON fixture produces counts 1, 1, 0; an incomplete HTML test fixture is not product evidence",
+      "result_sha256": "e9861f5e2024de88aa0c1174c9b801351a88568c8df0178fa5d6c8266d12ee69",
+      "receipt_sha256": "4bac6798453fcbee58a8e71137ed73474682d618c5042d2192b7d8c16993643b",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "Ordinary uploads at obs-4 (archive-valid, complete Instagram HTML) and obs-7 (JSON) each return the three required result headings with counts 1, 1, 0 and the loaded-result message. Each available storage snapshot changes; HTML-after equals JSON-before, proving persisted results in this session. PNGs show the result page and first count; lower counts are established by returned DOM, not a claim that all three cards fit in the viewport. No incomplete positive HTML fixture is used.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/agent-observation-3.json",
+          "sha256": "55a40a415ed27d955ad53d8354b44474ecd4a60fb3bda8697867331a3f5023ba",
+          "observation_id": "obs-3",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/agent-observation-4.json",
+          "sha256": "56e26f386f83bf33110553268ce52975c3df8d18e2bd2a29594c61936784947c",
+          "observation_id": "obs-4",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-4-0",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/browser-00046.png",
+          "sha256": "958fe247fe41e155e5be4c53e40529f6b7060271111a7c57830bd3c38fc8693c",
+          "observation_id": "obs-4",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/agent-observation-6.json",
+          "sha256": "876011c167d797ae3af72097e1063748927eef150463fb47264c1dd23fd260ab",
+          "observation_id": "obs-6",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/agent-observation-7.json",
+          "sha256": "823b97a1e240f82733b4ae2b35c4029ee589873e547eacdc6e35a737273a1e50",
+          "observation_id": "obs-7",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-7-0",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/browser-00078.png",
+          "sha256": "958fe247fe41e155e5be4c53e40529f6b7060271111a7c57830bd3c38fc8693c",
+          "observation_id": "obs-7",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-eaimebeeijnlneijkfognapa",
+      "persona_id": "PER-PEEKLY-V2-006",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "assigned_criterion": "If a recoverable browser/import failure actually occurs, perform the safe recovery and verify it. If no triggering failure occurs, report not_applicable; do not manufacture a failure.",
+      "result_sha256": "e9861f5e2024de88aa0c1174c9b801351a88568c8df0178fa5d6c8266d12ee69",
+      "receipt_sha256": "4bac6798453fcbee58a8e71137ed73474682d618c5042d2192b7d8c16993643b",
+      "expected_raw_status": "not_applicable",
+      "reviewed_status": "not_applicable",
+      "reason": "The full admitted sequence has successful existing-file navigation and valid HTML/JSON imports, with no rejected click, import error, or other triggering failure. Conditional recovery remains not_applicable; successive successful imports do not manufacture a trigger.",
+      "classifications": [
+        "conditional_not_applicable",
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/agent-observation-1.json",
+          "sha256": "b881ee53d8d7d312914dbae504285e8d8363f54a7ffad45b35b84fa3e92c7fa6",
+          "observation_id": "obs-1",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/agent-observation-2.json",
+          "sha256": "e59bd9516499f401f1fc1cfa9fa7184cfd0aa6f94c227448b102a95bd9d19d1b",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/agent-observation-3.json",
+          "sha256": "55a40a415ed27d955ad53d8354b44474ecd4a60fb3bda8697867331a3f5023ba",
+          "observation_id": "obs-3",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/agent-observation-4.json",
+          "sha256": "56e26f386f83bf33110553268ce52975c3df8d18e2bd2a29594c61936784947c",
+          "observation_id": "obs-4",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/agent-observation-5.json",
+          "sha256": "6e6d29813b27998e16e80a6046f8f5ec6af53e2fbd2892bee2eda13bb5fa468e",
+          "observation_id": "obs-5",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/agent-observation-6.json",
+          "sha256": "876011c167d797ae3af72097e1063748927eef150463fb47264c1dd23fd260ab",
+          "observation_id": "obs-6",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-eaimebeeijnlneijkfognapa/1/agent-observation-7.json",
+          "sha256": "823b97a1e240f82733b4ae2b35c4029ee589873e547eacdc6e35a737273a1e50",
+          "observation_id": "obs-7",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-dhklecmcppmmgkgiknilflkl",
+      "persona_id": "PER-PEEKLY-V2-007",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-START-IMPORT",
+      "assigned_criterion": "이미 Instagram 자료를 받은 사용자는 더보기 첫 화면의 **이미 받은 자료로 확인하기**에서 직접 가져오기 흐름을 바로 연다. [PRD-START-IMPORT] the current More entry for users who already have Instagram files is visible and opens the saved-file import flow",
+      "result_sha256": "21ba5c5db0132684aed6fe92add0e7b6bc80101d8276b56fb1fe810587dbcc81",
+      "receipt_sha256": "12de88e136beb1b01c1f94a9ce85535b17f35b8400d12da242eecc0576fb76bc",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The admitted More view at obs-2 exposes the existing-files row. A hit-tested dispatched click at obs-3 opens the saved-file import guide and visible picker, executing the current task entry.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/agent-observation-2.json",
+          "sha256": "0efb13bf22f5bc466b23f9c64bf76565f4ff4c1712db015acb576c13da69b85e",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "png-2-0",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/browser-00024.png",
+          "sha256": "6ecd5167c7af31507e2f0df2e95ed41f6078c97d7d2efb9a5d77ca74389f7a10",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/agent-observation-3.json",
+          "sha256": "af19e35b3eca96152b0f747d6f16719308cb491a58c87a087370881a6ccf2073",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-3-0",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/browser-00034.png",
+          "sha256": "75dc0b4d79d13fcbb9313db077831396f99e8ea74111af894978fa189f09d7f1",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-dhklecmcppmmgkgiknilflkl",
+      "persona_id": "PER-PEEKLY-V2-007",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-START-SKIP",
+      "assigned_criterion": "1단계에는 **이미 파일을 받았어요** 링크가 있어 3단계로 바로 갈 수 있다. [PRD-START-SKIP] the current PRD requires the More entry to open the existing-file import flow; a separate request-guide shortcut labelled '이미 파일을 받았어요' is not required",
+      "result_sha256": "21ba5c5db0132684aed6fe92add0e7b6bc80101d8276b56fb1fe810587dbcc81",
+      "receipt_sha256": "12de88e136beb1b01c1f94a9ce85535b17f35b8400d12da242eecc0576fb76bc",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The assigned current-behavior clause explicitly does not require a separate legacy shortcut labelled '이미 파일을 받았어요'. More -> existing-files -> import guide is actually executed at obs-2/obs-3; the guide opens directly at the result/file-selection step. No missing-shortcut defect is invented.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/agent-observation-2.json",
+          "sha256": "0efb13bf22f5bc466b23f9c64bf76565f4ff4c1712db015acb576c13da69b85e",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/agent-observation-3.json",
+          "sha256": "af19e35b3eca96152b0f747d6f16719308cb491a58c87a087370881a6ccf2073",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-3-0",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/browser-00034.png",
+          "sha256": "75dc0b4d79d13fcbb9313db077831396f99e8ea74111af894978fa189f09d7f1",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-dhklecmcppmmgkgiknilflkl",
+      "persona_id": "PER-PEEKLY-V2-007",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-IMPORT-FORMATS",
+      "assigned_criterion": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다. [PRD-IMPORT-FORMATS] each valid complete Instagram HTML and JSON fixture produces counts 1, 1, 0; an incomplete HTML test fixture is not product evidence",
+      "result_sha256": "21ba5c5db0132684aed6fe92add0e7b6bc80101d8276b56fb1fe810587dbcc81",
+      "receipt_sha256": "12de88e136beb1b01c1f94a9ce85535b17f35b8400d12da242eecc0576fb76bc",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "Ordinary uploads at obs-4 (archive-valid, complete Instagram HTML) and obs-7 (JSON) each return the three required result headings with counts 1, 1, 0 and the loaded-result message. Each available storage snapshot changes; HTML-after equals JSON-before, proving persisted results in this session. PNGs show the result page and first count; lower counts are established by returned DOM, not a claim that all three cards fit in the viewport. No incomplete positive HTML fixture is used.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/agent-observation-3.json",
+          "sha256": "af19e35b3eca96152b0f747d6f16719308cb491a58c87a087370881a6ccf2073",
+          "observation_id": "obs-3",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/agent-observation-4.json",
+          "sha256": "b3b0f42be3cced8d596f676982b9b831a434eac3504f0a6ca74a9c8ab29ae912",
+          "observation_id": "obs-4",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-4-0",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/browser-00046.png",
+          "sha256": "958fe247fe41e155e5be4c53e40529f6b7060271111a7c57830bd3c38fc8693c",
+          "observation_id": "obs-4",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/agent-observation-6.json",
+          "sha256": "75286d47edcb3c905e32372093080c3d3371c9b2bdbccbe90de3211dbeb0dccf",
+          "observation_id": "obs-6",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/agent-observation-7.json",
+          "sha256": "1f4e7f16fc7f49850dff4e54235b450424dc09815e915e2d67ecbd73645a2117",
+          "observation_id": "obs-7",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-7-0",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/browser-00078.png",
+          "sha256": "221fbae5562b8fceb1c0a8346cd3b12a501af2d79642ef71bffc4a56cb978ea8",
+          "observation_id": "obs-7",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-dhklecmcppmmgkgiknilflkl",
+      "persona_id": "PER-PEEKLY-V2-007",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "assigned_criterion": "If a recoverable browser/import failure actually occurs, perform the safe recovery and verify it. If no triggering failure occurs, report not_applicable; do not manufacture a failure.",
+      "result_sha256": "21ba5c5db0132684aed6fe92add0e7b6bc80101d8276b56fb1fe810587dbcc81",
+      "receipt_sha256": "12de88e136beb1b01c1f94a9ce85535b17f35b8400d12da242eecc0576fb76bc",
+      "expected_raw_status": "not_applicable",
+      "reviewed_status": "not_applicable",
+      "reason": "The full admitted sequence has successful existing-file navigation and valid HTML/JSON imports, with no rejected click, import error, or other triggering failure. Conditional recovery remains not_applicable; successive successful imports do not manufacture a trigger.",
+      "classifications": [
+        "conditional_not_applicable",
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/agent-observation-1.json",
+          "sha256": "f5378415b4c31aafab4768c8bc06deff2324db0bc2afbc134eda7c9f85a11876",
+          "observation_id": "obs-1",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/agent-observation-2.json",
+          "sha256": "0efb13bf22f5bc466b23f9c64bf76565f4ff4c1712db015acb576c13da69b85e",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/agent-observation-3.json",
+          "sha256": "af19e35b3eca96152b0f747d6f16719308cb491a58c87a087370881a6ccf2073",
+          "observation_id": "obs-3",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/agent-observation-4.json",
+          "sha256": "b3b0f42be3cced8d596f676982b9b831a434eac3504f0a6ca74a9c8ab29ae912",
+          "observation_id": "obs-4",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/agent-observation-5.json",
+          "sha256": "4e455660b5b2ce8b45872938d0a6c91d7c257db7e4f98755ea9f8659847fecad",
+          "observation_id": "obs-5",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/agent-observation-6.json",
+          "sha256": "75286d47edcb3c905e32372093080c3d3371c9b2bdbccbe90de3211dbeb0dccf",
+          "observation_id": "obs-6",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-dhklecmcppmmgkgiknilflkl/1/agent-observation-7.json",
+          "sha256": "1f4e7f16fc7f49850dff4e54235b450424dc09815e915e2d67ecbd73645a2117",
+          "observation_id": "obs-7",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-bjhjihfccjkbmdiedidhoncf",
+      "persona_id": "PER-PEEKLY-V2-008",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-START-IMPORT",
+      "assigned_criterion": "이미 Instagram 자료를 받은 사용자는 더보기 첫 화면의 **이미 받은 자료로 확인하기**에서 직접 가져오기 흐름을 바로 연다. [PRD-START-IMPORT] the current More entry for users who already have Instagram files is visible and opens the saved-file import flow",
+      "result_sha256": "ed234648e280228f50160325a10f3c2b306f1d2c42befcdd7542c3db7f29c13a",
+      "receipt_sha256": "4bb29b6d0dde964e1251ba393ea0a14b20df2ff639052b3f1e09fc92dc2085f5",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The admitted More view at obs-2 exposes the existing-files row. A hit-tested dispatched click at obs-3 opens the saved-file import guide and visible picker, executing the current task entry.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/agent-observation-2.json",
+          "sha256": "80a0148c3e83920545f0a823a1c8e3989a2a3b19aeb2798fd337082f512fa86f",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "png-2-0",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/browser-00024.png",
+          "sha256": "6ecd5167c7af31507e2f0df2e95ed41f6078c97d7d2efb9a5d77ca74389f7a10",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/agent-observation-3.json",
+          "sha256": "6f72422231e2164a3fac0f3a8a42f5780876913f849fa97f7d0d58cd7019daaf",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-3-0",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/browser-00034.png",
+          "sha256": "75dc0b4d79d13fcbb9313db077831396f99e8ea74111af894978fa189f09d7f1",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-bjhjihfccjkbmdiedidhoncf",
+      "persona_id": "PER-PEEKLY-V2-008",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-START-SKIP",
+      "assigned_criterion": "1단계에는 **이미 파일을 받았어요** 링크가 있어 3단계로 바로 갈 수 있다. [PRD-START-SKIP] the current PRD requires the More entry to open the existing-file import flow; a separate request-guide shortcut labelled '이미 파일을 받았어요' is not required",
+      "result_sha256": "ed234648e280228f50160325a10f3c2b306f1d2c42befcdd7542c3db7f29c13a",
+      "receipt_sha256": "4bb29b6d0dde964e1251ba393ea0a14b20df2ff639052b3f1e09fc92dc2085f5",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The assigned current-behavior clause explicitly does not require a separate legacy shortcut labelled '이미 파일을 받았어요'. More -> existing-files -> import guide is actually executed at obs-2/obs-3; the guide opens directly at the result/file-selection step. No missing-shortcut defect is invented.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/agent-observation-2.json",
+          "sha256": "80a0148c3e83920545f0a823a1c8e3989a2a3b19aeb2798fd337082f512fa86f",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/agent-observation-3.json",
+          "sha256": "6f72422231e2164a3fac0f3a8a42f5780876913f849fa97f7d0d58cd7019daaf",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-3-0",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/browser-00034.png",
+          "sha256": "75dc0b4d79d13fcbb9313db077831396f99e8ea74111af894978fa189f09d7f1",
+          "observation_id": "obs-3",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-bjhjihfccjkbmdiedidhoncf",
+      "persona_id": "PER-PEEKLY-V2-008",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-IMPORT-FORMATS",
+      "assigned_criterion": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다. [PRD-IMPORT-FORMATS] each valid complete Instagram HTML and JSON fixture produces counts 1, 1, 0; an incomplete HTML test fixture is not product evidence",
+      "result_sha256": "ed234648e280228f50160325a10f3c2b306f1d2c42befcdd7542c3db7f29c13a",
+      "receipt_sha256": "4bb29b6d0dde964e1251ba393ea0a14b20df2ff639052b3f1e09fc92dc2085f5",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "Ordinary uploads at obs-4 (archive-valid, complete Instagram HTML) and obs-7 (JSON) each return the three required result headings with counts 1, 1, 0 and the loaded-result message. Each available storage snapshot changes; HTML-after equals JSON-before, proving persisted results in this session. PNGs show the result page and first count; lower counts are established by returned DOM, not a claim that all three cards fit in the viewport. No incomplete positive HTML fixture is used.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/agent-observation-3.json",
+          "sha256": "6f72422231e2164a3fac0f3a8a42f5780876913f849fa97f7d0d58cd7019daaf",
+          "observation_id": "obs-3",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/agent-observation-4.json",
+          "sha256": "b8e71cfd2e87ebf134da0ffed997d377b9c9d0b552418546b3416ddc13fbd581",
+          "observation_id": "obs-4",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-4-0",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/browser-00046.png",
+          "sha256": "958fe247fe41e155e5be4c53e40529f6b7060271111a7c57830bd3c38fc8693c",
+          "observation_id": "obs-4",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/agent-observation-6.json",
+          "sha256": "c59678bcd76b25a53e9f1948fd29deabe1d549cf42ee2ffe0bbd2cf6d90551f1",
+          "observation_id": "obs-6",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/agent-observation-7.json",
+          "sha256": "58617c99d6736941aaa10e4b96eed32d461fc5a49d8cc4c89d3b1833cb0df0ee",
+          "observation_id": "obs-7",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-7-0",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/browser-00078.png",
+          "sha256": "958fe247fe41e155e5be4c53e40529f6b7060271111a7c57830bd3c38fc8693c",
+          "observation_id": "obs-7",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-bjhjihfccjkbmdiedidhoncf",
+      "persona_id": "PER-PEEKLY-V2-008",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "assigned_criterion": "If a recoverable browser/import failure actually occurs, perform the safe recovery and verify it. If no triggering failure occurs, report not_applicable; do not manufacture a failure.",
+      "result_sha256": "ed234648e280228f50160325a10f3c2b306f1d2c42befcdd7542c3db7f29c13a",
+      "receipt_sha256": "4bb29b6d0dde964e1251ba393ea0a14b20df2ff639052b3f1e09fc92dc2085f5",
+      "expected_raw_status": "not_applicable",
+      "reviewed_status": "not_applicable",
+      "reason": "The full admitted sequence has successful existing-file navigation and valid HTML/JSON imports, with no rejected click, import error, or other triggering failure. Conditional recovery remains not_applicable; successive successful imports do not manufacture a trigger.",
+      "classifications": [
+        "conditional_not_applicable",
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/agent-observation-1.json",
+          "sha256": "c8b208c9c7186eb8dc6d82036b796924631b861452f43bcab5e5ec2b7030b146",
+          "observation_id": "obs-1",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/agent-observation-2.json",
+          "sha256": "80a0148c3e83920545f0a823a1c8e3989a2a3b19aeb2798fd337082f512fa86f",
+          "observation_id": "obs-2",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/agent-observation-3.json",
+          "sha256": "6f72422231e2164a3fac0f3a8a42f5780876913f849fa97f7d0d58cd7019daaf",
+          "observation_id": "obs-3",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/agent-observation-4.json",
+          "sha256": "b8e71cfd2e87ebf134da0ffed997d377b9c9d0b552418546b3416ddc13fbd581",
+          "observation_id": "obs-4",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/agent-observation-5.json",
+          "sha256": "2a034b19fa1e962ab90abf5543f98c5f4c848fbb5632521f2d83cdfa94349cfa",
+          "observation_id": "obs-5",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/agent-observation-6.json",
+          "sha256": "c59678bcd76b25a53e9f1948fd29deabe1d549cf42ee2ffe0bbd2cf6d90551f1",
+          "observation_id": "obs-6",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-bjhjihfccjkbmdiedidhoncf/1/agent-observation-7.json",
+          "sha256": "58617c99d6736941aaa10e4b96eed32d461fc5a49d8cc4c89d3b1833cb0df0ee",
+          "observation_id": "obs-7",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-pblkjnfjnefpmkcnmhghnikb",
+      "persona_id": "PER-PEEKLY-V2-009",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-IMPORT-FORMATS",
+      "assigned_criterion": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다. [PRD-IMPORT-FORMATS] each valid complete Instagram HTML and JSON fixture produces counts 1, 1, 0; an incomplete HTML test fixture is not product evidence",
+      "result_sha256": "f6e58ec63e724e54d66357f296cdf6d634e6bfd4757baa36771e295b8bb5bf63",
+      "receipt_sha256": "b24d99cc75e455135227007dadca53641bfccaabd57441d91a18c6d0e3030e3a",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "Ordinary uploads at obs-7 (archive-valid, complete Instagram HTML) and obs-10 (JSON) each return the three required result headings with counts 1, 1, 0 and the loaded-result message. Each available storage snapshot changes; HTML-after equals JSON-before, proving persisted results in this session. PNGs show the result page and first count; lower counts are established by returned DOM, not a claim that all three cards fit in the viewport. No incomplete positive HTML fixture is used.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/agent-observation-6.json",
+          "sha256": "26931895c39605d5e0c0c6a439ac0c00bbed0df1960e940dd0cbbc41bb5fa60a",
+          "observation_id": "obs-6",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/agent-observation-7.json",
+          "sha256": "ce43b3c8ea82b0c9577c950f056799dc3d193e4c108725c69ac72ec294770679",
+          "observation_id": "obs-7",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-7-0",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/browser-00071.png",
+          "sha256": "fdb9cd45e4dc81563683bf3e7662f06acfe44e9175f16b6a6b1c90fc7c1f9d19",
+          "observation_id": "obs-7",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-9",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/agent-observation-9.json",
+          "sha256": "e0fbfc1cbcd05e444050662fadac0dc172f11c9b21d162382ca023425ca72831",
+          "observation_id": "obs-9",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/agent-observation-10.json",
+          "sha256": "7e1543980f13daefaf247d6d3ffc181ec0e3e613f458bb1c4ef69c09ee8379ba",
+          "observation_id": "obs-10",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-10-0",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/browser-00103.png",
+          "sha256": "fdb9cd45e4dc81563683bf3e7662f06acfe44e9175f16b6a6b1c90fc7c1f9d19",
+          "observation_id": "obs-10",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-pblkjnfjnefpmkcnmhghnikb",
+      "persona_id": "PER-PEEKLY-V2-009",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-IMPORT-HTML",
+      "assigned_criterion": "팔로워·팔로잉 HTML 목록에서 아이디를 읽지 못한 항목이 하나라도 있으면, 그 사람이 떠난 것처럼 보이지 않도록 파일 이름을 담은 오류로 멈춘다. [PRD-IMPORT-HTML] named malformed file is rejected and no result is published",
+      "result_sha256": "f6e58ec63e724e54d66357f296cdf6d634e6bfd4757baa36771e295b8bb5bf63",
+      "receipt_sha256": "b24d99cc75e455135227007dadca53641bfccaabd57441d91a18c6d0e3030e3a",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The named peekly-malformed-html.zip is actually uploaded at obs-13. Product DOM names [followers.html] and says it was not imported; available storage before/after remains the prior valid JSON snapshot. The guide stays in retry state and no new result is published. This intentionally malformed negative fixture is distinct from the complete positive HTML fixture. The PNG shows the retry picker; detailed error wording is DOM evidence below the captured viewport.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/agent-observation-10.json",
+          "sha256": "7e1543980f13daefaf247d6d3ffc181ec0e3e613f458bb1c4ef69c09ee8379ba",
+          "observation_id": "obs-10",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-13",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/agent-observation-13.json",
+          "sha256": "7552d7652f8e1614f752f03d01e8cdc4c394b6f4b6299ea3a131c5a3b94d38ac",
+          "observation_id": "obs-13",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-13-0",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/browser-00153.png",
+          "sha256": "6a5f821771ad320c7bec0b72440ebc18e85f46aaf94ef902eca403fa65d7e21e",
+          "observation_id": "obs-13",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-pblkjnfjnefpmkcnmhghnikb",
+      "persona_id": "PER-PEEKLY-V2-009",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-IMPORT-ACCOUNT",
+      "assigned_criterion": "이미 기록된 계정과 다른 계정의 파일은 막는다. [PRD-IMPORT-ACCOUNT] account mismatch is blocked before a result is saved",
+      "result_sha256": "f6e58ec63e724e54d66357f296cdf6d634e6bfd4757baa36771e295b8bb5bf63",
+      "receipt_sha256": "b24d99cc75e455135227007dadca53641bfccaabd57441d91a18c6d0e3030e3a",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The named account-mismatch fixture is actually uploaded at obs-14. Product DOM gives the different-account/same-account retry message; available before/after storage equals the prior valid JSON state, with persistence_unchanged=true. It is blocked before saving a new result. The screenshot shows the retained import/retry UI, not visually readable detailed alert text.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/agent-observation-10.json",
+          "sha256": "7e1543980f13daefaf247d6d3ffc181ec0e3e613f458bb1c4ef69c09ee8379ba",
+          "observation_id": "obs-10",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-14",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/agent-observation-14.json",
+          "sha256": "31a4541d0eb471b74501947b2dda614db5fc5c62e3d70e8a272c05fddc4a5807",
+          "observation_id": "obs-14",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-14-0",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/browser-00183.png",
+          "sha256": "6a5f821771ad320c7bec0b72440ebc18e85f46aaf94ef902eca403fa65d7e21e",
+          "observation_id": "obs-14",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-pblkjnfjnefpmkcnmhghnikb",
+      "persona_id": "PER-PEEKLY-V2-009",
+      "kind": "success",
+      "index": 3,
+      "requirement_id": "PRD-IMPORT-MISSING",
+      "assigned_criterion": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다. [PRD-IMPORT-MISSING] both missing-followers and missing-following fixtures are rejected",
+      "result_sha256": "f6e58ec63e724e54d66357f296cdf6d634e6bfd4757baa36771e295b8bb5bf63",
+      "receipt_sha256": "b24d99cc75e455135227007dadca53641bfccaabd57441d91a18c6d0e3030e3a",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "Both named missing-list fixtures are separately uploaded at obs-15 and obs-16. Each returns product guidance requiring both lists and checking [팔로워 및 팔로잉], stays in retry state, and preserves the prior valid storage hash. These per-attempt DOM/storage results prove the assigned rejection behavior. Detailed guidance is not readable in the registered viewport PNGs; this decision does not claim it was visually exposed.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/agent-observation-10.json",
+          "sha256": "7e1543980f13daefaf247d6d3ffc181ec0e3e613f458bb1c4ef69c09ee8379ba",
+          "observation_id": "obs-10",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-15",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/agent-observation-15.json",
+          "sha256": "9e96d7ba61ffc2b1e52d4a6fbf605e699eba6e568d0bf4f9a95094b34bd4fc10",
+          "observation_id": "obs-15",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-15-0",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/browser-00213.png",
+          "sha256": "6a5f821771ad320c7bec0b72440ebc18e85f46aaf94ef902eca403fa65d7e21e",
+          "observation_id": "obs-15",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-16",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/agent-observation-16.json",
+          "sha256": "d41db44c1a80e57329a0ff40166abb1f1a8f6117dcabb958f1da981b7d6904aa",
+          "observation_id": "obs-16",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-16-0",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/browser-00242.png",
+          "sha256": "6a5f821771ad320c7bec0b72440ebc18e85f46aaf94ef902eca403fa65d7e21e",
+          "observation_id": "obs-16",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-pblkjnfjnefpmkcnmhghnikb",
+      "persona_id": "PER-PEEKLY-V2-009",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "assigned_criterion": "If a recoverable browser/import failure actually occurs, perform the safe recovery and verify it. If no triggering failure occurs, report not_applicable; do not manufacture a failure.",
+      "result_sha256": "f6e58ec63e724e54d66357f296cdf6d634e6bfd4757baa36771e295b8bb5bf63",
+      "receipt_sha256": "b24d99cc75e455135227007dadca53641bfccaabd57441d91a18c6d0e3030e3a",
+      "expected_raw_status": "not_applicable",
+      "reviewed_status": "passed",
+      "reason": "Obs-3 rejects the sample-entry click without dispatch or automatic retry; requested label '샘플로 먼저 둘러보기' differs from the fresh actual label '샘플로 둘러보기'. Obs-4 uses the same selector with the corrected label, passes the hit test, and dispatches. Its immediate PNG still shows landing. Before any import, obs-5 reaches expanded More menus for the loaded sample and persisted state changes from 7b3f3a770f0ac89471a660ccfe9a54f5de96b387ebb22d307e06fadb84f77355 to e8fc9399636d81e28c5eb0954498e57377d0b17aa491ede553b70f8c92bf1891. This direct browser recovery satisfies the existential criterion and was missed by raw N/A. Later expected negative-import failures occur, but no valid retry follows; they are not the basis for this pass.",
+      "classifications": [
+        "judge_missed_execution",
+        "runner_limitation"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/agent-observation-1.json",
+          "sha256": "c5e3041b92510bb6dfa0a655aa623340b646ad3123aaf22a92e5584274228ed6",
+          "observation_id": "obs-1",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/agent-observation-3.json",
+          "sha256": "584a68c70ddd3a99881f447bb0ea80ba2b50bbb135ed3bfff8c62cbe567c8d90",
+          "observation_id": "obs-3",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/agent-observation-4.json",
+          "sha256": "b806a46db36f5affbef607315ce892210a6cece157673376ad390fb99e390946",
+          "observation_id": "obs-4",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "png-4-0",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/browser-00039.png",
+          "sha256": "f564df2860c5bf67f38a09c07b1a43672a3ef8be0b0f58e045ae2ff53f1e5cf2",
+          "observation_id": "obs-4",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/agent-observation-5.json",
+          "sha256": "7ac1f4ce6a65d34c604456c9342c162ea6c7a4abc0bd1020ef6ecd46afcf95ce",
+          "observation_id": "obs-5",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-5-0",
+          "path": "evidence/S-pblkjnfjnefpmkcnmhghnikb/1/browser-00049.png",
+          "sha256": "68f23a2790d31bbeac10d90eff51b96505072423aee7c702178b131ae9e26859",
+          "observation_id": "obs-5",
+          "purpose": "result"
+        }
+      ],
+      "operation_bindings": [
+        {
+          "observation_id": "obs-3",
+          "operation_id": "op-6b9eb3a430775d9a1f644f7fa0579a0d7fb35c2d",
+          "request_sha256": "fc931c09285e2d24fcf1b6b509936c949c96199a43ab85ddbc8f211f8faf8c15",
+          "reply_sha256": "a848d279693cf0ccc9723ddb9528abf6327c495bd9ed6ed82516b155a0f13016",
+          "tool": "click",
+          "arguments": {
+            "label": "샘플로 먼저 둘러보기",
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>section:nth-of-type(1)>button:nth-of-type(1)"
+          },
+          "reply_facts_text_checks_and_capture_bytes_match_checkpoint": true
+        },
+        {
+          "observation_id": "obs-4",
+          "operation_id": "op-e7cbc3287c7e8efeb963d041da4ae4aea3529328",
+          "request_sha256": "66a5073818b9501db546df7954506296f199c238c0ca58a65ed897f1886f0c76",
+          "reply_sha256": "babaea785df0424ac9de84a990c9cbf596cc29b22782d435163260eb492dc73a",
+          "tool": "click",
+          "arguments": {
+            "label": "샘플로 둘러보기",
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>section:nth-of-type(1)>button:nth-of-type(1)"
+          },
+          "reply_facts_text_checks_and_capture_bytes_match_checkpoint": true
+        },
+        {
+          "observation_id": "obs-5",
+          "operation_id": "op-2a0ed30ee3d640630e5c9f859dccae78c3510180",
+          "request_sha256": "fcac17a66a23c46dd1f821fb43f015266a8a99d4551c0697b7a6fb283b9e699c",
+          "reply_sha256": "91460ccbf16bd56af0b091270051e241290704729b0ddf1ad6f3092b0f42d809",
+          "tool": "click",
+          "arguments": {
+            "label": "더보기",
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>nav:nth-of-type(1)>button:nth-of-type(2)"
+          },
+          "reply_facts_text_checks_and_capture_bytes_match_checkpoint": true
+        }
+      ]
+    },
+    {
+      "job_id": "S-cijopeodbceldieicjneaaji",
+      "persona_id": "PER-PEEKLY-V2-010",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-IMPORT-FORMATS",
+      "assigned_criterion": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다. [PRD-IMPORT-FORMATS] each valid complete Instagram HTML and JSON fixture produces counts 1, 1, 0; an incomplete HTML test fixture is not product evidence",
+      "result_sha256": "778efeea04a12b711aa170048adc3216281b497189626fc2125c4df077d136cf",
+      "receipt_sha256": "e98f6036b1cdf0d9991909e3a1dc8af6b0841e3bfc33cd4518ef136bebb0393c",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "Ordinary uploads at obs-6 (archive-valid, complete Instagram HTML) and obs-9 (JSON) each return the three required result headings with counts 1, 1, 0 and the loaded-result message. Each available storage snapshot changes; HTML-after equals JSON-before, proving persisted results in this session. PNGs show the result page and first count; lower counts are established by returned DOM, not a claim that all three cards fit in the viewport. No incomplete positive HTML fixture is used.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/agent-observation-5.json",
+          "sha256": "7af149f6c581d8c74821d5bead52ced0bf3990356895f6e10d417906de04370b",
+          "observation_id": "obs-5",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/agent-observation-6.json",
+          "sha256": "4d685eb4f8f8794a1268e4ab3836fe21ecf73fd1fc577361a61b58cc54a33cd5",
+          "observation_id": "obs-6",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-6-0",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/browser-00061.png",
+          "sha256": "958fe247fe41e155e5be4c53e40529f6b7060271111a7c57830bd3c38fc8693c",
+          "observation_id": "obs-6",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-8",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/agent-observation-8.json",
+          "sha256": "3adda9ea2b284e29991ce7e3d19cb951c8c16ca9605f43c38788aa4b1d3b7f1d",
+          "observation_id": "obs-8",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-9",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/agent-observation-9.json",
+          "sha256": "2754572772886af5443db1ca91921a4423e14b416f173976a94b3dd1788f7655",
+          "observation_id": "obs-9",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-9-0",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/browser-00093.png",
+          "sha256": "958fe247fe41e155e5be4c53e40529f6b7060271111a7c57830bd3c38fc8693c",
+          "observation_id": "obs-9",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-cijopeodbceldieicjneaaji",
+      "persona_id": "PER-PEEKLY-V2-010",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-IMPORT-HTML",
+      "assigned_criterion": "팔로워·팔로잉 HTML 목록에서 아이디를 읽지 못한 항목이 하나라도 있으면, 그 사람이 떠난 것처럼 보이지 않도록 파일 이름을 담은 오류로 멈춘다. [PRD-IMPORT-HTML] named malformed file is rejected and no result is published",
+      "result_sha256": "778efeea04a12b711aa170048adc3216281b497189626fc2125c4df077d136cf",
+      "receipt_sha256": "e98f6036b1cdf0d9991909e3a1dc8af6b0841e3bfc33cd4518ef136bebb0393c",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The named peekly-malformed-html.zip is actually uploaded at obs-12. Product DOM names [followers.html] and says it was not imported; available storage before/after remains the prior valid JSON snapshot. The guide stays in retry state and no new result is published. This intentionally malformed negative fixture is distinct from the complete positive HTML fixture. The PNG shows the retry picker; detailed error wording is DOM evidence below the captured viewport.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-9",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/agent-observation-9.json",
+          "sha256": "2754572772886af5443db1ca91921a4423e14b416f173976a94b3dd1788f7655",
+          "observation_id": "obs-9",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/agent-observation-12.json",
+          "sha256": "1cb8307f698c71748d85581bfc48d0211b18d7fe4501b552e1c45b7bd7c22df3",
+          "observation_id": "obs-12",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-12-0",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/browser-00142.png",
+          "sha256": "6a5f821771ad320c7bec0b72440ebc18e85f46aaf94ef902eca403fa65d7e21e",
+          "observation_id": "obs-12",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-cijopeodbceldieicjneaaji",
+      "persona_id": "PER-PEEKLY-V2-010",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-IMPORT-ACCOUNT",
+      "assigned_criterion": "이미 기록된 계정과 다른 계정의 파일은 막는다. [PRD-IMPORT-ACCOUNT] account mismatch is blocked before a result is saved",
+      "result_sha256": "778efeea04a12b711aa170048adc3216281b497189626fc2125c4df077d136cf",
+      "receipt_sha256": "e98f6036b1cdf0d9991909e3a1dc8af6b0841e3bfc33cd4518ef136bebb0393c",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The named account-mismatch fixture is actually uploaded at obs-13. Product DOM gives the different-account/same-account retry message; available before/after storage equals the prior valid JSON state, with persistence_unchanged=true. It is blocked before saving a new result. The screenshot shows the retained import/retry UI, not visually readable detailed alert text.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-9",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/agent-observation-9.json",
+          "sha256": "2754572772886af5443db1ca91921a4423e14b416f173976a94b3dd1788f7655",
+          "observation_id": "obs-9",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-13",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/agent-observation-13.json",
+          "sha256": "b8c1a5acffa1dc2be5bb3de34cc73824b80839a22e5e313332bfba59da1eab4f",
+          "observation_id": "obs-13",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-13-0",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/browser-00172.png",
+          "sha256": "6a5f821771ad320c7bec0b72440ebc18e85f46aaf94ef902eca403fa65d7e21e",
+          "observation_id": "obs-13",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-cijopeodbceldieicjneaaji",
+      "persona_id": "PER-PEEKLY-V2-010",
+      "kind": "success",
+      "index": 3,
+      "requirement_id": "PRD-IMPORT-MISSING",
+      "assigned_criterion": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다. [PRD-IMPORT-MISSING] both missing-followers and missing-following fixtures are rejected",
+      "result_sha256": "778efeea04a12b711aa170048adc3216281b497189626fc2125c4df077d136cf",
+      "receipt_sha256": "e98f6036b1cdf0d9991909e3a1dc8af6b0841e3bfc33cd4518ef136bebb0393c",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "Both named missing-list fixtures are separately uploaded at obs-14 and obs-15. Each returns product guidance requiring both lists and checking [팔로워 및 팔로잉], stays in retry state, and preserves the prior valid storage hash. These per-attempt DOM/storage results prove the assigned rejection behavior. Detailed guidance is not readable in the registered viewport PNGs; this decision does not claim it was visually exposed.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-9",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/agent-observation-9.json",
+          "sha256": "2754572772886af5443db1ca91921a4423e14b416f173976a94b3dd1788f7655",
+          "observation_id": "obs-9",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-14",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/agent-observation-14.json",
+          "sha256": "1f6199c775890eaefc6fbfe416567aaf5bdfcae335e5c1385b4e91d417f46089",
+          "observation_id": "obs-14",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-14-0",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/browser-00201.png",
+          "sha256": "6a5f821771ad320c7bec0b72440ebc18e85f46aaf94ef902eca403fa65d7e21e",
+          "observation_id": "obs-14",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-15",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/agent-observation-15.json",
+          "sha256": "07fba5723f43e61ccad635ba9d0ceb70244688cc222b905dfb51babb0c842e53",
+          "observation_id": "obs-15",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-15-0",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/browser-00231.png",
+          "sha256": "6a5f821771ad320c7bec0b72440ebc18e85f46aaf94ef902eca403fa65d7e21e",
+          "observation_id": "obs-15",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-cijopeodbceldieicjneaaji",
+      "persona_id": "PER-PEEKLY-V2-010",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "assigned_criterion": "If a recoverable browser/import failure actually occurs, perform the safe recovery and verify it. If no triggering failure occurs, report not_applicable; do not manufacture a failure.",
+      "result_sha256": "778efeea04a12b711aa170048adc3216281b497189626fc2125c4df077d136cf",
+      "receipt_sha256": "e98f6036b1cdf0d9991909e3a1dc8af6b0841e3bfc33cd4518ef136bebb0393c",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "Obs-4 rejects the existing-files click without dispatch or automatic retry and supplies fresh controls. Obs-5 corrects the short label to the full label on that same selector; the hit-tested dispatched click opens the guide, and obs-6 produces a changed persisted usable HTML result through that recovered route. Retain raw browser-recovery pass. Later expected negative-import failures are actual triggers too, but no valid post-error retry is executed. The earlier direct browser recovery satisfies the existential criterion without claiming every failure was recovered.",
+      "classifications": [
+        "confirmed_raw_verdict",
+        "runner_limitation"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/agent-observation-4.json",
+          "sha256": "c8e479be6e9448d8d3091001bef124cc308ded10a218b5b4892ae5f082e47a4f",
+          "observation_id": "obs-4",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/agent-observation-5.json",
+          "sha256": "7af149f6c581d8c74821d5bead52ced0bf3990356895f6e10d417906de04370b",
+          "observation_id": "obs-5",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-5-0",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/browser-00049.png",
+          "sha256": "a71e4e6ef759d115ee90e266fc883616d63f3ed97ed0f3c9782f3d2cc7d8977b",
+          "observation_id": "obs-5",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/agent-observation-6.json",
+          "sha256": "4d685eb4f8f8794a1268e4ab3836fe21ecf73fd1fc577361a61b58cc54a33cd5",
+          "observation_id": "obs-6",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-6-0",
+          "path": "evidence/S-cijopeodbceldieicjneaaji/1/browser-00061.png",
+          "sha256": "958fe247fe41e155e5be4c53e40529f6b7060271111a7c57830bd3c38fc8693c",
+          "observation_id": "obs-6",
+          "purpose": "result"
+        }
+      ],
+      "operation_bindings": [
+        {
+          "observation_id": "obs-4",
+          "operation_id": "op-6769492038bcc41a74f753ddab6f87a70d9497b9",
+          "request_sha256": "e54e1d4ff08848b6ca210c8004daed7151b93262fa6a68a5bbb4d4e7d5fb4d66",
+          "reply_sha256": "398e7bdb0fac4727ca7f8cd8ac5f95d59f019780acc6f75e83fc50eebe8a4464",
+          "tool": "click",
+          "arguments": {
+            "label": "이미 받은 자료로 확인하기",
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(1)>button:nth-of-type(1)"
+          },
+          "reply_facts_text_checks_and_capture_bytes_match_checkpoint": true
+        },
+        {
+          "observation_id": "obs-5",
+          "operation_id": "op-645ec873326851eeffc330533ec31410f8109ad4",
+          "request_sha256": "f4fedf7270981f5e355a0054f4a9c815ba6ea86a677208f6a99629501f1b50f9",
+          "reply_sha256": "8ec6a84becde9eeaa43ecee0402062236575cca62df95615ada5377318961cf2",
+          "tool": "click",
+          "arguments": {
+            "label": "이미 받은 자료로 확인하기\n인스타그램에서 받은 파일을 골라 바로 결과를 봐요",
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(1)>button:nth-of-type(1)"
+          },
+          "reply_facts_text_checks_and_capture_bytes_match_checkpoint": true
+        }
+      ]
+    },
+    {
+      "job_id": "S-galdkhommdhbgkalkcfmmefk",
+      "persona_id": "PER-PEEKLY-V2-012",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-IMPORT-FORMATS",
+      "assigned_criterion": "Instagram이 HTML 형식으로 만든 백업과 JSON 형식으로 만든 백업을 똑같이 읽는다. [PRD-IMPORT-FORMATS] each valid complete Instagram HTML and JSON fixture produces counts 1, 1, 0; an incomplete HTML test fixture is not product evidence",
+      "result_sha256": "b19e9aa546e32fd90f85c520f5122864f23529af418081de50ff9e056df15101",
+      "receipt_sha256": "a738df39de59981d87eb8c8f49527a4d508985d163b144441dae730969f686a3",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "Ordinary uploads at obs-8 (archive-valid, complete Instagram HTML) and obs-11 (JSON) each return the three required result headings with counts 1, 1, 0 and the loaded-result message. Each available storage snapshot changes; HTML-after equals JSON-before, proving persisted results in this session. PNGs show the result page and first count; lower counts are established by returned DOM, not a claim that all three cards fit in the viewport. No incomplete positive HTML fixture is used.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/agent-observation-7.json",
+          "sha256": "ab4599cef26916a0e8c5cda973cbe0595ce19783024383c29432d726c87b1be1",
+          "observation_id": "obs-7",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-8",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/agent-observation-8.json",
+          "sha256": "1afb5a254a7973605fb004e2950a9c6ce1ba6ba9fbea67ac0254e0aa0039f8f5",
+          "observation_id": "obs-8",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-8-0",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/browser-00068.png",
+          "sha256": "ae0c8b44a759550b59cf03619d3b2b983a89c611efe717d0346e252d5ce6892e",
+          "observation_id": "obs-8",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/agent-observation-10.json",
+          "sha256": "bd571353423154548e6bf9d0e1edfa9da86f0392741b293f887abe1a043fd01e",
+          "observation_id": "obs-10",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/agent-observation-11.json",
+          "sha256": "4d451e290c7785f51bfdde45db73d5862719096bd841d6d04446e4633313b463",
+          "observation_id": "obs-11",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-11-0",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/browser-00101.png",
+          "sha256": "958fe247fe41e155e5be4c53e40529f6b7060271111a7c57830bd3c38fc8693c",
+          "observation_id": "obs-11",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-galdkhommdhbgkalkcfmmefk",
+      "persona_id": "PER-PEEKLY-V2-012",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-IMPORT-HTML",
+      "assigned_criterion": "팔로워·팔로잉 HTML 목록에서 아이디를 읽지 못한 항목이 하나라도 있으면, 그 사람이 떠난 것처럼 보이지 않도록 파일 이름을 담은 오류로 멈춘다. [PRD-IMPORT-HTML] named malformed file is rejected and no result is published",
+      "result_sha256": "b19e9aa546e32fd90f85c520f5122864f23529af418081de50ff9e056df15101",
+      "receipt_sha256": "a738df39de59981d87eb8c8f49527a4d508985d163b144441dae730969f686a3",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The named peekly-malformed-html.zip is actually uploaded at obs-14. Product DOM names [followers.html] and says it was not imported; available storage before/after remains the prior valid JSON snapshot. The guide stays in retry state and no new result is published. This intentionally malformed negative fixture is distinct from the complete positive HTML fixture. The PNG shows the retry picker; detailed error wording is DOM evidence below the captured viewport.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/agent-observation-11.json",
+          "sha256": "4d451e290c7785f51bfdde45db73d5862719096bd841d6d04446e4633313b463",
+          "observation_id": "obs-11",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-14",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/agent-observation-14.json",
+          "sha256": "2d3958b7b179c04a6245e9b974cf1969d85778faac5fef0fa0073c57d31fd662",
+          "observation_id": "obs-14",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-14-0",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/browser-00150.png",
+          "sha256": "b01bb7b12b6bbb687aad30f8f535f56c9cd56ef78aa2b6151369798badac5773",
+          "observation_id": "obs-14",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-galdkhommdhbgkalkcfmmefk",
+      "persona_id": "PER-PEEKLY-V2-012",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-IMPORT-ACCOUNT",
+      "assigned_criterion": "이미 기록된 계정과 다른 계정의 파일은 막는다. [PRD-IMPORT-ACCOUNT] account mismatch is blocked before a result is saved",
+      "result_sha256": "b19e9aa546e32fd90f85c520f5122864f23529af418081de50ff9e056df15101",
+      "receipt_sha256": "a738df39de59981d87eb8c8f49527a4d508985d163b144441dae730969f686a3",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The named account-mismatch fixture is actually uploaded at obs-15. Product DOM gives the different-account/same-account retry message; available before/after storage equals the prior valid JSON state, with persistence_unchanged=true. It is blocked before saving a new result. The screenshot shows the retained import/retry UI, not visually readable detailed alert text.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/agent-observation-11.json",
+          "sha256": "4d451e290c7785f51bfdde45db73d5862719096bd841d6d04446e4633313b463",
+          "observation_id": "obs-11",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-15",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/agent-observation-15.json",
+          "sha256": "9765fd98192e8229711f7f58c5fc6096ac7c9cf0acef5114c29e981b925184c2",
+          "observation_id": "obs-15",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-15-0",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/browser-00179.png",
+          "sha256": "b01bb7b12b6bbb687aad30f8f535f56c9cd56ef78aa2b6151369798badac5773",
+          "observation_id": "obs-15",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-galdkhommdhbgkalkcfmmefk",
+      "persona_id": "PER-PEEKLY-V2-012",
+      "kind": "success",
+      "index": 3,
+      "requirement_id": "PRD-IMPORT-MISSING",
+      "assigned_criterion": "팔로워와 팔로잉이 모두 있어야 결과를 만들고, 하나라도 없으면 [팔로워 및 팔로잉]을 골랐는지 확인하라고 안내한다. [PRD-IMPORT-MISSING] both missing-followers and missing-following fixtures are rejected",
+      "result_sha256": "b19e9aa546e32fd90f85c520f5122864f23529af418081de50ff9e056df15101",
+      "receipt_sha256": "a738df39de59981d87eb8c8f49527a4d508985d163b144441dae730969f686a3",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "Both named missing-list fixtures are separately uploaded at obs-16 and obs-17. Each returns product guidance requiring both lists and checking [팔로워 및 팔로잉], stays in retry state, and preserves the prior valid storage hash. These per-attempt DOM/storage results prove the assigned rejection behavior. Detailed guidance is not readable in the registered viewport PNGs; this decision does not claim it was visually exposed.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/agent-observation-11.json",
+          "sha256": "4d451e290c7785f51bfdde45db73d5862719096bd841d6d04446e4633313b463",
+          "observation_id": "obs-11",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-16",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/agent-observation-16.json",
+          "sha256": "25875667dfeda8b9cb4b7bc3be1df583d5e768127319806a97e8444fbf83823e",
+          "observation_id": "obs-16",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-16-0",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/browser-00208.png",
+          "sha256": "b01bb7b12b6bbb687aad30f8f535f56c9cd56ef78aa2b6151369798badac5773",
+          "observation_id": "obs-16",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-17",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/agent-observation-17.json",
+          "sha256": "cabe38aa7447d128935bec786b61e4971bb750cdca3f2bb2f719afa25b2b19f5",
+          "observation_id": "obs-17",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-17-0",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/browser-00237.png",
+          "sha256": "b01bb7b12b6bbb687aad30f8f535f56c9cd56ef78aa2b6151369798badac5773",
+          "observation_id": "obs-17",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-galdkhommdhbgkalkcfmmefk",
+      "persona_id": "PER-PEEKLY-V2-012",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "assigned_criterion": "If a recoverable browser/import failure actually occurs, perform the safe recovery and verify it. If no triggering failure occurs, report not_applicable; do not manufacture a failure.",
+      "result_sha256": "b19e9aa546e32fd90f85c520f5122864f23529af418081de50ff9e056df15101",
+      "receipt_sha256": "a738df39de59981d87eb8c8f49527a4d508985d163b144441dae730969f686a3",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "Existing-files clicks are rejected without dispatch at obs-3, obs-5, and obs-6: three attempts, correcting the raw prose count of two. Obs-4 is upward scroll at_boundary with dispatched=false and movement=0, not recovery. Fresh controls retain the full row label. Obs-7 uses it with the same selector, passes hit_test, dispatches, and opens the guide; obs-8 loads and persists valid HTML through this flow. Retain the direct browser-recovery pass. Later negative-import recovery is unattempted and is not used as recovery evidence.",
+      "classifications": [
+        "confirmed_raw_verdict",
+        "runner_limitation"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/agent-observation-3.json",
+          "sha256": "52e6d6767025311dad6328c6b92a7f9b70a9a49d97fd1916745e90bd71399e98",
+          "observation_id": "obs-3",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "png-3-0",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/browser-00029.png",
+          "sha256": "c687326055688a1f79d90f1d72e417f274581a8915637b6bbee2abab33240271",
+          "observation_id": "obs-3",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/agent-observation-4.json",
+          "sha256": "03d0b9dc614fad12e7c60b0926c7d80ae16ea53f42f52018d45fc6d61a1d6aab",
+          "observation_id": "obs-4",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/agent-observation-5.json",
+          "sha256": "52c4806a7f8f49e830dabddc0d2af736ac84944edb560b06b6655a0624ef2821",
+          "observation_id": "obs-5",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/agent-observation-6.json",
+          "sha256": "6224e8372d42d5792985546b75203d491f7eec3102fd749031782089502a7524",
+          "observation_id": "obs-6",
+          "purpose": "action"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/agent-observation-7.json",
+          "sha256": "ab4599cef26916a0e8c5cda973cbe0595ce19783024383c29432d726c87b1be1",
+          "observation_id": "obs-7",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-7-0",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/browser-00055.png",
+          "sha256": "75dc0b4d79d13fcbb9313db077831396f99e8ea74111af894978fa189f09d7f1",
+          "observation_id": "obs-7",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-8",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/agent-observation-8.json",
+          "sha256": "1afb5a254a7973605fb004e2950a9c6ce1ba6ba9fbea67ac0254e0aa0039f8f5",
+          "observation_id": "obs-8",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-8-0",
+          "path": "evidence/S-galdkhommdhbgkalkcfmmefk/1/browser-00068.png",
+          "sha256": "ae0c8b44a759550b59cf03619d3b2b983a89c611efe717d0346e252d5ce6892e",
+          "observation_id": "obs-8",
+          "purpose": "result"
+        }
+      ],
+      "operation_bindings": [
+        {
+          "observation_id": "obs-3",
+          "operation_id": "op-87daf7a1dc48e6c272f11b88ee512e89b7568917",
+          "request_sha256": "741f7512b0313c4ed505e85417bab4235b6dd2ce7b94e329bd6659a43d27d7f6",
+          "reply_sha256": "3175ebfc43950d7e05a83901ec5503d983f7178f04a00761769cf83be0962f51",
+          "tool": "click",
+          "arguments": {
+            "label": "이미 받은 자료로 확인하기",
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(1)>button:nth-of-type(1)"
+          },
+          "reply_facts_text_checks_and_capture_bytes_match_checkpoint": true
+        },
+        {
+          "observation_id": "obs-4",
+          "operation_id": "op-6a3cec6b7d6c0d0d023ba27fa332a8dc77110bc4",
+          "request_sha256": "3e2fd37bb7efe6cb64df0335312ea0e5461398a6608a3bcdb976579aa4a8e2ae",
+          "reply_sha256": "bb4edbc1f27d3e2f3bca0f48d285e9128699f4161310b9405c201d6a8ee79a7d",
+          "tool": "scroll",
+          "arguments": {
+            "delta": -400
+          },
+          "reply_facts_text_checks_and_capture_bytes_match_checkpoint": true
+        },
+        {
+          "observation_id": "obs-5",
+          "operation_id": "op-b7e397ac86b75b5038bc55b731e9c3cf9a7df52f",
+          "request_sha256": "741f7512b0313c4ed505e85417bab4235b6dd2ce7b94e329bd6659a43d27d7f6",
+          "reply_sha256": "f9d66d339d8222b0f0da153dae46732c3689c2eeba544bad6600edac6e0994fc",
+          "tool": "click",
+          "arguments": {
+            "label": "이미 받은 자료로 확인하기",
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(1)>button:nth-of-type(1)"
+          },
+          "reply_facts_text_checks_and_capture_bytes_match_checkpoint": true
+        },
+        {
+          "observation_id": "obs-6",
+          "operation_id": "op-38111f58a11718cbf58abcafa8bf8d31bf8b3bf3",
+          "request_sha256": "741f7512b0313c4ed505e85417bab4235b6dd2ce7b94e329bd6659a43d27d7f6",
+          "reply_sha256": "b9cae0d39bdf94c503c1c77eef4896535ad92ab3c7bab9f2c08028a14b666bc2",
+          "tool": "click",
+          "arguments": {
+            "label": "이미 받은 자료로 확인하기",
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(1)>button:nth-of-type(1)"
+          },
+          "reply_facts_text_checks_and_capture_bytes_match_checkpoint": true
+        },
+        {
+          "observation_id": "obs-7",
+          "operation_id": "op-ce0d075a8b3155f09923257c2fc78d937f352936",
+          "request_sha256": "e287818dddfb70f7586f81b2585c94b95bece2bad6ce8cc8caca374019fa2462",
+          "reply_sha256": "605e19c71a1bda3d426b79295323c6b78a983c72e0fe36654d06cb9cc89031f1",
+          "tool": "click",
+          "arguments": {
+            "label": "이미 받은 자료로 확인하기\n인스타그램에서 받은 파일을 골라 바로 결과를 봐요",
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(1)>button:nth-of-type(1)"
+          },
+          "reply_facts_text_checks_and_capture_bytes_match_checkpoint": true
+        }
+      ]
+    }
+  ]
+}
