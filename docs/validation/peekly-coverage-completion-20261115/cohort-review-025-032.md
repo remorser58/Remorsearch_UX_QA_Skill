@@ -10,9 +10,10 @@ This fragment reviews saved evidence from fresh `stage-32`, canonical plan `59f2
 | 026 | P → P | P → NR | F → F | N/A → N/A | Completed sealed receipt |
 | 027 | P → P | P → NR | F → F | N/A → N/A | Completed sealed receipt |
 | 028 | P → P | P → NR | F → F | P → P | Completed sealed receipt |
-| 029–032 | Pending | Pending | Pending | Pending | Await eligible completed receipts |
+| 029 | Unassessed | Unassessed | Unassessed | Unassessed | Review delivery uncertain; no completed-session credit |
+| 030–032 | Pending | Pending | Pending | Pending | Await eligible completed receipts |
 
-Current reviewed subset: **12 decisions** — success P3/F3/NR3/N/A0; recovery P1/F0/NR0/N/A2.025’s four unassessed criteria are not part of that assessed subtotal. No old23 SEARCH credit is assigned to025. Its partial execution is not a completed receipt.
+Current reviewed subset: **12 decisions** — success P3/F3/NR3/N/A0; recovery P1/F0/NR0/N/A2.025 and029 each have four unassessed criteria outside that assessed subtotal. No old23 SEARCH credit is assigned to025 and no old23 PAYWALL credit to029. Partial execution does not create a completed receipt.
 
 ## Case-specific evidence for026–028
 
@@ -54,6 +55,22 @@ Job `S-ocglonedchibimababmanahg` is uncertain at review phase, turn19, with18 ad
 - Delivery state `uncertain`; `can_retry=false`; no reply exists and no resend was made.
 - Transport evidence was independently captured at2026-11-14T21:40:33.056093+00:00; the live ledger snapshot hash is recorded in JSON. It is an as-of snapshot, not the eventual terminal ledger pin.
 - Owned closure remains pending the stage’s terminal audit.
+
+## 029 — preserved review uncertainty and partial artifacts
+
+Job `S-cmkbfkbjcjonakfbhgkpeaod` is uncertain at review phase, turn64, with **62 admitted partial observations and no result**. All four assigned criteria are **unassessed** on the completed-session basis. There are no helper decisions and no old23 PAYWALL execution credit for this case.
+
+- Independent read-only audit: 2026-11-14T21:54:49.988539+00:00.
+- Original uncertain review operation: `op-3dec06a91069c876ebef12568133b8814b406db3`, slot0.
+- Request SHA-256: `26f901de72b152e8b5265a0f1837927a701b29d9ab4a5928573f5e1321ed6edf`; payload and operation/context envelope bindings match.
+- Started 2026-11-14T21:51:24.783Z; saved deadline 2026-11-14T21:54:24.783Z; no reply or ended timestamp exists.
+- Exactly one free TOKENMAXX ledger attempt: `transport_or_protocol_error`, `TimeoutError`, reason `timed out`, elapsed **150.6345 seconds**. Delivery `uncertain`, `can_retry=false`.
+- Checkpoint SHA-256 `bdcd08570b606ebbbdae1e6fd1929b3f7172c95f795a8486ebc5194161692e1f` matches its canonical contents.
+- Preserved partial evidence: **124 registered-preview artifacts / 3,392,653 bytes** — 62 execution logs and62 PNGs. Every actual hash matches its sealed checkpoint registration, and all observation-log/body/context bindings match. The JSON fragment retains every actual artifact hash in `partial_artifact_preservation`.
+- Two supplemental lifecycle files are separately hashed. They and the partial evidence confer no completed criterion credit.
+- No close operation has completed for this job at this checkpoint; owned closure remains pending the stage’s terminal audit. No cleanup or resend was performed.
+
+The live ledger snapshot hash `d918232eaf029142e36eedf55e65d84e14db8f8152ac27c86974de9f726bc479` is preserved as an audit-time receipt; it is not substituted for the eventual terminal ledger pin.
 
 ## Bindings and validation
 
