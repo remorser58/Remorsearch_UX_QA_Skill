@@ -20,17 +20,30 @@ The user authorizes implementation, regression, owned isolated test contexts, sm
 - The old uncertain 009/010/012 remain preserved. The new requested cohort uses new jobs and call IDs.
 - Original 46 weighted mapping at 65f: 20 passed / 8 failed / 18 not_run; 32 unique mappings: 13 / 6 / 13.
 
-## Current phase — first actual smoke running; seed setup rejection preserved
+## Current phase — first smoke stopped and preserved; R2 corrections in progress
+
+- R1 ended `2026-11-14T16:04:40.926388+00:00` with `stopped_preserved`: 029 reached tool turn 65 and exceeded the old 128-artifact receipt cap. Its DB row remains interrupted/running with 64 admitted observations; it is not a valid completed session. No resume or queue rewrite.
+- Normal report/stage-summary files are absent. Launcher PID 24410 and matching owned main Chrome processes are gone; no normal browser-shutdown completion receipt is claimed.
+- Live ledger: 67 actual requests, audit valid, all reply_received, 0 uncertain resends, 0 unsettled model guards. Separate tool uncertainty: the pre-write seed rejection. Prior queues and runtime/fixture/library hashes remained unchanged.
+- Detailed evidence, hashes, actual Pro copy mismatch and navigation cause: `smoke-r1-diagnostics.md`.
+- Ready isolated commits: theme `3b7125119d884cc6070912e23247b775fb13e72b`; conditional safe SAVE-FAIL recovery `d9493da718959f0d87bd8fefba9c20d641923e78`; grounded History navigation `e85b242c80199b454d48d2f466fad27e4d683aa4`.
+- Separate isolated artifact-budget and actual Pro-copy corrections are under test. No R2 or 32-person run has launched.
+- NEW R2 root: `.ux-loop/peekly-completion-smoke-r2-20261115`. After its successful gate the 32 launch must explicitly use `--smoke-root .ux-loop/peekly-completion-smoke-r2-20261115`.
+- Durable post-run reporter/publisher is implemented in new `scripts/finalize_peekly_completion.py`; 14 offline tests pass, and the real prior 716-request ledger passes its free-route/no-resend validation. It has not been started. It preserves raw/unreviewed labels and only publishes the five owned generated documents after terminal integrity gates.
+
+### R1 launch checkpoint (historical; superseded by stopped state above)
 
 - Published pre-run HEAD: `02bdd95cd9817af396e11036c8386b37a805c6aa`; exact remote SHA verified.
 - Actual smoke started `2026-11-14T15:41:05.164088+00:00`, launcher PID 24410. Root: `.ux-loop/peekly-completion-smoke-20261115`.
 - 021 job `S-cadepflpaecgloopgfjkohof`: uncertain at turn 2, `host_execution_failed:browser_action_failed:legacy_seed_profile_not_fresh_owned`. No resend or resume.
-- 029 job `S-jopolnkkaipimlidlnlnjcoh` is still running; last check turn 15, retention fixture 03. Let it finish to inspect PAYWALL evidence.
+- 029 job `S-jopolnkkaipimlidlnlnjcoh` was running at the earlier turn-15 checkpoint. It later stopped at the artifact limit described above.
 - Exact seed failure: product startup stores the default `peekly_theme_preference=system`. The guard required only the empty v7 key and rejected this legitimate default preference. Initial storage matched; seed status rejected before storage write, before/after snapshot digest identical; reload/migration were not attempted.
 - Full `facts.storage_keys` includes v7 plus the theme preference; filtered `storage_snapshot.keys` includes only snapshot keys. Do not confuse those two inventories.
 - A separate worktree `.worktrees/peekly-seed-theme-fix-20261115` on `rem/peekly-seed-theme-fix-20261115` is preparing the minimal fix/tests. Main runtime remains byte-identical while 029 runs. Allow only optional theme preference exactly `system`, preserve it, keep empty-v7/full initial digest/owned-profile/no-prior-mutation/one-shot checks, deny other values and keys.
 - After this stage is terminal: audit and preserve it; integrate the reviewed fix; use a NEW smoke result root. This failed two-person gate does not authorize cohort expansion.
 - Isolated fix ready: `3b7125119d884cc6070912e23247b775fb13e72b`, driver + Node tests only. Exact failed storage reproduced 3 failures before the fix; 14 legacy Node cases and the 44-case combined guardrail/scroll/legacy suite passed afterward. Main runtime has not yet integrated it while 029 is running.
+
+### Implementation baseline before R1
 
 - Runtime source revision: `125b7325ed60cdafa52546fee39492cb0279a3ce`.
 - Full discovery: 1,834 tests, 1,813 passed, 21 optional skips, zero failures. Prepared agent runtime separately passed 25/25 without skips.
