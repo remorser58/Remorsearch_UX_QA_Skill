@@ -16,6 +16,13 @@ from uxpersonas.model_router import _clean_decision
 
 
 class VerdictQualityTests(unittest.TestCase):
+    def test_browser_observation_tolerates_storage_access_denial(self):
+        driver = Path(__file__).resolve().parents[1] / "skills/remorsearch-ux-qa/drivers/web/scale_browser_cdp.mjs"
+        source = driver.read_text(encoding="utf-8")
+        self.assertIn("let storageKeys=[],storageAccess='denied';try{storageKeys=Object.keys(localStorage);storageAccess='available';}catch{}", source)
+        self.assertIn("storage_access:storageAccess", source)
+        self.assertNotIn("storage_keys:Object.keys(localStorage)", source)
+
     def test_model_observation_projection_deduplicates_fixture_catalog_and_cumulative_uploads(self):
         catalog = [f"boundary-extra-{i:03d}.json" for i in range(531)]
         observations = []
