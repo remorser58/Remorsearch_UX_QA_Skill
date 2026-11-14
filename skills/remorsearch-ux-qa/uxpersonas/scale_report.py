@@ -74,6 +74,46 @@ def _receipt(queue, row, receipt, result, checkpoint):
     return receipt["outcome"]
 
 
+def completed_receipt_summary(report):
+    """A completed-only denominator alongside, never instead of, partial evidence."""
+    statuses = ("passed", "failed", "inconclusive", "blocked", "skipped")
+    criterion_statuses = ("passed", "failed", "not_run", "not_applicable")
+    summary = dict(completed_sessions=0, assessed_completed_sessions=0,
+        distinct_completed_personas=0, persona_ids=[],
+        session_outcomes={key: 0 for key in statuses},
+        criteria_all={key: 0 for key in criterion_statuses},
+        criteria_by_kind={kind: {key: 0 for key in criterion_statuses}
+                          for kind in ("success", "recovery")},
+        excluded_attempt_statuses={},
+        host_protocol_on_completed_receipts=0)
+    personas = []
+    for row in report.get("tasks", []):
+        result = row.get("result") or {}
+        receipt = result.get("receipt")
+        complete = (row.get("status") == "complete"
+                    and result.get("operational_completed") is True
+                    and isinstance(receipt, dict))
+        if complete:
+            summary["completed_sessions"] += 1
+            personas.append(row["persona_id"])
+            if any("host_protocol" in str(value) for value in
+                   (row.get("problem"), result.get("problem"), row.get("current_issue"))):
+                summary["host_protocol_on_completed_receipts"] += 1
+        if not complete or row.get("current_valid") is not True:
+            key = row.get("status") or "unknown"
+            summary["excluded_attempt_statuses"][key] = summary["excluded_attempt_statuses"].get(key, 0) + 1
+            continue
+        summary["assessed_completed_sessions"] += 1
+        outcome = row.get("current_ux_outcome") or receipt["outcome"]
+        summary["session_outcomes"][outcome] += 1
+        for criterion in receipt.get("criteria", []):
+            kind, status = criterion["kind"], criterion["status"]
+            summary["criteria_all"][status] += 1
+            summary["criteria_by_kind"][kind][status] += 1
+    summary["persona_ids"] = sorted(set(personas))
+    summary["distinct_completed_personas"] = len(set(personas))
+    return summary
+
 def current_report(queue):
     """Return historical bookkeeping plus separately revalidated evidence status.
 
@@ -125,8 +165,8 @@ def current_report(queue):
             counts["current_valid_sessions"] += 1
             counts["ux_outcomes"][outcome] += 1
     report["evidence_validation"] = counts
+    report["completed_receipt_summary"] = completed_receipt_summary(report)
     if counts["blocked_sessions"]:
         report["next_action"] = ("Historical completion is preserved, but current source or evidence validation is blocked. "
                                  "Review each current_issue; stale outcomes are excluded from current UX totals.")
     return report
-

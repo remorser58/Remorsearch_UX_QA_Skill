@@ -21,6 +21,25 @@ from . import swarm
 from .peekly_criteria import evaluate as evaluate_peekly_criteria
 
 
+def _preserve_driver_hashes(original, cleaned):
+    """Keep typed, validated evidence digests out of free-text privacy redaction."""
+    paths = (
+        ("storage_snapshot", "sha256"),
+        ("import_attempt", "fixture_sha256"),
+        ("import_attempt", "storage_before", "sha256"),
+        ("import_attempt", "storage_after", "sha256"),
+    )
+    for parts in paths:
+        source, target = original, cleaned
+        for key in parts[:-1]:
+            source = source.get(key) if isinstance(source, dict) else None
+            target = target.get(key) if isinstance(target, dict) else None
+        if isinstance(source, dict) and isinstance(target, dict):
+            value = source.get(parts[-1])
+            if isinstance(value, str) and re.fullmatch(r"[a-f0-9]{64}", value):
+                target[parts[-1]] = value
+
+
 class ScaleBrowserHost:
     def __init__(self, *, target_url, chrome, node, driver_path, adapter_path, fixtures_path, parallel_safe=True):
         from urllib.parse import urlsplit
@@ -169,12 +188,13 @@ class ScaleBrowserHost:
                 "fixtures_dir":str(self.fixtures)})
         name = payload["name"]
         arguments = payload["arguments"]
-        if name not in {"observe", "click", "type", "upload", "scroll", "wait"}:
+        if name not in {"observe", "click", "type", "upload", "upload_cancel",
+                        "upload_save_failure", "scroll", "wait"}:
             raise RuntimeError("tool_not_allowlisted")
         try:
             result = await self._exchange(context, "act", {"name":name, "arguments":arguments})
         except RuntimeError as exc:
-            # This exact driver rejection happens before mouse/key dispatch.
+            # This exact driver rejection happens before mouse-button/key dispatch.
             # Preserve the failure as an observed state; do not replay the click
             # or relax the target guard. Transport/unknown side effects still stop.
             if name != "click" or str(exc) != "browser_action_failed:click_target_not_allowed_or_visible":
@@ -185,7 +205,7 @@ class ScaleBrowserHost:
             result["text"] = ("Click NOT dispatched: target was not allowed or visible. "
                 "This is a failed action, not a successful navigation. Re-observe the current "
                 "controls and choose a safe recovery; no click was retried.\n" + result["text"])
-        if name == "upload" and isinstance(arguments, dict) and isinstance(arguments.get("file"), str):
+        if name in {"upload", "upload_cancel", "upload_save_failure"} and isinstance(arguments, dict) and isinstance(arguments.get("file"), str):
             fixture_name = arguments["file"]
             self.context_uploads[context].add(fixture_name)
             validation = self._validate_fixture_upload(fixture_name)
@@ -206,8 +226,10 @@ class ScaleBrowserHost:
         # Hashes are machine metadata, not free text. A hexadecimal digest can
         # contain a digit run which the privacy scrubber mistakes for a card.
         # Verify original capture bytes and never rewrite their identifiers.
+        original_facts = result["facts"]
         result = {**result, **swarm.clean({key: result[key]
             for key in ("text", "facts", "checks")})}
+        _preserve_driver_hashes(original_facts, result["facts"])
         self.context_observations[context].append({"text": result["text"], "facts": result["facts"]})
         for capture in result["captures"]:
             if not isinstance(capture, dict) or set(capture) != {"path", "sha256"}:

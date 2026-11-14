@@ -6,6 +6,7 @@ import crypto from 'node:crypto';
 import { spawn } from 'node:child_process';
 import readline from 'node:readline';
 import http from 'node:http';
+import { pathToFileURL } from 'node:url';
 let chrome, ws, proxy, targetOrigin, pageUrl, sequence = 0, pending = new Map(), profileDir, evidenceDir, fixturesDir, fixtureManifest, typedInputs = new Map(), proxyBlockedRequests = 0;
 const hash = b => crypto.createHash('sha256').update(b).digest('hex');
 const safeDir = p => {
@@ -20,6 +21,204 @@ function send(method, params = {}) {
     ws.send(JSON.stringify({id, method, params}));
   });
 }
+
+const CLICK_REJECTED = 'click_target_not_allowed_or_visible';
+let observedControls = [];
+let activeImportAttemptId = null;
+
+// Serialized into the owned page; no arbitrary caller-provided script is accepted.
+export function pageClickTarget(selector, label, requireActiveImport = false) {
+  const norm = s => String(s || '').replace(/\s+/g, ' ').trim();
+  const structural = e => {
+    const parts = [];
+    while (e && e.nodeType === 1 && e !== document.body) {
+      let n = 1;
+      for (let p = e.previousElementSibling; p; p = p.previousElementSibling) if (p.tagName === e.tagName) n++;
+      parts.unshift(e.tagName.toLowerCase() + ':nth-of-type(' + n + ')'); e = e.parentElement;
+    }
+    return 'body>' + parts.join('>');
+  };
+  const candidate = e => {
+    if (!e || !e.getBoundingClientRect || e.disabled) return false;
+    const r = e.getBoundingClientRect(), s = getComputedStyle(e);
+    return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none'
+      && (e.tagName === 'SUMMARY' || !e.closest('details:not([open])'))
+      && e.type !== 'submit' && !(e.closest('form') && e.tagName === 'BUTTON' && e.type !== 'button');
+  };
+  if (requireActiveImport) {
+    const status = norm(document.querySelector('[role=status][aria-live=polite]')?.textContent);
+    if (!status.includes('파일을 읽고 있어요') && !status.includes('팔로우 목록을 확인하고 있어요')) return null;
+  }
+  let e;
+  try { e = document.querySelector(selector); } catch { return null; }
+  if (!candidate(e) || norm(e.getAttribute('aria-label') || e.innerText || e.textContent) !== norm(label)) return null;
+  e.scrollIntoView({block:'center',inline:'nearest'});
+  const r = e.getBoundingClientRect();
+  const left = Math.max(0,r.left), right = Math.min(innerWidth,r.right);
+  const top = Math.max(0,r.top), bottom = Math.min(innerHeight,r.bottom);
+  if (right <= left || bottom <= top) return null;
+  const x=(left+right)/2, y=(top+bottom)/2, hit=document.elementFromPoint(x,y);
+  if (!hit || !(hit===e || e.contains(hit) || hit.closest('button,a,summary,[role=button],[role=link]')===e)) return null;
+  return {x,y,tag:e.tagName,href:e.tagName==='A'?e.href:null,
+    label:norm(e.getAttribute('aria-label') || e.innerText || e.textContent),selector:structural(e)};
+}
+
+export function pageVerifyClick(box, requireActiveImport = false) {
+  const norm = s => String(s || '').replace(/\s+/g,' ').trim();
+  let e;
+  try { e=document.querySelector(box.selector); } catch { return false; }
+  if (!e || e.disabled || norm(e.getAttribute('aria-label') || e.innerText || e.textContent)!==norm(box.label)) return false;
+  if (requireActiveImport) {
+    const text=norm(document.querySelector('[role=status][aria-live=polite]')?.textContent);
+    if (!text.includes('파일을 읽고 있어요') && !text.includes('팔로우 목록을 확인하고 있어요')) return false;
+  }
+  const r=e.getBoundingClientRect(), s=getComputedStyle(e);
+  if (s.visibility==='hidden' || s.display==='none' || r.width<=0 || r.height<=0
+      || box.x<r.left || box.x>r.right || box.y<r.top || box.y>r.bottom) return false;
+  const hit=document.elementFromPoint(box.x,box.y);
+  return !!hit && (hit===e || e.contains(hit) || hit.closest('button,a,summary,[role=button],[role=link]')===e);
+}
+
+export async function dispatchVerifiedClick(resolveTarget, verifyTarget, emit) {
+  const box=await resolveTarget();
+  if (!box) throw new Error(CLICK_REJECTED);
+  await emit('mouseMoved',box);
+  // Recheck after scroll/mouse movement, immediately before the first button event.
+  if (!await verifyTarget(box)) throw new Error(CLICK_REJECTED);
+  await emit('mousePressed',box);
+  await emit('mouseReleased',box);
+  return box;
+}
+
+export function pageImportState() {
+  const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
+  const phase=norm(document.querySelector('[role=status][aria-live=polite]')?.textContent);
+  const active=phase.includes('파일을 읽고 있어요') || phase.includes('팔로우 목록을 확인하고 있어요');
+  const analysis=phase.includes('팔로우 목록을 확인하고 있어요');
+  const complete=phase.includes('결과를 불러왔어요');
+  const structural=e=>{
+    const parts=[];
+    while(e&&e.nodeType===1&&e!==document.body){
+      let n=1;for(let p=e.previousElementSibling;p;p=p.previousElementSibling)if(p.tagName===e.tagName)n++;
+      parts.unshift(e.tagName.toLowerCase()+':nth-of-type('+n+')');e=e.parentElement;
+    }
+    return 'body>'+parts.join('>');
+  };
+  const candidates=[...document.querySelectorAll('button,[role=button]')]
+    .filter(e=>norm(e.getAttribute('aria-label')||e.innerText||e.textContent)==='읽기 멈추기');
+  const visible=candidates.filter(e=>{
+    const r=e.getBoundingClientRect(),s=getComputedStyle(e);
+    if(e.disabled||r.width<=0||r.height<=0||s.visibility==='hidden'||s.display==='none')return false;
+    const left=Math.max(0,r.left),right=Math.min(innerWidth,r.right),top=Math.max(0,r.top),bottom=Math.min(innerHeight,r.bottom);
+    if(right<=left||bottom<=top)return false;
+    const hit=document.elementFromPoint((left+right)/2,(top+bottom)/2);
+    return !!hit&&(hit===e||e.contains(hit)||hit.closest('button,[role=button]')===e);
+  });
+  return {phase,active,analysis,complete,cancel_control_present:candidates.length>0,
+    cancel:visible.length===1?{selector:structural(visible[0]),label:'읽기 멈추기'}:null};
+}
+
+export async function pageStorageSnapshot() {
+  const keys=['peekly_state_v7','peekly_state_v6','peekly_state'];
+  try {
+    const values=keys.map(key=>[key,localStorage.getItem(key)]).filter(row=>row[1]!==null);
+    const bytes=new TextEncoder().encode(JSON.stringify(values));
+    const digest=await globalThis.crypto.subtle.digest('SHA-256',bytes);
+    return {available:true,keys:values.map(row=>row[0]),
+      sha256:[...new Uint8Array(digest)].map(value=>value.toString(16).padStart(2,'0')).join('')};
+  } catch { return {available:false,keys:[],sha256:null}; }
+}
+
+export function pageArmStorageFailure() {
+  const name='__remorsearchOwnedStorageFailure';
+  if (window[name]) throw new Error('storage_fault_already_armed');
+  const original=Storage.prototype.setItem;
+  const state={key:'peekly_state_v7',armed:true,consumed:false,restored:false,restore_reason:null};
+  let timer;
+  const cleanup=reason=>{
+    if (Storage.prototype.setItem===wrapped) Storage.prototype.setItem=original;
+    state.armed=false;state.restored=Storage.prototype.setItem===original;
+    state.restore_reason=state.restore_reason||reason;
+    if(timer)clearTimeout(timer);
+  };
+  function wrapped(key,value) {
+    if(this===localStorage && String(key)===state.key && state.armed){
+      state.consumed=true;cleanup('consumed');
+      throw new DOMException('Owned synthetic one-shot storage failure','QuotaExceededError');
+    }
+    return original.call(this,key,value);
+  }
+  window[name]={state,cleanup};
+  try {
+    Storage.prototype.setItem=wrapped;
+    timer=setTimeout(()=>cleanup('timeout'),5000);
+  } catch (error) { cleanup('arm_failed');delete window[name];throw error; }
+  return {...state};
+}
+
+export function pageReadStorageFailure(cleanup = false) {
+  const name='__remorsearchOwnedStorageFailure',holder=window[name];
+  if(!holder)return null;
+  if(cleanup)holder.cleanup('finally');
+  const state={...holder.state};
+  if(cleanup)delete window[name];
+  return state;
+}
+
+// One compound action owns the timing-sensitive UI sequence. It never retries a
+// dispatched click, and reports a missed window rather than a product failure.
+export async function runCancellationAttempt(io) {
+  const started=io.now(), phases=[];
+  let cancelActive=false, cancelDispatched=false, terminal='window_not_observed', last=null;
+  while(io.now()-started<5000){
+    const state=await io.readPhase();last=state;
+    if(state.phase && phases.at(-1)?.text!==state.phase && phases.length<32)
+      phases.push({elapsed_ms:io.now()-started,text:state.phase});
+    if(state.complete){terminal='already_completed';break;}
+    if(state.active && state.analysis && state.cancel){
+      await io.captureActive();
+      const current=await io.readPhase();last=current;
+      if(!current.active || !current.analysis || !current.cancel){
+        if(current.complete){terminal='already_completed';break;}
+        await io.pause(10);continue;
+      }
+      cancelActive=true;
+      try { await io.dispatchCancel(current.cancel);cancelDispatched=true; }
+      catch(error){
+        if(String(error?.message)!==CLICK_REJECTED)throw error;
+        terminal='cancel_target_rejected';break;
+      }
+      const settled=io.now();
+      while(io.now()-settled<1000){
+        last=await io.readPhase();
+        if(last.complete){terminal='completed_after_cancel';break;}
+        await io.pause(25);
+      }
+      if(terminal!=='completed_after_cancel')
+        terminal=last?.active?'still_active_after_cancel':'inactive_after_cancel';
+      break;
+    }
+    await io.pause(10);
+  }
+  return {phase_samples:phases,cancel_active:cancelActive,cancel_dispatched:cancelDispatched,
+    terminal_state:terminal,post_state:last,observation_window_ms:io.now()-started};
+}
+
+async function persistence() {
+  return await evaluate('('+pageStorageSnapshot.toString()+')()');
+}
+async function guardedClick(selector,label,requireActiveImport=false) {
+  return await dispatchVerifiedClick(
+    async()=>{
+      const box=await evaluate('('+pageClickTarget.toString()+')('+JSON.stringify(selector)+','+JSON.stringify(label)+','+JSON.stringify(requireActiveImport)+')');
+      if(box?.href && new URL(box.href).origin!==targetOrigin)throw new Error('cross_origin_link_blocked');
+      return box;
+    },
+    box=>evaluate('('+pageVerifyClick.toString()+')('+JSON.stringify(box)+','+JSON.stringify(requireActiveImport)+')'),
+    (type,box)=>send('Input.dispatchMouseEvent',{type,x:box.x,y:box.y,...(type!=='mouseMoved'?{button:'left',clickCount:1}:{})})
+  );
+}
+
 async function start(input) {
   if (chrome || process.versions.node.split('.')[0] !== '26') throw new Error('node_runtime');
   const url = new URL(input.url);
@@ -114,6 +313,9 @@ async function observe() {
   }));
   data.network_policy = {allowed_origin:targetOrigin,external_requests_blocked:true,blocked_request_count:proxyBlockedRequests};
   data.available_fixtures = fixtureManifest.files.map(row=>row.name);
+  observedControls=data.controls.map(row=>({...row}));
+  data.storage_snapshot=await persistence();
+  if(activeImportAttemptId)data.import_attempt_id=activeImportAttemptId;
   return data;
 }
 async function screenshot() {
@@ -124,14 +326,20 @@ async function screenshot() {
   fs.writeFileSync(dest,bytes,{mode:0o600,flag:'wx'});
   return {path:name,sha256:hash(bytes)};
 }
+export function approvedCancelFixture(entries) {
+  return Array.isArray(entries) && entries.length===1
+    && entries[0]?.name==='peekly-progress-sample.zip'
+    && ['large-valid-progress','recognized-relationship-json-progress'].includes(entries[0].scenario);
+}
 async function act(input) {
   const name=input.name, args=input.arguments||{};
-  let uploadedFixture=null, uploadProgressSamples=[];
+  let uploadedFixture=null, uploadProgressSamples=[], importAttempt=null, clickDispatch=null;
+  const extraCaptures=[];
   if (name==='observe') {
     const state=await observe(); const capture=await screenshot();
     return {text:'URL '+state.url+'\nTitle '+state.title+'\n'+state.text,facts:state,captures:[capture],checks:[]};
   }
-  if (name==='upload') {
+  if (['upload','upload_cancel','upload_save_failure'].includes(name)) {
     const selector=args.selector, filename=args.file;
     if (typeof filename!=='string' || path.basename(filename)!==filename) throw new Error('fixture_name_invalid');
     const groupName=filename.startsWith('@group:')?filename.slice(7):null;
@@ -139,15 +347,16 @@ async function act(input) {
     if (!names.length || names.some(name=>typeof name!=='string'||path.basename(name)!==name)) throw new Error('fixture_not_allowlisted');
     const entries=names.map(name=>fixtureManifest.files.find(row=>row.name===name));
     if (entries.some(entry=>!entry)) throw new Error('fixture_not_allowlisted');
+    if(name==='upload_cancel' && !approvedCancelFixture(entries))
+      throw new Error('cancel_fixture_not_allowlisted');
+    if(name==='upload_save_failure' && (entries.length!==1 || entries[0].bytes>1048576
+        || !/^peekly-(?:sample-current|sample-previous|format-json|retention-snapshot-\d{2})\.zip$/.test(filename)))
+      throw new Error('storage_fault_fixture_not_allowlisted');
     const fullPaths=names.map((name,index)=>{
       const fullPath=path.join(fixturesDir,name), entry=entries[index], st=fs.lstatSync(fullPath);
       if (!st.isFile() || st.isSymbolicLink() || fs.realpathSync(fullPath)!==fullPath || st.size!==entry.bytes || hash(fs.readFileSync(fullPath))!==entry.sha256) throw new Error('fixture_integrity');
       return fullPath;
     });
-    // Hidden React file inputs may be nested below several wrapper nodes.
-    // Request the complete owned document tree before querying; a shallow
-    // depth-1 snapshot can falsely report upload_target_missing even though
-    // the input exists deeper in the page. This remains a read-only lookup.
     const document=await send('DOM.getDocument',{depth:-1,pierce:false});
     const found=await send('DOM.querySelector',{nodeId:document.root.nodeId,selector});
     if (!found.nodeId) throw new Error('upload_target_missing');
@@ -155,32 +364,55 @@ async function act(input) {
     const node=described.node;
     const attrs=Object.fromEntries((node.attributes||[]).reduce((out,value,index,array)=>{if(index%2===0)out.push([value,array[index+1]]);return out;},[]));
     if (node.nodeName!=='INPUT' || attrs.type!=='file') throw new Error('upload_target_not_single_file_input');
-    await send('DOM.setFileInputFiles',{files:fullPaths,nodeId:found.nodeId});
-    uploadedFixture=filename;
-    const started=Date.now(); let sawProgress=false, lastPhase=null;
-    while (Date.now()-started<1200) {
-      const phase=await evaluate("(() => {const e=document.querySelector('[role=status][aria-live=polite]');return e?(e.innerText||e.textContent||'').trim():null;})()");
-      if (phase) {
-        sawProgress=true;
-        if (phase!==lastPhase) uploadProgressSamples.push({elapsed_ms:Date.now()-started,text:phase.slice(0,240)});
-        lastPhase=phase;
-      } else if ((sawProgress && Date.now()-started>100) || Date.now()-started>500) break;
-      await new Promise(resolve=>setTimeout(resolve,50));
+    const before=await persistence();
+    if(name==='upload_save_failure' && (!before.available || !before.keys.includes('peekly_state_v7')))
+      throw new Error('storage_fault_baseline_missing');
+    importAttempt={schema_version:'peekly-import-attempt.v1',attempt_id:'upload-'+String(sequence),
+      tool:name,fixture:filename,fixture_sha256:entries.length===1?entries[0].sha256:null,
+      storage_before:before,phase_samples:[],cancel_active:false,cancel_dispatched:false};
+    activeImportAttemptId=importAttempt.attempt_id;
+    if(name!=='upload')extraCaptures.push(await screenshot());
+    let faultArmed=false;
+    try {
+      if(name==='upload_save_failure'){
+        await evaluate('('+pageArmStorageFailure.toString()+')()');faultArmed=true;
+      }
+      await send('DOM.setFileInputFiles',{files:fullPaths,nodeId:found.nodeId});
+      uploadedFixture=filename;
+      if(name==='upload_cancel'){
+        const cancellation=await runCancellationAttempt({
+          readPhase:()=>evaluate('('+pageImportState.toString()+')()'),
+          dispatchCancel:target=>guardedClick(target.selector,target.label,true),
+          captureActive:async()=>{if(extraCaptures.length<2)extraCaptures.push(await screenshot());},
+          pause:ms=>new Promise(resolve=>setTimeout(resolve,ms)),now:()=>Date.now()
+        });
+        Object.assign(importAttempt,cancellation);
+        uploadProgressSamples=cancellation.phase_samples;
+      } else {
+        const started=Date.now();let lastPhase=null;
+        while(Date.now()-started<(name==='upload_save_failure'?5000:1200)){
+          const current=await evaluate('('+pageImportState.toString()+')()');
+          if(current.phase && current.phase!==lastPhase && uploadProgressSamples.length<32){
+            uploadProgressSamples.push({elapsed_ms:Date.now()-started,text:current.phase});lastPhase=current.phase;
+          }
+          if(name==='upload_save_failure'){
+            const fault=await evaluate('('+pageReadStorageFailure.toString()+')()');
+            if(fault?.consumed){await new Promise(resolve=>setTimeout(resolve,100));break;}
+          } else if(current.complete || (!current.active && Date.now()-started>500))break;
+          await new Promise(resolve=>setTimeout(resolve,25));
+        }
+        importAttempt.phase_samples=uploadProgressSamples;
+      }
+    } finally {
+      if(faultArmed)importAttempt.storage_fault=await evaluate('('+pageReadStorageFailure.toString()+')(true)');
     }
   } else if (name==='click') {
-    const selector=args.selector, label=args.label;
+    const selector=args.selector,label=args.label,norm=value=>String(value||'').replace(/\s+/g,' ').trim();
     if (typeof label!=='string' || !label.trim() || label.length>180) throw new Error('click_label_required');
-    const expression="(() => {const norm=s=>(s||'').replace(/\\s+/g,' ').trim();const structural=e=>{const parts=[];while(e&&e.nodeType===1&&e!==document.body){let n=1;for(let p=e.previousElementSibling;p;p=p.previousElementSibling)if(p.tagName===e.tagName)n++;parts.unshift(e.tagName.toLowerCase()+':nth-of-type('+n+')');e=e.parentElement;}return 'body>'+parts.join('>');};const candidate=e=>!!e&&e.getBoundingClientRect().width>0&&e.getBoundingClientRect().height>0&&getComputedStyle(e).visibility!=='hidden'&&getComputedStyle(e).display!=='none'&&(e.tagName==='SUMMARY'||!e.closest('details:not([open])'))&&!e.disabled&&e.type!=='submit'&&!(e.closest('form')&&e.tagName==='BUTTON'&&e.type!=='button');let e=null;try{e=document.querySelector("+JSON.stringify(selector)+")}catch{};if(!candidate(e)||norm(e.getAttribute('aria-label')||e.innerText||e.textContent)!==norm("+JSON.stringify(label)+")){const matches=[...document.querySelectorAll('button,a,summary,[role=button],[role=link]')].filter(x=>candidate(x)&&norm(x.getAttribute('aria-label')||x.innerText||x.textContent)===norm("+JSON.stringify(label)+"));if(matches.length!==1)return null;e=matches[0];}e.scrollIntoView({block:'center',inline:'nearest'});const r=e.getBoundingClientRect();if(r.bottom<=0||r.top>=innerHeight||r.right<=0||r.left>=innerWidth)return null;return {x:r.x+r.width/2,y:r.y+r.height/2,tag:e.tagName,href:e.tagName==='A'?e.href:null,label:norm(e.getAttribute('aria-label')||e.innerText||e.textContent),selector:structural(e)};})()";
-    const box=await evaluate(expression);
-    if (!box) throw new Error('click_target_not_allowed_or_visible');
-    if (box.href && new URL(box.href).origin!==targetOrigin) throw new Error('cross_origin_link_blocked');
-    if (box.tag==='SUMMARY') {
-      await evaluate("(() => {const e=document.querySelector("+JSON.stringify(box.selector)+");if(!e)return false;e.click();return true;})()");
-    } else {
-      await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:box.x,y:box.y});
-      await send('Input.dispatchMouseEvent',{type:'mousePressed',x:box.x,y:box.y,button:'left',clickCount:1});
-      await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:box.x,y:box.y,button:'left',clickCount:1});
-    }
+    if(!observedControls.some(row=>row.selector===selector && row.visible===true && !row.disabled && norm(row.label)===norm(label)))
+      throw new Error(CLICK_REJECTED);
+    const box=await guardedClick(selector,label);
+    clickDispatch={dispatched:true,hit_test:true,requested_selector:selector,verified_selector:box.selector,label:box.label};
   } else if (name==='type') {
     const selector=args.selector, value=args.value;
     if (typeof value!=='string'||value.length>500||/[\r\n]/.test(value)) throw new Error('typed_value_limit');
@@ -196,9 +428,19 @@ async function act(input) {
     const ms=Math.max(0,Math.min(3000,args.ms)); await new Promise(r=>setTimeout(r,ms));
   } else throw new Error('unknown_tool');
   const state=await observe(); const capture=await screenshot();
+  if(importAttempt){
+    importAttempt.storage_after=state.storage_snapshot;
+    importAttempt.persistence_unchanged=importAttempt.storage_before.available && state.storage_snapshot.available
+      ? importAttempt.storage_before.sha256===state.storage_snapshot.sha256 : null;
+    if(importAttempt.terminal_state==='inactive_after_cancel' && importAttempt.persistence_unchanged===true)
+      importAttempt.terminal_state='cancelled_without_new_result';
+    if(name==='upload_save_failure')importAttempt.terminal_state=importAttempt.storage_fault?.consumed
+      ? 'storage_fault_consumed' : 'storage_fault_not_consumed';
+  }
   return {text:'Action '+name+' completed.\nURL '+state.url+'\nTitle '+state.title+'\n'+state.text,
-    facts:{...state,last_action:name,...(name==='click'?{last_action_label:args.label}:{}),...(uploadedFixture?{uploaded_fixture:uploadedFixture,upload_progress_samples:uploadProgressSamples}:{})},
-    captures:[capture],checks:[]};
+    facts:{...state,last_action:name,...(name==='click'?{last_action_label:args.label,click_dispatch:clickDispatch}:{}),
+      ...(uploadedFixture?{uploaded_fixture:uploadedFixture,upload_progress_samples:uploadProgressSamples,import_attempt:importAttempt}:{})},
+    captures:[...extraCaptures,capture],checks:[]};
 }
 async function close() {
   try { if(ws) ws.close(); } catch {}
@@ -206,6 +448,7 @@ async function close() {
   try { if(proxy) await new Promise(resolve=>proxy.close(resolve)); } catch {}
   return {stopped:!chrome||chrome.exitCode!==null};
 }
+export async function main() {
 process.umask(0o077);
 const input = readline.createInterface({input:process.stdin});
 for await (const line of input) {
@@ -220,3 +463,5 @@ for await (const line of input) {
 }
 input.close();
 await close().catch(()=>{});
+}
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) await main();

@@ -1,0 +1,1244 @@
+{
+  "schema_version": "peekly-not-run-cause-ledger.v1",
+  "date": "2026-11-14",
+  "timezone": "Asia/Seoul",
+  "reference_commit": "ee4b14571930af428d5a52e0e133deebedba485d",
+  "selection_rule": "Only r4/r6 report tasks with status=complete and final receipt criterion status=not_run; requirement_ids joined from matching plan job and criterion index.",
+  "criterion_count": 46,
+  "queue_counts": {
+    "r4": 19,
+    "r6": 27
+  },
+  "primary_cause_counts": {
+    "runner_storage_fault_unavailable": 4,
+    "task_flow_incomplete": 27,
+    "verdict_whitespace_false_not_run": 3,
+    "async_detail_not_observed": 1,
+    "fixture_pair_account_mismatch": 2,
+    "fixture_search_precondition_not_prepared": 4,
+    "fixture_retention_not_registered": 5
+  },
+  "primary_cause_definitions": {
+    "task_flow_incomplete": {
+      "label": "필수 과제·선행조건·결과 화면 미도달",
+      "group": "task_design",
+      "basis": "저장된 criterion reason 또는 완료 영수증의 관측/요약에 필수 upload/list/detail/confirm 부재가 명시됨.",
+      "recommendation": "기준별 필수 fixture·단계·완료 증거 체크리스트, sample→실제 fixture 전환 명시, 미완료 기준 우선 진행, 과제 복잡도에 따른 턴 예산."
+    },
+    "async_detail_not_observed": {
+      "label": "상세 로딩 후 결과 관측 미완료",
+      "group": "task_design",
+      "basis": "r4/023 마지막 상세 관측은 loading 상태이며 그 다음 완료 화면은 기록되지 않음.",
+      "recommendation": "화면 진입 뒤 bounded wait→observe를 필수 단계로 두고 로딩을 최종 증거로 처리하지 않음."
+    },
+    "runner_storage_fault_unavailable": {
+      "label": "결정적 저장 실패 주입 하네스 없음",
+      "group": "runner_capability",
+      "basis": "네 영수증 모두 허용 도구에 one-shot Storage.setItem 실패 주입 경로가 없다고 명시.",
+      "recommendation": "소유된 합성 프로필에 한정한 명시적 one-shot 저장 실패 어댑터와 이전 상태/재시도 검증. 일반 브라우저 관측과 별도 하네스 증거를 구분."
+    },
+    "fixture_retention_not_registered": {
+      "label": "11개 보관 시험 fixture가 실행 도구에 등록되지 않음",
+      "group": "fixture",
+      "basis": "실행 중 available_fixtures에는 retention-snapshot 이름이 없고 별도 extension manifest에만11개가 존재.",
+      "recommendation": "현재 실행 fixture manifest/allowlist에11개를 등록하고 시작 전 모든 이름·해시·서로 다른 시점·같은 계정을 검증."
+    },
+    "fixture_search_precondition_not_prepared": {
+      "label": "9행 이상 검색 선행 fixture/목록 미준비",
+      "group": "fixture_selection",
+      "basis": "네 영수증 모두5행 목록만 관측; 과제는9+행을 요구하지만 구체적 준비 fixture와 카테고리를 지정하지 않음.",
+      "recommendation": "manifest의 예상 cardinality와 연결한 검색 전용 fixture/카테고리를 명시. 업로드 후9+행 확인→실제 검색→한 행 결과 확인."
+    },
+    "fixture_pair_account_mismatch": {
+      "label": "빈 이전 기록과 현재 fixture의 계정 불일치",
+      "group": "fixture",
+      "basis": "r4/023 obs13 및 r6/023 obs11의 sample-current 업로드가 같은 계정 파일을 선택하라는 오류로 거부됨.",
+      "recommendation": "empty-previous와 current를 동일 합성 계정으로 구성하고 쌍의 계정 일치 preflight. 계정 불일치 시 UNKNOWN 비교를 실행한 것으로 세지 않음."
+    },
+    "verdict_whitespace_false_not_run": {
+      "label": "NBSP 공백 때문에 누락 목록 거부 문구를 놓침",
+      "group": "verdict",
+      "basis": "fixture별 업로드 관측에 필요한 오류문구가 있으나 raw substring 검사 때문에 not_run을 반환. _contains에는 NBSP 정규화가 이미 존재.",
+      "recommendation": "각 fixture에 귀속된 오류 결과를 각각 공백 정규화하여 확인. 두 시도를 합친 텍스트의 한 메시지만으로 통과시키지 않음."
+    }
+  },
+  "requirement_counts": {
+    "PRD-IMPORT-SAVE-FAIL": 4,
+    "PRD-RESULT-SNAPSHOT": 7,
+    "PRD-RESULT-REVERSE": 3,
+    "PRD-RESULT-MUTUAL": 4,
+    "PRD-IMPORT-MISSING": 3,
+    "PRD-IDENTITY-LIMIT": 2,
+    "PRD-IMPORT-SNAPSHOT-UNKNOWN": 3,
+    "PRD-RESULT-SEARCH": 4,
+    "PRD-PRIVACY-DELETE": 4,
+    "PRD-SNAPSHOT-RETENTION": 5,
+    "PRD-PAYWALL-BOUNDARY": 5,
+    "PRD-RESULT-RECIPROCITY": 2
+  },
+  "counting_unit": "criterion units in completed session attempts, not unique people; all46 are success criteria",
+  "cohort": {
+    "completed_sessions": 24,
+    "unique_completed_personas": 15,
+    "repeated_completed_personas": [
+      "016",
+      "017",
+      "018",
+      "019",
+      "020",
+      "023",
+      "026",
+      "029",
+      "030"
+    ],
+    "uncertain_attempts_excluded": 5,
+    "queued_attempts_excluded": 1,
+    "r5_excluded": true
+  },
+  "queue_budgets": {
+    "r4": {
+      "turns": 24,
+      "task_seconds": 1800
+    },
+    "r6": {
+      "turns": 16,
+      "task_seconds": 1800
+    },
+    "interpretation": "Fixed budgets are real; universal budget exhaustion is not established. They are secondary constraints, not silently counted as the primary cause of every unfinished path."
+  },
+  "diagnostic_evidence": [
+    {
+      "id": "retention-registration",
+      "paths": [
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-dlfbcbfdnididdofcbnkiiie/evidence/S-dlfbcbfdnididdofcbnkiiie/1/agent-observation-14.json",
+        ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-gobjinmilfaceenedbhopbnc/evidence/S-gobjinmilfaceenedbhopbnc/1/agent-observation-22.json",
+        ".ux-loop/peekly-retention-fixtures-v4-extension-20261114/fixture-manifest.json"
+      ],
+      "finding": "All five affected sessions' first observations advertise531 fixtures and zero retention-snapshot names. The separate extension manifest lists snapshot01–11. No new upload was attempted."
+    },
+    {
+      "id": "missing-nbsp",
+      "paths": [
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-pcmnpelhjaeccidlnociacoh/evidence/S-pcmnpelhjaeccidlnociacoh/1/agent-observation-6.json",
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-pcmnpelhjaeccidlnociacoh/evidence/S-pcmnpelhjaeccidlnociacoh/1/agent-observation-7.json",
+        "skills/remorsearch-ux-qa/uxpersonas/peekly_criteria.py"
+      ],
+      "finding": "All three affected sessions have TWO separate named fixture observations. In all six observations raw required-message substring=false, replacing NBSP with ordinary space makes the substring=true. Keep fixture/result attribution independent."
+    },
+    {
+      "id": "same-account-empty-current",
+      "paths": [
+        ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-dnpghpjkkefmnpbbfahadiia/evidence/S-dnpghpjkkefmnpbbfahadiia/1/agent-observation-13.json",
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-pcmnpelhjaeccidlnociacoh/evidence/S-pcmnpelhjaeccidlnociacoh/1/agent-observation-11.json"
+      ],
+      "finding": "Both current-file upload observations ask for a file matching the account already stored. No handle is reproduced."
+    },
+    {
+      "id": "search-preparation",
+      "paths": [
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/plan.json"
+      ],
+      "finding": "The search task asks for at least9 rows but names no fixture or category preparing that cardinality; observed completed receipts report only5 rows."
+    }
+  ],
+  "outside_not_run_denominator": {
+    "raw_failed_criteria": 6,
+    "progress_cancel_cases": 4,
+    "occluded_click_case": 1,
+    "wrong_comparison_screen_case": 1,
+    "note": "These failed criteria are not part of46. Repair their runner/judgment faults, but do not report them as reductions in the46-not_run baseline."
+  },
+  "recommended_smoke": {
+    "persona_ids": [
+      "PER-PEEKLY-V2-016",
+      "PER-PEEKLY-V2-029"
+    ],
+    "baseline_queue": "r6",
+    "baseline_success_not_run": 3,
+    "reason": "016 checks progress/abort plus missing storage-failure harness;029 checks missing11-snapshot registration, budget/checklist and paywall navigation. Their r6 baseline not_run is1+2. Progress failure is a separate audit gate, not a not_run reduction.",
+    "acceptance": "Require completed valid receipts; fewer than3 same-criterion not_run units without moving them to N/A or weakening criteria; independently check actual abort and preserved-state evidence. If the unsupported storage harness is intentionally left out, disclose it rather than fabricate a pass."
+  },
+  "rows": [
+    {
+      "queue": "r4",
+      "persona": "PER-PEEKLY-V2-014",
+      "job": "S-cdfkaillgggnoifejjmahlnd",
+      "requirement": "PRD-IMPORT-SAVE-FAIL",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "저장 실패를 주입할 도구가 allowlist에 없고 격리 테스트 하네스에 접근할 수 없어 one-shot Storage.setItem 실패와 '다시 저장' 재시도 흐름을 실행하지 못했다.",
+      "id": "NR-01",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-cdfkaillgggnoifejjmahlnd].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "014",
+      "primary_cause": "runner_storage_fault_unavailable",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": []
+    },
+    {
+      "queue": "r4",
+      "persona": "PER-PEEKLY-V2-015",
+      "job": "S-kannanoaknpgcdfcpnjipcpp",
+      "requirement": "PRD-IMPORT-SAVE-FAIL",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "결정적 one-shot Storage.setItem 실패 주입은 격리 테스트 하네스에서만 가능하며, 현재 허용 도구(observe/click/type/upload/scroll/wait)에는 저장 실패 주입 경로가 없어 브라우저 검증으로 실행할 수 없었다.",
+      "id": "NR-02",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-kannanoaknpgcdfcpnjipcpp].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "015",
+      "primary_cause": "runner_storage_fault_unavailable",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": []
+    },
+    {
+      "queue": "r4",
+      "persona": "PER-PEEKLY-V2-016",
+      "job": "S-mejjecmbmlhcmokgfkhfmlki",
+      "requirement": "PRD-IMPORT-SAVE-FAIL",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "제품 코드에 Storage.setItem 주입 경로가 없고 이 브라우저 도구 목록에는 격리 테스트 하네스가 없어 결정적 1회 저장 실패와 다시 저장 흐름을 실제 실행할 수 없었음. 브라우저에서 검증된 것으로 보고하지 않음.",
+      "id": "NR-03",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-mejjecmbmlhcmokgfkhfmlki].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "016",
+      "primary_cause": "runner_storage_fault_unavailable",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": []
+    },
+    {
+      "queue": "r4",
+      "persona": "PER-PEEKLY-V2-017",
+      "job": "S-llicafnbijihpafhdnkgabki",
+      "requirement": "PRD-RESULT-SNAPSHOT",
+      "kind": "success",
+      "index": 3,
+      "status": "not_run",
+      "reason": "The two required distinct snapshots were not both imported.",
+      "id": "NR-04",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-llicafnbijihpafhdnkgabki].result.receipt.criteria[kind=success,index=3]",
+      "persona_number": "017",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=24; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r4",
+      "persona": "PER-PEEKLY-V2-019",
+      "job": "S-efceebljpmeelhejldcenakm",
+      "requirement": "PRD-RESULT-SNAPSHOT",
+      "kind": "success",
+      "index": 3,
+      "status": "not_run",
+      "reason": "The two required distinct snapshots were not both imported.",
+      "id": "NR-05",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-efceebljpmeelhejldcenakm].result.receipt.criteria[kind=success,index=3]",
+      "persona_number": "019",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=24; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r4",
+      "persona": "PER-PEEKLY-V2-020",
+      "job": "S-igkhcbhpllgaaeefcnghhbdm",
+      "requirement": "PRD-RESULT-REVERSE",
+      "kind": "success",
+      "index": 1,
+      "status": "not_run",
+      "reason": "가져오기 후 '내가 맞팔 안 한 사람' 목록을 다시 열지 않아 가져온 데이터의 목록 일치를 확인하지 못했다.",
+      "id": "NR-06",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-igkhcbhpllgaaeefcnghhbdm].result.receipt.criteria[kind=success,index=1]",
+      "persona_number": "020",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=24; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r4",
+      "persona": "PER-PEEKLY-V2-020",
+      "job": "S-igkhcbhpllgaaeefcnghhbdm",
+      "requirement": "PRD-RESULT-MUTUAL",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "가져오기 후 '맞팔 중인 사람' 목록을 다시 열지 않아 가져온 데이터의 목록 일치를 확인하지 못했다.",
+      "id": "NR-07",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-igkhcbhpllgaaeefcnghhbdm].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "020",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=24; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r4",
+      "persona": "PER-PEEKLY-V2-020",
+      "job": "S-igkhcbhpllgaaeefcnghhbdm",
+      "requirement": "PRD-RESULT-SNAPSHOT",
+      "kind": "success",
+      "index": 3,
+      "status": "not_run",
+      "reason": "Two snapshots were imported, but the latest comparison and its names were not opened.",
+      "id": "NR-08",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-igkhcbhpllgaaeefcnghhbdm].result.receipt.criteria[kind=success,index=3]",
+      "persona_number": "020",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=24; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r4",
+      "persona": "PER-PEEKLY-V2-023",
+      "job": "S-dnpghpjkkefmnpbbfahadiia",
+      "requirement": "PRD-IMPORT-MISSING",
+      "kind": "success",
+      "index": 0,
+      "status": "not_run",
+      "reason": "Both missing-list uploads were observed but their result state was not captured.",
+      "id": "NR-09",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-dnpghpjkkefmnpbbfahadiia].result.receipt.criteria[kind=success,index=0]",
+      "persona_number": "023",
+      "primary_cause": "verdict_whitespace_false_not_run",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [],
+      "observation_evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-dnpghpjkkefmnpbbfahadiia/evidence/S-dnpghpjkkefmnpbbfahadiia/1/agent-observation-6.json",
+        ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-dnpghpjkkefmnpbbfahadiia/evidence/S-dnpghpjkkefmnpbbfahadiia/1/agent-observation-7.json"
+      ],
+      "raw_message_match_per_fixture": [
+        false,
+        false
+      ],
+      "nbsp_normalized_message_match_per_fixture": [
+        true,
+        true
+      ]
+    },
+    {
+      "queue": "r4",
+      "persona": "PER-PEEKLY-V2-023",
+      "job": "S-dnpghpjkkefmnpbbfahadiia",
+      "requirement": "PRD-IDENTITY-LIMIT",
+      "kind": "success",
+      "index": 1,
+      "status": "not_run",
+      "reason": "Relationship detail was opened but remained on a loading message, so the username-change/account-deletion explanatory copy was never observed.",
+      "id": "NR-10",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-dnpghpjkkefmnpbbfahadiia].result.receipt.criteria[kind=success,index=1]",
+      "persona_number": "023",
+      "primary_cause": "async_detail_not_observed",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=24; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r4",
+      "persona": "PER-PEEKLY-V2-023",
+      "job": "S-dnpghpjkkefmnpbbfahadiia",
+      "requirement": "PRD-IMPORT-SNAPSHOT-UNKNOWN",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "Deterministic check not run because its precondition was not observed.",
+      "id": "NR-11",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-dnpghpjkkefmnpbbfahadiia].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "023",
+      "primary_cause": "fixture_pair_account_mismatch",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [],
+      "observation_evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-dnpghpjkkefmnpbbfahadiia/evidence/S-dnpghpjkkefmnpbbfahadiia/1/agent-observation-13.json"
+      ]
+    },
+    {
+      "queue": "r4",
+      "persona": "PER-PEEKLY-V2-026",
+      "job": "S-hbccokhbajdlhklgphonlfjo",
+      "requirement": "PRD-RESULT-SEARCH",
+      "kind": "success",
+      "index": 0,
+      "status": "not_run",
+      "reason": "obs-20 showed a relationship list with only 5 rows ('5명') and no search input; no 9+ row list or exact-handle filtering was observed.",
+      "id": "NR-12",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-hbccokhbajdlhklgphonlfjo].result.receipt.criteria[kind=success,index=0]",
+      "persona_number": "026",
+      "primary_cause": "fixture_search_precondition_not_prepared",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=24; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r4",
+      "persona": "PER-PEEKLY-V2-026",
+      "job": "S-hbccokhbajdlhklgphonlfjo",
+      "requirement": "PRD-PRIVACY-DELETE",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "obs-22 showed 약관과 개인정보 still visible:false; no deletion dialog or confirmation was opened, and storage keys were not verified absent afterward.",
+      "id": "NR-13",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-hbccokhbajdlhklgphonlfjo].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "026",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=24; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r4",
+      "persona": "PER-PEEKLY-V2-027",
+      "job": "S-bmomdjabkgmnmopbhjeiaecm",
+      "requirement": "PRD-RESULT-SEARCH",
+      "kind": "success",
+      "index": 0,
+      "status": "not_run",
+      "reason": "관계 목록이 5행뿐이어서 9행 이상 선행조건이 충족되지 않았고, 검색 입력과 핸들 필터링을 실제로 수행하지 못했다.",
+      "id": "NR-14",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-bmomdjabkgmnmopbhjeiaecm].result.receipt.criteria[kind=success,index=0]",
+      "persona_number": "027",
+      "primary_cause": "fixture_search_precondition_not_prepared",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=24; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r4",
+      "persona": "PER-PEEKLY-V2-027",
+      "job": "S-bmomdjabkgmnmopbhjeiaecm",
+      "requirement": "PRD-PRIVACY-DELETE",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "더보기에 '기록 모두 지우기' 항목은 보였으나 삭제 확인 단계와 저장소 키 제거를 실행·검증하지 못했다.",
+      "id": "NR-15",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-bmomdjabkgmnmopbhjeiaecm].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "027",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=24; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r4",
+      "persona": "PER-PEEKLY-V2-029",
+      "job": "S-gobjinmilfaceenedbhopbnc",
+      "requirement": "PRD-SNAPSHOT-RETENTION",
+      "kind": "success",
+      "index": 1,
+      "status": "not_run",
+      "reason": "Retention requires 11 distinct valid snapshot imports; observed 0.",
+      "id": "NR-16",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-gobjinmilfaceenedbhopbnc].result.receipt.criteria[kind=success,index=1]",
+      "persona_number": "029",
+      "primary_cause": "fixture_retention_not_registered",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=24; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ],
+      "observation_evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-gobjinmilfaceenedbhopbnc/evidence/S-gobjinmilfaceenedbhopbnc/1/agent-observation-1.json"
+      ],
+      "available_fixture_count": 531,
+      "advertised_retention_fixture_count": 0
+    },
+    {
+      "queue": "r4",
+      "persona": "PER-PEEKLY-V2-029",
+      "job": "S-gobjinmilfaceenedbhopbnc",
+      "requirement": "PRD-PAYWALL-BOUNDARY",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "The latest free comparison, history controls and Pro feature explanation were not all observed.",
+      "id": "NR-17",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-gobjinmilfaceenedbhopbnc].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "029",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=24; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r4",
+      "persona": "PER-PEEKLY-V2-030",
+      "job": "S-aamdholooghglmdiceajhfda",
+      "requirement": "PRD-SNAPSHOT-RETENTION",
+      "kind": "success",
+      "index": 1,
+      "status": "not_run",
+      "reason": "Retention requires 11 distinct valid snapshot imports; observed 0.",
+      "id": "NR-18",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-aamdholooghglmdiceajhfda].result.receipt.criteria[kind=success,index=1]",
+      "persona_number": "030",
+      "primary_cause": "fixture_retention_not_registered",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=24; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ],
+      "observation_evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/sessions/S-aamdholooghglmdiceajhfda/evidence/S-aamdholooghglmdiceajhfda/1/agent-observation-1.json"
+      ],
+      "available_fixture_count": 531,
+      "advertised_retention_fixture_count": 0
+    },
+    {
+      "queue": "r4",
+      "persona": "PER-PEEKLY-V2-030",
+      "job": "S-aamdholooghglmdiceajhfda",
+      "requirement": "PRD-PAYWALL-BOUNDARY",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "The latest free comparison, history controls and Pro feature explanation were not all observed.",
+      "id": "NR-19",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r4-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-aamdholooghglmdiceajhfda].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "030",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=24; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-016",
+      "job": "S-ckpllpaipicenconelndnpji",
+      "requirement": "PRD-IMPORT-SAVE-FAIL",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "결정적 one-shot Storage.setItem 실패를 주입할 격리 테스트 하네스가 제공되지 않아 저장 실패·다시 저장 흐름을 실행하지 못했다.",
+      "id": "NR-20",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-ckpllpaipicenconelndnpji].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "016",
+      "primary_cause": "runner_storage_fault_unavailable",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": []
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-017",
+      "job": "S-fejkgbjagdokoghgelfmbcaj",
+      "requirement": "PRD-RESULT-RECIPROCITY",
+      "kind": "success",
+      "index": 0,
+      "status": "not_run",
+      "reason": "Imported state showed 5명, but the category list was not reopened after import; the earlier sample list cannot prove fixture match.",
+      "id": "NR-21",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-fejkgbjagdokoghgelfmbcaj].result.receipt.criteria[kind=success,index=0]",
+      "persona_number": "017",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-017",
+      "job": "S-fejkgbjagdokoghgelfmbcaj",
+      "requirement": "PRD-RESULT-MUTUAL",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "맞팔 중인 사람 shows 5명 but was never opened; no member list was inspected.",
+      "id": "NR-22",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-fejkgbjagdokoghgelfmbcaj].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "017",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-017",
+      "job": "S-fejkgbjagdokoghgelfmbcaj",
+      "requirement": "PRD-RESULT-SNAPSHOT",
+      "kind": "success",
+      "index": 3,
+      "status": "not_run",
+      "reason": "Two snapshots were imported, but the latest comparison and its names were not opened.",
+      "id": "NR-23",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-fejkgbjagdokoghgelfmbcaj].result.receipt.criteria[kind=success,index=3]",
+      "persona_number": "017",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-018",
+      "job": "S-mdmgdeapcgabkflegfcojikl",
+      "requirement": "PRD-RESULT-SNAPSHOT",
+      "kind": "success",
+      "index": 3,
+      "status": "not_run",
+      "reason": "The two required distinct snapshots were not both imported.",
+      "id": "NR-24",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-mdmgdeapcgabkflegfcojikl].result.receipt.criteria[kind=success,index=3]",
+      "persona_number": "018",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-019",
+      "job": "S-ikonfnebadpmafejfdbhlbfi",
+      "requirement": "PRD-RESULT-REVERSE",
+      "kind": "success",
+      "index": 1,
+      "status": "not_run",
+      "reason": "'내가 맞팔 안 한 사람 2명' 라벨과 숫자는 보였으나, 해당 카테고리를 직접 열어 목록을 확인하지 않았다.",
+      "id": "NR-25",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-ikonfnebadpmafejfdbhlbfi].result.receipt.criteria[kind=success,index=1]",
+      "persona_number": "019",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-019",
+      "job": "S-ikonfnebadpmafejfdbhlbfi",
+      "requirement": "PRD-RESULT-MUTUAL",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "'맞팔 중인 사람 5명' 라벨과 숫자는 보였으나, 해당 카테고리를 직접 열어 목록을 확인하지 않았다.",
+      "id": "NR-26",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-ikonfnebadpmafejfdbhlbfi].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "019",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-019",
+      "job": "S-ikonfnebadpmafejfdbhlbfi",
+      "requirement": "PRD-RESULT-SNAPSHOT",
+      "kind": "success",
+      "index": 3,
+      "status": "not_run",
+      "reason": "Two snapshots were imported, but the latest comparison and its names were not opened.",
+      "id": "NR-27",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-ikonfnebadpmafejfdbhlbfi].result.receipt.criteria[kind=success,index=3]",
+      "persona_number": "019",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-020",
+      "job": "S-njlobmghmcclimglglabhnif",
+      "requirement": "PRD-RESULT-RECIPROCITY",
+      "kind": "success",
+      "index": 0,
+      "status": "not_run",
+      "reason": "샘플 카드의 5명과 목록은 확인했으나 유효한 합성 가져오기 선행조건이 완료되지 않아 가져온 fixture 데이터와의 일치 여부를 판정하지 못했다.",
+      "id": "NR-28",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-njlobmghmcclimglglabhnif].result.receipt.criteria[kind=success,index=0]",
+      "persona_number": "020",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-020",
+      "job": "S-njlobmghmcclimglglabhnif",
+      "requirement": "PRD-RESULT-REVERSE",
+      "kind": "success",
+      "index": 1,
+      "status": "not_run",
+      "reason": "샘플 카드의 2명과 목록은 확인했으나 유효한 합성 가져오기 선행조건이 완료되지 않아 가져온 fixture 데이터와의 일치 여부를 판정하지 못했다.",
+      "id": "NR-29",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-njlobmghmcclimglglabhnif].result.receipt.criteria[kind=success,index=1]",
+      "persona_number": "020",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-020",
+      "job": "S-njlobmghmcclimglglabhnif",
+      "requirement": "PRD-RESULT-MUTUAL",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "샘플 카드의 5명과 목록은 확인했으나 유효한 합성 가져오기 선행조건이 완료되지 않아 가져온 fixture 데이터와의 일치 여부를 판정하지 못했다.",
+      "id": "NR-30",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-njlobmghmcclimglglabhnif].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "020",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-020",
+      "job": "S-njlobmghmcclimglglabhnif",
+      "requirement": "PRD-RESULT-SNAPSHOT",
+      "kind": "success",
+      "index": 3,
+      "status": "not_run",
+      "reason": "The two required distinct snapshots were not both imported.",
+      "id": "NR-31",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-njlobmghmcclimglglabhnif].result.receipt.criteria[kind=success,index=3]",
+      "persona_number": "020",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-021",
+      "job": "S-bhggnhhmcfoefpkldhlgmnmo",
+      "requirement": "PRD-IMPORT-MISSING",
+      "kind": "success",
+      "index": 0,
+      "status": "not_run",
+      "reason": "Both missing-list uploads were observed but their result state was not captured.",
+      "id": "NR-32",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-bhggnhhmcfoefpkldhlgmnmo].result.receipt.criteria[kind=success,index=0]",
+      "persona_number": "021",
+      "primary_cause": "verdict_whitespace_false_not_run",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [],
+      "observation_evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-bhggnhhmcfoefpkldhlgmnmo/evidence/S-bhggnhhmcfoefpkldhlgmnmo/1/agent-observation-11.json",
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-bhggnhhmcfoefpkldhlgmnmo/evidence/S-bhggnhhmcfoefpkldhlgmnmo/1/agent-observation-12.json"
+      ],
+      "raw_message_match_per_fixture": [
+        false,
+        false
+      ],
+      "nbsp_normalized_message_match_per_fixture": [
+        true,
+        true
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-021",
+      "job": "S-bhggnhhmcfoefpkldhlgmnmo",
+      "requirement": "PRD-IDENTITY-LIMIT",
+      "kind": "success",
+      "index": 1,
+      "status": "not_run",
+      "reason": "아이디 변경/계정 삭제 가능성 설명 화면을 열거나 관찰하지 않았다.",
+      "id": "NR-33",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-bhggnhhmcfoefpkldhlgmnmo].result.receipt.criteria[kind=success,index=1]",
+      "persona_number": "021",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-021",
+      "job": "S-bhggnhhmcfoefpkldhlgmnmo",
+      "requirement": "PRD-IMPORT-SNAPSHOT-UNKNOWN",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "peekly-empty-previous.zip만 업로드되어 0명 결과만 확인했고 peekly-sample-current.zip 비교 흐름은 실행되지 않았다.",
+      "id": "NR-34",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-bhggnhhmcfoefpkldhlgmnmo].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "021",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-023",
+      "job": "S-pcmnpelhjaeccidlnociacoh",
+      "requirement": "PRD-IMPORT-MISSING",
+      "kind": "success",
+      "index": 0,
+      "status": "not_run",
+      "reason": "Both missing-list uploads were observed but their result state was not captured.",
+      "id": "NR-35",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-pcmnpelhjaeccidlnociacoh].result.receipt.criteria[kind=success,index=0]",
+      "persona_number": "023",
+      "primary_cause": "verdict_whitespace_false_not_run",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [],
+      "observation_evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-pcmnpelhjaeccidlnociacoh/evidence/S-pcmnpelhjaeccidlnociacoh/1/agent-observation-6.json",
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-pcmnpelhjaeccidlnociacoh/evidence/S-pcmnpelhjaeccidlnociacoh/1/agent-observation-7.json"
+      ],
+      "raw_message_match_per_fixture": [
+        false,
+        false
+      ],
+      "nbsp_normalized_message_match_per_fixture": [
+        true,
+        true
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-023",
+      "job": "S-pcmnpelhjaeccidlnociacoh",
+      "requirement": "PRD-IMPORT-SNAPSHOT-UNKNOWN",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "Deterministic check not run because its precondition was not observed.",
+      "id": "NR-36",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-pcmnpelhjaeccidlnociacoh].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "023",
+      "primary_cause": "fixture_pair_account_mismatch",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [],
+      "observation_evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-pcmnpelhjaeccidlnociacoh/evidence/S-pcmnpelhjaeccidlnociacoh/1/agent-observation-11.json"
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-025",
+      "job": "S-lbijbjanebieoogdafhnojoj",
+      "requirement": "PRD-RESULT-SEARCH",
+      "kind": "success",
+      "index": 0,
+      "status": "not_run",
+      "reason": "관계 목록이 5행만 노출되어 9행 선행조건과 '아이디나 이름으로 찾기' input을 확인하지 못했다.",
+      "id": "NR-37",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-lbijbjanebieoogdafhnojoj].result.receipt.criteria[kind=success,index=0]",
+      "persona_number": "025",
+      "primary_cause": "fixture_search_precondition_not_prepared",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-025",
+      "job": "S-lbijbjanebieoogdafhnojoj",
+      "requirement": "PRD-PRIVACY-DELETE",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "'데이터 삭제' 탭 노출까지만 확인했고, 삭제 확인 단계 실행과 localStorage 키 제거 검증은 완료하지 못했다.",
+      "id": "NR-38",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-lbijbjanebieoogdafhnojoj].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "025",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-026",
+      "job": "S-lahjbaojphfmlebjabngdodi",
+      "requirement": "PRD-RESULT-SEARCH",
+      "kind": "success",
+      "index": 0,
+      "status": "not_run",
+      "reason": "5행 목록만 열려 9행 이상 선행조건과 검색 입력·합성 아이디 필터링을 검증하지 못했다.",
+      "id": "NR-39",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-lahjbaojphfmlebjabngdodi].result.receipt.criteria[kind=success,index=0]",
+      "persona_number": "026",
+      "primary_cause": "fixture_search_precondition_not_prepared",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-026",
+      "job": "S-lahjbaojphfmlebjabngdodi",
+      "requirement": "PRD-PRIVACY-DELETE",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "데이터 삭제 진입·확인·격리 프로필 저장 키 제거 확인을 수행하지 않았다.",
+      "id": "NR-40",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-lahjbaojphfmlebjabngdodi].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "026",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-029",
+      "job": "S-dlfbcbfdnididdofcbnkiiie",
+      "requirement": "PRD-SNAPSHOT-RETENTION",
+      "kind": "success",
+      "index": 1,
+      "status": "not_run",
+      "reason": "Retention requires 11 distinct valid snapshot imports; observed 0.",
+      "id": "NR-41",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-dlfbcbfdnididdofcbnkiiie].result.receipt.criteria[kind=success,index=1]",
+      "persona_number": "029",
+      "primary_cause": "fixture_retention_not_registered",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ],
+      "observation_evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-dlfbcbfdnididdofcbnkiiie/evidence/S-dlfbcbfdnididdofcbnkiiie/1/agent-observation-1.json"
+      ],
+      "available_fixture_count": 531,
+      "advertised_retention_fixture_count": 0
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-029",
+      "job": "S-dlfbcbfdnididdofcbnkiiie",
+      "requirement": "PRD-PAYWALL-BOUNDARY",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "The paywall boundary requires two valid snapshots for the same synthetic account.",
+      "id": "NR-42",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-dlfbcbfdnididdofcbnkiiie].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "029",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-030",
+      "job": "S-dgoedmkboghanafhpfnjhjao",
+      "requirement": "PRD-SNAPSHOT-RETENTION",
+      "kind": "success",
+      "index": 1,
+      "status": "not_run",
+      "reason": "Retention requires 11 distinct valid snapshot imports; observed 0.",
+      "id": "NR-43",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-dgoedmkboghanafhpfnjhjao].result.receipt.criteria[kind=success,index=1]",
+      "persona_number": "030",
+      "primary_cause": "fixture_retention_not_registered",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ],
+      "observation_evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-dgoedmkboghanafhpfnjhjao/evidence/S-dgoedmkboghanafhpfnjhjao/1/agent-observation-1.json"
+      ],
+      "available_fixture_count": 531,
+      "advertised_retention_fixture_count": 0
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-030",
+      "job": "S-dgoedmkboghanafhpfnjhjao",
+      "requirement": "PRD-PAYWALL-BOUNDARY",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "The latest free comparison, history controls and Pro feature explanation were not all observed.",
+      "id": "NR-44",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-dgoedmkboghanafhpfnjhjao].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "030",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        }
+      ]
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-031",
+      "job": "S-ckljgonbkoljgjojfnhffoae",
+      "requirement": "PRD-SNAPSHOT-RETENTION",
+      "kind": "success",
+      "index": 1,
+      "status": "not_run",
+      "reason": "Retention requires 11 distinct valid snapshot imports; observed 0.",
+      "id": "NR-45",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-ckljgonbkoljgjojfnhffoae].result.receipt.criteria[kind=success,index=1]",
+      "persona_number": "031",
+      "primary_cause": "fixture_retention_not_registered",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        },
+        {
+          "id": "turn_budget_explicit_receipt_statement",
+          "basis": "receipt_reason",
+          "note": "완료 영수증은 두 스냅샷만 turn budget 안에 가져왔다고 명시. 주원인별 집계에 중복 합산하지 않음."
+        }
+      ],
+      "observation_evidence": [
+        ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/sessions/S-ckljgonbkoljgjojfnhffoae/evidence/S-ckljgonbkoljgjojfnhffoae/1/agent-observation-1.json"
+      ],
+      "available_fixture_count": 531,
+      "advertised_retention_fixture_count": 0
+    },
+    {
+      "queue": "r6",
+      "persona": "PER-PEEKLY-V2-031",
+      "job": "S-ckljgonbkoljgjojfnhffoae",
+      "requirement": "PRD-PAYWALL-BOUNDARY",
+      "kind": "success",
+      "index": 2,
+      "status": "not_run",
+      "reason": "The latest free comparison, history controls and Pro feature explanation were not all observed.",
+      "id": "NR-46",
+      "evidence_report": ".ux-loop/peekly-host-protocol-followup16-r6-20261114/stage-33/report.json",
+      "evidence_selector": "tasks[job_id=S-ckljgonbkoljgjojfnhffoae].result.receipt.criteria[kind=success,index=2]",
+      "persona_number": "031",
+      "primary_cause": "task_flow_incomplete",
+      "primary_basis": "direct_stored_evidence",
+      "secondary_contributors": [
+        {
+          "id": "fixed_turn_budget",
+          "basis": "inferred_contributor",
+          "note": "해당 큐 turns=16; 모든 행이 실제 턴 소진으로 종료됐다고 확정하지 않음."
+        },
+        {
+          "id": "turn_budget_explicit_receipt_statement",
+          "basis": "receipt_reason",
+          "note": "완료 영수증은 두 스냅샷만 turn budget 안에 가져왔다고 명시. 주원인별 집계에 중복 합산하지 않음."
+        }
+      ]
+    }
+  ]
+}

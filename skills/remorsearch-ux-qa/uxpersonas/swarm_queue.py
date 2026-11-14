@@ -147,7 +147,7 @@ class Queue:
             fail("queue_input", "Unknown execution schema or provenance mode.")
         from .swarm_providers import ProviderSpec
         limits = plan["limits"]
-        for name, low, high in (("parallel", 1, 64), ("turns", 1, 24),
+        for name, low, high in (("parallel", 1, 64), ("turns", 1, 64),
                 ("call_seconds", 1, 180), ("task_seconds", 1, 3600),
                 ("lease_seconds", 10, 600), ("budget_microusd", 0, 10**12),
                 ("max_model_calls", 1, 50000)):

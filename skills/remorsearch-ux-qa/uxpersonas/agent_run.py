@@ -65,6 +65,31 @@ def _data(value, limit=65536, *, privacy=True):
     return copy.deepcopy(value)
 
 
+def _validated_observation_facts(value):
+    """Validate prose while retaining only reviewed, typed driver SHA fields."""
+    original = _data(value, 65536, privacy=False)
+    privacy_view = copy.deepcopy(original)
+    for parts in (("storage_snapshot", "sha256"),
+                  ("import_attempt", "fixture_sha256"),
+                  ("import_attempt", "storage_before", "sha256"),
+                  ("import_attempt", "storage_after", "sha256")):
+        target = privacy_view
+        for key in parts[:-1]:
+            target = target.get(key) if isinstance(target, dict) else None
+        if isinstance(target, dict):
+            candidate = target.get(parts[-1])
+            if isinstance(candidate, str) and re.fullmatch(r"[a-f0-9]{64}", candidate):
+                target[parts[-1]] = "reviewed SHA digest"
+    _data(privacy_view, 65536)
+    return original
+
+
+def _validated_observation_content(result):
+    _data({k: result[k] for k in ("text", "facts", "checks")}, privacy=False)
+    _data({k: result[k] for k in ("text", "checks")})
+    _validated_observation_facts(result["facts"])
+
+
 @dataclass(frozen=True)
 class Tool:
     name: str
@@ -256,7 +281,7 @@ class Execution:
             if kind == "tool":
                 if not isinstance(result, dict) or set(result) != {"text", "facts", "captures", "checks"}:
                     fail("observation_invalid", "Tool observation fields are invalid.")
-                _data({k: result[k] for k in ("text", "facts", "checks")})
+                _validated_observation_content(result)
             row.update(status="done", ended_at=time.time(), trace_id=reply["trace_id"], result=result)
             self.save()
             return copy.deepcopy(result)
@@ -272,7 +297,7 @@ class Execution:
                 or len(result["captures"]) > 4 or not isinstance(result["checks"], list)):
             fail("observation_invalid", "A tool must return bounded observations, facts, captures and native checks.")
         swarm.text(result["text"])
-        _data({k: result[k] for k in ("text", "facts", "checks")})
+        _validated_observation_content(result)
         base = Path(worker["claim"]["evidence_path"])
         artifacts = []
         for n, cap in enumerate(result["captures"]):

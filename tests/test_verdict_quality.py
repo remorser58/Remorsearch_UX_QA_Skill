@@ -282,10 +282,11 @@ class VerdictQualityTests(unittest.TestCase):
             {"text": "팔로우 목록을 확인하고 있어요", "facts": {"upload_progress_samples": [{"text": "팔로우 목록을 확인하고 있어요"}]}},
         ]
         uploads = ("peekly-progress-sample.zip",)
-        self.assertEqual(evaluate({"requirement_ids": ["PRD-IMPORT-PROGRESS"]}, facts, "", uploads, history), [])
+        self.assertEqual(evaluate({"requirement_ids": ["PRD-IMPORT-PROGRESS"]}, facts, "", uploads, history)[0]["status"], "not_run")
         history.append({"text": "읽기 멈추기", "facts": {"last_action_label": "읽기 멈추기"}})
-        self.assertEqual(evaluate({"requirement_ids": ["PRD-IMPORT-PROGRESS"]}, facts, "", uploads, history),
-            [{"kind": "success", "index": 0, "status": "passed"}])
+        # A requested label is not a verified click or evidence of unchanged
+        # persistence. The scoped upload_cancel receipt is required.
+        self.assertEqual(evaluate({"requirement_ids": ["PRD-IMPORT-PROGRESS"]}, facts, "", uploads, history)[0]["status"], "not_run")
 
     def test_size_criteria_requires_all_three_boundary_uploads_and_messages(self):
         task = {"requirement_ids": ["PRD-IMPORT-SIZE"]}

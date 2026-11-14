@@ -28,7 +28,7 @@ class ScaleLimits:
     max_model_calls: int = 10000
 
     def validate(self):
-        for name, low, high in (("parallel", 1, 64), ("turns", 1, 24),
+        for name, low, high in (("parallel", 1, 64), ("turns", 1, 64),
                 ("call_seconds", 1, 180), ("task_seconds", 1, 3600),
                 ("lease_seconds", 10, 600), ("budget_microusd", 0, 10**12),
                 ("max_model_calls", 1, 50000)):
@@ -42,6 +42,70 @@ def engine_manifest():
              "agent_run.py", "swarm.py", "library.py")
     return {name: byte_digest(read_bytes(root / name)) for name in files}
 
+
+PEEKLY_FIXTURE_REQUIREMENTS = {
+    "PRD-IMPORT-FORMATS": ("peekly-format-html.zip", "peekly-format-json.zip"),
+    "PRD-IMPORT-ACCOUNT": ("peekly-sample-current.zip", "peekly-account-mismatch.zip"),
+    "PRD-IMPORT-HTML": ("peekly-malformed-html.zip",),
+    "PRD-IMPORT-MISSING": ("peekly-missing-followers.zip", "peekly-missing-following.zip"),
+    "PRD-IMPORT-MULTI": ("@group:peekly-mixed-loose-valid", "@group:peekly-loose-512-valid",
+                         "@group:peekly-loose-513-rejected", "@group:peekly-zip-plus-loose-rejected"),
+    "PRD-IMPORT-SIZE": ("peekly-oversize-plus-one.zip", "@group:peekly-loose-file-over",
+                        "@group:peekly-loose-total-over"),
+    "PRD-IMPORT-PROGRESS": ("peekly-sample-current.zip", "peekly-progress-sample.zip"),
+    "PRD-IMPORT-SAVE-FAIL": ("peekly-sample-previous.zip", "peekly-sample-current.zip"),
+    "PRD-IMPORT-SNAPSHOT-UNKNOWN": ("peekly-empty-previous.zip", "peekly-sample-current.zip"),
+    "PRD-RESULT-SNAPSHOT": ("peekly-sample-previous.zip", "peekly-sample-current.zip"),
+    "PRD-PAYWALL-BOUNDARY": ("peekly-sample-previous.zip", "peekly-sample-current.zip"),
+    "PRD-IDENTITY-LIMIT": ("peekly-sample-previous.zip", "peekly-sample-current.zip"),
+    "PRD-RESULT-SEARCH": ("peekly-search-ready.zip",),
+    "PRD-SNAPSHOT-RETENTION": tuple(f"peekly-retention-snapshot-{i:02d}.zip" for i in range(1, 12)),
+}
+
+_PEEKLY_STEPS = {
+    "PRD-RESULT-RECIPROCITY": ("Import the valid relationship fixture or enter sample mode.", "Open the required relationship card, inspect count and actual rows, then close its modal before another card."),
+    "PRD-RESULT-REVERSE": ("Close any existing modal using its visible close control.", "Open the reverse relationship card; inspect count and row set."),
+    "PRD-RESULT-MUTUAL": ("Close any existing modal; the mutual card must be visible:true.", "Open the mutual card and inspect count plus row set; a person-detail sheet is not the mutual list."),
+    "PRD-RESULT-SNAPSHOT": ("Import peekly-sample-previous.zip, reopen the import entry, then import peekly-sample-current.zip.", "Open the latest comparison and its departed-follower list; inspect both count and names."),
+    "PRD-IDENTITY-LIMIT": ("Import both complete previous/current snapshots and open the latest comparison explanation.", "Inspect the username-change limitation there; the first-record preview is not this screen."),
+    "PRD-RESULT-SEARCH": ("Import peekly-search-ready.zip and open a relationship list with at least nine rows.", "Check unfiltered username order, enter an exact observed row key in the visible search input, and verify only that row remains."),
+    "PRD-SAMPLE-EXPORT": ("Enter sample mode before importing real synthetic snapshots.", "Open More > 관계 목록 (MatrixTab); inspect both copy/save disabled states and sample titles. Do not click disabled controls."),
+    "PRD-SNAPSHOT-RETENTION": ("Verify all eleven manifest keys before executing any retention step.", "For each snapshot 01 through11: open the current import entry, upload that one ZIP, inspect completion; never mix ZIPs.", "After the eleventh import open saved history and inspect retained count/oldest record; do not substitute repeated imports of the same ZIP."),
+    "PRD-PAYWALL-BOUNDARY": ("Import the complete previous/current pair and inspect free latest comparison names.", "Open history, inspect both date selectors and Pro restrictions; inspect timeline/person-history entry without purchasing."),
+    "PRD-IMPORT-PROGRESS": ("First save a small baseline with peekly-sample-current.zip if no actual saved snapshot exists; sample mode alone is insufficient.", "Open the current file input and use reviewed upload_cancel with peekly-progress-sample.zip; inspect captured reading and analysis phases, real stop dispatch and unchanged saved-result digest.", "Only if the cancel attempt lacks a required phase, try normal upload of that fixture to observe the missing phase within the remaining budget; never require a large completed import before cancellation."),
+    "PRD-IMPORT-SAVE-FAIL": ("Preserve an actual small saved baseline; if absent, import peekly-sample-previous.zip.", "Reopen the file input and use upload_save_failure with the distinct snapshot: current after previous, or previous after current. Inspect consumed fault, prior-result preservation and the visible 다시 저장 action.", "Click the visible retry after the one-shot fault clears, and inspect successful save. Without the reviewed capability report not_run; never simulate a pass."),
+}
+
+
+def criterion_checklist(requirement_ids):
+    """Return an ordered execution checklist, never a fabricated verdict."""
+    rows = []
+    for index, rid in enumerate(requirement_ids):
+        spec = PEEKLY_CRITERIA.get(rid)
+        if spec is None:
+            continue
+        rows.append(dict(kind="success", index=index, requirement_id=rid,
+            precondition=spec["precondition"], scope=spec["scope"],
+            required_fixtures=list(PEEKLY_FIXTURE_REQUIREMENTS.get(rid, ())),
+            steps=list(_PEEKLY_STEPS.get(rid, (spec["action"],)))))
+    priority = {"PRD-SAMPLE-EXPORT": 0, "PRD-START-SAMPLE": 1,
+                "PRD-START-IMPORT": 2, "PRD-START-SKIP": 2,
+                "PRD-SNAPSHOT-RETENTION": 30, "PRD-RESULT-SNAPSHOT": 40,
+                "PRD-PAYWALL-BOUNDARY": 45, "PRD-IDENTITY-LIMIT": 45,
+                "PRD-PRIVACY-DELETE": 100}
+    return sorted(rows, key=lambda row: (priority.get(row["requirement_id"], 20), row["index"]))
+
+
+def required_fixture_keys(requirement_ids):
+    return sorted({name for rid in requirement_ids
+                   for name in PEEKLY_FIXTURE_REQUIREMENTS.get(rid, ())})
+
+
+def _criterion_actions(requirement_ids):
+    return [f"[{row['requirement_id']}] Required fixtures: "
+            + (", ".join(name.replace("@group:", "manifest group ") for name in row["required_fixtures"]) or "none")
+            + ". Steps: " + " -> ".join(row["steps"])
+            for row in criterion_checklist(requirement_ids)]
 
 def _persona_journey_goal(base_goal, requirement_ids):
     """Turn each saved persona's mapped PRD requirements into executable actions.
@@ -80,13 +144,13 @@ def _persona_journey_goal(base_goal, requirement_ids):
     if "PRD-PAYWALL-BOUNDARY" in ids:
         actions.append("동일 계정 두 스냅샷의 현재 관계 목록과 최신 두 기록 비교 이름까지 무료로 보이는지 확인한다. 두 기록 미만이면 upsell을 요구하지 않는다. 여러 기록 timeline·두 날짜 선택·사람별 이력만 Pro 경계로 확인하고 결제는 누르지 않는다.")
     if "PRD-IMPORT-MULTI" in ids:
-        actions.append("파일 선택에서 @group:peekly-mixed-loose-valid를 실제 input[type=file][multiple]에 넣고, 512개 허용·513개 거절 및 ZIP+loose 혼합 거절 group을 각각 실행한다.")
+        actions.append("파일 선택에서 manifest group peekly-mixed-loose-valid의 정확한 catalog key를 실제 input[type=file][multiple]에 넣고, 512개 허용·513개 거절 및 ZIP+loose 혼합 거절 group을 각각 실행한다.")
     if "PRD-IMPORT-SIZE" in ids:
         actions.append("128MiB+1 ZIP, 32MiB+1 loose file, 64MiB 초과 loose aggregate group을 각각 업로드한다. 각 경계별 오류와 이전 결과 보존을 확인한다.")
     if "PRD-IMPORT-PROGRESS" in ids:
-        actions.append("대용량 valid 합성 ZIP을 업로드하고 reading→analyzing 상태를 관찰한다. 처리가 진행 중일 때 '읽기 멈추기'를 눌러 worker abort 및 결과 미저장을 확인한다.")
+        actions.append("작은 합성 스냅샷을 실제 저장한 기준 상태에서 upload_cancel로 대용량 valid ZIP의 reading→analyzing 진행과 실제 취소·기존 저장 결과 보존을 확인한다. 전체 대용량 import 완료를 먼저 요구하지 않으며 부족한 phase만 필요 시 별도 관찰한다.")
     if ids & {"PRD-IMPORT-PROGRESS", "PRD-IMPORT-SIZE", "PRD-IMPORT-SAVE-FAIL"}:
-        actions.append("가져오기 진행·크기 제한 기준은 이 실행 전 생성·해시 고정한 전용 합성 fixture로 실제 업로드한다. 저장 실패는 제품 코드에 주입 경로가 없으므로 별도 격리 테스트 하네스에서 결정적 저장 실패를 재현하고, 브라우저에서 검증한 것처럼 보고하지 않는다.")
+        actions.append("가져오기 진행·크기 제한 기준은 실제 저장된 작은 합성 기준 결과를 보존하며 전용 해시 고정 fixture로 실행한다. 저장 실패 기준에는 제공된 upload_save_failure의 한 번만 발생하는 격리 저장 오류와 실제 보이는 다시 저장 버튼을 사용한다. 도구가 없으면 not_run으로 남긴다.")
     if not actions:
         actions.append("이 페르소나의 요구사항에 직접 대응하는 화면 흐름을 관찰하고 각 성공 기준을 개별적으로 확인한다.")
     criteria = []
@@ -96,12 +160,22 @@ def _persona_journey_goal(base_goal, requirement_ids):
             criteria.append(f"- [{rid}] 화면={spec['screen']}; 셀렉터={spec['selector']}; 필수 텍스트={', '.join(spec['text'])}; 기대값={spec['value']}; 선행조건={spec['precondition']}; 행동={spec['action']}; 제한시간={spec['timeout_seconds']}초; 범위={spec['scope']}")
     return (base_goal + "\n\n이 페르소나의 요구사항별 실행 과제:\n" + "\n".join("- " + action for action in actions)
         + "\n\n명시적 성공 기준과 기계 판정 계약:\n" + "\n".join(criteria)
+        + "\n\n기준별 필수 단계 체크리스트:\n" + "\n".join(_criterion_actions(requirement_ids))
         + "\n\n실행 규칙: 새 브라우저의 현재 DOM을 먼저 관찰하고 기준마다 선행조건을 충족한 뒤 제한시간 안에 지정 행동을 실제 수행한다. "
         "업로드 기준은 이름이 지정된 모든 fixture를 실제 input[type=file]에 업로드하고 결과 화면까지 확인한다. "
         "기준에 적힌 텍스트만 보였다는 이유로 통과시키지 말고 숫자·상태·목록까지 확인한다. "
         "기계 판정 checks가 존재하면 그 결과를 반드시 따른다. 기계 판정이 없는 기준은 관측 ID와 스크린샷을 인용한다. "
         "필수 fixture나 하위 흐름을 건너뛰고 최종 판단하지 않는다. 성공 기준을 실행하지 않았거나 전제조건이 확인되지 않으면 not_run으로 남기고 다음 실행 행동을 먼저 시도한다. "
-        "조건부 복구 기준은 실제 실패가 발생했을 때만 실행하며 실패가 전혀 발생하지 않았으면 not_applicable로 남긴다. 실행하지 않은 조건을 failed로 판정하지 않는다.")
+        "조건부 복구 기준은 실제 실패가 발생했을 때만 실행하며 실패가 전혀 발생하지 않았으면 not_applicable로 남긴다. 실행하지 않은 조건을 failed로 판정하지 않는다. "
+        "현재 관측에서 visible:true인 control만 클릭한다. 모달이 열렸으면 먼저 보이는 닫기 control로 닫고 새 관측에서 다음 대상을 찾는다. "
+        "체크리스트 순서로 남은 기준을 하나씩 처리하며, 완료한 경로를 반복하지 않는다. 샘플 export는 데이터 import 전에, 데이터 삭제는 마지막에 한다. "
+        "행동 도구가 이미 최신 DOM을 반환했으면 같은 화면의 observe를 반복하지 않는다. 파일 이름/selector는 현재 fixture_catalog와 controls에서만 고른다.")
+
+
+def scale_job_id(product_id, persona_id, revision, goal, build):
+    """Use the same reviewed identity for preparation and no-replay preflight."""
+    return "S-" + digest([product_id, persona_id, revision, goal, build])[:24].translate(
+        str.maketrans("0123456789abcdef", "abcdefghijklmnop"))
 
 
 def prepare_scale_goal(library, run_path, providers, tool_host, tools, *, product_id,
@@ -185,13 +259,13 @@ def prepare_scale_goal(library, run_path, providers, tool_host, tools, *, produc
             fail("requirement_scope", "Review one to sixteen applicable requirements per persona.")
         # Typed internal identifiers contain no digit runs that could resemble
         # phone/account identifiers in the existing whole-task privacy gate.
-        jid = "S-" + digest([product_id, pid, profile["revision"], goal, build])[:24].translate(
-            str.maketrans("0123456789abcdef", "abcdefghijklmnop"))
+        jid = scale_job_id(product_id, pid, profile["revision"], goal, build)
         requirement_ids = [r["id"] for r in requirements]
         task = dict(id=jid, persona_id=pid, requirement_ids=requirement_ids,
             goal=_persona_journey_goal(goal, requirement_ids),
             starting_state="Fresh isolated owned context for the reviewed product.",
-            actions=["Choose a permitted next action from your own current observations."],
+            actions=["Choose a permitted next action from your own current observations."]
+                    + _criterion_actions(requirement_ids),
             decisions=copy.deepcopy(profile["profile"]["behaviors"]),
             success_criteria=[r["excerpt"] + (" [" + r["id"] + "] " + PEEKLY_CRITERIA[r["id"]]["value"]
                 if r["id"] in PEEKLY_CRITERIA else "") for r in requirements],

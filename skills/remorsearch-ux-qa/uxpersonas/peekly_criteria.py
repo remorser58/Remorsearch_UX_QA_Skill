@@ -57,7 +57,7 @@ CRITERIA = {
         "screen": "import processing", "selector": "[role=status][aria-live=polite]",
         "text": ["파일을 읽고 있어요", "팔로우 목록을 확인하고 있어요", "읽기 멈추기"],
         "value": "reading and analysis states are distinct and closing/stopping the import aborts it before a result is saved",
-        "precondition": "current file-selection screen", "action": "upload a sufficiently large valid archive, poll status, click 읽기 멈추기 while active, verify no result is saved",
+        "precondition": "current file-selection screen with saved small synthetic baseline", "action": "use upload_cancel with peekly-progress-sample.zip; verify both scoped processing phases, actual active stop and unchanged persisted state",
         "timeout_seconds": 15, "scope": "desktop", "fixture": "generated large valid fixture"},
     "PRD-IMPORT-ACCOUNT": {
         "screen": "import validation error", "selector": "[role=alert]",
@@ -103,7 +103,7 @@ CRITERIA = {
     "PRD-RESULT-SEARCH": {
         "screen": "relationship list", "selector": "input[placeholder='아이디나 이름으로 찾기']",
         "text": ["아이디나 이름으로 찾기"], "value": "rows are ordered by username/ID; the text input appears for >8 rows and an exact synthetic handle narrows to one row",
-        "precondition": "open relationship list with at least 9 rows", "action": "type exact synthetic handle and observe filtered row count",
+        "precondition": "import peekly-search-ready.zip then open 나를 맞팔 안 한 사람 with 12 rows", "action": "type exact synthetic handle synthetic_search_outgoing_05 and observe one matching row",
         "timeout_seconds": 45, "scope": "desktop"},
     "PRD-SAMPLE-EXPORT": {
         "screen": "sample relationship list", "selector": "button.matrix-export-btn",
@@ -125,12 +125,12 @@ CRITERIA = {
     "PRD-IDENTITY-LIMIT": {
         "screen": "relationship detail or result explanation", "selector": "visible explanatory text",
         "text": ["아이디 변경이나 계정 삭제 때문일 수도 있어요"], "value": "comparison explains username change/account deletion as possible explanations and does not assert a confirmed unfollow cause",
-        "precondition": "open identity-related explanation", "action": "observe explanatory copy",
+        "precondition": "import same-account previous/current pair and open actual latest comparison account list", "action": "observe explanatory copy on the comparison, not the first-record preview",
         "timeout_seconds": 30, "scope": "desktop"},
     "PRD-IMPORT-SNAPSHOT-UNKNOWN": {
         "screen": "snapshot comparison", "selector": "comparison summary",
         "text": ["비교할 수 없", "기록이 없"], "value": "empty/unknown previous snapshot is excluded from comparison",
-        "precondition": "two snapshots available", "action": "upload peekly-empty-previous.zip then peekly-sample-current.zip",
+        "precondition": "same-account empty/current fixture pair is available", "action": "upload peekly-empty-previous.zip then peekly-sample-current.zip and observe the comparison",
         "timeout_seconds": 120, "scope": "desktop"},
     "PRD-IMPORT-ALLTIME": {
         "screen": "Instagram export guide", "selector": "visible guide scene",
@@ -140,7 +140,7 @@ CRITERIA = {
     "PRD-IMPORT-SAVE-FAIL": {
         "screen": "import save failure", "selector": "[role=alert]",
         "text": ["결과를 저장하지 못했어요", "다시 저장"], "value": "a deterministic one-shot storage write failure shows a retry action and preserves prior result; retry succeeds",
-        "precondition": "isolated synthetic result exists", "action": "inject one-shot Storage.setItem failure; import valid fixture; inspect prior result; click retry after failure clears",
+        "precondition": "peekly-sample-current.zip has been saved in the isolated profile", "action": "use upload_save_failure with peekly-sample-previous.zip; verify error and unchanged state; click visible 다시 저장 and verify successful persisted retry before another action",
         "timeout_seconds": 60, "scope": "desktop-test-harness", "fixture": "one-shot localStorage failure"},
     "PRD-IMPORT-REOPEN": {
         "screen": "welcome/resume screen", "selector": "visible continue action",
@@ -178,7 +178,8 @@ for _rid, _spec in CRITERIA.items():
 
 def _contains(text: str, values) -> bool:
     normalized = " ".join(str(text).replace("\u00a0", " ").split())
-    return all(value in normalized for value in values)
+    return all(" ".join(str(value).replace("\u00a0", " ").split()) in normalized
+               for value in values)
 
 
 def _rows(history, text, facts):
@@ -259,10 +260,120 @@ def _category_counts(text):
 
 
 def _comparison_with_names(row):
-    text = row.get("text", "")
+    text = " ".join(str(row.get("text", "")).replace("\u00a0", " ").split())
     rows = row.get("facts", {}).get("list_rows", [])
     return ("팔로워에서 빠진 사람" in text and "명" in text
             and isinstance(rows, list) and len(rows) > 0)
+
+
+def _storage_available(snapshot):
+    return (isinstance(snapshot, dict) and snapshot.get("available") is True
+            and isinstance(snapshot.get("keys"), list)
+            and bool(re.fullmatch(r"[0-9a-f]{64}", str(snapshot.get("sha256", "")))))
+
+
+def _same_storage(before, after):
+    return (_storage_available(before) and _storage_available(after)
+            and before["sha256"] == after["sha256"]
+            and sorted(before["keys"]) == sorted(after["keys"]))
+
+
+def _import_attempts(rows, tool):
+    for position, row in enumerate(rows):
+        attempt = row.get("facts", {}).get("import_attempt")
+        if (isinstance(attempt, dict)
+                and attempt.get("schema_version") == "peekly-import-attempt.v1"
+                and attempt.get("tool") == tool
+                and isinstance(attempt.get("attempt_id"), str)
+                and re.fullmatch(r"[0-9a-f]{64}", str(attempt.get("fixture_sha256", "")))):
+            yield position, row, attempt
+
+
+def _attempt_rows(rows, start, attempt_id):
+    return [row for row in rows[start:]
+            if row.get("facts", {}).get("import_attempt_id") == attempt_id
+            or (isinstance(row.get("facts", {}).get("import_attempt"), dict)
+                and row["facts"]["import_attempt"].get("attempt_id") == attempt_id)]
+
+
+def _progress_check(rows):
+    attempts = [(position, row, attempt) for position, row, attempt
+                in _import_attempts(rows, "upload_cancel")
+                if attempt.get("fixture") == "peekly-progress-sample.zip"]
+    if not attempts:
+        return "not_run", "Use upload_cancel on the approved progress fixture; a requested stop label or a fast completed upload does not prove an active cancellation."
+    failure = None
+    passed = False
+    for _, _, attempt in attempts:
+        actual_cancel = attempt.get("cancel_active") is True and attempt.get("cancel_dispatched") is True
+        terminal = attempt.get("terminal_state")
+        before, after = attempt.get("storage_before"), attempt.get("storage_after")
+        if (actual_cancel and terminal == "completed_after_cancel"
+                and _storage_available(before) and _storage_available(after)
+                and not _same_storage(before, after)):
+            failure = ("failed", "A verified active cancel was dispatched, but completion was then observed with changed persisted state for that upload.")
+        if not actual_cancel or terminal != "cancelled_without_new_result":
+            continue
+        if not _same_storage(attempt.get("storage_before"), attempt.get("storage_after")):
+            continue
+        # Read/analysis sub-obligations may be observed in a separate upload of
+        # the exact same approved fixture in this session. Never use global
+        # setup-result text or a phase from another fixture.
+        phases = []
+        for row in rows:
+            candidate = row.get("facts", {}).get("import_attempt", {})
+            if (isinstance(candidate, dict)
+                    and candidate.get("schema_version") == "peekly-import-attempt.v1"
+                    and candidate.get("fixture") == attempt["fixture"]
+                    and candidate.get("fixture_sha256") == attempt["fixture_sha256"]):
+                phases.extend(str(item.get("text", "")) for item in candidate.get("phase_samples", [])
+                              if isinstance(item, dict))
+        if _contains(" ".join(phases), ["파일을 읽고 있어요", "팔로우 목록을 확인하고 있어요"]):
+            passed = True
+    return failure or (("passed", None) if passed else ("not_run", "The active cancel, both scoped phases and unchanged persisted result were not all observed; a missed timing window is not a product failure."))
+
+
+def _save_failure_check(rows):
+    attempts = list(_import_attempts(rows, "upload_save_failure"))
+    if not attempts:
+        return "not_run", "Use the bounded upload_save_failure tool with a saved synthetic baseline, then verify the visible retry action and its persisted result."
+    for position, row, attempt in attempts:
+        fault = attempt.get("storage_fault", {})
+        before, after = attempt.get("storage_before"), attempt.get("storage_after")
+        if not (isinstance(fault, dict) and fault.get("key") == "peekly_state_v7" and fault.get("consumed") is True
+                and fault.get("restored") is True and _storage_available(before)
+                and "peekly_state_v7" in before["keys"]):
+            continue
+        related = _attempt_rows(rows, position, attempt["attempt_id"])
+        error_rows = [item for item in related
+                      if _contains(item["text"], ["결과를 저장하지 못했어요", "다시 저장"])]
+        if not error_rows:
+            continue
+        if _storage_available(after) and not _same_storage(before, after):
+            return "failed", "The injected save failure displayed an error but changed the previously persisted state."
+        if not _same_storage(before, after):
+            continue
+        retry_seen = False
+        for item in related:
+            current_facts = item.get("facts", {})
+            dispatch = current_facts.get("click_dispatch", {})
+            is_retry = (isinstance(dispatch, dict) and dispatch.get("dispatched") is True
+                        and dispatch.get("hit_test") is True
+                        and _contains(dispatch.get("label", ""), ["다시 저장"]))
+            if is_retry:
+                retry_seen = True
+            elif current_facts.get("last_action", "observe") not in {"observe", "wait"}:
+                # The attempt ID persists until the next upload. A later sample,
+                # reset or navigation click cannot establish retry success.
+                retry_seen = False
+            snapshot = item.get("facts", {}).get("storage_snapshot")
+            saved = (_storage_available(snapshot) and "peekly_state_v7" in snapshot["keys"]
+                     and snapshot["sha256"] != before["sha256"])
+            if (retry_seen and saved and not _contains(item["text"], ["결과를 저장하지 못했어요"])
+                    and (_contains(item["text"], ["결과를 불러왔어요"])
+                         or _category_counts(item["text"]) is not None)):
+                return "passed", None
+    return "not_run", "The consumed/restored fault, original-result preservation, actual retry click and successful new persisted result were not all observed for the same upload attempt."
 
 
 def evaluate(task, facts, text, uploaded_fixtures=(), history=()):
@@ -347,14 +458,12 @@ def evaluate(task, facts, text, uploaded_fixtures=(), history=()):
                     emit(index, "failed", "The explicitly malformed HTML fixture was accepted as a result.")
                 else:
                     emit(index, "not_run", "The malformed-HTML upload was observed but its own result state was not captured.")
-        elif rid == "PRD-IMPORT-PROGRESS" and "peekly-progress-sample.zip" in uploads:
-            phase_text = all_text + " " + " ".join(str(row.get("text", "")) for obs in history
-                for row in (obs.get("facts", {}).get("upload_progress_samples", []) or []) if isinstance(row, dict))
-            stopped = any(obs.get("facts", {}).get("last_action_label") == "읽기 멈추기" for obs in history)
-            phases = "파일을 읽고 있어요" in phase_text and "팔로우 목록을 확인하고 있어요" in phase_text
-            no_result = "결과를 불러왔어요" not in all_text
-            if phases and stopped and no_result:
-                emit(index, "passed")
+        elif rid == "PRD-IMPORT-PROGRESS":
+            status, reason = _progress_check(rows)
+            emit(index, status, reason)
+        elif rid == "PRD-IMPORT-SAVE-FAIL":
+            status, reason = _save_failure_check(rows)
+            emit(index, status, reason)
         elif rid == "PRD-IMPORT-ACCOUNT":
             attempts = _uploaded_rows(rows, "peekly-account-mismatch.zip")
             if not attempts:
@@ -373,14 +482,17 @@ def evaluate(task, facts, text, uploaded_fixtures=(), history=()):
             if not follower_attempts or not following_attempts:
                 emit(index, "not_run", "Both named missing-list fixtures were not uploaded; an unrelated previous result cannot trigger this criterion.")
             else:
-                attempted_text = "\n".join(row["text"] for row in follower_attempts + following_attempts)
                 message = "팔로워와 팔로잉 목록이 모두 들어 있는 파일이 필요해요"
-                if message in attempted_text:
-                    emit(index, "passed")
-                elif "결과를 불러왔어요" in attempted_text:
+                rejected = [any(_contains(row["text"], [message]) for row in attempts)
+                            for attempts in (follower_attempts, following_attempts)]
+                accepted = any(_contains(row["text"], ["결과를 불러왔어요"])
+                               for row in follower_attempts + following_attempts)
+                if accepted:
                     emit(index, "failed", "A named missing-list fixture was accepted as a result.")
+                elif all(rejected):
+                    emit(index, "passed")
                 else:
-                    emit(index, "not_run", "Both missing-list uploads were observed but their result state was not captured.")
+                    emit(index, "not_run", "Each missing-list fixture needs its own observed rejection; one fixture's message cannot establish both outcomes.")
         elif rid == "PRD-IMPORT-SIZE" and {"peekly-oversize-plus-one.zip", "@group:peekly-loose-file-over", "@group:peekly-loose-total-over"} <= uploads:
             zip_error = "128MB" in all_text and "ZIP 파일이 너무 커요" in all_text
             file_error = "파일 하나는 최대 32MB" in all_text
@@ -423,8 +535,15 @@ def evaluate(task, facts, text, uploaded_fixtures=(), history=()):
                 emit(index, "not_run", "Sample mode was entered, but the actual More > 관계 목록 MatrixTab was not observed; a sample dashboard or detail modal is not the export screen.")
             else:
                 emit(index, "not_run", "Sample mode was not observed; real-data export controls cannot be judged against the sample restriction.")
-        elif rid == "PRD-IDENTITY-LIMIT" and "아이디 변경이나 계정 삭제 때문일 수도 있어요" in all_text:
-            emit(index, "passed")
+        elif rid == "PRD-IDENTITY-LIMIT":
+            comparison_rows = [row for row in rows if _comparison_with_names(row)]
+            if any(_contains(row["text"], ["아이디 변경이나 계정 삭제 때문일 수도 있어요"])
+                   for row in comparison_rows):
+                emit(index, "passed")
+            elif comparison_rows:
+                emit(index, "failed", "The actual latest comparison and its account list were observed without the required identity-change/account-deletion explanation.")
+            else:
+                emit(index, "not_run", "Open the actual latest comparison explanation and its account list; a first-record preview or loading screen cannot establish this disclosure criterion.")
         elif rid == "PRD-RESULT-SEARCH":
             list_rows = [(row, row["facts"].get("list_rows", [])) for row in rows
                          if isinstance(row["facts"].get("list_rows"), list)]
@@ -459,7 +578,17 @@ def evaluate(task, facts, text, uploaded_fixtures=(), history=()):
             if len(retention_uploads) < 11:
                 emit(index, "not_run", f"Retention requires 11 distinct valid snapshot imports; observed {len(retention_uploads)}.")
             else:
-                history_text = "\n".join(row["text"] for row in rows if "변화 기록" in row["text"] or "번의 관계 기록" in row["text"])
+                # A count seen before the eleventh distinct import is not the
+                # retained result. Read the latest qualifying history state.
+                history_states = []
+                for position, row in enumerate(rows):
+                    row_uploads = _row_uploads(row, uploads if position == len(rows) - 1 else ())
+                    if len(retention_uploads & row_uploads) < 11:
+                        continue
+                    normalized = " ".join(row["text"].split())
+                    if re.search(r"(\d+)\s*(?:번|개)의 관계 기록", normalized):
+                        history_states.append(normalized)
+                history_text = history_states[-1] if history_states else ""
                 count_match = re.search(r"(\d+)\s*(?:번|개)의 관계 기록", history_text)
                 count = int(count_match.group(1)) if count_match else None
                 storage_pressure = "저장 공간이 부족" in history_text or "storage pressure" in history_text.lower()
