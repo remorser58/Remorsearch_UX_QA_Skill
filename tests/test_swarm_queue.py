@@ -178,7 +178,7 @@ class QueueTests(unittest.TestCase):
         self.assertEqual(len({item["lease_token"] for item in claims}), 12)
         self.assertIsNone(queue.claim("overflow"))
 
-    def test_provider_capacity_counts_uncertain_and_allows_other_provider(self):
+    def test_provider_uncertain_operation_is_quarantined_without_holding_inflight_slot(self):
         queue = self.create(routes=["a", "a", "b"],
                             providers={"a": provider(concurrency=1), "b": provider("b", concurrency=1)})
         first = queue.claim("first")
@@ -186,7 +186,8 @@ class QueueTests(unittest.TestCase):
         queue.uncertain(first, request["operation_id"], "transport_lost")
         second = self.reopen().claim("second")
         self.assertEqual(second["provider"], "a")
-        self.assert_code("admission_wait", queue.begin, second, "review", 0, {})
+        request_a = queue.begin(second, "review", 0, {})["request"]
+        queue.finish(second, request_a, reply(request_a))
         third = queue.claim("third")
         request_b = queue.begin(third, "model", 0, {})["request"]
         self.assertEqual(third["provider"], "b")
@@ -195,7 +196,7 @@ class QueueTests(unittest.TestCase):
         self.assertEqual(report["providers"]["a"]["active_or_uncertain"], 1)
         self.assertEqual(report["budget"]["uncertain_reserved"], 20)
 
-    def test_global_capacity_keeps_uncertain_permit_across_restart(self):
+    def test_global_uncertain_operation_is_preserved_but_releases_inflight_slot_after_restart(self):
         queue = self.create(count=3, parallel=2)
         first = queue.claim("first")
         request = queue.begin(first, "tool", 0, {})["request"]
@@ -204,8 +205,12 @@ class QueueTests(unittest.TestCase):
         queue.begin(second, "model", 0, {})
         third = self.reopen().claim("third")
         self.assertIsNotNone(third)
-        self.assert_code("admission_wait", queue.begin, third, "close", 0, {})
-        self.assertEqual(len(queue.report()["operations"]), 2)
+        third_request = queue.begin(third, "close", 0, {})["request"]
+        self.assertEqual(third_request["payload"], {})
+        report = queue.report()
+        self.assertEqual(len(report["operations"]), 3)
+        self.assertEqual(report["counts"]["uncertain"], 1)
+        self.assertEqual(sum(op["state"] == "uncertain" for op in report["operations"]), 1)
 
     def test_verified_pre_dispatch_upload_rejection_reopens_fresh_model_decision(self):
         queue = self.create(count=1, parallel=2)

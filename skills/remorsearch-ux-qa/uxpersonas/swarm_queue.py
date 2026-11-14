@@ -387,14 +387,18 @@ class Queue:
                 fail("approval_required", "User approval is missing or expired; no paid request was sent.")
             now = self.clock()
             spec = self.plan["providers"][job["provider"]]["spec"]
-            count = db.execute("SELECT COUNT(*) FROM operations WHERE state IN ('intent','uncertain')").fetchone()[0]
+            # An uncertain operation is durably quarantined, never replayed, but
+            # its original transport is no longer an active execution slot. Keep
+            # it in the audit ledger, RPM window and budget accounting below;
+            # only live intents consume bounded in-flight concurrency.
+            count = db.execute("SELECT COUNT(*) FROM operations WHERE state='intent'").fetchone()[0]
             if count >= self.plan["limits"]["parallel"]:
-                fail("admission_wait", "The global request limit is occupied, including unresolved sends.")
+                fail("admission_wait", "The global in-flight request limit is occupied.")
             billed = kind in {"model", "review"}
             if billed:
-                count = db.execute("SELECT COUNT(*) FROM operations WHERE provider=? AND kind IN ('model','review') AND state IN ('intent','uncertain')", (job["provider"],)).fetchone()[0]
+                count = db.execute("SELECT COUNT(*) FROM operations WHERE provider=? AND kind IN ('model','review') AND state='intent'", (job["provider"],)).fetchone()[0]
                 if count >= spec["concurrency"]:
-                    fail("admission_wait", "This provider's capacity includes unresolved sends.")
+                    fail("admission_wait", "This provider's in-flight capacity is occupied.")
                 count = db.execute("SELECT COUNT(*) FROM operations WHERE provider=? AND kind IN ('model','review') AND started>? AND state!='not_sent'", (job["provider"], now - 60)).fetchone()[0]
                 if count >= spec["requests_per_minute"]:
                     fail("admission_wait", "This provider's durable request window is full.")
