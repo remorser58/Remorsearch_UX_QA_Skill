@@ -1,0 +1,340 @@
+{
+  "schema_version": "peekly-observation-projection.v1",
+  "description": "Minimal saved 015 SIZE rejection evidence; each text is the unchanged error suffix. Historical checks are retained. Group SHA null is original; the frozen driver validates every selected manifest member before upload. Independent audit verified all five fixture byte counts and hashes.",
+  "source_job": "S-eoddcjbgpjchiikdllkckjcf",
+  "requirement_ids": [
+    "PRD-IMPORT-PROGRESS",
+    "PRD-IMPORT-SIZE",
+    "PRD-IMPORT-SAVE-FAIL"
+  ],
+  "sources": [
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-eoddcjbgpjchiikdllkckjcf/evidence/S-eoddcjbgpjchiikdllkckjcf/1/agent-observation-8.json",
+      "sha256": "b368a85c54e307f2a72e16866c0bf94168424d88faa390fbb896a5e0a7905dd5"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-eoddcjbgpjchiikdllkckjcf/evidence/S-eoddcjbgpjchiikdllkckjcf/1/agent-observation-9.json",
+      "sha256": "7dd60383d2cc6363038017f1c0e08b01044a0651ae36d5c1068df1c8dc7c9fca"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-eoddcjbgpjchiikdllkckjcf/evidence/S-eoddcjbgpjchiikdllkckjcf/1/agent-observation-10.json",
+      "sha256": "e766c4a990bbe71a8ee893fbece079d6efb07f7a2ae41569c9f7d91a25d23a00"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-eoddcjbgpjchiikdllkckjcf/evidence/S-eoddcjbgpjchiikdllkckjcf/1/agent-observation-26.json",
+      "sha256": "08b91aef18464a40ed30472c42fec14fb6ab69e6b3f4d78d1a84f59ae2207f91"
+    }
+  ],
+  "fixture_provenance": {
+    "manifest_file": ".ux-loop/peekly-coverage-fixtures-v7-20261114/fixture-manifest.json",
+    "manifest_sha256": "4df650d58c2105bc67ca3eec27c826b1f8129f8f1a846b396a4eb9e53c48f44a",
+    "groups": {
+      "peekly-loose-file-over": [
+        "loose-file-over-32mib.json"
+      ],
+      "peekly-loose-total-over": [
+        "loose-total-a.json",
+        "loose-total-b.json",
+        "loose-total-c.json"
+      ]
+    },
+    "files": [
+      {
+        "bytes": 33554433,
+        "name": "loose-file-over-32mib.json",
+        "scenario": "loose-single-file-over-32mib",
+        "sha256": "731c45e3c9c8745df747dd8681fcc66ee441a74a2c1b105e83ea7429b1a50f36"
+      },
+      {
+        "bytes": 23068672,
+        "name": "loose-total-a.json",
+        "scenario": "loose-aggregate-over-64mib",
+        "sha256": "3ff845206ecc527b793b7133d1cc70aaf0991f2c753c69f17a5498c0861336ac"
+      },
+      {
+        "bytes": 23068672,
+        "name": "loose-total-b.json",
+        "scenario": "loose-aggregate-over-64mib",
+        "sha256": "d653c362855eadd8c8ede2dc66856356c60dae1be25d4a8c64c384a187634ffb"
+      },
+      {
+        "bytes": 23068672,
+        "name": "loose-total-c.json",
+        "scenario": "loose-aggregate-over-64mib",
+        "sha256": "ccef47ec2ff27446d89887df6d44f1e434d256612ff98e6988166aef1503ba93"
+      },
+      {
+        "bytes": 134217729,
+        "name": "peekly-oversize-plus-one.zip",
+        "scenario": "oversize-128mib-plus-one",
+        "sha256": "7ea6ce492b9f2e83db0190808df466a16da53a11f25ba786f46c26821243c687"
+      }
+    ],
+    "driver_file": "skills/remorsearch-ux-qa/drivers/web/scale_browser_cdp.mjs",
+    "driver_sha256": "dcddb4069f3103da5c66ed3da3a3927eee83c1d5759c648d5521de664de8b4a5"
+  },
+  "observations": [
+    {
+      "id": "obs-8",
+      "text": "파일을 읽지 못했어요: ZIP 파일이 너무 커요. 최대 128MB까지 불러올 수 있어요.\n\n다른 파일 고르기",
+      "facts": {
+        "last_action": "upload",
+        "uploaded_fixture": "peekly-oversize-plus-one.zip",
+        "fixture_uploads": [
+          "peekly-oversize-plus-one.zip",
+          "peekly-progress-sample.zip",
+          "peekly-sample-current.zip"
+        ],
+        "import_attempt_id": "upload-126",
+        "import_attempt": {
+          "attempt_id": "upload-126",
+          "cancel_active": false,
+          "cancel_dispatched": false,
+          "fixture": "peekly-oversize-plus-one.zip",
+          "fixture_sha256": "7ea6ce492b9f2e83db0190808df466a16da53a11f25ba786f46c26821243c687",
+          "persistence_unchanged": true,
+          "phase_samples": [
+            {
+              "elapsed_ms": 0,
+              "text": "파일을 읽고 있어요"
+            }
+          ],
+          "schema_version": "peekly-import-attempt.v1",
+          "storage_after": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "7509f5e365a5c4dbac83578292fc66d42fd0a2599a4fd3adba698f9117d09730"
+          },
+          "storage_before": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "7509f5e365a5c4dbac83578292fc66d42fd0a2599a4fd3adba698f9117d09730"
+          },
+          "tool": "upload"
+        },
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "7509f5e365a5c4dbac83578292fc66d42fd0a2599a4fd3adba698f9117d09730"
+        }
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 2,
+          "kind": "success",
+          "reason": "Use the bounded upload_save_failure tool with a saved synthetic baseline, then verify the visible retry action and its persisted result.",
+          "status": "not_run"
+        }
+      ]
+    },
+    {
+      "id": "obs-9",
+      "text": "파일을 읽지 못했어요: loose-file-over-32mib.json 파일이 너무 커요. 파일 하나는 최대 32MB까지 불러올 수 있어요.\n\n다른 파일 고르기",
+      "facts": {
+        "last_action": "upload",
+        "uploaded_fixture": "[handle]:peekly-loose-file-over",
+        "fixture_uploads": [
+          "[handle]:peekly-loose-file-over",
+          "peekly-oversize-plus-one.zip",
+          "peekly-progress-sample.zip",
+          "peekly-sample-current.zip"
+        ],
+        "import_attempt_id": "upload-155",
+        "import_attempt": {
+          "attempt_id": "upload-155",
+          "cancel_active": false,
+          "cancel_dispatched": false,
+          "fixture": "[handle]:peekly-loose-file-over",
+          "fixture_sha256": "731c45e3c9c8745df747dd8681fcc66ee441a74a2c1b105e83ea7429b1a50f36",
+          "persistence_unchanged": true,
+          "phase_samples": [
+            {
+              "elapsed_ms": 0,
+              "text": "파일을 읽고 있어요"
+            }
+          ],
+          "schema_version": "peekly-import-attempt.v1",
+          "storage_after": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "7509f5e365a5c4dbac83578292fc66d42fd0a2599a4fd3adba698f9117d09730"
+          },
+          "storage_before": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "7509f5e365a5c4dbac83578292fc66d42fd0a2599a4fd3adba698f9117d09730"
+          },
+          "tool": "upload"
+        },
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "7509f5e365a5c4dbac83578292fc66d42fd0a2599a4fd3adba698f9117d09730"
+        }
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 2,
+          "kind": "success",
+          "reason": "Use the bounded upload_save_failure tool with a saved synthetic baseline, then verify the visible retry action and its persisted result.",
+          "status": "not_run"
+        }
+      ]
+    },
+    {
+      "id": "obs-10",
+      "text": "파일을 읽지 못했어요: 파일은 모두 합쳐 최대 64MB까지 불러올 수 있어요.\n\n다른 파일 고르기",
+      "facts": {
+        "last_action": "upload",
+        "uploaded_fixture": "[handle]:peekly-loose-total-over",
+        "fixture_uploads": [
+          "[handle]:peekly-loose-file-over",
+          "[handle]:peekly-loose-total-over",
+          "peekly-oversize-plus-one.zip",
+          "peekly-progress-sample.zip",
+          "peekly-sample-current.zip"
+        ],
+        "import_attempt_id": "upload-184",
+        "import_attempt": {
+          "attempt_id": "upload-184",
+          "cancel_active": false,
+          "cancel_dispatched": false,
+          "fixture": "[handle]:peekly-loose-total-over",
+          "fixture_sha256": null,
+          "persistence_unchanged": true,
+          "phase_samples": [
+            {
+              "elapsed_ms": 1,
+              "text": "파일을 읽고 있어요"
+            }
+          ],
+          "schema_version": "peekly-import-attempt.v1",
+          "storage_after": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "7509f5e365a5c4dbac83578292fc66d42fd0a2599a4fd3adba698f9117d09730"
+          },
+          "storage_before": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "7509f5e365a5c4dbac83578292fc66d42fd0a2599a4fd3adba698f9117d09730"
+          },
+          "tool": "upload"
+        },
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "7509f5e365a5c4dbac83578292fc66d42fd0a2599a4fd3adba698f9117d09730"
+        }
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 2,
+          "kind": "success",
+          "reason": "Use the bounded upload_save_failure tool with a saved synthetic baseline, then verify the visible retry action and its persisted result.",
+          "status": "not_run"
+        }
+      ]
+    },
+    {
+      "id": "obs-26",
+      "text": "파일을 읽지 못했어요: loose-file-over-32mib.json 파일이 너무 커요. 파일 하나는 최대 32MB까지 불러올 수 있어요.\n\n다른 파일 고르기",
+      "facts": {
+        "last_action": "upload",
+        "uploaded_fixture": "[handle]:peekly-loose-file-over",
+        "fixture_uploads": [
+          "[handle]:peekly-loose-file-over",
+          "[handle]:peekly-loose-total-over",
+          "peekly-oversize-plus-one.zip",
+          "peekly-progress-sample.zip",
+          "peekly-sample-current.zip",
+          "peekly-sample-previous.zip"
+        ],
+        "import_attempt_id": "upload-641",
+        "import_attempt": {
+          "attempt_id": "upload-641",
+          "cancel_active": false,
+          "cancel_dispatched": false,
+          "fixture": "[handle]:peekly-loose-file-over",
+          "fixture_sha256": "731c45e3c9c8745df747dd8681fcc66ee441a74a2c1b105e83ea7429b1a50f36",
+          "persistence_unchanged": true,
+          "phase_samples": [
+            {
+              "elapsed_ms": 1,
+              "text": "파일을 읽고 있어요"
+            }
+          ],
+          "schema_version": "peekly-import-attempt.v1",
+          "storage_after": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "7509f5e365a5c4dbac83578292fc66d42fd0a2599a4fd3adba698f9117d09730"
+          },
+          "storage_before": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "7509f5e365a5c4dbac83578292fc66d42fd0a2599a4fd3adba698f9117d09730"
+          },
+          "tool": "upload"
+        },
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "7509f5e365a5c4dbac83578292fc66d42fd0a2599a4fd3adba698f9117d09730"
+        }
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 2,
+          "kind": "success",
+          "reason": "The write-failure notice and unchanged persisted state were observed, but the PRD-required direct save-retry control was absent; only file re-selection was offered.",
+          "status": "failed"
+        }
+      ]
+    }
+  ]
+}

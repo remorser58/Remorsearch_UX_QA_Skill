@@ -288,13 +288,15 @@ class VerdictQualityTests(unittest.TestCase):
         # persistence. The scoped upload_cancel receipt is required.
         self.assertEqual(evaluate({"requirement_ids": ["PRD-IMPORT-PROGRESS"]}, facts, "", uploads, history)[0]["status"], "not_run")
 
-    def test_size_criteria_requires_all_three_boundary_uploads_and_messages(self):
+    def test_unbound_size_upload_names_and_accumulated_messages_remain_not_run(self):
         task = {"requirement_ids": ["PRD-IMPORT-SIZE"]}
         facts = {"controls": [], "file_inputs": [], "network_policy": {}}
         uploads = ("peekly-oversize-plus-one.zip", "@group:peekly-loose-file-over", "@group:peekly-loose-total-over")
         text = "ZIP 파일이 너무 커요. 최대 128MB까지 불러올 수 있어요. 파일 하나는 최대 32MB까지 불러올 수 있어요. 파일은 모두 합쳐 최대 64MB까지 불러올 수 있어요."
-        self.assertEqual(evaluate(task, facts, text, uploads), [{"kind": "success", "index": 0, "status": "passed"}])
-        self.assertEqual(evaluate(task, facts, text, uploads[:1]), [])
+        # Each boundary now needs its own upload attempt and preserved state;
+        # names and cumulative copy alone cannot prove any of the executions.
+        self.assertEqual(evaluate(task, facts, text, uploads)[0]["status"], "not_run")
+        self.assertEqual(evaluate(task, facts, text, uploads[:1])[0]["status"], "not_run")
 
     def test_multi_file_criterion_requires_every_real_group_and_outcomes(self):
         task = {"requirement_ids": ["PRD-IMPORT-MULTI"]}

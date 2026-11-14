@@ -326,6 +326,11 @@ def _preserved_named_rejection(row, fixture):
 def _accepted_named_import(row, fixture):
     """Acceptance needs completion and a new saved state in the same attempt."""
     attempt = _named_import_attempt(row, fixture)
+    return _completed_new_save(row, attempt)
+
+
+def _completed_new_save(row, attempt):
+    """Use only an already bound attempt's completion and persistence evidence."""
     if attempt is None:
         return False
     before, after = attempt.get("storage_before"), attempt.get("storage_after")
@@ -657,6 +662,67 @@ def search_scope_evidence(rows):
     return failed or passed or missing
 
 
+SIZE_REQUIREMENT = "PRD-IMPORT-SIZE"
+SIZE_ALIASES = {
+    "[handle]:peekly-loose-file-over": "@group:peekly-loose-file-over",
+    "[handle]:peekly-loose-total-over": "@group:peekly-loose-total-over",
+}
+SIZE_BOUNDARIES = {
+    "peekly-oversize-plus-one.zip": (
+        "7ea6ce492b9f2e83db0190808df466a16da53a11f25ba786f46c26821243c687",
+        ("ZIP 파일이 너무 커요", "최대 128MB")),
+    "@group:peekly-loose-file-over": (
+        "731c45e3c9c8745df747dd8681fcc66ee441a74a2c1b105e83ea7429b1a50f36",
+        ("loose-file-over-32mib.json", "파일 하나는 최대 32MB")),
+    # The reviewed driver validates every selected manifest member before upload.
+    # Its v1 evidence deliberately uses null for a multi-file group, not a fake
+    # aggregate digest. The saved golden retains the frozen member provenance.
+    "@group:peekly-loose-total-over": (None, ("파일은 모두 합쳐 최대 64MB",)),
+}
+
+
+def size_scope_evidence(rows):
+    """Require each named size boundary's own rejection and preserved baseline."""
+    missing = {"status": "not_run", "indices": [],
+               "reason": "All three size boundaries need their own bound upload, matching rejection notice, and available unchanged saved-state digests."}
+    rejected, failed = {}, None
+    for index, row in enumerate(rows):
+        facts = row.get("facts", {})
+        name = facts.get("uploaded_fixture")
+        fixture = SIZE_ALIASES.get(name, name) if isinstance(name, str) else None
+        attempt = facts.get("import_attempt")
+        if fixture not in SIZE_BOUNDARIES or not isinstance(attempt, dict):
+            continue
+        named = attempt.get("fixture")
+        named = SIZE_ALIASES.get(named, named) if isinstance(named, str) else None
+        expected_sha, notice = SIZE_BOUNDARIES[fixture]
+        attempt_id = attempt.get("attempt_id")
+        if not (facts.get("last_action") == "upload" and attempt.get("tool") == "upload"
+                and attempt.get("schema_version") == "peekly-import-attempt.v1"
+                and isinstance(attempt_id, str) and attempt_id
+                and facts.get("import_attempt_id") == attempt_id and named == fixture
+                and "fixture_sha256" in attempt and attempt["fixture_sha256"] == expected_sha):
+            continue
+        if _completed_new_save(row, attempt):
+            failed = {"status": "failed", "indices": [index],
+                      "reason": "A pinned invalid size-boundary fixture completed import and changed the saved result in its own upload attempt."}
+            continue
+        before, after = attempt.get("storage_before"), attempt.get("storage_after")
+        if (attempt.get("persistence_unchanged") is True
+                and attempt.get("cancel_dispatched") is not True
+                and _same_storage(before, after)
+                and "peekly_state_v7" in before["keys"]
+                and _same_storage(after, facts.get("storage_snapshot"))
+                and _contains(row.get("text", ""), ("파일을 읽지 못했어요", *notice))):
+            rejected.setdefault(fixture, index)
+    if failed:
+        return failed
+    if rejected.keys() >= SIZE_BOUNDARIES.keys():
+        return {"status": "passed", "indices": [rejected[name] for name in SIZE_BOUNDARIES],
+                "summary": "Verified the pinned 128 MiB ZIP, 32 MiB loose-file, and 64 MiB aggregate boundaries were each rejected without replacing the saved result."}
+    return missing
+
+
 LEGACY_UNKNOWN_REQUIREMENT = "PRD-IMPORT-SNAPSHOT-UNKNOWN"
 LEGACY_UNKNOWN_REASON = (
     "No approved host capability configured a legacy snapshot without includedFiles. "
@@ -688,6 +754,8 @@ def guard_peekly_scope(task, criteria, observations):
     Relationship failures and unrelated criterion decisions remain untouched.
     Legacy-unknown has no configured setup. Search requires a fresh exact query;
     its historical placeholder-only failure is replaced by scoped DOM evidence.
+    Size uses its three bound rejection/preservation attempts, with acceptance
+    failure taking priority over any model decision or successful rejections.
     Both receipt paths use this after native merges and normal validation.
     """
     requirements = task.get("requirement_ids", [])
@@ -700,13 +768,16 @@ def guard_peekly_scope(task, criteria, observations):
         index = criterion.get("index")
         if (criterion.get("kind") != "success"
                 or not isinstance(index, int) or index < 0 or index >= len(requirements)
-                or requirements[index] not in {*RESULT_SCOPE_KEYS, SEARCH_REQUIREMENT}):
+                or requirements[index] not in {*RESULT_SCOPE_KEYS, SEARCH_REQUIREMENT, SIZE_REQUIREMENT}):
             continue
-        is_search = requirements[index] == SEARCH_REQUIREMENT
-        if not is_search and criterion.get("status") != "passed":
-            continue
-        proof = (search_scope_evidence(observations) if is_search
-                 else result_scope_evidence(observations, requirements[index]))
+        if requirements[index] == SEARCH_REQUIREMENT:
+            proof = search_scope_evidence(observations)
+        elif requirements[index] == SIZE_REQUIREMENT:
+            proof = size_scope_evidence(observations)
+        else:
+            if criterion.get("status") != "passed":
+                continue
+            proof = result_scope_evidence(observations, requirements[index])
         sources = [observations[i] for i in proof["indices"]]
         captures_bound = bool(sources) and all(
             any(artifact.get("kind") == "screenshot" for artifact in source.get("artifacts", []))
@@ -849,12 +920,9 @@ def evaluate(task, facts, text, uploaded_fixtures=(), history=()):
                     emit(index, "passed")
                 else:
                     emit(index, "not_run", "Each missing-list fixture needs its own observed rejection; one fixture's message cannot establish both outcomes.")
-        elif rid == "PRD-IMPORT-SIZE" and {"peekly-oversize-plus-one.zip", "@group:peekly-loose-file-over", "@group:peekly-loose-total-over"} <= uploads:
-            zip_error = "128MB" in all_text and "ZIP 파일이 너무 커요" in all_text
-            file_error = "파일 하나는 최대 32MB" in all_text
-            total_error = "모두 합쳐 최대 64MB" in all_text
-            if zip_error and file_error and total_error:
-                emit(index, "passed")
+        elif rid == SIZE_REQUIREMENT:
+            proof = size_scope_evidence(rows)
+            emit(index, proof["status"], proof.get("reason"))
         elif rid == LEGACY_UNKNOWN_REQUIREMENT:
             emit(index, "not_run", LEGACY_UNKNOWN_REASON)
         elif rid == "PRD-PRIVACY-LOCAL":

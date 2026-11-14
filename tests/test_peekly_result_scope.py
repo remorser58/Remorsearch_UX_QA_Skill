@@ -18,7 +18,7 @@ from uxpersonas.peekly_criteria import (
     CRITERIA, LEGACY_UNKNOWN_REASON, LEGACY_UNKNOWN_REQUIREMENT,
     RESULT_CURRENT_FIXTURE, RESULT_CURRENT_SHA256, RESULT_SCOPE_KEYS,
     SEARCH_KEYS, SEARCH_QUERY, SEARCH_QUERY_SHA256, SEARCH_REQUIREMENT,
-    evaluate, result_scope_evidence, search_scope_evidence,
+    SIZE_REQUIREMENT, evaluate, result_scope_evidence, search_scope_evidence, size_scope_evidence,
 )
 from uxpersonas.scale_run import Evidence
 from uxresearch.canonical import EngineError, byte_digest
@@ -368,6 +368,53 @@ class ReceiptScopeTests(unittest.TestCase):
         self.assertEqual(error.exception.issue["code"], "erased_failure")
 
 
+
+    def size_task(self):
+        self.worker["claim"]["task"].update(
+            requirement_ids=["PRD-IMPORT-PROGRESS", SIZE_REQUIREMENT, "PRD-IMPORT-SAVE-FAIL"],
+            success_criteria=["Cancel active import", "Three size boundaries", "Save failure recovery"])
+
+    def test_actual_015_size_triad_corrects_only_size_and_keeps_save_failure(self):
+        self.size_task()
+        observed = self.admit(golden("peekly_size_scope_015.json"))
+        expected = [artifact["id"] for row in observed[:3] for artifact in row["artifacts"]]
+        for judgment in (None, *(self.judgment(["passed", status, "failed"])
+                                 for status in ("passed", "failed", "not_run"))):
+            for receipt in self.receipts(judgment):
+                self.assertEqual([c["status"] for c in receipt["criteria"]],
+                                 ["passed", "passed", "failed"])
+                self.assertEqual(receipt["criteria"][1]["evidence_ids"], expected)
+
+    def test_missing_size_boundary_cannot_be_promoted_by_model_or_legacy_native_pass(self):
+        self.size_task()
+        rows = golden("peekly_size_scope_015.json")[:2]
+        rows[-1]["checks"].append({"kind": "success", "index": 1, "status": "passed"})
+        self.admit(rows)
+        for judgment in (None, self.judgment(["passed", "passed", "not_run"])):
+            for receipt in self.receipts(judgment):
+                self.assertEqual(receipt["criteria"][1]["status"], "not_run")
+                self.assertEqual(receipt["criteria"][1]["evidence_ids"], [])
+
+    def test_accepted_invalid_size_boundary_failure_survives_later_triad_and_model_pass(self):
+        self.size_task()
+        rows = golden("peekly_size_scope_015.json")
+        accepted = RejectionWordingScopeTests.synthetic_acceptance(rows[0])
+        accepted["checks"] = [{"kind": "success", "index": 1, "status": "failed"}]
+        self.admit([accepted, *rows])
+        for judgment in (None, self.judgment(["passed", "passed", "failed"])):
+            for receipt in self.receipts(judgment):
+                self.assertEqual(receipt["criteria"][1]["status"], "failed")
+
+    def test_size_triad_needs_a_capture_for_each_boundary(self):
+        self.size_task()
+        observed = self.admit(golden("peekly_size_scope_015.json"))
+        observed[2]["artifacts"] = []
+        judgment = self.judgment(["passed", "passed", "failed"])
+        judgment["criteria"][2]["observation_ids"] = ["obs-4"]
+        for receipt in self.receipts(judgment):
+            self.assertEqual(receipt["criteria"][1]["status"], "not_run")
+
+
 class LegacyUnknownScopeTests(unittest.TestCase):
     def test_actual_021_known_empty_then_normal_pair_does_not_exercise_legacy_unknown(self):
         rows = golden("peekly_legacy_unknown_021.json")
@@ -615,6 +662,109 @@ class SearchScopeTests(unittest.TestCase):
                 mutate(rows)
                 self.assert_search(rows, "failed")
                 self.assert_search(rows + golden("peekly_search_scope_026.json"), "failed")
+
+
+
+class SizeScopeTests(unittest.TestCase):
+    def assert_size(self, rows, status):
+        self.assertEqual(size_scope_evidence(rows)["status"], status)
+        self.assertEqual(statuses(rows, [SIZE_REQUIREMENT]), {0: status})
+
+    def test_actual_015_rejection_triad_passes_without_fabricating_group_sha(self):
+        rows = golden("peekly_size_scope_015.json")
+        self.assertIsNone(rows[2]["facts"]["import_attempt"]["fixture_sha256"])
+        self.assertEqual(size_scope_evidence(rows)["indices"], [0, 1, 2])
+        self.assert_size(rows, "passed")
+        self.assert_size([rows[0], rows[2], rows[3]], "passed")  # The later 32 MiB attempt is also real.
+
+    def test_frozen_member_provenance_exercises_three_distinct_boundaries(self):
+        value = json.loads((FIXTURES / "peekly_size_scope_015.json").read_text())
+        provenance = value["fixture_provenance"]
+        self.assertEqual(provenance["manifest_sha256"],
+                         "4df650d58c2105bc67ca3eec27c826b1f8129f8f1a846b396a4eb9e53c48f44a")
+        files = {row["name"]: row for row in provenance["files"]}
+        self.assertEqual(files["peekly-oversize-plus-one.zip"]["bytes"], 128 * 1024 ** 2 + 1)
+        self.assertEqual(files["loose-file-over-32mib.json"]["bytes"], 32 * 1024 ** 2 + 1)
+        group = [files[name] for name in provenance["groups"]["peekly-loose-total-over"]]
+        self.assertEqual(sum(row["bytes"] for row in group), 66 * 1024 ** 2)
+        self.assertTrue(all(row["bytes"] < 32 * 1024 ** 2 for row in group))
+
+    def test_only_the_two_reviewed_redacted_group_aliases_are_accepted(self):
+        rows = golden("peekly_size_scope_015.json")[:3]
+        for row in rows[1:]:
+            facts = row["facts"]
+            facts["uploaded_fixture"] = facts["uploaded_fixture"].replace("[handle]:", "@group:")
+            facts["import_attempt"]["fixture"] = facts["uploaded_fixture"]
+        self.assert_size(rows, "passed")
+        for name in ("[other]:peekly-loose-total-over", "[handle]:unreviewed-total-over"):
+            altered = copy.deepcopy(rows)
+            altered[2]["facts"]["uploaded_fixture"] = name
+            altered[2]["facts"]["import_attempt"]["fixture"] = name
+            self.assert_size(altered, "not_run")
+
+    def test_missing_boundary_or_notice_stays_not_run(self):
+        baseline = golden("peekly_size_scope_015.json")[:3]
+        for missing in range(3):
+            with self.subTest(missing=missing):
+                self.assert_size([r for i, r in enumerate(baseline) if i != missing], "not_run")
+                rows = copy.deepcopy(baseline)
+                rows[missing]["text"] = "파일 고르기"
+                self.assert_size(rows, "not_run")
+        rows = copy.deepcopy(baseline)
+        rows[0]["text"] = "ZIP 파일이 너무 커요. 최대 128MB"
+        self.assert_size(rows, "not_run")  # A guide/limit mention is not the observed import error.
+
+    def test_unbound_fixture_attempt_or_unavailable_changed_state_cannot_pass(self):
+        for name, mutate in (
+            ("wrong sha", lambda row: row["facts"]["import_attempt"].update(fixture_sha256="a" * 64)),
+            ("other fixture", lambda row: row["facts"].update(uploaded_fixture="peekly-sample-current.zip")),
+            ("other attempt", lambda row: row["facts"].update(import_attempt_id="upload-unrelated")),
+            ("other tool", lambda row: row["facts"]["import_attempt"].update(tool="upload_cancel")),
+            ("stale action", lambda row: row["facts"].update(last_action="observe")),
+            ("unavailable before", lambda row: row["facts"]["import_attempt"]["storage_before"].update(available=False)),
+            ("no preserved state", lambda row: row["facts"]["import_attempt"].update(persistence_unchanged=False)),
+            ("changed after", lambda row: row["facts"]["import_attempt"]["storage_after"].update(sha256="b" * 64)),
+            ("changed current", lambda row: row["facts"]["storage_snapshot"].update(sha256="b" * 64)),
+        ):
+            with self.subTest(case=name):
+                rows = golden("peekly_size_scope_015.json")[:3]
+                mutate(rows[0])
+                self.assert_size(rows, "not_run")
+        for remove in (True, False):
+            rows = golden("peekly_size_scope_015.json")[:3]
+            if remove:
+                rows[2]["facts"]["import_attempt"].pop("fixture_sha256")
+            else:
+                rows[2]["facts"]["import_attempt"]["fixture_sha256"] = "a" * 64
+            self.assert_size(rows, "not_run")
+
+    def test_other_attempt_or_accumulated_text_cannot_supply_the_missing_notice(self):
+        rows = golden("peekly_size_scope_015.json")[:3]
+        unrelated = copy.deepcopy(rows[0])
+        unrelated["facts"].update(last_action="observe", uploaded_fixture="peekly-sample-current.zip")
+        rows[0]["text"] = "파일을 읽고 있어요"
+        self.assert_size([unrelated, *rows], "not_run")
+        rows[1]["text"] += "\n" + unrelated["text"]
+        self.assert_size(rows, "not_run")
+
+    def test_each_actual_acceptance_has_failure_priority_before_or_after_rejections(self):
+        baseline = golden("peekly_size_scope_015.json")[:3]
+        for boundary in baseline:
+            accepted = RejectionWordingScopeTests.synthetic_acceptance(boundary)
+            for rows in ([accepted], [accepted, *baseline], [*baseline, accepted]):
+                self.assert_size(rows, "failed")
+
+    def test_bare_completion_copy_or_unsaved_completion_is_not_acceptance(self):
+        for boundary in golden("peekly_size_scope_015.json")[:3]:
+            bare = copy.deepcopy(boundary)
+            bare["text"] = "결과를 불러왔어요."
+            self.assert_size([bare], "not_run")
+            accepted = RejectionWordingScopeTests.synthetic_acceptance(boundary)
+            accepted["facts"]["import_attempt"]["phase_samples"] = []
+            self.assert_size([accepted], "not_run")
+            accepted = RejectionWordingScopeTests.synthetic_acceptance(boundary)
+            accepted["facts"]["import_attempt"]["storage_after"]["available"] = False
+            self.assert_size([accepted], "not_run")
 
 
 if __name__ == "__main__":
