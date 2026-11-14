@@ -14,6 +14,15 @@ Reduce the 46 success-criterion not_run records in the ee4b145 r4/r6 completed-s
 - Base and original remote verified: ee4b14571930af428d5a52e0e133deebedba485d
 - Product/PRD: existing owned Peekly build 51110f4; do not change product UX in this runner-focused task.
 
+## Current state — r3 is running, never launch it again
+
+- Frozen runtime commit:18a4c0af8cee17e6af73984eaebfa4a5595720e4. Pushed to origin/rem/peekly-coverage-20261114; exact remote SHA verified.
+- Fresh detached launch2026-11-14T05:19:15Z, PID84778; durable started_at05:19:18Z. Exact personas016/029.
+- Run root:.ux-loop/peekly-coverage-smoke-r3-20261114; stage-2/queue.sqlite; launch log:.ux-loop/peekly-coverage-smoke-r3-launch-20261114.log.
+- Initial queue inspection:running2,016turn3/029turn1, no problem. Read current queue/run-status for newer progress.
+- Source, fixtures and saved persona library are frozen. Do not edit them during this run. Docs-only updates are allowed.
+- R1/r2 are preserved and cannot authorize expansion. No32-person cohort has launched. After r3 passes the stored gate, use the existing cohort launcher once; it verifies the exact same freeze and excludes all prior job IDs.
+
 ## Initial implementation before r1 (historical)
 
 - Baseline/remote/clean state verified; new branch created.
@@ -29,14 +38,14 @@ Reduce the 46 success-criterion not_run records in the ee4b145 r4/r6 completed-s
 - Actual launcher offline preflight passed: 27 existing queues, 287 forbidden distinct job IDs, 36 historical uncertain job rows; all543 fixture byte/hash pairs and all32 reusable saved persona IDs verified. No model/browser calls occurred during this preflight.
 - Owned preview HTTP200 and served/local index SHA256 both match pinned artifact: 848b334a6affa5c6a578911819aaf127da34bc2e6ae2f04899022872b7d0f6f5.
 
-## Current state — r2 ended; r3 fixes frozen and validated, not launched
+## Preserved r2 result and r3 prelaunch validation
 
 - Frozen implementation: fb0c6666bde5e969a6b479ec94ccf875a5f3aac5. Pushed to origin/rem/peekly-coverage-20261114 and remote SHA verified equal.
 - New smoke launched detached2026-11-14T04:48:43Z, PID78522, exact016/029.
 - Current root: .ux-loop/peekly-coverage-smoke-r2-20261114; queue stage-2/queue.sqlite; launch log .ux-loop/peekly-coverage-smoke-r2-launch-20261114.log.
 - r2 ended2026-11-14T05:13:52Z with state=smoke_failed. Queue complete2 but assessed1:016 operational_completed=false/problem=observation_invalid;029 valid inconclusive, success passed2/not_run1 and recovery N/A1. No jobs remain running, queued or uncertain; owned browser shutdown confirmed.
 - Exact016 cause: upload_save_failure op-f30fb0491f9e1ca6d18d7babaa8454b28e305646 returned an honest failed native criterion with a bounded reason, but agent_run.py observation admission accepts reason only for not_run. The preceding64MiB rejection was an intentional size-boundary group, not the v7 progress fixture.
-- Applied after r2 ended: allow only bounded failed/not_run diagnostic reasons through the existing privacy/length checks; clarify direct scroll-to-import after sample export. New default smoke root is .ux-loop/peekly-coverage-smoke-r3-20261114. Runtime edits are frozen and regression/offline preflight passed. R3 has NOT launched. Preserve r1/r2; never resume either.
+- Applied after r2 ended: allow only bounded failed/not_run diagnostic reasons through the existing privacy/length checks; clarify direct scroll-to-import after sample export. New default smoke root is .ux-loop/peekly-coverage-smoke-r3-20261114. Runtime edits are frozen and regression/offline preflight passed. R3 subsequently launched as recorded above. Preserve r1/r2; never resume either.
 - R3 verification:30 focused tests passed (native reason5, checklist7, launcher18); existing agent/scale/verdict/evidence85 tests had65 passes/20 optional LangGraph skips/0 failures. Combined95 passes/20 skips. Focused log .ux-loop/peekly-r3-final-focused-20261114.log SHA25699fc74ab8fb6dd2abdf439f7c0362a9ec1664c4721567c6f3893f9c9cafc8e4f; existing suite log .ux-loop/peekly-reason-schema-regressions-20261114.log SHA25691162f2b2f3408c42d2140f0a17923e754aa24e3a721566dedb4748e6d217aa0.
 - Actual r3 offline preflight passed:29 preserved queues,291 forbidden distinct job IDs,36 historical uncertain rows; existing543 fixture hashes and32 saved personas checked without model/browser calls.
 - Final r2 ledger:77 actual request receipts/76 call IDs,1 known completed-response repair,0 uncertainty,0 uncertain resends,0 unsettled guards. Audit valid; prior_queues_unchanged=true. Ledger SHA25665334e4a9034a104a277e7f5d01826e82679842ed51653c041a5314904ced745. Only approved free TOKENMAXX route; fallback0.
@@ -74,10 +83,10 @@ Reduce the 46 success-criterion not_run records in the ee4b145 r4/r6 completed-s
 
 ## Next checkpoints
 
-1. Commit and push the validated frozen r3 repair. Verify remote SHA before starting a fresh r3 smoke. Never resume r1/r2.
-2. After launching r3 once, inspect its durable status through short readonly SQLite/jq calls. Confirm valid completed receipts, frozen inputs, prior_queues_unchanged and no router resend after uncertainty before expansion.
+1. Inspect the ALREADY RUNNING r3 smoke. Never launch it again or resume r1/r2.
+2. Use short readonly SQLite/jq calls. Confirm valid completed receipts, frozen inputs, prior_queues_unchanged and no router resend after uncertainty before expansion.
 3. Latest r6 same-person baseline has3 success not_run. Expansion requires2 valid complete receipts, no host_protocol, zero success N/A and fewer than3 success not_run.
 4. If completed receipts demonstrate not_run reduction, launch fresh32 once, preserve every uncertain send; periodically inspect.
 5. Update four-column comparison, report commit/push, verify remote SHA and clean worktree.
 
-If interrupted, read this file and durable queues before doing anything. Existing uncertain operations are never replayed; completed outputs are read back. R1 and r2 are stopped and preserved. R3 has not launched at this checkpoint; inspect whether its root exists before any launch.
+If interrupted, read this file and durable queues before doing anything. Existing uncertain operations are never replayed; completed outputs are read back. R1 and r2 are stopped and preserved. R3 has already launched; inspect its state, never start a second copy.
