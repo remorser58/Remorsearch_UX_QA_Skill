@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+import unicodedata
 
 PEEKLY_PRD_SHA256 = "a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b"
 
@@ -181,10 +182,13 @@ for _rid, _spec in CRITERIA.items():
     _spec["source_anchor"] = SOURCE_ANCHORS[_rid]
 
 
+def _normalized_text(value) -> str:
+    return " ".join(unicodedata.normalize("NFKC", str(value or "")).split())
+
+
 def _contains(text: str, values) -> bool:
-    normalized = " ".join(str(text).replace("\u00a0", " ").split())
-    return all(" ".join(str(value).replace("\u00a0", " ").split()) in normalized
-               for value in values)
+    normalized = _normalized_text(text)
+    return all(_normalized_text(value) in normalized for value in values)
 
 
 def _rows(history, text, facts):
@@ -265,7 +269,7 @@ def _category_counts(text):
 
 
 def _comparison_with_names(row):
-    text = " ".join(str(row.get("text", "")).replace("\u00a0", " ").split())
+    text = _normalized_text(row.get("text", ""))
     rows = row.get("facts", {}).get("list_rows", [])
     return ("팔로워에서 빠진 사람" in text and "명" in text
             and isinstance(rows, list) and len(rows) > 0)
@@ -827,6 +831,33 @@ def _pair_fixture_attempt(row):
     return None
 
 
+def _pro_feature_sheet(row):
+    """Recognize the pinned desktop Pro sheet, not an unrelated Pro mention.
+
+    PaywallModal.tsx has all three title/description pairs in one sheet. Its
+    body inserts nonbreaking spaces; visible close/confirm controls establish
+    that this sheet is the current modal rather than hidden background copy.
+    """
+    body = _normalized_text(row.get("text", ""))
+    if "Peekly Pro" not in body:
+        return False
+    sheet = body.rsplit("Peekly Pro", 1)[1]
+    visible_buttons = {
+        _normalized_text(control.get("label")) for control in _controls(row)
+        if isinstance(control, dict) and control.get("tag") == "button"
+        and control.get("visible") is True and control.get("disabled") is False
+    }
+    features = (
+        ("변화를 시간순으로", "여러 번 확인한 관계 변화를 한곳에서 봐요"),
+        ("원하는 두 시점 비교", "저장한 날짜를 골라 달라진 사람을 확인해요"),
+        ("한 사람의 관계 이력", "보관된 기록에서 그 사람과의 관계를 따라봐요"),
+    )
+    return ({"닫기", "확인"} <= visible_buttons
+            and "현재 관계와 최근 변화는 무료예요" in sheet
+            and "Pro로 쌓인 기록을 이어서 살펴보세요" in sheet
+            and all(all(part in sheet for part in pair) for pair in features))
+
+
 def paywall_scope_evidence(rows):
     """Observe one actual free-account pair, its latest names and Pro boundary.
 
@@ -843,7 +874,7 @@ def paywall_scope_evidence(rows):
     for index, row in enumerate(rows):
         if not isinstance(row, dict) or not isinstance(row.get("facts"), dict):
             continue
-        facts, body = row["facts"], str(row.get("text", ""))
+        facts, body = row["facts"], _normalized_text(row.get("text", ""))
         if "샘플을 보고" in body or "샘플 닫기" in body:
             chain, anchor, free, locked, pro = [], None, None, None, None
             progress = dict.fromkeys(progress, False)
@@ -875,9 +906,11 @@ def paywall_scope_evidence(rows):
             free = index
             progress["free_comparison"] = True
         start = next((c for c in _controls(row) if isinstance(c, dict)
-                      and c.get("tag") == "select" and c.get("label") == "비교 시작 기록"), None)
+                      and c.get("tag") == "select" and c.get("visible") is True
+                      and _normalized_text(c.get("label")) == "비교 시작 기록"), None)
         end = next((c for c in _controls(row) if isinstance(c, dict)
-                    and c.get("tag") == "select" and c.get("label") == "비교 종료 기록"), None)
+                    and c.get("tag") == "select" and c.get("visible") is True
+                    and _normalized_text(c.get("label")) == "비교 종료 기록"), None)
         if start is not None and end is not None:
             progress["history_open"] = True
             if start.get("disabled") is True and end.get("disabled") is True:
@@ -886,10 +919,7 @@ def paywall_scope_evidence(rows):
             elif start.get("disabled") is False and end.get("disabled") is False:
                 failed = {"status": "failed", "indices": [*indices, index], "reason":
                           "The owned free account exposed both date-selection controls that the current PRD reserves for Pro."}
-        if "Pro" in body and all(any(term in body for term in terms) for terms in (
-                ("변화 타임라인", "여러 기록의 변화", "여러 시점의 변화"),
-                ("두 날짜 선택 비교", "두 시점 비교", "날짜 선택"),
-                ("사람별 관계 이력", "개인별 이력", "한 사람의 관계 이력"))):
+        if _pro_feature_sheet(row):
             pro = index
             progress["pro_features"] = True
         if free is not None and locked is not None and pro is not None:
@@ -980,7 +1010,7 @@ def legacy_scope_evidence(rows):
     for index, row in enumerate(rows):
         if not isinstance(row, dict) or not isinstance(row.get("facts"), dict):
             continue
-        facts, body = row["facts"], str(row.get("text", ""))
+        facts, body = row["facts"], _normalized_text(row.get("text", ""))
         if facts.get("last_action") == "seed_legacy_unknown":
             seed, anchor = _validated_legacy_seed(row), None
             seed_index = index if seed else None
@@ -1017,7 +1047,7 @@ def legacy_scope_evidence(rows):
             continue
         comparison = _comparison_with_names(row) or any(
             isinstance(control, dict) and control.get("tag") == "button"
-            and "팔로워에서 빠진 사람" in str(control.get("label", "")) for control in _controls(row))
+            and "팔로워에서 빠진 사람" in _normalized_text(control.get("label", "")) for control in _controls(row))
         if comparison:
             failed = {"status": "failed", "indices": sorted(set([seed_index, anchor_index, index])), "reason":
                       "The validated legacy/current pair exposed a departed-account comparison although the legacy source had unknown included-file provenance."}

@@ -1,0 +1,364 @@
+{
+  "schema_version": "peekly-paywall-copy-golden.v1",
+  "description": "Minimal read-only diagnostic projection of failed smoke persona029. Observation65 exists on disk but was not admitted because artifact capacity was exhausted; replay must never count this source session as completed or credit its coverage. Unit receipt admissions are authored regressions only.",
+  "source_job": "S-jopolnkkaipimlidlnlnjcoh",
+  "regression_base_commit": "7a251a9b277a76d5199951b7c6a898ea72600e62",
+  "original_session_completed": false,
+  "original_outcome_credit": false,
+  "product_source": {
+    "commit": "51110f4c569673faa8d242d5b85c4b47afb54cbb",
+    "path": "src/components/PaywallModal.tsx",
+    "sha256": "fbab580c8e60b7480ed60e90c2f82d87be5295feaf38cc3e7fa7801755a5aa3c"
+  },
+  "sources": [
+    {
+      "file": ".ux-loop/peekly-completion-smoke-20261115/stage-2/sessions/S-jopolnkkaipimlidlnlnjcoh/evidence/S-jopolnkkaipimlidlnlnjcoh/1/agent-observation-45.json",
+      "sha256": "6f958e3f094abfa11741693aa3784c157a9cb92f46a483e8a5583c99fc79904b",
+      "admitted_in_original_checkpoint": true
+    },
+    {
+      "file": ".ux-loop/peekly-completion-smoke-20261115/stage-2/sessions/S-jopolnkkaipimlidlnlnjcoh/evidence/S-jopolnkkaipimlidlnlnjcoh/1/agent-observation-48.json",
+      "sha256": "c96b17b4efe4e92deb29d3c9eab01a48e2af10aa7f4ace2cb6ca0d6791ec8825",
+      "admitted_in_original_checkpoint": true
+    },
+    {
+      "file": ".ux-loop/peekly-completion-smoke-20261115/stage-2/sessions/S-jopolnkkaipimlidlnlnjcoh/evidence/S-jopolnkkaipimlidlnlnjcoh/1/agent-observation-50.json",
+      "sha256": "5bcbcaea0bc80b779495f530583c3452006fd8fa77300344f7f777de4e23877e",
+      "admitted_in_original_checkpoint": true
+    },
+    {
+      "file": ".ux-loop/peekly-completion-smoke-20261115/stage-2/sessions/S-jopolnkkaipimlidlnlnjcoh/evidence/S-jopolnkkaipimlidlnlnjcoh/1/agent-observation-61.json",
+      "sha256": "59d4ef10ea09d1f5fb8757a6394deac611cb3f9569771b66f59877a71b66e703",
+      "admitted_in_original_checkpoint": true
+    },
+    {
+      "file": ".ux-loop/peekly-completion-smoke-20261115/stage-2/sessions/S-jopolnkkaipimlidlnlnjcoh/evidence/S-jopolnkkaipimlidlnlnjcoh/1/agent-observation-65.json",
+      "sha256": "ac5f5b57b66c2c041ae5921bce99a42014af7694ff2803dc83227caae593e342",
+      "admitted_in_original_checkpoint": false
+    }
+  ],
+  "observations": [
+    {
+      "id": "obs-45",
+      "text": "Action upload completed.",
+      "facts": {
+        "last_action": "upload",
+        "uploaded_fixture": "peekly-sample-previous.zip",
+        "import_attempt_id": "upload-472",
+        "import_attempt": {
+          "schema_version": "peekly-import-attempt.v1",
+          "tool": "upload",
+          "fixture": "peekly-sample-previous.zip",
+          "fixture_sha256": "b06f0fd115ab74703087e11f0c025df3791a09664cd03922a9fe182760fdc823",
+          "attempt_id": "upload-472",
+          "storage_before": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "f202e82f2e5a8dcfdaffad1912cb966cd57048f5c25953fce02778595b8c8e60"
+          },
+          "storage_after": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "c66127ea79df6ad498e4d4149671a4375c5456d67c0efd80d5f0c3a7db0e6f9e"
+          },
+          "persistence_unchanged": false,
+          "cancel_dispatched": false,
+          "phase_samples": [
+            {
+              "text": "결과를 불러왔어요."
+            }
+          ]
+        },
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "c66127ea79df6ad498e4d4149671a4375c5456d67c0efd80d5f0c3a7db0e6f9e"
+        }
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 1,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 2,
+          "kind": "success",
+          "reason": "The two pinned same-account imports, latest free names, same-screen date controls and Pro explanation were not all observed.",
+          "status": "not_run"
+        }
+      ]
+    },
+    {
+      "id": "obs-48",
+      "text": "Action upload completed.",
+      "facts": {
+        "last_action": "upload",
+        "uploaded_fixture": "peekly-sample-current.zip",
+        "import_attempt_id": "upload-505",
+        "import_attempt": {
+          "schema_version": "peekly-import-attempt.v1",
+          "tool": "upload",
+          "fixture": "peekly-sample-current.zip",
+          "fixture_sha256": "938514f0010f47ace5c2a2fdae17d2c237fd82838cedd78829e0915d367ca186",
+          "attempt_id": "upload-505",
+          "storage_before": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "c66127ea79df6ad498e4d4149671a4375c5456d67c0efd80d5f0c3a7db0e6f9e"
+          },
+          "storage_after": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "1e24b297c12ea75639da7ca36d0d02709d89e62cf2f94391f6a93aee974628df"
+          },
+          "persistence_unchanged": false,
+          "cancel_dispatched": false,
+          "phase_samples": [
+            {
+              "text": "결과를 불러왔어요."
+            }
+          ]
+        },
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "1e24b297c12ea75639da7ca36d0d02709d89e62cf2f94391f6a93aee974628df"
+        }
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 1,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 2,
+          "kind": "success",
+          "reason": "The two pinned same-account imports, latest free names, same-screen date controls and Pro explanation were not all observed.",
+          "status": "not_run"
+        }
+      ]
+    },
+    {
+      "id": "obs-50",
+      "text": "Action click completed.\nURL http://[ip]:4174/\nTitle Peekly · 내 팔로우 관계 한눈에\nPeekly\nPro\n[handle]\n\n2026년 11월 15일 기준 · 팔로워 7명 · 팔로잉 10명\n\n나를 맞팔 안 한 사람\n5\n명\n내가 팔로우하는데 나를 팔로우하지 않아요\n내가 맞팔 안 한 사람\n나를 팔로우하는데 내가 팔로우하지 않아요\n2명\n맞팔 중인 사람\n서로 팔로우하고 있어요\n5명\n팔로워에서 빠진 사람\n2026년 11월 15일 기록과 비교했어요\n6명\n변화 기록\n언제 누구와 달라졌는지 모아보기\n인스타그램으로 로그인\n연결 관리\n팔로워에서 빠진 사람 6명\n\n이전 기록에는 있고 지금은 없는 계정이에요. 아이디 변경이나 계정 삭제 때문일 수도 있어요.\n\nHY\n[handle]\n이유 모름\nIN\n[handle]\n언팔로우\nJI\n[handle]\n이유 모름\nJU\n[handle]\n언팔로우\nSU\n[handle]\n이유 모름\nYU\n[handle]\n이유 모름\n결과\n더보기",
+      "facts": {
+        "last_action": "click",
+        "last_action_label": "팔로워에서 빠진 사람\n2026년 11월 15일 기록과 비교했어요\n6명",
+        "click_dispatch": {
+          "dispatched": true,
+          "hit_test": true,
+          "label": "팔로워에서 빠진 사람 2026년 11월 15일 기록과 비교했어요 6명",
+          "requested_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(3)>button:nth-of-type(1)",
+          "verified_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(3)>button:nth-of-type(1)"
+        },
+        "import_attempt_id": "upload-505",
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "1e24b297c12ea75639da7ca36d0d02709d89e62cf2f94391f6a93aee974628df"
+        },
+        "list_rows": [
+          {
+            "key": "evt_hyunwoo.k"
+          },
+          {
+            "key": "evt_ina.archive"
+          },
+          {
+            "key": "evt_jimin.han_"
+          },
+          {
+            "key": "evt_junho.jeong"
+          },
+          {
+            "key": "evt_sujin.lee_"
+          },
+          {
+            "key": "evt_yuna.99_"
+          }
+        ],
+        "controls": [
+          {
+            "tag": "button",
+            "label": "닫기",
+            "disabled": false,
+            "visible": true,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>button:nth-of-type(1)"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 1,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 2,
+          "kind": "success",
+          "reason": "The two pinned same-account imports, latest free names, same-screen date controls and Pro explanation were not all observed.",
+          "status": "not_run"
+        }
+      ]
+    },
+    {
+      "id": "obs-61",
+      "text": "Scroll scrolled; wheel dispatched=true, observed movement=67.\n변화 기록\n변화 기록\n기간 비교\n이전 기록\n이후 기록",
+      "facts": {
+        "last_action": "scroll",
+        "import_attempt_id": "upload-505",
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "1e24b297c12ea75639da7ca36d0d02709d89e62cf2f94391f6a93aee974628df"
+        },
+        "controls": [
+          {
+            "tag": "button",
+            "label": "닫기",
+            "disabled": false,
+            "visible": true,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>button:nth-of-type(1)"
+          },
+          {
+            "tag": "select",
+            "label": "비교 시작 기록",
+            "disabled": true,
+            "visible": true,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(3)>div:nth-of-type(1)>label:nth-of-type(1)>select:nth-of-type(1)"
+          },
+          {
+            "tag": "select",
+            "label": "비교 종료 기록",
+            "disabled": true,
+            "visible": true,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(3)>div:nth-of-type(1)>label:nth-of-type(2)>select:nth-of-type(1)"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 1,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 2,
+          "kind": "success",
+          "reason": "The two pinned same-account imports, latest free names, same-screen date controls and Pro explanation were not all observed.",
+          "status": "not_run"
+        }
+      ]
+    },
+    {
+      "id": "obs-65",
+      "text": "Peekly Pro\n내 관계의 변화를\n시간순으로\n\n현재 관계와 최근 변화는 무료예요.\nPro로 쌓인 기록을 이어서 살펴보세요.\n\n변화를 시간순으로\n여러 번 확인한 관계 변화를 한곳에서 봐요\n원하는 두 시점 비교\n저장한 날짜를 골라 달라진 사람을 확인해요\n한 사람의 관계 이력\n보관된 기록에서 그 사람과의 관계를 따라봐요\n\n지금 이 기기에 10번의 기록이 있어요.\n\n무료와 Pro 모두 최근 10개까지 보관해요. 저장 공간이 부족하면 줄어들 수 있어요. 구매해도 수집 전의 과거나 지워진 기록이 생기지는 않아요.\n\n가격을 확인하고 있어요.\n\nPro 월간\n한 달마다 자동 갱신돼요. 언제든 구독을 해지할 수 있어요.\nPro 평생\n한 번 결제하고 Pro 기능을 계속 이용해요. 자동 갱신되지 않아요.\n\n이 기기에 남아 있는 기록을 비교해요. 정확한 행동 시각이나 이유, 상대방의 비공개 설정을 알아내는 기능은 제공하지 않아요.\n\nPro 월간은 한 달마다 자동 갱신되며 구매가 확정되면 Apple ID 계정으로 결제돼요. 구독 기간이 끝나기 최소 24시간 전에 자동 갱신을 끄지 않으면 같은 구독이 이어지고, 다음 요금은 기간이 끝나기 전 24시간 안에 결제돼요. 구매 후 [설정 > Apple ID > 구독]에서 관리하거나 해지할 수 있어요. 이 갱신·해지 조건은 기존 Pro 연간 구독에도 적용돼요.\n\n분석은 이 기기 안에서만 해요\n\n개인정보 처리방침\n이용약관\n구매 복원\n확인",
+      "facts": {
+        "last_action": "click",
+        "last_action_label": "Pro 기능 보기",
+        "click_dispatch": {
+          "dispatched": true,
+          "hit_test": true,
+          "label": "Pro 기능 보기",
+          "requested_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(3)>div:nth-of-type(2)>button:nth-of-type(1)",
+          "verified_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(3)>div:nth-of-type(2)>button:nth-of-type(1)"
+        },
+        "import_attempt_id": "upload-505",
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "1e24b297c12ea75639da7ca36d0d02709d89e62cf2f94391f6a93aee974628df"
+        },
+        "controls": [
+          {
+            "tag": "button",
+            "label": "닫기",
+            "disabled": false,
+            "visible": false,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(1)>button:nth-of-type(1)"
+          },
+          {
+            "tag": "button",
+            "label": "닫기",
+            "disabled": false,
+            "visible": true,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(1)>div:nth-of-type(1)>button:nth-of-type(1)"
+          },
+          {
+            "tag": "button",
+            "label": "구매 복원",
+            "disabled": false,
+            "visible": false,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(3)>button:nth-of-type(3)"
+          },
+          {
+            "tag": "button",
+            "label": "확인",
+            "disabled": false,
+            "visible": true,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>div:nth-of-type(2)>div:nth-of-type(1)>div:nth-of-type(3)>button:nth-of-type(1)"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 1,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 2,
+          "kind": "success",
+          "reason": "The two pinned same-account imports, latest free names, same-screen date controls and Pro explanation were not all observed.",
+          "status": "not_run"
+        }
+      ]
+    }
+  ],
+  "projection": "Only prerequisite import/save facts, latest-name list, same-row selectors, and Pro sheet text/control boundary are retained. Text is extracted verbatim; raw sources and admission status remain hash-referenced."
+}

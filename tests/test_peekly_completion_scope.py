@@ -44,10 +44,16 @@ def paywall_rows():
     free = observed("팔로워에서 빠진 사람 2명", list_rows=[{"key": "synthetic-account"}])
     # Real product puts the accessible names on <select>, not in body text.
     history = observed("변화 기록 이전 기록 이후 기록 원하는 두 시점을 골라 비교해요", controls=[
-        {"tag": "select", "label": "비교 시작 기록", "disabled": True},
-        {"tag": "select", "label": "비교 종료 기록", "disabled": True},
+        {"tag": "select", "label": "비교 시작 기록", "disabled": True, "visible": True},
+        {"tag": "select", "label": "비교 종료 기록", "disabled": True, "visible": True},
     ])
-    pro = observed("Pro 변화 타임라인 두 시점 비교 사람별 관계 이력", controls=[])
+    pro = observed("Peekly Pro 현재 관계와 최근 변화는 무료예요. Pro로 쌓인 기록을 이어서 살펴보세요. "
+                   "변화를 시간순으로 여러 번 확인한 관계 변화를 한곳에서 봐요 "
+                   "원하는 두 시점 비교 저장한 날짜를 골라 달라진 사람을 확인해요 "
+                   "한 사람의 관계 이력 보관된 기록에서 그 사람과의 관계를 따라봐요", controls=[
+        {"tag": "button", "label": "닫기", "disabled": False, "visible": True},
+        {"tag": "button", "label": "확인", "disabled": False, "visible": True},
+    ])
     return [previous, current, free, history, pro]
 
 
