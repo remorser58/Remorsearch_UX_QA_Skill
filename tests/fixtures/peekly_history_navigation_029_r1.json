@@ -1,0 +1,663 @@
+{
+  "cohort_requirement_ids": {
+    "PER-PEEKLY-V2-001": [
+      "PRD-START-SAMPLE",
+      "PRD-START-IMPORT",
+      "PRD-PRIVACY-LOCAL"
+    ],
+    "PER-PEEKLY-V2-002": [
+      "PRD-START-SAMPLE",
+      "PRD-START-IMPORT",
+      "PRD-PRIVACY-LOCAL"
+    ],
+    "PER-PEEKLY-V2-003": [
+      "PRD-START-SAMPLE",
+      "PRD-START-IMPORT",
+      "PRD-PRIVACY-LOCAL"
+    ],
+    "PER-PEEKLY-V2-004": [
+      "PRD-START-SAMPLE",
+      "PRD-START-IMPORT",
+      "PRD-PRIVACY-LOCAL"
+    ],
+    "PER-PEEKLY-V2-005": [
+      "PRD-START-IMPORT",
+      "PRD-START-SKIP",
+      "PRD-IMPORT-FORMATS"
+    ],
+    "PER-PEEKLY-V2-006": [
+      "PRD-START-IMPORT",
+      "PRD-START-SKIP",
+      "PRD-IMPORT-FORMATS"
+    ],
+    "PER-PEEKLY-V2-007": [
+      "PRD-START-IMPORT",
+      "PRD-START-SKIP",
+      "PRD-IMPORT-FORMATS"
+    ],
+    "PER-PEEKLY-V2-008": [
+      "PRD-START-IMPORT",
+      "PRD-START-SKIP",
+      "PRD-IMPORT-FORMATS"
+    ],
+    "PER-PEEKLY-V2-009": [
+      "PRD-IMPORT-FORMATS",
+      "PRD-IMPORT-HTML",
+      "PRD-IMPORT-ACCOUNT",
+      "PRD-IMPORT-MISSING"
+    ],
+    "PER-PEEKLY-V2-010": [
+      "PRD-IMPORT-FORMATS",
+      "PRD-IMPORT-HTML",
+      "PRD-IMPORT-ACCOUNT",
+      "PRD-IMPORT-MISSING"
+    ],
+    "PER-PEEKLY-V2-011": [
+      "PRD-IMPORT-FORMATS",
+      "PRD-IMPORT-HTML",
+      "PRD-IMPORT-ACCOUNT",
+      "PRD-IMPORT-MISSING"
+    ],
+    "PER-PEEKLY-V2-012": [
+      "PRD-IMPORT-FORMATS",
+      "PRD-IMPORT-HTML",
+      "PRD-IMPORT-ACCOUNT",
+      "PRD-IMPORT-MISSING"
+    ],
+    "PER-PEEKLY-V2-013": [
+      "PRD-IMPORT-PROGRESS",
+      "PRD-IMPORT-SIZE",
+      "PRD-IMPORT-SAVE-FAIL"
+    ],
+    "PER-PEEKLY-V2-014": [
+      "PRD-IMPORT-PROGRESS",
+      "PRD-IMPORT-SIZE",
+      "PRD-IMPORT-SAVE-FAIL"
+    ],
+    "PER-PEEKLY-V2-015": [
+      "PRD-IMPORT-PROGRESS",
+      "PRD-IMPORT-SIZE",
+      "PRD-IMPORT-SAVE-FAIL"
+    ],
+    "PER-PEEKLY-V2-016": [
+      "PRD-IMPORT-PROGRESS",
+      "PRD-IMPORT-SIZE",
+      "PRD-IMPORT-SAVE-FAIL"
+    ],
+    "PER-PEEKLY-V2-017": [
+      "PRD-RESULT-RECIPROCITY",
+      "PRD-RESULT-REVERSE",
+      "PRD-RESULT-MUTUAL",
+      "PRD-RESULT-SNAPSHOT"
+    ],
+    "PER-PEEKLY-V2-018": [
+      "PRD-RESULT-RECIPROCITY",
+      "PRD-RESULT-REVERSE",
+      "PRD-RESULT-MUTUAL",
+      "PRD-RESULT-SNAPSHOT"
+    ],
+    "PER-PEEKLY-V2-019": [
+      "PRD-RESULT-RECIPROCITY",
+      "PRD-RESULT-REVERSE",
+      "PRD-RESULT-MUTUAL",
+      "PRD-RESULT-SNAPSHOT"
+    ],
+    "PER-PEEKLY-V2-020": [
+      "PRD-RESULT-RECIPROCITY",
+      "PRD-RESULT-REVERSE",
+      "PRD-RESULT-MUTUAL",
+      "PRD-RESULT-SNAPSHOT"
+    ],
+    "PER-PEEKLY-V2-021": [
+      "PRD-IMPORT-MISSING",
+      "PRD-IDENTITY-LIMIT",
+      "PRD-IMPORT-SNAPSHOT-UNKNOWN"
+    ],
+    "PER-PEEKLY-V2-022": [
+      "PRD-IMPORT-MISSING",
+      "PRD-IDENTITY-LIMIT",
+      "PRD-IMPORT-SNAPSHOT-UNKNOWN"
+    ],
+    "PER-PEEKLY-V2-023": [
+      "PRD-IMPORT-MISSING",
+      "PRD-IDENTITY-LIMIT",
+      "PRD-IMPORT-SNAPSHOT-UNKNOWN"
+    ],
+    "PER-PEEKLY-V2-024": [
+      "PRD-IMPORT-MISSING",
+      "PRD-IDENTITY-LIMIT",
+      "PRD-IMPORT-SNAPSHOT-UNKNOWN"
+    ],
+    "PER-PEEKLY-V2-025": [
+      "PRD-RESULT-SEARCH",
+      "PRD-PRIVACY-LOCAL",
+      "PRD-PRIVACY-DELETE"
+    ],
+    "PER-PEEKLY-V2-026": [
+      "PRD-RESULT-SEARCH",
+      "PRD-PRIVACY-LOCAL",
+      "PRD-PRIVACY-DELETE"
+    ],
+    "PER-PEEKLY-V2-027": [
+      "PRD-RESULT-SEARCH",
+      "PRD-PRIVACY-LOCAL",
+      "PRD-PRIVACY-DELETE"
+    ],
+    "PER-PEEKLY-V2-028": [
+      "PRD-RESULT-SEARCH",
+      "PRD-PRIVACY-LOCAL",
+      "PRD-PRIVACY-DELETE"
+    ],
+    "PER-PEEKLY-V2-029": [
+      "PRD-SAMPLE-EXPORT",
+      "PRD-SNAPSHOT-RETENTION",
+      "PRD-PAYWALL-BOUNDARY"
+    ],
+    "PER-PEEKLY-V2-030": [
+      "PRD-SAMPLE-EXPORT",
+      "PRD-SNAPSHOT-RETENTION",
+      "PRD-PAYWALL-BOUNDARY"
+    ],
+    "PER-PEEKLY-V2-031": [
+      "PRD-SAMPLE-EXPORT",
+      "PRD-SNAPSHOT-RETENTION",
+      "PRD-PAYWALL-BOUNDARY"
+    ],
+    "PER-PEEKLY-V2-032": [
+      "PRD-SAMPLE-EXPORT",
+      "PRD-SNAPSHOT-RETENTION",
+      "PRD-PAYWALL-BOUNDARY"
+    ]
+  },
+  "cohort_source": {
+    "path": ".ux-loop/peekly-coverage32-20261114/stage-32/plan.json",
+    "sha256": "b8f4384c0c2d5632cdebed691007a252b1a73c2858e1e870d687a4a66656292e"
+  },
+  "description": "Minimal read-only projection of immutable R1 029 observations. These are old navigation facts, not evidence of new execution or a passed paywall.",
+  "observations": [
+    {
+      "facts": {
+        "controls": [
+          {
+            "disabled": false,
+            "label": "Pro",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>header:nth-of-type(1)>div:nth-of-type(1)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": true
+          },
+          {
+            "disabled": false,
+            "label": "나를 맞팔 안 한 사람\n5\n명\n내가 팔로우하는데 나를 팔로우하지 않아요",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "내가 맞팔 안 한 사람\n나를 팔로우하는데 내가 팔로우하지 않아요\n2명",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(1)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": true
+          },
+          {
+            "disabled": false,
+            "label": "맞팔 중인 사람\n서로 팔로우하고 있어요\n5명",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(2)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": true
+          },
+          {
+            "disabled": false,
+            "label": "팔로워에서 빠진 사람\n2026년 11월 15일 기록과 비교했어요\n6명",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(3)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": true
+          },
+          {
+            "disabled": false,
+            "label": "변화 기록\n언제 누구와 달라졌는지 모아보기",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(4)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": true
+          },
+          {
+            "disabled": false,
+            "label": "인스타그램으로 로그인",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>button:nth-of-type(2)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "연결 관리",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>button:nth-of-type(3)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "결과",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>nav:nth-of-type(1)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": true
+          },
+          {
+            "disabled": false,
+            "label": "더보기",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>nav:nth-of-type(1)>button:nth-of-type(2)",
+            "tag": "button",
+            "visible": true
+          }
+        ],
+        "import_attempt_id": "upload-505",
+        "last_action": "click",
+        "last_action_label": "닫기",
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "1e24b297c12ea75639da7ca36d0d02709d89e62cf2f94391f6a93aee974628df"
+        },
+        "viewport": {
+          "height": 413,
+          "width": 756
+        }
+      },
+      "id": "obs-51",
+      "text": "Action click completed.\nURL http://[ip]:4174/\nTitle Peekly · 내 팔로우 관계 한눈에\nPeekly\nPro\n[handle]\n\n2026년 11월 15일 기준 · 팔로워 7명 · 팔로잉 10명\n\n나를 맞팔 안 한 사람\n5\n명\n내가 팔로우하는데 나를 팔로우하지 않아요\n내가 맞팔 안 한 사람\n나를 팔로우하는데 내가 팔로우하지 않아요\n2명\n맞팔 중인 사람\n서로 팔로우하고 있어요\n5명\n팔로워에서 빠진 사람\n2026년 11월 15일 기록과 비교했어요\n6명\n변화 기록\n언제 누구와 달라졌는지 모아보기\n인스타그램으로 로그인\n연결 관리\n결과\n더보기"
+    },
+    {
+      "facts": {
+        "controls": [
+          {
+            "disabled": false,
+            "label": "Pro",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>header:nth-of-type(1)>div:nth-of-type(1)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": true
+          },
+          {
+            "disabled": false,
+            "label": "이미 받은 자료로 확인하기\n인스타그램에서 받은 파일을 골라 바로 결과를 봐요",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(1)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "변화 기록\n언제 누구와 달라졌는지 모아보기",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(2)>li:nth-of-type(1)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "자세히 보기\n내 팔로우와 달라진 관계를 자세히 봐요",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(2)>li:nth-of-type(2)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "관계 목록\n서로 팔로우하는지 한눈에 봐요",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(2)>li:nth-of-type(3)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": true
+          },
+          {
+            "disabled": false,
+            "label": "직접 확인\n직접 확인한 프로필과 스토리 기록",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(2)>li:nth-of-type(4)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": true
+          },
+          {
+            "disabled": false,
+            "label": "활동 기록\n보낸 팔로우 요청, 좋아요와 댓글 보기",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(2)>li:nth-of-type(5)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": true
+          },
+          {
+            "disabled": false,
+            "label": "팔로우 정리\n팔로우를 정리할 계정 골라 두기",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(2)>li:nth-of-type(6)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": true
+          },
+          {
+            "disabled": false,
+            "label": "시스템 설정",
+            "role": "radio",
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>section:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(1)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "밝게",
+            "role": "radio",
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>section:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(2)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "어둡게",
+            "role": "radio",
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>section:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(3)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "연결 및 데이터\n연결한 계정 확인과 기록 관리",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(3)>li:nth-of-type(1)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "Peekly Pro\n관계 변화 기록과 기간별 비교",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(3)>li:nth-of-type(2)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "약관과 개인정보\n개인정보 처리방침, 이용약관, 기록 모두 지우기",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(3)>li:nth-of-type(3)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "결과",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>nav:nth-of-type(1)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": true
+          },
+          {
+            "disabled": false,
+            "label": "더보기",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>nav:nth-of-type(1)>button:nth-of-type(2)",
+            "tag": "button",
+            "visible": true
+          }
+        ],
+        "import_attempt_id": "upload-505",
+        "last_action": "click",
+        "last_action_label": "더보기",
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "1e24b297c12ea75639da7ca36d0d02709d89e62cf2f94391f6a93aee974628df"
+        },
+        "viewport": {
+          "height": 413,
+          "width": 756
+        }
+      },
+      "id": "obs-52",
+      "text": "Action click completed.\nURL http://[ip]:4174/\nTitle Peekly · 내 팔로우 관계 한눈에\nPeekly\nPro\n더보기\n이미 받은 자료로 확인하기\n인스타그램에서 받은 파일을 골라 바로 결과를 봐요\n변화 기록\n언제 누구와 달라졌는지 모아보기\n자세히 보기\n내 팔로우와 달라진 관계를 자세히 봐요\n관계 목록\n서로 팔로우하는지 한눈에 봐요\n직접 확인\n직접 확인한 프로필과 스토리 기록\n활동 기록\n보낸 팔로우 요청, 좋아요와 댓글 보기\n팔로우 정리\n팔로우를 정리할 계정 골라 두기\n화면 모드\n시스템 설정\n밝게\n어둡게\n연결 및 데이터\n연결한 계정 확인과 기록 관리\nPeekly Pro\n관계 변화 기록과 기간별 비교\n약관과 개인정보\n개인정보 처리방침, 이용약관, 기록 모두 지우기\n결과\n더보기"
+    },
+    {
+      "facts": {
+        "controls": [
+          {
+            "disabled": false,
+            "label": "Pro",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>header:nth-of-type(1)>div:nth-of-type(1)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": true
+          },
+          {
+            "disabled": false,
+            "label": "이미 받은 자료로 확인하기\n인스타그램에서 받은 파일을 골라 바로 결과를 봐요",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(1)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "변화 기록\n언제 누구와 달라졌는지 모아보기",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(2)>li:nth-of-type(1)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "자세히 보기\n내 팔로우와 달라진 관계를 자세히 봐요",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(2)>li:nth-of-type(2)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "관계 목록\n서로 팔로우하는지 한눈에 봐요",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(2)>li:nth-of-type(3)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "직접 확인\n직접 확인한 프로필과 스토리 기록",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(2)>li:nth-of-type(4)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "활동 기록\n보낸 팔로우 요청, 좋아요와 댓글 보기",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(2)>li:nth-of-type(5)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "팔로우 정리\n팔로우를 정리할 계정 골라 두기",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(2)>li:nth-of-type(6)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "시스템 설정",
+            "role": "radio",
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>section:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(1)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": true
+          },
+          {
+            "disabled": false,
+            "label": "밝게",
+            "role": "radio",
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>section:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(2)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": true
+          },
+          {
+            "disabled": false,
+            "label": "어둡게",
+            "role": "radio",
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>section:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(3)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": true
+          },
+          {
+            "disabled": false,
+            "label": "연결 및 데이터\n연결한 계정 확인과 기록 관리",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(3)>li:nth-of-type(1)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": true
+          },
+          {
+            "disabled": false,
+            "label": "Peekly Pro\n관계 변화 기록과 기간별 비교",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(3)>li:nth-of-type(2)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "약관과 개인정보\n개인정보 처리방침, 이용약관, 기록 모두 지우기",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(3)>li:nth-of-type(3)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": false
+          },
+          {
+            "disabled": false,
+            "label": "결과",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>nav:nth-of-type(1)>button:nth-of-type(1)",
+            "tag": "button",
+            "visible": true
+          },
+          {
+            "disabled": false,
+            "label": "더보기",
+            "role": null,
+            "selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>nav:nth-of-type(1)>button:nth-of-type(2)",
+            "tag": "button",
+            "visible": true
+          }
+        ],
+        "import_attempt_id": "upload-505",
+        "last_action": "scroll",
+        "scroll_attempt": {
+          "after": {
+            "bounds": {
+              "bottom": 413,
+              "left": 0,
+              "right": 756,
+              "top": 0
+            },
+            "client_height": 413,
+            "content_height": 413,
+            "max_scroll_top": 772,
+            "overflow_y": "visible",
+            "point": {
+              "x": 378,
+              "y": 206.5
+            },
+            "scroll_height": 1185,
+            "scroll_top": 616,
+            "selector": "html",
+            "visible_area": 312228
+          },
+          "background_moved": true,
+          "before": {
+            "bounds": {
+              "bottom": 413,
+              "left": 0,
+              "right": 756,
+              "top": 0
+            },
+            "client_height": 413,
+            "content_height": 413,
+            "max_scroll_top": 772,
+            "overflow_y": "visible",
+            "point": {
+              "x": 378,
+              "y": 206.5
+            },
+            "scroll_height": 1185,
+            "scroll_top": 286,
+            "selector": "html",
+            "visible_area": 312228
+          },
+          "blocked_areas": [],
+          "delta": 330,
+          "dispatched": true,
+          "document_after": {
+            "x": 0,
+            "y": 616
+          },
+          "document_before": {
+            "x": 0,
+            "y": 286
+          },
+          "modal_bounds": null,
+          "modal_selector": null,
+          "moved": true,
+          "observation_window_ms": 91,
+          "observed_delta": 330,
+          "outcome": "scrolled",
+          "requested_delta": 400,
+          "schema_version": "owned-scroll-attempt.v1",
+          "scope": "page",
+          "viewport": {
+            "height": 413,
+            "width": 756
+          }
+        },
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "1e24b297c12ea75639da7ca36d0d02709d89e62cf2f94391f6a93aee974628df"
+        },
+        "viewport": {
+          "height": 413,
+          "width": 756
+        }
+      },
+      "id": "obs-53",
+      "text": "Scroll scrolled; wheel dispatched=true, observed movement=330.\nURL http://[ip]:4174/\nTitle Peekly · 내 팔로우 관계 한눈에\nPeekly\nPro\n더보기\n이미 받은 자료로 확인하기\n인스타그램에서 받은 파일을 골라 바로 결과를 봐요\n변화 기록\n언제 누구와 달라졌는지 모아보기\n자세히 보기\n내 팔로우와 달라진 관계를 자세히 봐요\n관계 목록\n서로 팔로우하는지 한눈에 봐요\n직접 확인\n직접 확인한 프로필과 스토리 기록\n활동 기록\n보낸 팔로우 요청, 좋아요와 댓글 보기\n팔로우 정리\n팔로우를 정리할 계정 골라 두기\n화면 모드\n시스템 설정\n밝게\n어둡게\n연결 및 데이터\n연결한 계정 확인과 기록 관리\nPeekly Pro\n관계 변화 기록과 기간별 비교\n약관과 개인정보\n개인정보 처리방침, 이용약관, 기록 모두 지우기\n결과\n더보기"
+    }
+  ],
+  "schema_version": "peekly-history-navigation-golden.v1",
+  "source_job": "S-jopolnkkaipimlidlnlnjcoh",
+  "sources": [
+    {
+      "path": ".ux-loop/peekly-completion-smoke-20261115/stage-2/sessions/S-jopolnkkaipimlidlnlnjcoh/evidence/S-jopolnkkaipimlidlnlnjcoh/1/agent-observation-51.json",
+      "sha256": "770b5d720e259755479e590a91606b4c004c71c64fe4820a5b518e3896bd50cc"
+    },
+    {
+      "path": ".ux-loop/peekly-completion-smoke-20261115/stage-2/sessions/S-jopolnkkaipimlidlnlnjcoh/evidence/S-jopolnkkaipimlidlnlnjcoh/1/agent-observation-52.json",
+      "sha256": "ec892c955b8dcdb1a450ea8c19435f4ada293500f0bfc7a69e001764a0e2dcfb"
+    },
+    {
+      "path": ".ux-loop/peekly-completion-smoke-20261115/stage-2/sessions/S-jopolnkkaipimlidlnlnjcoh/evidence/S-jopolnkkaipimlidlnlnjcoh/1/agent-observation-53.json",
+      "sha256": "37437c38feea085ed179dd620a3c579ab8e07ef51eae76e336a99d0f3c384c5a"
+    }
+  ]
+}

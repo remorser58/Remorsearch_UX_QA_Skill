@@ -163,6 +163,48 @@ def _scroll_blocker(observations):
     return None
 
 
+def _history_scroll_direction(observation):
+    """Infer only the pinned Results/More vertical order from current controls.
+
+    The driver currently supplies no per-control geometry. More places history
+    before its other tools/theme controls; Results places it after category
+    cards and before connection actions. A visible control on just one side
+    gives a bounded direction. Unknown/occluded layouts receive no guess.
+    """
+    facts = observation.get("facts", {})
+    controls = [c for c in facts.get("controls", []) if isinstance(c, dict)]
+    norm = lambda value: " ".join(str(value or "").split())
+    labels = [norm(c.get("label")) for c in controls]
+    history = [i for i, label in enumerate(labels) if label.startswith("변화 기록")]
+    if (len(history) != 1 or (facts.get("scroll_attempt") or {}).get("scope") == "modal"
+            or any(label == "닫기" and c.get("visible") is True for label, c in zip(labels, controls))):
+        return None, "History scroll direction is not grounded outside a modal."
+    index = history[0]
+    if any(label.startswith("이미 받은 자료로 확인하기") for label in labels):
+        before_labels = ("이미 받은 자료로 확인하기",)
+        after_labels = ("자세히 보기", "관계 목록", "직접 확인", "활동 기록", "팔로우 정리",
+                        "시스템 설정", "밝게", "어둡게", "연결 및 데이터", "Peekly Pro", "약관과 개인정보")
+        if not any(label.startswith(("관계 목록", "직접 확인")) for label in labels):
+            return None, "The current controls do not identify the pinned More page."
+        page = "More"
+    elif all(any(label.startswith(marker) for label in labels) for marker in
+             ("나를 맞팔 안 한 사람", "내가 맞팔 안 한 사람", "맞팔 중인 사람")):
+        before_labels = ("나를 맞팔 안 한 사람", "내가 맞팔 안 한 사람", "맞팔 중인 사람", "팔로워에서 빠진 사람")
+        after_labels = ("인스타그램으로 로그인", "연결 관리")
+        page = "Results"
+    else:
+        return None, "The current controls identify neither the pinned Results nor More layout."
+    before = any(i < index and label.startswith(before_labels) and control.get("visible") is True
+                 for i, (label, control) in enumerate(zip(labels, controls)))
+    after = any(i > index and label.startswith(after_labels) and control.get("visible") is True
+                for i, (label, control) in enumerate(zip(labels, controls)))
+    if before == after:
+        return None, "Visible controls do not establish which side of the viewport contains history."
+    return (-400 if after else 400), ("The pinned " + page + " layout and current visible "
+        + ("later" if after else "earlier") + " controls place history "
+        + ("above" if after else "below") + " the visible area.")
+
+
 def _completion_action(requirement_id, task, observations, tools):
     """Suggest one currently grounded safe step; never execute it or assign a pass."""
     from .peekly_criteria import _accepted_named_import, paywall_scope_evidence, legacy_scope_evidence
@@ -222,6 +264,18 @@ def _completion_action(requirement_id, task, observations, tools):
             return target(label)
         return target("결과")
 
+    def history_target():
+        found = [c for c in controls if normalize(c.get("label")).startswith("변화 기록")]
+        if close or any(c.get("visible") is True for c in found) or (found and all(c.get("disabled") is True for c in found)):
+            return target("변화 기록")
+        direction, reason = _history_scroll_direction(latest)
+        if direction is None:
+            return None, reason
+        action, blocker = target("변화 기록", delta=direction)
+        if action is not None and action["tool"] == "scroll":
+            action["reason"] = reason + " Inspect the returned observation before clicking."
+        return action, blocker
+
     if requirement_id == "PRD-IMPORT-SNAPSHOT-UNKNOWN":
         progress = legacy_scope_evidence(observations)
         if not progress["seed_validated"]:
@@ -245,7 +299,7 @@ def _completion_action(requirement_id, task, observations, tools):
         if not progress["locked_selectors"]:
             if any(normalize(c.get("label")) == "기간 비교" for c in controls):
                 return target("기간 비교", inside_modal=True)
-            return target("변화 기록")
+            return history_target()
         if not progress["pro_features"]:
             return target("Pro 기능 보기", inside_modal=True)
         return None, "All paywall stages were inspected; preserve the normalized evidence outcome."
