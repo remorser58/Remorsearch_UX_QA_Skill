@@ -1,5 +1,7 @@
 # Peekly explicit-success verification — 2026-11-14
 
+> Latest queue reconciliation: see [final cohort audit — 2026-11-14](final-cohort-audit-20261114.md). It documents the initial queue-state discrepancy and why a trustworthy 32-persona aggregate cannot yet be published.
+
 ## Decision and scope
 
 This report uses the current Peekly PRD from product commit `51110f4` (SHA-256 `a014a85b7523928f693cd4422793929631f033176715f31409412e95e1d7432b`) and the 32 saved personas re-derived against that PRD. It does **not** start another persona journey. The final queue state is frozen at 23 operationally completed sessions, one blocked session and one uncertain model send. The uncertain send is preserved and was not replayed.
