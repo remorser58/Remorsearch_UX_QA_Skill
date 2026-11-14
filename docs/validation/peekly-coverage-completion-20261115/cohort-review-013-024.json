@@ -1,0 +1,3084 @@
+{
+  "schema_version": "peekly-completion-criterion-review.v1",
+  "stage_root": ".ux-loop/peekly-completion32-pinned-20261115/stage-32",
+  "plan_sha256": "59f2c770425f85dd834542349f1915f084ca8fc6129c421cc907b4127d0212d8",
+  "raw_summary_sha256": null,
+  "artifact_audit_sha256": null,
+  "scope": "Independent semantic review of all 48 criteria from the eleven completed assigned personas 013 and 015–024; all four criteria of uncertain 014 are excluded. All 52 assigned criteria are accounted for. Final terminal eligibility and shared raw-summary/artifact-audit pins remain pending.",
+  "raw_receipts_modified": false,
+  "new_model_calls": 0,
+  "new_browser_calls": 0,
+  "queue_writes": 0,
+  "draft_pending_final_raw_pins": true,
+  "assigned_personas": [
+    "PER-PEEKLY-V2-013",
+    "PER-PEEKLY-V2-014",
+    "PER-PEEKLY-V2-015",
+    "PER-PEEKLY-V2-016",
+    "PER-PEEKLY-V2-017",
+    "PER-PEEKLY-V2-018",
+    "PER-PEEKLY-V2-019",
+    "PER-PEEKLY-V2-020",
+    "PER-PEEKLY-V2-021",
+    "PER-PEEKLY-V2-022",
+    "PER-PEEKLY-V2-023",
+    "PER-PEEKLY-V2-024"
+  ],
+  "reviewed_personas": [
+    "PER-PEEKLY-V2-013",
+    "PER-PEEKLY-V2-015",
+    "PER-PEEKLY-V2-016",
+    "PER-PEEKLY-V2-017",
+    "PER-PEEKLY-V2-018",
+    "PER-PEEKLY-V2-019",
+    "PER-PEEKLY-V2-020",
+    "PER-PEEKLY-V2-021",
+    "PER-PEEKLY-V2-022",
+    "PER-PEEKLY-V2-023",
+    "PER-PEEKLY-V2-024"
+  ],
+  "decisions": [
+    {
+      "job_id": "S-eghkdbdagmmiacobmdheghfg",
+      "persona_id": "PER-PEEKLY-V2-013",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-IMPORT-PROGRESS",
+      "result_sha256": "2d92908c7b17f4d1dbfed676265d444d58295c9dd9f7f2f7fe60c8946b7d9a0f",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "obs-5 established a new persisted current-fixture baseline. The scoped progress attempt in obs-8 sampled reading at 6 ms and analysis at 51 ms, recorded cancel_active=true and cancel_dispatched=true, ended cancelled_without_new_result after a 1,115 ms observation window, and preserved the same 401ca05d4e2b93517fe5eb77ebeba21b66891c2695091ce34708a808a561dbb3 storage digest. The PNGs show pre-upload/post-cancel selection states; active cancellation is supported by the admitted guarded-dispatch facts, not a claimed active-cancel screenshot or an exact dispatch timestamp.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-eghkdbdagmmiacobmdheghfg/1/agent-observation-5.json",
+          "sha256": "76c5e16511673abe36a32ec2281ac02c2173f08180bb935393589fad9252a84c",
+          "observation_id": "obs-5",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-8",
+          "path": "evidence/S-eghkdbdagmmiacobmdheghfg/1/agent-observation-8.json",
+          "sha256": "d41fe8777b40785e8c7a7c9c52dafbb13e563388b6c57c17673895b7e0f8a71d",
+          "observation_id": "obs-8",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-8-0",
+          "path": "evidence/S-eghkdbdagmmiacobmdheghfg/1/browser-00081.png",
+          "sha256": "19aa780ac481881922d8a7b70c222e19e078c459ce6fade31fddc617bf443dd8",
+          "observation_id": "obs-8",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "png-8-1",
+          "path": "evidence/S-eghkdbdagmmiacobmdheghfg/1/browser-00127.png",
+          "sha256": "67cf66bda48229e08f293f20e6eae009701fdd4226f837827336dd915fd8d1c2",
+          "observation_id": "obs-8",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-eghkdbdagmmiacobmdheghfg",
+      "persona_id": "PER-PEEKLY-V2-013",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-IMPORT-SIZE",
+      "result_sha256": "2d92908c7b17f4d1dbfed676265d444d58295c9dd9f7f2f7fe60c8946b7d9a0f",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The actual 128 MiB+1 ZIP, 32 MiB+1 loose-file group and over-64 MiB loose aggregate were each uploaded separately in obs-9/10/11. Each corresponding DOM observation contains its specific size rejection, and before/after/current storage stays at the saved 401ca05d4e2b93517fe5eb77ebeba21b66891c2695091ce34708a808a561dbb3 baseline. The captured modal viewport does not expose the rejection paragraphs; the rejection wording is supported by admitted DOM logs rather than claimed visible PNG text.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-eghkdbdagmmiacobmdheghfg/1/agent-observation-5.json",
+          "sha256": "76c5e16511673abe36a32ec2281ac02c2173f08180bb935393589fad9252a84c",
+          "observation_id": "obs-5",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-9",
+          "path": "evidence/S-eghkdbdagmmiacobmdheghfg/1/agent-observation-9.json",
+          "sha256": "20294af8f7eb68bef17034b15fa3f0dda723f1b1048ee66011da095fa8dd7cbe",
+          "observation_id": "obs-9",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-eghkdbdagmmiacobmdheghfg/1/agent-observation-10.json",
+          "sha256": "4916ed246cc6898a990774f640fb3ec65d046a801f9a78de7b7b3c228db9c256",
+          "observation_id": "obs-10",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-eghkdbdagmmiacobmdheghfg/1/agent-observation-11.json",
+          "sha256": "def86cfa0df6a4ef07ea1f21c9716b43d309613e98fbfeab54703d8fc5181320",
+          "observation_id": "obs-11",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-9-0",
+          "path": "evidence/S-eghkdbdagmmiacobmdheghfg/1/browser-00156.png",
+          "sha256": "a607796665d348b43311f3dba473df9b69d084207c8fbbbdab8b38dea98ecf50",
+          "observation_id": "obs-9",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-eghkdbdagmmiacobmdheghfg",
+      "persona_id": "PER-PEEKLY-V2-013",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-IMPORT-SAVE-FAIL",
+      "result_sha256": "2d92908c7b17f4d1dbfed676265d444d58295c9dd9f7f2f7fe60c8946b7d9a0f",
+      "expected_raw_status": "failed",
+      "reviewed_status": "failed",
+      "reason": "obs-12 actually consumed and restored the one-shot peekly_state_v7 write fault during the distinct previous-fixture import. The admitted save-error DOM and unchanged 401ca05d4e2b93517fe5eb77ebeba21b66891c2695091ce34708a808a561dbb3 baseline establish the failed write with prior-state preservation. Its complete 19-control inventory contains no 다시 저장 action; the viewed frame offers only 다른 파일 고르기. The error paragraph itself is outside the captured viewport. Successful ordinary re-selection afterward does not satisfy or erase the missing direct-save-retry requirement.",
+      "classifications": [
+        "product_defect",
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-eghkdbdagmmiacobmdheghfg/1/agent-observation-5.json",
+          "sha256": "76c5e16511673abe36a32ec2281ac02c2173f08180bb935393589fad9252a84c",
+          "observation_id": "obs-5",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-eghkdbdagmmiacobmdheghfg/1/agent-observation-12.json",
+          "sha256": "05110ea91763bc74c194c1a1e28168ca176d27aa3aa3cbf1d5bc642758e4903f",
+          "observation_id": "obs-12",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-12-1",
+          "path": "evidence/S-eghkdbdagmmiacobmdheghfg/1/browser-00231.png",
+          "sha256": "a607796665d348b43311f3dba473df9b69d084207c8fbbbdab8b38dea98ecf50",
+          "observation_id": "obs-12",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-eghkdbdagmmiacobmdheghfg",
+      "persona_id": "PER-PEEKLY-V2-013",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "result_sha256": "2d92908c7b17f4d1dbfed676265d444d58295c9dd9f7f2f7fe60c8946b7d9a0f",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "After the acknowledged consumed/restored save failure in obs-12, obs-13 performs exactly one ordinary upload of the same failed peekly-sample-previous.zip through the observed file input. Its before digest equals the preserved failed-attempt baseline, its completion sample appears at 28 ms, and its after/current digest changes to f11c5fbd771cd44df0de8603fa850a5fdee3c4671e9f31552232dae0b94347a5. The saved result and success toast are visible. This confirms safe persisted recovery while the separate direct-retry product failure remains failed.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-eghkdbdagmmiacobmdheghfg/1/agent-observation-12.json",
+          "sha256": "05110ea91763bc74c194c1a1e28168ca176d27aa3aa3cbf1d5bc642758e4903f",
+          "observation_id": "obs-12",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-13",
+          "path": "evidence/S-eghkdbdagmmiacobmdheghfg/1/agent-observation-13.json",
+          "sha256": "34a79138f2cc6742ff479f7337f3ab05a4a3c12cd7d86b45fca619ffbfc7796c",
+          "observation_id": "obs-13",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-13-0",
+          "path": "evidence/S-eghkdbdagmmiacobmdheghfg/1/browser-00243.png",
+          "sha256": "f3be7fb865eee35e290cc4ddc716aeae5a2a3e99238a660fe98d694e4dbaadb5",
+          "observation_id": "obs-13",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-jjlepgjfpnolfggebebihpij",
+      "persona_id": "PER-PEEKLY-V2-015",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-IMPORT-PROGRESS",
+      "result_sha256": "b2c78a26376232e7d1e26c3c325ad2ae961204b69d3b05074579fd0daed9feed",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "obs-7 established a new persisted current-fixture baseline. obs-10 sampled reading at 3 ms and analysis at 61 ms, recorded cancel_active=true and cancel_dispatched=true, ended cancelled_without_new_result after a 1,105 ms observation window, and preserved 0cb983c39b7af7bcd743d34a6b2054dc40a46a68277dfb58adda5de4db148f4b. The PNGs are pre-upload/post-cancel selection states; active cancellation is supported by admitted guarded-dispatch facts, not a visible active-cancel frame or exact dispatch timestamp.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-jjlepgjfpnolfggebebihpij/1/agent-observation-7.json",
+          "sha256": "775c9b499028e830c560494fe1890d0981dba2ac393a3e4c22bd90b89c2fb38f",
+          "observation_id": "obs-7",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-jjlepgjfpnolfggebebihpij/1/agent-observation-10.json",
+          "sha256": "23ad6483a7b78142d424760d76ddd1509340928994c4abfc43bf893a069d86c9",
+          "observation_id": "obs-10",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-10-0",
+          "path": "evidence/S-jjlepgjfpnolfggebebihpij/1/browser-00101.png",
+          "sha256": "19aa780ac481881922d8a7b70c222e19e078c459ce6fade31fddc617bf443dd8",
+          "observation_id": "obs-10",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "png-10-1",
+          "path": "evidence/S-jjlepgjfpnolfggebebihpij/1/browser-00151.png",
+          "sha256": "67cf66bda48229e08f293f20e6eae009701fdd4226f837827336dd915fd8d1c2",
+          "observation_id": "obs-10",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-jjlepgjfpnolfggebebihpij",
+      "persona_id": "PER-PEEKLY-V2-015",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-IMPORT-SIZE",
+      "result_sha256": "b2c78a26376232e7d1e26c3c325ad2ae961204b69d3b05074579fd0daed9feed",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "obs-11/12/13 separately uploaded the pinned 128 MiB+1 ZIP, 32 MiB+1 loose-file group and over-64 MiB loose aggregate. Each admitted DOM contains the corresponding 128MB, 32MB or 64MB rejection, and each before/after/current storage digest equals the actual saved 0cb983c39b7af7bcd743d34a6b2054dc40a46a68277dfb58adda5de4db148f4b baseline. Rejection paragraphs are outside the captured modal viewport; wording is supported by the DOM logs rather than claimed visible PNG text.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-jjlepgjfpnolfggebebihpij/1/agent-observation-7.json",
+          "sha256": "775c9b499028e830c560494fe1890d0981dba2ac393a3e4c22bd90b89c2fb38f",
+          "observation_id": "obs-7",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-jjlepgjfpnolfggebebihpij/1/agent-observation-11.json",
+          "sha256": "c2784da9b8869f25203be3e37404b85d1f10726163c16e345ec7ea0a5ebe63cc",
+          "observation_id": "obs-11",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-jjlepgjfpnolfggebebihpij/1/agent-observation-12.json",
+          "sha256": "7fe448356f198ec0cddd671de40fcba276ab1bc9af9d0c1acd5d3bb617970d4b",
+          "observation_id": "obs-12",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-13",
+          "path": "evidence/S-jjlepgjfpnolfggebebihpij/1/agent-observation-13.json",
+          "sha256": "a80e24062cec5a4428b8c0f6db7dad7d5e67a186745cecaecf33ab3aa379cc76",
+          "observation_id": "obs-13",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-11-0",
+          "path": "evidence/S-jjlepgjfpnolfggebebihpij/1/browser-00178.png",
+          "sha256": "a607796665d348b43311f3dba473df9b69d084207c8fbbbdab8b38dea98ecf50",
+          "observation_id": "obs-11",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-jjlepgjfpnolfggebebihpij",
+      "persona_id": "PER-PEEKLY-V2-015",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-IMPORT-SAVE-FAIL",
+      "result_sha256": "b2c78a26376232e7d1e26c3c325ad2ae961204b69d3b05074579fd0daed9feed",
+      "expected_raw_status": "failed",
+      "reviewed_status": "failed",
+      "reason": "obs-14 consumed and restored the one-shot peekly_state_v7 fault during the distinct previous-fixture import and retained the saved 0cb983c39b7af7bcd743d34a6b2054dc40a46a68277dfb58adda5de4db148f4b baseline. The admitted save-error DOM and complete 19-control inventory show no 다시 저장 action. The viewed final frame offers 다른 파일 고르기; the error paragraph is outside its captured viewport. This proves the missing direct-save-retry product requirement, independently of general recovery.",
+      "classifications": [
+        "product_defect",
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-jjlepgjfpnolfggebebihpij/1/agent-observation-7.json",
+          "sha256": "775c9b499028e830c560494fe1890d0981dba2ac393a3e4c22bd90b89c2fb38f",
+          "observation_id": "obs-7",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-14",
+          "path": "evidence/S-jjlepgjfpnolfggebebihpij/1/agent-observation-14.json",
+          "sha256": "f67307f55e89cc563f4d6c52657e5c0f7ff0eec6f17ad7b49b8e7d42327211e3",
+          "observation_id": "obs-14",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-14-1",
+          "path": "evidence/S-jjlepgjfpnolfggebebihpij/1/browser-00243.png",
+          "sha256": "a607796665d348b43311f3dba473df9b69d084207c8fbbbdab8b38dea98ecf50",
+          "observation_id": "obs-14",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-jjlepgjfpnolfggebebihpij",
+      "persona_id": "PER-PEEKLY-V2-015",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "result_sha256": "b2c78a26376232e7d1e26c3c325ad2ae961204b69d3b05074579fd0daed9feed",
+      "expected_raw_status": "not_applicable",
+      "reviewed_status": "not_run",
+      "reason": "The literal recovery criterion is triggered by an actual recoverable import/save failure and does not exempt expected fixture failures. obs-14 is a definitely completed failed save with consumed=true, restored=true, unchanged valid baseline, admitted error DOM and observed normal file selection. The session finalizes at obs-14 without any subsequent ordinary reimport or persisted recovery. Raw N/A incorrectly excludes this real trigger; recovery is not_run because it was unattempted, not a product recovery failure. This is a new remaining NR outside the historical 23-row baseline.",
+      "classifications": [
+        "judge_unfounded_execution"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-jjlepgjfpnolfggebebihpij/1/agent-observation-7.json",
+          "sha256": "775c9b499028e830c560494fe1890d0981dba2ac393a3e4c22bd90b89c2fb38f",
+          "observation_id": "obs-7",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-jjlepgjfpnolfggebebihpij/1/agent-observation-11.json",
+          "sha256": "c2784da9b8869f25203be3e37404b85d1f10726163c16e345ec7ea0a5ebe63cc",
+          "observation_id": "obs-11",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-jjlepgjfpnolfggebebihpij/1/agent-observation-12.json",
+          "sha256": "7fe448356f198ec0cddd671de40fcba276ab1bc9af9d0c1acd5d3bb617970d4b",
+          "observation_id": "obs-12",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-13",
+          "path": "evidence/S-jjlepgjfpnolfggebebihpij/1/agent-observation-13.json",
+          "sha256": "a80e24062cec5a4428b8c0f6db7dad7d5e67a186745cecaecf33ab3aa379cc76",
+          "observation_id": "obs-13",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-14",
+          "path": "evidence/S-jjlepgjfpnolfggebebihpij/1/agent-observation-14.json",
+          "sha256": "f67307f55e89cc563f4d6c52657e5c0f7ff0eec6f17ad7b49b8e7d42327211e3",
+          "observation_id": "obs-14",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-14-1",
+          "path": "evidence/S-jjlepgjfpnolfggebebihpij/1/browser-00243.png",
+          "sha256": "a607796665d348b43311f3dba473df9b69d084207c8fbbbdab8b38dea98ecf50",
+          "observation_id": "obs-14",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-ekcpeodledhmeheieecnhdee",
+      "persona_id": "PER-PEEKLY-V2-016",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-IMPORT-PROGRESS",
+      "result_sha256": "22a301ce66fbb807c25688ee6c7427a624ceb8ceb94b636c226b67a227beb39b",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "obs-5 established a new persisted current-fixture baseline. obs-8 sampled reading at 0 ms and analysis at 26 ms, recorded cancel_active=true and cancel_dispatched=true, ended cancelled_without_new_result after a 1,085 ms observation window, and preserved 117b07616a1f2aa17fc3df37fa24f904575d3d930bafd9c2d8b58bf01f0cf51b. The PNGs are pre-upload/post-cancel selection states; active cancellation is supported by admitted guarded-dispatch facts, not a visible active-cancel frame or exact dispatch timestamp.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-ekcpeodledhmeheieecnhdee/1/agent-observation-5.json",
+          "sha256": "5498e90fa00f15b4179ac3fc127ae9a6982a352c4056c4a33c90b9ba100a1704",
+          "observation_id": "obs-5",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-8",
+          "path": "evidence/S-ekcpeodledhmeheieecnhdee/1/agent-observation-8.json",
+          "sha256": "be77fa4edcefbd55bc4790fcc97a2ba3d42767b416662d12f0cfb6b2b99b8b16",
+          "observation_id": "obs-8",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-8-0",
+          "path": "evidence/S-ekcpeodledhmeheieecnhdee/1/browser-00082.png",
+          "sha256": "a71e4e6ef759d115ee90e266fc883616d63f3ed97ed0f3c9782f3d2cc7d8977b",
+          "observation_id": "obs-8",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "png-8-1",
+          "path": "evidence/S-ekcpeodledhmeheieecnhdee/1/browser-00134.png",
+          "sha256": "14f20109fb764b09a625fb752f871baf5db66ffc8a55bd0a7f49aa01f25e59da",
+          "observation_id": "obs-8",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-ekcpeodledhmeheieecnhdee",
+      "persona_id": "PER-PEEKLY-V2-016",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-IMPORT-SIZE",
+      "result_sha256": "22a301ce66fbb807c25688ee6c7427a624ceb8ceb94b636c226b67a227beb39b",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "obs-9/10/11 separately uploaded the pinned 128 MiB+1 ZIP, 32 MiB+1 loose-file group and over-64 MiB loose aggregate. Each admitted DOM contains the corresponding 128MB, 32MB or 64MB rejection, and each before/after/current storage digest equals the actual saved 117b07616a1f2aa17fc3df37fa24f904575d3d930bafd9c2d8b58bf01f0cf51b baseline. Rejection paragraphs are outside the captured modal viewport; wording is supported by the DOM logs rather than claimed visible PNG text.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-ekcpeodledhmeheieecnhdee/1/agent-observation-5.json",
+          "sha256": "5498e90fa00f15b4179ac3fc127ae9a6982a352c4056c4a33c90b9ba100a1704",
+          "observation_id": "obs-5",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-9",
+          "path": "evidence/S-ekcpeodledhmeheieecnhdee/1/agent-observation-9.json",
+          "sha256": "7deee56881502ede7fe21749a94761c38ab64e4e94e415650793982a88e3bca3",
+          "observation_id": "obs-9",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-ekcpeodledhmeheieecnhdee/1/agent-observation-10.json",
+          "sha256": "1513c6b99ad5e5baf30f12c73f1e650adfa3da59db5102e891310769bf6bee12",
+          "observation_id": "obs-10",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-ekcpeodledhmeheieecnhdee/1/agent-observation-11.json",
+          "sha256": "76631bf8f9f059c903c0f993f47f5309a6b924d91499b106de9ae5ee9759b29c",
+          "observation_id": "obs-11",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-9-0",
+          "path": "evidence/S-ekcpeodledhmeheieecnhdee/1/browser-00160.png",
+          "sha256": "34fed3ee3d8a6cb98cb0a05736c670fc1058ca6c31f800187acde30f3bef83d8",
+          "observation_id": "obs-9",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-ekcpeodledhmeheieecnhdee",
+      "persona_id": "PER-PEEKLY-V2-016",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-IMPORT-SAVE-FAIL",
+      "result_sha256": "22a301ce66fbb807c25688ee6c7427a624ceb8ceb94b636c226b67a227beb39b",
+      "expected_raw_status": "failed",
+      "reviewed_status": "failed",
+      "reason": "obs-12 consumed and restored the one-shot peekly_state_v7 fault during the distinct previous-fixture import and retained the saved 117b07616a1f2aa17fc3df37fa24f904575d3d930bafd9c2d8b58bf01f0cf51b baseline. The admitted save-error DOM and complete 19-control inventory show no 다시 저장 action. The viewed final frame offers 다른 파일 고르기; the error paragraph is outside its captured viewport. This proves the missing direct-save-retry product requirement, independently of general recovery.",
+      "classifications": [
+        "product_defect",
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-ekcpeodledhmeheieecnhdee/1/agent-observation-5.json",
+          "sha256": "5498e90fa00f15b4179ac3fc127ae9a6982a352c4056c4a33c90b9ba100a1704",
+          "observation_id": "obs-5",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-ekcpeodledhmeheieecnhdee/1/agent-observation-12.json",
+          "sha256": "db22a842d9743a11d06c2daff110b820ed64a45a35d0ff615fd9c101aad4a40c",
+          "observation_id": "obs-12",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-12-1",
+          "path": "evidence/S-ekcpeodledhmeheieecnhdee/1/browser-00226.png",
+          "sha256": "34fed3ee3d8a6cb98cb0a05736c670fc1058ca6c31f800187acde30f3bef83d8",
+          "observation_id": "obs-12",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-ekcpeodledhmeheieecnhdee",
+      "persona_id": "PER-PEEKLY-V2-016",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "result_sha256": "22a301ce66fbb807c25688ee6c7427a624ceb8ceb94b636c226b67a227beb39b",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "After the acknowledged consumed/restored failed save in obs-12, obs-13 performs one ordinary upload of the same failed peekly-sample-previous.zip. Its before digest equals the preserved baseline; its completion sample appears at 9 ms and its after/current digest changes to d1a4371f7cfb1317cb490ad905643694565ee658a8c226cce1ed2b64d9bdfd63. The viewed saved-result frame and success toast support actual persisted recovery. The separate missing direct retry remains failed.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-ekcpeodledhmeheieecnhdee/1/agent-observation-12.json",
+          "sha256": "db22a842d9743a11d06c2daff110b820ed64a45a35d0ff615fd9c101aad4a40c",
+          "observation_id": "obs-12",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-13",
+          "path": "evidence/S-ekcpeodledhmeheieecnhdee/1/agent-observation-13.json",
+          "sha256": "9edda2b026505870abef40d073d08f89322ab5269b8bcf099906778ad556aedc",
+          "observation_id": "obs-13",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-13-0",
+          "path": "evidence/S-ekcpeodledhmeheieecnhdee/1/browser-00237.png",
+          "sha256": "f3be7fb865eee35e290cc4ddc716aeae5a2a3e99238a660fe98d694e4dbaadb5",
+          "observation_id": "obs-13",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-aiidkoilmlhfjinghfbgbnjf",
+      "persona_id": "PER-PEEKLY-V2-017",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-RESULT-RECIPROCITY",
+      "result_sha256": "355660544f87364b6c3f96d57c0ac8150a6ab0692b6d1d7d6dbf23ea3dc2cc8b",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The ordinary previous import in obs-5 and current import in obs-8 form one persisted storage chain. With the current import retained at b27288687710063289433db955270fddbf2c9dc1ae930a9495140ad02581d4b4, obs-13 actually hit-tests and opens the required category sheet: count 5, complete admitted row set atelier.luna_, ina.archive, junho.jeong, minsu.kim_, taeo.kang_. The screenshot confirms the sheet label/count and its upper rows; the full set is supported by the registered DOM list rows. No sample-mode or dashboard-only evidence is used.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-5.json",
+          "sha256": "8ea3a22b0190218fff25651f2f5f79742adbbeb780a2594489621842e37bee24",
+          "observation_id": "obs-5",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-8",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-8.json",
+          "sha256": "9599a60335651fee020bfdb1db4061d5b0c340777729936d5eba209e7b5fbf47",
+          "observation_id": "obs-8",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-13",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-13.json",
+          "sha256": "e371e63b76d7ae92ba3591a88f73dcb7ae77e1f5f513828049b6d2fa3708a979",
+          "observation_id": "obs-13",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-13-0",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/browser-00139.png",
+          "sha256": "538fb0984f25809c60926d84873671ffc59e758d149eb5e48ed738f5403c3742",
+          "observation_id": "obs-13",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-aiidkoilmlhfjinghfbgbnjf",
+      "persona_id": "PER-PEEKLY-V2-017",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-RESULT-REVERSE",
+      "result_sha256": "355660544f87364b6c3f96d57c0ac8150a6ab0692b6d1d7d6dbf23ea3dc2cc8b",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The ordinary previous import in obs-5 and current import in obs-8 form one persisted storage chain. With the current import retained at b27288687710063289433db955270fddbf2c9dc1ae930a9495140ad02581d4b4, obs-15 actually hit-tests and opens the required category sheet: count 2, complete admitted row set haneul.song, seongsu.coffee. The screenshot confirms the sheet label/count and both rows; the full set is supported by the registered DOM list rows. No sample-mode or dashboard-only evidence is used.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-5.json",
+          "sha256": "8ea3a22b0190218fff25651f2f5f79742adbbeb780a2594489621842e37bee24",
+          "observation_id": "obs-5",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-8",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-8.json",
+          "sha256": "9599a60335651fee020bfdb1db4061d5b0c340777729936d5eba209e7b5fbf47",
+          "observation_id": "obs-8",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-15",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-15.json",
+          "sha256": "0ff859fef3231e71e5705066c1f9fecde5d719f18b072f517ef0b3a17531831f",
+          "observation_id": "obs-15",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-15-0",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/browser-00159.png",
+          "sha256": "7435b1cc39ce778d22fff696c935ece40bcbc6634df6ad9baec0234b75b9671b",
+          "observation_id": "obs-15",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-aiidkoilmlhfjinghfbgbnjf",
+      "persona_id": "PER-PEEKLY-V2-017",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-RESULT-MUTUAL",
+      "result_sha256": "355660544f87364b6c3f96d57c0ac8150a6ab0692b6d1d7d6dbf23ea3dc2cc8b",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The ordinary previous import in obs-5 and current import in obs-8 form one persisted storage chain. With the current import retained at b27288687710063289433db955270fddbf2c9dc1ae930a9495140ad02581d4b4, obs-17 actually hit-tests and opens the required category sheet: count 5, complete admitted row set dohyun.fit, haerin.daily, minji_kim, seojun.park, yuna.choi. The screenshot confirms the sheet label/count and its upper rows; the full set is supported by the registered DOM list rows. No sample-mode or dashboard-only evidence is used.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-5.json",
+          "sha256": "8ea3a22b0190218fff25651f2f5f79742adbbeb780a2594489621842e37bee24",
+          "observation_id": "obs-5",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-8",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-8.json",
+          "sha256": "9599a60335651fee020bfdb1db4061d5b0c340777729936d5eba209e7b5fbf47",
+          "observation_id": "obs-8",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-17",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-17.json",
+          "sha256": "a3f20adf8421da4323be8d13d0c7152d1a7a49abdb24264a465d3598047388b6",
+          "observation_id": "obs-17",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-17-0",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/browser-00179.png",
+          "sha256": "d03831b9ba73a24aa51182c74d90b5264a77e874d8f35448a29d745eddbdf394",
+          "observation_id": "obs-17",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-aiidkoilmlhfjinghfbgbnjf",
+      "persona_id": "PER-PEEKLY-V2-017",
+      "kind": "success",
+      "index": 3,
+      "requirement_id": "PRD-RESULT-SNAPSHOT",
+      "result_sha256": "355660544f87364b6c3f96d57c0ac8150a6ab0692b6d1d7d6dbf23ea3dc2cc8b",
+      "expected_raw_status": "passed",
+      "reviewed_status": "failed",
+      "reason": "The assigned criterion explicitly requires that the UI not infer a cause. Same-session ordinary previous→current imports in obs-5/8 persist the expected pair; obs-10 actually opens the departed-follower sheet and contains the exact six names hyunwoo.k, ina.archive, jimin.han_, junho.jeong, sujin.lee_, yuna.99_. Although its caveat allows ID changes or account deletion, its admitted list rows label ina.archive and junho.jeong as 언팔로우. Those causal labels contradict the no-inferred-cause requirement, so raw PASS becomes FAIL. The PNG visibly shows the caveat and first row; the contradictory badges are in the same admitted DOM below the captured crop, not claimed visible pixels.",
+      "classifications": [
+        "product_defect",
+        "judge_false_pass"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-5.json",
+          "sha256": "8ea3a22b0190218fff25651f2f5f79742adbbeb780a2594489621842e37bee24",
+          "observation_id": "obs-5",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-8",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-8.json",
+          "sha256": "9599a60335651fee020bfdb1db4061d5b0c340777729936d5eba209e7b5fbf47",
+          "observation_id": "obs-8",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-10.json",
+          "sha256": "b02d300cb654f1c9e9c5947fbf02654d7ea1ea380c5e02789bfc6fc198f03abc",
+          "observation_id": "obs-10",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-10-0",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/browser-00109.png",
+          "sha256": "242f955c94a6d1f8d5a6770ee4b2504ae92c4d16d2738f4fff9053949b433b5d",
+          "observation_id": "obs-10",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-aiidkoilmlhfjinghfbgbnjf",
+      "persona_id": "PER-PEEKLY-V2-017",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "result_sha256": "355660544f87364b6c3f96d57c0ac8150a6ab0692b6d1d7d6dbf23ea3dc2cc8b",
+      "expected_raw_status": "not_applicable",
+      "reviewed_status": "not_applicable",
+      "reason": "All 17 admitted observations were reviewed. The two ordinary valid imports completed and persisted, followed by normal navigation through the comparison and all three relationship sheets. No recoverable browser/import rejection or failed save is observed in this session. The product's inferred-cause defect is not an import/browser failure requiring the conditional recovery action. Raw N/A is retained and earns no execution credit.",
+      "classifications": [
+        "conditional_not_applicable",
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-1.json",
+          "sha256": "8358d635d3d18f33a0ca3c4db893dd4342c59fd0a86590c64d7a4e4afac82e91",
+          "observation_id": "obs-1",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-2.json",
+          "sha256": "15a7f0aa2a7c2127a8c8bc9974eb8bdd654d288b6422b4d14483adaf8440e8c0",
+          "observation_id": "obs-2",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-3.json",
+          "sha256": "0d20b1f08655ee43e3e526bf3f2996b54ac436d655644aa72e934f1179ca3596",
+          "observation_id": "obs-3",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-4.json",
+          "sha256": "88c5e8f4c427e69ab8566c775bd7e1489fab1e55f2fefdd43cc15377d7836385",
+          "observation_id": "obs-4",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-5.json",
+          "sha256": "8ea3a22b0190218fff25651f2f5f79742adbbeb780a2594489621842e37bee24",
+          "observation_id": "obs-5",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-6.json",
+          "sha256": "31522c585f6071b714ccf0ffc524cd806d5073176ddac0460d834fffda05cc4c",
+          "observation_id": "obs-6",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-7.json",
+          "sha256": "a9bec8c73a3e13b086a4cb26e1abece068be1461c8064eb87e9664a2ade15f07",
+          "observation_id": "obs-7",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-8",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-8.json",
+          "sha256": "9599a60335651fee020bfdb1db4061d5b0c340777729936d5eba209e7b5fbf47",
+          "observation_id": "obs-8",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-9",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-9.json",
+          "sha256": "4e656641a355700a1241c21e8e84185531c3d0cded3255894e1f64c2712160f1",
+          "observation_id": "obs-9",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-10.json",
+          "sha256": "b02d300cb654f1c9e9c5947fbf02654d7ea1ea380c5e02789bfc6fc198f03abc",
+          "observation_id": "obs-10",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-11.json",
+          "sha256": "50a5f0f226b9e8faa30aff74b148d59ac66f1b093c3d337b9df7985bdf9791e0",
+          "observation_id": "obs-11",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-12.json",
+          "sha256": "13274721952b2d563451cfa74e27a4ba9651783feb2da28b5ed64e83efe119e5",
+          "observation_id": "obs-12",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-13",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-13.json",
+          "sha256": "e371e63b76d7ae92ba3591a88f73dcb7ae77e1f5f513828049b6d2fa3708a979",
+          "observation_id": "obs-13",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-14",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-14.json",
+          "sha256": "d0bd504d06bd7c18ec5270bd20b089af379b89fc92ad98c1f7a6fc71be7b57e6",
+          "observation_id": "obs-14",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-15",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-15.json",
+          "sha256": "0ff859fef3231e71e5705066c1f9fecde5d719f18b072f517ef0b3a17531831f",
+          "observation_id": "obs-15",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-16",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-16.json",
+          "sha256": "b4a6e60df6d1aa877eea3e57093a3622f0916ab974aba7c32560d7d723caf003",
+          "observation_id": "obs-16",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-17",
+          "path": "evidence/S-aiidkoilmlhfjinghfbgbnjf/1/agent-observation-17.json",
+          "sha256": "a3f20adf8421da4323be8d13d0c7152d1a7a49abdb24264a465d3598047388b6",
+          "observation_id": "obs-17",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-eijmndepmkoldnjffcibcchh",
+      "persona_id": "PER-PEEKLY-V2-018",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-RESULT-RECIPROCITY",
+      "result_sha256": "f9674665f4fdbb0b3e1f76a196aba820ba906eae580a42eb58a459dec23558e6",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The ordinary previous import in obs-4 and current import in obs-7 form one persisted storage chain. With the current import retained at 3c0e4d3a5b0bb3037b397cab5a7b22cb187502401e5ef80a69a4e70744771126, obs-12 actually hit-tests and opens the required category sheet: count 5, complete admitted row set atelier.luna_, ina.archive, junho.jeong, minsu.kim_, taeo.kang_. The screenshot confirms the sheet label/count and its upper rows; the full set is supported by the registered DOM list rows. No sample-mode or dashboard-only evidence is used.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-4.json",
+          "sha256": "3166751a75a0cffc533bcef9af3a7eb1df69300272fa27c246607d2aefab8167",
+          "observation_id": "obs-4",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-7.json",
+          "sha256": "51c6023495c93f5fe14fdefb85300af20441851592dec26080f2707f0f3c994e",
+          "observation_id": "obs-7",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-12.json",
+          "sha256": "232075a0272e9250a2602dedbd5d0c8dd2a2c608f28354d2c17e5c4a11e72d7c",
+          "observation_id": "obs-12",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-12-0",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/browser-00127.png",
+          "sha256": "897c563340d2bfccd33144fc793b998e782c2095dc987ef71f81123d7483f98f",
+          "observation_id": "obs-12",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-eijmndepmkoldnjffcibcchh",
+      "persona_id": "PER-PEEKLY-V2-018",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-RESULT-REVERSE",
+      "result_sha256": "f9674665f4fdbb0b3e1f76a196aba820ba906eae580a42eb58a459dec23558e6",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The ordinary previous import in obs-4 and current import in obs-7 form one persisted storage chain. With the current import retained at 3c0e4d3a5b0bb3037b397cab5a7b22cb187502401e5ef80a69a4e70744771126, obs-14 actually hit-tests and opens the required category sheet: count 2, complete admitted row set haneul.song, seongsu.coffee. The screenshot confirms the sheet label/count and both rows; the full set is supported by the registered DOM list rows. No sample-mode or dashboard-only evidence is used.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-4.json",
+          "sha256": "3166751a75a0cffc533bcef9af3a7eb1df69300272fa27c246607d2aefab8167",
+          "observation_id": "obs-4",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-7.json",
+          "sha256": "51c6023495c93f5fe14fdefb85300af20441851592dec26080f2707f0f3c994e",
+          "observation_id": "obs-7",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-14",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-14.json",
+          "sha256": "2e40d5302b6f28b2bcc388fd768e83067540e0597ced8e363d993abe21913b6e",
+          "observation_id": "obs-14",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-14-0",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/browser-00147.png",
+          "sha256": "119dd7e74e9605460a58e1302a35ba0db9cf41bebdb70fbd133f4764b9c7fe96",
+          "observation_id": "obs-14",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-eijmndepmkoldnjffcibcchh",
+      "persona_id": "PER-PEEKLY-V2-018",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-RESULT-MUTUAL",
+      "result_sha256": "f9674665f4fdbb0b3e1f76a196aba820ba906eae580a42eb58a459dec23558e6",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The ordinary previous import in obs-4 and current import in obs-7 form one persisted storage chain. With the current import retained at 3c0e4d3a5b0bb3037b397cab5a7b22cb187502401e5ef80a69a4e70744771126, obs-16 actually hit-tests and opens the required category sheet: count 5, complete admitted row set dohyun.fit, haerin.daily, minji_kim, seojun.park, yuna.choi. The screenshot confirms the sheet label/count and its upper rows; the full set is supported by the registered DOM list rows. No sample-mode or dashboard-only evidence is used.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-4.json",
+          "sha256": "3166751a75a0cffc533bcef9af3a7eb1df69300272fa27c246607d2aefab8167",
+          "observation_id": "obs-4",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-7.json",
+          "sha256": "51c6023495c93f5fe14fdefb85300af20441851592dec26080f2707f0f3c994e",
+          "observation_id": "obs-7",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-16",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-16.json",
+          "sha256": "6c2559c25dbe5e93458c547ae13ba813fb7722788814297f40077e6810962b91",
+          "observation_id": "obs-16",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-16-0",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/browser-00167.png",
+          "sha256": "d03831b9ba73a24aa51182c74d90b5264a77e874d8f35448a29d745eddbdf394",
+          "observation_id": "obs-16",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-eijmndepmkoldnjffcibcchh",
+      "persona_id": "PER-PEEKLY-V2-018",
+      "kind": "success",
+      "index": 3,
+      "requirement_id": "PRD-RESULT-SNAPSHOT",
+      "result_sha256": "f9674665f4fdbb0b3e1f76a196aba820ba906eae580a42eb58a459dec23558e6",
+      "expected_raw_status": "passed",
+      "reviewed_status": "failed",
+      "reason": "The assigned criterion explicitly requires that the UI not infer a cause. Same-session ordinary previous→current imports in obs-4/7 persist the expected pair; obs-9 actually opens the departed-follower sheet and contains the exact six names hyunwoo.k, ina.archive, jimin.han_, junho.jeong, sujin.lee_, yuna.99_. Although its caveat allows ID changes or account deletion, its admitted list rows label ina.archive and junho.jeong as 언팔로우. Those causal labels contradict the no-inferred-cause requirement, so raw PASS becomes FAIL. The PNG visibly shows the caveat and first row; the contradictory badges are in the same admitted DOM below the captured crop, not claimed visible pixels.",
+      "classifications": [
+        "product_defect",
+        "judge_false_pass"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-4.json",
+          "sha256": "3166751a75a0cffc533bcef9af3a7eb1df69300272fa27c246607d2aefab8167",
+          "observation_id": "obs-4",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-7.json",
+          "sha256": "51c6023495c93f5fe14fdefb85300af20441851592dec26080f2707f0f3c994e",
+          "observation_id": "obs-7",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-9",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-9.json",
+          "sha256": "3358eea517fa88e5f279d120e4f78918da72445eca2cf511bafa2227687621e0",
+          "observation_id": "obs-9",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-9-0",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/browser-00097.png",
+          "sha256": "f718331875510acb8d48a5d98e464f6265a95632ed214a6f0eeaedcc9142fe19",
+          "observation_id": "obs-9",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-eijmndepmkoldnjffcibcchh",
+      "persona_id": "PER-PEEKLY-V2-018",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "result_sha256": "f9674665f4fdbb0b3e1f76a196aba820ba906eae580a42eb58a459dec23558e6",
+      "expected_raw_status": "not_applicable",
+      "reviewed_status": "not_applicable",
+      "reason": "All 16 admitted observations were reviewed. The two ordinary valid imports completed and persisted, followed by normal navigation through the comparison and all three relationship sheets. No recoverable browser/import rejection or failed save is observed in this session. The product's inferred-cause defect is not an import/browser failure requiring the conditional recovery action. Raw N/A is retained and earns no execution credit.",
+      "classifications": [
+        "conditional_not_applicable",
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-1.json",
+          "sha256": "e544b58874ac7661a5b44af58797971541624afcfaccaf1ef10417ea90139c14",
+          "observation_id": "obs-1",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-2.json",
+          "sha256": "efcc8835d865d5955dd3b1a8008cd311c368e923319665d133d8047460f3ba03",
+          "observation_id": "obs-2",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-3.json",
+          "sha256": "d337821b8873d44417dede61ae93ced8fcd11d1f1340312d097575859fca5113",
+          "observation_id": "obs-3",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-4.json",
+          "sha256": "3166751a75a0cffc533bcef9af3a7eb1df69300272fa27c246607d2aefab8167",
+          "observation_id": "obs-4",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-5.json",
+          "sha256": "06282631ba7fc1eb7026c89bc8b8acdc0d7471c1acf3672b7257914c2dbc5611",
+          "observation_id": "obs-5",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-6.json",
+          "sha256": "b88bd092c8a18480c892397f688dd811cb65bc4d8bd0d2049786debdf4d397e4",
+          "observation_id": "obs-6",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-7.json",
+          "sha256": "51c6023495c93f5fe14fdefb85300af20441851592dec26080f2707f0f3c994e",
+          "observation_id": "obs-7",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-8",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-8.json",
+          "sha256": "17b03eb0b7041b6a70b1ba3ace8d0f647d68db456fa1a5656baf1ca9323a6456",
+          "observation_id": "obs-8",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-9",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-9.json",
+          "sha256": "3358eea517fa88e5f279d120e4f78918da72445eca2cf511bafa2227687621e0",
+          "observation_id": "obs-9",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-10.json",
+          "sha256": "5f6674bb77c2aaacd659eb60a81dbdcca41ffcbb0d03791779619267bdc66b77",
+          "observation_id": "obs-10",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-11.json",
+          "sha256": "cd78e3ba776bd1c716382387b6ccc47ff452043f2b8597e9d365d1393fe3ad01",
+          "observation_id": "obs-11",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-12.json",
+          "sha256": "232075a0272e9250a2602dedbd5d0c8dd2a2c608f28354d2c17e5c4a11e72d7c",
+          "observation_id": "obs-12",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-13",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-13.json",
+          "sha256": "0fa8e5697e5c40bbbce204e3cc4f5d611e97f3581c2c1644a3645408b34f624d",
+          "observation_id": "obs-13",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-14",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-14.json",
+          "sha256": "2e40d5302b6f28b2bcc388fd768e83067540e0597ced8e363d993abe21913b6e",
+          "observation_id": "obs-14",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-15",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-15.json",
+          "sha256": "9e3c0cd023a27c67e34575ebd11bbdb4617b030e76bc388a4f1405f7c652dac1",
+          "observation_id": "obs-15",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-16",
+          "path": "evidence/S-eijmndepmkoldnjffcibcchh/1/agent-observation-16.json",
+          "sha256": "6c2559c25dbe5e93458c547ae13ba813fb7722788814297f40077e6810962b91",
+          "observation_id": "obs-16",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-accbhomandanakneabadnkem",
+      "persona_id": "PER-PEEKLY-V2-019",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-RESULT-RECIPROCITY",
+      "result_sha256": "48c41d21ab0b7599aece798a7a928a3557633d55db8369495cf57e2ebf06509e",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The ordinary previous import in obs-6 and current import in obs-9 form one persisted storage chain. With the current import retained at 66d933cfd77338b6562e49a06319445828c010008ca46f91f543d1ffaee683c3, obs-10 actually hit-tests and opens the required category sheet: count 5, complete admitted row set atelier.luna_, ina.archive, junho.jeong, minsu.kim_, taeo.kang_. The screenshot confirms the sheet label/count and its upper rows; the full set is supported by the registered DOM list rows. No sample-mode or dashboard-only evidence is used.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-6.json",
+          "sha256": "549479976297dacbe7d50932c891293786caab438bc388c41240c5853dda2911",
+          "observation_id": "obs-6",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-9",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-9.json",
+          "sha256": "37f1265684766a4e8626cab02c8d01ef20f0f9188c0cae03065fed7e9bf8de39",
+          "observation_id": "obs-9",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-10.json",
+          "sha256": "b4defe5079fe542c39249471428cd37e43d1e24ae32427be293a9ff481551d05",
+          "observation_id": "obs-10",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-10-0",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/browser-00104.png",
+          "sha256": "a0843e07d160c63dc14aedbbcb9f7d6439a85ffbee9b6c879103be304b16fd4b",
+          "observation_id": "obs-10",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-accbhomandanakneabadnkem",
+      "persona_id": "PER-PEEKLY-V2-019",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-RESULT-REVERSE",
+      "result_sha256": "48c41d21ab0b7599aece798a7a928a3557633d55db8369495cf57e2ebf06509e",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The ordinary previous import in obs-6 and current import in obs-9 form one persisted storage chain. With the current import retained at 66d933cfd77338b6562e49a06319445828c010008ca46f91f543d1ffaee683c3, obs-12 actually hit-tests and opens the required category sheet: count 2, complete admitted row set haneul.song, seongsu.coffee. The screenshot confirms the sheet label/count and both rows; the full set is supported by the registered DOM list rows. No sample-mode or dashboard-only evidence is used.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-6.json",
+          "sha256": "549479976297dacbe7d50932c891293786caab438bc388c41240c5853dda2911",
+          "observation_id": "obs-6",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-9",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-9.json",
+          "sha256": "37f1265684766a4e8626cab02c8d01ef20f0f9188c0cae03065fed7e9bf8de39",
+          "observation_id": "obs-9",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-12.json",
+          "sha256": "2d990bd164a324da295a4d25ae53588c3bc678da4366b8e00be03d3769033242",
+          "observation_id": "obs-12",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-12-0",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/browser-00124.png",
+          "sha256": "119dd7e74e9605460a58e1302a35ba0db9cf41bebdb70fbd133f4764b9c7fe96",
+          "observation_id": "obs-12",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-accbhomandanakneabadnkem",
+      "persona_id": "PER-PEEKLY-V2-019",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-RESULT-MUTUAL",
+      "result_sha256": "48c41d21ab0b7599aece798a7a928a3557633d55db8369495cf57e2ebf06509e",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The ordinary previous import in obs-6 and current import in obs-9 form one persisted storage chain. With the current import retained at 66d933cfd77338b6562e49a06319445828c010008ca46f91f543d1ffaee683c3, obs-14 actually hit-tests and opens the required category sheet: count 5, complete admitted row set dohyun.fit, haerin.daily, minji_kim, seojun.park, yuna.choi. The screenshot confirms the sheet label/count and its upper rows; the full set is supported by the registered DOM list rows. No sample-mode or dashboard-only evidence is used.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-6.json",
+          "sha256": "549479976297dacbe7d50932c891293786caab438bc388c41240c5853dda2911",
+          "observation_id": "obs-6",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-9",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-9.json",
+          "sha256": "37f1265684766a4e8626cab02c8d01ef20f0f9188c0cae03065fed7e9bf8de39",
+          "observation_id": "obs-9",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-14",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-14.json",
+          "sha256": "cf72d19514ec180442c2e511f70b3f969f980a91b30867dfd00b0cb7d35ff697",
+          "observation_id": "obs-14",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-14-0",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/browser-00144.png",
+          "sha256": "e8e82d11d0a46780ef60c80b9db4fdb670e081e293bee9300f9433fd576b563a",
+          "observation_id": "obs-14",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-accbhomandanakneabadnkem",
+      "persona_id": "PER-PEEKLY-V2-019",
+      "kind": "success",
+      "index": 3,
+      "requirement_id": "PRD-RESULT-SNAPSHOT",
+      "result_sha256": "48c41d21ab0b7599aece798a7a928a3557633d55db8369495cf57e2ebf06509e",
+      "expected_raw_status": "passed",
+      "reviewed_status": "failed",
+      "reason": "The assigned criterion explicitly requires that the UI not infer a cause. Same-session ordinary previous→current imports in obs-6/7 persist the expected pair; obs-16 actually opens the departed-follower sheet and contains the exact six names hyunwoo.k, ina.archive, jimin.han_, junho.jeong, sujin.lee_, yuna.99_. Although its caveat allows ID changes or account deletion, its admitted list rows label ina.archive and junho.jeong as 언팔로우. Those causal labels contradict the no-inferred-cause requirement, so raw PASS becomes FAIL. The PNG visibly shows the caveat and first row; the contradictory badges are in the same admitted DOM below the captured crop, not claimed visible pixels.",
+      "classifications": [
+        "product_defect",
+        "judge_false_pass"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-6.json",
+          "sha256": "549479976297dacbe7d50932c891293786caab438bc388c41240c5853dda2911",
+          "observation_id": "obs-6",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-9",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-9.json",
+          "sha256": "37f1265684766a4e8626cab02c8d01ef20f0f9188c0cae03065fed7e9bf8de39",
+          "observation_id": "obs-9",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-16",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-16.json",
+          "sha256": "9fa834e1f64e873b95713cd1b0dc271896638f2044b633164d90529aeef5026c",
+          "observation_id": "obs-16",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-16-0",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/browser-00164.png",
+          "sha256": "46d11eecdfff3efc00b3161f80a2334cd6a03ebf1d1ef6d1ac4d313eb348aa02",
+          "observation_id": "obs-16",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-accbhomandanakneabadnkem",
+      "persona_id": "PER-PEEKLY-V2-019",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "result_sha256": "48c41d21ab0b7599aece798a7a928a3557633d55db8369495cf57e2ebf06509e",
+      "expected_raw_status": "not_applicable",
+      "reviewed_status": "not_applicable",
+      "reason": "All 16 admitted observations were reviewed. The two ordinary valid imports completed and persisted, followed by normal navigation through the comparison and all three relationship sheets. No recoverable browser/import rejection or failed save is observed in this session. The product's inferred-cause defect is not an import/browser failure requiring the conditional recovery action. Raw N/A is retained and earns no execution credit.",
+      "classifications": [
+        "conditional_not_applicable",
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-1.json",
+          "sha256": "e8a08bc7ac0bc521d9869e6c46c29c74e1fd76c45befbed915e51591925cbdf8",
+          "observation_id": "obs-1",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-2.json",
+          "sha256": "4017b1864e68b09b227192cd13a2aa28475ca9bda9596efa1fc8e6ac68add784",
+          "observation_id": "obs-2",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-3.json",
+          "sha256": "0205a3e138b87d5831061987fa5d527e71950e8c4fcde82398c5eab521ac0a32",
+          "observation_id": "obs-3",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-4.json",
+          "sha256": "f2fe0d335d16c24d7fb6f2b3fbdb283c5348dbf498ef3c6a3dbad1667e4a9fff",
+          "observation_id": "obs-4",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-5.json",
+          "sha256": "1720f6134fd1ad589633cd453dc3923e296ce8a7445344741879214f277ddb7b",
+          "observation_id": "obs-5",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-6.json",
+          "sha256": "549479976297dacbe7d50932c891293786caab438bc388c41240c5853dda2911",
+          "observation_id": "obs-6",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-7.json",
+          "sha256": "c1d66fd2e76888e92dafd14009a7d24f9718f2e98cf4299d7cb44395cebdbd5c",
+          "observation_id": "obs-7",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-8",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-8.json",
+          "sha256": "09d4b847f5eac8765254aa2ab142b38b6209b81628acf2785569807bc7037715",
+          "observation_id": "obs-8",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-9",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-9.json",
+          "sha256": "37f1265684766a4e8626cab02c8d01ef20f0f9188c0cae03065fed7e9bf8de39",
+          "observation_id": "obs-9",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-10.json",
+          "sha256": "b4defe5079fe542c39249471428cd37e43d1e24ae32427be293a9ff481551d05",
+          "observation_id": "obs-10",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-11.json",
+          "sha256": "557bf092cf21ac4a21da876d02935a4856ab1f05c4f43332043e43c776526ee3",
+          "observation_id": "obs-11",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-12.json",
+          "sha256": "2d990bd164a324da295a4d25ae53588c3bc678da4366b8e00be03d3769033242",
+          "observation_id": "obs-12",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-13",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-13.json",
+          "sha256": "2f03699f0db757e75424199c924330bf3fc7daca2f9f8b66a3888db8c0b4fa98",
+          "observation_id": "obs-13",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-14",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-14.json",
+          "sha256": "cf72d19514ec180442c2e511f70b3f969f980a91b30867dfd00b0cb7d35ff697",
+          "observation_id": "obs-14",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-15",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-15.json",
+          "sha256": "36750c8e575ed54885dbf88bdebbdf607de8860256530705ce95f60279ca9117",
+          "observation_id": "obs-15",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-16",
+          "path": "evidence/S-accbhomandanakneabadnkem/1/agent-observation-16.json",
+          "sha256": "9fa834e1f64e873b95713cd1b0dc271896638f2044b633164d90529aeef5026c",
+          "observation_id": "obs-16",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-flmilpmkbnekbambkncmlajo",
+      "persona_id": "PER-PEEKLY-V2-020",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-RESULT-RECIPROCITY",
+      "result_sha256": "3bd6ab6f5a3d798838a65a79e8a8a8d9d092d04f3714f3caca7a50fa54bf52d4",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The ordinary previous import in obs-4 and current import in obs-7 form one persisted storage chain. With the current import retained at 70da2011655df18dfc36624837eddc6aaed9c3325d524f56cecb9672ec016031, obs-12 actually hit-tests and opens the required category sheet: count 5, complete admitted row set atelier.luna_, ina.archive, junho.jeong, minsu.kim_, taeo.kang_. The screenshot confirms the sheet label/count and its upper rows; the full set is supported by the registered DOM list rows. No sample-mode or dashboard-only evidence is used.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-4.json",
+          "sha256": "ba756a56452114974ce166d73ab797133b34aa4fa17837c946575c4515cf3019",
+          "observation_id": "obs-4",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-7.json",
+          "sha256": "b62094dddff59f33960f7b8ef514e6a485f38fa53318fcb68a146a658999b07c",
+          "observation_id": "obs-7",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-12.json",
+          "sha256": "8673d9331933f0c71e58ffb680197460ac0362e7adc75776b116f25c8b7f96c7",
+          "observation_id": "obs-12",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-12-0",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/browser-00129.png",
+          "sha256": "200d920556700a3522493f7c86e6350c1802299866cfb49053a220df200fb1e1",
+          "observation_id": "obs-12",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-flmilpmkbnekbambkncmlajo",
+      "persona_id": "PER-PEEKLY-V2-020",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-RESULT-REVERSE",
+      "result_sha256": "3bd6ab6f5a3d798838a65a79e8a8a8d9d092d04f3714f3caca7a50fa54bf52d4",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The ordinary previous import in obs-4 and current import in obs-7 form one persisted storage chain. With the current import retained at 70da2011655df18dfc36624837eddc6aaed9c3325d524f56cecb9672ec016031, obs-14 actually hit-tests and opens the required category sheet: count 2, complete admitted row set haneul.song, seongsu.coffee. The screenshot confirms the sheet label/count and both rows; the full set is supported by the registered DOM list rows. No sample-mode or dashboard-only evidence is used.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-4.json",
+          "sha256": "ba756a56452114974ce166d73ab797133b34aa4fa17837c946575c4515cf3019",
+          "observation_id": "obs-4",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-7.json",
+          "sha256": "b62094dddff59f33960f7b8ef514e6a485f38fa53318fcb68a146a658999b07c",
+          "observation_id": "obs-7",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-14",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-14.json",
+          "sha256": "2866224c045eb17b35787d140e8122f067c8e2e07d502aa1cdff7da360c5e510",
+          "observation_id": "obs-14",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-14-0",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/browser-00149.png",
+          "sha256": "7435b1cc39ce778d22fff696c935ece40bcbc6634df6ad9baec0234b75b9671b",
+          "observation_id": "obs-14",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-flmilpmkbnekbambkncmlajo",
+      "persona_id": "PER-PEEKLY-V2-020",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-RESULT-MUTUAL",
+      "result_sha256": "3bd6ab6f5a3d798838a65a79e8a8a8d9d092d04f3714f3caca7a50fa54bf52d4",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The ordinary previous import in obs-4 and current import in obs-7 form one persisted storage chain. With the current import retained at 70da2011655df18dfc36624837eddc6aaed9c3325d524f56cecb9672ec016031, obs-16 actually hit-tests and opens the required category sheet: count 5, complete admitted row set dohyun.fit, haerin.daily, minji_kim, seojun.park, yuna.choi. The screenshot confirms the sheet label/count and its upper rows; the full set is supported by the registered DOM list rows. No sample-mode or dashboard-only evidence is used.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-4.json",
+          "sha256": "ba756a56452114974ce166d73ab797133b34aa4fa17837c946575c4515cf3019",
+          "observation_id": "obs-4",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-7.json",
+          "sha256": "b62094dddff59f33960f7b8ef514e6a485f38fa53318fcb68a146a658999b07c",
+          "observation_id": "obs-7",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-16",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-16.json",
+          "sha256": "47985cbd94cc4d326479d1ebe8e62eaf69889d815871d630460fdd2bdd0f8825",
+          "observation_id": "obs-16",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-16-0",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/browser-00169.png",
+          "sha256": "149019a994129c65a943bed393ffce64339c3304abc9b13d18fd9bab1716f158",
+          "observation_id": "obs-16",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-flmilpmkbnekbambkncmlajo",
+      "persona_id": "PER-PEEKLY-V2-020",
+      "kind": "success",
+      "index": 3,
+      "requirement_id": "PRD-RESULT-SNAPSHOT",
+      "result_sha256": "3bd6ab6f5a3d798838a65a79e8a8a8d9d092d04f3714f3caca7a50fa54bf52d4",
+      "expected_raw_status": "passed",
+      "reviewed_status": "failed",
+      "reason": "The assigned criterion explicitly requires that the UI not infer a cause. Same-session ordinary previous→current imports in obs-4/7 persist the expected pair; obs-9 actually opens the departed-follower sheet and contains the exact six names hyunwoo.k, ina.archive, jimin.han_, junho.jeong, sujin.lee_, yuna.99_. Although its caveat allows ID changes or account deletion, its admitted list rows label ina.archive and junho.jeong as 언팔로우. Those causal labels contradict the no-inferred-cause requirement, so raw PASS becomes FAIL. The PNG visibly shows the caveat and first row; the contradictory badges are in the same admitted DOM below the captured crop, not claimed visible pixels.",
+      "classifications": [
+        "product_defect",
+        "judge_false_pass"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-4.json",
+          "sha256": "ba756a56452114974ce166d73ab797133b34aa4fa17837c946575c4515cf3019",
+          "observation_id": "obs-4",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-7.json",
+          "sha256": "b62094dddff59f33960f7b8ef514e6a485f38fa53318fcb68a146a658999b07c",
+          "observation_id": "obs-7",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-9",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-9.json",
+          "sha256": "dcac5226922a0ebf75446fd449b516ef2cf9357bfff0b6efd92ce6d0a2d99be2",
+          "observation_id": "obs-9",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-9-0",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/browser-00099.png",
+          "sha256": "4f24bfaeb8bce9aad9e90c3fde42b3c4d6f15621a8841463b6f7ac605e00eb11",
+          "observation_id": "obs-9",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-flmilpmkbnekbambkncmlajo",
+      "persona_id": "PER-PEEKLY-V2-020",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "result_sha256": "3bd6ab6f5a3d798838a65a79e8a8a8d9d092d04f3714f3caca7a50fa54bf52d4",
+      "expected_raw_status": "not_applicable",
+      "reviewed_status": "not_applicable",
+      "reason": "All 16 admitted observations were reviewed. The two ordinary valid imports completed and persisted, followed by normal navigation through the comparison and all three relationship sheets. No recoverable browser/import rejection or failed save is observed in this session. The product's inferred-cause defect is not an import/browser failure requiring the conditional recovery action. Raw N/A is retained and earns no execution credit.",
+      "classifications": [
+        "conditional_not_applicable",
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-1.json",
+          "sha256": "53f0f0fbf7fd7a9309e80295799833315c59bc1b482074a8d62d71e1bf0be489",
+          "observation_id": "obs-1",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-2.json",
+          "sha256": "e378cc18ef51c2adb3541e2911f471f8daba149c99c11b31cc70fd52dfb02e43",
+          "observation_id": "obs-2",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-3",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-3.json",
+          "sha256": "ecb1a4977e63f8a0f6e2f281154acac843832e4ee7290af20c0a13917d6d77d5",
+          "observation_id": "obs-3",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-4",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-4.json",
+          "sha256": "ba756a56452114974ce166d73ab797133b34aa4fa17837c946575c4515cf3019",
+          "observation_id": "obs-4",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-5.json",
+          "sha256": "97f3d082690ad38bafdc47190ca861c83648b70e163bd772b115eb40b8f1648c",
+          "observation_id": "obs-5",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-6.json",
+          "sha256": "d435180c444a258fa3763c76f06151facc6e3f44db58457ca477eaa40a83f1ce",
+          "observation_id": "obs-6",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-7.json",
+          "sha256": "b62094dddff59f33960f7b8ef514e6a485f38fa53318fcb68a146a658999b07c",
+          "observation_id": "obs-7",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-8",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-8.json",
+          "sha256": "d5c0ad21c84c338c8e96b004d7eec40a8a9408f282cd4e26f6541c46563e2ae3",
+          "observation_id": "obs-8",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-9",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-9.json",
+          "sha256": "dcac5226922a0ebf75446fd449b516ef2cf9357bfff0b6efd92ce6d0a2d99be2",
+          "observation_id": "obs-9",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-10.json",
+          "sha256": "6994760a81e3158ecc7d79278ed9bad32478d3fe38bb0440dd3cf9fd8744ac5e",
+          "observation_id": "obs-10",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-11.json",
+          "sha256": "a3018682d4177eeb7cfe015003ec2be5de4a5b9b4d901092d5a0f12fc3174475",
+          "observation_id": "obs-11",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-12.json",
+          "sha256": "8673d9331933f0c71e58ffb680197460ac0362e7adc75776b116f25c8b7f96c7",
+          "observation_id": "obs-12",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-13",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-13.json",
+          "sha256": "d21a3bad12cbff6cd36680b0498c0e0e73d579531c2eb7153d97ae9db01cd951",
+          "observation_id": "obs-13",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-14",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-14.json",
+          "sha256": "2866224c045eb17b35787d140e8122f067c8e2e07d502aa1cdff7da360c5e510",
+          "observation_id": "obs-14",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-15",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-15.json",
+          "sha256": "803a9b4e9fe7dec169506ffa0146e50adb5e99a6c3fd7381008907679070175f",
+          "observation_id": "obs-15",
+          "purpose": "context"
+        },
+        {
+          "artifact_id": "log-16",
+          "path": "evidence/S-flmilpmkbnekbambkncmlajo/1/agent-observation-16.json",
+          "sha256": "47985cbd94cc4d326479d1ebe8e62eaf69889d815871d630460fdd2bdd0f8825",
+          "observation_id": "obs-16",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-piofceocafbdlopejgfplabf",
+      "persona_id": "PER-PEEKLY-V2-021",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-IMPORT-MISSING",
+      "result_sha256": "0a4b3e6bb5d849c0aca9056463a6c4c5c9028411f07c52268466b8ababd464ae",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "obs-10 and obs-11 separately submit the pinned missing-followers and missing-following ZIPs. Each completed attempt retains the actual current/legacy storage digest a4ce104c8558ee68d4ff3adc2f60e29d83c706fdf5dbc9a4a5d6aba987b8455e; each admitted DOM requires both lists and asks whether [팔로워 및 팔로잉] was selected. The screenshot shows normal file re-selection, while the rejection paragraph is below its captured crop. These are actual rejected imports, not merely catalogued negative fixtures.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-piofceocafbdlopejgfplabf/1/agent-observation-6.json",
+          "sha256": "3b86d7c67f5b3bad75a6d2f058055c14c47d332a06aba34e9dcac094e219cc4e",
+          "observation_id": "obs-6",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-piofceocafbdlopejgfplabf/1/agent-observation-10.json",
+          "sha256": "3a180b3cfcfc068226d4ef15845c3468a5b4a07ec43b746032e64bdf3c141766",
+          "observation_id": "obs-10",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-piofceocafbdlopejgfplabf/1/agent-observation-11.json",
+          "sha256": "170944bbe0ef191db11780df393bd8b731c09660eecbf2f852c6a283522b25ed",
+          "observation_id": "obs-11",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-10-0",
+          "path": "evidence/S-piofceocafbdlopejgfplabf/1/browser-00135.png",
+          "sha256": "b80d84a1e858054f5a30e8a9b25832268247b47d40c3fe87c024407704ba7442",
+          "observation_id": "obs-10",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-piofceocafbdlopejgfplabf",
+      "persona_id": "PER-PEEKLY-V2-021",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-IDENTITY-LIMIT",
+      "result_sha256": "0a4b3e6bb5d849c0aca9056463a6c4c5c9028411f07c52268466b8ababd464ae",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The actual same-session known pair is current in obs-6 followed by previous in obs-12, a documented deviation from the prescribed previous→current order. Its active previous snapshot compares with the retained current snapshot, excluding the legacy unknown snapshot. obs-14 hit-tests and opens the exact reverse-direction difference: one yuna.choi row. The viewed PNG and admitted DOM both show the username-change/account-deletion caveat and 이유 모름; no confirmed-unfollow badge appears anywhere in this comparison. This supports this session's IDENTITY requirement without transferring contradictory badges from other sessions or claiming a forward six-person comparison.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-piofceocafbdlopejgfplabf/1/agent-observation-6.json",
+          "sha256": "3b86d7c67f5b3bad75a6d2f058055c14c47d332a06aba34e9dcac094e219cc4e",
+          "observation_id": "obs-6",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-piofceocafbdlopejgfplabf/1/agent-observation-12.json",
+          "sha256": "4f92f721e84ff772a9c58baa5022018281a41073e65f0a9c1b176fab922f338e",
+          "observation_id": "obs-12",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-14",
+          "path": "evidence/S-piofceocafbdlopejgfplabf/1/agent-observation-14.json",
+          "sha256": "ed83d93ec7e6cac1dd2fddc955030480fcc1798a38743a36eebea036d7c38b86",
+          "observation_id": "obs-14",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-14-0",
+          "path": "evidence/S-piofceocafbdlopejgfplabf/1/browser-00201.png",
+          "sha256": "b09b7682370dd5a642b385a610addb8d464d5e0a583e1533a676bee5c249101b",
+          "observation_id": "obs-14",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-piofceocafbdlopejgfplabf",
+      "persona_id": "PER-PEEKLY-V2-021",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-IMPORT-SNAPSHOT-UNKNOWN",
+      "result_sha256": "0a4b3e6bb5d849c0aca9056463a6c4c5c9028411f07c52268466b8ababd464ae",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "obs-2 is the first mutation after observation and validates the pinned v6 seed through the actual v7 product loader: fresh_owned_profile, initial_storage_match, migration_validated and reload_observed are true. It retains exactly one non-sample unknown snapshot with null active/comparison IDs. Before any previous import, obs-6 adds only current; obs-7 retains exactly unknown plus current for the same account, with active and comparison both pointing to current at a4ce104c8558ee68d4ff3adc2f60e29d83c706fdf5dbc9a4a5d6aba987b8455e. Its genuinely opened Home notice visibly excludes incomplete old records from analysis; the admitted Home DOM asks for a subsequent record and has no departed-follower comparison. Inferred migrated included_files does not erase list_completeness=unknown. This verifies the assigned migration/exclusion path; no separate known-empty fixture import was attempted. The known-empty phrase is treated as the predeclared fixture-classification guard, supported by frozen peekly_criteria.py:135–140 and 998–1063, scale_entry.py:65 and 96–100, test_peekly_result_scope.py:473–477, and the seed/current/exclusion-only positive contract in test_peekly_completion_scope.py:60–92 and 156–162. Separate empty-input behavior is unexecuted and uncredited.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-piofceocafbdlopejgfplabf/1/agent-observation-1.json",
+          "sha256": "caf5498e39b6387939f13e8edb889832299ce7ad6d478ff673f222cf15c4b72b",
+          "observation_id": "obs-1",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-piofceocafbdlopejgfplabf/1/agent-observation-2.json",
+          "sha256": "091cc5a14f5e2ef290bb3319c0dcf1848838296f545b9613b124d8dade86fc41",
+          "observation_id": "obs-2",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-piofceocafbdlopejgfplabf/1/agent-observation-6.json",
+          "sha256": "3b86d7c67f5b3bad75a6d2f058055c14c47d332a06aba34e9dcac094e219cc4e",
+          "observation_id": "obs-6",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-piofceocafbdlopejgfplabf/1/agent-observation-7.json",
+          "sha256": "b02d6af58fd54b7788b673c8b89c6341a20a470f33545b3f7fe5c17eca6e0ce9",
+          "observation_id": "obs-7",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-7-0",
+          "path": "evidence/S-piofceocafbdlopejgfplabf/1/browser-00085.png",
+          "sha256": "855632b8a635256c000f52eb8a0afe53b6f70dcfdbfaa7d528643085c98eb378",
+          "observation_id": "obs-7",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-piofceocafbdlopejgfplabf",
+      "persona_id": "PER-PEEKLY-V2-021",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "result_sha256": "0a4b3e6bb5d849c0aca9056463a6c4c5c9028411f07c52268466b8ababd464ae",
+      "expected_raw_status": "not_applicable",
+      "reviewed_status": "passed",
+      "reason": "The literal conditional criterion has no unexpected-failure-only exception. The actual missing-list rejections in obs-10/11 trigger it; obs-12 then performs one permitted ordinary valid previous-fixture upload through the observed file input. It preserves the rejected-attempt baseline as its before digest and persists a new result at cda27becf7d3dbb117e81822b13ef55e0d3a9899331dd34c39e5f482c8689875; the completion sample is 35 ms and the saved-result/success-toast PNG is visible. Raw N/A missed this executed, persisted recovery and becomes PASS. No uncertain operation is repeated.",
+      "classifications": [
+        "judge_missed_execution"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-piofceocafbdlopejgfplabf/1/agent-observation-10.json",
+          "sha256": "3a180b3cfcfc068226d4ef15845c3468a5b4a07ec43b746032e64bdf3c141766",
+          "observation_id": "obs-10",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-piofceocafbdlopejgfplabf/1/agent-observation-11.json",
+          "sha256": "170944bbe0ef191db11780df393bd8b731c09660eecbf2f852c6a283522b25ed",
+          "observation_id": "obs-11",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-piofceocafbdlopejgfplabf/1/agent-observation-12.json",
+          "sha256": "4f92f721e84ff772a9c58baa5022018281a41073e65f0a9c1b176fab922f338e",
+          "observation_id": "obs-12",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-12-0",
+          "path": "evidence/S-piofceocafbdlopejgfplabf/1/browser-00179.png",
+          "sha256": "fe383046c5b18e2210ff7ebc02ff086fbf454ae6e3da952db5748c3ce636c80f",
+          "observation_id": "obs-12",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-amagkkfaamjiaedfeobnkibo",
+      "persona_id": "PER-PEEKLY-V2-022",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-IMPORT-MISSING",
+      "result_sha256": "9852c5a4d4d56d1162efd121f3e61fc35c3501162c73b9ba4f47b6af6815d4b7",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "obs-10 and obs-11 separately submit the pinned missing-followers and missing-following ZIPs. Each completed attempt retains the actual current/legacy storage digest e002e6e16c74f4c689bde5f93a4413632a41b7d01603ce976d747f280d074f04; each admitted DOM requires both lists and asks whether [팔로워 및 팔로잉] was selected. The screenshot shows normal file re-selection, while the rejection paragraph is below its captured crop. These are actual rejected imports, not merely catalogued negative fixtures.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-amagkkfaamjiaedfeobnkibo/1/agent-observation-6.json",
+          "sha256": "0acc7c8e6022449c423c44bc8eaf70d5ef0ab97e2f3be6fc7907d2a300e807a9",
+          "observation_id": "obs-6",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-amagkkfaamjiaedfeobnkibo/1/agent-observation-10.json",
+          "sha256": "e02be2c7fd163914090876eb26f91110369c69903e324228e750bc63a4e5c37c",
+          "observation_id": "obs-10",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-amagkkfaamjiaedfeobnkibo/1/agent-observation-11.json",
+          "sha256": "1b28e80bfcad0634ca12eb34671220a9438f86c6c41b5a517c80560b894e1c12",
+          "observation_id": "obs-11",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-10-0",
+          "path": "evidence/S-amagkkfaamjiaedfeobnkibo/1/browser-00137.png",
+          "sha256": "af7621350440ac964e599c9cee2a15ad3048f59d470a09847173cd53b11dadbd",
+          "observation_id": "obs-10",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-amagkkfaamjiaedfeobnkibo",
+      "persona_id": "PER-PEEKLY-V2-022",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-IDENTITY-LIMIT",
+      "result_sha256": "9852c5a4d4d56d1162efd121f3e61fc35c3501162c73b9ba4f47b6af6815d4b7",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The actual same-session known pair is current in obs-6 followed by previous in obs-12, a documented deviation from the prescribed previous→current order. Its active previous snapshot compares with the retained current snapshot, excluding the legacy unknown snapshot. obs-14 hit-tests and opens the exact reverse-direction difference: one yuna.choi row. The viewed PNG and admitted DOM both show the username-change/account-deletion caveat and 이유 모름; no confirmed-unfollow badge appears anywhere in this comparison. This supports this session's IDENTITY requirement without transferring contradictory badges from other sessions or claiming a forward six-person comparison.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-amagkkfaamjiaedfeobnkibo/1/agent-observation-6.json",
+          "sha256": "0acc7c8e6022449c423c44bc8eaf70d5ef0ab97e2f3be6fc7907d2a300e807a9",
+          "observation_id": "obs-6",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-amagkkfaamjiaedfeobnkibo/1/agent-observation-12.json",
+          "sha256": "da928a77dd570a5e90b5e82d15fbf002e921f71ff17d54e254e87d4e37ece43b",
+          "observation_id": "obs-12",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-14",
+          "path": "evidence/S-amagkkfaamjiaedfeobnkibo/1/agent-observation-14.json",
+          "sha256": "fecb8e39c9f63c932a10b1427604f3d1d2e0a63ac1cc539555d3f6fa357f7b3e",
+          "observation_id": "obs-14",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-14-0",
+          "path": "evidence/S-amagkkfaamjiaedfeobnkibo/1/browser-00201.png",
+          "sha256": "15696f64de449be3d37015b6ad8f6d7f6233c88a862eb4ca0f4afea23ed0432b",
+          "observation_id": "obs-14",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-amagkkfaamjiaedfeobnkibo",
+      "persona_id": "PER-PEEKLY-V2-022",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-IMPORT-SNAPSHOT-UNKNOWN",
+      "result_sha256": "9852c5a4d4d56d1162efd121f3e61fc35c3501162c73b9ba4f47b6af6815d4b7",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "obs-2 is the first mutation after observation and validates the pinned v6 seed through the actual v7 product loader: fresh_owned_profile, initial_storage_match, migration_validated and reload_observed are true. It retains exactly one non-sample unknown snapshot with null active/comparison IDs. Before any previous import, obs-6 adds only current; obs-7 retains exactly unknown plus current for the same account, with active and comparison both pointing to current at e002e6e16c74f4c689bde5f93a4413632a41b7d01603ce976d747f280d074f04. Its genuinely opened Home notice visibly excludes incomplete old records from analysis; the admitted Home DOM asks for a subsequent record and has no departed-follower comparison. Inferred migrated included_files does not erase list_completeness=unknown. This verifies the assigned migration/exclusion path; no separate known-empty fixture import was attempted. The known-empty phrase is treated as the predeclared fixture-classification guard, supported by frozen peekly_criteria.py:135–140 and 998–1063, scale_entry.py:65 and 96–100, test_peekly_result_scope.py:473–477, and the seed/current/exclusion-only positive contract in test_peekly_completion_scope.py:60–92 and 156–162. Separate empty-input behavior is unexecuted and uncredited.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-amagkkfaamjiaedfeobnkibo/1/agent-observation-1.json",
+          "sha256": "50921062505da3e2ac1503764392fd2617afa552548ef8453beffb7dea5bb12f",
+          "observation_id": "obs-1",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-amagkkfaamjiaedfeobnkibo/1/agent-observation-2.json",
+          "sha256": "87d1fea6f25964f2a20cc01f463aeef336ca5e4e8f5d7fc064dd23b4690b5986",
+          "observation_id": "obs-2",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-amagkkfaamjiaedfeobnkibo/1/agent-observation-6.json",
+          "sha256": "0acc7c8e6022449c423c44bc8eaf70d5ef0ab97e2f3be6fc7907d2a300e807a9",
+          "observation_id": "obs-6",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-amagkkfaamjiaedfeobnkibo/1/agent-observation-7.json",
+          "sha256": "5f228183a2e90166845c3bdb62411837f90d499b458fca0707e6c554f7bdfbb1",
+          "observation_id": "obs-7",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-7-0",
+          "path": "evidence/S-amagkkfaamjiaedfeobnkibo/1/browser-00084.png",
+          "sha256": "855632b8a635256c000f52eb8a0afe53b6f70dcfdbfaa7d528643085c98eb378",
+          "observation_id": "obs-7",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-amagkkfaamjiaedfeobnkibo",
+      "persona_id": "PER-PEEKLY-V2-022",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "result_sha256": "9852c5a4d4d56d1162efd121f3e61fc35c3501162c73b9ba4f47b6af6815d4b7",
+      "expected_raw_status": "not_applicable",
+      "reviewed_status": "passed",
+      "reason": "The literal conditional criterion has no unexpected-failure-only exception. The actual missing-list rejections in obs-10/11 trigger it; obs-12 then performs one permitted ordinary valid previous-fixture upload through the observed file input. It preserves the rejected-attempt baseline as its before digest and persists a new result at e2fef179a1885fea8261602d220dc7344b3eebe18fbe5bcf771caab199988ab9; the completion sample is 4 ms and the saved-result/success-toast PNG is visible. Raw N/A missed this executed, persisted recovery and becomes PASS. No uncertain operation is repeated.",
+      "classifications": [
+        "judge_missed_execution"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-amagkkfaamjiaedfeobnkibo/1/agent-observation-10.json",
+          "sha256": "e02be2c7fd163914090876eb26f91110369c69903e324228e750bc63a4e5c37c",
+          "observation_id": "obs-10",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-amagkkfaamjiaedfeobnkibo/1/agent-observation-11.json",
+          "sha256": "1b28e80bfcad0634ca12eb34671220a9438f86c6c41b5a517c80560b894e1c12",
+          "observation_id": "obs-11",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-amagkkfaamjiaedfeobnkibo/1/agent-observation-12.json",
+          "sha256": "da928a77dd570a5e90b5e82d15fbf002e921f71ff17d54e254e87d4e37ece43b",
+          "observation_id": "obs-12",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-12-0",
+          "path": "evidence/S-amagkkfaamjiaedfeobnkibo/1/browser-00179.png",
+          "sha256": "fe383046c5b18e2210ff7ebc02ff086fbf454ae6e3da952db5748c3ce636c80f",
+          "observation_id": "obs-12",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-cknakkjhlkhdkmajbbhgconh",
+      "persona_id": "PER-PEEKLY-V2-023",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-IMPORT-MISSING",
+      "result_sha256": "b2a28e014af1cc091a7027e3cfece7e9e5bbd348ba30f0d774ecfa9f68f82161",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "obs-10 and obs-11 separately submit the pinned missing-followers and missing-following ZIPs. Each completed attempt retains the actual current/legacy storage digest 10611cc54a16080de9ec2b41f9e28c98bfda7cac65cb5450be5ba92e368c083a; each admitted DOM requires both lists and asks whether [팔로워 및 팔로잉] was selected. The screenshot shows normal file re-selection, while the rejection paragraph is below its captured crop. These are actual rejected imports, not merely catalogued negative fixtures.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-cknakkjhlkhdkmajbbhgconh/1/agent-observation-6.json",
+          "sha256": "d198a4eeb24bd84f6e5088ced7c18fcc89abce8e04d53e687f90a7cc08b020dc",
+          "observation_id": "obs-6",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-cknakkjhlkhdkmajbbhgconh/1/agent-observation-10.json",
+          "sha256": "99e796d716deb6e575257b2551ed966c4052a68eaa89431853833ea32e41b063",
+          "observation_id": "obs-10",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-cknakkjhlkhdkmajbbhgconh/1/agent-observation-11.json",
+          "sha256": "a78928260c9b9ccd0449d665e35e4b07593fd884279f58bc6113156703f064c9",
+          "observation_id": "obs-11",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-10-0",
+          "path": "evidence/S-cknakkjhlkhdkmajbbhgconh/1/browser-00137.png",
+          "sha256": "af7621350440ac964e599c9cee2a15ad3048f59d470a09847173cd53b11dadbd",
+          "observation_id": "obs-10",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-cknakkjhlkhdkmajbbhgconh",
+      "persona_id": "PER-PEEKLY-V2-023",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-IDENTITY-LIMIT",
+      "result_sha256": "b2a28e014af1cc091a7027e3cfece7e9e5bbd348ba30f0d774ecfa9f68f82161",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The actual same-session known pair is current in obs-6 followed by previous in obs-12, a documented deviation from the prescribed previous→current order. Its active previous snapshot compares with the retained current snapshot, excluding the legacy unknown snapshot. obs-14 hit-tests and opens the exact reverse-direction difference: one yuna.choi row. The viewed PNG and admitted DOM both show the username-change/account-deletion caveat and 이유 모름; no confirmed-unfollow badge appears anywhere in this comparison. This supports this session's IDENTITY requirement without transferring contradictory badges from other sessions or claiming a forward six-person comparison.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-cknakkjhlkhdkmajbbhgconh/1/agent-observation-6.json",
+          "sha256": "d198a4eeb24bd84f6e5088ced7c18fcc89abce8e04d53e687f90a7cc08b020dc",
+          "observation_id": "obs-6",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-cknakkjhlkhdkmajbbhgconh/1/agent-observation-12.json",
+          "sha256": "1fbf1fb9c7ef5f97dc69aead18d818fdf42fb8b970671fc490072a45722aec7d",
+          "observation_id": "obs-12",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-14",
+          "path": "evidence/S-cknakkjhlkhdkmajbbhgconh/1/agent-observation-14.json",
+          "sha256": "f9f60f573219bfb9e55f91d505ce6d13caabb1ea85ce400ff8f0a974c67f6833",
+          "observation_id": "obs-14",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-14-0",
+          "path": "evidence/S-cknakkjhlkhdkmajbbhgconh/1/browser-00203.png",
+          "sha256": "15696f64de449be3d37015b6ad8f6d7f6233c88a862eb4ca0f4afea23ed0432b",
+          "observation_id": "obs-14",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-cknakkjhlkhdkmajbbhgconh",
+      "persona_id": "PER-PEEKLY-V2-023",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-IMPORT-SNAPSHOT-UNKNOWN",
+      "result_sha256": "b2a28e014af1cc091a7027e3cfece7e9e5bbd348ba30f0d774ecfa9f68f82161",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "obs-2 is the first mutation after observation and validates the pinned v6 seed through the actual v7 product loader: fresh_owned_profile, initial_storage_match, migration_validated and reload_observed are true. It retains exactly one non-sample unknown snapshot with null active/comparison IDs. Before any previous import, obs-6 adds only current; obs-7 retains exactly unknown plus current for the same account, with active and comparison both pointing to current at 10611cc54a16080de9ec2b41f9e28c98bfda7cac65cb5450be5ba92e368c083a. Its genuinely opened Home notice visibly excludes incomplete old records from analysis; the admitted Home DOM asks for a subsequent record and has no departed-follower comparison. Inferred migrated included_files does not erase list_completeness=unknown. This verifies the assigned migration/exclusion path; no separate known-empty fixture import was attempted. The known-empty phrase is treated as the predeclared fixture-classification guard, supported by frozen peekly_criteria.py:135–140 and 998–1063, scale_entry.py:65 and 96–100, test_peekly_result_scope.py:473–477, and the seed/current/exclusion-only positive contract in test_peekly_completion_scope.py:60–92 and 156–162. Separate empty-input behavior is unexecuted and uncredited.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-cknakkjhlkhdkmajbbhgconh/1/agent-observation-1.json",
+          "sha256": "e2a98b762ba72430ebb2f6614c248f70a667041c7eea1f33656d2d0e70aa8a5e",
+          "observation_id": "obs-1",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-cknakkjhlkhdkmajbbhgconh/1/agent-observation-2.json",
+          "sha256": "f192fd76d11c173e1320b00ab8c29c747c13af034027ddcfa2a24d6a13800cbe",
+          "observation_id": "obs-2",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-cknakkjhlkhdkmajbbhgconh/1/agent-observation-6.json",
+          "sha256": "d198a4eeb24bd84f6e5088ced7c18fcc89abce8e04d53e687f90a7cc08b020dc",
+          "observation_id": "obs-6",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-7",
+          "path": "evidence/S-cknakkjhlkhdkmajbbhgconh/1/agent-observation-7.json",
+          "sha256": "ffbb9f97fcd89e95261c18326986d41000936963d59a1b31d3d4f2f412ba0c77",
+          "observation_id": "obs-7",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-7-0",
+          "path": "evidence/S-cknakkjhlkhdkmajbbhgconh/1/browser-00084.png",
+          "sha256": "692c6b05781f961b10ba6c3d9b566b19d3dbcdf8ea219190524c0bde85a2b4f5",
+          "observation_id": "obs-7",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-cknakkjhlkhdkmajbbhgconh",
+      "persona_id": "PER-PEEKLY-V2-023",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "result_sha256": "b2a28e014af1cc091a7027e3cfece7e9e5bbd348ba30f0d774ecfa9f68f82161",
+      "expected_raw_status": "not_applicable",
+      "reviewed_status": "passed",
+      "reason": "The literal conditional criterion has no unexpected-failure-only exception. The actual missing-list rejections in obs-10/11 trigger it; obs-12 then performs one permitted ordinary valid previous-fixture upload through the observed file input. It preserves the rejected-attempt baseline as its before digest and persists a new result at 274a3a4c9ce858615bfefaae377b3c563f55fe3be1017431fe635b3b21843d3a; the completion sample is 27 ms and the saved-result/success-toast PNG is visible. Raw N/A missed this executed, persisted recovery and becomes PASS. No uncertain operation is repeated.",
+      "classifications": [
+        "judge_missed_execution"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-cknakkjhlkhdkmajbbhgconh/1/agent-observation-10.json",
+          "sha256": "99e796d716deb6e575257b2551ed966c4052a68eaa89431853833ea32e41b063",
+          "observation_id": "obs-10",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-cknakkjhlkhdkmajbbhgconh/1/agent-observation-11.json",
+          "sha256": "a78928260c9b9ccd0449d665e35e4b07593fd884279f58bc6113156703f064c9",
+          "observation_id": "obs-11",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-12",
+          "path": "evidence/S-cknakkjhlkhdkmajbbhgconh/1/agent-observation-12.json",
+          "sha256": "1fbf1fb9c7ef5f97dc69aead18d818fdf42fb8b970671fc490072a45722aec7d",
+          "observation_id": "obs-12",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-12-0",
+          "path": "evidence/S-cknakkjhlkhdkmajbbhgconh/1/browser-00181.png",
+          "sha256": "88413f89cf25397b5c32f73966d904b313d77c1a9e9b04879da3a972d97236e8",
+          "observation_id": "obs-12",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-beikkhpkhpdnflofalopgodk",
+      "persona_id": "PER-PEEKLY-V2-024",
+      "kind": "success",
+      "index": 0,
+      "requirement_id": "PRD-IMPORT-MISSING",
+      "result_sha256": "b3360d3f353f8bac9f53bade1de8902fa77e21ec358ff67e298acec2f7e40348",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "obs-9 and obs-10 separately submit the pinned missing-followers and missing-following ZIPs. Each completed attempt retains the actual current/legacy storage digest 3a15edf2b2554e7af318a4417687304e5f3136faf916f7bf4e4177bf9f2ecf9f; each admitted DOM requires both lists and asks whether [팔로워 및 팔로잉] was selected. The screenshot shows normal file re-selection, while the rejection paragraph is below its captured crop. These are actual rejected imports, not merely catalogued negative fixtures.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-beikkhpkhpdnflofalopgodk/1/agent-observation-5.json",
+          "sha256": "58c7bbf5c67819a89d8c5c3c59646e671cf168151977a2343f36a9b0d1927c2d",
+          "observation_id": "obs-5",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-9",
+          "path": "evidence/S-beikkhpkhpdnflofalopgodk/1/agent-observation-9.json",
+          "sha256": "4fed92622d0541d2c873acdd5b9013a1ee17f48c61e51be78d0897fd92adc92c",
+          "observation_id": "obs-9",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-beikkhpkhpdnflofalopgodk/1/agent-observation-10.json",
+          "sha256": "091ceda8b3bc6c8757eaf6f608af2556cfd11c0282bc1a93d74ebc5e02a8c27d",
+          "observation_id": "obs-10",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-9-0",
+          "path": "evidence/S-beikkhpkhpdnflofalopgodk/1/browser-00126.png",
+          "sha256": "af7621350440ac964e599c9cee2a15ad3048f59d470a09847173cd53b11dadbd",
+          "observation_id": "obs-9",
+          "purpose": "context"
+        }
+      ]
+    },
+    {
+      "job_id": "S-beikkhpkhpdnflofalopgodk",
+      "persona_id": "PER-PEEKLY-V2-024",
+      "kind": "success",
+      "index": 1,
+      "requirement_id": "PRD-IDENTITY-LIMIT",
+      "result_sha256": "b3360d3f353f8bac9f53bade1de8902fa77e21ec358ff67e298acec2f7e40348",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "The actual same-session known pair is current in obs-5 followed by previous in obs-11, a documented deviation from the prescribed previous→current order. Its active previous snapshot compares with the retained current snapshot, excluding the legacy unknown snapshot. obs-15 hit-tests and opens the exact reverse-direction difference: one yuna.choi row. The viewed PNG and admitted DOM both show the username-change/account-deletion caveat and 이유 모름; no confirmed-unfollow badge appears anywhere in this comparison. This supports this session's IDENTITY requirement without transferring contradictory badges from other sessions or claiming a forward six-person comparison.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-beikkhpkhpdnflofalopgodk/1/agent-observation-5.json",
+          "sha256": "58c7bbf5c67819a89d8c5c3c59646e671cf168151977a2343f36a9b0d1927c2d",
+          "observation_id": "obs-5",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-beikkhpkhpdnflofalopgodk/1/agent-observation-11.json",
+          "sha256": "53745f1247b30818d64ebd3eb05aac87916f10e4800347ae89d7bc4c9e53811a",
+          "observation_id": "obs-11",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-15",
+          "path": "evidence/S-beikkhpkhpdnflofalopgodk/1/agent-observation-15.json",
+          "sha256": "d427dc1555709cd6f5150141ae87c7189fbda66c1b2f06d075d28f24bae32d44",
+          "observation_id": "obs-15",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-15-0",
+          "path": "evidence/S-beikkhpkhpdnflofalopgodk/1/browser-00214.png",
+          "sha256": "15696f64de449be3d37015b6ad8f6d7f6233c88a862eb4ca0f4afea23ed0432b",
+          "observation_id": "obs-15",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-beikkhpkhpdnflofalopgodk",
+      "persona_id": "PER-PEEKLY-V2-024",
+      "kind": "success",
+      "index": 2,
+      "requirement_id": "PRD-IMPORT-SNAPSHOT-UNKNOWN",
+      "result_sha256": "b3360d3f353f8bac9f53bade1de8902fa77e21ec358ff67e298acec2f7e40348",
+      "expected_raw_status": "passed",
+      "reviewed_status": "passed",
+      "reason": "obs-2 is the first mutation after observation and validates the pinned v6 seed through the actual v7 product loader: fresh_owned_profile, initial_storage_match, migration_validated and reload_observed are true. It retains exactly one non-sample unknown snapshot with null active/comparison IDs. Before any previous import, obs-5 adds only current; obs-6 retains exactly unknown plus current for the same account, with active and comparison both pointing to current at 3a15edf2b2554e7af318a4417687304e5f3136faf916f7bf4e4177bf9f2ecf9f. Its genuinely opened Home notice visibly excludes incomplete old records from analysis; the admitted Home DOM asks for a subsequent record and has no departed-follower comparison. Inferred migrated included_files does not erase list_completeness=unknown. This verifies the assigned migration/exclusion path; no separate known-empty fixture import was attempted. The known-empty phrase is treated as the predeclared fixture-classification guard, supported by frozen peekly_criteria.py:135–140 and 998–1063, scale_entry.py:65 and 96–100, test_peekly_result_scope.py:473–477, and the seed/current/exclusion-only positive contract in test_peekly_completion_scope.py:60–92 and 156–162. Separate empty-input behavior is unexecuted and uncredited.",
+      "classifications": [
+        "confirmed_raw_verdict"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-1",
+          "path": "evidence/S-beikkhpkhpdnflofalopgodk/1/agent-observation-1.json",
+          "sha256": "f725e105437f735abffddd5167818ff0968e8515e614031f7084c7a7b1303dbd",
+          "observation_id": "obs-1",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-2",
+          "path": "evidence/S-beikkhpkhpdnflofalopgodk/1/agent-observation-2.json",
+          "sha256": "8c7748630cab80e6c89d0cbe39b4e01fd59ae98abb0a1ac6b32d76df766d02d8",
+          "observation_id": "obs-2",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-5",
+          "path": "evidence/S-beikkhpkhpdnflofalopgodk/1/agent-observation-5.json",
+          "sha256": "58c7bbf5c67819a89d8c5c3c59646e671cf168151977a2343f36a9b0d1927c2d",
+          "observation_id": "obs-5",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "log-6",
+          "path": "evidence/S-beikkhpkhpdnflofalopgodk/1/agent-observation-6.json",
+          "sha256": "22c5167ed6ea61c7e21895e7a50c59d5f42f9f3472629d7fd40e7a3a67bfac86",
+          "observation_id": "obs-6",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-6-0",
+          "path": "evidence/S-beikkhpkhpdnflofalopgodk/1/browser-00073.png",
+          "sha256": "692c6b05781f961b10ba6c3d9b566b19d3dbcdf8ea219190524c0bde85a2b4f5",
+          "observation_id": "obs-6",
+          "purpose": "result"
+        }
+      ]
+    },
+    {
+      "job_id": "S-beikkhpkhpdnflofalopgodk",
+      "persona_id": "PER-PEEKLY-V2-024",
+      "kind": "recovery",
+      "index": 0,
+      "requirement_id": "CONDITIONAL-RECOVERY",
+      "result_sha256": "b3360d3f353f8bac9f53bade1de8902fa77e21ec358ff67e298acec2f7e40348",
+      "expected_raw_status": "not_applicable",
+      "reviewed_status": "passed",
+      "reason": "The literal conditional criterion has no unexpected-failure-only exception. The actual missing-list rejections in obs-9/10 trigger it; obs-11 then performs one permitted ordinary valid previous-fixture upload through the observed file input. It preserves the rejected-attempt baseline as its before digest and persists a new result at 37783829d6930fa47d96083d6bc0354cf702468188f769c5f2145a7a83a3241e; the completion sample is 30 ms and the saved-result/success-toast PNG is visible. Raw N/A missed this executed, persisted recovery and becomes PASS. No uncertain operation is repeated.",
+      "classifications": [
+        "judge_missed_execution"
+      ],
+      "evidence": [
+        {
+          "artifact_id": "log-9",
+          "path": "evidence/S-beikkhpkhpdnflofalopgodk/1/agent-observation-9.json",
+          "sha256": "4fed92622d0541d2c873acdd5b9013a1ee17f48c61e51be78d0897fd92adc92c",
+          "observation_id": "obs-9",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-10",
+          "path": "evidence/S-beikkhpkhpdnflofalopgodk/1/agent-observation-10.json",
+          "sha256": "091ceda8b3bc6c8757eaf6f608af2556cfd11c0282bc1a93d74ebc5e02a8c27d",
+          "observation_id": "obs-10",
+          "purpose": "setup"
+        },
+        {
+          "artifact_id": "log-11",
+          "path": "evidence/S-beikkhpkhpdnflofalopgodk/1/agent-observation-11.json",
+          "sha256": "53745f1247b30818d64ebd3eb05aac87916f10e4800347ae89d7bc4c9e53811a",
+          "observation_id": "obs-11",
+          "purpose": "result"
+        },
+        {
+          "artifact_id": "png-11-0",
+          "path": "evidence/S-beikkhpkhpdnflofalopgodk/1/browser-00170.png",
+          "sha256": "bd25da383482c4f7185eb4aa3702e7f96c95c657c6edbbc73ad9212ac8c905c7",
+          "observation_id": "obs-11",
+          "purpose": "result"
+        }
+      ]
+    }
+  ],
+  "review_notes": [
+    {
+      "persona_id": "PER-PEEKLY-V2-013",
+      "verified": {
+        "persona_id": "PER-PEEKLY-V2-013",
+        "result_sha256": "2d92908c7b17f4d1dbfed676265d444d58295c9dd9f7f2f7fe60c8946b7d9a0f",
+        "checkpoint_sha256": "5096dcc677905127e85b4eb76d37ce0d0e71384211db2b2d296635a6f8d13976",
+        "verified_artifacts": 28,
+        "verified_bytes": 775070,
+        "admitted_observations": 13,
+        "context_id": "ctx-ebbc3a045ff3ac57a89ec312596a7dee6c114e19"
+      },
+      "reviewed_statuses": {
+        "success": [
+          "passed",
+          "passed",
+          "failed"
+        ],
+        "recovery": [
+          "passed"
+        ]
+      },
+      "raw_statuses_unchanged": true,
+      "pngs_viewed": [
+        "png-8-0",
+        "png-8-1",
+        "png-12-1",
+        "png-13-0"
+      ],
+      "visual_note": "The save-error and size-error paragraphs are in admitted DOM text but outside the captured 756x413 modal viewport; no active-cancel frame is captured.",
+      "timing": {
+        "reading_ms": 6,
+        "analysis_ms": 51,
+        "observation_window_ms": 1115,
+        "cancel_active": true,
+        "cancel_dispatched": true,
+        "terminal_state": "cancelled_without_new_result",
+        "exact_cancel_dispatch_ms": null
+      }
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-015",
+      "verified": {
+        "persona_id": "PER-PEEKLY-V2-015",
+        "result_sha256": "b2c78a26376232e7d1e26c3c325ad2ae961204b69d3b05074579fd0daed9feed",
+        "checkpoint_sha256": "bd80b0ec1ccbc32ad526560f3fa96221236d5d635e708950db970b921f9af4c6",
+        "verified_artifacts": 30,
+        "verified_bytes": 814766,
+        "admitted_observations": 14,
+        "context_id": "ctx-26c41cac187b9dd28411592adecd27e6349b3a9c"
+      },
+      "reviewed_statuses": {
+        "success": [
+          "passed",
+          "passed",
+          "failed"
+        ],
+        "recovery": [
+          "not_run"
+        ]
+      },
+      "raw_statuses_unchanged": false,
+      "pngs_viewed": [
+        "png-14-1"
+      ],
+      "visual_note": "Size/save error paragraphs are admitted DOM text outside the captured viewport. No active-cancel frame or exact dispatch timestamp is recorded.",
+      "timing": {
+        "reading_ms": 3,
+        "analysis_ms": 61,
+        "observation_window_ms": 1105,
+        "cancel_active": true,
+        "cancel_dispatched": true,
+        "terminal_state": "cancelled_without_new_result",
+        "exact_cancel_dispatch_ms": null
+      },
+      "new_remaining_not_run_outside_old23": true
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-016",
+      "verified": {
+        "persona_id": "PER-PEEKLY-V2-016",
+        "result_sha256": "22a301ce66fbb807c25688ee6c7427a624ceb8ceb94b636c226b67a227beb39b",
+        "checkpoint_sha256": "e0062d181c302429159d006c51ce8c7eff53d125e8eddc877c965914b263dea8",
+        "verified_artifacts": 28,
+        "verified_bytes": 777540,
+        "admitted_observations": 13,
+        "context_id": "ctx-b63b258d1174f854e56196e5b994e93824287836"
+      },
+      "reviewed_statuses": {
+        "success": [
+          "passed",
+          "passed",
+          "failed"
+        ],
+        "recovery": [
+          "passed"
+        ]
+      },
+      "raw_statuses_unchanged": true,
+      "pngs_viewed": [
+        "png-8-1",
+        "png-12-1",
+        "png-13-0"
+      ],
+      "visual_note": "Size/save error paragraphs are admitted DOM text outside the captured viewport. No active-cancel frame or exact dispatch timestamp is recorded.",
+      "timing": {
+        "reading_ms": 0,
+        "analysis_ms": 26,
+        "observation_window_ms": 1085,
+        "cancel_active": true,
+        "cancel_dispatched": true,
+        "terminal_state": "cancelled_without_new_result",
+        "exact_cancel_dispatch_ms": null
+      },
+      "new_remaining_not_run_outside_old23": false
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-017",
+      "verified": {
+        "verified_artifacts": 34,
+        "verified_bytes": 866990,
+        "admitted_observations": 17,
+        "context_id": "ctx-43c1ab6a8c26ff79bb32c201ae94077e5fc57e81",
+        "persona_id": "PER-PEEKLY-V2-017",
+        "result_sha256": "355660544f87364b6c3f96d57c0ac8150a6ab0692b6d1d7d6dbf23ea3dc2cc8b",
+        "checkpoint_sha256": "3beac525b02142bf9902b0188d9a7621896fd69b9644d22ea50bb4eb83af66ee"
+      },
+      "reviewed_statuses": {
+        "success": [
+          "passed",
+          "passed",
+          "passed",
+          "failed"
+        ],
+        "recovery": [
+          "not_applicable"
+        ]
+      },
+      "raw_statuses_unchanged": false,
+      "pngs_viewed": [
+        "png-10-0",
+        "png-13-0",
+        "png-15-0",
+        "png-17-0"
+      ],
+      "equivalent_png": null,
+      "visual_note": "Category screenshots show labels/counts and upper rows; full row sets are admitted DOM evidence. The comparison caveat is visible, but causal badges occur below the captured crop and are supported by that same observation's DOM.",
+      "old23_rows_reviewed_passed": 3
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-018",
+      "verified": {
+        "verified_artifacts": 32,
+        "verified_bytes": 823233,
+        "admitted_observations": 16,
+        "context_id": "ctx-de21f0ea570d86cc579189edaea62b6770909144",
+        "persona_id": "PER-PEEKLY-V2-018",
+        "result_sha256": "f9674665f4fdbb0b3e1f76a196aba820ba906eae580a42eb58a459dec23558e6",
+        "checkpoint_sha256": "b9ab869b84bbefb167cd78f0ce10dfd85b83a1c2e60b5f3e5d19c2fb43ef9211"
+      },
+      "reviewed_statuses": {
+        "success": [
+          "passed",
+          "passed",
+          "passed",
+          "failed"
+        ],
+        "recovery": [
+          "not_applicable"
+        ]
+      },
+      "raw_statuses_unchanged": false,
+      "pngs_viewed": [
+        "png-9-0",
+        "png-12-0",
+        "png-14-0"
+      ],
+      "equivalent_png": {
+        "artifact_id": "png-16-0",
+        "sha256": "d03831b9ba73a24aa51182c74d90b5264a77e874d8f35448a29d745eddbdf394",
+        "identical_viewed_artifact": "017/png-17-0"
+      },
+      "visual_note": "Category screenshots show labels/counts and upper rows; full row sets are admitted DOM evidence. The comparison caveat is visible, but causal badges occur below the captured crop and are supported by that same observation's DOM.",
+      "old23_rows_reviewed_passed": 3
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-019",
+      "verified": {
+        "verified_artifacts": 32,
+        "verified_bytes": 804073,
+        "admitted_observations": 16,
+        "context_id": "ctx-454607fd94d98997020c9fd333b606cdb9a34d26",
+        "persona_id": "PER-PEEKLY-V2-019",
+        "result_sha256": "48c41d21ab0b7599aece798a7a928a3557633d55db8369495cf57e2ebf06509e",
+        "checkpoint_sha256": "e43c0f9783986282d59ba49eb59d7ae9341a3e279d1d2d368d4d0c8c926e0617"
+      },
+      "reviewed_statuses": {
+        "success": [
+          "passed",
+          "passed",
+          "passed",
+          "failed"
+        ],
+        "recovery": [
+          "not_applicable"
+        ]
+      },
+      "raw_statuses_unchanged": false,
+      "pngs_viewed": [
+        "png-10-0",
+        "png-14-0",
+        "png-16-0"
+      ],
+      "equivalent_png": {
+        "artifact_id": "png-12-0",
+        "sha256": "119dd7e74e9605460a58e1302a35ba0db9cf41bebdb70fbd133f4764b9c7fe96",
+        "identical_viewed_artifact": "018/png-14-0"
+      },
+      "visual_note": "The category labels/counts and upper rows are visible; complete sets are admitted DOM evidence. Comparison caveat is visible; contradictory causal badges are same-observation DOM below the captured crop.",
+      "old23_rows_reviewed_passed": 3
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-020",
+      "verified": {
+        "verified_artifacts": 32,
+        "verified_bytes": 821895,
+        "admitted_observations": 16,
+        "context_id": "ctx-f2cf2af2341fb09772e24d7267cd37d5ffc2de0b",
+        "persona_id": "PER-PEEKLY-V2-020",
+        "result_sha256": "3bd6ab6f5a3d798838a65a79e8a8a8d9d092d04f3714f3caca7a50fa54bf52d4",
+        "checkpoint_sha256": "dc5b72c738b7ae33d678e32171294c46700ff04dc61763dd53dfed5a171a3430"
+      },
+      "reviewed_statuses": {
+        "success": [
+          "passed",
+          "passed",
+          "passed",
+          "failed"
+        ],
+        "recovery": [
+          "not_applicable"
+        ]
+      },
+      "raw_statuses_unchanged": false,
+      "pngs_viewed": [
+        "png-9-0",
+        "png-12-0",
+        "png-16-0"
+      ],
+      "equivalent_png": {
+        "artifact_id": "png-14-0",
+        "sha256": "7435b1cc39ce778d22fff696c935ece40bcbc6634df6ad9baec0234b75b9671b",
+        "identical_viewed_artifact": "017/png-15-0"
+      },
+      "visual_note": "The category labels/counts and upper rows are visible; complete sets are admitted DOM evidence. Comparison caveat is visible; contradictory causal badges are same-observation DOM below the captured crop.",
+      "old23_rows_reviewed_passed": 3
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-021",
+      "verified": {
+        "verified_artifacts": 28,
+        "verified_bytes": 766225,
+        "admitted_observations": 14,
+        "context_id": "ctx-a9e8c8435f097f6e194d03f000e892eb00680244",
+        "persona_id": "PER-PEEKLY-V2-021",
+        "result_sha256": "0a4b3e6bb5d849c0aca9056463a6c4c5c9028411f07c52268466b8ababd464ae",
+        "checkpoint_sha256": "c0c3ab4d1746f12880f82db3334c1617146d2f3f2ce2671ba391a13811c6c851"
+      },
+      "reviewed_statuses": {
+        "success": [
+          "passed",
+          "passed",
+          "passed"
+        ],
+        "recovery": [
+          "passed"
+        ]
+      },
+      "raw_statuses_unchanged": false,
+      "pngs_viewed": [
+        "png-7-0",
+        "png-10-0",
+        "png-12-0",
+        "png-14-0"
+      ],
+      "visual_note": "The expanded legacy Home exclusion notice, recovered saved result/toast, comparison caveat and sole reason-unknown row are visible. Missing-list rejection paragraphs and the subsequent-record prompt are supported by admitted DOM below the captured crop.",
+      "task_deviation": "Known comparison direction is current→previous, not the prescribed previous→current order; exact observed difference is one yuna.choi with no confirmed-cause badge.",
+      "known_empty_fixture_exercised": false,
+      "old23_rows_reviewed_passed": 1,
+      "seed_contract": {
+        "fixture_sha256": "f4ea8b627d7b305552cf326205096aa244cf40a873fcbf275807947feec1a6f5",
+        "product_commit": "51110f4c569673faa8d242d5b85c4b47afb54cbb",
+        "product_loader_sha256": "401759c4ef2d11efcf7b710292ba6269ce66653cd3d19fd2164fa6f54883559a",
+        "product_validation_sha256": "8812e073064029937aaecb1908d0301eff96c2bee8794e3ee8ec6a6ddc46871c",
+        "initial_unknown_retained": true,
+        "current_only_unknown_exclusion_verified": true
+      },
+      "unknown_scope_interpretation": "Predeclared classification guard; see scope_interpretations and unknown-criterion-scope-review.md.",
+      "known_empty_behavior_credited": false
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-022",
+      "verified": {
+        "verified_artifacts": 28,
+        "verified_bytes": 765852,
+        "admitted_observations": 14,
+        "context_id": "ctx-714fdce58c3f6b957636891edb0ce1e5c3c2e67b",
+        "persona_id": "PER-PEEKLY-V2-022",
+        "result_sha256": "9852c5a4d4d56d1162efd121f3e61fc35c3501162c73b9ba4f47b6af6815d4b7",
+        "checkpoint_sha256": "2e5860762bbb7224c6e940509310061686f730b67d52fba343a3aebb171c31bd"
+      },
+      "reviewed_statuses": {
+        "success": [
+          "passed",
+          "passed",
+          "passed"
+        ],
+        "recovery": [
+          "passed"
+        ]
+      },
+      "raw_statuses_unchanged": false,
+      "pngs_viewed": [
+        "png-7-0",
+        "png-10-0",
+        "png-12-0",
+        "png-14-0"
+      ],
+      "visual_note": "The expanded legacy Home exclusion notice, recovered saved result/toast, comparison caveat and sole reason-unknown row are visible. Missing-list rejection paragraphs and the subsequent-record prompt are supported by admitted DOM below the captured crop.",
+      "task_deviation": "Known comparison direction is current→previous, not the prescribed previous→current order; exact observed difference is one yuna.choi with no confirmed-cause badge.",
+      "known_empty_fixture_exercised": false,
+      "old23_rows_reviewed_passed": 2,
+      "seed_contract": {
+        "fixture_sha256": "f4ea8b627d7b305552cf326205096aa244cf40a873fcbf275807947feec1a6f5",
+        "product_commit": "51110f4c569673faa8d242d5b85c4b47afb54cbb",
+        "product_loader_sha256": "401759c4ef2d11efcf7b710292ba6269ce66653cd3d19fd2164fa6f54883559a",
+        "product_validation_sha256": "8812e073064029937aaecb1908d0301eff96c2bee8794e3ee8ec6a6ddc46871c",
+        "initial_unknown_retained": true,
+        "current_only_unknown_exclusion_verified": true
+      },
+      "unknown_scope_interpretation": "Predeclared classification guard; see scope_interpretations and unknown-criterion-scope-review.md.",
+      "known_empty_behavior_credited": false
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-023",
+      "verified": {
+        "verified_artifacts": 28,
+        "verified_bytes": 767044,
+        "admitted_observations": 14,
+        "context_id": "ctx-a313b35a49eb4f035f91163ae42762b5f024adbb",
+        "persona_id": "PER-PEEKLY-V2-023",
+        "result_sha256": "b2a28e014af1cc091a7027e3cfece7e9e5bbd348ba30f0d774ecfa9f68f82161",
+        "checkpoint_sha256": "4a50978fe7bdb78871ef1ecb94ea07c5c295e33ec1a3f632c0e8e9e6ea5c1007"
+      },
+      "reviewed_statuses": {
+        "success": [
+          "passed",
+          "passed",
+          "passed"
+        ],
+        "recovery": [
+          "passed"
+        ]
+      },
+      "raw_statuses_unchanged": false,
+      "pngs_viewed": [
+        "png-7-0",
+        "png-12-0",
+        "png-14-0"
+      ],
+      "equivalent_pngs": [
+        {
+          "artifact_id": "png-10-0",
+          "identical_viewed_artifact": "022/png-10-0",
+          "sha256": "af7621350440ac964e599c9cee2a15ad3048f59d470a09847173cd53b11dadbd"
+        }
+      ],
+      "visual_note": "The expanded Home exclusion notice, saved recovery result/toast and sole comparison row with caveat/reason-unknown are visible in the verified PNGs. Missing-list rejection and next-record prompt are admitted DOM text below the captured crop. Byte-identical PNGs are explicitly identified where their pixels were already viewed.",
+      "task_deviation": "Known comparison direction is current→previous; exact observed difference is one yuna.choi with no confirmed-cause badge. This does not prove the forward comparison's causal-label defect fixed.",
+      "known_empty_fixture_exercised": false,
+      "known_empty_behavior_credited": false,
+      "old23_rows_reviewed_passed": 1,
+      "seed_contract": {
+        "fixture_sha256": "f4ea8b627d7b305552cf326205096aa244cf40a873fcbf275807947feec1a6f5",
+        "product_commit": "51110f4c569673faa8d242d5b85c4b47afb54cbb",
+        "product_loader_sha256": "401759c4ef2d11efcf7b710292ba6269ce66653cd3d19fd2164fa6f54883559a",
+        "product_validation_sha256": "8812e073064029937aaecb1908d0301eff96c2bee8794e3ee8ec6a6ddc46871c",
+        "initial_unknown_retained": true,
+        "current_only_unknown_exclusion_verified": true
+      },
+      "unknown_scope_interpretation": "Predeclared classification guard; see scope_interpretations and unknown-criterion-scope-review.md."
+    },
+    {
+      "persona_id": "PER-PEEKLY-V2-024",
+      "verified": {
+        "verified_artifacts": 30,
+        "verified_bytes": 827145,
+        "admitted_observations": 15,
+        "context_id": "ctx-70fb6f68fbb7fc4b41e041aeeed8e5f37f213a62",
+        "persona_id": "PER-PEEKLY-V2-024",
+        "result_sha256": "b3360d3f353f8bac9f53bade1de8902fa77e21ec358ff67e298acec2f7e40348",
+        "checkpoint_sha256": "306691972b5d0be47a7bbb3184ae80dfc44d37271ead384e7be68b5917e818e8"
+      },
+      "reviewed_statuses": {
+        "success": [
+          "passed",
+          "passed",
+          "passed"
+        ],
+        "recovery": [
+          "passed"
+        ]
+      },
+      "raw_statuses_unchanged": false,
+      "pngs_viewed": [
+        "png-11-0"
+      ],
+      "equivalent_pngs": [
+        {
+          "artifact_id": "png-6-0",
+          "identical_viewed_artifact": "023/png-7-0",
+          "sha256": "692c6b05781f961b10ba6c3d9b566b19d3dbcdf8ea219190524c0bde85a2b4f5"
+        },
+        {
+          "artifact_id": "png-9-0",
+          "identical_viewed_artifact": "022/png-10-0",
+          "sha256": "af7621350440ac964e599c9cee2a15ad3048f59d470a09847173cd53b11dadbd"
+        },
+        {
+          "artifact_id": "png-15-0",
+          "identical_viewed_artifact": "023/png-14-0",
+          "sha256": "15696f64de449be3d37015b6ad8f6d7f6233c88a862eb4ca0f4afea23ed0432b"
+        }
+      ],
+      "visual_note": "The expanded Home exclusion notice, saved recovery result/toast and sole comparison row with caveat/reason-unknown are visible in the verified PNGs. Missing-list rejection and next-record prompt are admitted DOM text below the captured crop. Byte-identical PNGs are explicitly identified where their pixels were already viewed.",
+      "task_deviation": "Known comparison direction is current→previous; exact observed difference is one yuna.choi with no confirmed-cause badge. This does not prove the forward comparison's causal-label defect fixed.",
+      "known_empty_fixture_exercised": false,
+      "known_empty_behavior_credited": false,
+      "old23_rows_reviewed_passed": 1,
+      "seed_contract": {
+        "fixture_sha256": "f4ea8b627d7b305552cf326205096aa244cf40a873fcbf275807947feec1a6f5",
+        "product_commit": "51110f4c569673faa8d242d5b85c4b47afb54cbb",
+        "product_loader_sha256": "401759c4ef2d11efcf7b710292ba6269ce66653cd3d19fd2164fa6f54883559a",
+        "product_validation_sha256": "8812e073064029937aaecb1908d0301eff96c2bee8794e3ee8ec6a6ddc46871c",
+        "initial_unknown_retained": true,
+        "current_only_unknown_exclusion_verified": true
+      },
+      "unknown_scope_interpretation": "Predeclared classification guard; see scope_interpretations and unknown-criterion-scope-review.md."
+    }
+  ],
+  "excluded_sessions": [
+    {
+      "persona_id": "PER-PEEKLY-V2-014",
+      "job_id": "S-ndgicogijfhmlolgkninpofi",
+      "status": "uncertain",
+      "excluded_success": 3,
+      "excluded_recovery": 1,
+      "result_sha256": null,
+      "checkpoint_sha256": "5bc7f6e3a3ea29fc35cafda1ea8ca0b9c54559252530f2292f412759da600aad",
+      "verified_partial_artifacts": 19,
+      "verified_partial_bytes": 502328,
+      "admitted_partial_observations": 9,
+      "operation_id": "op-ae10298c78b325afb8a9847dc16a57af3ecc8b69",
+      "request_sha256": "86b1039d9fcc29eee8bf031bf24263b535dd3cb39e7b22a26525235f3da59f40",
+      "tool": "upload",
+      "fixture": "peekly-oversize-plus-one.zip",
+      "node_command_id": 11,
+      "node_failure_phase": "upload_target_resolution",
+      "node_elapsed_ms": 54176,
+      "host_elapsed_seconds": 60.39683283295017,
+      "file_dispatch_reached": false,
+      "problem": "host_execution_failed:browser_action_failed:cdp_timeout:DOM.getDocument",
+      "node_close_record": {
+        "at": "2026-11-14T21:11:36.654Z",
+        "stopped": true,
+        "browser_stopped": true,
+        "proxy_stopped": true
+      },
+      "host_record_phase": "transport_uncertain",
+      "terminal_host_teardown_pending": true,
+      "diagnostic_note": "Observed elapsed times do not establish underlying Chrome, event-loop or I/O cause. Node closed record is separate from pending terminal cohort host teardown. No replay, resend or external cleanup was performed."
+    }
+  ],
+  "scope_interpretations": [
+    {
+      "requirement_id": "PRD-IMPORT-SNAPSHOT-UNKNOWN",
+      "interpretation": "The recognized-empty phrase is a predeclared fixture-classification guard against treating a known-empty ZIP as unknown legacy provenance. It is not an additional required empty-import journey in this task. Credit is limited to the assigned validated seed → sole-current import → actual Home exclusion path; separate known-empty import behavior remains unexecuted and uncredited.",
+      "basis": [
+        {
+          "path": "skills/remorsearch-ux-qa/uxpersonas/peekly_criteria.py",
+          "lines": "135–140, 998–1063",
+          "detail": "Definition retains known-empty wording while prescribing legacy seed/current/Home exclusion; production admission grants pass for that chain."
+        },
+        {
+          "path": "skills/remorsearch-ux-qa/uxpersonas/scale_entry.py",
+          "lines": "65, 96–100",
+          "detail": "Exactly legacy JSON and current ZIP are required; the checkpoint precedes other imports and known-empty cannot substitute."
+        },
+        {
+          "path": "tests/test_peekly_result_scope.py",
+          "lines": "473–477",
+          "detail": "Authored definition test explicitly retains known-empty value and excludes empty-ZIP upload from the action."
+        },
+        {
+          "path": "tests/test_peekly_completion_scope.py",
+          "lines": "60–92, 156–162",
+          "detail": "Authored three-observation seed/current/exclusion case is explicitly expected to pass."
+        },
+        {
+          "path": "tests/test_coverage_planning.py",
+          "lines": "350–366",
+          "detail": "Authored planning test requires precisely those two fixtures and rejects the old empty-ZIP journey."
+        }
+      ],
+      "source_identity": {
+        "runtime_commit": "f50d082a197e683b5961d17919fe219dc48c4d55",
+        "frozen_source_files_unchanged": true,
+        "sources": [
+          {
+            "path": "skills/remorsearch-ux-qa/uxpersonas/peekly_criteria.py",
+            "sha256": "2c56c951e419a0e82b217a63f0f0fc65fa5ed309f90d356db1904f2d592f4593"
+          },
+          {
+            "path": "skills/remorsearch-ux-qa/uxpersonas/scale_entry.py",
+            "sha256": "24547d6a3660d2f5c76ad01642e822d9a11c510e26da93a5bec6c11065b81752"
+          },
+          {
+            "path": "tests/test_peekly_result_scope.py",
+            "sha256": "4bcd8aa554d1f83617b9e1f8914e6b65eb7f6f98fd3681d186603b27355ae18a"
+          },
+          {
+            "path": "tests/test_peekly_completion_scope.py",
+            "sha256": "c0bc439767fa96fd03ed12a251150b7c78217d84c3fc0ff319eb64b43fcff458"
+          },
+          {
+            "path": "tests/test_coverage_planning.py",
+            "sha256": "a15b30d00f0222b7af35b3d28ef45f153539b5a300b69b0d1cc0b8f12db52acf"
+          }
+        ],
+        "actual_bound_unknown_action": "[PRD-IMPORT-SNAPSHOT-UNKNOWN] Required fixtures: peekly-legacy-unknown-state.json, peekly-sample-current.zip. Steps: FIRST mutating action in the fresh context: seed_legacy_unknown(file=peekly-legacy-unknown-state.json). Only observe may precede it; no click, import or other write. Inspect validated seed and product-reloaded unknown legacy state. -> Next import only peekly-sample-current.zip, close the completed import sheet and open Home results. Do not import previous or another known snapshot yet: that would obscure legacy exclusion. -> Expand the visible 이전 기록 1개 보관 중 control if needed. Inspect 이전 버전에서 저장한 불완전한 기록은 분석에 쓰지 않아요. and 다음에는 달라진 계정도 보여드려요 with no departed-follower comparison. Preserve this observation before other imports. -> After this UNKNOWN checkpoint, execute other criteria's normal previous/current pair. A known-empty ZIP or normal pair cannot substitute for the reviewed legacy seed. If seed is unavailable or rejected, retain the actual blocked reason and do not invent legacy proof."
+      },
+      "independent_scope_review": "docs/validation/peekly-coverage-completion-20261115/unknown-criterion-scope-review.md",
+      "known_empty_fixture_exercised": false,
+      "known_empty_behavior_credited": false,
+      "tests_read_only_not_run": true
+    }
+  ],
+  "semantic_review_complete": true
+}
