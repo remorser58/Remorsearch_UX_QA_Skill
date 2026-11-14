@@ -20,7 +20,7 @@ class DriverLogicTests(unittest.TestCase):
             node = str(candidate) if candidate.is_file() else None
         if not node:
             self.skipTest("Node is unavailable; owned-driver unit checks not run")
-        scripts = [Path(__file__).with_name(name) for name in ("scale_browser_guardrails.test.mjs", "scale_browser_scroll.test.mjs", "scale_browser_legacy_seed.test.mjs", "scale_browser_lifecycle.test.mjs")]
+        scripts = [Path(__file__).with_name(name) for name in ("scale_browser_guardrails.test.mjs", "scale_browser_scroll.test.mjs", "scale_browser_legacy_seed.test.mjs", "scale_browser_lifecycle.test.mjs", "scale_browser_action_deadline.test.mjs")]
         result = subprocess.run([node, "--test", "--test-reporter=tap", *(str(script) for script in scripts)], capture_output=True, text=True, timeout=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("# fail 0", result.stdout)

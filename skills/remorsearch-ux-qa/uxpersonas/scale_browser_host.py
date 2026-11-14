@@ -77,7 +77,9 @@ def _authorize_legacy_seed(task, arguments, uploads, attempted):
 
 
 class ScaleBrowserHost:
-    EXCHANGE_TIMEOUTS = {"start": 70, "act": 25, "close": 12}
+    # One Queue tool call may start a context then perform an action. Keep
+    # 70 + 90 = 160 seconds inside the live Queue's 180-second call ceiling.
+    EXCHANGE_TIMEOUTS = {"start": 70, "act": 90, "close": 12}
     TERMINATE_SECONDS = 4
     KILL_SECONDS = 3
 
@@ -248,15 +250,24 @@ class ScaleBrowserHost:
             ident = self.serials.get(context_id, 0) + 1
             self.serials[context_id] = ident
             packet = json.dumps({"id": ident, "kind": kind, "payload": payload}, ensure_ascii=False, separators=(",", ":"))
-            self._record_lifecycle(context_id, "dispatching", command=kind, command_id=ident)
+            command_started = time.monotonic()
+            command_started_at = time.time()
+            timeout = self.EXCHANGE_TIMEOUTS[kind]
+            self._record_lifecycle(context_id, "dispatching", command=kind, command_id=ident,
+                command_started_at=command_started_at, command_timeout_seconds=timeout,
+                command_deadline_at=command_started_at + timeout, command_elapsed_seconds=0)
             try:
                 # Once bytes may have left the process, a timeout/cancel/protocol
                 # failure poisons this channel. Never consume a late reply as a
                 # later command's response, and never resend the original action.
-                async with asyncio.timeout(self.EXCHANGE_TIMEOUTS[kind]):
+                async with asyncio.timeout(timeout):
                     process.stdin.write(packet.encode() + b"\n")
                     await process.stdin.drain()
                     raw = await process.stdout.readline()
+                if time.monotonic() - command_started >= timeout:
+                    # An event-loop delay must not turn a late response into a
+                    # within-budget acknowledgement merely by callback ordering.
+                    raise TimeoutError("browser_response_after_deadline")
                 if not raw or len(raw) > 65536:
                     raise RuntimeError("browser_transport_closed")
                 reply = json.loads(raw)
@@ -267,10 +278,18 @@ class ScaleBrowserHost:
             except BaseException as exc:
                 self.poisoned.add(context_id)
                 self._record_lifecycle(context_id, "transport_uncertain",
-                                       error_type=type(exc).__name__)
+                    error_type=type(exc).__name__,
+                    command_elapsed_seconds=time.monotonic() - command_started)
                 raise
-            self._record_lifecycle(context_id, "reply_received")
+            self._record_lifecycle(context_id, "reply_received",
+                command_elapsed_seconds=time.monotonic() - command_started)
             if reply.get("error"):
+                if any(marker in str(reply["error"]) for marker in (
+                        "browser_action_timeout", "browser_action_aborted",
+                        "browser_action_transport_uncertain", "cdp_timeout:")):
+                    self.poisoned.add(context_id)
+                    self._record_lifecycle(context_id, "transport_uncertain",
+                        error_type="DriverActionDeadline", driver_error=str(reply["error"])[:120])
                 raise RuntimeError("browser_action_failed:" + str(reply.get("error", "unknown"))[:120])
             return reply["result"]
 
@@ -345,20 +364,33 @@ class ScaleBrowserHost:
             raise RuntimeError("tool_not_allowlisted")
         if name == "seed_legacy_unknown":
             self.context_seed_attempts[context] = True
+        action_started = time.monotonic()
         try:
-            result = await self._exchange(context, "act", {"name":name, "arguments":arguments})
-        except RuntimeError as exc:
-            # This exact driver rejection happens before mouse-button/key dispatch.
-            # Preserve the failure as an observed state; do not replay the click
-            # or relax the target guard. Transport/unknown side effects still stop.
-            if name != "click" or str(exc) != "browser_action_failed:click_target_not_allowed_or_visible":
-                raise
-            result = await self._exchange(context, "act", {"name":"observe", "arguments":{}})
-            result["facts"]["rejected_action"] = {"name": name, "reason": "target_not_allowed_or_visible",
-                "click_dispatched": False, "automatic_click_retry": False}
-            result["text"] = ("Click NOT dispatched: target was not allowed or visible. "
-                "This is a failed action, not a successful navigation. Re-observe the current "
-                "controls and choose a safe recovery; no click was retried.\n" + result["text"])
+            # A known nondispatched click rejection may obtain a fresh observe,
+            # but both exchanges share this one action window, never 90 + 90.
+            async with asyncio.timeout(self.EXCHANGE_TIMEOUTS["act"]):
+                try:
+                    result = await self._exchange(context, "act", {"name":name, "arguments":arguments})
+                except RuntimeError as exc:
+                    if name != "click" or str(exc) != "browser_action_failed:click_target_not_allowed_or_visible":
+                        raise
+                    if time.monotonic() - action_started >= self.EXCHANGE_TIMEOUTS["act"]:
+                        raise TimeoutError("browser_action_window_after_deadline")
+                    result = await self._exchange(context, "act", {"name":"observe", "arguments":{}})
+                    result["facts"]["rejected_action"] = {"name": name, "reason": "target_not_allowed_or_visible",
+                        "click_dispatched": False, "automatic_click_retry": False}
+                    result["text"] = ("Click NOT dispatched: target was not allowed or visible. "
+                        "This is a failed action, not a successful navigation. Re-observe the current "
+                        "controls and choose a safe recovery; no click was retried.\n" + result["text"])
+            if time.monotonic() - action_started >= self.EXCHANGE_TIMEOUTS["act"]:
+                raise TimeoutError("browser_action_window_after_deadline")
+        except TimeoutError:
+            if context not in self.poisoned:
+                self.poisoned.add(context)
+                self._record_lifecycle(context, "transport_uncertain", error_type="ActionWindowTimeout",
+                    action_elapsed_seconds=time.monotonic() - action_started,
+                    action_timeout_seconds=self.EXCHANGE_TIMEOUTS["act"])
+            raise
         if name in {"upload", "upload_cancel", "upload_save_failure"} and isinstance(arguments, dict) and isinstance(arguments.get("file"), str):
             fixture_name = arguments["file"]
             self.context_uploads[context].add(fixture_name)

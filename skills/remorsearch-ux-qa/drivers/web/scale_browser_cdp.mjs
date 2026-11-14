@@ -12,6 +12,7 @@ let startupController=null, startupSignal=null, closePromise=null, chromeSpawnFa
 let lifecycleInitialized=false, proxyListenPending=false;
 const proxyConnections=new Set();
 const hash = b => crypto.createHash('sha256').update(b).digest('hex');
+export const DRIVER_DEADLINES_MS=Object.freeze({start:60000,act:80000,reply:5000});
 // The parent owns this Node process group. Every child inherits that group;
 // there is no detached child and no attachment to an existing browser.
 export async function runBounded(operation,timeoutMs,code,signal) {
@@ -35,7 +36,7 @@ export async function runBounded(operation,timeoutMs,code,signal) {
     controller.signal.removeEventListener('abort',stop);
   }
 }
-const startupIO=(operation,signal)=>runBounded(operation,60000,'browser_start_timeout',signal);
+const startupIO=(operation,signal)=>runBounded(operation,DRIVER_DEADLINES_MS.start,'browser_start_timeout',signal);
 const safeDir = async (p,signal) => {
   if(!path.isAbsolute(p))throw new Error('private_directory');
   const real=await startupIO(()=>fs.promises.realpath(p),signal);
@@ -43,7 +44,9 @@ const safeDir = async (p,signal) => {
   if(real!==p||!stat.isDirectory()||(stat.mode&0o077))throw new Error('private_directory');
   return p;
 };
-export async function validateFixtureFiles(manifest,directory,signal,io=fs.promises) {
+export async function validateFixtureFiles(manifest,directory,signal,io=fs.promises,
+    {timeoutMs=DRIVER_DEADLINES_MS.start,code='browser_start_timeout'}={}) {
+  const read=operation=>runBounded(operation,timeoutMs,code,signal);
   for(const row of manifest.files) {
     signal?.throwIfAborted();
     if(!row||typeof row.name!=='string'||path.basename(row.name)!==row.name
@@ -51,13 +54,92 @@ export async function validateFixtureFiles(manifest,directory,signal,io=fs.promi
         ||!Number.isSafeInteger(row.bytes)||row.bytes<0||row.bytes>134217729)
       throw new Error('fixture_manifest_entry');
     const filename=path.join(directory,row.name);
-    const stat=await startupIO(()=>io.lstat(filename),signal);
-    const real=await startupIO(()=>io.realpath(filename),signal);
+    const stat=await read(()=>io.lstat(filename));
+    const real=await read(()=>io.realpath(filename));
     if(!stat.isFile()||stat.isSymbolicLink()||real!==filename||stat.size!==row.bytes)
       throw new Error('fixture_integrity');
-    const bytes=await startupIO(inner=>io.readFile(filename,{signal:inner}),signal);
+    const bytes=await read(inner=>io.readFile(filename,{signal:inner}));
     if(bytes.length!==row.bytes||hash(bytes)!==row.sha256)throw new Error('fixture_integrity');
   }
+}
+export class ActionBudget {
+  constructor({timeoutMs=DRIVER_DEADLINES_MS.act,record=async()=>{},now=()=>performance.now()}={}) {
+    this.timeoutMs=timeoutMs;this.record=record;this.now=now;this.active=null;this.poisoned=false;
+  }
+  check() {
+    const active=this.active;
+    if(!active)return;
+    if(this.now()>=active.deadline)active.controller.abort(new Error('browser_action_timeout'));
+    active.signal?.throwIfAborted();active.controller.signal.throwIfAborted();
+  }
+  abort() {this.active?.controller.abort(new Error('browser_action_aborted'));}
+  get signal() {return this.active?.signal;}
+  async phase(phase,extra={}) {
+    this.check();
+    const active=this.active;
+    if(!active)return;
+    const now=this.now(),previous=active.phase;
+    const detail={command_id:active.commandId,action:active.tool,action_phase:phase,
+      elapsed_ms:Math.round(now-active.started),previous_phase:previous,
+      previous_phase_ms:Math.round(now-active.phaseStarted),...extra};
+    active.phase=phase;active.phaseStarted=now;
+    await this.record('action_phase',detail);this.check();
+  }
+  async run(commandId,tool,operation) {
+    if(this.poisoned)throw new Error('browser_action_transport_uncertain');
+    if(this.active)throw new Error('browser_action_already_running');
+    const started=this.now(),controller=new AbortController();
+    const active={commandId,tool,started,deadline:started+this.timeoutMs,controller,
+      signal:null,phase:'accepted',phaseStarted:started};
+    this.active=active;
+    try {
+      return await runBounded(async signal=>{
+        active.signal=signal;
+        await this.phase('started');
+        const result=await operation(this);
+        this.check();await this.phase('completed');return result;
+      },this.timeoutMs,'browser_action_timeout',controller.signal);
+    }catch(error) {
+      this.poisoned=active.signal?.aborted===true||controller.signal.aborted
+        ||this.now()>=active.deadline||String(error?.message).startsWith('cdp_timeout:');
+      if(this.poisoned&&!controller.signal.aborted)controller.abort(new Error('browser_action_aborted'));
+      try {await this.record('action_failed',{command_id:commandId,action:tool,
+        action_phase:active.phase,elapsed_ms:Math.round(this.now()-started),
+        error:String(error?.message||'browser_action_failed').slice(0,120),channel_poisoned:this.poisoned});}catch{}
+      throw error;
+    }finally {
+      // Keep the aborted signal after timeout: a late asynchronous read/write
+      // must never regain permission to dispatch a browser action.
+      if(!this.poisoned)this.active=null;
+    }
+  }
+}
+const actionBudget=new ActionBudget({record:lifecycle});
+export async function writeCaptureBytes(directory,name,bytes,signal,io=fs.promises) {
+  if(typeof name!=='string'||path.basename(name)!==name||!/^browser-\d+\.png$/.test(name)
+      ||!Buffer.isBuffer(bytes))throw new Error('capture_path_invalid');
+  return await runBounded(async inner=>{
+    let handle;
+    try {
+      handle=await io.open(path.join(directory,name),'wx',0o600);
+      // open() itself is not cancellable. A late exclusive open is closed
+      // without writing, never admitted as a completed capture or retried.
+      inner.throwIfAborted();
+      const before=await handle.stat();inner.throwIfAborted();
+      if(!before.isFile()||(before.mode&0o077))throw new Error('capture_permissions');
+      await handle.writeFile(bytes,{signal:inner});inner.throwIfAborted();
+      const after=await handle.stat();inner.throwIfAborted();
+      if(after.size!==bytes.length||(after.mode&0o077))throw new Error('capture_write_unconfirmed');
+      return {path:name,sha256:hash(bytes)};
+    }finally {if(handle)await handle.close();}
+  },DRIVER_DEADLINES_MS.act,'browser_action_timeout',signal);
+}
+export async function writeReplyOnce(stream,packet,{timeoutMs=DRIVER_DEADLINES_MS.reply}={}) {
+  const bytes=JSON.stringify(packet)+'\n';
+  await runBounded(()=>new Promise((resolve,reject)=>{
+    stream.write(bytes,error=>error?reject(error):resolve());
+  }),timeoutMs,'browser_reply_flush_timeout');
+  return Buffer.byteLength(bytes);
 }
 export async function fetchJsonBounded(url,{signal,timeoutMs=5000,fetcher=fetch}={}) {
   return await runBounded(async inner=>{
@@ -128,9 +210,10 @@ async function lifecycle(phase,extra={}) {
   }catch{/* Host ownership metadata remains authoritative when disk I/O is unavailable. */}
 }
 function send(method, params = {}) {
+  actionBudget.check();
   const id = ++sequence;
   return new Promise((resolve, reject) => {
-    const signal=startupSignal;
+    const signal=actionBudget.signal||startupSignal;
     let timer;
     const finish=(error,value)=>{
       clearTimeout(timer);pending.delete(id);signal?.removeEventListener('abort',aborted);
@@ -642,7 +725,7 @@ async function start(input) {
     return await runBounded(async signal=>{
       startupSignal=signal;
       return await startWithinBudget(input,signal);
-    },60000,'browser_start_timeout',startupController.signal);
+    },DRIVER_DEADLINES_MS.start,'browser_start_timeout',startupController.signal);
   } catch(error) {
     await lifecycle('start_failed',{error:String(error?.message||'browser_start_failed').slice(0,120)});
     throw error;
@@ -768,9 +851,11 @@ async function evaluate(expression) {
   return r.result?.value;
 }
 async function observe() {
+  await actionBudget.phase('observe_dom');
   const expression = "(() => {const rendered=e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return r.width>0&&r.height>0&&s.visibility!=='hidden'&&s.display!=='none'&&(e.tagName==='SUMMARY'||!e.closest('details:not([open])'))};const visible=e=>{if(!rendered(e))return false;const r=e.getBoundingClientRect();if(r.bottom<=0||r.top>=innerHeight||r.right<=0||r.left>=innerWidth)return false;const x=Math.min(innerWidth-1,Math.max(0,r.x+r.width/2)),y=Math.min(innerHeight-1,Math.max(0,r.y+r.height/2)),hit=document.elementFromPoint(x,y);return !!hit&&(hit===e||e.contains(hit)||hit.closest('button,a,summary,[role=button],[role=link]')===e)};const selector=e=>{const parts=[];while(e&&e.nodeType===1&&e!==document.body){let n=1;for(let p=e.previousElementSibling;p;p=p.previousElementSibling)if(p.tagName===e.tagName)n++;parts.unshift(e.tagName.toLowerCase()+':nth-of-type('+n+')');e=e.parentElement;}return 'body>'+parts.join('>');};const controls=[...document.querySelectorAll('button,a,summary,input,textarea,select,[role=button],[role=link]')].filter(rendered).slice(0,100).map((e,i)=>({index:i,selector:selector(e),tag:e.tagName.toLowerCase(),id:e.id||null,role:e.getAttribute('role'),type:e.type||null,label:(e.getAttribute('aria-label')||e.innerText||e.textContent||e.getAttribute('placeholder')||'').trim().slice(0,180),placeholder:e.getAttribute('placeholder')||null,title:e.getAttribute('title')||null,multiple:e.multiple===true,disabled:!!e.disabled,visible:visible(e),href:e.tagName==='A'?e.href:null}));const fileInputs=[...document.querySelectorAll('input[type=file]')].map((e,i)=>({index:i,selector:selector(e),accept:e.accept,multiple:e.multiple,disabled:!!e.disabled,hidden:!visible(e)}));const listRows=[...document.querySelectorAll('.person-list [data-row-key]')].map(e=>({key:e.getAttribute('data-row-key'),text:(e.innerText||e.textContent||'').trim().slice(0,180)}));let storageKeys=[],storageAccess='denied';try{storageKeys=Object.keys(localStorage);storageAccess='available';}catch{}return {url:location.href,title:document.title,text:(document.body?.innerText||'').slice(0,12000),controls,file_inputs:fileInputs,list_rows:listRows,storage_keys:storageKeys,storage_access:storageAccess,viewport:{width:innerWidth,height:innerHeight}};})()";
   const data=await evaluate(expression);
   if (!data || new URL(data.url).origin!==targetOrigin) throw new Error('origin_changed');
+  await actionBudget.phase('observe_inputs');
   const values = await evaluate("(() => {const out={};for(const selector of "+JSON.stringify([...typedInputs.keys()])+ "){try{const e=document.querySelector(selector);out[selector]=e&&('value' in e)?String(e.value):null;}catch{out[selector]=null;}}return out;})()");
   data.typed_input_checks = Object.entries(values||{}).map(([selector,value])=>({
     selector, retained:value!==null && hash(Buffer.from(value,'utf8'))===typedInputs.get(selector),
@@ -779,6 +864,7 @@ async function observe() {
   data.network_policy = {allowed_origin:targetOrigin,external_requests_blocked:true,blocked_request_count:proxyBlockedRequests};
   data.available_fixtures = fixtureManifest.files.map(row=>row.name);
   observedControls=data.controls.map(row=>({...row}));
+  await actionBudget.phase('observe_storage');
   data.storage_snapshot=await persistence();
   if(activeImportAttemptId)data.import_attempt_id=activeImportAttemptId;
   if(legacySeedReceipt) {
@@ -788,12 +874,14 @@ async function observe() {
   return data;
 }
 async function screenshot() {
+  await actionBudget.phase('screenshot_capture');
   const r=await send('Page.captureScreenshot',{format:'png',fromSurface:true,captureBeyondViewport:false});
   const bytes=Buffer.from(r.data,'base64');
   const name='browser-'+String(++sequence).padStart(5,'0')+'.png';
-  const dest=path.join(evidenceDir,name);
-  fs.writeFileSync(dest,bytes,{mode:0o600,flag:'wx'});
-  return {path:name,sha256:hash(bytes)};
+  await actionBudget.phase('screenshot_write',{capture:name,bytes:bytes.length});
+  const receipt=await writeCaptureBytes(evidenceDir,name,bytes,actionBudget.signal);
+  await actionBudget.phase('screenshot_written',{capture:name,bytes:bytes.length});
+  return receipt;
 }
 export function approvedCancelFixture(entries) {
   return Array.isArray(entries) && entries.length===1
@@ -867,7 +955,10 @@ export function observationResult(state,capture) {
   return {text:'URL '+state.url+'\nTitle '+state.title+'\n'+state.text,
     facts:{...state,last_action:'observe'},captures:[capture],checks:[]};
 }
-async function act(input) {
+async function act(input,commandId) {
+  return await actionBudget.run(commandId,input.name,()=>actWithinBudget(input));
+}
+async function actWithinBudget(input) {
   const name=input.name, args=input.arguments||{};
   let uploadedFixture=null, uploadProgressSamples=[], importAttempt=null, clickDispatch=null, scrollAttempt=null;
   const extraCaptures=[];
@@ -877,6 +968,7 @@ async function act(input) {
   }
   if(name!=='seed_legacy_unknown'&&!['observe','wait'].includes(name))mutationsBeforeSeed++;
   if(name==='seed_legacy_unknown') {
+    await actionBudget.phase('legacy_seed');
     await seedLegacyUnknown(args);
   } else if (['upload','upload_cancel','upload_save_failure'].includes(name)) {
     const selector=args.selector, filename=args.file;
@@ -892,11 +984,11 @@ async function act(input) {
     if(name==='upload_save_failure' && (entries.length!==1 || entries[0].bytes>1048576
         || !/^peekly-(?:sample-current|sample-previous|format-json|retention-snapshot-\d{2})\.zip$/.test(filename)))
       throw new Error('storage_fault_fixture_not_allowlisted');
-    const fullPaths=names.map((name,index)=>{
-      const fullPath=path.join(fixturesDir,name), entry=entries[index], st=fs.lstatSync(fullPath);
-      if (!st.isFile() || st.isSymbolicLink() || fs.realpathSync(fullPath)!==fullPath || st.size!==entry.bytes || hash(fs.readFileSync(fullPath))!==entry.sha256) throw new Error('fixture_integrity');
-      return fullPath;
-    });
+    await actionBudget.phase('upload_fixture_validation',{fixture_count:entries.length});
+    await validateFixtureFiles({files:entries},fixturesDir,actionBudget.signal,fs.promises,
+      {timeoutMs:DRIVER_DEADLINES_MS.act,code:'browser_action_timeout'});
+    const fullPaths=names.map(name=>path.join(fixturesDir,name));
+    await actionBudget.phase('upload_target_resolution');
     const document=await send('DOM.getDocument',{depth:-1,pierce:false});
     const found=await send('DOM.querySelector',{nodeId:document.root.nodeId,selector});
     if (!found.nodeId) throw new Error('upload_target_missing');
@@ -917,6 +1009,7 @@ async function act(input) {
       if(name==='upload_save_failure'){
         await evaluate('('+pageArmStorageFailure.toString()+')()');faultArmed=true;
       }
+      await actionBudget.phase('upload_dispatch');
       await send('DOM.setFileInputFiles',{files:fullPaths,nodeId:found.nodeId});
       uploadedFixture=filename;
       if(name==='upload_cancel'){
@@ -945,6 +1038,7 @@ async function act(input) {
     } finally {
       if(faultArmed)importAttempt.storage_fault=await evaluate('('+pageReadStorageFailure.toString()+')(true)');
     }
+    await actionBudget.phase('upload_observed');
   } else if (name==='click') {
     const selector=args.selector,label=args.label,norm=value=>String(value||'').replace(/\s+/g,' ').trim();
     if (typeof label!=='string' || !label.trim() || label.length>180) throw new Error('click_label_required');
@@ -991,6 +1085,7 @@ async function act(input) {
 async function close() {
   if(closePromise)return await closePromise;
   startupController?.abort(new Error('browser_shutdown_requested'));
+  actionBudget.abort();
   closePromise=(async()=>{
     await lifecycle('close_started');
     for(const item of pending.values())item.reject(new Error('browser_shutdown_requested'));
@@ -1009,6 +1104,7 @@ process.umask(0o077);
 const input = readline.createInterface({input:process.stdin});
 const stop=()=>{
   startupController?.abort(new Error('host_shutdown_signal'));
+  actionBudget.abort();
   input.close();
   void close().then(result=>process.exit(result.stopped?0:1),()=>process.exit(1));
 };
@@ -1016,15 +1112,33 @@ process.once('SIGTERM',stop);process.once('SIGINT',stop);
 try {
   for await (const line of input) {
     if(line.length>65536) break;
-    let m; try {m=JSON.parse(line);let result;
+    let m,replyAttempted=false;
+    const commandStarted=performance.now();
+    try {m=JSON.parse(line);let result;
       if(m.kind==='start') result=await start(m.payload);
       else if(m.kind==='close') result=await close();
-      else result=await act(m.payload);
-      process.stdout.write(JSON.stringify({id:m.id,result})+'\n');
+      else result=await act(m.payload,m.id);
+      if(m.kind!=='close')await lifecycle('reply_writing',{command_id:m.id,
+        command:m.kind,elapsed_ms:Math.round(performance.now()-commandStarted)});
+      replyAttempted=true;
+      const bytes=await writeReplyOnce(process.stdout,{id:m.id,result},
+        {timeoutMs:m.kind==='close'?1000:DRIVER_DEADLINES_MS.reply});
+      if(m.kind!=='close')await lifecycle('reply_written',{command_id:m.id,
+        command:m.kind,elapsed_ms:Math.round(performance.now()-commandStarted),bytes});
       if(m.kind==='close') break;
     } catch (err) {
-      process.stdout.write(JSON.stringify({id:m?.id,error:String(err?.message||'browser_tool_failed').slice(0,160)})+'\n');
-      if(m?.kind==='act'&&!closePromise)continue;
+      // A timed-out write may already have sent bytes. Never append a second
+      // response to that command; the parent preserves its uncertain delivery.
+      if(replyAttempted) {
+        await lifecycle('reply_uncertain',{command_id:m?.id??null,
+          elapsed_ms:Math.round(performance.now()-commandStarted),
+          error:String(err?.message||'reply_failed').slice(0,120)});
+        break;
+      }
+      replyAttempted=true;
+      try {await writeReplyOnce(process.stdout,{id:m?.id,error:String(err?.message||'browser_tool_failed').slice(0,160)});}
+      catch{break;}
+      if(m?.kind==='act'&&!closePromise&&!actionBudget.poisoned)continue;
       break;
     }
   }
