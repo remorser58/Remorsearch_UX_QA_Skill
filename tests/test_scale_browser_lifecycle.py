@@ -53,7 +53,8 @@ class HostLifecycleTests(unittest.IsolatedAsyncioTestCase):
         host._terminate_owned = AsyncMock(return_value=True)
         reply = await host.call("close", close_request())
         self.assertTrue(reply["result"]["stopped"])
-        self.assertTrue(reply["result"]["forced_cleanup"])
+        self.assertEqual(reply["result"], {"stopped": True})
+        self.assertTrue(host.lifecycle["context"]["shutdown"]["forced_cleanup"])
         self.assertEqual(process.stdin.write.call_count, 1)
         self.assertNotIn("context", host.processes)
         self.assertIn("context", host.closed_contexts)
@@ -138,7 +139,8 @@ class HostLifecycleTests(unittest.IsolatedAsyncioTestCase):
                 with self.assertRaises(TimeoutError):
                     await host._exchange("context", "act", {"name": "observe"})
                 result = await host.call("close", close_request())
-                self.assertTrue(result["result"]["owned_group_exit_confirmed"])
+                self.assertEqual(result["result"], {"stopped": True})
+                self.assertTrue(host.lifecycle["context"]["shutdown"]["owned_group_exit_confirmed"])
                 with self.assertRaises(ProcessLookupError):
                     os.killpg(pgid, 0)
                 record = json.loads((evidence / "browser-host-lifecycle.json").read_text())

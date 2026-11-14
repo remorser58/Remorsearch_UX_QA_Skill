@@ -316,7 +316,9 @@ class ScaleBrowserHost:
                     mapping.pop(context, None)
             return {"operation_id":request["operation_id"],"context_id":context,
                 "request_sha256":request["request_sha256"],"trace_id":"browser-close-"+context[-12:],
-                "result":result}
+                # ScaleExecution and AgentExecution deliberately require this
+                # exact wire shape. Rich teardown details stay in lifecycle.
+                "result":{"stopped": stopped}}
         if kind != "tool":
             raise RuntimeError("unsupported_browser_host_operation")
         evidence = safe_path(payload["evidence_path"])

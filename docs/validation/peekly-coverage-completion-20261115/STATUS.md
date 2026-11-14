@@ -20,10 +20,17 @@ The user authorizes implementation, regression, owned isolated test contexts, sm
 - The old uncertain 009/010/012 remain preserved. The new requested cohort uses new jobs and call IDs.
 - Original 46 weighted mapping at 65f: 20 passed / 8 failed / 18 not_run; 32 unique mappings: 13 / 6 / 13.
 
-## Current phase — independent R4 smoke running on fixed lifecycle source
+## Current phase — R4 preserved; exact close contract repaired for R5
 
-- Source `4a0f3bbbf610132798d8edb8ad343637f7e4d82d` committed/pushed, exact remote SHA and clean worktree verified before launch. R4 launched at `2026-11-14T18:51:27.742143+00:00` (04:51 Asia/Seoul), detached PID 49840. Root `.ux-loop/peekly-completion-smoke-r4-20261115`; 024 job `S-iikjgdifekagbjlmmogeoldg`, 032 job `S-imkegjkfkgiilkafipmeibkj`.
-- Read-only checkpoint at 04:52: both jobs running, turn 3, three admitted observations each; six completed model and six completed tool operations, no recorded problem. New startup has produced real observations in both contexts. This is progress, not a passed smoke or completed-session coverage. No 32-person run has started.
+- R4 ended at `2026-11-14T18:58:20.151359+00:00` with `smoke_failed`, control paused, queued 2 / complete 0 / running 0 / uncertain 0. It was intentionally paused after discovering a close-result adapter contract mismatch, before either job dispatched close. All in-flight responses settled; 37 logical model/review calls, 38 attempts with one known received-reply quality repair, zero uncertain resends. Both browser contexts and groups closed. The 35 prior queues and all 70 partial artifacts remain intact; partial observations earn no completed-session coverage. See `smoke-r4-diagnostics.json` / `.md`.
+- The root's lifecycle change incorrectly added details to the close wire result. Existing ScaleExecution and AgentExecution require exactly `{"stopped": true}`. The prior 88-case suite and zero-model browser lifecycle probe did not cover that caller boundary. An offline actual Queue/ScaleExecution reproduction yielded blocked 2 / complete 0 with `worker_stop_unconfirmed`; this code was not dispatched as a per-job close in R4.
+- Fixed the wire result only; rich teardown evidence remains in lifecycle records. Added two actual Queue/host integration regressions: successful current-valid completion/readback without redispatch, and failed-group closure retaining ownership/blocking completion. Final combined regression passed 90/90, zero failures/skips, in 19.543 seconds. Log `.ux-loop/peekly-completion-r5-regression-20261115.log`, SHA `5116e476ff038054f254fa881fa534aeda302100aaffc751d084fda6aa8fad9c`; asyncio slow-callback and temporary-directory cleanup warnings were emitted, without test failure.
+- NEW independent R5 pair is 022/031 at `.ux-loop/peekly-completion-smoke-r5-20261115`, not used in completion R1–R4. Exact requirement/context equivalence verified; matched baseline is THREE not_run among six success criteria (022 IDENTITY + UNKNOWN; 031 PAYWALL). All-six-executed strict gate remains. See `smoke-r5-plan.md`. No R5/32-person execution yet at this checkpoint. Preserve R4 paused; never resume it.
+
+### R4 launch checkpoint (historical)
+
+- Source `4a0f3bbbf610132798d8edb8ad343637f7e4d82d` committed/pushed, exact remote SHA and clean worktree verified before launch. R4 launched at `2026-11-14T18:51:27.742143+00:00` (03:51 Asia/Seoul), detached PID 49840. Root `.ux-loop/peekly-completion-smoke-r4-20261115`; 024 job `S-iikjgdifekagbjlmmogeoldg`, 032 job `S-imkegjkfkgiilkafipmeibkj`.
+- Read-only checkpoint at 03:52: both jobs running, turn 3, three admitted observations each; six completed model and six completed tool operations, no recorded problem. New startup has produced real observations in both contexts. This is progress, not a passed smoke or completed-session coverage. No 32-person run has started.
 - Keep runtime/fixtures/library/product bytes fixed through R4 and the subsequent cohort. Preserve every old queue and uncertainty. Only documentation may be updated while execution runs.
 
 ### R3 preservation and R4 prelaunch validation (historical)

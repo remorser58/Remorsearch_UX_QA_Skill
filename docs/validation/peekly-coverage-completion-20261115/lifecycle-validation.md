@@ -1,5 +1,15 @@
 # Browser lifecycle repair validation before R4
 
+## Follow-up: exact caller contract before R5
+
+The initial lifecycle validation below was insufficient at the caller boundary: ScaleExecution and AgentExecution require the close result to be exactly `{"stopped": true}`. The host had included additional diagnostic keys. The root detected this during R4 and paused the run before a per-job close was dispatched. All outstanding replies settled, both owned groups closed, and raw partial evidence remains preserved.
+
+The wire result now retains only `stopped`; diagnostic detail remains in lifecycle files and memory. A red offline test through actual Queue + ScaleExecution reproduced two blocked sessions with `worker_stop_unconfirmed`. After the fix, two added integration tests verify real current-valid completion, no duplicate close on readback, and retained ownership/blocked completion if group closure is unconfirmed. The final 90-test suite passed with zero failures/skips (19.543 seconds); it emitted asyncio slow-callback and temporary-directory cleanup warnings. Log SHA `5116e476ff038054f254fa881fa534aeda302100aaffc751d084fda6aa8fad9c`. The Node driver is unchanged from its 61-case passing suite.
+
+R4 and its partial observations are not a passed smoke. R5 uses the predeclared 022/031 pair and the correct matched three-not-run baseline; see `smoke-r5-plan.md`.
+
+## Initial R4 validation (historical)
+
 The failed R3 root and its two uncertain tool operations remain unchanged. This change addresses runner startup/teardown, not Peekly product behavior or a reclassification of missing UX evidence.
 
 ## Implementation and independent review
@@ -42,4 +52,3 @@ Probe summary SHA-256: `56508047d3566945172ddcf7622953619dcaf5703b2865a9ea169431
 Offline R4 preflight passed with 35 old queues, 333 excluded prior job IDs and 43 preserved historical uncertain rows. Personas 024/032 are predeclared in `smoke-r4-plan.md`. No old operation is resumed.
 
 This validates the runner changes and actual lifecycle only. Reduction of the matched two-not-run smoke baseline and the full old-23 set still requires fresh completed persona evidence. The prior packaged Node 22 release check limitation remains; these results do not establish packaged release readiness.
-

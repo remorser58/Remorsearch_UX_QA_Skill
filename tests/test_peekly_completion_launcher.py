@@ -39,7 +39,7 @@ class CompletionGateTests(unittest.TestCase):
     def test_both_targeted_flows_and_all_six_executed(self):
         result = gate()
         self.assertTrue(result["pass_gate"])
-        self.assertEqual(result["baseline_success_not_run"], 2)
+        self.assertEqual(result["baseline_success_not_run"], 3)
         self.assertTrue(all(row["executed"] for row in result["targeted_flows"]))
 
     def test_one_remaining_target_blocks_even_if_aggregate_decreases(self):
@@ -48,17 +48,19 @@ class CompletionGateTests(unittest.TestCase):
         self.assertIn("target_not_exercised:PRD-IMPORT-SNAPSHOT-UNKNOWN", result["reasons"])
 
     def test_prior_smoke_personas_cannot_substitute_for_fresh_pair(self):
-        summary, report = completion_evidence()
-        prior = ["PER-PEEKLY-V2-021", "PER-PEEKLY-V2-029"]
-        summary["persona_ids"] = prior
-        for value in (summary["completed_receipt_summary"], report["completed_receipt_summary"]):
-            value["persona_ids"] = prior
-        for row, pid in zip(report["tasks"], prior):
-            row["persona_id"] = pid
-        result = completion.smoke_gate(summary, report,
-            completion.base.router_delivery_audit(clean_ledger()))
-        self.assertFalse(result["pass_gate"])
-        self.assertTrue(all(not row["executed"] for row in result["targeted_flows"]))
+        for numbers in (("021", "029"), ("023", "030"), ("024", "032")):
+            with self.subTest(prior=numbers):
+                summary, report = completion_evidence()
+                prior = ["PER-PEEKLY-V2-" + number for number in numbers]
+                summary["persona_ids"] = prior
+                for value in (summary["completed_receipt_summary"], report["completed_receipt_summary"]):
+                    value["persona_ids"] = prior
+                for row, pid in zip(report["tasks"], prior):
+                    row["persona_id"] = pid
+                result = completion.smoke_gate(summary, report,
+                    completion.base.router_delivery_audit(clean_ledger()))
+                self.assertFalse(result["pass_gate"])
+                self.assertTrue(all(not row["executed"] for row in result["targeted_flows"]))
 
     def test_non_target_not_run_also_blocks(self):
         self.assertFalse(gate(("not_run", "passed", "passed", "passed", "passed", "passed"))["pass_gate"])
