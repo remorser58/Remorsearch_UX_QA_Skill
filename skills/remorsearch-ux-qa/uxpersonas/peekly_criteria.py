@@ -82,17 +82,20 @@ CRITERIA = {
     "PRD-RESULT-RECIPROCITY": {
         "screen": "results category list", "selector": "button or tab with text 나를 맞팔 안 한 사람",
         "text": ["나를 맞팔 안 한 사람"], "value": "category label and count match imported fixture data",
-        "precondition": "valid synthetic import completed", "action": "open category and inspect count/list",
+        "precondition": "pinned current synthetic import completed", "action": "open category and inspect count/list",
+        "fixture": "peekly-sample-current.zip",
         "timeout_seconds": 30, "scope": "desktop"},
     "PRD-RESULT-REVERSE": {
         "screen": "results category list", "selector": "button or tab with text 내가 맞팔 안 한 사람",
         "text": ["내가 맞팔 안 한 사람"], "value": "category label and count match imported fixture data",
-        "precondition": "valid synthetic import completed", "action": "open category and inspect count/list",
+        "precondition": "pinned current synthetic import completed", "action": "open category and inspect count/list",
+        "fixture": "peekly-sample-current.zip",
         "timeout_seconds": 30, "scope": "desktop"},
     "PRD-RESULT-MUTUAL": {
         "screen": "results category list", "selector": "button or tab with text 맞팔 중인 사람",
         "text": ["맞팔 중인 사람"], "value": "category label and count match imported fixture data",
-        "precondition": "valid synthetic import completed", "action": "open category and inspect count/list",
+        "precondition": "pinned current synthetic import completed", "action": "open category and inspect count/list",
+        "fixture": "peekly-sample-current.zip",
         "timeout_seconds": 30, "scope": "desktop"},
     "PRD-RESULT-SNAPSHOT": {
         "screen": "snapshot comparison", "selector": "result comparison summary",
@@ -129,8 +132,9 @@ CRITERIA = {
         "timeout_seconds": 30, "scope": "desktop"},
     "PRD-IMPORT-SNAPSHOT-UNKNOWN": {
         "screen": "snapshot comparison", "selector": "comparison summary",
-        "text": ["비교할 수 없", "기록이 없"], "value": "empty/unknown previous snapshot is excluded from comparison",
-        "precondition": "same-account empty/current fixture pair is available", "action": "upload peekly-empty-previous.zip then peekly-sample-current.zip and observe the comparison",
+        "text": ["비교할 수 없", "기록이 없"], "value": "a legacy snapshot with unknown included-file provenance is excluded; a recognized empty import is known-empty",
+        "precondition": "a legacy snapshot without includedFiles is configured and verified in the owned profile",
+        "action": "not_run until an approved legacy-state setup capability exists; the known-empty ZIP cannot substitute for this precondition",
         "timeout_seconds": 120, "scope": "desktop"},
     "PRD-IMPORT-ALLTIME": {
         "screen": "Instagram export guide", "selector": "visible guide scene",
@@ -278,6 +282,34 @@ def _same_storage(before, after):
             and sorted(before["keys"]) == sorted(after["keys"]))
 
 
+REJECTION_FIXTURE_SHA256 = {
+    "peekly-malformed-html.zip": "9bc5fdf9bc926f3fada2b986508ab93bb018f450cd5bb597d407b998677e190d",
+    "peekly-account-mismatch.zip": "a0fa22372bb16645faed613d09c962ccc7611421dd7f934d54bb32c59aaad795",
+}
+
+
+def _preserved_named_rejection(row, fixture):
+    """New rejection wording requires its own pinned upload and unchanged state."""
+    facts = row.get("facts", {})
+    attempt = facts.get("import_attempt")
+    if not isinstance(attempt, dict):
+        return False
+    attempt_id = attempt.get("attempt_id")
+    before, after = attempt.get("storage_before"), attempt.get("storage_after")
+    return (
+        facts.get("last_action") == "upload" and facts.get("uploaded_fixture") == fixture
+        and attempt.get("tool") == "upload"
+        and attempt.get("schema_version") == "peekly-import-attempt.v1"
+        and attempt.get("fixture") == fixture
+        and attempt.get("fixture_sha256") == REJECTION_FIXTURE_SHA256.get(fixture)
+        and isinstance(attempt_id, str) and bool(attempt_id)
+        and facts.get("import_attempt_id") == attempt_id
+        and attempt.get("persistence_unchanged") is True
+        and _same_storage(before, after)
+        and _same_storage(after, facts.get("storage_snapshot"))
+    )
+
+
 def _import_attempts(rows, tool):
     for position, row in enumerate(rows):
         attempt = row.get("facts", {}).get("import_attempt")
@@ -387,6 +419,177 @@ def _save_failure_check(rows):
     return ("passed", None) if passed else ("not_run", "The consumed/restored fault, original-result preservation, actual retry click and successful new persisted result were not all observed for the same upload attempt.")
 
 
+# Frozen oracle derived from the hash-verified v7 owned fixture's relationship JSON.
+# These synthetic names are input expectations, never inferred from a sample screen.
+RESULT_CURRENT_FIXTURE = "peekly-sample-current.zip"
+RESULT_CURRENT_SHA256 = "938514f0010f47ace5c2a2fdae17d2c237fd82838cedd78829e0915d367ca186"
+RESULT_SCOPE_KEYS = {
+    "PRD-RESULT-RECIPROCITY": frozenset(("atelier.luna_", "ina.archive", "junho.jeong", "minsu.kim_", "taeo.kang_")),
+    "PRD-RESULT-REVERSE": frozenset(("haneul.song", "seongsu.coffee")),
+    "PRD-RESULT-MUTUAL": frozenset(("dohyun.fit", "haerin.daily", "minji_kim", "seojun.park", "yuna.choi")),
+}
+
+
+def result_scope_evidence(rows, requirement_id):
+    """Bind one result category to an actual current-fixture import and list visit.
+
+    Rows are admitted observations from one session, in order. Earlier incomplete
+    visits do not veto a later complete visit; a proven failure remains visible.
+    Returned indices name the import, category click, and actual list evidence.
+    """
+    if requirement_id not in RESULT_SCOPE_KEYS:
+        return None
+    label = CRITERIA[requirement_id]["text"][0]
+    expected = RESULT_SCOPE_KEYS[requirement_id]
+    norm = lambda value: " ".join(str(value or "").split())
+    missing = {
+        "status": "not_run", "indices": [],
+        "reason": "The pinned current fixture and a subsequent matching category click/count/list were not observed in the same import attempt. Sample, stale, or unrelated lists cannot satisfy this criterion.",
+    }
+    anchor = opened = passed = failed = None
+    known_digests = set()
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict):
+            continue
+        facts = row.get("facts", {})
+        if not isinstance(facts, dict):
+            continue
+        text = str(row.get("text", ""))
+        action = facts.get("last_action")
+        requested_label = norm(facts.get("last_action_label"))
+        if (_contains(text, ["샘플을 보고 있어요"]) or "샘플 닫기" in text
+                or requested_label in {"샘플로 먼저 둘러보기", "샘플로 둘러보기"}):
+            anchor = opened = None
+            continue
+        attempt = facts.get("import_attempt")
+        if action in {"upload", "upload_cancel", "upload_save_failure"} or facts.get("uploaded_fixture"):
+            anchor = opened = None
+            if not isinstance(attempt, dict):
+                continue
+            attempt_id = attempt.get("attempt_id")
+            before, after = attempt.get("storage_before"), attempt.get("storage_after")
+            phases = attempt.get("phase_samples", [])
+            complete = isinstance(phases, list) and any(
+                isinstance(phase, dict) and _contains(phase.get("text", ""), ["결과를 불러왔어요"])
+                for phase in phases)
+            bound = (
+                action == "upload" and attempt.get("tool") == "upload"
+                and attempt.get("schema_version") == "peekly-import-attempt.v1"
+                and facts.get("uploaded_fixture") == RESULT_CURRENT_FIXTURE
+                and attempt.get("fixture") == RESULT_CURRENT_FIXTURE
+                and attempt.get("fixture_sha256") == RESULT_CURRENT_SHA256
+                and isinstance(attempt_id, str) and bool(attempt_id)
+                and facts.get("import_attempt_id") == attempt_id
+                and complete and _contains(text, ["결과를 불러왔어요"])
+                and _storage_available(before) and _storage_available(after)
+                and _same_storage(after, facts.get("storage_snapshot"))
+                and attempt.get("cancel_dispatched") is not True
+                and (not _same_storage(before, after) or after["sha256"] in known_digests)
+            )
+            if bound:
+                anchor = {"id": attempt_id, "storage": after, "index": index}
+                known_digests.add(after["sha256"])
+            continue
+        if anchor is None:
+            continue
+        if (facts.get("import_attempt_id") != anchor["id"]
+                or not _same_storage(facts.get("storage_snapshot"), anchor["storage"])):
+            anchor = opened = None
+            continue
+        if action == "click":
+            opened = None
+            click = facts.get("click_dispatch", {})
+            actual_label = norm(click.get("label")) if isinstance(click, dict) else ""
+            if (not isinstance(click, dict) or click.get("dispatched") is not True
+                    or click.get("hit_test") is not True
+                    or not isinstance(click.get("verified_selector"), str)
+                    or not click["verified_selector"]
+                    or actual_label != requested_label
+                    or not actual_label.startswith(label + " ")):
+                continue
+            counts = re.findall(r"(\d+)\s*명", actual_label)
+            if len(counts) != 1:
+                continue
+            opened = {"index": index, "count": int(counts[0])}
+        elif action not in {"observe", "wait", "scroll"}:
+            opened = None
+        if opened is None:
+            continue
+        # A dashboard label is not the opened Sheet heading. The latter is a
+        # separate exact line, as rendered by ResultsTab's LIST_COPY/openList.
+        headings = [re.fullmatch(re.escape(label) + r"\s+(\d+)\s*명", norm(line))
+                    for line in text.splitlines()]
+        headings = [int(match.group(1)) for match in headings if match]
+        people = facts.get("list_rows")
+        if len(headings) != 1 or not isinstance(people, list) or not people:
+            continue
+        keys = [person.get("key") for person in people if isinstance(person, dict)]
+        if len(keys) != len(people) or any(not isinstance(key, str) or not key for key in keys):
+            continue
+        indices = list(dict.fromkeys((anchor["index"], opened["index"], index)))
+        if (opened["count"] != len(expected) or headings[0] != len(expected)
+                or len(keys) != len(expected) or set(keys) != expected):
+            failed = {
+                "status": "failed", "indices": indices,
+                "reason": "The category was inspected after the pinned current import, but its card count, opened-list count, or account keys differ from the fixture oracle.",
+            }
+        else:
+            passed = {"status": "passed", "indices": indices}
+    return failed or passed or missing
+
+
+LEGACY_UNKNOWN_REQUIREMENT = "PRD-IMPORT-SNAPSHOT-UNKNOWN"
+LEGACY_UNKNOWN_REASON = (
+    "No approved host capability configured a legacy snapshot without includedFiles. "
+    "The recognized known-empty ZIP and a later normal comparison do not exercise this precondition."
+)
+
+
+def unsupported_legacy_criterion(task, criterion):
+    requirements, index = task.get("requirement_ids", []), criterion.get("index")
+    return (criterion.get("kind") == "success" and isinstance(requirements, list)
+            and isinstance(index, int) and 0 <= index < len(requirements)
+            and requirements[index] == LEGACY_UNKNOWN_REQUIREMENT)
+
+
+def guard_peekly_scope(task, criteria, observations):
+    """Veto unsupported relationship passes and the unconfigured legacy criterion.
+
+    Relationship failures and all unrelated criterion decisions remain untouched.
+    Legacy-unknown has no supported setup; both historical pass/fail are not_run.
+    Both receipt paths use this after native merges as well as normal validation,
+    so a legacy/synthetic native pass cannot restore a sample-only model pass.
+    """
+    requirements = task.get("requirement_ids", [])
+    if not isinstance(requirements, list):
+        return criteria
+    for criterion in criteria:
+        if unsupported_legacy_criterion(task, criterion):
+            criterion.update(status="not_run", evidence_ids=[], observation=LEGACY_UNKNOWN_REASON)
+            continue
+        index = criterion.get("index")
+        if (criterion.get("kind") != "success" or criterion.get("status") != "passed"
+                or not isinstance(index, int) or index < 0 or index >= len(requirements)
+                or requirements[index] not in RESULT_SCOPE_KEYS):
+            continue
+        proof = result_scope_evidence(observations, requirements[index])
+        sources = [observations[i] for i in proof["indices"]]
+        captures_bound = bool(sources) and all(
+            any(artifact.get("kind") == "screenshot" for artifact in source.get("artifacts", []))
+            for source in sources)
+        if proof["status"] == "not_run" or not captures_bound:
+            criterion.update(
+                status="not_run", evidence_ids=[],
+                observation=proof.get("reason") or "The imported category evidence has no bound screenshot for every required step.")
+        else:
+            criterion.update(
+                status=proof["status"],
+                observation=proof.get("reason") or "Verified current-fixture import, subsequent category click, and matching count/account list in the same attempt.",
+                evidence_ids=list(dict.fromkeys(
+                    artifact["id"] for source in sources for artifact in source["artifacts"])))
+    return criteria
+
+
 def evaluate(task, facts, text, uploaded_fixtures=(), history=()):
     """Return only deterministic checks supported by current DOM evidence."""
     ids = task.get("requirement_ids", [])
@@ -463,7 +666,11 @@ def evaluate(task, facts, text, uploaded_fixtures=(), history=()):
                 emit(index, "not_run", "The named malformed-HTML fixture was not uploaded; a different HTML fixture cannot trigger this criterion.")
             else:
                 attempted_text = "\n".join(row["text"] for row in attempts)
-                if "파일에서 팔로워·팔로잉 목록을 읽지 못했어요" in attempted_text or "파일을 읽지 못했어요" in attempted_text:
+                current_rejection = any(
+                    _preserved_named_rejection(row, "peekly-malformed-html.zip")
+                    and _contains(row["text"], ["[followers.html] 파일에서 팔로워·팔로잉 목록을 읽지 못해 불러오지 않았어요."])
+                    for row in attempts)
+                if current_rejection or "파일에서 팔로워·팔로잉 목록을 읽지 못했어요" in attempted_text or "파일을 읽지 못했어요" in attempted_text:
                     emit(index, "passed")
                 elif "결과를 불러왔어요" in attempted_text:
                     emit(index, "failed", "The explicitly malformed HTML fixture was accepted as a result.")
@@ -481,7 +688,11 @@ def evaluate(task, facts, text, uploaded_fixtures=(), history=()):
                 emit(index, "not_run", "The named account-mismatch fixture was not uploaded; another fixture's prior result cannot trigger this criterion.")
             else:
                 attempted_text = "\n".join(row["text"] for row in attempts)
-                if "여러 계정의 정보가 섞여 있어요" in attempted_text or "파일 이름과 내용의 계정이 달라요" in attempted_text:
+                current_rejection = any(
+                    _preserved_named_rejection(row, "peekly-account-mismatch.zip")
+                    and _contains(row["text"], ["계정의 파일이에요.", "지금 기록된 계정은", "같은 계정의 파일을 골라 주세요."])
+                    for row in attempts)
+                if current_rejection or "여러 계정의 정보가 섞여 있어요" in attempted_text or "파일 이름과 내용의 계정이 달라요" in attempted_text:
                     emit(index, "passed")
                 elif "결과를 불러왔어요" in attempted_text:
                     emit(index, "failed", "The explicitly mismatched-account fixture was accepted as a result.")
@@ -510,8 +721,8 @@ def evaluate(task, facts, text, uploaded_fixtures=(), history=()):
             total_error = "모두 합쳐 최대 64MB" in all_text
             if zip_error and file_error and total_error:
                 emit(index, "passed")
-        elif rid == "PRD-IMPORT-SNAPSHOT-UNKNOWN" and {"peekly-empty-previous.zip", "peekly-sample-current.zip"} <= uploads:
-            emit(index, "passed" if ("비교할 수 없" in all_text or "기록이 없" in all_text) else "failed" if "언팔" in all_text and "명" in all_text else "not_run")
+        elif rid == LEGACY_UNKNOWN_REQUIREMENT:
+            emit(index, "not_run", LEGACY_UNKNOWN_REASON)
         elif rid == "PRD-PRIVACY-LOCAL":
             guide_open = any("파일 고르기" in row["text"] or row["facts"].get("file_inputs") for row in rows)
             notice = _contains(all_text, ["파일은 이 기기 안에서만 읽어요", "어디로도 보내지 않아요"])
@@ -555,6 +766,9 @@ def evaluate(task, facts, text, uploaded_fixtures=(), history=()):
                 emit(index, "failed", "The actual latest comparison and its account list were observed without the required identity-change/account-deletion explanation.")
             else:
                 emit(index, "not_run", "Open the actual latest comparison explanation and its account list; a first-record preview or loading screen cannot establish this disclosure criterion.")
+        elif rid in RESULT_SCOPE_KEYS:
+            proof = result_scope_evidence(rows, rid)
+            emit(index, proof["status"], proof.get("reason"))
         elif rid == "PRD-RESULT-SEARCH":
             list_rows = [(row, row["facts"].get("list_rows", [])) for row in rows
                          if isinstance(row["facts"].get("list_rows"), list)]

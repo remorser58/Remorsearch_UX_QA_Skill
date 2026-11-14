@@ -1,0 +1,346 @@
+{
+  "schema_version": "peekly-result-scope-golden.v1",
+  "description": "Read-only projection of actual persona017 observations. Only relevant original text lines, provenance facts, row keys and checks are retained; synthetic positive tests are separate.",
+  "source_job": "S-jmpokhjegennajnihcaemagh",
+  "sources": [
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-4.json",
+      "sha256": "6c782df70582bbad1cfeafbb59bdb5fd5da42d0b741632b3500a88f2b1f165e7"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-6.json",
+      "sha256": "2c802a801f12f4c2405b8c60550e13e904abee497c6726fe98cbb73d90f5f654"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-8.json",
+      "sha256": "5eed4b945330f033fcd7e2956028aa3372f132a0185e960917694619a3169497"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-13.json",
+      "sha256": "7e6bb24481c0948f9a1f1ddb13a48c6b2b31b756b3a23bb3649c48a34b1d83a2"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-16.json",
+      "sha256": "cbd8ac13a16de748d0a20c60a9fa1b0aaaff6bd35951b9cfd2f7108b7baaac79"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-jmpokhjegennajnihcaemagh/evidence/S-jmpokhjegennajnihcaemagh/1/agent-observation-18.json",
+      "sha256": "7cd8b438c97088c5598a19891d0131d90a3699fe08458ac69ea0879abfc9802f"
+    }
+  ],
+  "observations": [
+    {
+      "id": "obs-4",
+      "text": "샘플을 보고 있어요. 로그인하면 내 관계를 볼 수 있어요.\n샘플 닫기\n2026년 11월 14일 기준 · 팔로워 7명 · 팔로잉 10명\n나를 맞팔 안 한 사람\n5\n명\n내가 맞팔 안 한 사람\n2명\n맞팔 중인 사람\n5명\n팔로워에서 빠진 사람\n6명\n나를 맞팔 안 한 사람 5명",
+      "facts": {
+        "last_action": "click",
+        "last_action_label": "나를 맞팔 안 한 사람\n5\n명\n내가 팔로우하는데 나를 팔로우하지 않아요",
+        "fixture_uploads": [],
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "cf2a8ce75e7828ef97785d9b18e229dc97fe7e35505984e5e727251a00924a0a"
+        },
+        "click_dispatch": {
+          "dispatched": true,
+          "hit_test": true,
+          "label": "나를 맞팔 안 한 사람 5 명 내가 팔로우하는데 나를 팔로우하지 않아요",
+          "requested_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>button:nth-of-type(1)",
+          "verified_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>button:nth-of-type(1)"
+        },
+        "list_rows": [
+          {
+            "key": "atelier.luna_"
+          },
+          {
+            "key": "ina.archive"
+          },
+          {
+            "key": "junho.jeong"
+          },
+          {
+            "key": "minsu.kim_"
+          },
+          {
+            "key": "taeo.kang_"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "index": 3,
+          "kind": "success",
+          "reason": "The two required distinct snapshots were not both imported.",
+          "status": "not_run"
+        }
+      ]
+    },
+    {
+      "id": "obs-6",
+      "text": "샘플을 보고 있어요. 로그인하면 내 관계를 볼 수 있어요.\n샘플 닫기\n2026년 11월 14일 기준 · 팔로워 7명 · 팔로잉 10명\n나를 맞팔 안 한 사람\n5\n명\n내가 맞팔 안 한 사람\n2명\n맞팔 중인 사람\n5명\n팔로워에서 빠진 사람\n6명\n내가 맞팔 안 한 사람 2명",
+      "facts": {
+        "last_action": "click",
+        "last_action_label": "내가 맞팔 안 한 사람\n나를 팔로우하는데 내가 팔로우하지 않아요\n2명",
+        "fixture_uploads": [],
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "cf2a8ce75e7828ef97785d9b18e229dc97fe7e35505984e5e727251a00924a0a"
+        },
+        "click_dispatch": {
+          "dispatched": true,
+          "hit_test": true,
+          "label": "내가 맞팔 안 한 사람 나를 팔로우하는데 내가 팔로우하지 않아요 2명",
+          "requested_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(1)>button:nth-of-type(1)",
+          "verified_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(1)>button:nth-of-type(1)"
+        },
+        "list_rows": [
+          {
+            "key": "haneul.song"
+          },
+          {
+            "key": "seongsu.coffee"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "index": 3,
+          "kind": "success",
+          "reason": "The two required distinct snapshots were not both imported.",
+          "status": "not_run"
+        }
+      ]
+    },
+    {
+      "id": "obs-8",
+      "text": "샘플을 보고 있어요. 로그인하면 내 관계를 볼 수 있어요.\n샘플 닫기\n2026년 11월 14일 기준 · 팔로워 7명 · 팔로잉 10명\n나를 맞팔 안 한 사람\n5\n명\n내가 맞팔 안 한 사람\n2명\n맞팔 중인 사람\n5명\n팔로워에서 빠진 사람\n6명\n맞팔 중인 사람 5명",
+      "facts": {
+        "last_action": "click",
+        "last_action_label": "맞팔 중인 사람\n서로 팔로우하고 있어요\n5명",
+        "fixture_uploads": [],
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "cf2a8ce75e7828ef97785d9b18e229dc97fe7e35505984e5e727251a00924a0a"
+        },
+        "click_dispatch": {
+          "dispatched": true,
+          "hit_test": true,
+          "label": "맞팔 중인 사람 서로 팔로우하고 있어요 5명",
+          "requested_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(2)>button:nth-of-type(1)",
+          "verified_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(2)>button:nth-of-type(1)"
+        },
+        "list_rows": [
+          {
+            "key": "dohyun.fit"
+          },
+          {
+            "key": "haerin.daily"
+          },
+          {
+            "key": "minji_kim"
+          },
+          {
+            "key": "seojun.park"
+          },
+          {
+            "key": "yuna.choi"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "index": 3,
+          "kind": "success",
+          "reason": "The two required distinct snapshots were not both imported.",
+          "status": "not_run"
+        }
+      ]
+    },
+    {
+      "id": "obs-13",
+      "text": "2026년 11월 14일 기준 · 팔로워 12명 · 팔로잉 12명\n나를 맞팔 안 한 사람\n2\n명\n내가 맞팔 안 한 사람\n2명\n맞팔 중인 사람\n10명\n결과를 불러왔어요.",
+      "facts": {
+        "last_action": "upload",
+        "uploaded_fixture": "peekly-sample-previous.zip",
+        "fixture_uploads": [
+          "peekly-sample-previous.zip"
+        ],
+        "import_attempt_id": "upload-122",
+        "import_attempt": {
+          "attempt_id": "upload-122",
+          "cancel_active": false,
+          "cancel_dispatched": false,
+          "fixture": "peekly-sample-previous.zip",
+          "fixture_sha256": "b06f0fd115ab74703087e11f0c025df3791a09664cd03922a9fe182760fdc823",
+          "persistence_unchanged": false,
+          "phase_samples": [
+            {
+              "elapsed_ms": 0,
+              "text": "파일을 읽고 있어요"
+            },
+            {
+              "elapsed_ms": 28,
+              "text": "결과를 불러왔어요."
+            }
+          ],
+          "schema_version": "peekly-import-attempt.v1",
+          "storage_after": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "421bc43ca28e1c7547e1fd2c1d557488e0826cb5d1ec8300b8334b7efed29ff2"
+          },
+          "storage_before": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "cf2a8ce75e7828ef97785d9b18e229dc97fe7e35505984e5e727251a00924a0a"
+          },
+          "tool": "upload"
+        },
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "421bc43ca28e1c7547e1fd2c1d557488e0826cb5d1ec8300b8334b7efed29ff2"
+        },
+        "list_rows": []
+      },
+      "checks": [
+        {
+          "index": 3,
+          "kind": "success",
+          "reason": "The two required distinct snapshots were not both imported.",
+          "status": "not_run"
+        }
+      ]
+    },
+    {
+      "id": "obs-16",
+      "text": "2026년 11월 14일 기준 · 팔로워 7명 · 팔로잉 10명\n나를 맞팔 안 한 사람\n5\n명\n내가 맞팔 안 한 사람\n2명\n맞팔 중인 사람\n5명\n팔로워에서 빠진 사람\n6명\n결과를 불러왔어요.",
+      "facts": {
+        "last_action": "upload",
+        "uploaded_fixture": "peekly-sample-current.zip",
+        "fixture_uploads": [
+          "peekly-sample-current.zip",
+          "peekly-sample-previous.zip"
+        ],
+        "import_attempt_id": "upload-154",
+        "import_attempt": {
+          "attempt_id": "upload-154",
+          "cancel_active": false,
+          "cancel_dispatched": false,
+          "fixture": "peekly-sample-current.zip",
+          "fixture_sha256": "938514f0010f47ace5c2a2fdae17d2c237fd82838cedd78829e0915d367ca186",
+          "persistence_unchanged": false,
+          "phase_samples": [
+            {
+              "elapsed_ms": 1,
+              "text": "파일을 읽고 있어요"
+            },
+            {
+              "elapsed_ms": 28,
+              "text": "결과를 불러왔어요."
+            }
+          ],
+          "schema_version": "peekly-import-attempt.v1",
+          "storage_after": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "6b17dff2d22dc40910a8c5b80235a94381d75c906d6bf4757099cfbf9a739866"
+          },
+          "storage_before": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "421bc43ca28e1c7547e1fd2c1d557488e0826cb5d1ec8300b8334b7efed29ff2"
+          },
+          "tool": "upload"
+        },
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "6b17dff2d22dc40910a8c5b80235a94381d75c906d6bf4757099cfbf9a739866"
+        },
+        "list_rows": []
+      },
+      "checks": [
+        {
+          "index": 3,
+          "kind": "success",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "id": "obs-18",
+      "text": "2026년 11월 14일 기준 · 팔로워 7명 · 팔로잉 10명\n나를 맞팔 안 한 사람\n5\n명\n내가 맞팔 안 한 사람\n2명\n맞팔 중인 사람\n5명\n팔로워에서 빠진 사람\n6명\n팔로워에서 빠진 사람 6명",
+      "facts": {
+        "last_action": "click",
+        "last_action_label": "팔로워에서 빠진 사람\n2026년 11월 14일 기록과 비교했어요\n6명",
+        "fixture_uploads": [
+          "peekly-sample-current.zip",
+          "peekly-sample-previous.zip"
+        ],
+        "import_attempt_id": "upload-154",
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "6b17dff2d22dc40910a8c5b80235a94381d75c906d6bf4757099cfbf9a739866"
+        },
+        "click_dispatch": {
+          "dispatched": true,
+          "hit_test": true,
+          "label": "팔로워에서 빠진 사람 2026년 11월 14일 기록과 비교했어요 6명",
+          "requested_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(3)>button:nth-of-type(1)",
+          "verified_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(3)>button:nth-of-type(1)"
+        },
+        "list_rows": [
+          {
+            "key": "evt_hyunwoo.k"
+          },
+          {
+            "key": "evt_ina.archive"
+          },
+          {
+            "key": "evt_jimin.han_"
+          },
+          {
+            "key": "evt_junho.jeong"
+          },
+          {
+            "key": "evt_sujin.lee_"
+          },
+          {
+            "key": "evt_yuna.99_"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "index": 3,
+          "kind": "success",
+          "status": "passed"
+        }
+      ]
+    }
+  ]
+}

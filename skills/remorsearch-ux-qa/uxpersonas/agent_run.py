@@ -18,6 +18,7 @@ from typing import TypedDict
 from uxresearch.canonical import EngineError, byte_digest, canonical, digest
 from uxresearch.storage import Store, atomic, read_bytes, read_json, safe_path
 from . import swarm
+from .peekly_criteria import guard_peekly_scope, unsupported_legacy_criterion
 
 PINNED = {"langgraph": "1.2.20", "langgraph-checkpoint-sqlite": "3.1.3"}
 SCHEMA = "ux-agent-execution.v1"
@@ -371,7 +372,7 @@ class Execution:
                                  observation=item["observation"], evidence_ids=refs))
         if seen != expected:
             fail("judgment_invalid", "All declared criteria, including unobserved ones, must be reported.")
-        return criteria
+        return guard_peekly_scope(worker["claim"]["task"], criteria, observations)
 
     def make_receipt(self, worker, judgment=None, *, problem=None):
         receipt = self.validate_claim(worker)
@@ -398,7 +399,8 @@ class Execution:
         if judgment is not None:
             receipt["criteria"] = self.criteria(worker, judgment, observations)
             # Later recovery/review cannot erase an earlier native failed check.
-            failed = {(c["kind"], c["index"]) for o in observations for c in o["checks"] if c["status"] == "failed"}
+            failed = {(c["kind"], c["index"]) for o in observations for c in o["checks"]
+                      if c["status"] == "failed" and not unsupported_legacy_criterion(worker["claim"]["task"], c)}
             if any((c["kind"], c["index"]) in failed and c["status"] != "failed" for c in receipt["criteria"]):
                 fail("erased_failure", "The judgment erases an earlier observed failed checkpoint.")
             statuses = {c["status"] for c in receipt["criteria"]}
@@ -406,6 +408,8 @@ class Execution:
                 "passed" if "not_run" not in statuses and "passed" in statuses
                 and statuses <= {"passed", "not_applicable"} else "inconclusive")
             receipt["reason"] = judgment["reason"]
+        else:
+            receipt["criteria"] = guard_peekly_scope(worker["claim"]["task"], receipt["criteria"], observations)
         if problem:
             receipt["outcome"], receipt["reason"] = "inconclusive", problem
         return receipt

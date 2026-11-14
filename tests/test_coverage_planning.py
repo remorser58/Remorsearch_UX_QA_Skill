@@ -190,6 +190,154 @@ class ChecklistTests(unittest.TestCase):
         self.assertEqual(report, original)
 
 
+class ImportedCategoryPlanningTests(unittest.TestCase):
+    categories = {
+        "PRD-RESULT-RECIPROCITY": "나를 맞팔 안 한 사람",
+        "PRD-RESULT-REVERSE": "내가 맞팔 안 한 사람",
+        "PRD-RESULT-MUTUAL": "맞팔 중인 사람",
+    }
+
+    def test_each_category_requires_actual_current_import_and_its_own_list(self):
+        for rid, label in self.categories.items():
+            with self.subTest(requirement=rid):
+                row = criterion_checklist([rid])[0]
+                self.assertEqual(row["required_fixtures"], ["peekly-sample-current.zip"])
+                self.assertIn("Import peekly-sample-current.zip once", row["steps"][0])
+                self.assertIn("confirm completion", row["steps"][0])
+                self.assertIn("Sample mode cannot satisfy", row["steps"][0])
+                self.assertIn("Open the visible " + label + " category list", row["steps"][1])
+                self.assertIn("actual row set", row["steps"][1])
+                goal = _persona_journey_goal("Inspect the owned imported result.", [rid])
+                self.assertNotIn("or enter sample mode", goal)
+                self.assertNotIn("샘플로 둘러보기를 열고", goal)
+                self.assertEqual(swarm.clean(goal), goal)
+                self.assertLessEqual(len(goal), 8000)
+        rows = criterion_checklist(list(self.categories))
+        self.assertEqual(sum("Import peekly-sample-current.zip once" in r["steps"][0] for r in rows), 1)
+        self.assertTrue(all("without another upload" in r["steps"][0] for r in rows[1:]))
+
+    def test_saved_017_to_020_requirements_put_pair_before_three_distinct_lists(self):
+        # These saved personas had only sample-list/card/departed-list observations.
+        # Their actual requirement set needs three separate post-import list steps.
+        original = [*self.categories, "PRD-RESULT-SNAPSHOT"]
+        for ids in (original, list(reversed(original))):
+            with self.subTest(ids=ids):
+                rows = criterion_checklist(ids)
+                self.assertEqual(rows[0]["requirement_id"], "PRD-RESULT-SNAPSHOT")
+                self.assertEqual([r["index"] for r in rows],
+                                 [ids.index(r["requirement_id"]) for r in rows])
+                self.assertEqual(set(required_fixture_keys(ids)),
+                                 {"peekly-sample-previous.zip", "peekly-sample-current.zip"})
+                for row in rows[1:]:
+                    self.assertIn("After PRD-RESULT-SNAPSHOT completes", row["steps"][0])
+                    self.assertIn("active completed result", row["steps"][0])
+                    self.assertIn("without another upload", row["steps"][0])
+                    self.assertIn(self.categories[row["requirement_id"]] + " category list", row["steps"][1])
+                goal = _persona_journey_goal("Reviewed fresh cohort. " + "bounded " * 95, ids)
+                self.assertIn("목록을 각각 직접 열어", goal)
+                self.assertIn("카드 숫자만 본 상태", goal)
+                self.assertIn("대체 증거가 아니다", goal)
+                self.assertEqual(swarm.clean(goal), goal)
+                self.assertLessEqual(len(goal), 8000)
+
+    def test_category_setup_preserves_export_retention_paywall_identity_and_deletion_order(self):
+        for setup in (["PRD-RESULT-SNAPSHOT"], ["PRD-IDENTITY-LIMIT"],
+                      ["PRD-PAYWALL-BOUNDARY"],
+                      ["PRD-SNAPSHOT-RETENTION", "PRD-PAYWALL-BOUNDARY",
+                       "PRD-RESULT-SNAPSHOT", "PRD-IDENTITY-LIMIT"]):
+            ids = [*self.categories, "PRD-PRIVACY-DELETE", *reversed(setup), "PRD-SAMPLE-EXPORT"]
+            with self.subTest(setup=setup):
+                rows = criterion_checklist(ids)
+                ordered = [r["requirement_id"] for r in rows]
+                self.assertEqual(ordered[0], "PRD-SAMPLE-EXPORT")
+                self.assertEqual(ordered[-1], "PRD-PRIVACY-DELETE")
+                first_list = min(ordered.index(rid) for rid in self.categories)
+                self.assertTrue(all(ordered.index(rid) < first_list for rid in setup))
+                if "PRD-SNAPSHOT-RETENTION" in setup:
+                    self.assertLess(ordered.index("PRD-SNAPSHOT-RETENTION"),
+                                    ordered.index("PRD-PAYWALL-BOUNDARY"))
+                if "PRD-PAYWALL-BOUNDARY" in setup:
+                    for row in rows:
+                        if row["requirement_id"] in {"PRD-RESULT-SNAPSHOT", "PRD-IDENTITY-LIMIT"}:
+                            self.assertIn("reuse it without another upload", row["steps"][0])
+                self.assertEqual([r["index"] for r in rows],
+                                 [ids.index(r["requirement_id"]) for r in rows])
+                for row in rows:
+                    if row["requirement_id"] in self.categories:
+                        self.assertIn("without another upload", row["steps"][0])
+
+    def test_category_fixture_preflight_rejects_missing_current_and_verifies_it_once(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest_path = root / "fixture-manifest.json"
+            manifest = dict(schema_version="peekly-synthetic-fixtures.v1", files=[], groups={})
+            manifest_path.write_text(json.dumps(manifest))
+            for rid in self.categories:
+                with self.subTest(requirement=rid):
+                    with self.assertRaisesRegex(RuntimeError, "required_fixture_missing:peekly-sample-current.zip"):
+                        live.fixture_preflight(root, [rid])
+            name = "peekly-sample-current.zip"
+            data = b"owned-offline-current-fixture"
+            (root / name).write_bytes(data)
+            manifest["files"] = [dict(name=name, bytes=len(data), sha256=byte_digest(data))]
+            manifest_path.write_text(json.dumps(manifest))
+            checked = live.fixture_preflight(root, list(self.categories))
+            self.assertEqual(checked["required_fixture_keys"], [name])
+            self.assertEqual(checked["required_file_count"], 1)
+            self.assertEqual(checked["verified_fixture_bytes"], len(data))
+
+
+class LegacyUnknownPlanningTests(unittest.TestCase):
+    def test_unavailable_legacy_setup_stays_not_run_without_known_empty_substitution(self):
+        rid = "PRD-IMPORT-SNAPSHOT-UNKNOWN"
+        row = criterion_checklist([rid])[0]
+        self.assertEqual(row["required_fixtures"], [])
+        self.assertEqual(required_fixture_keys([rid]), [])
+        self.assertIn("legacy snapshot without includedFiles", row["steps"][0])
+        self.assertIn("no reviewed setup", row["steps"][0])
+        self.assertIn("Keep not_run: reviewed legacy-unknown setup unavailable", row["steps"][1])
+        self.assertIn("Do not substitute peekly-empty-previous.zip", row["steps"][1])
+        self.assertIn("Continue the other criteria", row["steps"][2])
+        self.assertNotIn("not_applicable", " ".join(row["steps"]))
+        goal = _persona_journey_goal("Inspect only the reviewed owned state.", [rid])
+        self.assertIn("known-empty이므로 대체하지 않는다", goal)
+        self.assertIn("그 사유와 함께 not_run으로 남기고 다른 기준을 계속", goal)
+        self.assertNotIn("peekly-empty-previous.zip을 먼저 넣고", goal)
+        self.assertNotIn("upload peekly-empty-previous.zip then", goal.lower())
+        self.assertEqual(swarm.clean(goal), goal)
+        self.assertLessEqual(len(goal), 8000)
+
+    def test_unsupported_unknown_does_not_block_or_weaken_other_pair_preflight(self):
+        unknown = "PRD-IMPORT-SNAPSHOT-UNKNOWN"
+        normal = "PRD-RESULT-SNAPSHOT"
+        normal_row = criterion_checklist([normal])[0]
+        mixed_rows = criterion_checklist([unknown, normal])
+        mixed_normal = next(row for row in mixed_rows if row["requirement_id"] == normal)
+        self.assertEqual(mixed_normal["index"], 1)
+        self.assertEqual({k: v for k, v in mixed_normal.items() if k != "index"},
+                         {k: v for k, v in normal_row.items() if k != "index"})
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest_path = root / "fixture-manifest.json"
+            manifest = dict(schema_version="peekly-synthetic-fixtures.v1", files=[], groups={})
+            manifest_path.write_text(json.dumps(manifest))
+            unsupported = live.fixture_preflight(root, [unknown])
+            self.assertEqual(unsupported["required_file_count"], 0)
+            for name in ("peekly-sample-previous.zip", "peekly-sample-current.zip"):
+                data = ("owned-normal-pair:" + name).encode()
+                (root / name).write_bytes(data)
+                manifest["files"].append(dict(name=name, bytes=len(data), sha256=byte_digest(data)))
+            manifest_path.write_text(json.dumps(manifest))
+            mixed = live.fixture_preflight(root, [unknown, normal])
+            self.assertEqual(mixed, live.fixture_preflight(root, [normal]))
+            self.assertEqual(mixed["required_file_count"], 2)
+            self.assertNotIn("peekly-empty-previous.zip", mixed["required_fixture_keys"])
+            manifest["files"] = manifest["files"][:1]
+            manifest_path.write_text(json.dumps(manifest))
+            with self.assertRaisesRegex(RuntimeError, "required_fixture_missing:peekly-sample-current.zip"):
+                live.fixture_preflight(root, [unknown, normal])
+
+
 class FixtureGateTests(unittest.IsolatedAsyncioTestCase):
     async def test_paywall_pair_without_older_history_blocks_before_route(self):
         with tempfile.TemporaryDirectory() as directory:

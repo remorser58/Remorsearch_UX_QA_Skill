@@ -1,0 +1,392 @@
+{
+  "schema_version": "peekly-legacy-unknown-golden.v1",
+  "description": "Read-only projection of actual persona021 known-empty import followed by a normal pair; no legacy includedFiles-missing state was configured. Original native false failure is retained.",
+  "source_job": "S-injjambjkacdigcmpjaogaap",
+  "sources": [
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-injjambjkacdigcmpjaogaap/evidence/S-injjambjkacdigcmpjaogaap/1/agent-observation-7.json",
+      "sha256": "8a8e15b2dabc9b180355c8870d56c3d50d3bb5e30b46c952043931578958985c"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-injjambjkacdigcmpjaogaap/evidence/S-injjambjkacdigcmpjaogaap/1/agent-observation-10.json",
+      "sha256": "573ad3f096d79d2595a52fa70abb26b4c5bfced3dfe051d1e1d2a423596d8c46"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-injjambjkacdigcmpjaogaap/evidence/S-injjambjkacdigcmpjaogaap/1/agent-observation-15.json",
+      "sha256": "ad422371d4601acbcd8c0e57f75d43d596d9bd24c2c4fcb386269941ba99b22d"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-injjambjkacdigcmpjaogaap/evidence/S-injjambjkacdigcmpjaogaap/1/agent-observation-18.json",
+      "sha256": "ea473f1fc0b6ebe23580b193a915e7b8e5e3e7e35a5c7270f06420f197e0f46a"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-injjambjkacdigcmpjaogaap/evidence/S-injjambjkacdigcmpjaogaap/1/agent-observation-21.json",
+      "sha256": "b1a3d2f33d206d777d9857fc353747babfd18757ae4bf95eacadd885830be88f"
+    }
+  ],
+  "observations": [
+    {
+      "id": "obs-7",
+      "text": "2026년 11월 14일 기준 · 팔로워 0명 · 팔로잉 0명\n나를 맞팔 안 한 사람\n0\n명\n내가 맞팔 안 한 사람\n0명\n맞팔 중인 사람\n0명\n변화 기록\n다음에 새로 확인하면 지금 기록과 비교해요. 확인하기 전의 변화는 알 수 없어요.\n결과를 불러왔어요.",
+      "facts": {
+        "last_action": "upload",
+        "uploaded_fixture": "peekly-empty-previous.zip",
+        "fixture_uploads": [
+          "peekly-empty-previous.zip",
+          "peekly-missing-followers.zip",
+          "peekly-missing-following.zip"
+        ],
+        "import_attempt_id": "upload-105",
+        "import_attempt": {
+          "attempt_id": "upload-105",
+          "cancel_active": false,
+          "cancel_dispatched": false,
+          "fixture": "peekly-empty-previous.zip",
+          "fixture_sha256": "8585fbfdf08af2287d7ca2ae4b51c883fc41b8b409e08aa5f7a49b881784e1ac",
+          "persistence_unchanged": false,
+          "phase_samples": [
+            {
+              "elapsed_ms": 0,
+              "text": "파일을 읽고 있어요"
+            },
+            {
+              "elapsed_ms": 28,
+              "text": "결과를 불러왔어요."
+            }
+          ],
+          "schema_version": "peekly-import-attempt.v1",
+          "storage_after": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "811bd7f9fd2d40768753f7e77d7b2d6ee7ea64da52da6dcb0b39b07d7deaca0a"
+          },
+          "storage_before": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "489ae1989e53978df3d5d9273e9b1bcd9b6ca427aa9e015aa8bf994b9ee6ea41"
+          },
+          "tool": "upload"
+        },
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "811bd7f9fd2d40768753f7e77d7b2d6ee7ea64da52da6dcb0b39b07d7deaca0a"
+        },
+        "list_rows": []
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 1,
+          "kind": "success",
+          "reason": "Open the actual latest comparison explanation and its account list; a first-record preview or loading screen cannot establish this disclosure criterion.",
+          "status": "not_run"
+        }
+      ]
+    },
+    {
+      "id": "obs-10",
+      "text": "2026년 11월 14일 기준 · 팔로워 7명 · 팔로잉 10명\n나를 맞팔 안 한 사람\n5\n명\n내가 맞팔 안 한 사람\n2명\n맞팔 중인 사람\n5명\n팔로워에서 빠진 사람\n2026년 11월 14일 기록과 비교했어요\n0명\n변화 기록\n결과를 불러왔어요.",
+      "facts": {
+        "last_action": "upload",
+        "uploaded_fixture": "peekly-sample-current.zip",
+        "fixture_uploads": [
+          "peekly-empty-previous.zip",
+          "peekly-missing-followers.zip",
+          "peekly-missing-following.zip",
+          "peekly-sample-current.zip"
+        ],
+        "import_attempt_id": "upload-137",
+        "import_attempt": {
+          "attempt_id": "upload-137",
+          "cancel_active": false,
+          "cancel_dispatched": false,
+          "fixture": "peekly-sample-current.zip",
+          "fixture_sha256": "938514f0010f47ace5c2a2fdae17d2c237fd82838cedd78829e0915d367ca186",
+          "persistence_unchanged": false,
+          "phase_samples": [
+            {
+              "elapsed_ms": 1,
+              "text": "파일을 읽고 있어요"
+            },
+            {
+              "elapsed_ms": 29,
+              "text": "결과를 불러왔어요."
+            }
+          ],
+          "schema_version": "peekly-import-attempt.v1",
+          "storage_after": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "98ba2f64daa6ad25de2297e9f33620ed541539b176f01d50d60f92d0b2fb4bdb"
+          },
+          "storage_before": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "811bd7f9fd2d40768753f7e77d7b2d6ee7ea64da52da6dcb0b39b07d7deaca0a"
+          },
+          "tool": "upload"
+        },
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "98ba2f64daa6ad25de2297e9f33620ed541539b176f01d50d60f92d0b2fb4bdb"
+        },
+        "list_rows": []
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 1,
+          "kind": "success",
+          "reason": "Open the actual latest comparison explanation and its account list; a first-record preview or loading screen cannot establish this disclosure criterion.",
+          "status": "not_run"
+        },
+        {
+          "index": 2,
+          "kind": "success",
+          "status": "not_run"
+        }
+      ]
+    },
+    {
+      "id": "obs-15",
+      "text": "2026년 11월 14일 기준 · 팔로워 12명 · 팔로잉 12명\n나를 맞팔 안 한 사람\n2\n명\n내가 맞팔 안 한 사람\n2명\n맞팔 중인 사람\n10명\n팔로워에서 빠진 사람\n2026년 11월 14일 기록과 비교했어요\n1명\n변화 기록\n결과를 불러왔어요.",
+      "facts": {
+        "last_action": "upload",
+        "uploaded_fixture": "peekly-sample-previous.zip",
+        "fixture_uploads": [
+          "peekly-empty-previous.zip",
+          "peekly-missing-followers.zip",
+          "peekly-missing-following.zip",
+          "peekly-sample-current.zip",
+          "peekly-sample-previous.zip"
+        ],
+        "import_attempt_id": "upload-189",
+        "import_attempt": {
+          "attempt_id": "upload-189",
+          "cancel_active": false,
+          "cancel_dispatched": false,
+          "fixture": "peekly-sample-previous.zip",
+          "fixture_sha256": "b06f0fd115ab74703087e11f0c025df3791a09664cd03922a9fe182760fdc823",
+          "persistence_unchanged": false,
+          "phase_samples": [
+            {
+              "elapsed_ms": 0,
+              "text": "파일을 읽고 있어요"
+            },
+            {
+              "elapsed_ms": 28,
+              "text": "결과를 불러왔어요."
+            }
+          ],
+          "schema_version": "peekly-import-attempt.v1",
+          "storage_after": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "9cddbf788eada15335e44d0e8ed47063fbe79036b7308ce921a50c0bc66da0c2"
+          },
+          "storage_before": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "98ba2f64daa6ad25de2297e9f33620ed541539b176f01d50d60f92d0b2fb4bdb"
+          },
+          "tool": "upload"
+        },
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "9cddbf788eada15335e44d0e8ed47063fbe79036b7308ce921a50c0bc66da0c2"
+        },
+        "list_rows": []
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 1,
+          "kind": "success",
+          "reason": "Open the actual latest comparison explanation and its account list; a first-record preview or loading screen cannot establish this disclosure criterion.",
+          "status": "not_run"
+        },
+        {
+          "index": 2,
+          "kind": "success",
+          "status": "not_run"
+        }
+      ]
+    },
+    {
+      "id": "obs-18",
+      "text": "2026년 11월 14일 기준 · 팔로워 7명 · 팔로잉 10명\n나를 맞팔 안 한 사람\n5\n명\n내가 맞팔 안 한 사람\n2명\n맞팔 중인 사람\n5명\n팔로워에서 빠진 사람\n2026년 11월 14일 기록과 비교했어요\n6명\n변화 기록\n결과를 불러왔어요.",
+      "facts": {
+        "last_action": "upload",
+        "uploaded_fixture": "peekly-sample-current.zip",
+        "fixture_uploads": [
+          "peekly-empty-previous.zip",
+          "peekly-missing-followers.zip",
+          "peekly-missing-following.zip",
+          "peekly-sample-current.zip",
+          "peekly-sample-previous.zip"
+        ],
+        "import_attempt_id": "upload-221",
+        "import_attempt": {
+          "attempt_id": "upload-221",
+          "cancel_active": false,
+          "cancel_dispatched": false,
+          "fixture": "peekly-sample-current.zip",
+          "fixture_sha256": "938514f0010f47ace5c2a2fdae17d2c237fd82838cedd78829e0915d367ca186",
+          "persistence_unchanged": false,
+          "phase_samples": [
+            {
+              "elapsed_ms": 0,
+              "text": "파일을 읽고 있어요"
+            },
+            {
+              "elapsed_ms": 28,
+              "text": "결과를 불러왔어요."
+            }
+          ],
+          "schema_version": "peekly-import-attempt.v1",
+          "storage_after": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "9a2479dc2533b154303a515d0088810ff3405432219134f99dc9f9a9462f31ba"
+          },
+          "storage_before": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "9cddbf788eada15335e44d0e8ed47063fbe79036b7308ce921a50c0bc66da0c2"
+          },
+          "tool": "upload"
+        },
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "9a2479dc2533b154303a515d0088810ff3405432219134f99dc9f9a9462f31ba"
+        },
+        "list_rows": []
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 1,
+          "kind": "success",
+          "reason": "Open the actual latest comparison explanation and its account list; a first-record preview or loading screen cannot establish this disclosure criterion.",
+          "status": "not_run"
+        },
+        {
+          "index": 2,
+          "kind": "success",
+          "status": "not_run"
+        }
+      ]
+    },
+    {
+      "id": "obs-21",
+      "text": "2026년 11월 14일 기준 · 팔로워 7명 · 팔로잉 10명\n나를 맞팔 안 한 사람\n5\n명\n내가 맞팔 안 한 사람\n2명\n맞팔 중인 사람\n5명\n팔로워에서 빠진 사람\n2026년 11월 14일 기록과 비교했어요\n6명\n변화 기록\n팔로워에서 빠진 사람 6명\n이전 기록에는 있고 지금은 없는 계정이에요. 아이디 변경이나 계정 삭제 때문일 수도 있어요.\n언팔로우\n언팔로우",
+      "facts": {
+        "last_action": "click",
+        "last_action_label": "팔로워에서 빠진 사람\n2026년 11월 14일 기록과 비교했어요\n6명",
+        "fixture_uploads": [
+          "peekly-empty-previous.zip",
+          "peekly-missing-followers.zip",
+          "peekly-missing-following.zip",
+          "peekly-sample-current.zip",
+          "peekly-sample-previous.zip"
+        ],
+        "import_attempt_id": "upload-221",
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "9a2479dc2533b154303a515d0088810ff3405432219134f99dc9f9a9462f31ba"
+        },
+        "click_dispatch": {
+          "dispatched": true,
+          "hit_test": true,
+          "label": "팔로워에서 빠진 사람 2026년 11월 14일 기록과 비교했어요 6명",
+          "requested_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(3)>button:nth-of-type(1)",
+          "verified_selector": "body>div:nth-of-type(1)>div:nth-of-type(1)>main:nth-of-type(1)>div:nth-of-type(1)>ul:nth-of-type(1)>li:nth-of-type(3)>button:nth-of-type(1)"
+        },
+        "list_rows": [
+          {
+            "key": "evt_hyunwoo.k"
+          },
+          {
+            "key": "evt_ina.archive"
+          },
+          {
+            "key": "evt_jimin.han_"
+          },
+          {
+            "key": "evt_junho.jeong"
+          },
+          {
+            "key": "evt_sujin.lee_"
+          },
+          {
+            "key": "evt_yuna.99_"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 1,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 2,
+          "kind": "success",
+          "status": "failed"
+        }
+      ]
+    }
+  ]
+}

@@ -18,6 +18,7 @@ from . import swarm
 from .agent_run import Execution, Tool, _data, _host_info, _validated_observation_facts, _validated_observation_content
 from .library import Library
 from .model_router import _clean_decision
+from .peekly_criteria import guard_peekly_scope, unsupported_legacy_criterion
 from .swarm_providers import DefinitelyNotSent, ProviderUncertain
 from .swarm_queue import Queue
 
@@ -173,7 +174,8 @@ class Evidence:
                         # the reason explains why the criterion was not executed.
                         evidence_ids=[])
             failed = {(c["kind"], c["index"]) for o in observations
-                      for c in o["checks"] if c["status"] == "failed"}
+                      for c in o["checks"] if c["status"] == "failed"
+                      and not unsupported_legacy_criterion(task, c)}
             if any((c["kind"], c["index"]) in failed and c["status"] != "failed"
                    for c in criteria):
                 fail("erased_failure", "A later judgment cannot erase an admitted native failure.")
@@ -198,6 +200,7 @@ class Evidence:
                     criterion.update(status="not_run",
                         observation=check.get("reason") or "Deterministic check not run because its precondition was not observed.",
                         evidence_ids=[])
+        criteria = guard_peekly_scope(task, criteria, observations)
         statuses = {c["status"] for c in criteria}
         outcome = ("failed" if "failed" in statuses else
                    "passed" if "not_run" not in statuses and "passed" in statuses

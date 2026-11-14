@@ -43,7 +43,15 @@ def engine_manifest():
     return {name: byte_digest(read_bytes(root / name)) for name in files}
 
 
+_PEEKLY_CATEGORY_LISTS = {
+    "PRD-RESULT-RECIPROCITY": "나를 맞팔 안 한 사람",
+    "PRD-RESULT-REVERSE": "내가 맞팔 안 한 사람",
+    "PRD-RESULT-MUTUAL": "맞팔 중인 사람",
+}
+
+
 PEEKLY_FIXTURE_REQUIREMENTS = {
+    **{rid: ("peekly-sample-current.zip",) for rid in _PEEKLY_CATEGORY_LISTS},
     "PRD-IMPORT-FORMATS": ("peekly-format-html.zip", "peekly-format-json.zip"),
     "PRD-IMPORT-ACCOUNT": ("peekly-sample-current.zip", "peekly-account-mismatch.zip"),
     "PRD-IMPORT-HTML": ("peekly-malformed-html.zip",),
@@ -54,7 +62,8 @@ PEEKLY_FIXTURE_REQUIREMENTS = {
                         "@group:peekly-loose-total-over"),
     "PRD-IMPORT-PROGRESS": ("peekly-sample-current.zip", "peekly-progress-sample.zip"),
     "PRD-IMPORT-SAVE-FAIL": ("peekly-sample-previous.zip", "peekly-sample-current.zip"),
-    "PRD-IMPORT-SNAPSHOT-UNKNOWN": ("peekly-empty-previous.zip", "peekly-sample-current.zip"),
+    # The current host has no reviewed legacy-unknown seed; known-empty ZIPs are not a substitute.
+    "PRD-IMPORT-SNAPSHOT-UNKNOWN": (),
     "PRD-RESULT-SNAPSHOT": ("peekly-sample-previous.zip", "peekly-sample-current.zip"),
     "PRD-PAYWALL-BOUNDARY": ("peekly-retention-snapshot-01.zip", "peekly-sample-previous.zip", "peekly-sample-current.zip"),
     "PRD-IDENTITY-LIMIT": ("peekly-sample-previous.zip", "peekly-sample-current.zip"),
@@ -63,9 +72,9 @@ PEEKLY_FIXTURE_REQUIREMENTS = {
 }
 
 _PEEKLY_STEPS = {
-    "PRD-RESULT-RECIPROCITY": ("Import the valid relationship fixture or enter sample mode.", "Open the required relationship card, inspect count and actual rows, then close its modal before another card."),
-    "PRD-RESULT-REVERSE": ("Close any existing modal using its visible close control.", "Open the reverse relationship card; inspect count and row set."),
-    "PRD-RESULT-MUTUAL": ("Close any existing modal; the mutual card must be visible:true.", "Open the mutual card and inspect count plus row set; a person-detail sheet is not the mutual list."),
+    "PRD-RESULT-RECIPROCITY": ("Open the visible 나를 맞팔 안 한 사람 category list and inspect its count and actual row set from the current fixture; dashboard card counts or sample MatrixTab are insufficient.",),
+    "PRD-RESULT-REVERSE": ("Open the visible 내가 맞팔 안 한 사람 category list and inspect its count and actual row set from the current fixture; another category or the departed-follower list is insufficient.",),
+    "PRD-RESULT-MUTUAL": ("Open the visible 맞팔 중인 사람 category list and inspect its count and actual row set from the current fixture; a person-detail sheet is not the mutual list.",),
     "PRD-RESULT-SNAPSHOT": ("Import peekly-sample-previous.zip, reopen the import entry, then import peekly-sample-current.zip.", "Open the latest comparison and its departed-follower list; inspect both count and names."),
     "PRD-IDENTITY-LIMIT": ("Import both complete previous/current snapshots and open the latest comparison explanation.", "Inspect the username-change limitation there; the first-record preview is not this screen."),
     "PRD-RESULT-SEARCH": ("Import peekly-search-ready.zip and open a relationship list with at least nine rows.", "Check unfiltered username order, enter an exact observed row key in the visible search input, and verify only that row remains."),
@@ -74,6 +83,7 @@ _PEEKLY_STEPS = {
     "PRD-PAYWALL-BOUNDARY": ("Import peekly-retention-snapshot-01.zip as older same-account history, then peekly-sample-previous.zip and peekly-sample-current.zip once; inspect free latest comparison names.", "Open 변화 기록. If tabs are below the record-count overview, scroll(delta=400) in the active modal body and inspect the returned observation.", "Select the visible 기간 비교 tab and inspect both 비교 시작 기록 / 비교 종료 기록 selectors, including their disabled free-state restrictions; do not click disabled controls.", "With older history present, open the visible Pro 기능 보기 explanation and inspect timeline/person-history restrictions without purchasing."),
     "PRD-IMPORT-PROGRESS": ("First save a small baseline with peekly-sample-current.zip if no actual saved snapshot exists; sample mode alone is insufficient.", "Open the current file input and use reviewed upload_cancel with peekly-progress-sample.zip; inspect captured reading and analysis phases, real stop dispatch and unchanged saved-result digest.", "Only if the cancel attempt lacks a required phase, try normal upload of that fixture to observe the missing phase within the remaining budget; never require a large completed import before cancellation."),
     "PRD-IMPORT-SAVE-FAIL": ("Preserve an actual small saved baseline; if absent, import peekly-sample-previous.zip.", "Reopen the file input and use upload_save_failure with the distinct snapshot: current after previous, or previous after current. Inspect consumed fault, prior-result preservation and the visible 다시 저장 action.", "Click the visible retry after the one-shot fault clears, and inspect successful save. Without the reviewed capability report not_run; never simulate a pass."),
+    "PRD-IMPORT-SNAPSHOT-UNKNOWN": ("This criterion requires a verified legacy snapshot without includedFiles metadata; the current host and fixture catalog provide no reviewed setup for that state.", "Keep not_run: reviewed legacy-unknown setup unavailable. Do not substitute peekly-empty-previous.zip with its recognized empty lists or the normal previous/current pair.", "Continue the other criteria with their own required fixtures; do not invent a legacy state or infer its outcome from another comparison."),
 }
 
 
@@ -82,6 +92,9 @@ def criterion_checklist(requirement_ids):
     rows = []
     has_paywall = "PRD-PAYWALL-BOUNDARY" in requirement_ids
     has_retention = "PRD-SNAPSHOT-RETENTION" in requirement_ids
+    pair_setup = next((rid for rid in ("PRD-PAYWALL-BOUNDARY", "PRD-RESULT-SNAPSHOT", "PRD-IDENTITY-LIMIT")
+                       if rid in requirement_ids), None)
+    first_category = next((rid for rid in requirement_ids if rid in _PEEKLY_CATEGORY_LISTS), None)
     for index, rid in enumerate(requirement_ids):
         spec = PEEKLY_CRITERIA.get(rid)
         if spec is None:
@@ -94,6 +107,16 @@ def criterion_checklist(requirement_ids):
         elif has_paywall and rid in {"PRD-RESULT-SNAPSHOT", "PRD-IDENTITY-LIMIT"}:
             steps[0] = ("After PRD-PAYWALL-BOUNDARY establishes the previous/current pair, reuse it without another upload "
                         "and open the latest comparison explanation.")
+        if rid in _PEEKLY_CATEGORY_LISTS:
+            if pair_setup:
+                prerequisite = (f"After {pair_setup} completes its ordered imports, confirm peekly-sample-current.zip "
+                                "is the active completed result and reuse it without another upload.")
+            elif rid == first_category:
+                prerequisite = ("Import peekly-sample-current.zip once and confirm completion unless that exact fixture "
+                                "is already the active completed result.")
+            else:
+                prerequisite = "Reuse the active completed peekly-sample-current.zip result without another upload."
+            steps.insert(0, prerequisite + " Sample mode cannot satisfy this import prerequisite.")
         rows.append(dict(kind="success", index=index, requirement_id=rid,
             precondition=spec["precondition"], scope=spec["scope"],
             required_fixtures=list(PEEKLY_FIXTURE_REQUIREMENTS.get(rid, ())),
@@ -103,6 +126,7 @@ def criterion_checklist(requirement_ids):
                 "PRD-SNAPSHOT-RETENTION": 3 if has_paywall else 30,
                 "PRD-RESULT-SNAPSHOT": 40,
                 "PRD-PAYWALL-BOUNDARY": 35, "PRD-IDENTITY-LIMIT": 45,
+                **{rid: 50 for rid in _PEEKLY_CATEGORY_LISTS},
                 "PRD-PRIVACY-DELETE": 100}
     return sorted(rows, key=lambda row: (priority.get(row["requirement_id"], 20), row["index"]))
 
@@ -130,8 +154,8 @@ def _persona_journey_goal(base_goal, requirement_ids):
         actions.append("샘플 둘러보기에서 More > 관계 목록(MatrixTab)을 실제로 연다. 목록 복사와 목록 저장 버튼의 disabled 상태와 샘플 전용 title 안내를 확인한다. 비활성 버튼을 억지로 클릭하지 않으며, 실데이터 목록의 활성 버튼을 샘플 기준 실패로 판정하지 않는다.")
     if "PRD-SNAPSHOT-RETENTION" in ids:
         actions.append("서로 다른 유효 합성 스냅샷 11개를 개별 import하고 기록 목록에서 최대 10개 보관을 확인한다. 저장 공간 압박으로 더 적게 보관되면 최신 두 기록 보존을 확인한다. PAYWALL도 있으면 이 단계를 이전/최신 pair보다 먼저 끝낸다. 고정 turn budget으로 끝내지 못하면 retention은 not_run으로 남기고 통과/실패를 만들지 않는다.")
-    if ids & {"PRD-START-SAMPLE", "PRD-RESULT-RECIPROCITY", "PRD-RESULT-REVERSE", "PRD-RESULT-MUTUAL"}:
-        actions.append("샘플로 둘러보기를 열고 요구된 관계 카드의 설명·숫자를 확인한다. 목록이 해당 기준에 포함되면 직접 열어 목록도 확인한다.")
+    if "PRD-START-SAMPLE" in ids:
+        actions.append("샘플로 둘러보기를 열고 시작 과제의 샘플 화면을 확인한다. 샘플 관측으로 실제 import가 필요한 관계 목록 기준을 대신하지 않는다.")
     if ids & {"PRD-START-IMPORT", "PRD-START-SKIP"}:
         actions.append("현재 PRD 기준으로 More 첫 화면의 '이미 받은 자료로 확인하기'를 눌러 실제 파일 선택 단계까지 이동한다. 별도의 요청 안내 shortcut '이미 파일을 받았어요'는 현재 PRD 요구가 아니므로 찾거나 실패로 판정하지 않는다.")
     if "PRD-RESULT-SNAPSHOT" in ids:
@@ -148,7 +172,7 @@ def _persona_journey_goal(base_goal, requirement_ids):
     if "PRD-IMPORT-HTML" in ids:
         actions.append("읽을 수 없는 HTML 관계 항목 기준이면 peekly-malformed-html.zip을 넣고 가져오기 중단 안내를 확인한다.")
     if "PRD-IMPORT-SNAPSHOT-UNKNOWN" in ids:
-        actions.append("비어 있는 이전 백업의 비교 제외 기준이면 peekly-empty-previous.zip을 먼저 넣고 peekly-sample-current.zip을 이어 넣어 비교가 제외되는지 확인한다.")
+        actions.append("UNKNOWN 기준은 includedFiles 메타데이터가 없는 legacy snapshot을 요구한다. peekly-empty-previous.zip의 인식된 빈 목록은 known-empty이므로 대체하지 않는다. 현재 host/fixture에는 검증된 legacy-unknown 준비 기능이 없으므로 그 사유와 함께 not_run으로 남기고 다른 기준을 계속한다. 정상 pair나 다른 비교의 문구로 이 기준의 통과·실패를 만들지 않는다.")
     if "PRD-RESULT-SEARCH" in ids:
         actions.append("9명 이상 관계 목록을 열어 username 순서와 현재 UI placeholder '아이디나 이름으로 찾기'가 있는 text input을 확인한다. 합성 아이디를 검색해 대상 행만 남는지 확인한다.")
     if "PRD-PRIVACY-LOCAL" in ids:
@@ -160,6 +184,11 @@ def _persona_journey_goal(base_goal, requirement_ids):
                  if "PRD-SNAPSHOT-RETENTION" in ids else
                  "peekly-retention-snapshot-01.zip을 동일 계정의 더 오래된 세 번째 기록으로 먼저 가져온다.")
         actions.append(setup + " 그 뒤 previous/current pair를 한 번만 가져와 무료 최신 비교의 이름을 확인한다. 변화 기록의 기간 비교 탭을 직접 선택하고 날짜 선택기 두 개의 무료 제한과 이전 이력의 Pro 기능 보기 설명을 확인한다. 두 기록만으로 Pro 설명을 찾지 않으며 결제는 누르지 않는다.")
+    categories = [_PEEKLY_CATEGORY_LISTS[rid] for rid in requirement_ids if rid in _PEEKLY_CATEGORY_LISTS]
+    if categories:
+        actions.append("관계 범주 검사는 필요한 snapshot/history pair 절차 뒤에 수행한다. 실제 peekly-sample-current.zip import가 완료된 현재 결과를 재사용하고, 아직 그 결과가 없을 때만 한 번 가져온다. "
+                       + " · ".join(categories)
+                       + " 목록을 각각 직접 열어 수와 실제 행을 확인한다. 샘플 관계 목록, 카드 숫자만 본 상태, 팔로워에서 빠진 사람 목록은 이 기준들의 대체 증거가 아니다. SAMPLE-EXPORT가 있으면 샘플 export를 import 전에 마친다.")
     if "PRD-IMPORT-MULTI" in ids:
         actions.append("파일 선택에서 manifest group peekly-mixed-loose-valid의 정확한 catalog key를 실제 input[type=file][multiple]에 넣고, 512개 허용·513개 거절 및 ZIP+loose 혼합 거절 group을 각각 실행한다.")
     if "PRD-IMPORT-SIZE" in ids:

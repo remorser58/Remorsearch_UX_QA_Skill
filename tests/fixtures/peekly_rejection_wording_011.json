@@ -1,0 +1,252 @@
+{
+  "schema_version": "peekly-rejection-wording-golden.v1",
+  "description": "Read-only projection of actual persona011 named malformed-HTML and account-mismatch rejections with import-attempt and preserved-state facts. No new product run.",
+  "source_job": "S-pdalpdmknheojnhkkichdfbm",
+  "sources": [
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-pdalpdmknheojnhkkichdfbm/evidence/S-pdalpdmknheojnhkkichdfbm/1/agent-observation-10.json",
+      "sha256": "b7708b415b312b9422de6f4863e499b965f7487667074454839556215aaa0bd3"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-pdalpdmknheojnhkkichdfbm/evidence/S-pdalpdmknheojnhkkichdfbm/1/agent-observation-14.json",
+      "sha256": "64ef36b4db90eeda03f1979deab1eeb0e5313cc664e23307771588784decfa42"
+    },
+    {
+      "file": ".ux-loop/peekly-coverage32-20261114/stage-32/sessions/S-pdalpdmknheojnhkkichdfbm/evidence/S-pdalpdmknheojnhkkichdfbm/1/agent-observation-15.json",
+      "sha256": "f1c22588d15ab38f8162f5e18839ea0cc16ea3de1c6ccfe5a29425fa9edf74b0"
+    }
+  ],
+  "observations": [
+    {
+      "id": "obs-10",
+      "text": "인스타그램에서 받은 파일을 골라 바로 결과를 봐요\n관계 목록\n팔로우를 정리할 계정 골라 두기\n연결한 계정 확인과 기록 관리\n받은 파일로 결과를 확인해요\n파일 요청\n1\n[다운로드] 폴더에서 instagram으로 시작하는 파일을 골라요\n다른 파일\n아직 파일이 없어요\n파일은 이 기기 안에서만 읽어요. 어디로도 보내지 않아요.\n[followers.html] 파일에서 팔로워·팔로잉 목록을 읽지 못해 불러오지 않았어요. 인스타그램에서 파일을 다시 받아 주세요.\n다른 파일 고르기",
+      "facts": {
+        "last_action": "upload",
+        "uploaded_fixture": "peekly-malformed-html.zip",
+        "fixture_uploads": [
+          "peekly-format-html.zip",
+          "peekly-format-json.zip",
+          "peekly-malformed-html.zip"
+        ],
+        "import_attempt_id": "upload-101",
+        "import_attempt": {
+          "attempt_id": "upload-101",
+          "cancel_active": false,
+          "cancel_dispatched": false,
+          "fixture": "peekly-malformed-html.zip",
+          "fixture_sha256": "9bc5fdf9bc926f3fada2b986508ab93bb018f450cd5bb597d407b998677e190d",
+          "persistence_unchanged": true,
+          "phase_samples": [
+            {
+              "elapsed_ms": 0,
+              "text": "파일을 읽고 있어요"
+            }
+          ],
+          "schema_version": "peekly-import-attempt.v1",
+          "storage_after": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "d297df05ca1382a742ca4a4f8a8bebe209cc9d4ba9dce9a98d6198df40211e6c"
+          },
+          "storage_before": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "d297df05ca1382a742ca4a4f8a8bebe209cc9d4ba9dce9a98d6198df40211e6c"
+          },
+          "tool": "upload"
+        },
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "d297df05ca1382a742ca4a4f8a8bebe209cc9d4ba9dce9a98d6198df40211e6c"
+        }
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 1,
+          "kind": "success",
+          "reason": "The malformed-HTML upload was observed but its own result state was not captured.",
+          "status": "not_run"
+        },
+        {
+          "index": 2,
+          "kind": "success",
+          "reason": "The named account-mismatch fixture was not uploaded; another fixture's prior result cannot trigger this criterion.",
+          "status": "not_run"
+        },
+        {
+          "index": 3,
+          "kind": "success",
+          "reason": "Both named missing-list fixtures were not uploaded; an unrelated previous result cannot trigger this criterion.",
+          "status": "not_run"
+        }
+      ]
+    },
+    {
+      "id": "obs-14",
+      "text": "인스타그램에서 받은 파일을 골라 바로 결과를 봐요\n관계 목록\n팔로우를 정리할 계정 골라 두기\n연결한 계정 확인과 기록 관리\n받은 파일로 결과를 확인해요\n파일 요청\n1\n[다운로드] 폴더에서 instagram으로 시작하는 파일을 골라요\n다른 파일\n아직 파일이 없어요\n파일은 이 기기 안에서만 읽어요. 어디로도 보내지 않아요.\n[followers.html] 파일에서 팔로워·팔로잉 목록을 읽지 못해 불러오지 않았어요. 인스타그램에서 파일을 다시 받아 주세요.\n다른 파일 고르기",
+      "facts": {
+        "last_action": "upload",
+        "uploaded_fixture": "peekly-malformed-html.zip",
+        "fixture_uploads": [
+          "peekly-format-html.zip",
+          "peekly-format-json.zip",
+          "peekly-malformed-html.zip",
+          "peekly-sample-current.zip"
+        ],
+        "import_attempt_id": "upload-162",
+        "import_attempt": {
+          "attempt_id": "upload-162",
+          "cancel_active": false,
+          "cancel_dispatched": false,
+          "fixture": "peekly-malformed-html.zip",
+          "fixture_sha256": "9bc5fdf9bc926f3fada2b986508ab93bb018f450cd5bb597d407b998677e190d",
+          "persistence_unchanged": true,
+          "phase_samples": [
+            {
+              "elapsed_ms": 0,
+              "text": "파일을 읽고 있어요"
+            }
+          ],
+          "schema_version": "peekly-import-attempt.v1",
+          "storage_after": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "9af62a14fb957a6ac318b8583f89a4e07e13c0b2e9db946a6a9410d0fe99e61f"
+          },
+          "storage_before": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "9af62a14fb957a6ac318b8583f89a4e07e13c0b2e9db946a6a9410d0fe99e61f"
+          },
+          "tool": "upload"
+        },
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "9af62a14fb957a6ac318b8583f89a4e07e13c0b2e9db946a6a9410d0fe99e61f"
+        }
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 1,
+          "kind": "success",
+          "reason": "The malformed-HTML upload was observed but its own result state was not captured.",
+          "status": "not_run"
+        },
+        {
+          "index": 2,
+          "kind": "success",
+          "reason": "The named account-mismatch fixture was not uploaded; another fixture's prior result cannot trigger this criterion.",
+          "status": "not_run"
+        },
+        {
+          "index": 3,
+          "kind": "success",
+          "reason": "Both named missing-list fixtures were not uploaded; an unrelated previous result cannot trigger this criterion.",
+          "status": "not_run"
+        }
+      ]
+    },
+    {
+      "id": "obs-15",
+      "text": "인스타그램에서 받은 파일을 골라 바로 결과를 봐요\n관계 목록\n팔로우를 정리할 계정 골라 두기\n연결한 계정 확인과 기록 관리\n받은 파일로 결과를 확인해요\n파일 요청\n1\n[다운로드] 폴더에서 instagram으로 시작하는 파일을 골라요\n다른 파일\n아직 파일이 없어요\n파일은 이 기기 안에서만 읽어요. 어디로도 보내지 않아요.\n[handle] 계정의 파일이에요. 지금 기록된 계정은 [handle] 같은 계정의 파일을 골라 주세요.\n다른 파일 고르기",
+      "facts": {
+        "last_action": "upload",
+        "uploaded_fixture": "peekly-account-mismatch.zip",
+        "fixture_uploads": [
+          "peekly-account-mismatch.zip",
+          "peekly-format-html.zip",
+          "peekly-format-json.zip",
+          "peekly-malformed-html.zip",
+          "peekly-sample-current.zip"
+        ],
+        "import_attempt_id": "upload-192",
+        "import_attempt": {
+          "attempt_id": "upload-192",
+          "cancel_active": false,
+          "cancel_dispatched": false,
+          "fixture": "peekly-account-mismatch.zip",
+          "fixture_sha256": "a0fa22372bb16645faed613d09c962ccc7611421dd7f934d54bb32c59aaad795",
+          "persistence_unchanged": true,
+          "phase_samples": [
+            {
+              "elapsed_ms": 1,
+              "text": "파일을 읽고 있어요"
+            }
+          ],
+          "schema_version": "peekly-import-attempt.v1",
+          "storage_after": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "9af62a14fb957a6ac318b8583f89a4e07e13c0b2e9db946a6a9410d0fe99e61f"
+          },
+          "storage_before": {
+            "available": true,
+            "keys": [
+              "peekly_state_v7"
+            ],
+            "sha256": "9af62a14fb957a6ac318b8583f89a4e07e13c0b2e9db946a6a9410d0fe99e61f"
+          },
+          "tool": "upload"
+        },
+        "storage_snapshot": {
+          "available": true,
+          "keys": [
+            "peekly_state_v7"
+          ],
+          "sha256": "9af62a14fb957a6ac318b8583f89a4e07e13c0b2e9db946a6a9410d0fe99e61f"
+        }
+      },
+      "checks": [
+        {
+          "index": 0,
+          "kind": "success",
+          "status": "passed"
+        },
+        {
+          "index": 1,
+          "kind": "success",
+          "reason": "The malformed-HTML upload was observed but its own result state was not captured.",
+          "status": "not_run"
+        },
+        {
+          "index": 2,
+          "kind": "success",
+          "reason": "The account-mismatch upload was observed but its own result state was not captured.",
+          "status": "not_run"
+        },
+        {
+          "index": 3,
+          "kind": "success",
+          "reason": "Both named missing-list fixtures were not uploaded; an unrelated previous result cannot trigger this criterion.",
+          "status": "not_run"
+        }
+      ]
+    }
+  ]
+}
