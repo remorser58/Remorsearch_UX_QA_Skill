@@ -37,6 +37,7 @@ TOOLS = [
     Tool("upload", "Choose one hash-verified synthetic fixture or one reviewed @group:<name> multi-file fixture from the manifest for a visible or hidden file input.", {"selector":"string","file":"string"}, "owned_fixture_write"),
     Tool("upload_cancel", "Upload only a reviewed large-valid-progress fixture and click its visible stop control while processing; capture actual interruption and saved-state hashes.", {"selector":"string","file":"string"}, "owned_fixture_write"),
     Tool("upload_save_failure", "Upload a reviewed small synthetic snapshot with one isolated snapshot-storage write failure; capture the real error and prior-state preservation, then use a separate visible retry click.", {"selector":"string","file":"string"}, "owned_fixture_write"),
+    Tool("seed_legacy_unknown", "Once, before any mutating action in an UNKNOWN task, seed only peekly-legacy-unknown-state.json into this fresh owned synthetic profile; reload through the real product legacy loader and validate UNKNOWN readback. This sets up a prerequisite, not a product pass. Never repeat after uncertain delivery.", {"file":"string"}, "owned_fixture_write"),
     Tool("scroll", "Scroll the current page by a bounded signed pixel delta.", {"delta":"integer"}, "owned_fixture_write"),
     Tool("wait", "Wait briefly for the current page to settle.", {"ms":"integer"}, "owned_fixture_write"),
 ]

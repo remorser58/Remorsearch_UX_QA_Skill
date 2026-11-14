@@ -25,6 +25,149 @@ function send(method, params = {}) {
 const CLICK_REJECTED = 'click_target_not_allowed_or_visible';
 let observedControls = [];
 let activeImportAttemptId = null;
+let legacySeedReceipt=null, initialFreshStorage=null, legacySeedAllowed=false;
+let freshOwnedProfile=false, seedConsumed=false, mutationsBeforeSeed=0;
+const LEGACY_FILE='peekly-legacy-unknown-state.json';
+const LEGACY_ID='peekly_legacy_unknown_v6';
+const LEGACY_PRODUCT='51110f4c569673faa8d242d5b85c4b47afb54cbb';
+const LEGACY_LOADER='401759c4ef2d11efcf7b710292ba6269ce66653cd3d19fd2164fa6f54883559a';
+const canonical=value=>JSON.stringify(value, function(key,item) {
+  return item&&typeof item==='object'&&!Array.isArray(item)
+    ? Object.fromEntries(Object.entries(item).sort(([a],[b])=>a<b?-1:a>b?1:0)) : item;
+});
+
+export function validateLegacySeedFixture(bytes,manifest) {
+  const descriptor=manifest?.coverage?.legacy_seed;
+  const entry=manifest?.files?.find(row=>row.name===LEGACY_FILE);
+  const proof=descriptor?.product_validation;
+  const required=['v6_missing_metadata_migrates_unknown','legacy_snapshot_retained',
+    'legacy_excluded_from_selection','v7_roundtrip_valid','known_empty_is_known',
+    'malformed_v7_rejected_without_legacy_fallback','plain_v7_under_compression_threshold'];
+  if(!Buffer.isBuffer(bytes)||bytes.length<1||bytes.length>=65536
+      ||entry?.scenario!=='validated-legacy-state-missing-provenance'
+      ||entry.bytes!==bytes.length||entry.sha256!==hash(bytes)
+      ||descriptor?.schema_version!=='peekly-legacy-seed-fixture.v1'
+      ||descriptor.fixture!==LEGACY_FILE||descriptor.fixture_sha256!==entry.sha256
+      ||descriptor.storage_key!=='peekly_state_v6'||descriptor.product_commit!==LEGACY_PRODUCT
+      ||descriptor.product_loader_sha256!==LEGACY_LOADER
+      ||JSON.stringify(descriptor.snapshot_ids)!==JSON.stringify([LEGACY_ID])
+      ||descriptor.source_included_files_absent!==true||descriptor.source_list_completeness_absent!==true
+      ||proof?.schema_version!=='peekly-legacy-product-validation.v1'
+      ||proof.product_commit!==LEGACY_PRODUCT||proof.product_loader_sha256!==LEGACY_LOADER
+      ||proof.fixture_sha256!==entry.sha256
+      ||proof.raw_included_files_absent!==true||proof.raw_list_completeness_absent!==true
+      ||JSON.stringify(proof.migrated_snapshot_ids)!==JSON.stringify([LEGACY_ID])
+      ||required.some(key=>proof.checks?.[key]!==true)
+      ||descriptor.product_validation_sha256!==hash(Buffer.from(canonical(proof)+'\n')))
+    throw new Error('legacy_seed_fixture_unvalidated');
+  let state;
+  try {state=JSON.parse(bytes.toString('utf8'));}catch{throw new Error('legacy_seed_fixture_malformed');}
+  const snapshot=state?.snapshots?.[0];
+  if(!Array.isArray(state?.snapshots)||state.snapshots.length!==1||snapshot?.id!==LEGACY_ID
+      ||snapshot.isSample!==false||typeof snapshot.accountHandle!=='string'
+      ||!Array.isArray(snapshot.followers)||!snapshot.followers.length
+      ||!Array.isArray(snapshot.following)||!snapshot.following.length
+      ||Object.hasOwn(snapshot,'includedFiles')||Object.hasOwn(snapshot,'listCompleteness')
+      ||state.activeSnapshotId!==LEGACY_ID||state.comparisonSnapshotId!==LEGACY_ID
+      ||hash(Buffer.from(snapshot.accountHandle))!==descriptor.owner_sha256)
+    throw new Error('legacy_seed_fixture_malformed');
+  return descriptor;
+}
+
+export function requireFreshOwnedProfile(profile,evidence) {
+  if(path.dirname(profile)!==evidence||path.basename(profile)!=='browser-profile'
+      ||fs.realpathSync(profile)!==profile||!fs.statSync(profile).isDirectory()
+      ||(fs.statSync(profile).mode&0o077)||fs.readdirSync(profile).length)
+    throw new Error('legacy_seed_profile_not_fresh_owned');
+  return true;
+}
+
+export function requireLegacySeedReady({allowed,owned,consumed,mutations,initial,current}) {
+  if(!allowed)throw new Error('legacy_seed_not_authorized');
+  if(consumed)throw new Error('legacy_seed_already_attempted');
+  if(!owned||mutations!==0||initial?.fresh!==true||current?.fresh!==true
+      ||initial.sha256!==current.sha256)
+    throw new Error('legacy_seed_profile_not_fresh_owned');
+}
+
+// Fixed-schema fresh-state check. No raw storage value is returned to the model.
+export async function pageFreshStorage() {
+  try {
+    const keys=Object.keys(localStorage).sort();
+    const values=keys.map(key=>[key,localStorage.getItem(key)]);
+    const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(values)));
+    const sha256=[...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join('');
+    const expected={snapshots:[],activeSnapshotId:null,comparisonSnapshotId:null,
+      whitelistedUsernames:[],customTagsByUsername:{},unfollowLog:[],cleanupQueueUsernames:[],
+      profileChecks:{},entitlement:{tier:'FREE',secretPassExpiresAt:null,rewardUnlockedItemIds:[],
+        whitelistLimit:20,customTagLimit:2,maxAccounts:1}};
+    const ordered=value=>JSON.stringify(value,function(key,item) {
+      return item&&typeof item==='object'&&!Array.isArray(item)
+        ?Object.fromEntries(Object.entries(item).sort(([a],[b])=>a<b?-1:a>b?1:0)):item;
+    });
+    const raw=localStorage.getItem('peekly_state_v7');
+    const fresh=keys.length===1&&keys[0]==='peekly_state_v7'&&typeof raw==='string'
+      &&raw.length<4096&&ordered(JSON.parse(raw))===ordered(expected);
+    return {available:true,fresh,sha256,keys};
+  }catch{return {available:false,fresh:false,sha256:null,keys:[]};}
+}
+
+export async function pageApplyLegacySeed(raw,fixtureSha,initialSha,origin) {
+  // This fixed internal routine has no caller-selectable storage key.
+  if(location.origin!==origin)throw new Error('legacy_seed_origin_changed');
+  const digest=async text=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',
+    new TextEncoder().encode(text)))].map(x=>x.toString(16).padStart(2,'0')).join('');
+  const keys=Object.keys(localStorage).sort();
+  const serialized=JSON.stringify(keys.map(key=>[key,localStorage.getItem(key)]));
+  const before=await digest(serialized);
+  if(before!==initialSha||keys.length!==1||keys[0]!=='peekly_state_v7'
+      ||await digest(raw)!==fixtureSha)throw new Error('legacy_seed_storage_changed');
+  if(JSON.stringify(Object.keys(localStorage).sort().map(key=>[key,localStorage.getItem(key)]))!==serialized)
+    throw new Error('legacy_seed_storage_changed');
+  // Set fallback first. If removal fails, current v7 remains authoritative and
+  // the one-shot attempt is uncertain; there is no rollback or automatic retry.
+  localStorage.setItem('peekly_state_v6',raw);
+  if(localStorage.getItem('peekly_state_v6')!==raw)throw new Error('legacy_seed_write_unconfirmed');
+  localStorage.removeItem('peekly_state_v7');
+  if(localStorage.getItem('peekly_state_v7')!==null)throw new Error('legacy_seed_removal_unconfirmed');
+  return {written:true};
+}
+
+export async function pageReadLegacyState(attemptId) {
+  const result={schema_version:'peekly-legacy-state.v1',seed_attempt_id:attemptId,available:false};
+  try {
+    const raw=localStorage.getItem('peekly_state_v7');
+    if(!raw||raw.length>=65536||!raw.startsWith('{'))return result;
+    const state=JSON.parse(raw);
+    if(!Array.isArray(state.snapshots)||state.snapshots.length>10)return result;
+    const digest=async text=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',
+      new TextEncoder().encode(text)))].map(x=>x.toString(16).padStart(2,'0')).join('');
+    const rows=[];
+    for(const snapshot of state.snapshots) {
+      if(typeof snapshot.id!=='string'||snapshot.id.length>100
+          ||typeof snapshot.accountHandle!=='string'||snapshot.accountHandle.length>30
+          ||typeof snapshot.isSample!=='boolean'||!Array.isArray(snapshot.includedFiles)
+          ||snapshot.includedFiles.length>20
+          ||snapshot.includedFiles.some(item=>typeof item!=='string'||item.length>40))return result;
+      rows.push({id:snapshot.id,account_sha256:await digest(snapshot.accountHandle),
+        is_sample:snapshot.isSample,list_completeness:snapshot.listCompleteness??null,
+        included_files:snapshot.includedFiles});
+    }
+    const values=['peekly_state_v7','peekly_state_v6','peekly_state'].map(key=>[key,localStorage.getItem(key)])
+      .filter(row=>row[1]!==null);
+    return {...result,available:true,storage_sha256:await digest(JSON.stringify(values)),
+      snapshots:rows,active_snapshot_id:state.activeSnapshotId,comparison_snapshot_id:state.comparisonSnapshotId};
+  }catch{return result;}
+}
+
+export function isValidatedLegacyMigration(state,descriptor) {
+  const row=state?.snapshots?.[0];
+  return state?.available===true&&state.snapshots.length===1&&row?.id===LEGACY_ID
+    &&row.account_sha256===descriptor.owner_sha256&&row.is_sample===false
+    &&row.list_completeness==='unknown'
+    &&JSON.stringify(row.included_files)===JSON.stringify(['followers','following'])
+    &&state.active_snapshot_id===null&&state.comparison_snapshot_id===null;
+}
 
 // Serialized into the owned page; no arbitrary caller-provided script is accepted.
 export function pageClickTarget(selector, label, requireActiveImport = false) {
@@ -367,6 +510,8 @@ async function start(input) {
   if (url.protocol !== 'http:' || !['127.0.0.1','localhost','[::1]'].includes(url.hostname) || url.username || url.password) throw new Error('target_must_be_loopback_http');
   targetOrigin = url.origin; pageUrl = url.href; typedInputs = new Map(); proxyBlockedRequests = 0;
   profileDir = safeDir(input.profile_dir); evidenceDir = safeDir(input.evidence_path);
+  freshOwnedProfile=requireFreshOwnedProfile(profileDir,evidenceDir);
+  legacySeedAllowed=input.legacy_seed_allowed===true;
   fixturesDir = safeDir(input.fixtures_dir);
   const manifestPath = path.join(fixturesDir, 'fixture-manifest.json');
   const manifestStat = fs.lstatSync(manifestPath);
@@ -437,6 +582,7 @@ async function start(input) {
   await send('Page.navigate',{url:pageUrl});
   await new Promise(r=>setTimeout(r,700));
   const snap=await observe();
+  initialFreshStorage=await evaluate('('+pageFreshStorage.toString()+')()');
   return {started:true,url:snap.url,title:snap.title,origin:targetOrigin,available_fixtures:fixtureManifest.files.map(row=>row.name)};
 }
 async function evaluate(expression) {
@@ -458,6 +604,10 @@ async function observe() {
   observedControls=data.controls.map(row=>({...row}));
   data.storage_snapshot=await persistence();
   if(activeImportAttemptId)data.import_attempt_id=activeImportAttemptId;
+  if(legacySeedReceipt) {
+    data.legacy_seed=structuredClone(legacySeedReceipt);
+    data.legacy_state=await evaluate('('+pageReadLegacyState.toString()+')('+JSON.stringify(legacySeedReceipt.attempt_id)+')');
+  }
   return data;
 }
 async function screenshot() {
@@ -473,15 +623,85 @@ export function approvedCancelFixture(entries) {
     && entries[0]?.name==='peekly-progress-sample.zip'
     && ['large-valid-progress','recognized-relationship-json-progress'].includes(entries[0].scenario);
 }
+async function seedLegacyUnknown(args) {
+  if(seedConsumed)throw new Error('legacy_seed_already_attempted');
+  if(Object.keys(args).length!==1||args.file!==LEGACY_FILE)throw new Error('legacy_seed_fixed_fixture_only');
+  const fullPath=path.join(fixturesDir,LEGACY_FILE),stat=fs.lstatSync(fullPath);
+  if(!stat.isFile()||stat.isSymbolicLink()||fs.realpathSync(fullPath)!==fullPath)
+    throw new Error('legacy_seed_fixture_integrity');
+  const bytes=fs.readFileSync(fullPath),descriptor=validateLegacySeedFixture(bytes,fixtureManifest);
+  const current=await evaluate('('+pageFreshStorage.toString()+')()');
+  const before=await persistence();
+  const ready={allowed:legacySeedAllowed,owned:freshOwnedProfile,consumed:seedConsumed,
+    mutations:mutationsBeforeSeed,initial:initialFreshStorage,current};
+  const attemptId='legacy-seed-'+(++sequence);
+  legacySeedReceipt={schema_version:'peekly-legacy-seed.v1',attempt_id:attemptId,
+    fixture:LEGACY_FILE,fixture_sha256:descriptor.fixture_sha256,
+    product_commit:descriptor.product_commit,product_loader_sha256:descriptor.product_loader_sha256,
+    product_validation_sha256:descriptor.product_validation_sha256,
+    fresh_owned_profile:freshOwnedProfile&&current.fresh===true,
+    initial_storage_match:initialFreshStorage?.sha256===current.sha256,
+    source_key:'peekly_state_v6',target_key:'peekly_state_v7',
+    source_snapshot_ids:[LEGACY_ID],source_included_files_absent:true,source_list_completeness_absent:true,
+    storage_before:before,storage_after:before,reload_observed:false,migration_validated:false,status:'rejected'};
+  const record=suffix=>fs.writeFileSync(path.join(evidenceDir,attemptId+'-'+suffix+'.json'),
+    JSON.stringify(legacySeedReceipt)+'\n',{mode:0o600,flag:'wx'});
+  // The latch is consumed before the first possible storage mutation. An error
+  // or lost response can never cause the same profile to receive another seed.
+  seedConsumed=true;
+  try {requireLegacySeedReady(ready);}
+  catch(error){record('rejected');throw error;}
+  legacySeedReceipt.status='uncertain';
+  record('intent');
+  try {
+    await evaluate('('+pageApplyLegacySeed.toString()+')('+JSON.stringify(bytes.toString('utf8'))+','+
+      JSON.stringify(descriptor.fixture_sha256)+','+JSON.stringify(initialFreshStorage.sha256)+','+
+      JSON.stringify(targetOrigin)+')');
+    await send('Page.reload',{ignoreCache:true});
+    const until=Date.now()+3500;
+    let state;
+    do {
+      await new Promise(resolve=>setTimeout(resolve,100));
+      try {
+        state=await evaluate('('+pageReadLegacyState.toString()+')('+JSON.stringify(attemptId)+')');
+        if(isValidatedLegacyMigration(state,descriptor))break;
+      }catch(error) {
+        // Reload destroys the old execution context. Poll only the new document;
+        // no write, reload, browser action or model call is retried.
+        if(!String(error.message).includes('context')&&!String(error.message).includes('page_evaluation_failed'))throw error;
+      }
+    }while(Date.now()<until);
+    legacySeedReceipt.storage_after=await persistence();
+    legacySeedReceipt.reload_observed=state?.available===true;
+    legacySeedReceipt.migration_validated=isValidatedLegacyMigration(state,descriptor)
+      &&state.storage_sha256===legacySeedReceipt.storage_after.sha256
+      &&legacySeedReceipt.storage_after.sha256!==before.sha256;
+    if(!legacySeedReceipt.migration_validated)throw new Error('legacy_seed_migration_unconfirmed');
+    legacySeedReceipt.status='validated';
+    record('receipt');
+  }catch(error) {
+    legacySeedReceipt.status='uncertain';
+    try {legacySeedReceipt.storage_after=await persistence();}catch{}
+    record('uncertain');
+    throw new Error('legacy_seed_uncertain_no_retry:'+String(error.message).slice(0,100));
+  }
+}
+export function observationResult(state,capture) {
+  return {text:'URL '+state.url+'\nTitle '+state.title+'\n'+state.text,
+    facts:{...state,last_action:'observe'},captures:[capture],checks:[]};
+}
 async function act(input) {
   const name=input.name, args=input.arguments||{};
   let uploadedFixture=null, uploadProgressSamples=[], importAttempt=null, clickDispatch=null, scrollAttempt=null;
   const extraCaptures=[];
   if (name==='observe') {
     const state=await observe(); const capture=await screenshot();
-    return {text:'URL '+state.url+'\nTitle '+state.title+'\n'+state.text,facts:state,captures:[capture],checks:[]};
+    return observationResult(state,capture);
   }
-  if (['upload','upload_cancel','upload_save_failure'].includes(name)) {
+  if(name!=='seed_legacy_unknown'&&!['observe','wait'].includes(name))mutationsBeforeSeed++;
+  if(name==='seed_legacy_unknown') {
+    await seedLegacyUnknown(args);
+  } else if (['upload','upload_cancel','upload_save_failure'].includes(name)) {
     const selector=args.selector, filename=args.file;
     if (typeof filename!=='string' || path.basename(filename)!==filename) throw new Error('fixture_name_invalid');
     const groupName=filename.startsWith('@group:')?filename.slice(7):null;
@@ -489,6 +709,7 @@ async function act(input) {
     if (!names.length || names.some(name=>typeof name!=='string'||path.basename(name)!==name)) throw new Error('fixture_not_allowlisted');
     const entries=names.map(name=>fixtureManifest.files.find(row=>row.name===name));
     if (entries.some(entry=>!entry)) throw new Error('fixture_not_allowlisted');
+    if(names.includes(LEGACY_FILE))throw new Error('legacy_seed_requires_bounded_tool');
     if(name==='upload_cancel' && !approvedCancelFixture(entries))
       throw new Error('cancel_fixture_not_allowlisted');
     if(name==='upload_save_failure' && (entries.length!==1 || entries[0].bytes>1048576

@@ -240,7 +240,9 @@ def router_delivery_audit(ledger):
         violation_call_ids=sorted({row["call_id"] for row in violations}), violations=violations)
 
 
-def smoke_gate(summary, report, delivery_audit=None, *, router_ledger_sha256=None):
+def smoke_gate(summary, report, delivery_audit=None, *, router_ledger_sha256=None,
+               persona_ids=SMOKE_IDS, baseline_not_run=SMOKE_BASELINE_NOT_RUN,
+               success_units=SMOKE_SUCCESS_UNITS):
     """Coverage gate: failed product criteria count as executed; N/A cannot hide them."""
     reasons = []
     counts = report.get("counts", {})
@@ -252,16 +254,16 @@ def smoke_gate(summary, report, delivery_audit=None, *, router_ledger_sha256=Non
         reasons.append("unsettled_or_excluded_sessions")
     if sum(counts.values()) != 2:
         reasons.append("unexpected_queue_denominator")
-    if summary.get("sessions") != 2 or sorted(summary.get("persona_ids", [])) != list(SMOKE_IDS):
+    if summary.get("sessions") != 2 or sorted(summary.get("persona_ids", [])) != list(persona_ids):
         reasons.append("stage_personas_mismatch")
     if completed != summary.get("completed_receipt_summary"):
         reasons.append("completed_summary_mismatch")
     if any(completed.get(key) != 2 for key in
            ("completed_sessions", "assessed_completed_sessions", "distinct_completed_personas")):
         reasons.append("completed_valid_receipts_required")
-    if completed.get("persona_ids") != list(SMOKE_IDS) or completed.get("excluded_attempt_statuses"):
+    if completed.get("persona_ids") != list(persona_ids) or completed.get("excluded_attempt_statuses"):
         reasons.append("completed_personas_or_exclusions_mismatch")
-    if sorted(row.get("persona_id", "") for row in tasks) != list(SMOKE_IDS):
+    if sorted(row.get("persona_id", "") for row in tasks) != list(persona_ids):
         reasons.append("receipt_personas_mismatch")
     actual = Counter()
     for row in tasks:
@@ -278,14 +280,14 @@ def smoke_gate(summary, report, delivery_audit=None, *, router_ledger_sha256=Non
     expected_statuses = ("passed", "failed", "not_run", "not_applicable")
     if any(type(success.get(key)) is not int or success[key] < 0 for key in expected_statuses):
         reasons.append("invalid_success_counts")
-    elif (sum(success.values()) != SMOKE_SUCCESS_UNITS
+    elif (sum(success.values()) != success_units
           or any(actual[key] != success[key] for key in expected_statuses)
           or any(key not in expected_statuses for key in actual)):
         reasons.append("success_denominator_mismatch")
     else:
         if success["not_applicable"] != 0:
             reasons.append("success_na_relabel_forbidden")
-        if success["not_run"] >= SMOKE_BASELINE_NOT_RUN:
+        if success["not_run"] >= baseline_not_run:
             reasons.append("not_run_did_not_decrease")
     host = sum(any("host_protocol" in str(value) for value in
                    (row.get("problem"), row.get("current_issue"), (row.get("result") or {}).get("problem")))
@@ -309,8 +311,8 @@ def smoke_gate(summary, report, delivery_audit=None, *, router_ledger_sha256=Non
             reasons.append("router_uncertain_resend_violation")
         if delivery_audit.get("unsettled_guard_call_count") != 0:
             reasons.append("router_unsettled_delivery_guard")
-    return dict(pass_gate=not reasons, reasons=sorted(set(reasons)), persona_ids=list(SMOKE_IDS),
-                baseline_success_not_run=SMOKE_BASELINE_NOT_RUN, success_criteria=success,
+    return dict(pass_gate=not reasons, reasons=sorted(set(reasons)), persona_ids=list(persona_ids),
+                baseline_success_not_run=baseline_not_run, success_criteria=success,
                 completed_receipt_summary=completed, host_protocol_count=host,
                 router_delivery_audit=delivery_audit, router_ledger_sha256=router_ledger_sha256)
 

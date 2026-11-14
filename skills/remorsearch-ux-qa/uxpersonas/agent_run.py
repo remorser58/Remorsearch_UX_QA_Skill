@@ -73,7 +73,13 @@ def _validated_observation_facts(value):
     for parts in (("storage_snapshot", "sha256"),
                   ("import_attempt", "fixture_sha256"),
                   ("import_attempt", "storage_before", "sha256"),
-                  ("import_attempt", "storage_after", "sha256")):
+                  ("import_attempt", "storage_after", "sha256"),
+                  ("legacy_seed", "fixture_sha256"),
+                  ("legacy_seed", "product_loader_sha256"),
+                  ("legacy_seed", "product_validation_sha256"),
+                  ("legacy_seed", "storage_before", "sha256"),
+                  ("legacy_seed", "storage_after", "sha256"),
+                  ("legacy_state", "storage_sha256")):
         target = privacy_view
         for key in parts[:-1]:
             target = target.get(key) if isinstance(target, dict) else None
@@ -81,6 +87,18 @@ def _validated_observation_facts(value):
             candidate = target.get(parts[-1])
             if isinstance(candidate, str) and re.fullmatch(r"[a-f0-9]{64}", candidate):
                 target[parts[-1]] = "reviewed SHA digest"
+    seed = privacy_view.get("legacy_seed") if isinstance(privacy_view, dict) else None
+    if isinstance(seed, dict) and seed.get("schema_version") == "peekly-legacy-seed.v1":
+        if re.fullmatch(r"[a-f0-9]{40}", str(seed.get("product_commit", ""))):
+            seed["product_commit"] = "reviewed product revision"
+    state = privacy_view.get("legacy_state") if isinstance(privacy_view, dict) else None
+    if isinstance(state, dict) and state.get("schema_version") == "peekly-legacy-state.v1":
+        snapshots = state.get("snapshots")
+        if isinstance(snapshots, list) and len(snapshots) <= 10:
+            for snapshot in snapshots:
+                if isinstance(snapshot, dict) and re.fullmatch(
+                        r"[a-f0-9]{64}", str(snapshot.get("account_sha256", ""))):
+                    snapshot["account_sha256"] = "reviewed synthetic account digest"
     _data(privacy_view, 65536)
     return original
 

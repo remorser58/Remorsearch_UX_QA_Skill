@@ -133,9 +133,9 @@ CRITERIA = {
         "timeout_seconds": 30, "scope": "desktop"},
     "PRD-IMPORT-SNAPSHOT-UNKNOWN": {
         "screen": "snapshot comparison", "selector": "comparison summary",
-        "text": ["비교할 수 없", "기록이 없"], "value": "a legacy snapshot with unknown included-file provenance is excluded; a recognized empty import is known-empty",
+        "text": ["불완전한 기록은 분석에 쓰지 않아요", "다음에는 달라진 계정도 보여드려요"], "value": "a legacy snapshot with unknown included-file provenance is excluded; a recognized empty import is known-empty",
         "precondition": "a legacy snapshot without includedFiles is configured and verified in the owned profile",
-        "action": "not_run until an approved legacy-state setup capability exists; the known-empty ZIP cannot substitute for this precondition",
+        "action": "use validated seed_legacy_unknown in the fresh owned profile, import only peekly-sample-current.zip, open Home and expand the retained legacy-record notice; verify the legacy record is excluded before importing the normal previous snapshot; the known-empty ZIP cannot substitute",
         "timeout_seconds": 120, "scope": "desktop"},
     "PRD-IMPORT-ALLTIME": {
         "screen": "Instagram export guide", "selector": "visible guide scene",
@@ -802,11 +802,235 @@ def delete_scope_evidence(rows):
     return failed or passed or missing
 
 
+PAYWALL_REQUIREMENT = "PRD-PAYWALL-BOUNDARY"
+PAIR_FIXTURE_SHA256 = {
+    RESULT_CURRENT_FIXTURE: RESULT_CURRENT_SHA256,
+    "peekly-sample-previous.zip": "b06f0fd115ab74703087e11f0c025df3791a09664cd03922a9fe182760fdc823",
+}
+
+
+def _pair_fixture_attempt(row):
+    facts = row.get("facts", {})
+    attempt = facts.get("import_attempt")
+    if not isinstance(attempt, dict):
+        return None
+    fixture, attempt_id = attempt.get("fixture"), attempt.get("attempt_id")
+    if (isinstance(fixture, str) and fixture in PAIR_FIXTURE_SHA256
+            and facts.get("last_action") == "upload" and attempt.get("tool") == "upload"
+            and facts.get("uploaded_fixture") == fixture
+            and attempt.get("schema_version") == "peekly-import-attempt.v1"
+            and attempt.get("fixture_sha256") == PAIR_FIXTURE_SHA256[fixture]
+            and isinstance(attempt_id, str) and attempt_id
+            and facts.get("import_attempt_id") == attempt_id
+            and _completed_new_save(row, attempt)):
+        return attempt
+    return None
+
+
+def paywall_scope_evidence(rows):
+    """Observe one actual free-account pair, its latest names and Pro boundary.
+
+    The product's date labels are accessible control names, not body text.
+    Both selects must belong to one observation; stale controls from separate
+    screens or imports cannot establish a locked or enabled date range.
+    """
+    progress = dict(pair_imported=False, free_comparison=False, history_open=False,
+                    locked_selectors=False, pro_features=False)
+    missing = {"status": "not_run", "indices": [], "reason":
+               "The two pinned same-account imports, latest free names, same-screen date controls and Pro explanation were not all observed."}
+    chain, anchor, indices = [], None, []
+    free = locked = pro = failed = passed = None
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict) or not isinstance(row.get("facts"), dict):
+            continue
+        facts, body = row["facts"], str(row.get("text", ""))
+        if "샘플을 보고" in body or "샘플 닫기" in body:
+            chain, anchor, free, locked, pro = [], None, None, None, None
+            progress = dict.fromkeys(progress, False)
+            continue
+        if facts.get("last_action") in {"upload", "upload_cancel", "upload_save_failure", "seed_legacy_unknown"} or facts.get("uploaded_fixture"):
+            attempt = _pair_fixture_attempt(row)
+            anchor, free, locked, pro = None, None, None, None
+            progress = dict.fromkeys(progress, False)
+            if attempt is None:
+                chain = []
+                continue
+            if not chain or not _same_storage(chain[-1][1]["storage_after"], attempt["storage_before"]):
+                chain = []
+            chain.append((index, attempt))
+            chain = chain[-2:]
+            if {item[1]["fixture"] for item in chain} == set(PAIR_FIXTURE_SHA256):
+                anchor = attempt
+                indices = [item[0] for item in chain]
+                progress["pair_imported"] = True
+            continue
+        if anchor is None:
+            continue
+        if (facts.get("import_attempt_id") != anchor["attempt_id"]
+                or not _same_storage(anchor["storage_after"], facts.get("storage_snapshot"))):
+            anchor = free = locked = pro = None
+            progress = dict.fromkeys(progress, False)
+            continue
+        if _comparison_with_names(row):
+            free = index
+            progress["free_comparison"] = True
+        start = next((c for c in _controls(row) if isinstance(c, dict)
+                      and c.get("tag") == "select" and c.get("label") == "비교 시작 기록"), None)
+        end = next((c for c in _controls(row) if isinstance(c, dict)
+                    and c.get("tag") == "select" and c.get("label") == "비교 종료 기록"), None)
+        if start is not None and end is not None:
+            progress["history_open"] = True
+            if start.get("disabled") is True and end.get("disabled") is True:
+                locked = index
+                progress["locked_selectors"] = True
+            elif start.get("disabled") is False and end.get("disabled") is False:
+                failed = {"status": "failed", "indices": [*indices, index], "reason":
+                          "The owned free account exposed both date-selection controls that the current PRD reserves for Pro."}
+        if "Pro" in body and all(any(term in body for term in terms) for terms in (
+                ("변화 타임라인", "여러 기록의 변화", "여러 시점의 변화"),
+                ("두 날짜 선택 비교", "두 시점 비교", "날짜 선택"),
+                ("사람별 관계 이력", "개인별 이력", "한 사람의 관계 이력"))):
+            pro = index
+            progress["pro_features"] = True
+        if free is not None and locked is not None and pro is not None:
+            passed = {"status": "passed", "indices": sorted(set([*indices, free, locked, pro])),
+                      "summary": "The pinned same-account pair exposes latest comparison names for free; its actual history date controls are locked and the Pro sheet explains the reserved history features."}
+    return {**(failed or passed or missing), **progress}
+
+
 LEGACY_UNKNOWN_REQUIREMENT = "PRD-IMPORT-SNAPSHOT-UNKNOWN"
 LEGACY_UNKNOWN_REASON = (
     "No approved host capability configured a legacy snapshot without includedFiles. "
     "The recognized known-empty ZIP and a later normal comparison do not exercise this precondition."
 )
+LEGACY_SEED_FIXTURE = "peekly-legacy-unknown-state.json"
+LEGACY_SEED_FIXTURE_SHA256 = "f4ea8b627d7b305552cf326205096aa244cf40a873fcbf275807947feec1a6f5"
+LEGACY_PRODUCT_COMMIT = "51110f4c569673faa8d242d5b85c4b47afb54cbb"
+LEGACY_PRODUCT_LOADER_SHA256 = "401759c4ef2d11efcf7b710292ba6269ce66653cd3d19fd2164fa6f54883559a"
+LEGACY_PRODUCT_VALIDATION_SHA256 = "8812e073064029937aaecb1908d0301eff96c2bee8794e3ee8ec6a6ddc46871c"
+LEGACY_SNAPSHOT_ID = "peekly_legacy_unknown_v6"
+LEGACY_ACCOUNT_SHA256 = "d3a9cb66b6e4e094776153196c0f4c302d5d7951a9c1ce3eb5238aa75ca0e1c9"
+
+
+def _legacy_state(row, seed):
+    facts = row.get("facts", {})
+    state, persisted = facts.get("legacy_state"), facts.get("storage_snapshot")
+    if (not isinstance(state, dict) or state.get("schema_version") != "peekly-legacy-state.v1"
+            or state.get("available") is not True or state.get("seed_attempt_id") != seed["attempt_id"]
+            or not _storage_available(persisted) or state.get("storage_sha256") != persisted["sha256"]):
+        return None
+    snapshots = state.get("snapshots")
+    if (not isinstance(snapshots, list) or not 1 <= len(snapshots) <= 10
+            or any(not isinstance(s, dict) or not isinstance(s.get("id"), str)
+                   or not s["id"] or s.get("account_sha256") != LEGACY_ACCOUNT_SHA256
+                   or s.get("is_sample") is not False
+                   or not isinstance(s.get("included_files"), list)
+                   or any(not isinstance(name, str) for name in s["included_files"])
+                   for s in snapshots)):
+        return None
+    return state
+
+
+def _validated_legacy_seed(row):
+    facts = row.get("facts", {})
+    seed = facts.get("legacy_seed")
+    if not isinstance(seed, dict):
+        return None
+    required = ("fresh_owned_profile", "initial_storage_match", "source_included_files_absent",
+                "source_list_completeness_absent", "reload_observed", "migration_validated")
+    if (facts.get("last_action") != "seed_legacy_unknown"
+            or seed.get("schema_version") != "peekly-legacy-seed.v1" or seed.get("status") != "validated"
+            or not isinstance(seed.get("attempt_id"), str) or not seed["attempt_id"]
+            or seed.get("fixture") != LEGACY_SEED_FIXTURE
+            or seed.get("fixture_sha256") != LEGACY_SEED_FIXTURE_SHA256
+            or seed.get("product_commit") != LEGACY_PRODUCT_COMMIT
+            or seed.get("product_loader_sha256") != LEGACY_PRODUCT_LOADER_SHA256
+            or seed.get("product_validation_sha256") != LEGACY_PRODUCT_VALIDATION_SHA256
+            or any(seed.get(key) is not True for key in required)
+            or seed.get("source_key") != "peekly_state_v6" or seed.get("target_key") != "peekly_state_v7"
+            or seed.get("source_snapshot_ids") != [LEGACY_SNAPSHOT_ID]
+            or not _storage_available(seed.get("storage_before"))
+            or not _storage_available(seed.get("storage_after"))
+            or _same_storage(seed["storage_before"], seed["storage_after"])
+            or not _same_storage(seed["storage_after"], facts.get("storage_snapshot"))):
+        return None
+    state = _legacy_state(row, seed)
+    if state is None or len(state["snapshots"]) != 1:
+        return None
+    snapshot = state["snapshots"][0]
+    if (snapshot["id"] != LEGACY_SNAPSHOT_ID or snapshot.get("list_completeness") != "unknown"
+            or set(snapshot.get("included_files", [])) != {"followers", "following"}
+            or state.get("active_snapshot_id") is not None or state.get("comparison_snapshot_id") is not None):
+        return None
+    return seed
+
+
+def legacy_scope_evidence(rows):
+    """Require an actual validated migration and its subsequent exclusion UI.
+
+    Known-empty ZIPs, generic unavailable copy, claimed setup flags and a later
+    normal pair never satisfy the legacy precondition. A demonstrated comparison
+    with the only legacy/current pair remains a failure even after a later pass.
+    """
+    progress = dict(seed_validated=False, current_imported=False, exclusion_visible=False)
+    missing = {"status": "not_run", "indices": [], "reason": LEGACY_UNKNOWN_REASON}
+    seed = anchor = None
+    seed_index = anchor_index = None
+    passed = failed = None
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict) or not isinstance(row.get("facts"), dict):
+            continue
+        facts, body = row["facts"], str(row.get("text", ""))
+        if facts.get("last_action") == "seed_legacy_unknown":
+            seed, anchor = _validated_legacy_seed(row), None
+            seed_index = index if seed else None
+            progress = dict(seed_validated=seed is not None, current_imported=False, exclusion_visible=False)
+            if seed:
+                missing["reason"] = "The validated legacy migration needs one current-fixture import and its actual exclusion/next-record explanation."
+            continue
+        if seed is None:
+            continue
+        if facts.get("last_action") in {"upload", "upload_cancel", "upload_save_failure"} or facts.get("uploaded_fixture"):
+            anchor = _pair_fixture_attempt(row)
+            if (anchor is None or anchor.get("fixture") != RESULT_CURRENT_FIXTURE
+                    or not _same_storage(seed["storage_after"], anchor["storage_before"])):
+                anchor = None
+            anchor_index = index if anchor else None
+            progress["current_imported"] = anchor is not None
+        if anchor is None:
+            continue
+        if (facts.get("import_attempt_id") != anchor["attempt_id"]
+                or not _same_storage(anchor["storage_after"], facts.get("storage_snapshot"))):
+            anchor = None
+            continue
+        state = _legacy_state(row, seed)
+        if state is None or len(state["snapshots"]) != 2:
+            continue
+        legacy = next((s for s in state["snapshots"] if s["id"] == LEGACY_SNAPSHOT_ID), None)
+        current = next((s for s in state["snapshots"] if s["id"] != LEGACY_SNAPSHOT_ID), None)
+        # snapshotFromParsed writes includedFiles but leaves optional completeness
+        # absent until the next product reload. That is known, not legacy unknown.
+        if (legacy is None or current is None or current.get("list_completeness") not in (None, "known")
+                or not {"followers", "following"} <= set(current.get("included_files", []))):
+            continue
+        if "샘플을 보고" in body or "샘플 닫기" in body:
+            continue
+        comparison = _comparison_with_names(row) or any(
+            isinstance(control, dict) and control.get("tag") == "button"
+            and "팔로워에서 빠진 사람" in str(control.get("label", "")) for control in _controls(row))
+        if comparison:
+            failed = {"status": "failed", "indices": sorted(set([seed_index, anchor_index, index])), "reason":
+                      "The validated legacy/current pair exposed a departed-account comparison although the legacy source had unknown included-file provenance."}
+        exclusion = _contains(body, ["이전 기록 1개 보관 중", "불완전한 기록은 분석에 쓰지 않아요"])
+        next_record = _contains(body, ["다음에는 달라진 계정도 보여드려요", "다음에 새로 확인하면 지금 기록과 비교해요"])
+        if (legacy.get("list_completeness") == "unknown"
+                and state.get("active_snapshot_id") == current["id"]
+                and state.get("comparison_snapshot_id") == current["id"]
+                and exclusion and next_record and not comparison):
+            progress["exclusion_visible"] = True
+            passed = {"status": "passed", "indices": sorted(set([seed_index, anchor_index, index])), "summary":
+                      "The pinned legacy record migrated to unknown completeness, remained retained beside one known current import, and the product visibly excluded it while explaining that another new record is needed for comparison."}
+    return {**(failed or passed or missing), **progress}
 
 
 def unsupported_legacy_criterion(task, criterion):
@@ -819,7 +1043,7 @@ def unsupported_legacy_criterion(task, criterion):
 def unsupported_native_failure(task, criterion, observations):
     """Limit historical native-failure corrections to two explicit scope errors."""
     if unsupported_legacy_criterion(task, criterion):
-        return True
+        return legacy_scope_evidence(observations)["status"] != "failed"
     requirements, index = task.get("requirement_ids", []), criterion.get("index")
     return (criterion.get("kind") == "success" and isinstance(requirements, list)
             and isinstance(index, int) and 0 <= index < len(requirements)
@@ -831,7 +1055,7 @@ def guard_peekly_scope(task, criteria, observations):
     """Bind only the explicitly reviewed Peekly requirements to their prerequisites.
 
     Relationship failures and unrelated criterion decisions remain untouched.
-    Legacy-unknown has no configured setup. Search requires a fresh exact query;
+    Legacy-unknown requires validated migration and actual exclusion UI. Search requires a fresh exact query;
     its historical placeholder-only failure is replaced by scoped DOM evidence.
     Size uses its three bound rejection/preservation attempts, with acceptance
     failure taking priority over any model decision or successful rejections.
@@ -842,13 +1066,10 @@ def guard_peekly_scope(task, criteria, observations):
     if not isinstance(requirements, list):
         return criteria
     for criterion in criteria:
-        if unsupported_legacy_criterion(task, criterion):
-            criterion.update(status="not_run", evidence_ids=[], observation=LEGACY_UNKNOWN_REASON)
-            continue
         index = criterion.get("index")
         if (criterion.get("kind") != "success"
                 or not isinstance(index, int) or index < 0 or index >= len(requirements)
-                or requirements[index] not in {*RESULT_SCOPE_KEYS, SEARCH_REQUIREMENT, SIZE_REQUIREMENT, DELETE_REQUIREMENT}):
+                or requirements[index] not in {*RESULT_SCOPE_KEYS, SEARCH_REQUIREMENT, SIZE_REQUIREMENT, DELETE_REQUIREMENT, PAYWALL_REQUIREMENT, LEGACY_UNKNOWN_REQUIREMENT}):
             continue
         if requirements[index] == SEARCH_REQUIREMENT:
             proof = search_scope_evidence(observations)
@@ -856,6 +1077,10 @@ def guard_peekly_scope(task, criteria, observations):
             proof = size_scope_evidence(observations)
         elif requirements[index] == DELETE_REQUIREMENT:
             proof = delete_scope_evidence(observations)
+        elif requirements[index] == PAYWALL_REQUIREMENT:
+            proof = paywall_scope_evidence(observations)
+        elif requirements[index] == LEGACY_UNKNOWN_REQUIREMENT:
+            proof = legacy_scope_evidence(observations)
         else:
             if criterion.get("status") != "passed":
                 continue
@@ -1009,7 +1234,8 @@ def evaluate(task, facts, text, uploaded_fixtures=(), history=()):
             proof = delete_scope_evidence(rows)
             emit(index, proof["status"], proof.get("reason"))
         elif rid == LEGACY_UNKNOWN_REQUIREMENT:
-            emit(index, "not_run", LEGACY_UNKNOWN_REASON)
+            proof = legacy_scope_evidence(rows)
+            emit(index, proof["status"], proof.get("reason"))
         elif rid == "PRD-PRIVACY-LOCAL":
             guide_open = any("파일 고르기" in row["text"] or row["facts"].get("file_inputs") for row in rows)
             notice = _contains(all_text, ["파일은 이 기기 안에서만 읽어요", "어디로도 보내지 않아요"])
@@ -1097,34 +1323,7 @@ def evaluate(task, facts, text, uploaded_fixtures=(), history=()):
                     emit(index, "passed", "Storage pressure was observed and the recent records remain available.")
                 else:
                     emit(index, "not_run", "Eleven uploads were observed, but the retained-history count or storage-pressure explanation was not established.")
-        elif rid == "PRD-PAYWALL-BOUNDARY":
-            two_snapshots = {"peekly-sample-previous.zip", "peekly-sample-current.zip"} <= uploads
-            if not two_snapshots:
-                emit(index, "not_run", "The paywall boundary requires two valid snapshots for the same synthetic account.")
-            else:
-                free_comparison = any(_comparison_with_names(row) for row in rows)
-                history_open = any(
-                    ("기록 살펴보기" in row["text"] or "비교 시작 기록" in row["text"])
-                    for row in rows
-                )
-                all_controls = [c for row in rows for c in _controls(row)]
-                start_select = next((c for c in all_controls if c.get("tag") == "select"
-                    and ("시작 기록" in str(c.get("label") or "") or "비교 시작" in str(c.get("label") or ""))), None)
-                end_select = next((c for c in all_controls if c.get("tag") == "select"
-                    and ("종료 기록" in str(c.get("label") or "") or "비교 종료" in str(c.get("label") or ""))), None)
-                date_selects_locked = bool(start_select and end_select
-                    and start_select.get("disabled") is True and end_select.get("disabled") is True)
-                date_selects_enabled = bool(start_select and end_select
-                    and start_select.get("disabled") is not True and end_select.get("disabled") is not True)
-                pro_text = all(any(term in all_text for term in terms) for terms in (
-                    ("변화 타임라인", "여러 기록의 변화", "여러 시점의 변화"),
-                    ("두 날짜 선택 비교", "두 시점 비교", "날짜 선택"),
-                    ("사람별 관계 이력", "개인별 이력", "한 사람의 관계 이력"),
-                ))
-                if free_comparison and history_open and date_selects_locked and pro_text:
-                    emit(index, "passed")
-                elif history_open and date_selects_enabled:
-                    emit(index, "failed", "The free account exposed date-selection controls that the current PRD reserves for Pro.")
-                else:
-                    emit(index, "not_run", "The latest free comparison, history controls and Pro feature explanation were not all observed.")
+        elif rid == PAYWALL_REQUIREMENT:
+            proof = paywall_scope_evidence(rows)
+            emit(index, proof["status"], proof.get("reason"))
     return checks

@@ -55,7 +55,7 @@ def checkpoint_data(state, turns):
     Receipt previews, judgments and all other state share the existing 1 MiB
     metadata allowance. No request, response or final-result limit is raised.
     """
-    bounded(turns, 1, 64, "checkpoint turns")
+    bounded(turns, 1, 80, "checkpoint turns")
     state = data(state, CHECKPOINT_METADATA_BYTES
                  + turns * (CHECKPOINT_OBSERVATION_BYTES + 1) + 32)
     if not isinstance(state, dict):
@@ -180,7 +180,7 @@ class Queue:
             fail("queue_input", "Unknown execution schema or provenance mode.")
         from .swarm_providers import ProviderSpec
         limits = plan["limits"]
-        for name, low, high in (("parallel", 1, 64), ("turns", 1, 64),
+        for name, low, high in (("parallel", 1, 64), ("turns", 1, 80),
                 ("call_seconds", 1, 180), ("task_seconds", 1, 3600),
                 ("lease_seconds", 10, 600), ("budget_microusd", 0, 10**12),
                 ("max_model_calls", 1, 50000)):

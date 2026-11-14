@@ -28,7 +28,7 @@ class ScaleLimits:
     max_model_calls: int = 10000
 
     def validate(self):
-        for name, low, high in (("parallel", 1, 64), ("turns", 1, 64),
+        for name, low, high in (("parallel", 1, 64), ("turns", 1, 80),
                 ("call_seconds", 1, 180), ("task_seconds", 1, 3600),
                 ("lease_seconds", 10, 600), ("budget_microusd", 0, 10**12),
                 ("max_model_calls", 1, 50000)):
@@ -62,8 +62,7 @@ PEEKLY_FIXTURE_REQUIREMENTS = {
                         "@group:peekly-loose-total-over"),
     "PRD-IMPORT-PROGRESS": ("peekly-sample-current.zip", "peekly-progress-sample.zip"),
     "PRD-IMPORT-SAVE-FAIL": ("peekly-sample-previous.zip", "peekly-sample-current.zip"),
-    # The current host has no reviewed legacy-unknown seed; known-empty ZIPs are not a substitute.
-    "PRD-IMPORT-SNAPSHOT-UNKNOWN": (),
+    "PRD-IMPORT-SNAPSHOT-UNKNOWN": ("peekly-legacy-unknown-state.json", "peekly-sample-current.zip"),
     "PRD-RESULT-SNAPSHOT": ("peekly-sample-previous.zip", "peekly-sample-current.zip"),
     "PRD-PAYWALL-BOUNDARY": ("peekly-retention-snapshot-01.zip", "peekly-sample-previous.zip", "peekly-sample-current.zip"),
     "PRD-IDENTITY-LIMIT": ("peekly-sample-previous.zip", "peekly-sample-current.zip"),
@@ -76,7 +75,7 @@ _PEEKLY_STEPS = {
     "PRD-RESULT-REVERSE": ("Open the visible 내가 맞팔 안 한 사람 category list and inspect its count and actual row set from the current fixture; another category or the departed-follower list is insufficient.",),
     "PRD-RESULT-MUTUAL": ("Open the visible 맞팔 중인 사람 category list and inspect its count and actual row set from the current fixture; a person-detail sheet is not the mutual list.",),
     "PRD-RESULT-SNAPSHOT": ("Import peekly-sample-previous.zip, reopen the import entry, then import peekly-sample-current.zip.", "Open the latest comparison and its departed-follower list; inspect both count and names."),
-    "PRD-IDENTITY-LIMIT": ("Import both complete previous/current snapshots and open the latest comparison explanation.", "Inspect the username-change limitation there; the first-record preview is not this screen."),
+    "PRD-IDENTITY-LIMIT": ("Import both complete previous/current snapshots, then reveal and open the visible 팔로워에서 빠진 사람 control on current results.", "Inspect the username-change limitation in that actual comparison explanation. The warning text is not a clickable control; the first-record preview is not this screen."),
     "PRD-RESULT-SEARCH": ("Import peekly-search-ready.zip and open a relationship list with at least nine rows.", "Check unfiltered username order, enter an exact observed row key in the visible search input, and verify only that row remains."),
     "PRD-SAMPLE-EXPORT": ("Enter sample mode before importing real synthetic snapshots.", "Open More > 관계 목록 (MatrixTab); inspect both copy/save disabled states and sample titles. Do not click disabled controls.", "When a later criterion requires import, proceed directly to the More import entry after recording export evidence; do not add a separate 샘플 닫기 prerequisite."),
     "PRD-SNAPSHOT-RETENTION": ("Verify all eleven manifest keys before executing any retention step.", "For each snapshot 01 through11: open the current import entry, upload that one ZIP, inspect completion; never mix ZIPs.", "After the eleventh import open saved history and inspect retained count/oldest record; do not substitute repeated imports of the same ZIP."),
@@ -84,12 +83,17 @@ _PEEKLY_STEPS = {
         "Import peekly-retention-snapshot-01.zip as older same-account history, then peekly-sample-previous.zip and peekly-sample-current.zip once; this is setup for the following A/B/C steps.",
         "PAYWALL-A: After current import completes, stay on the current results. Scroll the page as needed to reveal 팔로워에서 빠진 사람, open that visible control, and inspect actual latest-comparison names and explanation; card counts alone do not complete A.",
         "PAYWALL-B: Close that detail only for outside navigation, then open More > 변화 기록. If tabs are below the record-count overview, scroll(delta=400) in the active modal body and inspect the returned observation. Select the visible 기간 비교 tab and inspect both 비교 시작 기록 / 비교 종료 기록 selectors and their disabled free-state restrictions; do not click disabled controls.",
-        "PAYWALL-C: With older history present, keep the history modal open and scroll its body to the visible Pro 기능 보기 control. Open it and inspect the timeline, two-date comparison and person-history explanations without purchasing.",
+        "PAYWALL-C: With older history present, stay on 기간 비교 in the open history modal. Its Pro 기능 보기 control is just below the two selectors; scroll its body until that control is visible, then open it and inspect timeline, two-date comparison and person-history explanations without purchasing. Do not return to the longer timeline comparison to find this same control.",
         "Before final, record A/B/C separately as observed with observation IDs or blocked with the last attempted action, observation ID and actual stop reason. An unattempted step remains pending while a safe next action and budget remain: execute that action. If citing a turn limit, state the actual turn/limit. Honor the existing two-unchanged-scroll escape and continue other pending criteria; do not repeat completed imports.",
     ),
     "PRD-IMPORT-PROGRESS": ("First save a small baseline with peekly-sample-current.zip if no actual saved snapshot exists; sample mode alone is insufficient.", "Open the current file input and use reviewed upload_cancel with peekly-progress-sample.zip; inspect captured reading and analysis phases, real stop dispatch and unchanged saved-result digest.", "Only if the cancel attempt lacks a required phase, try normal upload of that fixture to observe the missing phase within the remaining budget; never require a large completed import before cancellation."),
     "PRD-IMPORT-SAVE-FAIL": ("Preserve an actual small saved baseline; if absent, import peekly-sample-previous.zip.", "Reopen the file input and use upload_save_failure with the distinct snapshot: current after previous, or previous after current. Inspect consumed fault, prior-result preservation and the visible 다시 저장 action.", "Click the visible retry after the one-shot fault clears, and inspect successful save. Without the reviewed capability report not_run; never simulate a pass."),
-    "PRD-IMPORT-SNAPSHOT-UNKNOWN": ("This criterion requires a verified legacy snapshot without includedFiles metadata; the current host and fixture catalog provide no reviewed setup for that state.", "Keep not_run: reviewed legacy-unknown setup unavailable. Do not substitute peekly-empty-previous.zip with its recognized empty lists or the normal previous/current pair.", "Continue the other criteria with their own required fixtures; do not invent a legacy state or infer its outcome from another comparison."),
+    "PRD-IMPORT-SNAPSHOT-UNKNOWN": (
+        "FIRST mutating action in the fresh context: seed_legacy_unknown(file=peekly-legacy-unknown-state.json). Only observe may precede it; no click, import or other write. Inspect validated seed and product-reloaded unknown legacy state.",
+        "Next import only peekly-sample-current.zip, close the completed import sheet and open Home results. Do not import previous or another known snapshot yet: that would obscure legacy exclusion.",
+        "Expand the visible 이전 기록 1개 보관 중 control if needed. Inspect 이전 버전에서 저장한 불완전한 기록은 분석에 쓰지 않아요. and 다음에는 달라진 계정도 보여드려요 with no departed-follower comparison. Preserve this observation before other imports.",
+        "After this UNKNOWN checkpoint, execute other criteria's normal previous/current pair. A known-empty ZIP or normal pair cannot substitute for the reviewed legacy seed. If seed is unavailable or rejected, retain the actual blocked reason and do not invent legacy proof.",
+    ),
 }
 
 
@@ -113,6 +117,9 @@ def criterion_checklist(requirement_ids):
         elif has_paywall and rid in {"PRD-RESULT-SNAPSHOT", "PRD-IDENTITY-LIMIT"}:
             steps[0] = ("After PRD-PAYWALL-BOUNDARY establishes the previous/current pair, reuse it without another upload "
                         "and open the latest comparison explanation.")
+        elif rid == "PRD-IDENTITY-LIMIT" and "PRD-RESULT-SNAPSHOT" in requirement_ids:
+            steps[0] = ("After PRD-RESULT-SNAPSHOT establishes and inspects the previous/current pair, reuse it without another upload. "
+                        "Inspect the open latest comparison, or reopen its visible 팔로워에서 빠진 사람 control.")
         if rid in _PEEKLY_CATEGORY_LISTS:
             if pair_setup:
                 prerequisite = (f"After {pair_setup} completes its ordered imports, confirm peekly-sample-current.zip "
@@ -127,7 +134,8 @@ def criterion_checklist(requirement_ids):
             precondition=spec["precondition"], scope=spec["scope"],
             required_fixtures=list(PEEKLY_FIXTURE_REQUIREMENTS.get(rid, ())),
             steps=steps))
-    priority = {"PRD-SAMPLE-EXPORT": 0, "PRD-START-SAMPLE": 1,
+    priority = {"PRD-IMPORT-SNAPSHOT-UNKNOWN": -1,
+                "PRD-SAMPLE-EXPORT": 0, "PRD-START-SAMPLE": 1,
                 "PRD-START-IMPORT": 2, "PRD-START-SKIP": 2,
                 "PRD-SNAPSHOT-RETENTION": 3 if has_paywall else 30,
                 "PRD-RESULT-SNAPSHOT": 40,
@@ -140,6 +148,20 @@ def criterion_checklist(requirement_ids):
 def required_fixture_keys(requirement_ids):
     return sorted({name for rid in requirement_ids
                    for name in PEEKLY_FIXTURE_REQUIREMENTS.get(rid, ())})
+
+
+def per_task_turn_limit(task, approved_turns):
+    """Reserve the extra history navigation budget only for the 13-import task.
+
+    The global queue ceiling stays an upper bound. Ordinary Peekly tasks retain
+    64 turns; retention plus paywall may use 80 for eleven retention imports,
+    the distinct previous/current pair and the real small-viewport modal path.
+    """
+    ids = set(task.get("requirement_ids", []))
+    if not ids.intersection(PEEKLY_CRITERIA):
+        return approved_turns
+    requested = 80 if {"PRD-SNAPSHOT-RETENTION", "PRD-PAYWALL-BOUNDARY"} <= ids else 64
+    return min(approved_turns, requested)
 
 
 def _criterion_actions(requirement_ids):
@@ -178,9 +200,9 @@ def _persona_journey_goal(base_goal, requirement_ids):
     if "PRD-IMPORT-HTML" in ids:
         actions.append("읽을 수 없는 HTML 관계 항목 기준이면 peekly-malformed-html.zip을 넣고 가져오기 중단 안내를 확인한다.")
     if "PRD-IMPORT-SNAPSHOT-UNKNOWN" in ids:
-        actions.append("UNKNOWN 기준은 includedFiles 메타데이터가 없는 legacy snapshot을 요구한다. peekly-empty-previous.zip의 인식된 빈 목록은 known-empty이므로 대체하지 않는다. 현재 host/fixture에는 검증된 legacy-unknown 준비 기능이 없으므로 그 사유와 함께 not_run으로 남기고 다른 기준을 계속한다. 정상 pair나 다른 비교의 문구로 이 기준의 통과·실패를 만들지 않는다.")
+        actions.insert(0, "UNKNOWN은 새 context에서 observe 뒤 첫 변경 동작으로 seed_legacy_unknown(file=peekly-legacy-unknown-state.json)을 실행한다. 그 전에 클릭·import하지 않는다. 검증된 legacy unknown을 실제 앱이 다시 읽은 뒤 current 하나만 import하고 Home에서 이전 기록 안내를 펼쳐 불완전 기록 제외와 첫 기록 상태를 관찰한다. 이 증거를 남긴 다음에만 다른 기준의 previous/current pair를 가져온다. known-empty ZIP이나 정상 pair로 UNKNOWN을 대체하지 않는다.")
     if "PRD-RESULT-SEARCH" in ids:
-        actions.append("9명 이상 관계 목록을 열어 username 순서와 현재 UI placeholder '아이디나 이름으로 찾기'가 있는 text input을 확인한다. 합성 아이디를 검색해 대상 행만 남는지 확인한다.")
+        actions.append("peekly-search-ready.zip import 뒤 9명 이상 관계 목록을 열어 username 순서를 관찰한다. 현재 visible:true인 input[type=search], label '이름 또는 아이디 찾기'에 실제 관측한 행의 정확한 아이디를 입력하고 대상 행만 남는지 확인한다.")
     if "PRD-PRIVACY-LOCAL" in ids:
         actions.append("현재 PRD의 자체 서버 없음·기기 내 처리 고지를 확인한다. 결과 공유는 사용자가 고른 목적지로 전달될 수 있고 샘플 공유는 비활성화된다는 경계를 구분한다. desktop 브라우저의 외부 요청 차단은 테스트 격리 정책이지 제품 자체의 데이터 흐름 증거라고 주장하지 않는다.")
     if "PRD-PRIVACY-DELETE" in ids:
@@ -214,7 +236,7 @@ def _persona_journey_goal(base_goal, requirement_ids):
         + "\n\n명시적 성공 기준과 기계 판정 계약:\n" + "\n".join(criteria)
         + "\n\n기준별 필수 단계 체크리스트:\n" + "\n".join(_criterion_actions(requirement_ids))
         + "\n\n실행 규칙: 새 브라우저의 현재 DOM을 먼저 관찰하고 기준마다 선행조건을 충족한 뒤 제한시간 안에 지정 행동을 실제 수행한다. "
-        "업로드 기준은 이름이 지정된 모든 fixture를 실제 input[type=file]에 업로드하고 결과 화면까지 확인한다. "
+        "ZIP·loose 업로드 fixture는 실제 input[type=file]에 넣고 결과까지 확인한다. legacy-state JSON은 seed_legacy_unknown으로만 준비하며 파일 input에 업로드하지 않는다. "
         "기준에 적힌 텍스트만 보였다는 이유로 통과시키지 말고 숫자·상태·목록까지 확인한다. "
         "기계 판정 checks가 존재하면 그 결과를 반드시 따른다. 기계 판정이 없는 기준은 관측 ID와 스크린샷을 인용한다. "
         "필수 fixture나 하위 흐름을 건너뛰고 최종 판단하지 않는다. 성공 기준을 실행하지 않았거나 전제조건이 확인되지 않으면 not_run으로 남기고 다음 실행 행동을 먼저 시도한다. "

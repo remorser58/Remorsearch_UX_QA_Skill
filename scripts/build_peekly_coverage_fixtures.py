@@ -15,6 +15,7 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import stat
+import subprocess
 import sys
 import zipfile
 
@@ -27,6 +28,10 @@ RELATIONS = "connections/followers_and_following/"
 SAMPLES = ("peekly-sample-previous.zip", "peekly-sample-current.zip")
 PROGRESS = "peekly-progress-sample.zip"
 SEARCH = "peekly-search-ready.zip"
+LEGACY_SEED = "peekly-legacy-unknown-state.json"
+LEGACY_SNAPSHOT_ID = "peekly_legacy_unknown_v6"
+LEGACY_PRODUCT_COMMIT = "51110f4c569673faa8d242d5b85c4b47afb54cbb"
+LEGACY_PRODUCT_LOADER_SHA256 = "401759c4ef2d11efcf7b710292ba6269ce66653cd3d19fd2164fa6f54883559a"
 RETENTION = tuple(f"peekly-retention-snapshot-{i:02d}.zip" for i in range(1, 12))
 REQUIRED = {*SAMPLES, PROGRESS, "peekly-format-json.zip",
             "peekly-empty-previous.zip", "peekly-account-mismatch.zip"}
@@ -327,8 +332,74 @@ def _copy_verified(source, destination, row):
         raise FixtureBuildError("source_changed_during_copy:" + row["name"])
 
 
+def legacy_seed_state(owner):
+    """A genuine pre-provenance snapshot, not an empty current-format import."""
+    if not isinstance(owner, str) or not re.fullmatch(r"[a-z0-9._]{1,30}", owner):
+        raise FixtureBuildError("legacy_seed_owner_invalid")
+    def user(name):
+        return {"pk": name, "username": name, "timestamp": TIMESTAMP - 86400}
+    snapshot = {
+        "id": LEGACY_SNAPSHOT_ID, "accountHandle": owner,
+        "label": "합성 이전 버전 기록", "createdAt": (TIMESTAMP - 86400) * 1000,
+        "isSample": False,
+        "followers": [user("synthetic_legacy_mutual"), user("synthetic_legacy_follower")],
+        "following": [user("synthetic_legacy_mutual"), user("synthetic_legacy_following")],
+        "pendingFollowRequests": [], "recentlyUnfollowed": [], "closeFriends": [],
+        "blockedProfiles": [], "restrictedProfiles": [], "hideStoryFrom": [],
+        "likesGivenByAuthor": {}, "commentsGivenByAuthor": {},
+    }
+    # Both provenance fields are deliberately absent. The real product normalizer
+    # must infer includedFiles and assign UNKNOWN; the host never assigns it.
+    return {
+        "snapshots": [snapshot], "activeSnapshotId": LEGACY_SNAPSHOT_ID,
+        "comparisonSnapshotId": LEGACY_SNAPSHOT_ID, "whitelistedUsernames": [],
+        "customTagsByUsername": {}, "unfollowLog": [], "cleanupQueueUsernames": [],
+        "profileChecks": {}, "entitlement": {
+            "tier": "FREE", "secretPassExpiresAt": None, "rewardUnlockedItemIds": [],
+            "whitelistLimit": 20, "customTagLimit": 2, "maxAccounts": 1},
+    }
+
+
+def _validated_legacy_seed(destination, owner, product_path, node):
+    path = destination / LEGACY_SEED
+    with path.open("xb") as stream:
+        stream.write(_json_bytes(legacy_seed_state(owner)))
+    os.chmod(path, 0o600)
+    command = [str(node), str(Path(__file__).with_name("validate_peekly_legacy_seed.mjs")),
+               str(Path(product_path).resolve(strict=True)), str(path)]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, timeout=30,
+                                check=False)
+        validation = json.loads(result.stdout) if result.returncode == 0 else None
+    except (subprocess.TimeoutExpired, json.JSONDecodeError) as exc:
+        raise FixtureBuildError("legacy_product_validation_unavailable") from exc
+    required = {"v6_missing_metadata_migrates_unknown", "legacy_snapshot_retained",
+                "legacy_excluded_from_selection", "v7_roundtrip_valid",
+                "known_empty_is_known", "malformed_v7_rejected_without_legacy_fallback",
+                "plain_v7_under_compression_threshold"}
+    if (not isinstance(validation, dict)
+            or validation.get("schema_version") != "peekly-legacy-product-validation.v1"
+            or validation.get("product_commit") != LEGACY_PRODUCT_COMMIT
+            or validation.get("product_loader_sha256") != LEGACY_PRODUCT_LOADER_SHA256
+            or validation.get("fixture_sha256") != sha256(path)
+            or set(validation.get("checks", {})) != required
+            or any(value is not True for value in validation["checks"].values())):
+        raise FixtureBuildError("legacy_product_validation_failed")
+    return {"schema_version": "peekly-legacy-seed-fixture.v1",
+            "fixture": LEGACY_SEED, "fixture_sha256": sha256(path),
+            "storage_key": "peekly_state_v6", "snapshot_ids": [LEGACY_SNAPSHOT_ID],
+            "owner_sha256": hashlib.sha256(owner.encode("utf-8")).hexdigest(),
+            "source_included_files_absent": True,
+            "source_list_completeness_absent": True,
+            "product_commit": LEGACY_PRODUCT_COMMIT,
+            "product_loader_sha256": LEGACY_PRODUCT_LOADER_SHA256,
+            "product_validation_sha256": hashlib.sha256(_json_bytes(validation)).hexdigest(),
+            "product_validation": validation}
+
+
 def build_fixtures(source, destination, *, progress_follower_rows=PROGRESS_FOLLOWER_ROWS,
-                   progress_following_rows=PROGRESS_FOLLOWING_ROWS, progress_chunk_rows=100_000):
+                   progress_following_rows=PROGRESS_FOLLOWING_ROWS, progress_chunk_rows=100_000,
+                   legacy_product_path=None, legacy_node="node"):
     source, destination = Path(source), Path(destination)
     if source.is_symlink():
         raise FixtureBuildError("source_directory_symlink")
@@ -363,6 +434,8 @@ def build_fixtures(source, destination, *, progress_follower_rows=PROGRESS_FOLLO
     # a concurrently-created destination cannot be overwritten.
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.mkdir(mode=0o700)
+    legacy = (_validated_legacy_seed(destination, owner, legacy_product_path, legacy_node)
+              if legacy_product_path is not None else None)
     modified = {*SAMPLES, PROGRESS}
     for name, row in files.items():
         if name not in modified:
@@ -403,8 +476,11 @@ def build_fixtures(source, destination, *, progress_follower_rows=PROGRESS_FOLLO
                               "expected_counts": progress_counts}
 
     all_names = set(files) | set(RETENTION) | {SEARCH}
+    if legacy:
+        all_names.add(LEGACY_SEED)
     generated_scenarios = {PROGRESS: "recognized-relationship-json-progress",
-                           SEARCH: "search-ready-12-following-only-rows"}
+                           SEARCH: "search-ready-12-following-only-rows",
+                           LEGACY_SEED: "validated-legacy-state-missing-provenance"}
     generated_scenarios.update({name: f"retention-snapshot-{i:02d}"
                                 for i, name in enumerate(RETENTION, 1)})
     output_rows = []
@@ -418,7 +494,7 @@ def build_fixtures(source, destination, *, progress_follower_rows=PROGRESS_FOLLO
     if len({row["sha256"] for row in output_rows if row["name"] in RETENTION}) != 11:
         raise FixtureBuildError("retention_snapshots_not_distinct")
     manifest = copy.deepcopy(original)
-    manifest.update(version="peekly-coverage-fixtures-v1", files=output_rows,
+    manifest.update(version="peekly-coverage-fixtures-v2" if legacy else "peekly-coverage-fixtures-v1", files=output_rows,
                     source={"path": "synthetic-coverage-derived-from-v5",
                             "manifest_sha256": manifest_sha,
                             "preserves": "source directory unchanged; groups preserved"})
@@ -450,6 +526,8 @@ def build_fixtures(source, destination, *, progress_follower_rows=PROGRESS_FOLLO
                      "ignored_padding": False, "latency_guaranteed": False},
         "modified_source_files": sorted(modified),
     }
+    if legacy:
+        manifest["coverage"]["legacy_seed"] = legacy
     # Only a fully built, verified directory receives its final manifest.
     manifest_path = destination / "fixture-manifest.json"
     with manifest_path.open("xb") as stream:
@@ -474,12 +552,16 @@ if __name__ == "__main__":
     parser.add_argument("--progress-followers", type=int, default=PROGRESS_FOLLOWER_ROWS)
     parser.add_argument("--progress-following", type=int, default=PROGRESS_FOLLOWING_ROWS)
     parser.add_argument("--progress-chunk-rows", type=int, default=100_000)
+    parser.add_argument("--legacy-product-path", type=Path,
+                        help="Validate the new seed with the pinned product loader; never modifies product files.")
+    parser.add_argument("--legacy-node", default="node")
     args = parser.parse_args()
     try:
         main(args.source, args.destination,
              progress_follower_rows=args.progress_followers,
              progress_following_rows=args.progress_following,
-             progress_chunk_rows=args.progress_chunk_rows)
+             progress_chunk_rows=args.progress_chunk_rows,
+             legacy_product_path=args.legacy_product_path, legacy_node=args.legacy_node)
     except (FixtureBuildError, OSError) as exc:
         print(str(exc), file=sys.stderr)
         raise SystemExit(2)

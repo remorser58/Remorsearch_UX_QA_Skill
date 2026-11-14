@@ -134,9 +134,9 @@ class ChecklistTests(unittest.TestCase):
                     self.assertLess(goal.index("서로 다른 유효 합성 스냅샷 11개"),
                                     goal.index("그 뒤 previous/current pair"))
 
-    def test_sixty_four_observations_fit_model_envelope_and_preserve_checks(self):
+    def test_eighty_history_observations_fit_model_envelope_and_preserve_checks(self):
         observations = []
-        for i in range(64):
+        for i in range(80):
             observations.append({"id": f"obs-{i+1}", "action": "Inspect owned result",
                 "text": "관찰한 결과 " * 1000,
                 "facts": {"text": "관찰한 결과 " * 1000,
@@ -151,14 +151,17 @@ class ChecklistTests(unittest.TestCase):
                 "captures": [], "artifacts": []})
         original = copy.deepcopy(observations)
         execution = ScaleExecution.__new__(ScaleExecution)
-        execution.plan = {"tools": [], "limits": {"turns": 64}}
-        task = {"id": "S-test", "goal": "Inspect retention.", "requirement_ids": ["PRD-SNAPSHOT-RETENTION"]}
+        execution.plan = {"tools": [], "limits": {"turns": 80}}
+        task = {"id": "S-test", "goal": "Inspect retention and Pro boundary.",
+                "requirement_ids": ["PRD-SNAPSHOT-RETENTION", "PRD-PAYWALL-BOUNDARY"]}
         record = {"profile": {}, "provenance": {"mode": "synthetic"},
                   "context": {"requirements": []}}
         payload = execution.payload({"job": {"task": task}},
-                                    {"observations": observations, "turn": 60}, record, "model")
+                                    {"observations": observations, "turn": 76}, record, "model")
         self.assertLess(len(json.dumps(payload, ensure_ascii=False).encode()), 262144)
-        self.assertEqual(sum(len(o["checks"]) for o in payload["observations"]), 64)
+        self.assertEqual(sum(len(o["checks"]) for o in payload["observations"]), 80)
+        self.assertEqual(payload["effective_turn_limit"], 80)
+        self.assertEqual(payload["remaining_model_turns"], 4)
         self.assertEqual([o["id"] for o in payload["observations"]],
                          [o["id"] for o in observations])
         self.assertNotIn("controls", payload["observations"][0]["facts"])
@@ -288,51 +291,56 @@ class ImportedCategoryPlanningTests(unittest.TestCase):
 
 
 class LegacyUnknownPlanningTests(unittest.TestCase):
-    def test_unavailable_legacy_setup_stays_not_run_without_known_empty_substitution(self):
+    def test_validated_legacy_setup_precedes_every_mutating_action_and_is_not_an_upload(self):
         rid = "PRD-IMPORT-SNAPSHOT-UNKNOWN"
         row = criterion_checklist([rid])[0]
-        self.assertEqual(row["required_fixtures"], [])
-        self.assertEqual(required_fixture_keys([rid]), [])
-        self.assertIn("legacy snapshot without includedFiles", row["steps"][0])
-        self.assertIn("no reviewed setup", row["steps"][0])
-        self.assertIn("Keep not_run: reviewed legacy-unknown setup unavailable", row["steps"][1])
-        self.assertIn("Do not substitute peekly-empty-previous.zip", row["steps"][1])
-        self.assertIn("Continue the other criteria", row["steps"][2])
+        self.assertEqual(row["required_fixtures"], ["peekly-legacy-unknown-state.json", "peekly-sample-current.zip"])
+        self.assertEqual(required_fixture_keys([rid]), sorted(row["required_fixtures"]))
+        self.assertIn("FIRST mutating action", row["steps"][0])
+        self.assertIn("Only observe may precede it", row["steps"][0])
+        self.assertIn("Next import only peekly-sample-current.zip", row["steps"][1])
+        self.assertIn("Do not import previous", row["steps"][1])
+        self.assertIn("Preserve this observation before other imports", row["steps"][2])
+        self.assertIn("After this UNKNOWN checkpoint", row["steps"][3])
         self.assertNotIn("not_applicable", " ".join(row["steps"]))
         goal = _persona_journey_goal("Inspect only the reviewed owned state.", [rid])
-        self.assertIn("known-empty이므로 대체하지 않는다", goal)
-        self.assertIn("그 사유와 함께 not_run으로 남기고 다른 기준을 계속", goal)
+        self.assertIn("known-empty ZIP이나 정상 pair로 UNKNOWN을 대체하지 않는다", goal)
+        self.assertIn("파일 input에 업로드하지 않는다", goal)
         self.assertNotIn("peekly-empty-previous.zip을 먼저 넣고", goal)
         self.assertNotIn("upload peekly-empty-previous.zip then", goal.lower())
         self.assertEqual(swarm.clean(goal), goal)
         self.assertLessEqual(len(goal), 8000)
 
-    def test_unsupported_unknown_does_not_block_or_weaken_other_pair_preflight(self):
+    def test_legacy_seed_preflight_is_required_and_pair_remains_after_unknown(self):
         unknown = "PRD-IMPORT-SNAPSHOT-UNKNOWN"
         normal = "PRD-RESULT-SNAPSHOT"
         normal_row = criterion_checklist([normal])[0]
-        mixed_rows = criterion_checklist([unknown, normal])
+        mixed_rows = criterion_checklist([normal, "PRD-IDENTITY-LIMIT", unknown])
+        self.assertEqual(mixed_rows[0]["requirement_id"], unknown)
+        self.assertEqual(mixed_rows[0]["index"], 2)
         mixed_normal = next(row for row in mixed_rows if row["requirement_id"] == normal)
-        self.assertEqual(mixed_normal["index"], 1)
+        self.assertEqual(mixed_normal["index"], 0)
         self.assertEqual({k: v for k, v in mixed_normal.items() if k != "index"},
                          {k: v for k, v in normal_row.items() if k != "index"})
+        identity = next(row for row in mixed_rows if row["requirement_id"] == "PRD-IDENTITY-LIMIT")
+        self.assertIn("reuse it without another upload", identity["steps"][0])
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             manifest_path = root / "fixture-manifest.json"
             manifest = dict(schema_version="peekly-synthetic-fixtures.v1", files=[], groups={})
             manifest_path.write_text(json.dumps(manifest))
-            unsupported = live.fixture_preflight(root, [unknown])
-            self.assertEqual(unsupported["required_file_count"], 0)
-            for name in ("peekly-sample-previous.zip", "peekly-sample-current.zip"):
+            with self.assertRaisesRegex(RuntimeError, "required_fixture_missing:peekly-legacy-unknown-state.json"):
+                live.fixture_preflight(root, [unknown])
+            for name in ("peekly-legacy-unknown-state.json", "peekly-sample-previous.zip", "peekly-sample-current.zip"):
                 data = ("owned-normal-pair:" + name).encode()
                 (root / name).write_bytes(data)
                 manifest["files"].append(dict(name=name, bytes=len(data), sha256=byte_digest(data)))
             manifest_path.write_text(json.dumps(manifest))
             mixed = live.fixture_preflight(root, [unknown, normal])
-            self.assertEqual(mixed, live.fixture_preflight(root, [normal]))
-            self.assertEqual(mixed["required_file_count"], 2)
+            self.assertEqual(mixed["required_file_count"], 3)
+            self.assertEqual(live.fixture_preflight(root, [normal])["required_file_count"], 2)
             self.assertNotIn("peekly-empty-previous.zip", mixed["required_fixture_keys"])
-            manifest["files"] = manifest["files"][:1]
+            manifest["files"] = manifest["files"][:2]
             manifest_path.write_text(json.dumps(manifest))
             with self.assertRaisesRegex(RuntimeError, "required_fixture_missing:peekly-sample-current.zip"):
                 live.fixture_preflight(root, [unknown, normal])
@@ -499,15 +507,19 @@ class BoundedLongJourneyTests(unittest.IsolatedAsyncioTestCase):
             for artifact in row["result"]["receipt"]["artifacts"]:
                 self.assertEqual(byte_digest((evidence_root / artifact["path"]).read_bytes()), artifact["sha256"])
         invalid = copy.deepcopy(plan)
-        invalid["limits"]["turns"] = 65
+        invalid["limits"]["turns"] = 81
         with self.assertRaises(Exception):
             Queue.create(self.root / "too-long-scale", invalid)
         self.assertFalse((self.root / "too-long-scale").exists())
-        self.assertEqual(ScaleLimits(turns=64).validate()["turns"], 64)
+        for ceiling in (1, 12, 64, 65, 80):
+            self.assertEqual(ScaleLimits(turns=ceiling).validate()["turns"], ceiling)
         with self.assertRaises(Exception):
-            ScaleLimits(turns=65).validate()
+            ScaleLimits(turns=81).validate()
+        with self.assertRaises(Exception):
+            ScaleLimits(turns=0).validate()
         self.assertEqual(live.live_limits(32).max_model_calls, 32 * 17)
         self.assertEqual(live.live_limits(32, 64).max_model_calls, 32 * 65)
+        self.assertEqual(live.live_limits(32, 80).max_model_calls, 32 * 81)
         self.assertEqual(live.live_limits(32, 64).budget_microusd, 0)
 
     async def test_checkpoint_budget_does_not_expand_other_envelopes_or_observation_count(self):

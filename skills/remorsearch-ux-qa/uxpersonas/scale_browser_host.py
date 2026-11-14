@@ -28,6 +28,12 @@ def _preserve_driver_hashes(original, cleaned):
         ("import_attempt", "fixture_sha256"),
         ("import_attempt", "storage_before", "sha256"),
         ("import_attempt", "storage_after", "sha256"),
+        ("legacy_seed", "fixture_sha256"),
+        ("legacy_seed", "product_loader_sha256"),
+        ("legacy_seed", "product_validation_sha256"),
+        ("legacy_seed", "storage_before", "sha256"),
+        ("legacy_seed", "storage_after", "sha256"),
+        ("legacy_state", "storage_sha256"),
     )
     for parts in paths:
         source, target = original, cleaned
@@ -38,6 +44,35 @@ def _preserve_driver_hashes(original, cleaned):
             value = source.get(parts[-1])
             if isinstance(value, str) and re.fullmatch(r"[a-f0-9]{64}", value):
                 target[parts[-1]] = value
+    original_seed, clean_seed = original.get("legacy_seed"), cleaned.get("legacy_seed")
+    if isinstance(original_seed, dict) and isinstance(clean_seed, dict):
+        value = original_seed.get("product_commit")
+        if isinstance(value, str) and re.fullmatch(r"[a-f0-9]{40}", value):
+            clean_seed["product_commit"] = value
+    original_state, clean_state = original.get("legacy_state"), cleaned.get("legacy_state")
+    if (isinstance(original_state, dict) and isinstance(clean_state, dict)
+            and original_state.get("schema_version") == "peekly-legacy-state.v1"):
+        sources, targets = original_state.get("snapshots"), clean_state.get("snapshots")
+        if isinstance(sources, list) and isinstance(targets, list) and len(sources) == len(targets) <= 10:
+            for source, target in zip(sources, targets):
+                if isinstance(source, dict) and isinstance(target, dict):
+                    value = source.get("account_sha256")
+                    if isinstance(value, str) and re.fullmatch(r"[a-f0-9]{64}", value):
+                        target["account_sha256"] = value
+
+
+def _authorize_legacy_seed(task, arguments, uploads, attempted):
+    """Authorize only the reviewed UNKNOWN setup in its original owned context."""
+    if (not isinstance(task, dict)
+            or not isinstance(task.get("requirement_ids"), list)
+            or "PRD-IMPORT-SNAPSHOT-UNKNOWN" not in task.get("requirement_ids", [])):
+        raise RuntimeError("legacy_seed_task_not_authorized")
+    if arguments != {"file": "peekly-legacy-unknown-state.json"}:
+        raise RuntimeError("legacy_seed_fixed_fixture_only")
+    if attempted:
+        raise RuntimeError("legacy_seed_already_attempted")
+    if uploads:
+        raise RuntimeError("legacy_seed_after_import_not_allowed")
 
 
 class ScaleBrowserHost:
@@ -72,6 +107,7 @@ class ScaleBrowserHost:
         self.context_uploads = {}
         self.context_observations = {}
         self.context_fixture_validation = {}
+        self.context_seed_attempts = {}
 
     def _validate_fixture_upload(self, fixture_name):
         """Expose bounded fixture-shape metadata without leaking fixture contents."""
@@ -151,6 +187,7 @@ class ScaleBrowserHost:
         self.context_uploads = getattr(self, "context_uploads", {})
         self.context_observations = getattr(self, "context_observations", {})
         self.context_fixture_validation = getattr(self, "context_fixture_validation", {})
+        self.context_seed_attempts = getattr(self, "context_seed_attempts", {})
         if kind == "close":
             process = self.processes.get(context)
             if process is None:
@@ -170,6 +207,7 @@ class ScaleBrowserHost:
             self.context_uploads.pop(context, None)
             self.context_observations.pop(context, None)
             self.context_fixture_validation.pop(context, None)
+            self.context_seed_attempts.pop(context, None)
             return {"operation_id":request["operation_id"],"context_id":context,
                 "request_sha256":request["request_sha256"],"trace_id":"browser-close-"+context[-12:],
                 "result":result}
@@ -182,15 +220,23 @@ class ScaleBrowserHost:
         self.context_uploads.setdefault(context, set())
         self.context_observations.setdefault(context, [])
         self.context_fixture_validation.setdefault(context, [])
+        name = payload["name"]
+        arguments = payload["arguments"]
+        if name == "seed_legacy_unknown":
+            _authorize_legacy_seed(self.context_tasks.get(context), arguments,
+                                   self.context_uploads[context],
+                                   self.context_seed_attempts.get(context, False))
         if context not in self.processes:
             await self._exchange(context, "start", {"url":self.target_url, "chrome":self.chrome,
                 "profile_dir":str(evidence / "browser-profile"), "evidence_path":str(evidence),
-                "fixtures_dir":str(self.fixtures)})
-        name = payload["name"]
-        arguments = payload["arguments"]
+                "fixtures_dir":str(self.fixtures),
+                "legacy_seed_allowed":"PRD-IMPORT-SNAPSHOT-UNKNOWN" in
+                    self.context_tasks.get(context, {}).get("requirement_ids", [])})
         if name not in {"observe", "click", "type", "upload", "upload_cancel",
-                        "upload_save_failure", "scroll", "wait"}:
+                        "upload_save_failure", "seed_legacy_unknown", "scroll", "wait"}:
             raise RuntimeError("tool_not_allowlisted")
+        if name == "seed_legacy_unknown":
+            self.context_seed_attempts[context] = True
         try:
             result = await self._exchange(context, "act", {"name":name, "arguments":arguments})
         except RuntimeError as exc:

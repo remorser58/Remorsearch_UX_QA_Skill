@@ -113,7 +113,7 @@ class VerdictQualityTests(unittest.TestCase):
         for expected in ("peekly-sample-previous.zip", "peekly-sample-current.zip",
                          "peekly-format-html.zip", "peekly-format-json.zip",
                          "peekly-missing-followers.zip", "peekly-missing-following.zip",
-                         "peekly-account-mismatch.zip", "검색", "별도 브라우저 프로필"):
+                         "peekly-account-mismatch.zip", "이름 또는 아이디 찾기", "별도 브라우저 프로필"):
             self.assertIn(expected, goal)
         self.assertIn("not_applicable", goal)
         self.assertIn("not_run", goal)
@@ -251,7 +251,8 @@ class VerdictQualityTests(unittest.TestCase):
             ]}}
         pro = {"text": "변화 타임라인 두 시점 비교 사람별 관계 이력", "facts": {"controls": []}}
         checks = evaluate(task, pro["facts"], pro["text"], uploads, [free, history])
-        self.assertEqual(checks[0]["status"], "passed")
+        # Cumulative fixture names and unbound UI copy do not prove two imports.
+        self.assertEqual(checks[0]["status"], "not_run")
         checks = evaluate(task, free["facts"], free["text"], uploads, [free])
         self.assertEqual(checks[0]["status"], "not_run")
 
