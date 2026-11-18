@@ -641,6 +641,7 @@ class AttachIntegrityTests(unittest.TestCase):
         self.receipts.mkdir()
         old_png = self.receipts / "original-qa.png"
         write_png(old_png)
+        old_png.chmod(0o600)
         self.qa["records"]["runs"][0].update(started_at="2026-09-28T11:00:00Z", ended_at="2026-09-28T11:00:05Z")
         self.qa["records"]["observations"][0]["receipt"] = {
             "artifact_path": old_png.name, "sha256": sha256_file(old_png), "captured_at": "2026-09-28T11:00:01Z",
