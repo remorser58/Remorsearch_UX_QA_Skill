@@ -113,6 +113,13 @@ transitions through the driver; starting another session at the entry URL does
 not measure the screen the host browser reached. Keep `serve` running in one
 terminal and send client commands from another, as in the quickstart above.
 
+On Chromium 141 / Playwright 1.56.1, capturing an opened native `<select>`
+popup can time out or disturb mobile emulation. If a capture reports a changed
+viewport or pixel mapping, do not treat it as valid geometry. Preserve the
+failed run; in a separate run, focus the closed select with Tab, choose with
+arrow keys and Tab away without opening the popup. This can continue page
+measurement, but does not validate the native popup or a whole keyboard task.
+
 Before reporting, check that each reached screen has a measurement snapshot and
 analysis evidence. Missing measurements, capped reflow/focus probes or unsupported
 text remain named coverage gaps, not passed checks. After a confirmation appears,
