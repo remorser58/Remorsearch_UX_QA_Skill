@@ -22,7 +22,7 @@ For every priority task, require all these rows on each device in scope:
 | Keyboard only | Whole primary task, including intermediate choices and recovery |
 | Reading order | Each intermediate screen's meaningful sequence and focus order |
 
-After every step, verify prior values/choices. Author `success.task_checks` for material fields after error/coupon/address/recovery transitions and at completion (`drivers/web/README.md`). Use explicit expected reset/normalized values; `from_step` reuses an authored input, `type.redact:true` protects its recorded text. Failed submit: first-invalid focus, invalid state and error association. Success requires final options/quantities/amounts/notes to match. Each row: pass/partial/fail/untested with reason.
+Compare all values/choices after each step and at completion. Use `success.task_checks`, explicit reset/normalization, `from_step` and `type.redact:true` (`drivers/web/README.md`). Failed submits: first-invalid focus, invalid state, error association. Each row: pass/partial/fail/untested with reason.
 
 Scenario: ID/task/goal/safe data, basis/brief condition, context/constraints/device/input/start, expected decision/integrity/risk, claim IDs and omissions. Audience rows cite audience_id/segment_id/task_id/facet and gate-supported motivations. Without an audience, choose task-changing strata: new/returning, touch/keyboard, interruption, delay, empty/stale/edge data. Do not add demographic decoration or stereotype behavior.
 
@@ -30,7 +30,9 @@ Optional dataset: exact source/revision/schema, bounded/streaming sample; record
 
 ## 2. Exercise and capture
 
-Exercise actual product/input/start state; capture decisions/recovery, console/network/runtime errors, keyboard/focus/semantics and feedback. Screenshots support the trace; available interactions require flow evidence.
+Exercise actual product/input/start state; capture decisions/recovery, console/network/runtime errors, keyboard/focus/semantics and feedback. Screenshots support, not replace, flow evidence.
+
+Follow `drivers/web/README.md` section "Task-walk coverage" for per-screen measurement and analysis.
 
 Bundled fallback (Node.js 22; detect installed dependencies first):
 
