@@ -73,8 +73,22 @@ def main(argv: list[str] | None = None) -> int:
     rev = commands.add_parser("revision", help="Compute the content hash of the explicitly declared code scope")
     rev.add_argument("--workspace", type=Path, required=True)
     rev.add_argument("--path", action="append", required=True)
+    undo = commands.add_parser("rollback", help="Preview selected improvements; confirm the exact preview to reverse them")
+    undo.add_argument("--checkpoint", type=Path, required=True)
+    undo.add_argument("--fix", action="append", required=True)
+    undo.add_argument("--confirm", help="Explicitly selected confirmation_sha256 from the current preview")
+    undo.add_argument("--actor", default="")
+    undo.add_argument("--reason", default="")
     args = parser.parse_args(argv)
     try:
+        if args.command == "rollback":
+            from . import rollback
+            output_path(args.checkpoint)
+            result = (rollback.apply(args.checkpoint, args.fix, args.confirm,
+                                     actor=args.actor, reason=args.reason)
+                      if args.confirm else rollback.preview(args.checkpoint, args.fix))
+            emit(result)
+            return 0
         if args.command == "fill":
             result = fill(args.draft, args.evidence_root, args.out, workspace=args.workspace)
             emit(result)
