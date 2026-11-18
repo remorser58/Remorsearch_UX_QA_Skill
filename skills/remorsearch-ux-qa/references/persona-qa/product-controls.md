@@ -110,6 +110,7 @@ The preview binds current checkpoint/content hashes. Conflicting or unrecorded c
 stale confirmation, missing original snapshots, a pending forward patch and held workspace
 locks stop reversal. Unknown delivery is never retried automatically.
 The supported atomic content scope is **one file**; multi-file changes stop before writing.
+Recreating deleted originals also stops when their original permissions/metadata were not recorded.
 The existing write-ahead record supports crash recovery, but is not multi-file atomicity.
 Advisory locks coordinate cooperating writers; no filesystem compare-and-swap against
 arbitrary noncooperating writers is claimed.

@@ -315,6 +315,9 @@ def seed_input(doc):
     for item in doc["personas"]:
         from .library import PROFILE_FIELDS
         exact_keys(item, PROFILE_FIELDS | {"persona_id", "seed_id"})
+        identifier(item["seed_id"])
+        for field in ("contexts", "assumptions", "unknowns"):
+            strings(item[field], field)
         seed = seeds.get(item["seed_id"])
         if seed is None or item["seed_id"] in seen:
             fail("controls_seed", "Select distinct actual catalog seeds, not duplicated identities.")

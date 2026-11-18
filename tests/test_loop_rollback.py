@@ -9,7 +9,7 @@ from loop_factory import ROOT, SKILL, make_packet
 from uxloop.engine import report, run
 from uxloop.io import ContractError, GateStop, code_snapshot, digest
 from uxloop.patching import finish_intent
-from uxloop.rollback import _plan, apply, preview
+from uxloop.rollback import _plan, apply, preview, validate_pending
 from uxloop.storage import event, load, save
 
 
@@ -199,6 +199,24 @@ class RollbackTests(unittest.TestCase):
         with self.assertRaises(ContractError):
             self.undo(proposal)
         self.assertNotEqual((self.workspace / "index.html").read_bytes(), self.original)
+
+    def test_deleted_file_without_original_metadata_is_not_recreated(self):
+        state = copy.deepcopy(self.state)
+        proposal, intent = _plan(state, ["fix-1"])
+        snapshot = state["applied_fixes"][0]["rollback_snapshot"]
+        snapshot["after_files"]["index.html"] = None
+        snapshot["sha256"] = digest({k: v for k, v in snapshot.items() if k != "sha256"})
+        (self.workspace / "index.html").unlink()
+        with self.assertRaisesRegex(GateStop, "metadata"):
+            _plan(state, ["fix-1"])
+        self.assertFalse((self.workspace / "index.html").exists())
+        row = report(state)["improvements"][0]
+        self.assertFalse(row["rollback_available"])
+        self.assertIn("metadata", row["rollback_limit"])
+        state["pending_rollback"] = dict(preview=proposal, intent=intent, actor="owner", reason="selected",
+                                         authorization_event=state["permissions"]["code_write"]["id"])
+        with self.assertRaisesRegex(ContractError, "metadata"):
+            validate_pending(state)
 
     def test_oversized_checkpoint_never_replaces_readable_state(self):
         state = load(self.checkpoint)

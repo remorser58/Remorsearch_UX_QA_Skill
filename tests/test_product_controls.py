@@ -199,6 +199,14 @@ class ProductControlsTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(EngineError):
             controls.seed_input(doc)
 
+    def test_malformed_seed_lists_are_not_coerced_into_apparently_valid_profiles(self):
+        for field in ("contexts", "assumptions", "unknowns", "seed_id"):
+            for value in (None, {}, "abc" if field != "seed_id" else []):
+                doc = self.seed_document()
+                doc["personas"][0][field] = value
+                with self.subTest(field=field, value=value), self.assertRaises(EngineError):
+                    controls.seed_input(doc)
+
     def test_preparation_persists_selection_and_criteria_in_existing_queue(self):
         selection = self.select()
         with patch.object(controls, "revalidate", wraps=controls.revalidate) as validate:

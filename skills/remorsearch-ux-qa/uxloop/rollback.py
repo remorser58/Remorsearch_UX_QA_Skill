@@ -16,6 +16,7 @@ def improvement_rows(state):
     result = []
     for fid, receipt in applied.items():
         fix = fixes[fid]
+        available, limit = _availability(receipt, fix)
         result.append({
             "fix_id": fid,
             "finding_ids": fix["finding_ids"],
@@ -30,10 +31,8 @@ def improvement_rows(state):
             "figma_id": fix["figma_id"],
             "status": ("reverted" if fid in reverted else
                        "accepted" if fid in state["accepted_fix_ids"] else "applied_unverified"),
-            "rollback_available": (fid not in reverted and bool(receipt.get("rollback_snapshot"))
-                                   and len(fix["changed_paths"]) == 1),
-            "rollback_limit": (None if len(fix["changed_paths"]) == 1 else
-                               "Multi-file atomic publication is unavailable; no rollback write is permitted."),
+            "rollback_available": fid not in reverted and available,
+            "rollback_limit": limit,
         })
     return result
 
@@ -53,6 +52,19 @@ def _snapshot(receipt, fix):
         if any(v is not None and not isinstance(v, str) for v in files.values()):
             raise ContractError("Rollback supports only recorded UTF-8 text files")
     return body
+
+
+def _availability(receipt, fix):
+    try:
+        snapshot = _snapshot(receipt, fix)
+    except (ContractError, GateStop) as exc:
+        return False, str(exc)
+    if len(fix["changed_paths"]) != 1:
+        return False, "Multi-file atomic publication is unavailable; no rollback write is permitted."
+    if any(value is not None and snapshot["after_files"][name] is None
+           for name, value in snapshot["before_files"].items()):
+        return False, "Deleted-file permissions/metadata were not recorded; automatic recreation is blocked."
+    return True, None
 
 
 def _plan(state, fix_ids):
@@ -87,6 +99,9 @@ def _plan(state, fix_ids):
     for receipt in reversed(ordered):
         fid = receipt["fix_id"]
         snapshot = _snapshot(receipt, fixes[fid])
+        if any(value is not None and snapshot["after_files"][name] is None
+               for name, value in snapshot["before_files"].items()):
+            raise GateStop("blocked", "Deleted-file permissions/metadata are unavailable; no files were changed")
         for name, expected in snapshot["after_files"].items():
             if after[name] != expected:
                 raise GateStop("blocked", "Concurrent or unrecorded edit prevents rollback: " + name)
@@ -135,6 +150,13 @@ def validate_pending(state):
     if (not isinstance(ids, list) or not ids or any(not isinstance(fid, str) for fid in ids)
             or len(ids) != len(set(ids)) or not set(ids) <= applied - reverted):
         raise ContractError("Invalid pending rollback selection")
+    fixes = {row["id"]: row for row in state["packet"]["fixes"]}
+    receipts = {row["fix_id"]: row for row in state["applied_fixes"]}
+    for fid in ids:
+        snapshot = _snapshot(receipts[fid], fixes[fid])
+        if any(value is not None and snapshot["after_files"][name] is None
+               for name, value in snapshot["before_files"].items()):
+            raise ContractError("Pending rollback cannot recreate deleted-file metadata")
     keys = {"fix_id", "before_hashes", "after_files", "after_revision", "changed_paths"}
     scope = set(state["packet"]["goal"]["code_paths"])
     if (not isinstance(intent, dict) or set(intent) != keys or intent["fix_id"] != "rollback"
