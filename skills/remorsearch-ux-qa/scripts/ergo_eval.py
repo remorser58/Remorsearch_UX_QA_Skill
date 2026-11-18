@@ -220,6 +220,8 @@ def configurations(data: dict[str, Any]) -> tuple[dict[str, dict[str, set[str]]]
 
 def record(data: dict[str, Any], out: Path) -> None:
     _, _, groups_of, notes = configurations(data)
+    if not any(groups_of.values()):
+        raise SystemExit(f"error: no runnable scenario/device pairs in suite: {data['suite']}")
     for n in notes:
         print(f"note: {n}", flush=True)
     runs_dir = out / "runs"
