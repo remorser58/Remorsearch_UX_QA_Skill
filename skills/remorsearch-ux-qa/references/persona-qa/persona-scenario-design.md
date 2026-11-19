@@ -56,6 +56,9 @@ Use a supplied completed audience, brief-derived conditions, or an optional boun
 For scenarios about discoverability, optional decisions, or recovery, look up
 `references/persona-qa/behavior-guidance.md`: record the user goal, cue,
 expected state change, and reject/return path in the existing scenario.
+When that scenario depends on finding or safely disclosing information, look up
+`references/persona-qa/information-architecture.md` for classification, case
+evidence, and checks for first choice, disclosure, and privacy.
 
 ```text
 Scenario ID:
