@@ -300,6 +300,121 @@ never serialized. Temporary browser handles are disposed. Checks precede later
 focus/reflow probes. Matching endpoints do not exclude a transition that returns
 to the same state during capture; rapidly changing targets need another capture.
 
+## State probes
+
+A **committing task** creates, changes, deletes, sends or pays (order, booking, cancellation, profile save, message). Every committing task x viewport x input row needs the four probes below. Replays may submit again: use an owned synthetic fixture that starts each source/replay context with isolated, seeded state. `follow_up` does not reset a backend or pause for a manual reset. Without that isolation or authorization, stop at confirmation and mark the probes `not checked`. These templates do not authorize real charges, deletion or account changes; test-mode payment requires approved staging.
+
+| Probe | Do | Pass when |
+| --- | --- | --- |
+| a Back/reopen | After completion, return to or reopen the completed step with the product's own control, then submit again | One record/charge/receipt, not two |
+| b Keep | Open the cancel/delete confirmation, choose keep/close (or `press` Escape) | Saved state is unchanged |
+| c Switch | Change item/date/recipient after entering dependent inputs | Stale selections, inputs and totals are cleared, or carried only where a visible product promise or task rule says so |
+| d Error, fix, resubmit | Trigger a validation error, correct only the failing field, resubmit | Every other input and choice survives; one record |
+
+Back is a control inside the page; the driver has no browser chrome (see "Not exercised"), so toolbar Back stays `not checked`. Compare rendered receipts/history (`count` with a visible `container`), never storage. Without visible evidence of record/charge count, a is `not checked`; b also needs saved content/status comparisons, since an unchanged count alone cannot prove unchanged state.
+
+Replay prefix semantics: `follow_up` re-runs original actions 1..`after_step` in a new context, inserting after each named original index (0 = before step 1). Limits: 64 insertions, 64 actions each, 512 total replay actions. Its final capture is compared with the source checkpoint; provide `expected`, `from_step` or `from_check`, and `after_step` >= 1 (use a `snapshot` action for an entry checkpoint). Each check has its own replay: insertions are never shared. Missing/disabled targets yield `unevaluable` (`replay_failed`); any non-`ok` source step cancels all follow-ups, so keep exploratory attempts separate. `changes` labels a `back`/`reentry`, b `cancel`, c `reentry`, d `edit_resubmit`. The selector/property/container/`after_step` tuple must be unique per scenario.
+
+Put these checks inside `success.task_checks` of an `init` scenario, author its `steps`, and execute `run` as described in "Editing the generated scenario" and "Commands". Use one scenario per probe/device row and an isolated fixture URL. For b, checkpoint before the synthetic delete/cancel; a and d must reach synthetic completion. Real destructive actions remain unauthorized. For d, also load **Error-recovery probe** below.
+
+Fill every `<...>` from a screen reached in this run: selectors, step numbers, expected values and the visible promise quoted in `basis.reference`. Keep the other fields. Never leave a placeholder or borrow a selector or promise from another product; an unfilled probe is `not checked`. A missing `basis` records an unevaluable candidate, not a pass.
+
+a, with its baseline (`M` < `N`, the commit step). If resubmit is visibly absent/disabled, omit that click: reviewed blocking evidence plus unchanged count is `done/pass` (duplicate prevention), not a successful resubmit. Otherwise perform it; an unexplained missing target is `not checked`:
+
+```json
+[
+ {"id":"a-before","selector":"<record-row>","container":"<records-list>","property":"count",
+  "expected":<fixture-seeded-count>,"after_step":<M>,"severity":"P1",
+  "consequence":"Baseline before the commit.",
+  "basis":{"kind":"task","reference":"<fixture starts with this many records>"}},
+ {"id":"a-resubmit","selector":"<record-row>","container":"<records-list>","property":"count",
+  "from_check":"a-before","delta":1,"after_step":<N>,"severity":"P1",
+  "consequence":"Back or reopen, then resubmit, must not add a second record or charge.",
+  "basis":{"kind":"<product|task>","reference":"<visible promise: one submission, one record>"},
+  "follow_up":{"fixture":true,"changes":["back"],"insertions":[{"after_step":<N>,"steps":[
+    {"action":"click","target":"<product Back/reopen control>"},
+    {"action":"snapshot","label":"reopened"},
+    {"action":"click","target":"<same submit control as step N>"}]}]}}
+]
+```
+
+b. `K` is where the saved item is visible, before the real cancel/delete step. Compare each saved content/status field; use a summary containing them all or repeat this check with unique IDs/selectors. Also compare the saved-row count when available:
+
+```json
+{"id":"b-keep","selector":"<saved content and status summary>","property":"text",
+ "expected":"<fixture-seeded saved summary>","after_step":<K>,"severity":"P1",
+ "consequence":"Keep or close on the confirmation must leave saved data unchanged.",
+ "basis":{"kind":"<product|task>","reference":"<visible confirmation text promising no change>"},
+ "follow_up":{"fixture":true,"changes":["cancel"],"insertions":[{"after_step":<K>,"steps":[
+   {"action":"click","target":"<cancel/delete control>"},
+   {"action":"snapshot","label":"confirmation-open"},
+   {"action":"click","target":"<keep/close control in the confirmation>"}]}]}}
+```
+
+c. The source path selects the target directly and does not retype the dependent field. The insertion at `k` (before that selection) makes the replay choose another item/date/recipient and fill the dependent input first. Add the carried check only when a visible rule says it is kept; with no grounded clear/carry rule, c is `not checked`:
+
+```json
+[
+ {"id":"c-cleared","selector":"<dependent field, total or selection>","property":"<value|text|checked>",
+  "expected":<value the rule states after the switch>,"after_step":<S>,"severity":"P1",
+  "consequence":"A stale value from the previous item/date/recipient must not carry over.",
+  "basis":{"kind":"<product|task>","reference":"<visible rule: changing X resets or recomputes Y>"},
+  "follow_up":{"fixture":true,"changes":["reentry"],"insertions":[{"after_step":<k>,"steps":[
+    {"action":"click","target":"<other item/date/recipient>"},
+    {"action":"type","target":"<dependent input>","text":"<synthetic value>"}]}]}},
+ {"id":"c-carried","selector":"<field the product promises to keep>","property":"value",
+  "from_step":<n>,"after_step":<S>,"severity":"P2",
+  "consequence":"An entry the product promises to keep was lost on the switch.",
+  "basis":{"kind":"<product|task>","reference":"<visible rule: this entry is kept when X changes>"},
+  "follow_up":{"fixture":true,"changes":["reentry"],"insertions":[{"after_step":<k>,"steps":[
+    {"action":"click","target":"<other item/date/recipient>"},
+    {"action":"type","target":"<dependent input>","text":"<synthetic value>"}]}]}}
+]
+```
+
+## Error-recovery probe
+
+Probe d uses the fixture/coverage rules in **State probes**. `M` is before commit; `k` precedes the fix; subsequent original steps correct the field and resubmit at `N`. `n` <= `k` types an unaffected input. Repeat its check for all unaffected fields/choices and review their `error-shown` captures too. At `N`, use the surviving input (`value`) or confirmation copy (`text`). For invalid text instead of omission, insert `type` before submit and set `clear:true` on the original fixing `type`. The record-count check repeats the same insertions in its own isolated replay; a source-only count would not test the error path.
+
+```json
+[
+{"id":"d-before","selector":"<record-row>","container":"<records-list>","property":"count",
+ "expected":<fixture-seeded-count>,"after_step":<M>,"severity":"P1",
+ "consequence":"Baseline before the commit.",
+ "basis":{"kind":"task","reference":"<fixture starts with this many records>"}},
+{"id":"d-other-input","selector":"<unaffected input or confirmation copy>","property":"<value|text>","from_step":<n>,
+ "after_step":<N>,"severity":"P1",
+ "consequence":"Entries must survive the error and the resubmit.",
+ "basis":{"kind":"<product|task>","reference":"<visible promise that entries are kept>"},
+ "follow_up":{"fixture":true,"changes":["edit_resubmit"],"insertions":[{"after_step":<k>,"steps":[
+   {"action":"click","target":"<submit control>"},
+   {"action":"snapshot","label":"error-shown"}]}]}},
+{"id":"d-one-record","selector":"<record-row>","container":"<records-list>","property":"count",
+ "from_check":"d-before","delta":1,"after_step":<N>,"severity":"P1",
+ "consequence":"Error correction and resubmit must create exactly one record.",
+ "basis":{"kind":"task","reference":"<visible promise: one submission, one record>"},
+ "follow_up":{"fixture":true,"changes":["edit_resubmit"],"insertions":[{"after_step":<k>,"steps":[
+   {"action":"click","target":"<submit control>"},
+   {"action":"snapshot","label":"error-shown"}]}]}}
+]
+```
+
+## State-probe coverage
+
+One row per committing task x viewport x input x probe; the denominator is the rows, never the tasks. Absent rows are `not checked`. Evidence is IDs and paths only (no field values): `run.json` `success_detail.criteria[]` (`id`, `step_index`, `snapshot_id`, `result`, `reason`), the `S-*` PNG, and for `follow_up` its `replay.run_id` and `state-oracle/<check-id>/run.json`.
+
+| Task | Viewport (CSS px) | Input | Probe | Status | Result | Evidence | Reason or gap |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| <task> | <w x h, device ID> | <touch, mouse or keyboard> | a | done | pass or fail | <run, step, snapshot, check, replay run_path> | - |
+| <task> | <w x h, device ID> | <input> | b | not applicable | - | <run, step, snapshot of the reached screens> | <what the task lacks> |
+| <task> | <w x h, device ID> | <input> | c | not checked | - | - | <blocker> |
+
+- `done`: the check was evaluated on the current build (`result` pass or fail, comparison done), with linked run, step and capture reviewed. A fail is still `done`.
+- `not applicable`: the reached screens show the task has no such step (no confirmation, no switchable item/date/recipient, no validation). Cite their run, step and snapshot IDs; without them it is `not checked`.
+- `not checked`: everything else, with the reason: no resettable fixture or authorization, no visible record list, ungrounded policy, toolbar Back, grounding failure, or any unevaluable result (`replay_failed`, `checkpoint_unvisited`, `capture_state_changed`, `expectation_basis_missing`).
+
+Report `done k, not applicable m, not checked j of n rows`. Carry gaps into the verdict; `not checked` never counts as passed.
+
 ## Temporal candidates and intermediate keyboard replays
 
 After actions, the existing page instrumentation records changed visible
@@ -619,6 +734,13 @@ they belong to (0 = initial load), so a step can own two snapshots.
   `data-ergo-role`; unknown role names are dropped with a warning, never guessed),
   `source: "dom"`. Hotspots become `source: "manual"`, `role: "hotspot"`,
   `selector: "hotspot:<id>"`.
+- **Repeated warnings**: geometry/readability findings share a screen, rule and
+  `selector_family` (scoped class/structural path, preserving container and shadow
+  host boundaries) plus semantic role. They report `element_count` and up to three
+  selector `examples`; linked observations retain every element's measurement.
+  Scroll position does not create a new screen. Missing family evidence keeps
+  exact selectors separate; numbered IDs alone never establish a component family.
+  Task, timing and multi-element relations are not collapsed by this grouping.
 - **Colours**: the layers under the element's centre (`elementsFromPoint`, or the
   ancestor chain when off-screen) are composited over the page canvas with group
   opacity; `color_bg` is `null` when an image, video, canvas, SVG or

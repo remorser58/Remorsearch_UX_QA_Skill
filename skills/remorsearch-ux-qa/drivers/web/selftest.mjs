@@ -2264,6 +2264,55 @@ async function paintedStateTest(base, tmp) {
   }
 }
 
+function stateProbeTemplateTest() {
+  const section = fs.readFileSync(path.join(HERE, 'README.md'), 'utf8')
+    .split('## State probes\n')[1].split('## State-probe coverage')[0];
+  const blocks = [...section.matchAll(/```json\n([\s\S]*?)\n```/g)];
+  const values = {
+    '<M>': '1', '<N>': '4', '<K>': '1', '<S>': '3', '<k>': '1', '<n>': '1',
+    '<fixture-seeded-count>': '0', '<product|task>': 'task',
+    '<record-row>': '.record', '<records-list>': '#history',
+    '<product Back/reopen control>': '#back', '<same submit control as step N>': '#submit',
+    '<saved content and status summary>': '#saved-status', '<fixture-seeded saved summary>': 'Saved',
+    '<cancel/delete control>': '#delete', '<keep/close control in the confirmation>': '#keep',
+    '<dependent field, total or selection>': '#dependent', '<value|text|checked>': 'value',
+    '<value the rule states after the switch>': '""', '<other item/date/recipient>': '#other',
+    '<dependent input>': '#dependent', '<synthetic value>': 'Draft',
+    '<field the product promises to keep>': '#kept',
+    '<unaffected input or confirmation copy>': '#kept', '<value|text>': 'value',
+    '<submit control>': '#submit',
+    '<fixture starts with this many records>': 'Fixture begins empty.',
+    '<visible promise: one submission, one record>': 'Submit creates one record.',
+    '<visible confirmation text promising no change>': 'Keep leaves the saved record unchanged.',
+    '<visible rule: changing X resets or recomputes Y>': 'Switch clears the dependent draft.',
+    '<visible rule: this entry is kept when X changes>': 'Switch keeps the note.',
+    '<visible promise that entries are kept>': 'Correction preserves other entries.',
+  };
+  check('state templates: four probe JSON blocks are present', blocks.length === 4);
+  for (const [index, block] of blocks.entries()) {
+    const filled = block[1].replace(/<[^>]+>/g, (token) => {
+      if (!(token in values)) throw new Error(`Unfilled state template token: ${token}`);
+      return values[token];
+    });
+    const parsed = JSON.parse(filled);
+    const task_checks = Array.isArray(parsed) ? parsed : [parsed];
+    const normalized = normalizeScenario({
+      schema_version: 'ergo-scenario.v1', scenario_id: `SC-probe-template-${index}`,
+      surface: { kind: 'web', url: 'http://127.0.0.1/fixture' }, task_goal_ko: 'Validate authored state probe templates.',
+      device_ids: ['galaxy-s24'], targets: {},
+      steps: [{ action: 'type', target: '#kept', text: 'Note' }, { action: 'type', target: '#fix', text: 'Valid' },
+        { action: 'click', target: '#target' }, { action: 'click', target: '#submit' }],
+      success: { task_checks },
+    }, { requireSteps: true });
+    check(`state templates: probe ${index + 1} validates with an authored prefix`,
+      normalized.scenario.success.task_checks.length === task_checks.length);
+    if (index === 2 || index === 3) {
+      check(`state templates: probe ${index + 1} independently replays every outcome check`,
+        task_checks.filter((c) => c.after_step > 1).every((c) => c.follow_up?.insertions.length));
+    }
+  }
+}
+
 async function warningFamilyTest(tmp) {
   const { pw, info } = loadPlaywright();
   const transport = await openBrowser(pw, info, { endpoint: undefined });
@@ -2506,6 +2555,7 @@ async function main() {
     writeJson(path.join(tmp, 'p-s24.json'), profile('EP-S24', 'galaxy-s24'));
     writeJson(path.join(tmp, 'p-desk.json'), profile('EP-DESK', 'desktop-1920'));
     deviceTableTest();
+    if (want('state-templates')) stateProbeTemplateTest();
     if (want('connect')) await connectTest(base, tmp);
     if (want('integrity')) await taskIntegrityTest(base, tmp);
     if (want('temporal')) await runTemporalSelftest({ base, tmp, runDriver, check });

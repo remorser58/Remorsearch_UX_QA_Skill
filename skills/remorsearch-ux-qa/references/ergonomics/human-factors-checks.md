@@ -222,7 +222,7 @@ RF-02/RF-03은 `run.adaptation[]`과 원본·복제 baseline·변경 조건의 �
 `TI-01` is an opt-in measured task comparison on the recorded owner execution:
 `success.task_checks` compares grounded value/text/checked/visible-count
 expectations at checkpoints. `from_check` is a same-run invariant; `follow_up`
-compares a fresh replay on an owned fixture. Missing product/task `basis` stays
+compares a fresh replay on an owned fixture (four state probes and coverage: README State probes). Missing product/task `basis` stays
 a candidate, not a defect. Evidence keeps capture IDs, not field values.
 Severity/consequence do not prove downstream harm. Unvisited, ambiguous,
 protected and missing targets remain unevaluable. See `drivers/web/README.md`

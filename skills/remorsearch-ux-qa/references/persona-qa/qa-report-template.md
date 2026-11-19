@@ -109,6 +109,14 @@ Count executed scenarios even when the task failed. Give completion separately. 
 | Recovery paths | [k/n planned device/task combinations] | [k/n] | [at least one per device for ship] |
 | Accessibility checks | [k/n planned checks; standards apart] | [pass/fail/partial counts] | [keyboard, assistive technology, etc.] |
 
+For each committing task, add one row per task x viewport x input x probe (a Back/reopen resubmit, b keep on confirmation, c switch item/date/recipient, d error-fix-resubmit). Status is exactly `done`, `not applicable` or `not checked`; the other columns follow `drivers/web/README.md` section State-probe coverage. Absent rows count as `not checked`; carry gaps into the verdict, never count them as passed.
+
+| Task | Viewport, input | Probe | Status | Result | Run/step/capture/check | Reason or gap |
+| --- | --- | --- | --- | --- | --- | --- |
+| [task] | [CSS size, device ID, input] | [a-d] | [done/not applicable/not checked] | [pass/fail/-] | [run ID, step, snapshot, check ID, replay run_path] | [required unless done] |
+
+Summary: `done k, not applicable m, not checked j of n rows`.
+
 ## Method and limits
 
 - Product, start URL, current build ID, run start/end, report date, scope and primary task.
