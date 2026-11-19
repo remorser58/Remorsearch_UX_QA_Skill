@@ -8,7 +8,9 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import nullcontext
 from pathlib import Path
+from unittest.mock import patch
 
 import _paths  # noqa: F401  (puts the skill folder and its scripts on sys.path)
 
@@ -30,7 +32,7 @@ class RecordCLI(unittest.TestCase):
             with self.subTest(layout=layout), tempfile.TemporaryDirectory() as tmp:
                 suite, out = Path(tmp) / "suite", Path(tmp) / "out"
                 if layout == "audience-only":
-                    (suite / "audiences").mkdir(parents=True)
+                    (suite / "audience").mkdir(parents=True)
                 elif layout == "empty-scenarios":
                     (suite / "scenarios").mkdir(parents=True)
                 result = self.run_record(suite, out)
@@ -51,14 +53,52 @@ class RecordCLI(unittest.TestCase):
             result_path = out / "runs" / run_id / "run.json"
             result_path.parent.mkdir(parents=True)
             result_path.write_text("{}", encoding="utf-8")
-            previous = [{"run_id": run_id, "exit": 0}]
             log = out / "record-log.json"
-            log.write_text(json.dumps(previous), encoding="utf-8")
+            previous = (json.dumps([{"run_id": run_id, "exit": 0}]) + "\n").encode()
+            log.write_bytes(previous)
             result = self.run_record(suite, out)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertNotIn("recorded ", result.stdout)
-            self.assertEqual(json.loads(log.read_text(encoding="utf-8")), previous)
+            self.assertEqual(log.read_bytes(), previous)
             self.assertEqual(result_path.read_text(encoding="utf-8"), "{}")
+            self.assertFalse((out / "profiles").exists())
+            log.unlink()
+            data = ergo_eval.load_suite(suite)
+            with patch.object(ergo_eval, "static_server", side_effect=AssertionError("unexpected server")):
+                ergo_eval.record(data, out)
+            self.assertFalse(log.exists())
+            self.assertFalse((out / "profiles").exists())
+
+    def test_pending_recording_appends_to_existing_log(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            data = suite_two_products_one_device()
+            done, pending = sorted(data["scenarios"])[:2]
+            run_id = f"R-{done}-galaxy-s24-p"
+            saved = out / "runs" / run_id / "run.json"
+            saved.parent.mkdir(parents=True)
+            saved.write_text("{}", encoding="utf-8")
+            log = out / "record-log.json"
+            previous = [{"run_id": run_id, "exit": 0}]
+            log.write_text(json.dumps(previous), encoding="utf-8")
+            data["paths"] = {pending: out / "pending.json"}
+            groups = {done: {"galaxy-s24|portrait"}, pending: {"galaxy-s24|portrait"}}
+            completed = subprocess.CompletedProcess([], 0)
+            with (
+                patch.object(ergo_eval, "configurations", return_value=({}, {}, groups, [])),
+                patch.dict(data, {"scenarios": {sid: data["scenarios"][sid] for sid in groups}}),
+                patch.object(ergo_eval, "static_server", return_value=nullcontext("http://fixture")) as server,
+                patch.object(ergo_eval.subprocess, "run", return_value=completed) as driver,
+            ):
+                ergo_eval.record(data, out)
+            server.assert_called_once()
+            driver.assert_called_once()
+            records = json.loads(log.read_text(encoding="utf-8"))
+            self.assertEqual(records[:1], previous)
+            self.assertEqual(len(records), 2)
+            self.assertEqual(records[1]["run_id"], f"R-{pending}-galaxy-s24-p")
+            self.assertEqual(records[1]["exit"], 0)
+            self.assertEqual(saved.read_text(encoding="utf-8"), "{}")
 
 
 def suite_two_products_one_device() -> dict:
