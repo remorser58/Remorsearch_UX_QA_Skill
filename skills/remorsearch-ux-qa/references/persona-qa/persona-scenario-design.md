@@ -53,6 +53,10 @@ Use a supplied completed audience, brief-derived conditions, or an optional boun
 
 ## Scenario format
 
+For scenarios about discoverability, optional decisions, or recovery, look up
+`references/persona-qa/behavior-guidance.md`: record the user goal, cue,
+expected state change, and reject/return path in the existing scenario.
+
 ```text
 Scenario ID:
 Audience ref (audience_id, segment_id, facet), or "none" with the reason:
