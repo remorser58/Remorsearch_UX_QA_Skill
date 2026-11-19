@@ -61,6 +61,8 @@ When that scenario depends on finding or safely disclosing information, look up
 evidence, and checks for first choice, disclosure, and privacy.
 For method selection or a finding that needs stronger evidence, look up
 `references/persona-qa/ux-qa-methods.md` and record the method and its limits.
+For Korean search, forms, or composers, use the input-provenance checks in
+`references/persona-qa/keyboard-recovery.md` when composition can affect the task.
 
 ```text
 Scenario ID:
