@@ -59,6 +59,8 @@ expected state change, and reject/return path in the existing scenario.
 When that scenario depends on finding or safely disclosing information, look up
 `references/persona-qa/information-architecture.md` for classification, case
 evidence, and checks for first choice, disclosure, and privacy.
+For method selection or a finding that needs stronger evidence, look up
+`references/persona-qa/ux-qa-methods.md` and record the method and its limits.
 
 ```text
 Scenario ID:
