@@ -7,18 +7,21 @@ from __future__ import annotations
 import argparse
 import asyncio
 import hashlib
+from dataclasses import replace
 from datetime import datetime, timezone, timedelta
 import json
 from pathlib import Path
 import sys
 import time
 import urllib.request
+from types import SimpleNamespace
 
 SKILL = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SKILL))
 from uxresearch.canonical import byte_digest, canonical
-from uxresearch.storage import atomic, read_bytes, safe_path
+from uxresearch.storage import atomic, read_bytes, read_json, safe_path
 from uxpersonas.library import Library
+from uxpersonas.product_controls import bind_scale, revalidate
 from uxpersonas.scale_entry import ScaleLimits, prepare_scale_goal, preview, required_fixture_keys, scale_job_id
 from uxpersonas.scale_run import execute_scale
 from uxpersonas.swarm_providers import ProviderSpec
@@ -76,12 +79,52 @@ def _route(ledger_path=None):
         backoff_initial=2, backoff_max=30, ledger_path=ledger_path)
     # ProviderSpec's internal identifier intentionally excludes '/' while the
     # router retains and sends the exact catalog model ID above.
-    spec = ProviderSpec(key="local-router", protocol="callback", model="tokenmaxx-deepseek-v4-1-flash-free",
+    spec = _provider_spec()
+    provider = RoutedScaleProvider(spec, router)
+    return router, {"local-router":provider}, spec, [route.model for route in routes]
+
+
+def _provider_spec():
+    """The launcher's fixed route contract, available without contacting its catalog."""
+    return ProviderSpec(key="local-router", protocol="callback", model="tokenmaxx-deepseek-v4-1-flash-free",
         concurrency=2, requests_per_minute=30,
         input_price_per_million=0, output_price_per_million=0,
         input_token_cap=262144, output_token_cap=16384, timeout_seconds=180)
-    provider = RoutedScaleProvider(spec, router)
-    return router, {"local-router":provider}, spec, [route.model for route in routes]
+
+
+def _read_selection(path):
+    if path is None:
+        raise RuntimeError("reviewed_selection_required")
+    # Reuse the CLI's bounded, strict JSON reader and controls integrity checks.
+    # A proposal, cancellation or unconfirmed choice is not a selection receipt.
+    return revalidate(read_json(path))
+
+
+def _selection_preflight(selection, args, persona_ids, library):
+    choice = selection["choice"]
+    if choice["parallel"] > 2 or choice["budget_microusd"] != 0 or choice["turns"] != args.turns:
+        raise RuntimeError("selection_exceeds_launcher_scope_or_turns_differ")
+    if set(choice["assignments"].values()) != {"local-router"}:
+        raise RuntimeError("selection_route_not_supported")
+    limits = replace(live_limits(len(persona_ids), args.turns), parallel=choice["parallel"],
+                     max_model_calls=choice["max_model_calls"])
+    limits.validate()
+    # Validate against the same fixed spec _route will construct, before its
+    # authenticated catalog request. Preparation rechecks the real provider.
+    bind_scale(selection, product_id=args.product_id, persona_ids=persona_ids,
+        assignments=choice["assignments"], providers={"local-router": SimpleNamespace(spec=_provider_spec())},
+        limits=limits, library=library)
+    return limits
+
+
+def _execution_consent(args):
+    # Selection grants no execution/cost authority. Require the host's separate
+    # current consent reference with the existing Queue.authorize field bounds.
+    actor, reference = getattr(args, "approval_actor", None), getattr(args, "consent_reference", None)
+    if (not isinstance(actor, str) or not actor.strip() or len(actor) > 160
+            or not isinstance(reference, str) or not reference.strip() or len(reference) > 500):
+        raise RuntimeError("explicit_execution_consent_required")
+    return actor, reference
 
 
 def _load_personas(library_path, product_id, count):
@@ -196,7 +239,7 @@ async def _execute_with_shutdown(run_root, providers, host, router):
     return report, stopped
 
 
-async def run_stage(args, persona_ids, index):
+async def run_stage(args, persona_ids, index, *, selection=None, expected_selection_sha256=None):
     run_root = safe_path(args.run_root / ("stage-"+str(index)))
     if run_root.exists():
         raise RuntimeError("stage_output_exists")
@@ -209,13 +252,18 @@ async def run_stage(args, persona_ids, index):
         requirement_ids = {rid for pid in persona_ids
             for rid in library.get(args.product_id, pid, saved[pid]["revision"])["profile"]["requirement_ids"]}
     fixture_check = fixture_preflight(args.fixtures, requirement_ids)
-    limits = live_limits(len(persona_ids), args.turns)
     artifact_path = safe_path(args.build_artifact)
     build = dict(id=args.build_id, artifact_path=str(artifact_path),
         sha256=byte_digest(read_bytes(artifact_path)))
     forbidden_jobs = getattr(args, "forbidden_job_ids", ())
     _reject_forbidden_jobs((scale_job_id(args.product_id, pid, saved[pid]["revision"], args.goal, build)
                            for pid in persona_ids), forbidden_jobs)
+    selection = _read_selection(selection)
+    if expected_selection_sha256 is not None and selection["selection_sha256"] != expected_selection_sha256:
+        raise RuntimeError("reviewed_selection_changed_before_stage")
+    actor, consent_reference = _execution_consent(args)
+    with Library(args.library) as library:
+        limits = _selection_preflight(selection, args, persona_ids, library)
     router, providers, spec, configured_routes = _route(run_root / "model-router-ledger.live.json")
     host = ScaleBrowserHost(target_url=args.url, chrome=args.chrome, node=args.node,
         driver_path=SKILL / "drivers/web/scale_browser_cdp.mjs",
@@ -233,7 +281,8 @@ async def run_stage(args, persona_ids, index):
     with Library(args.library) as library:
         queue = prepare_scale_goal(library, run_root, providers, host, TOOLS,
             product_id=args.product_id, target=args.target, goal=args.goal, build=build,
-            limits=limits, persona_ids=persona_ids,
+            limits=limits, persona_ids=persona_ids, assignments=selection["choice"]["assignments"],
+            selection=selection,
             credential_scopes={"local-router":"local OpenCodex provider configuration; no key material exposed"},
             reviewed=True, tool_provenance="owned_browser",
             billing_reviews={"local-router":billing_review},
@@ -244,8 +293,7 @@ async def run_stage(args, persona_ids, index):
     approval_seconds = max(3600, ((len(persona_ids) + limits.parallel - 1) // limits.parallel)
                            * limits.task_seconds + 300)
     approval = queue.authorize(plan_sha256=queue.plan_sha256,
-        actor="user-approved-chat-instruction",
-        consent_reference="2026-11-14 user: reduce46 not_run; fix+regression; two-person smoke then fresh unique32; TOKENMAXX free only; concurrency2; preserve uncertain sends; report/push",
+        actor=actor, consent_reference=consent_reference,
         budget_microusd=limits.budget_microusd,
         expires_at=time.time()+approval_seconds)
     queue.control("resume")
@@ -298,25 +346,42 @@ async def run_stage(args, persona_ids, index):
 
 
 async def main(args):
+    _execution_consent(args)
+    receipt_paths = getattr(args, "selection", None)
+    if not isinstance(receipt_paths, list) or len(receipt_paths) != len(args.stages):
+        raise RuntimeError("one_reviewed_selection_required_per_stage")
+    selections = [_read_selection(path) for path in receipt_paths]
     args.library = safe_path(args.library)
     args.run_root = safe_path(args.run_root)
     args.build_artifact = safe_path(args.build_artifact)
     args.fixtures = safe_path(args.fixtures)
     if not args.library.is_dir() or not args.build_artifact.is_file() or not args.fixtures.is_dir():
         raise RuntimeError("library_build_or_fixture_artifact_missing")
+    if not (args.library / "library.json").is_file():
+        raise RuntimeError("saved_persona_library_missing")
     fixture_manifest = json.loads((args.fixtures / "fixture-manifest.json").read_text())
     if fixture_manifest.get("schema_version") != "peekly-synthetic-fixtures.v1" or not fixture_manifest.get("files"):
         raise RuntimeError("peekly_fixture_manifest_invalid")
     if args.run_root.exists():
         raise RuntimeError("run_root_exists_preserved")
-    args.run_root.mkdir(parents=True,mode=0o700)
     if args.start_index < 0 or args.start_index >= 32:
         raise RuntimeError("persona_start_index_out_of_range")
-    all_ids = _load_personas(args.library,args.product_id,max(args.stages))
-    cursor=args.start_index; stages=[]
-    for count in args.stages:
-        ids=all_ids[cursor:count]; cursor=count
-        summary=await run_stage(args,ids,count)
+    cursor, seen = args.start_index, set()
+    with Library(args.library) as library:
+        for count, selection in zip(args.stages, selections):
+            ids = selection["choice"]["persona_ids"]
+            if count <= cursor or count > 32 or len(ids) != count - cursor or seen.intersection(ids):
+                raise RuntimeError("selected_stage_cohort_mismatch")
+            _selection_preflight(selection, args, ids, library)
+            seen.update(ids)
+            cursor = count
+    args.run_root.mkdir(parents=True,mode=0o700)
+    stages=[]
+    for count, selection, path in zip(args.stages, selections, receipt_paths):
+        # Re-read at each stage so cancelled/changed/stale input cannot use a
+        # cached confirmation after an earlier stage has run.
+        summary=await run_stage(args,selection["choice"]["persona_ids"],count,selection=path,
+                                expected_selection_sha256=selection["selection_sha256"])
         stages.append(summary)
         atomic(args.run_root / "stages.json", canonical({"stages":stages,
             "total_sessions":sum(x["sessions"] for x in stages),
@@ -326,7 +391,7 @@ async def main(args):
             raise RuntimeError("stage_incomplete_preserved:"+str(count))
 
 
-def parse_args():
+def parse_args(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("--library",required=True,type=Path)
     p.add_argument("--product-id",required=True)
@@ -337,20 +402,27 @@ def parse_args():
     p.add_argument("--build-artifact",required=True,type=Path)
     p.add_argument("--fixtures",required=True,type=Path)
     p.add_argument("--run-root",required=True,type=Path)
+    p.add_argument("--selection", required=True, type=Path, action="append",
+        help="Existing ux_personas select receipt; repeat once per stage in order. No default selection.")
+    p.add_argument("--approval-actor", required=True, help="Actor for the separate current execution approval")
+    p.add_argument("--consent-reference", required=True,
+        help="Reference to explicit current execution consent for these exact stages and the zero-cost route")
     p.add_argument("--node",type=Path,default=Path(NODE_DEFAULT))
     p.add_argument("--chrome",type=Path,default=Path(CHROME_DEFAULT))
     p.add_argument("--stages",type=int,nargs="+",default=[4,16,32],
         help="cumulative persona indices to execute (e.g. 4 16 32)")
     p.add_argument("--start-index",type=int,default=0,
-        help="zero-based first saved persona index; use to continue cumulative batches without replaying prior personas")
+        help="Prior cumulative endpoint; receipts must explicitly name only new personas, never resume old queues")
     p.add_argument("--turns", type=int, default=16, help="bounded model decisions per persona (4..64); retention journeys require an explicit larger budget")
-    args=p.parse_args()
+    args=p.parse_args(argv)
     if not 4 <= args.turns <= 64:
         p.error("turns must be from 4 to 64")
     if args.start_index < 0 or args.start_index >= 32:
         p.error("start-index must be between 0 and 31")
     if any(n<=args.start_index or n>32 for n in args.stages) or args.stages != sorted(set(args.stages)):
         p.error("cumulative stage endpoints must be strictly increasing values after start-index and at most 32")
+    if len(args.selection) != len(args.stages):
+        p.error("supply one --selection receipt per stage")
     return args
 
 if __name__=="__main__":
