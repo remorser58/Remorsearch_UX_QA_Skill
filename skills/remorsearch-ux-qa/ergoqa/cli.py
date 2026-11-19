@@ -10,7 +10,7 @@ from typing import Any
 
 from . import analyze, audience, bench, bundle, checks, report, swarm
 from .devices import get_device, list_devices
-from .profiles import profile_index, sample_profiles
+from .profiles import profile_index, resolve_thumb_input, sample_profiles
 from .snapshot import SnapshotError, load_json
 
 EXIT_OK, EXIT_FINDINGS, EXIT_USAGE, EXIT_DEGRADED = 0, 1, 2, 3
@@ -232,7 +232,8 @@ def cmd_heatmap(args: argparse.Namespace) -> int:
     if args.kind == "reach":
         geom = reach.geometry_for_device(device)
         grip = profile["attributes"]["grip"]
-        thumb = float(profile["attributes"]["thumb_length_mm"])
+        thumb_input = resolve_thumb_input(profile)
+        thumb = thumb_input["mm"]
         for r in range(rows):
             row = []
             for c in range(cols):
@@ -256,6 +257,8 @@ def cmd_heatmap(args: argparse.Namespace) -> int:
     overlay = png.heat_overlay(image, values, alpha=0.45)
     png.write_png(args.out, overlay)
     print(f"{args.kind} heatmap -> {args.out}")
+    if args.kind == "reach" and "reference_percentile" in thumb_input:
+        print(f"functional thumb input: {thumb:.1f} mm, synthetic P{thumb_input['reference_percentile']} ({thumb_input['basis']})")
     return EXIT_OK
 
 

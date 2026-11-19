@@ -22,6 +22,7 @@ from typing import Any, Callable, Iterable
 
 from . import params
 from .hf import cognition, game, gaze, perception, pointing, reach
+from .profiles import resolve_thumb_input
 from .snapshot import is_number, validate_adaptation, validate_native_state
 
 SEVERITY_ORDER = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
@@ -461,7 +462,8 @@ def check_reach(ctx: Context) -> list[Observation]:
     geom = reach.geometry_for_device(ctx.device)
     if reach.tablet_like(geom) and grip.startswith("one_hand"):
         return []  # HGR-9: nobody operates a tablet with the holding thumb; the phone model does not apply
-    thumb = float(ctx.attrs.get("thumb_length_mm") or params.THUMB_LENGTH_MM["all"][0])
+    thumb_input = resolve_thumb_input(ctx.profile)
+    thumb = thumb_input["mm"]
     for element in ctx.elements:
         roles = _roles(element)
         is_game = "game_control" in roles
@@ -512,7 +514,8 @@ def check_reach(ctx: Context) -> list[Observation]:
             failed = score["zone"] == "natural" and not score["cramped"] and "irreversible" in roles
             out.append(Observation(
                 "RH-02", *base, [element["id"]], element_key(element),
-                {"name": "reach_difficulty", "value": difficulty, "unit": "0-1", "threshold": params.REACH_EASY_MAX, "comparator": ">"},
+                {"name": "reach_difficulty", "value": difficulty, "unit": "0-1", "threshold": params.REACH_EASY_MAX, "comparator": ">",
+                 "thumb_input": thumb_input},
                 not failed, "P3" if failed else None,
                 f"파괴적 동작 '{label}'이(가) {grip} 파지에서 가장 편한 엄지 영역에 있습니다.",
                 reach.MODEL_ID, extra,
@@ -535,9 +538,11 @@ def check_reach(ctx: Context) -> list[Observation]:
         out.append(Observation(
             "RH-01", *base, [element["id"]], element_key(element),
             {"name": "reach_difficulty", "value": difficulty, "unit": "0-1", "threshold": params.REACH_HARD, "comparator": "<",
-             "grip": grip, "zone": score["zone"]},
+             "grip": grip, "zone": score["zone"], "thumb_input": thumb_input},
             severity is None, severity,
-            f"'{label}'은(는) {grip} 파지·엄지 {thumb:.0f}mm 기준 {zone_ko} 위치입니다(난이도 {difficulty:.2f}"
+            f"'{label}'은(는) {grip} 파지·엄지 {thumb:.1f}mm"
+            + (f" (합성 참조 P{thumb_input['reference_percentile']})" if "reference_percentile" in thumb_input else "")
+            + f" 기준 {zone_ko} 위치입니다(난이도 {difficulty:.2f}"
             + (", 손바닥 가까운 좁은 영역" if score["cramped"] else "") + ").",
             reach.MODEL_ID, extra,
         ))
@@ -1127,7 +1132,7 @@ def check_gaze(ctx: Context) -> list[Observation]:
         scale = _notice_scale(ctx)
         grip = ctx.attrs.get("grip", "")
         geom = reach.geometry_for_device(ctx.device) if ctx.is_touch else None
-        thumb = float(ctx.attrs.get("thumb_length_mm") or params.THUMB_LENGTH_MM["all"][0])
+        thumb_input = resolve_thumb_input(ctx.profile) if geom is not None and grip.startswith("one_hand") else None
         feedback = []
         for element in ctx.elements:
             roles = _roles(element)
@@ -1185,8 +1190,9 @@ def check_gaze(ctx: Context) -> list[Observation]:
             salient, sal = _salient_change(ctx, element, new=prior is None)
             band = gaze.notice_band(theta, salient, scale)
             occluded = False
-            if geom is not None and grip.startswith("one_hand"):
-                occluded = reach.occluded_by_thumb(_point_mm(ctx, focus["x"], focus["y"]), _point_mm(ctx, *centre_css), geom, grip, thumb, params.OCCLUSION_WEDGE_DEG)
+            if thumb_input is not None:
+                occluded = reach.occluded_by_thumb(_point_mm(ctx, focus["x"], focus["y"]), _point_mm(ctx, *centre_css), geom, grip, thumb_input["mm"], params.OCCLUSION_WEDGE_DEG)
+                feedback_geometry["thumb_input"] = thumb_input
             feedback.append((element, roles, prior, theta, salient, sal, band, occluded, near_css, feedback_geometry))
         # Redundant feedback: when another new, salient message appears where the user is
         # looking (likely noticed, not occluded), a far secondary label is not missed feedback.

@@ -100,6 +100,48 @@ class TabletReach(unittest.TestCase):
 
 
 class Denominators(unittest.TestCase):
+    def test_missing_thumb_uses_nearest_persona_reference(self) -> None:
+        from ergoqa import profiles, snapshot
+
+        button = el("pay", "button", (10, 60, 60, 48), text="결제",
+                    interactive=True, roles=("primary",), tag="button")
+        cases = [(8, 10), (31, 25), (50, 25), (72, 75), (93, 95)]
+        used = []
+        for requested, reference in cases:
+            prof = profile(f"EP-{requested}")
+            prof["attributes"]["hand_percentile"] = requested
+            prof["attributes"]["thumb_length_mm"] = None
+            self.assertEqual(profiles.validate_profile(prof), [])
+            self.assertEqual(snapshot.validate_profile(prof), [])
+            obs = next(o for o in checks.check_reach(ctx([button], prof)) if o.check_id == "RH-01")
+            value = obs.measurement["thumb_input"]
+            self.assertEqual(value["basis"], "synthetic_nearest_hand_percentile")
+            self.assertEqual(value["reference_percentile"], reference)
+            self.assertEqual(value["mm"], profiles.thumb_length_for_percentile(reference))
+            self.assertIsNone(prof["attributes"]["thumb_length_mm"])
+            used.append(value["mm"])
+        self.assertLess(used[0], used[-1])
+        self.assertNotIn(params.THUMB_LENGTH_MM["all"][0], used)
+
+    def test_thumb_without_size_uses_stable_synthetic_stratum(self) -> None:
+        from ergoqa import profiles
+
+        prof = profile("EP-stable")
+        attrs = prof["attributes"]
+        del attrs["thumb_length_mm"], attrs["hand_percentile"]
+        first = profiles.resolve_thumb_input(prof)
+        attrs["age_band"] = "60s"
+        self.assertEqual(profiles.resolve_thumb_input(prof), first)
+        self.assertEqual(first["basis"], "synthetic_assigned_hand_percentile")
+        self.assertIn(first["reference_percentile"], (25, 75))
+        self.assertEqual(profiles.validate_profile(prof), [])
+        attrs["thumb_length_mm"] = 99
+        profiles._finalise(prof, get_device(attrs["device_id"]))
+        self.assertEqual(profiles.resolve_thumb_input(prof), {"mm": 99.0, "basis": "provided_profile"})
+        for invalid in (False, 0, float("nan"), float("inf"), "99"):
+            attrs["thumb_length_mm"] = invalid
+            self.assertTrue(profiles.validate_profile(prof))
+
     def test_explicit_inconclusive_is_not_coverage_or_comparison(self) -> None:
         known = profile("EP-known", grip="one_hand_right")
         unknown = profile("EP-unknown", grip="one_hand_right", age_band="60s")
