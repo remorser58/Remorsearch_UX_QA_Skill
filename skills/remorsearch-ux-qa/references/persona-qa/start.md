@@ -43,6 +43,9 @@ destinations, concurrency and the maximum cost; obtain explicit approval before
 paid calls. Pause/resume uses the same queue and budget. A fixture simulation
 does not prove actual-model or actual-product UX performance.
 
+For capture budgets or cleanup review, use the [storage retention guide](storage-retention.md).
+List candidates only; preserve evidence and unresolved runs.
+
 ## Supported entry
 
 From the installed skill folder:
