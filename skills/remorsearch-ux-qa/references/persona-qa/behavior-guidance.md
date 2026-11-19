@@ -27,3 +27,11 @@ When a mechanism suggests several fixes, correct the blocker before adding a pro
 ## Example: retry an import without losing the previous result
 
 User outcome: save the reviewed import once. Baseline shows Save followed by a network failure; the list still has the previous data. On a failure fixture, inspect that the draft and old list survive, the next action says what it will do, a retry commits once, and a reopen shows the expected stored value. On the decline/cancel route, check that the original list remains unchanged. A successful click or temporary success notice alone cannot pass.
+
+## Interrupted drafts: prove what will reopen
+
+Use a disposable draft with distinguishable revisions A and B. Interrupt after B in each supported state: confirmed save, locally retained but not synced, and save unavailable. Before leaving, record what the UI says will survive, where it can be resumed, and what the user needs to do. Independently check the recovered revision, identity/account and storage scope; do not count a toast as evidence. Test another device only when the product promises it. For retryable commits, prove exactly one result; for collaborative flows, add a newer competing revision and verify both conflict handling and recovery.
+
+[Figma documents](https://help.figma.com/hc/en-us/articles/360040328553-What-can-I-do-offline-in-Figma) offline edits in the current browser and later sync; pending edits are not portable. Its [engineering account](https://www.figma.com/blog/behind-the-feature-autosave/) explains crash recovery and the risk that applying stale edits makes newer work appear lost. [Google Forms documents](https://support.google.com/docs/answer/10952360?hl=en) a same-account draft retained for 30 days under supported conditions and no autosave offline. Offline input not saving does not imply the earlier online draft was deleted; a saved draft is not a submission. These are documented comparisons, not live observations or evidence that either design works for your users.
+
+For user research, distinguish time to the first correct resumed action, wrong turns, and eventual completion. [Trafton et al.](https://interruptions.net/literature/Trafton-IJHCS03.pdf) motivate measuring resumption separately; their lab task supplies no product-specific timing target.
