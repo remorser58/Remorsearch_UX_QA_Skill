@@ -338,7 +338,7 @@ def _element(errors: _Errors, el: Any, path: str) -> None:
     errors.string(el, "id", path)
     errors.string(el, "role", path)
     errors.string(el, "name", path, required=False, nullable=True, nonempty=False)
-    for key in ("text", "tag", "selector"):
+    for key in ("text", "tag", "selector", "selector_family"):
         errors.string(el, key, path, required=False, nullable=True, nonempty=False)
     _box(errors, el.get("box"), f"{path}.box")
     if "visible_box" in el and el["visible_box"] is not None:

@@ -50,9 +50,9 @@ def render(
         "## 1. 범위와 증거 경계",
         "",
         f"- 실행(run) {len(analyses)}건, 시뮬레이션 프로필 {len(profiles)}개. 문제 단위 {len(problem_units)}건 "
-        f"(P0 {ucounts['P0']} · P1 {ucounts['P1']} · P2 {ucounts['P2']} · P3 {ucounts['P3']}), 요소별 발견 {len(findings)}건 "
+        f"(P0 {ucounts['P0']} · P1 {ucounts['P1']} · P2 {ucounts['P2']} · P3 {ucounts['P3']}), 발견 {len(findings)}건 "
         f"(P0 {counts['P0']} · P1 {counts['P1']} · P2 {counts['P2']} · P3 {counts['P3']}).",
-        "- 문제 단위는 같은 시나리오·같은 체크·같은 차이 조건의 발견을 하나로 묶은 것입니다(예: 한 화면의 작은 본문 글자 여러 개 = 1건).",
+        "- 반복 요소의 크기·가독성 경고는 같은 화면·컴포넌트 계열·체크별로 묶습니다. 요소 수와 예시를 표시하고 개별 측정은 증거에 보존합니다.",
         "- 모든 조작은 드라이버가 실제 화면(브라우저/기기)에서 수행한 기록을 분석했습니다. 인간공학 수치는 결정론적 모델이 계산했고, LLM 페르소나가 연기하지 않았습니다.",
         "- 'k/n 시뮬레이션 프로필'은 **커버리지**이며 실제 사용자 비율(유병률·선호)을 뜻하지 않습니다.",
         "- 실측(observed)과 모델 예측(inferred)을 분리해 표기했습니다. 모델 예측은 실제 사용자 테스트로 확인해야 하는 가설입니다.",
@@ -107,11 +107,13 @@ def render(
     lines.append("- 페르소나 데이터셋에 없는 인간공학 속성(손잡이·파지·손 크기·시력·운동·기기)은 모두 시나리오 가정입니다.")
     lines += ["", "## 4. 문제 단위 (분류·수정 우선순위용)", "", "| ID | 심각도 | 체크 | 시나리오 | 조건 | 요소 수 | 발견 ID |", "|---|---|---|---|---|---|---|"]
     for u in problem_units:
-        lines.append(f"| {u['id']} | {u['severity']} | {u['check_id']} {u['title_ko']} | {u['scenario_id']} | {u['condition']} | {len(u['instances'])} | {', '.join(u['instances'][:6])}{' …' if len(u['instances']) > 6 else ''} |")
-    lines += ["", "### 요소별 발견 요약", "", "| ID | 심각도 | 범주 | 근거 | 대상 | 커버리지 | 차이 조건 |", "|---|---|---|---|---|---|---|"]
+        lines.append(f"| {u['id']} | {u['severity']} | {u['check_id']} {u['title_ko']} | {u['scenario_id']} | {u['condition']} | {u['element_count']} | {', '.join(u['instances'][:6])}{' …' if len(u['instances']) > 6 else ''} |")
+    lines += ["", "### 발견 요약", "", "| ID | 심각도 | 범주 | 근거 | 대상 | 커버리지 | 차이 조건 |", "|---|---|---|---|---|---|---|"]
     for f in findings:
         diff = ", ".join(f"{k}={v}" for k, v in f["profile_specific"].items()) or "-"
         target = f["element_key"].replace("|", " / ")[:48]
+        if f.get("element_count", 1) > 1:
+            target = f"{f['selector_family']} ({f['element_count']}개)"
         lines.append(f"| {f['id']} | {f['severity']} | {f['category']} | {BASIS_KO[f['basis']].split('(')[0]} | {target} | {f['coverage_label'].split(' (')[0]} | {diff} |")
     if composed:
         names = {s["segment_id"]: s["name_ko"] for s in (audience or {}).get("segments", [])}
@@ -147,7 +149,7 @@ def render(
         lines += ["## 5-1. 검토용 가설 (결함으로 세지 않음)", "",
                   "검증에서 고유 탐지가 없고 판정 타당도가 낮았던 모델 체크입니다(GZ-01, GZ-04, PC-05). 디자인 검토의 단서로만 쓰세요.", ""]
         for u in make_units(hypotheses):
-            lines.append(f"- {u['check_id']} {u['title_ko']} · {u['scenario_id']} · 조건 {u['condition']} · 요소 {len(u['instances'])}개 ({', '.join(e.split('|')[0] for e in u['elements'][:4])})")
+            lines.append(f"- {u['check_id']} {u['title_ko']} · {u['scenario_id']} · 조건 {u['condition']} · 요소 {u['element_count']}개 ({', '.join(u['examples'])})")
         lines.append("")
     lines += [
         "## 6. 자동화하지 않은 판단 (사람/비전 LLM 확인 필요)",

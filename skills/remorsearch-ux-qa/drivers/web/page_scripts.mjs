@@ -1351,6 +1351,31 @@ export function extractSnapshot(args) {
       text: displayedText,
       tag,
       selector: uniqueSelector(el),
+      // A family is structural evidence, never a guess based on numbered IDs.
+      // Keep unclassed ancestor positions and explicit container IDs so unrelated
+      // toolbars/dialogs do not collapse into one warning.
+      selector_family: (() => {
+        if (!el.classList.length && el.id) return null;
+        const parts = [];
+        for (let node = el; node; node = node.parentElement) {
+          if (node !== el && node.id) {
+            parts.unshift(uniqueSelector(node));
+            break;
+          }
+          const classes = [...node.classList].sort();
+          let part = node.localName + classes.map((name) => `.${CSS.escape(name)}`).join('');
+          if (node !== el && !classes.length && node.parentElement) {
+            const siblings = [...node.parentElement.children].filter((s) => s.localName === node.localName);
+            if (siblings.length > 1) part += `:nth-of-type(${siblings.indexOf(node) + 1})`;
+          }
+          parts.unshift(part);
+        }
+        let family = parts.join(' > ');
+        for (let root = el.getRootNode(); root.host; root = root.host.getRootNode()) {
+          family = `${uniqueSelector(root.host)} >>> ${family}`;
+        }
+        return family;
+      })(),
       dom_id: el.id ? String(el.id).slice(0, 120) : null,
       box: { x: round2(g.r.left), y: round2(g.r.top), w: round2(g.r.width), h: round2(g.r.height) },
       ...visibleBoxOf(el),

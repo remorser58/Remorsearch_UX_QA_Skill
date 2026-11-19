@@ -26,6 +26,13 @@ from .snapshot import is_number, validate_adaptation, validate_native_state
 
 SEVERITY_ORDER = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
 
+# Single-element geometry/readability rules can share a component-level finding.
+# Interaction, timing, task-state and multi-element relations remain separate.
+REPEATED_ELEMENT_CHECKS = frozenset({
+    "RH-01", "PT-01", "PT-02", "PT-04", "PC-01", "PC-02", "PC-04", "PC-05",
+    "GM-01", "GM-02", "GM-05", "LY-01",
+})
+
 # Reach-zone labels (thumb-reach-v3); shared with the swarm's derived advice.
 ZONE_KO = {"out": "파지를 바꿔야 닿는", "stretch": "엄지를 크게 뻗어야 하는", "mild": "약간 불편한", "natural": "편한"}
 

@@ -185,9 +185,22 @@ def _device_of(profile: dict[str, Any]) -> Any:
     return device
 
 
+def summarize_elements(observations: list[dict[str, Any]]) -> dict[str, Any]:
+    """Summarize only the linked evidence, including for a single-profile export."""
+    worst = min(observations, key=_severity_rank)
+    selectors = sorted({sel for o in observations for sel in
+                        (o.get("selectors") or [o["element_key"].split("|", 1)[0]])})
+    count = len({o["element_key"].split("|", 1)[0] for o in observations})
+    examples = selectors[:3]
+    summary = worst.get("message_ko", worst.get("summary", ""))
+    if count > 1:
+        summary = f"{count}개 반복 요소 (예: {', '.join(examples)}). 대표 측정: {summary}"
+    return {"element_count": count, "examples": examples, "summary_ko": summary}
+
+
 def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     profiles_by_id = {p["profile_id"]: p for p in profiles}
-    groups: dict[tuple[str, str, str], dict[str, Any]] = {}
+    groups: dict[tuple, dict[str, Any]] = {}
     evaluated_by_run: dict[str, list[str]] = {}
     devices: dict[str, Any] = {}
     for analysis in analyses:
@@ -199,9 +212,14 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
         for obs in analysis["observations"]:
             if (obs.get("extra") or {}).get("verdict") == "inconclusive":
                 continue  # retained in raw observations and analysis limitations
-            # Group by the element's selector, not its current text: a countdown or score
-            # whose text changes every snapshot is one element (cross-review 2026-09-28).
-            key = (scenario_id, obs["check_id"], obs["element_key"].split("|", 1)[0])
+            # Geometry/readability groups have captured screen/component identity.
+            # Other rules retain exact selectors, independent of changing text.
+            grouping = (obs.get("extra") or {}).get("warning_group") if obs["check_id"] in checks.REPEATED_ELEMENT_CHECKS else None
+            if grouping:
+                key = (scenario_id, obs["check_id"], grouping["selector_family"], grouping["screen_key"],
+                       grouping["role"], tuple(grouping["roles"]))
+            else:
+                key = (scenario_id, obs["check_id"], obs["element_key"].split("|", 1)[0], "", "", ())
             group = groups.setdefault(key, {"tested": set(), "triggered": set(), "failed": [], "runs": set()})
             group["tested"].add(obs["profile_id"])
             group["runs"].add(obs["run_id"])
@@ -209,7 +227,7 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
                 group["triggered"].add(obs["profile_id"])
                 group["failed"].append(obs)
     findings: list[dict[str, Any]] = []
-    for (scenario_id, check_id, _selector), group in sorted(groups.items()):
+    for (scenario_id, check_id, family, screen_key, _role, _roles), group in sorted(groups.items()):
         if not group["failed"]:
             continue
         element_key = group["failed"][0]["element_key"]
@@ -248,12 +266,18 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
         evaluated = {pid for run_id in group["runs"] for pid in evaluated_by_run.get(run_id, [])} | set(tested)
         untriggered = [profiles_by_id[p] for p in sorted(evaluated) if p not in group["triggered"] and p in profiles_by_id]
         differential = {} if check_id == "TI-01" else _differential([profiles_by_id[p] for p in triggered if p in profiles_by_id], untriggered)
+        selectors = sorted({sel for o in group["failed"] for sel in o.get("selectors", [])})
         findings.append({
             "check_id": check_id,
             "tier": checks.tier(check_id, worst.get("measurement")),
             "category": spec.category,
             "scenario_id": scenario_id,
             "element_key": element_key,
+            "screen_key": screen_key,
+            "selector_family": family,
+            "component_role": _role,
+            "component_roles": list(_roles),
+            **summarize_elements(group["failed"]),
             "severity": worst["severity"],
             "basis": spec.basis,
             # Measured on estimated geometry (vision annotation) is still inferred.
@@ -267,11 +291,10 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
             "segments_affected": _segments(triggered, profiles_by_id),
             "observation_ids": [o["id"] for o in group["failed"]],
             "run_ids": sorted(group["runs"]),
-            "selectors": sorted({sel for o in group["failed"] for sel in o.get("selectors", [])}),
+            "selectors": selectors,
             "context_selectors": sorted({sel for o in group["failed"] for sel in o.get("context_selectors", [])}),
             "measurement": worst["measurement"],
             "title_ko": spec.title_ko,
-            "summary_ko": worst["message_ko"],
             "fix_layer": spec.fix_layer,
             "recommendation_ko": _derived_recommendation(check_id, spec, group["failed"]),
             "refs": list(spec.refs),
@@ -296,18 +319,18 @@ def _differential_key(finding: dict[str, Any]) -> str:
 
 
 def units(findings: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Group findings into problem units: one (scenario, check, differential condition).
+    """Group legacy findings by scenario/check/condition, preserving scoped groups.
 
-    A systemic problem (small body text across a page for presbyopic profiles, five
-    targets under 24 px) is one unit with its elements as instances, as accessibility
-    scanners report one rule with many nodes. Counting units instead of findings is
-    the standard merge step before counting problems (UEM-02).
+    Captured screen/component groups already represent one problem unit and must
+    not be merged again across distinct components or screens.
     """
-    groups: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
+    groups: dict[tuple, list[dict[str, Any]]] = {}
     for f in findings:
-        groups.setdefault((f["scenario_id"], f["check_id"], _differential_key(f)), []).append(f)
+        # Keep screen/component boundaries from aggregation in the priority view.
+        groups.setdefault((f["scenario_id"], f["check_id"], _differential_key(f),
+                           f.get("screen_key", ""), f["id"] if f.get("screen_key") else ""), []).append(f)
     out = []
-    for (scenario_id, check_id, diff), members in groups.items():
+    for (scenario_id, check_id, diff, screen_key, _instance), members in groups.items():
         worst = min(members, key=lambda f: checks.SEVERITY_ORDER.get(f["severity"] or "P3", 3))
         triggered = sorted({p for f in members for p in f["triggered_profiles"]})
         tested = sorted({p for f in members for p in f["tested_profiles"]})
@@ -319,6 +342,11 @@ def units(findings: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
             "basis": worst["basis"],
             "severity": worst["severity"],
             "condition": diff,
+            "screen_key": screen_key,
+            "selector_family": worst.get("selector_family", ""),
+            "element_count": sum(f.get("element_count", 1) for f in members),
+            "examples": sorted({s for f in members for s in
+                                (f.get("examples") or [f["element_key"].split("|", 1)[0]])})[:3],
             "profile_specific": worst.get("profile_specific") or {},
             "instances": [f["id"] for f in members],
             "elements": [f["element_key"] for f in members],

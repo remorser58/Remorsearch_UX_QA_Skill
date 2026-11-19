@@ -9,6 +9,8 @@ not re-simulated for other profiles; judgment notes stay with their own run.
 
 from __future__ import annotations
 
+import hashlib
+import json
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -99,13 +101,14 @@ def _path_selectors(run: dict[str, Any], snapshots_by_id: dict[str, dict[str, An
 
 
 def _dedupe(observations: list[checks.Observation]) -> list[checks.Observation]:
-    """Keep one observation per (check, element, profile, run): the worst one."""
+    """Keep the worst observation per check, element, profile, run and screen."""
     best: dict[tuple, checks.Observation] = {}
     order: list[tuple] = []
     for obs in observations:
         # A capture gap and a valid verdict are independent evidence. Preserve
         # the gap even when another snapshot of the same element was evaluable.
-        key = (obs.check_id, obs.element_key, obs.profile_id, obs.run_id, obs.extra.get("verdict") == "inconclusive")
+        key = (obs.check_id, obs.element_key, obs.profile_id, obs.run_id, obs.extra.get("verdict") == "inconclusive",
+               (obs.extra.get("warning_group") or {}).get("screen_key"))
         current = best.get(key)
         if current is None:
             best[key] = obs
@@ -293,6 +296,30 @@ def analyze_run(
                 observation.extra.update({"probe_kind": "intermediate_focus", "source_run_id": run["run_id"],
                                           "source_snapshot_id": replay["source_snapshot_id"], "probe_path": replay["run_path"]})
                 observations.append(observation)
+    # A selector may be reused by a later screen. Preserve that evidence before
+    # deduplication, while repeated captures of the same screen keep the worst
+    # per-element observation. Text inputs never enter the screen signature.
+    for snap in live_snapshots:
+        elements = snap.get("elements", [])
+        visible = [e for e in elements if e.get("visible") and not e.get("inert_by_modal")]
+        screen = [
+            {key: snap.get("surface", {}).get(key) for key in ("kind", "url", "title", "app_id", "build_id")},
+            snap.get("device"),
+            sorted((e.get("selector") or e["id"], e.get("role", "")) for e in visible),
+            [(e.get("selector"), e.get("text")) for e in visible if e.get("role") == "heading"],
+        ]
+        screen_key = "screen-" + hashlib.sha256(json.dumps(screen, sort_keys=True).encode()).hexdigest()[:16]
+        by_id = {e["id"]: e for e in elements}
+        for obs in observations:
+            if (obs.snapshot_id != snap["snapshot_id"] or obs.check_id not in checks.REPEATED_ELEMENT_CHECKS
+                    or len(obs.element_ids) != 1):
+                continue
+            element = by_id[obs.element_ids[0]]
+            family = element.get("selector_family") or element.get("selector") or element["id"]
+            obs.extra["warning_group"] = {
+                "screen_key": screen_key, "selector_family": family,
+                "role": element.get("role", ""), "roles": sorted(element.get("roles") or []),
+            }
     observations = _dedupe(observations)
     evidence_snapshots = snapshots + [s for _, probe_snapshots, _ in probes for s in probe_snapshots.values()]
     selector_of = {

@@ -2264,6 +2264,53 @@ async function paintedStateTest(base, tmp) {
   }
 }
 
+async function warningFamilyTest(tmp) {
+  const { pw, info } = loadPlaywright();
+  const transport = await openBrowser(pw, info, { endpoint: undefined });
+  const context = await transport.browser.newContext({ viewport: { width: 360, height: 780 }, deviceScaleFactor: 1 });
+  try {
+    const page = await context.newPage();
+    await page.setContent(`<!doctype html><main id="catalog">
+      <div class="row"><button id="one" class="choice small">One</button><p class="detail">First detail</p></div>
+      <div class="row"><button id="two" class="small choice">Two</button><p class="detail">Second detail</p></div>
+      <button id="help" class="help">Help</button>
+      <button id="back">Back</button><button id="next">Next</button>
+      </main><aside id="tools"><button id="other" class="choice small">Other</button></aside>
+      <section><button id="plain-a" class="choice">A</button></section>
+      <section><button id="plain-b" class="choice">B</button></section>
+      <div id="copy"><p>Anonymous first</p><p>Anonymous second</p></div>`);
+    await page.evaluate(() => {
+      for (const id of ['host-a', 'host-b']) {
+        const host = document.createElement('div');
+        host.id = id;
+        document.body.append(host);
+        host.attachShadow({ mode: 'open' }).innerHTML =
+          `<div id="shadow-panel"><button id="${id}-action" class="action">Act</button></div>`;
+      }
+    });
+    const ex = await page.evaluate(extractSnapshot, { key: STATE_KEY, cap: 400, knownRoles: [...KNOWN_ROLES] });
+    writeJson(path.join(tmp, 'warning-family-capture.json'), ex);
+    const family = (id) => ex.elements.find((e) => e.selector === `#${id}`)?.selector_family;
+    check('warning family: repeated nested components share a family regardless of ID or class order',
+      family('one') === '#catalog > div.row > button.choice.small' && family('one') === family('two'), ex.elements);
+    check('warning family: distinct components and containers remain separate',
+      family('one') !== family('help') && family('one') !== family('other'));
+    check('warning family: classless ancestors retain structural positions',
+      family('plain-a') !== family('plain-b'));
+    check('warning family: unrelated unclassed IDs are not normalized',
+      family('back') === null && family('next') === null);
+    check('warning family: anonymous repeated text uses its scoped structural family',
+      ex.elements.filter((e) => e.text.startsWith('Anonymous')).length === 2
+      && ex.elements.filter((e) => e.text.startsWith('Anonymous')).every((e) => e.selector_family === '#copy > p'));
+    check('warning family: identical shadow-local containers retain host boundaries',
+      family('host-a-action') === '#host-a >>> #shadow-panel > button.action'
+      && family('host-b-action') === '#host-b >>> #shadow-panel > button.action');
+  } finally {
+    await context.close();
+    await transport.close();
+  }
+}
+
 async function gazeGeometryTest(tmp) {
   const { pw, info } = loadPlaywright();
   const transport = await openBrowser(pw, info, { endpoint: undefined });
@@ -2467,6 +2514,7 @@ async function main() {
       await runStateOracleSelftest({ pw, info, check, tmp });
     }
     if (want('painted')) await paintedStateTest(base, tmp);
+    if (want('warning-family')) await warningFamilyTest(tmp);
     if (want('gaze')) await gazeGeometryTest(tmp);
     if (want('typography')) await typographyTest(base, tmp);
 
