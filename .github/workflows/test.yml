@@ -38,7 +38,7 @@ jobs:
 
   web-driver:
     name: Web driver selftest on Node 22
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: skills/remorsearch-ux-qa/drivers/web
