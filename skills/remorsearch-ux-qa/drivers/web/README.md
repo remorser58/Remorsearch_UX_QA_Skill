@@ -181,20 +181,25 @@ unevaluable. Authored source redaction also applies to that interactive action.
   "selector_visible":"#confirmed",
   "task_checks":[
     {"id":"request-after-error","selector":"#request","property":"value","from_step":1,"after_step":2,
+     "basis":{"kind":"task","reference":"Preserve the dietary request during correction."},
      "severity":"P1","consequence":"A required dietary request may be lost during recovery."},
     {"id":"request-final","selector":"#confirmed-request","property":"text","from_step":1,
+     "basis":{"kind":"task","reference":"Submit the entered dietary request."},
      "severity":"P1","consequence":"The final request must match the entered request."},
     {"id":"option-final","selector":"#option","property":"checked","expected":true,
+     "basis":{"kind":"task","reference":"Submit the selected option."},
      "severity":"P2","consequence":"The selected option must survive submission."}
   ]
 }
 ```
 
 Each check has a unique 1–128 character ID, CSS selector (≤1000 characters),
-`property: value|text|checked`, exactly one of `expected` or `from_step`, and
+`property: value|text|checked|count`, exactly one of `expected`, `from_step` or `from_check`, and
 authored `severity: P0|P1|P2|P3` plus `consequence` (≤1000 characters; no field
 values). At most 64 checks. `expected` is a string (≤5000 characters, including
-empty) or a boolean for `checked`. Comparisons are exact: author `expected:""`
+empty), a boolean for `checked`, or a non-negative integer for `count`.
+`count` requires a visible `container`; only rendered matches inside it count.
+Comparisons are exact: author `expected:""`
 for intentional reset/cleanup, or the expected normalized string for deliberate
 normalization. Missing, multiple, hidden or credential targets are unevaluable;
 no label or demographic inference is used. Password/hidden/credential fields,
@@ -212,6 +217,76 @@ they never contain actual/expected values or value hashes. P0/P1 still need
 capture review. `TI-01` reports comparison failure only for the recorded owner;
 authored consequence/severity do not prove downstream harm.
 
+Supply `basis:{"kind":"product"|"task","reference":"visible promise or task rule"}`
+for every grounded expectation. It is optional in the schema: missing basis loads
+but records an unevaluable candidate (`reason:"expectation_basis_missing"`,
+`comparison:"pass"|"fail"`), not a defect or pass.
+Do not invent a preservation policy: changing the recipient may intentionally clear
+a draft. `from_check` refers to an earlier captured check with the same property;
+`delta` on counts expresses one approval → one new visible record (`1`), or
+cancel/re-entry → no new record (`0`). Compare visible receipts/history, never
+app storage or hidden keys. A same-run relation is an invariant, not metamorphic.
+
+For a metamorphic comparison, opt into a fresh source/follow-up execution with
+`follow_up` on the check. It requires `fixture:true`, `changes` drawn from
+`back|cancel|reentry|edit_resubmit`, and `insertions:[{"after_step":N,"steps":[...]}]`.
+The inserted steps use the ordinary action contract; `after_step:0` means before
+the first action. The original run is preserved, the follow-up uses a new browser
+context, and its run/captures are linked separately. Only use owned synthetic
+data: replaying a prefix may submit again. Input cases name an authored `type`
+step, `kind:blank|boundary|documented_valid|invalid`, `expectation:accept|reject`
+and a product/task `basis`; documented alternatives are not automatically invalid.
+
+For example, these are fields inside `success.task_checks`. The second check
+counts rendered `.record` descendants of `#history` after one approval; the
+follow-up then opens and cancels a draft before comparing with the source count.
+`changes` is descriptive metadata, not generated actions. Insertion indices refer
+to original steps; follow-up `input_cases[].step` refers to the expanded replay.
+
+```json
+[
+  {"id":"before","selector":".record","container":"#history","property":"count",
+   "expected":0,"after_step":1,"severity":"P1","consequence":"No request is saved yet.",
+   "basis":{"kind":"task","reference":"Begin with an empty request history."}},
+  {"id":"approved","selector":".record","container":"#history","property":"count",
+   "from_check":"before","delta":1,"after_step":3,
+   "severity":"P1","consequence":"One approval must create exactly one record.",
+   "basis":{"kind":"product","reference":"Approve saves this request once; Cancel discards the draft."},
+   "follow_up":{"fixture":true,"changes":["cancel"],
+     "insertions":[{"after_step":3,"steps":[
+       {"action":"click","target":"#new-request"},
+       {"action":"click","target":"#cancel"}
+     ]}]}}
+]
+```
+
+`from_check` is the ID of a preceding check in the same run, with a strictly
+earlier checkpoint and the same property. Count `delta` defaults to zero and may
+be any safe integer; it is permitted only with `count` + `from_check`. A follow-up
+compares the source check's observed scalar with the same visible property after
+replaying its prefix plus insertions. `from_step` is only for `value`/`text`.
+`text` reads `innerText`; neither text nor value comparisons trim or normalize.
+Author the normalized literal only when the product itself performs that change.
+
+Optional `input_cases` belongs to a check or its `follow_up`; it classifies
+authored inputs rather than inventing formats. For example:
+
+```json
+"input_cases":[
+  {"step":1,"kind":"blank","expectation":"reject",
+   "basis":{"kind":"product","reference":"The field is visibly required."}},
+  {"step":3,"kind":"boundary","expectation":"accept","boundary":"Maximum 60 characters",
+   "basis":{"kind":"product","reference":"The visible counter permits 60 characters."}}
+]
+```
+
+Each listed step must be a `type` action; `blank` requires `text:""`,
+`documented_valid` requires `accept`, and `invalid` requires `reject`.
+Only `boundary` carries a nonempty `boundary` description. Expectations need an
+associated visible outcome check; classification alone never proves acceptance.
+Invalid shapes/bounds are usage errors (exit 2). A valid but unavailable comparison
+is unevaluable (exit 3 unless execution is blocked, exit 4).
+
 With a visible completion page and a measured mismatch, `run.json` retains
 `status:"completed"`, `success:false`, `success_basis:"measured"`, and the
 driver exits **3**. Passing checks exit **0**; unevaluable checks yield
@@ -219,10 +294,61 @@ driver exits **3**. Passing checks exit **0**; unevaluable checks yield
 can be attached as defect evidence; the bundle keeps `task_success:false`.
 Blocked/failed executions and missing captures retain their existing limits.
 The opted property and visibility are sampled around each designated capture;
-changed state is `unevaluable` with `capture_state_changed`. Only browser handles
-hold transient values, and they are disposed immediately. Checks precede later
+changed state is `unevaluable` with `capture_state_changed`. Cross-check/replay
+scalars stay in private driver memory and are cleared after comparison; they are
+never serialized. Temporary browser handles are disposed. Checks precede later
 focus/reflow probes. Matching endpoints do not exclude a transition that returns
 to the same state during capture; rapidly changing targets need another capture.
+
+## Temporal candidates and intermediate keyboard replays
+
+After actions, the existing page instrumentation records changed visible
+status/alert/dialog regions and leaf text in `temporal_candidates` (up to 128;
+output overflow is `temporal_candidates_dropped`; page sampling caps set
+`temporal_sampling_truncated`). Each candidate keeps action/capture
+anchors, appearance/disappearance times, a declared-window link or a proposed
+`timing_window` object. These are **candidates**, not defects. Confirm the selector
+against the UI, copy that object into `timing_windows`, and replay the recorded
+steps with an explicit wait covering the observation window. Do not infer
+"never disappears" from `open_at_observation_end`; its completed duration is null.
+Polling can miss events shorter than 16 ms; this is not a screen-reader test.
+
+A declared window may identify an untimed recovery location:
+
+```json
+"timing_windows": [{
+  "id":"saved-notice", "selector":"#notice", "kind":"transient_text",
+  "measure":"visible_duration",
+  "recovery":{"selector":"#receipt","after_step":4}
+}]
+```
+
+Omitting recovery `after_step` checks the final captured state. Only the same
+visible text after an observed disappearance establishes `available`; an absent
+match is `not_observed`, not proof that no alternative path exists. Text recovery
+does not establish recovery of an action. `exception:{"kind":"extend","basis":"..."}`
+records a claimed WCAG 2.2.1 exception/adjustment for review; supported kinds are
+`turn_off`, `adjust`, `extend`, `real_time`, `essential`, `twenty_hours`.
+CG-02 remains a reading-time model, not a WCAG verdict. WCAG 2.2.4 is **AAA**.
+
+Declare intermediate states already reached by the task:
+
+```json
+"focus_walks": [{
+  "id":"review", "after_step":3, "state":"modal", "selector":"#review",
+  "return_selector":"#open-review", "fixture":true
+}]
+```
+
+At most eight checks; states are `modal`, `validation_error`, `detail`,
+`confirmation`. `fixture:true` authorizes prefix replay only on owned synthetic
+data. Each uses a fresh browser context and the ordinary recorded actions, checks
+the visible state selector, then performs Tab and Shift+Tab walks and Escape.
+Results record focus indication, obscuring, cycles, return target and captures
+under `probes/`. The analyzer keeps their own run IDs; `probe_replays` links the
+source task and replay. A normal modal cycle is not a keyboard trap. Failure to
+reproduce, capped walks and missing return expectations are gaps, not passes.
+Neither these probes nor initial/final focus walks replace a whole keyboard task.
 
 ## Analysing a run recorded without a profile
 
@@ -551,8 +677,9 @@ they belong to (0 = initial load), so a step can own two snapshots.
   reports `visible_ms` (shortest completed visible interval, the tightest window a
   user got; null if none completed), `intervals_ms`, `min/max_visible_ms`,
   `appearances`, `open_interval_ms` (still visible at the end, a lower bound, not
-  counted), and the text seen. "Visible" = rendered, non-zero box, intersecting
-  the viewport. Non-CSS selectors fall back to Playwright polling (`method`).
+  counted), and the text seen. "Visible" = rendered with a non-zero box;
+  off-viewport appearances are recorded separately. Non-CSS selectors fall back
+  to Playwright polling (`method`). Observation ends before focus/reflow probes.
 - **Screen coordinates**: boxes, points, hit tests and captures all use the screen
   (the visual viewport). CDP screenshot clips are in document coordinates, so frames
   are clipped at the visual viewport's page position (a clip at 0,0 captured the top

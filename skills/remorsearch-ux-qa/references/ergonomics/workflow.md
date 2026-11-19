@@ -21,6 +21,8 @@ python3 scripts/ergo_qa.py catalog
 
 Use safe steps and authored `success.task_checks` for material values/choices after recovery transitions and at completion; exact payloads, 1-based steps, intentional reset/normalization and `type.redact:true` are in `drivers/web/README.md`. Read-only defaults and separate write grants apply. Production verification/payment, human checks or missing access stop the path. Emulation covers Chromium viewport/DPR/input; real device, grip, keyboard occlusion, safe area and screen reader remain untested.
 
+State/temporal/focus replay contracts: see the driver README.
+
 ## 2. Compose profiles
 
 Default stratified coverage:

@@ -220,11 +220,13 @@ RF-02/RF-03은 `run.adaptation[]`과 원본·복제 baseline·변경 조건의 �
 [WCAG 1.4.12 해설](https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html).
 
 `TI-01` is an opt-in measured task comparison on the recorded owner execution:
-`success.task_checks` compares authored value/text/checked expectations after
-specified actions and at completion. It stores checkpoint/capture IDs without
-field values. Severity and consequence are authored task impact; comparison
-alone does not prove downstream harm. Unvisited, ambiguous, protected and missing
-targets remain unevaluable. See `drivers/web/README.md` for executable payloads.
+`success.task_checks` compares grounded value/text/checked/visible-count
+expectations at checkpoints. `from_check` is a same-run invariant; `follow_up`
+compares a fresh replay on an owned fixture. Missing product/task `basis` stays
+a candidate, not a defect. Evidence keeps capture IDs, not field values.
+Severity/consequence do not prove downstream harm. Unvisited, ambiguous,
+protected and missing targets remain unevaluable. See `drivers/web/README.md`
+for executable contracts, timing recovery and separate intermediate focus probes.
 
 ## Judgment (not automated)
 
