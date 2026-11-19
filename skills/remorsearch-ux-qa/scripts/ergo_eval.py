@@ -220,6 +220,8 @@ def configurations(data: dict[str, Any]) -> tuple[dict[str, dict[str, set[str]]]
 
 def record(data: dict[str, Any], out: Path) -> None:
     _, _, groups_of, notes = configurations(data)
+    if not any(groups_of.values()):
+        raise SystemExit(f"error: no runnable scenario/device pairs in suite: {data['suite']}")
     for n in notes:
         print(f"note: {n}", flush=True)
     runs_dir = out / "runs"
@@ -943,7 +945,8 @@ def main() -> int:
     C5_SEEDS = args.c5_seeds
     data = load_suite(args.suite.resolve())
     out = args.out.resolve()
-    out.mkdir(parents=True, exist_ok=True)
+    if args.cmd != "record":
+        out.mkdir(parents=True, exist_ok=True)
     if args.cmd == "plan":
         configs, registry, groups_of, notes = configurations(data)
         print(json.dumps({"configs": {c: {prod: len(ids) for prod, ids in v.items()} for c, v in configs.items() if not c.startswith("C5@") or c.endswith("#0")},

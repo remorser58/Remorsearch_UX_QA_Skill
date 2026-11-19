@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import copy
 import json
+import subprocess
+import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -12,6 +15,50 @@ import _paths  # noqa: F401  (puts the skill folder and its scripts on sys.path)
 import ergo_eval  # noqa: E402
 
 EXAMPLE = _paths.SKILL / "examples" / "audience" / "transit-card.audience.json"
+
+
+class RecordCLI(unittest.TestCase):
+    def run_record(self, suite: Path, out: Path) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [sys.executable, str(_paths.SKILL / "scripts" / "ergo_eval.py"),
+             "record", "--suite", str(suite), "--out", str(out), "--c5-seeds", "1"],
+            capture_output=True, text=True, timeout=15,
+        )
+
+    def test_empty_recording_fails_without_creating_output(self) -> None:
+        for layout in ("missing", "audience-only", "empty-scenarios"):
+            with self.subTest(layout=layout), tempfile.TemporaryDirectory() as tmp:
+                suite, out = Path(tmp) / "suite", Path(tmp) / "out"
+                if layout == "audience-only":
+                    (suite / "audiences").mkdir(parents=True)
+                elif layout == "empty-scenarios":
+                    (suite / "scenarios").mkdir(parents=True)
+                result = self.run_record(suite, out)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("no runnable scenario/device pairs", result.stderr)
+                self.assertIn(str(suite.resolve()), result.stderr)
+                self.assertFalse(out.exists())
+
+    def test_completed_recording_remains_resumable(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            suite, out = Path(tmp) / "suite", Path(tmp) / "out"
+            sid = "SC-test-public-a"
+            (suite / "scenarios").mkdir(parents=True)
+            (suite / "scenarios" / "public.json").write_text(json.dumps(
+                {"scenario_id": sid, "device_ids": ["galaxy-s24"], "surface": {"kind": "web"}}
+            ), encoding="utf-8")
+            run_id = f"R-{sid}-galaxy-s24-p"
+            result_path = out / "runs" / run_id / "run.json"
+            result_path.parent.mkdir(parents=True)
+            result_path.write_text("{}", encoding="utf-8")
+            previous = [{"run_id": run_id, "exit": 0}]
+            log = out / "record-log.json"
+            log.write_text(json.dumps(previous), encoding="utf-8")
+            result = self.run_record(suite, out)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertNotIn("recorded ", result.stdout)
+            self.assertEqual(json.loads(log.read_text(encoding="utf-8")), previous)
+            self.assertEqual(result_path.read_text(encoding="utf-8"), "{}")
 
 
 def suite_two_products_one_device() -> dict:
