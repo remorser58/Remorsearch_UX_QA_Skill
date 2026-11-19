@@ -100,6 +100,35 @@ class TabletReach(unittest.TestCase):
 
 
 class Denominators(unittest.TestCase):
+    def test_explicit_inconclusive_is_not_coverage_or_comparison(self) -> None:
+        known = profile("EP-known", grip="one_hand_right")
+        unknown = profile("EP-unknown", grip="one_hand_right", age_band="60s")
+        button = el("pay", "button", (10, 60, 60, 48), text="결제",
+                    interactive=True, roles=("primary",), tag="button")
+        reach_obs = next(o for o in checks.check_reach(ctx([button], known)) if o.check_id == "RH-01")
+        observed = reach_obs.to_dict(0)
+        observed.update(selectors=["#pay"], context_selectors=[])
+        self.assertFalse(observed["passed"])
+        inconclusive = {**observed, "id": "OB-unknown", "profile_id": "EP-unknown",
+                        "measurement": {}, "passed": None, "severity": None,
+                        "extra": {"verdict": "inconclusive"}}
+        analysis = {"scenario_id": "SC-1", "run_id": observed["run_id"],
+                    "profiles_evaluated": ["EP-known", "EP-unknown"],
+                    "observations": [observed, inconclusive]}
+        finding = swarm.aggregate([analysis], [known, unknown])[0]
+        self.assertEqual(finding["tested_profiles"], ["EP-known"])
+        self.assertEqual(finding["coverage_label"].split()[0], "1/1")
+        self.assertEqual(finding["profile_specific"], {})
+
+        # An actual observation at the same anchor still counts, even if a
+        # different snapshot of that profile at that anchor was inconclusive.
+        assessment = {**observed, "id": "OB-assessed", "profile_id": "EP-unknown",
+                      "passed": True, "severity": None}
+        analysis["observations"].append(assessment)
+        finding = swarm.aggregate([analysis], [known, unknown])[0]
+        self.assertEqual(finding["tested_profiles"], ["EP-known", "EP-unknown"])
+        self.assertIn("age_band", finding["profile_specific"])
+
     def test_tested_profiles_include_non_triggering_applicable_profiles(self) -> None:
         young = profile("EP-Y")
         old = profile("EP-O", age_band="60s", presbyopia=True)

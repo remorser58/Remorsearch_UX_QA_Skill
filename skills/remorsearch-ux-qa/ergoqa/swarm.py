@@ -188,6 +188,7 @@ def _device_of(profile: dict[str, Any]) -> Any:
 def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     profiles_by_id = {p["profile_id"]: p for p in profiles}
     groups: dict[tuple[str, str, str], dict[str, Any]] = {}
+    inconclusive_by_anchor: dict[tuple[str, str, str], set[str]] = {}
     evaluated_by_run: dict[str, list[str]] = {}
     devices: dict[str, Any] = {}
     for analysis in analyses:
@@ -197,11 +198,12 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
             evaluated_by_run.setdefault(run_id, [])
             evaluated_by_run[run_id] += [p for p in analysis["profiles_evaluated"] if p not in evaluated_by_run[run_id]]
         for obs in analysis["observations"]:
-            if (obs.get("extra") or {}).get("verdict") == "inconclusive":
-                continue  # retained in raw observations and analysis limitations
             # Group by the element's selector, not its current text: a countdown or score
             # whose text changes every snapshot is one element (cross-review 2026-09-28).
             key = (scenario_id, obs["check_id"], obs["element_key"].split("|", 1)[0])
+            if (obs.get("extra") or {}).get("verdict") == "inconclusive":
+                inconclusive_by_anchor.setdefault(key, set()).add(obs["profile_id"])
+                continue  # retained in raw observations and analysis limitations
             group = groups.setdefault(key, {"tested": set(), "triggered": set(), "failed": [], "runs": set()})
             group["tested"].add(obs["profile_id"])
             group["runs"].add(obs["run_id"])
@@ -209,16 +211,22 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
                 group["triggered"].add(obs["profile_id"])
                 group["failed"].append(obs)
     findings: list[dict[str, Any]] = []
-    for (scenario_id, check_id, _selector), group in sorted(groups.items()):
+    for key, group in sorted(groups.items()):
+        scenario_id, check_id, _selector = key
         if not group["failed"]:
             continue
         element_key = group["failed"][0]["element_key"]
         spec = checks.CATALOG[check_id]
+        # An explicit lack of evidence cannot be turned into a silent pass by
+        # applicability. A conclusive observation at this anchor still counts.
+        unassessed = inconclusive_by_anchor.get(key, set()) - group["tested"]
         if check_id != "PJ-01":
             # Denominator: every evaluated profile the check applies to, not only the ones
             # that happened to emit an observation.
             for run_id in group["runs"]:
                 for pid in evaluated_by_run.get(run_id, []):
+                    if pid in unassessed:
+                        continue
                     profile = profiles_by_id.get(pid)
                     if profile is None:
                         continue
@@ -246,7 +254,8 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
         # counting profiles outside the check's scope as not triggered, so a CVD-only or
         # bright-sun-only finding names its condition (AP-05) instead of reading "k/k".
         evaluated = {pid for run_id in group["runs"] for pid in evaluated_by_run.get(run_id, [])} | set(tested)
-        untriggered = [profiles_by_id[p] for p in sorted(evaluated) if p not in group["triggered"] and p in profiles_by_id]
+        untriggered = [profiles_by_id[p] for p in sorted(evaluated - unassessed)
+                       if p not in group["triggered"] and p in profiles_by_id]
         differential = {} if check_id == "TI-01" else _differential([profiles_by_id[p] for p in triggered if p in profiles_by_id], untriggered)
         findings.append({
             "check_id": check_id,
