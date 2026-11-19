@@ -16,7 +16,7 @@ from . import checks, png
 from .devices import device_for_snapshot, get_device, rotate
 from .hf import gaze
 from .profiles import profile_index
-from .snapshot import load_run_dir
+from .snapshot import load_run_dir, resolve_within
 
 SEVERITY_RANK = checks.SEVERITY_ORDER
 
@@ -163,6 +163,19 @@ def run_health(run: dict[str, Any], snapshots: list[dict[str, Any]], scenario: d
         if w.get("error"):
             health = "degraded" if health == "ok" else health
             notes.append(f"{rid}: 시간 창 '{w.get('id')}' 측정 오류: {w.get('error')}")
+        elif w.get("open_interval_ms") is not None:
+            notes.append(f"{rid}: 시간 창 '{w.get('id')}'은 관찰 종료 시 열려 있습니다. 이후 소멸 여부는 미검사입니다.")
+    if run.get("temporal_candidates_dropped"):
+        health = "degraded" if health == "ok" else health
+        notes.append(f"{rid}: 시간 후보 상한으로 {run['temporal_candidates_dropped']}개 후보를 보존하지 못했습니다.")
+    if run.get("temporal_sampling_truncated"):
+        health = "degraded" if health == "ok" else health
+        notes.append(f"{rid}: 페이지 변경/활성 시간 후보 상한에 도달해 후보 관찰이 불완전합니다.")
+    for replay in run.get("probe_replays", []):
+        for walk in replay.get("walks", []):
+            if walk.get("ended") in ("time_budget", "max_stops", "opaque_frame"):
+                health = "degraded" if health == "ok" else health
+                notes.append(f"{rid}: 중간 상태 {replay.get('id')}의 {walk.get('direction')} 검사 범위 제한: {walk['ended']}.")
     game = (run.get("surface") or {}).get("kind") == "game" or any(w.get("kind") == "qte" for w in (scenario or {}).get("timing_windows", []))
     if game and not (run.get("flash_sampling") or {}).get("enabled"):
         notes.append(f"{rid}: 섬광(광과민성) 프레임 검사를 하지 않았습니다(--flash-sample-ms 없음). GM-04 결과가 없다는 것은 통과가 아닙니다.")
@@ -228,6 +241,24 @@ def analyze_run(
     if not live_snapshots:
         raise ValueError(f"run {run['run_id']} has no live task captures")
     live_by_id = {s["snapshot_id"]: s for s in live_snapshots}
+    # Probe captures are a separate execution. Never relabel their measurements
+    # with the task run's snapshots or treat them as task completion evidence.
+    probes = []
+    probe_gaps = []
+    for replay in run.get("probe_replays", []):
+        if replay.get("status") != "observed":
+            probe_gaps.append(f"{run['run_id']} focus replay {replay.get('id')}: {replay.get('reason') or 'not checked'}")
+            continue
+        if replay.get("source_snapshot_id") not in live_by_id:
+            raise ValueError("focus replay source capture is not part of the task run")
+        probe_path = resolve_within(Path(run_dir), replay["run_path"])
+        probe_run, probe_snapshots = load_run_dir(probe_path.parent, verify_screenshots=verify_screenshots)
+        if (probe_run["run_id"] != replay.get("run_id") or probe_run.get("status") != "completed"
+                or probe_run.get("device") != run.get("device")
+                or probe_run.get("surface", {}).get("url") != run.get("surface", {}).get("url")
+                or probe_run.get("surface", {}).get("build_id") != run.get("surface", {}).get("build_id")):
+            raise ValueError("focus replay identity, build, device or completion does not match")
+        probes.append((probe_run, {s["snapshot_id"]: s for s in probe_snapshots}, replay))
     step_by_after = {s.get("after"): s for s in run.get("steps", []) if s.get("after")}
     selectors = _path_selectors(run, live_by_id)
     clicked = _path_selectors(run, live_by_id, CLICK_ACTIONS)
@@ -257,10 +288,16 @@ def analyze_run(
         if profile is not own:
             run_obs = [o for o in run_obs if o.check_id != "PJ-01"]
         observations.extend(run_obs)
+        for probe_run, probe_snapshots, replay in probes:
+            for observation in checks.check_focus_walks(probe_run, profile, probe_snapshots):
+                observation.extra.update({"probe_kind": "intermediate_focus", "source_run_id": run["run_id"],
+                                          "source_snapshot_id": replay["source_snapshot_id"], "probe_path": replay["run_path"]})
+                observations.append(observation)
     observations = _dedupe(observations)
+    evidence_snapshots = snapshots + [s for _, probe_snapshots, _ in probes for s in probe_snapshots.values()]
     selector_of = {
         (snap["snapshot_id"], e.get("id")): e.get("selector")
-        for snap in snapshots for e in snap.get("elements", []) if e.get("selector")
+        for snap in evidence_snapshots for e in snap.get("elements", []) if e.get("selector")
     }
     context_of = {
         (snap["snapshot_id"], e.get("id")): [f"#{a}" for a in (e.get("ancestor_ids") or []) if isinstance(a, str) and a]
@@ -291,6 +328,9 @@ def analyze_run(
     ]
     health, health_notes = run_health(run, snapshots, scenario)
     limitations += health_notes
+    limitations += probe_gaps
+    if probe_gaps and health == "ok":
+        health = "degraded"
     limitations += sorted({
         f"{obs.run_id} {obs.snapshot_id} {obs.check_id} {obs.element_key.split('|', 1)[0]}: {obs.message_ko}"
         for obs in observations if obs.extra.get("verdict") == "inconclusive"
@@ -319,4 +359,6 @@ def analyze_run(
         "profiles_evaluated": [p["profile_id"] for p in evaluated],
         "observations": dicts,
         "coverage": coverage,
+        "temporal_candidates": run.get("temporal_candidates", []),
+        "probe_replays": run.get("probe_replays", []),
     }

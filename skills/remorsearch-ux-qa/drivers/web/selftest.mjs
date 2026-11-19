@@ -28,6 +28,8 @@ import { decodePng } from './png.mjs';
 import { snapshotReply } from './serve.mjs';
 import { normalizeAction, normalizeBuildId, normalizeScenario } from './validate.mjs';
 import { writeJsonAtomic } from './util.mjs';
+import { runTemporalSelftest } from './temporal_selftest.mjs';
+import { runStateOracleSelftest } from './state_oracle_selftest.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..');
@@ -182,7 +184,7 @@ function readFixture(pathname, res, req) {
 }
 
 // Fixture files served at /<name> (same origin as the pages, no CORS headers).
-const FIXTURE_FILES = Object.fromEntries(['layers.html', 'dialog.html', 'reflow.html', 'reflow2.html', 'reflow2.css', 'reflow_adaptation.html', 'viewport.html', 'focus.html', 'focus2.html', 'feedback_ambient.html', 'native_feedback.html', 'inspect.html', 'painted_state.html', 'typography.html']
+const FIXTURE_FILES = Object.fromEntries(['temporal_keyboard.html', 'layers.html', 'dialog.html', 'reflow.html', 'reflow2.html', 'reflow2.css', 'reflow_adaptation.html', 'viewport.html', 'focus.html', 'focus2.html', 'feedback_ambient.html', 'native_feedback.html', 'inspect.html', 'painted_state.html', 'typography.html']
   .map((f) => [`/${f}`, f]));
 
 function startFixtureServer() {
@@ -2040,7 +2042,8 @@ async function taskIntegrityTest(base, tmp) {
   const input = { action: 'type', target: '#memo', text: sentinel, redact: true, delay_ms: 0 };
   const tap = (target) => ({ action: 'tap', target });
   const criterion = (id, selector, property, expected, after_step) => ({ id, selector, property, expected,
-    ...(after_step === undefined ? {} : { after_step }), severity: 'P2', consequence: '명시한 요청사항이 해당 단계에 유지되어야 합니다.' });
+    ...(after_step === undefined ? {} : { after_step }), basis: { kind: 'task', reference: 'The fixture task requires retaining the authored request.' },
+    severity: 'P2', consequence: '명시한 요청사항이 해당 단계에 유지되어야 합니다.' });
   const ref = (id, selector, property, from_step, after_step) => {
     const result = criterion(id, selector, property, '', after_step);
     delete result.expected;
@@ -2458,6 +2461,11 @@ async function main() {
     deviceTableTest();
     if (want('connect')) await connectTest(base, tmp);
     if (want('integrity')) await taskIntegrityTest(base, tmp);
+    if (want('temporal')) await runTemporalSelftest({ base, tmp, runDriver, check });
+    if (want('state-oracle')) {
+      const { pw, info } = loadPlaywright();
+      await runStateOracleSelftest({ pw, info, check, tmp });
+    }
     if (want('painted')) await paintedStateTest(base, tmp);
     if (want('gaze')) await gazeGeometryTest(tmp);
     if (want('typography')) await typographyTest(base, tmp);

@@ -1751,17 +1751,29 @@ def check_run_timing(run: dict[str, Any], profile: dict[str, Any], device: Any, 
             appearances = int(measured.get("appearances") or 0)
             offscreen = appearances > 0 and int(measured.get("offscreen_appearances") or 0) >= appearances
             failed = shortest + params.TIMING_JITTER_MS < need or has_action or offscreen
+            recovery = measured.get("recovery") or {}
+            recovered = (recovery.get("status") == "available" and recovery.get("basis") == "same_visible_text"
+                         and recovery.get("snapshot_id") in snapshots)
+            exception = declared.get("exception") or measured.get("exception")
+            # Same information available without a deadline is not information loss.
+            # Text recovery alone does not establish recovery of a timed action.
+            if recovered and not has_action:
+                failed = False
             critical = bool(element and _roles(element) & {"error_message", "critical_message"})
             severity = ("P1" if (has_action or (offscreen and critical)) else "P2") if failed else None
             out.append(Observation(
                 "CG-02", run_id, pid, None, None, [], key,
                 {"name": "visible_ms", "value": shortest, "unit": "ms", "threshold": round(need), "comparator": ">=", "chars": len(text), "offscreen": offscreen,
-                 "reading_rate_syll_per_min": reading_rate, "has_action": has_action},
+                 "reading_rate_syll_per_min": reading_rate, "has_action": has_action,
+                 "recovery": recovery, "exception_claimed": exception, "wcag_verdict": "not_determined"},
                 not failed, severity,
                 f"'{text[:30]}' 메시지가 {shortest:.0f}ms만 표시됨(느린 독자 기준 읽기 필요 시간 약 {need:.0f}ms)"
-                + (" — 동작이 포함된 메시지가 자동으로 사라짐(WCAG 2.2.1)." if has_action else ".")
+                + (" — 동작도 사라짐. WCAG 2.2.1 대체 경로·조정·예외를 별도 확인해야 합니다." if has_action else ".")
+                + (" 같은 정보가 화면에서 다시 확인되었습니다." if recovered else "")
+                + (" 예외는 작성자 주장으로, 적용 여부는 별도 검토해야 합니다." if exception else "")
                 + (" 게다가 화면 밖(뷰포트 바깥)에 나타나 보이지 않았습니다." if offscreen else ""),
                 "reading-time-v2",
+                {"verdict": "modeled_risk" if failed else "observed", "wcag_level": "2.2.1 A; 2.2.4 AAA"},
             ))
     samples = run.get("flash_samples") or []
     if samples:
@@ -2791,13 +2803,14 @@ def check_task_integrity(run: dict[str, Any], profile: dict[str, Any], snapshots
         return []
     out = []
     for criterion in (run.get("success_detail") or {}).get("criteria", []):
-        if criterion.get("kind") != "task_check" or criterion.get("passed") is None:
+        if criterion.get("kind") != "task_check" or criterion.get("passed") is None or not criterion.get("basis"):
             continue
         snapshot = snapshots.get(criterion.get("snapshot_id"))
         if snapshot is None:
             continue
         passed = criterion["passed"]
         measurement = {key: criterion[key] for key in ("id", "selector", "property", "checkpoint", "result", "step_index", "snapshot_id", "severity", "consequence")}
+        measurement.update({key: criterion[key] for key in ("basis", "container", "relation", "replay", "input_cases") if key in criterion})
         message = ("명시한 과업 값 검사를 통과했습니다." if passed else
                    f"명시한 과업 값이 {criterion['checkpoint']} 시점의 화면 상태와 일치하지 않습니다. {criterion['consequence']}")
         out.append(Observation(
@@ -2805,7 +2818,7 @@ def check_task_integrity(run: dict[str, Any], profile: dict[str, Any], snapshots
             [criterion["element_id"]] if criterion.get("element_id") else [],
             f"{criterion['selector']}|{criterion['id']}", measurement, passed,
             None if passed else criterion["severity"], message,
-            extra={"anchor_selectors": [criterion["selector"]], "scope": "authored criteria on the recorded owner execution; field values omitted", "impact_basis": "authored; comparison does not establish downstream harm"},
+            extra={"anchor_selectors": [criterion.get("container", criterion["selector"])], "scope": "authored visible-state criteria; same-run invariants and explicitly linked fresh replay; field values omitted", "impact_basis": criterion["basis"]},
         ))
     return out
 
