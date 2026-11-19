@@ -22,6 +22,33 @@ from . import swarm
 from .peekly_criteria import evaluate as evaluate_peekly_criteria
 
 
+async def _with_timeout(coro, seconds):
+    """Bound one owned coroutine on Python 3.10+, preserving caller cancellation."""
+    timeout = getattr(asyncio, "timeout", None)
+    if timeout is not None:
+        # Preserve the original in-task behavior on Python 3.11 and newer.
+        async with timeout(seconds):
+            return await coro
+    task = asyncio.create_task(coro)
+    try:
+        # wait_for in Python 3.10 can swallow caller cancellation when the
+        # child finishes concurrently (CPython #86296). wait keeps it distinct
+        # from our deadline and avoids 3.10's separate asyncio.TimeoutError.
+        done, _ = await asyncio.wait({task}, timeout=seconds)
+        if task not in done:
+            raise TimeoutError()
+        return task.result()
+    finally:
+        if not task.done():
+            task.cancel()
+            # Drain owned IO/action before releasing its channel lock; cleanup
+            # errors must not replace the caller's cancellation or timeout.
+            await asyncio.gather(task, return_exceptions=True)
+        elif not task.cancelled():
+            # Also consume a concurrently completed error on caller cancellation.
+            task.exception()
+
+
 def _preserve_driver_hashes(original, cleaned):
     """Keep typed, validated evidence digests out of free-text privacy redaction."""
     paths = (
@@ -260,10 +287,11 @@ class ScaleBrowserHost:
                 # Once bytes may have left the process, a timeout/cancel/protocol
                 # failure poisons this channel. Never consume a late reply as a
                 # later command's response, and never resend the original action.
-                async with asyncio.timeout(timeout):
+                async def exchange_io():
                     process.stdin.write(packet.encode() + b"\n")
                     await process.stdin.drain()
-                    raw = await process.stdout.readline()
+                    return await process.stdout.readline()
+                raw = await _with_timeout(exchange_io(), timeout)
                 if time.monotonic() - command_started >= timeout:
                     # An event-loop delay must not turn a late response into a
                     # within-budget acknowledgement merely by callback ordering.
@@ -368,7 +396,7 @@ class ScaleBrowserHost:
         try:
             # A known nondispatched click rejection may obtain a fresh observe,
             # but both exchanges share this one action window, never 90 + 90.
-            async with asyncio.timeout(self.EXCHANGE_TIMEOUTS["act"]):
+            async def action():
                 try:
                     result = await self._exchange(context, "act", {"name":name, "arguments":arguments})
                 except RuntimeError as exc:
@@ -382,12 +410,15 @@ class ScaleBrowserHost:
                     result["text"] = ("Click NOT dispatched: target was not allowed or visible. "
                         "This is a failed action, not a successful navigation. Re-observe the current "
                         "controls and choose a safe recovery; no click was retried.\n" + result["text"])
+                return result
+            result = await _with_timeout(action(), self.EXCHANGE_TIMEOUTS["act"])
             if time.monotonic() - action_started >= self.EXCHANGE_TIMEOUTS["act"]:
                 raise TimeoutError("browser_action_window_after_deadline")
-        except TimeoutError:
+        except (TimeoutError, asyncio.CancelledError) as exc:
             if context not in self.poisoned:
                 self.poisoned.add(context)
-                self._record_lifecycle(context, "transport_uncertain", error_type="ActionWindowTimeout",
+                self._record_lifecycle(context, "transport_uncertain",
+                    error_type="ActionWindowTimeout" if isinstance(exc, TimeoutError) else "CancelledError",
                     action_elapsed_seconds=time.monotonic() - action_started,
                     action_timeout_seconds=self.EXCHANGE_TIMEOUTS["act"])
             raise
