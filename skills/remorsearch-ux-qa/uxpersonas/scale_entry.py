@@ -369,9 +369,19 @@ def prepare_scale_goal(library, run_path, providers, tool_host, tools, *, produc
             task["actions"] = list(dict.fromkeys([action for row in controls for action in row["actions"]]
                                                 + _criterion_actions(requirement_ids)))
             task["recovery_criteria"] = [criterion for row in controls for criterion in row["recovery"]]
-            task["success_criteria"] = [r["excerpt"] + " / " + " / ".join(
-                criterion for row in controls if r["id"] in row["requirement_ids"]
-                for criterion in row["success"]) for r in requirements]
+            # Native checks bind only the original requirement-index slots.
+            # A selected task may add obligations those checks never evaluate;
+            # keep them separate so a native pass cannot certify the whole task.
+            for control_index, row in enumerate(controls):
+                for success_index, criterion in enumerate(row["success"]):
+                    index = len(task["success_criteria"])
+                    task["success_criteria"].append(f"[{row['id']}] {criterion}")
+                    for requirement_index, coverage in enumerate(task["requirement_coverage"]):
+                        if coverage["requirement_id"] in row["requirement_ids"]:
+                            coverage["obligations"].append(dict(
+                                id=f"O-CONTROL-{control_index+1}-{success_index+1}-{requirement_index+1}",
+                                description=criterion,
+                                criterion_refs=[dict(kind="success", index=index)], exclusion_reason=None))
         # Reuse the existing plan/PRD/research gates in bounded single-task chunks;
         # the new queue, not a raised old eight-worker constant, schedules them.
         prepared = swarm._prepare_plan(library, dict(schema_version=swarm.SCHEMA, product_id=product_id,

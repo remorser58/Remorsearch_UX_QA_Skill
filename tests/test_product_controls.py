@@ -53,6 +53,19 @@ class ProductControlsTests(unittest.IsolatedAsyncioTestCase):
         async def respond(request):
             kind = request["payload"]["phase"]
             result = await self.host.respond(kind, request)
+            judgment = (result["result"] if kind == "review" else
+                        result["result"].get("judgment") if result["result"].get("kind") == "final" else None)
+            if judgment is not None:
+                # The selected authored obligation has its own binding. Evaluate
+                # that exact fixture statement from its rejection observation;
+                # do not let the native requirement check certify it implicitly.
+                self.assertEqual(request["payload"]["task"]["success_criteria"][1:],
+                                 ["[TASK-RECOVER] The rejected draft remains"])
+                rejected = next(o for o in request["payload"]["observations"] if o["facts"]["stage"] == "rejected")
+                judgment["criteria"].append(dict(kind="success", index=1,
+                    status="passed" if rejected["facts"]["retained"] else "failed",
+                    observation="The rejected draft remains" if rejected["facts"]["retained"] else "The rejected draft was lost",
+                    observation_ids=[rejected["id"]]))
             if kind == "review":
                 result["result"] = dict(kind="final", judgment=result["result"])
             result["usage"] = dict(input_tokens=10, output_tokens=10, provider="fixture", model="authored",
