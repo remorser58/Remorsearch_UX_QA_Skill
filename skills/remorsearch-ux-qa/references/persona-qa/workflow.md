@@ -1,13 +1,13 @@
 <!-- Mode: persona-qa. Entry point: `SKILL.md`. -->
 # Persona QA mode
 
-Test task completion and input preservation. Synthetic scenarios define conditions; product traces establish failures. Integrated improvement includes task-linked research; standalone QA adds it only when requested.
+Test completion and input preservation. Synthetic scenarios define conditions; traces establish failures. Integrated improvement includes task-linked research; standalone QA requires a research request.
 
 ## Phase 0 recap
 
-Use `SKILL.md` Phase 0. Discover tasks from the product; record URL/build, device/viewport/input, constraints, intent, Figma version, grants and synthetic fixtures. Begin baseline QA without a prepared audience or problem list. Ask only for missing material access; preserve existing grants.
+Use `SKILL.md` Phase 0. Discover tasks; record URL/build, device/viewport/input, constraints, intent, Figma version, grants and fixtures. Ask only for missing access; preserve grants.
 
-Disclose Chromium emulation limits: real device/grip/keyboard occlusion/safe area/screen reader remain untested. Korean product: `references/persona-qa/kwcag-card.md`; report language changes wording only. Outside-product pages: `references/shared/access-card.md` in operator/verifier prompts. Host browser first; preserve user state.
+Disclose untested Chromium emulation limits: real device/grip, keyboard occlusion, safe area, screen reader. Korean product: `references/persona-qa/kwcag-card.md`; report language affects wording only. Outside-product pages: `references/shared/access-card.md` in operator/verifier prompts. Host browser first; preserve user state.
 
 ## 1. Build the priority-task matrix
 
@@ -21,8 +21,9 @@ For every priority task, require all these rows on each device in scope:
 | Recovery | Back, return, rerender and each coupon/address/error transition |
 | Keyboard only | Whole primary task, including intermediate choices and recovery |
 | Reading order | Each intermediate screen's meaningful sequence and focus order |
+| State probes | Committing tasks: all four probes + coverage in `drivers/web/README.md` State probes |
 
-After every step, verify prior values/choices. Author `success.task_checks` for material fields after error/coupon/address/recovery transitions and at completion (`drivers/web/README.md`). Use explicit expected reset/normalized values; `from_step` reuses an authored input, `type.redact:true` protects its recorded text. Failed submit: first-invalid focus, invalid state and error association. Success requires final options/quantities/amounts/notes to match. Each row: pass/partial/fail/untested with reason.
+Compare all values/choices after each step and at completion. Use `success.task_checks`, explicit reset/normalization, `from_step` and `type.redact:true` (`drivers/web/README.md`). Failed submits: first-invalid focus, invalid state, error association. Each row: pass/partial/fail/untested with reason; probe rows done/not applicable/not checked.
 
 Scenario: ID/task/goal/safe data, basis/brief condition, context/constraints/device/input/start, expected decision/integrity/risk, claim IDs and omissions. Audience rows cite audience_id/segment_id/task_id/facet and gate-supported motivations. Without an audience, choose task-changing strata: new/returning, touch/keyboard, interruption, delay, empty/stale/edge data. Do not add demographic decoration or stereotype behavior.
 
@@ -30,7 +31,9 @@ Optional dataset: exact source/revision/schema, bounded/streaming sample; record
 
 ## 2. Exercise and capture
 
-Exercise actual product/input/start state; capture decisions/recovery, console/network/runtime errors, keyboard/focus/semantics and feedback. Screenshots support the trace; available interactions require flow evidence.
+Exercise actual product/input/start state; capture decisions/recovery, console/network/runtime errors, keyboard/focus/semantics and feedback. Screenshots support, not replace, flow evidence.
+
+Per-screen measurement/analysis: `drivers/web/README.md` section "Task-walk coverage".
 
 Bundled fallback (Node.js 22; detect installed dependencies first):
 

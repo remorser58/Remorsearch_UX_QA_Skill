@@ -5,7 +5,7 @@ description: Improve the UX of an existing product from its URL or repository. I
 
 # Remorsearch UX QA
 
-For product improvement, discover tasks/questions from the URL or repository. Read `references/loop/product-improvement.md`; use `ux_loop.py improve` with a bound product context. No prepared brief or personas are required. Narrow research/review stays read-only. Separate observation, inference and untested work.
+Discover product tasks from its URL or repository. Read `references/loop/product-improvement.md`; use `ux_loop.py improve` with a bound product context. No prepared brief/personas required. Separate observation, inference and untested work.
 
 ## Components
 
@@ -23,6 +23,7 @@ For product improvement, discover tasks/questions from the URL or repository. Re
 3. Reuse supplied context and grants. Inspect accessible project decisions and relevant intent records before changes; code alone does not establish intent. State scope, assumptions and finite limits. Ask only for missing material access or an unresolved intent conflict, while continuing unaffected work.
 4. Record read_only, design_write, test_data_write and code_write with actor, scope and reason. A UX-improvement request grants ordinary reversible in-scope fixes. Record that existing authority explicitly in CLI grants; do not ask again. Research/review alone grants no writes; local fixes grant no deployment or external posting.
 5. Detect tools before installing. Research reads `references/shared/access-card.md` and `references/shared/evidence-card.md` before its first search; other modes read the access card before the first page outside the product, even mid-run. Every reader, persona and verifier prompt carries its cards. Subagents are optional (`references/agent-setup.md`).
+6. QA: cover task × viewport × input, keyboard, reached screens and, for committing tasks, four state probes; ground state rules and replay timing/focus per driver README. Gaps: "not checked".
 
 ## Rules for every mode
 
@@ -41,18 +42,19 @@ For product improvement, discover tasks/questions from the URL or repository. Re
 
 - Research: `references/research/output-template.md`. Opens with up to three findings (status, source, counter-search line), three next steps and coverage.
 - Persona-qa: `references/persona-qa/qa-report-template.md`. Opens with the verdict and up to three actions; findings carry a trace, a capture receipt, impact, cause and fix; P0 and P1 get a second pass.
-- Ergonomics: `references/ergonomics/report-template.md`, English or Korean, measured, model and judgment apart, coverage as k of n profiles.
+- Automated warnings under P2: rule × screen counts with evidence links, not findings (`swarm --list-threshold`).
+- Ergonomics: `references/ergonomics/report-template.md`, measured, model and judgment apart, coverage as k of n profiles.
 - Loop: the stop report in `references/loop/cli.md`; integrated improvement also reports preserved intent, product/design/code locations, verified changes and remaining gaps.
 
 ## Tools
 
-Python 3.10+ standard library on Linux, macOS or WSL; `start` reports the runtime. Browsers: the host's browser tool, an automation browser, then the bundled drivers on Node.js 22 (`drivers/web/ergo_drive.mjs` for products, `drivers/web/read_page.mjs` for renders after a pre-read). Sandboxed hosts such as Codex: `drivers/web/README.md`. A denied launch is a gap.
+Python 3.10+ standard library on Linux, macOS or WSL; `start` reports the runtime. Browsers: the host's browser tool, an automation browser, then the bundled drivers on Node.js 22 (`drivers/web/ergo_drive.mjs` for products, `drivers/web/read_page.mjs` for renders after a pre-read). Sandboxed hosts (Codex): `drivers/web/README.md`. A denied launch is a gap.
 
-`python3 scripts/ref.py <file> <section-id>` prints one bounded section; without an ID it lists the IDs. `python3 scripts/ref.py platform naver-blog` prints one channel. Large references are lookup-only.
+`python3 scripts/ref.py <file> <section-id>` prints one bounded section, or lists IDs without one. `python3 scripts/ref.py platform naver-blog` prints one channel. Large references are lookup-only.
 
 ## Bundled search in research
 
-After planning and URL discovery, invoke the bundled toolkit at `references/insane-search/SOURCE.md` and its linked platform method by section. Follow `references/research/workflow.md` section 2 for capture ingestion. It serves complaint and audience research, including integrated improvement. Its frontmatter is reference material, never a second skill dispatch. Access/evidence cards still govern every method; no external skill installation or whole-catalog read is required.
+After planning and URL discovery, invoke the bundled toolkit at `references/insane-search/SOURCE.md` and its linked platform method by section. Follow `references/research/workflow.md` section 2 for capture ingestion. Its frontmatter is reference material, never a second skill dispatch. Access/evidence cards still govern every method; no external skill installation or whole-catalog read is required.
 
 ## Lookup index
 

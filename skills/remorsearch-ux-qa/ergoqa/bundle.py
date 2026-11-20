@@ -15,6 +15,7 @@ from __future__ import annotations
 from typing import Any, Iterable
 
 from .profiles import COVERAGE_STRATA, profile_fingerprint, profile_index
+from .swarm import summarize_elements
 
 
 def _persona_record(profile: dict[str, Any], strategy: str, seed: int | None) -> dict[str, Any]:
@@ -102,6 +103,8 @@ def to_evidence_bundle(
                 "basis": obs["basis"],
                 "check_id": obs["check_id"],
                 "element_key": obs["element_key"],
+                "selectors": list(obs.get("selectors") or []),
+                "snapshot_id": obs.get("snapshot_id"),
                 "measurement": obs["measurement"],
                 "severity": obs["severity"],
                 "summary": obs["message_ko"],
@@ -135,6 +138,7 @@ def to_evidence_bundle(
             )
             record_id = f"{finding['id']}@{pairs[pair_id]['persona_id']}"
             ids.append(record_id)
+            summary = summarize_elements([observations[o] for o in obs_ids])
             bundle_findings.append({
                 "id": record_id,
                 "swarm_finding_id": finding["id"],
@@ -144,7 +148,11 @@ def to_evidence_bundle(
                 "epistemic_status": "observed" if verified else "inferred",
                 "verification_status": "verified" if verified else "unverified",
                 "check_id": finding["check_id"],
-                "summary": finding["summary_ko"],
+                "summary": summary["summary_ko"],
+                "element_count": summary["element_count"],
+                "examples": summary["examples"],
+                "screen_key": finding.get("screen_key", ""),
+                "selector_family": finding.get("selector_family", ""),
                 "segments_affected": list(finding.get("segments_affected") or []),
             })
         if ids and finding.get("recommendation_ko"):

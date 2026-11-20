@@ -21,6 +21,8 @@ python3 scripts/ergo_qa.py catalog
 
 Use safe steps and authored `success.task_checks` for material values/choices after recovery transitions and at completion; exact payloads, 1-based steps, intentional reset/normalization and `type.redact:true` are in `drivers/web/README.md`. Read-only defaults and separate write grants apply. Production verification/payment, human checks or missing access stop the path. Emulation covers Chromium viewport/DPR/input; real device, grip, keyboard occlusion, safe area and screen reader remain untested.
 
+State/temporal/focus replay contracts: see the driver README.
+
 ## 2. Compose profiles
 
 Default stratified coverage:
@@ -51,6 +53,11 @@ python3 scripts/ergo_qa.py analyze --runs runs/ --profiles work/profiles.json --
 ```
 
 One real scripted trace per device/orientation can serve all profiles there. Keep screenshots, geometry/colors/timing before/after each step, actual outcomes and collector versions. Bundled run/idle default limit is 900 seconds. Android uses adb capture plus `android-snapshot`; iOS/desktop/engine-rendered games use platform captures and annotations (vision geometry is inferred); look up `references/ergonomics/platform-drivers.md` for exact options. A blocked transport stays untested.
+
+`init` leaves `steps` empty. Author task transitions or use `serve`, then analyze
+the whole run. Follow `drivers/web/README.md` section "Task-walk coverage" for
+per-screen measurements and task × viewport × input rows, including keyboard.
+Unvisited cells are "not checked"; entry scans do not establish task completion.
 
 Opt-in persona agents use serve and `references/ergonomics/persona-agent-protocol.md`, plus `references/agent-setup.md` if spawning is authorized. Each agent receives applicable cards and sees screenshots before touch decisions. Separate runs per agent when behavior matters; later technical/a11y inspection records its provenance. Notes/expectation/confusion remain judgment. Optional `references/ergonomics/swarm-and-social-layer.md` boards/interviews cite run/step/observation IDs; ungrounded answers are speculative and simulated discourse only generates research hypotheses.
 
