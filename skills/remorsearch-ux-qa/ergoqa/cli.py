@@ -224,14 +224,21 @@ def cmd_heatmap(args: argparse.Namespace) -> int:
     profiles = {p["profile_id"]: p for p in _load_profiles(args.profiles)}
     profile = profiles[args.profile]
     shot = Path(args.snapshot).parent / snapshot["screenshot"]["path"]
-    image = png.to_rgb(png.read_png(shot))
     device = device_for_snapshot(snapshot["device"])
     vw, vh = snapshot["device"]["viewport_css"]
     cols, rows = max(1, int(vw // 8)), max(1, int(vh // 8))
     values: list[list[float | None]] = []
     if args.kind == "reach":
-        geom = reach.geometry_for_device(device)
         grip = profile["attributes"]["grip"]
+        scope = reach.applicability(profile["attributes"], device, snapshot["device"])
+        if scope.kind == "unsupported":
+            raise ValueError(f"reach heatmap unavailable: {scope.reason}")
+        image = png.read_png(shot)
+        if scope.kind == "neutral":
+            png.write_png(args.out, image)
+            print(f"{scope.reason}; unchanged image -> {args.out}")
+            return EXIT_OK
+        geom = reach.geometry_for_device(device)
         thumb_input = resolve_thumb_input(profile)
         thumb = thumb_input["mm"]
         for r in range(rows):
@@ -239,9 +246,10 @@ def cmd_heatmap(args: argparse.Namespace) -> int:
             for c in range(cols):
                 x_mm = css_px_to_mm(device, (c + 0.5) * vw / cols, "x")
                 y_mm = css_px_to_mm(device, (r + 0.5) * vh / rows, "y")
-                row.append(reach.reach_score(x_mm, y_mm, geom, grip, thumb)["difficulty"] if grip in reach.SUPPORTED_GRIPS else None)
+                row.append(reach.reach_score(x_mm, y_mm, geom, grip, thumb)["difficulty"])
             values.append(row)
     else:
+        image = png.read_png(shot)
         snapshot["screenshot"]["resolved_path"] = str(shot)
         grid = analyze.conspicuity_for_snapshot(snapshot) or []
         form = getattr(device, "form_factor", "phone")
@@ -254,7 +262,7 @@ def cmd_heatmap(args: argparse.Namespace) -> int:
                 bottom_up = grid[min(gh - 1, int(yf * gh))][min(gw - 1, int(xf * gw))] if gh else 0.0
                 row.append(0.5 * bottom_up + 0.5 * gaze.position_prior(xf, yf, gaze.prior_kind(form, snapshot.get("surface", {}).get("kind", "web"))))
             values.append(row)
-    overlay = png.heat_overlay(image, values, alpha=0.45)
+    overlay = png.heat_overlay(png.to_rgb(image), values, alpha=0.45)
     png.write_png(args.out, overlay)
     print(f"{args.kind} heatmap -> {args.out}")
     if args.kind == "reach" and "reference_percentile" in thumb_input:
