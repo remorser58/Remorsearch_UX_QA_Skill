@@ -118,6 +118,26 @@ def suite_two_products_one_device() -> dict:
 
 
 class Configurations(unittest.TestCase):
+    def test_experiment_pool_hand_conditions_change_the_reach_input(self) -> None:
+        from ergo_experiments import pool_for
+        from ergoqa.profiles import thumb_length_for_percentile
+
+        for orientation in ("portrait", "landscape"):
+            pool = pool_for("galaxy-s24", orientation)
+            grips = {p["pool"]["grip"] for p in pool}
+            for grip in grips:
+                conditions = {p["pool"]["condition"]: p["attributes"] for p in pool
+                              if p["pool"]["grip"] == grip}
+                with self.subTest(orientation=orientation, grip=grip):
+                    small, baseline, large = (conditions[name]["thumb_length_mm"]
+                                              for name in ("small_hand", "baseline", "large_hand"))
+                    self.assertLess(small, baseline)
+                    self.assertLess(baseline, large)
+                    self.assertEqual(small, thumb_length_for_percentile(5))
+                    self.assertEqual(large, thumb_length_for_percentile(95))
+                    # An unrelated condition must retain the baseline size.
+                    self.assertEqual(conditions["walking"]["thumb_length_mm"], baseline)
+
     def test_budgets_are_per_product_even_on_a_shared_device(self) -> None:
         old = ergo_eval.C5_SEEDS
         ergo_eval.C5_SEEDS = 2
