@@ -5,7 +5,7 @@ description: Improve existing product UX from a URL or repository. Inspect PRD a
 
 # Remorsearch UX QA
 
-Inspect PRD audience/needs/tasks and actual use. Read `references/loop/product-improvement.md`. No prepared brief or personas required. Research/review is read-only.
+Inspect PRD audience/needs/tasks and actual use via `references/loop/product-improvement.md`. No brief/personas needed. Research/review is read-only.
 
 Start: `references/persona-qa/start.md`.
 Local: `references/persona-qa/local-run.md` (§6 before research).
@@ -22,7 +22,7 @@ Browser: `references/persona-qa/browser-run.md`.
 
 ## Phase 0, every run
 
-1. Select requested components: product/PRD/intent, baseline QA, task research, behavioral personas, bounded QA, warranted fix and replay. Load the active card; pass record IDs. Research defaults to standard; 간단히 (quick) wins over 깊게/철저히 (deep).
+1. Load requested component cards: PRD/intent, baseline QA, research, behavioral personas, bounded QA, warranted fixes and replay. Pass record IDs. Standard research is default; 간단히 overrides 깊게/철저히.
 2. A Korean report changes wording only. Korean research channels/users load `references/research/korea/overview.md`; Korean product QA loads `references/persona-qa/kwcag-card.md`. Standalone QA adds research only when requested.
 3. Reuse supplied context and grants. Inspect accessible project decisions and intent records before changes; code alone does not establish intent. State scope, assumptions and finite limits. Ask only for missing material access or an unresolved intent conflict; continue unaffected work.
 4. Record read_only, design_write, test_data_write and code_write with actor, scope and reason. A UX-improvement request grants ordinary reversible in-scope fixes. Record that existing authority explicitly in CLI grants; do not ask again. Research/review alone grants no writes; local fixes grant no deployment or posting.
@@ -60,7 +60,7 @@ Python 3.10+ (stdlib); detect with `python3 scripts/find_runtime.py`. Prefer hos
 
 After planning and URL discovery, use `references/insane-search/SOURCE.md` and its linked platform method by section for complaint/audience research, including improvement. Capture ingestion: `references/research/workflow.md` section 2. Toolkit frontmatter is reference-only. Access/evidence cards govern every method. No external skill install or whole-catalog read.
 
-## Lookup index
+## Lookup
 
 | Question | File |
 | --- | --- |
@@ -71,6 +71,7 @@ After planning and URL discovery, use `references/insane-search/SOURCE.md` and i
 | Scenarios | `references/persona-qa/persona-scenario-design.md`, `references/persona-qa/community-to-test.md` |
 | Persona library/replay | `references/persona-qa/persona-library-swarm.md` §12 replay |
 | Model / queued swarm | `references/persona-qa/agent-run.md`, `references/persona-qa/scale-run.md` |
+| Choices / rollback | `references/persona-qa/product-controls.md` |
 | Severity | `references/persona-qa/evidence-and-severity.md` |
 | Korean channels, law, statistics | `references/research/korea/overview.md` |
 | Accessibility items | `references/persona-qa/kwcag-2.2.md` by ID |

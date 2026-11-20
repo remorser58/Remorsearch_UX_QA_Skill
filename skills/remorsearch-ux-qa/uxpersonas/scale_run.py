@@ -468,6 +468,9 @@ class ScaleExecution:
         if not 1 <= len(self.tools) <= 16:
             fail("tool_scope", "One to sixteen reviewed tools are required.")
         self.owned_contexts = set()
+        if self.plan.get("product_selection") is not None:
+            from .product_controls import validate_plan_selection
+            validate_plan_selection(self.plan, self.providers)
         self.validate_adapters()
 
     def validate_adapters(self):
@@ -490,6 +493,9 @@ class ScaleExecution:
         expected_mode = "fixture" if self.plan["mode"] == "fixture" else "model_tools"
         if info["mode"] != expected_mode:
             fail("provenance_conflict", "Fixture and live execution cannot be mixed in one run.")
+        if self.plan.get("product_selection") is not None:
+            from .product_controls import validate_runtime_selection
+            validate_runtime_selection(self.plan["product_selection"], self.providers)
         return info
 
     def validate(self, claim):

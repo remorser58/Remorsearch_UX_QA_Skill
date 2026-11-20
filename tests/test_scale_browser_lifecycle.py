@@ -99,6 +99,61 @@ class HostLifecycleTests(unittest.IsolatedAsyncioTestCase):
             await host._exchange("context", "act", {})
         self.assertNotIn("context", host.poisoned)
 
+    @patch("uxpersonas.scale_browser_host.asyncio.timeout", None, create=True)
+    async def test_external_cancellation_drains_reader_even_if_cleanup_raises(self):
+        for cleanup_error in (False, True):
+            with self.subTest(cleanup_error=cleanup_error):
+                entered, drained = asyncio.Event(), asyncio.Event()
+                readers = []
+                async def stalled():
+                    readers.append(asyncio.current_task())
+                    entered.set()
+                    try:
+                        await asyncio.Future()
+                    finally:
+                        drained.set()
+                        if cleanup_error:
+                            raise RuntimeError("reader_cleanup_failed")
+                host, process = fake_host(AsyncMock(side_effect=stalled))
+                host.EXCHANGE_TIMEOUTS["act"] = 5
+                caller = asyncio.create_task(host._exchange("context", "act", {}))
+                await asyncio.wait_for(entered.wait(), 1)
+                caller.cancel()
+                with self.assertRaises(asyncio.CancelledError):
+                    await caller
+                self.assertTrue(drained.is_set())
+                self.assertTrue(all(task.done() for task in readers))
+                self.assertIn("context", host.poisoned)
+                self.assertEqual(host.lifecycle["context"]["error_type"], "CancelledError")
+                with self.assertRaisesRegex(RuntimeError, "transport_uncertain"):
+                    await host._exchange("context", "act", {})
+                process.stdin.write.assert_called_once()
+
+    @patch("uxpersonas.scale_browser_host.asyncio.timeout", None, create=True)
+    async def test_external_cancellation_wins_concurrent_reply_completion(self):
+        entered, release = asyncio.Event(), asyncio.Event()
+        readers = []
+        async def reply():
+            readers.append(asyncio.current_task())
+            entered.set()
+            await release.wait()
+            return b'{"id":1,"result":{}}\n'
+        host, process = fake_host(AsyncMock(side_effect=reply))
+        host.EXCHANGE_TIMEOUTS["act"] = 5
+        caller = asyncio.create_task(host._exchange("context", "act", {}))
+        await asyncio.wait_for(entered.wait(), 1)
+        release.set()
+        # Finish the reader, then cancel its caller before result admission.
+        asyncio.get_running_loop().call_soon(caller.cancel)
+        with self.assertRaises(asyncio.CancelledError):
+            await caller
+        self.assertTrue(all(task.done() for task in readers))
+        self.assertIn("context", host.poisoned)
+        self.assertEqual(host.lifecycle["context"]["error_type"], "CancelledError")
+        with self.assertRaisesRegex(RuntimeError, "transport_uncertain"):
+            await host._exchange("context", "act", {})
+        process.stdin.write.assert_called_once()
+
     async def test_stdin_backpressure_is_bounded_and_not_replayed(self):
         host, process = fake_host(AsyncMock())
         async def stalled():

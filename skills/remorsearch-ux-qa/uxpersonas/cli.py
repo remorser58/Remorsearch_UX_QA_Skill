@@ -15,6 +15,12 @@ from .library import Library
 def parser():
     root = argparse.ArgumentParser(description=__doc__)
     commands = root.add_subparsers(dest="command", required=True)
+    for name in ("configure", "select", "seed-input", "seed-catalog"):
+        control = commands.add_parser(name, help="PRD-bound choices and attributed Korean seed profiles; no execution")
+        if name != "seed-catalog":
+            control.add_argument("--input", type=Path, required=True)
+        if name == "select":
+            control.add_argument("--choice", type=Path, required=True)
     for name in ("start", "status"):
         entry = commands.add_parser(name, help="Prepare reviewed source and explain existing QA results" if name == "start" else "Recheck a prepared workspace without rerunning tasks")
         entry.add_argument("--work", type=Path, required=True, help="Independent workspace; new or empty for first use")
@@ -102,6 +108,18 @@ def main(argv=None):
                   else result["issue"]["reason"] + "\n다음 단계: " + result["issue"].get("next_step", "호스트가 기존 근거와 범위를 확인합니다."), file=sys.stderr)
             return 2
     try:
+        if args.command in {"configure", "select", "seed-input", "seed-catalog"}:
+            from . import product_controls as controls
+            if args.command == "seed-catalog":
+                result = controls.seed_catalog()
+            elif args.command == "seed-input":
+                result = controls.seed_input(read_json(args.input))
+            elif args.command == "select":
+                result = controls.select(read_json(args.input), read_json(args.choice))
+            else:
+                result = controls.propose(read_json(args.input))
+            print(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False))
+            return 0
         if args.command == "import-research":
             from .research_intake import validate_paths
             validate_paths(args.library, args.research_run)

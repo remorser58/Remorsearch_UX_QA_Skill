@@ -100,6 +100,77 @@ class TabletReach(unittest.TestCase):
 
 
 class Denominators(unittest.TestCase):
+    def test_missing_thumb_uses_nearest_persona_reference(self) -> None:
+        from ergoqa import profiles, snapshot
+
+        button = el("pay", "button", (10, 60, 60, 48), text="결제",
+                    interactive=True, roles=("primary",), tag="button")
+        cases = [(8, 10), (31, 25), (50, 25), (72, 75), (93, 95)]
+        used = []
+        for requested, reference in cases:
+            prof = profile(f"EP-{requested}")
+            prof["attributes"]["hand_percentile"] = requested
+            prof["attributes"]["thumb_length_mm"] = None
+            self.assertEqual(profiles.validate_profile(prof), [])
+            self.assertEqual(snapshot.validate_profile(prof), [])
+            obs = next(o for o in checks.check_reach(ctx([button], prof)) if o.check_id == "RH-01")
+            value = obs.measurement["thumb_input"]
+            self.assertEqual(value["basis"], "synthetic_nearest_hand_percentile")
+            self.assertEqual(value["reference_percentile"], reference)
+            self.assertEqual(value["mm"], profiles.thumb_length_for_percentile(reference))
+            self.assertIsNone(prof["attributes"]["thumb_length_mm"])
+            used.append(value["mm"])
+        self.assertLess(used[0], used[-1])
+        self.assertNotIn(params.THUMB_LENGTH_MM["all"][0], used)
+
+    def test_thumb_without_size_uses_stable_synthetic_stratum(self) -> None:
+        from ergoqa import profiles
+
+        prof = profile("EP-stable")
+        attrs = prof["attributes"]
+        del attrs["thumb_length_mm"], attrs["hand_percentile"]
+        first = profiles.resolve_thumb_input(prof)
+        attrs["age_band"] = "60s"
+        self.assertEqual(profiles.resolve_thumb_input(prof), first)
+        self.assertEqual(first["basis"], "synthetic_assigned_hand_percentile")
+        self.assertIn(first["reference_percentile"], (25, 75))
+        self.assertEqual(profiles.validate_profile(prof), [])
+        attrs["thumb_length_mm"] = 99
+        profiles._finalise(prof, get_device(attrs["device_id"]))
+        self.assertEqual(profiles.resolve_thumb_input(prof), {"mm": 99.0, "basis": "provided_profile"})
+        for invalid in (False, 0, float("nan"), float("inf"), "99"):
+            attrs["thumb_length_mm"] = invalid
+            self.assertTrue(profiles.validate_profile(prof))
+
+    def test_explicit_inconclusive_is_not_coverage_or_comparison(self) -> None:
+        known = profile("EP-known", grip="one_hand_right")
+        unknown = profile("EP-unknown", grip="one_hand_right", age_band="60s")
+        button = el("pay", "button", (10, 60, 60, 48), text="결제",
+                    interactive=True, roles=("primary",), tag="button")
+        reach_obs = next(o for o in checks.check_reach(ctx([button], known)) if o.check_id == "RH-01")
+        observed = reach_obs.to_dict(0)
+        observed.update(selectors=["#pay"], context_selectors=[])
+        self.assertFalse(observed["passed"])
+        inconclusive = {**observed, "id": "OB-unknown", "profile_id": "EP-unknown",
+                        "measurement": {}, "passed": None, "severity": None,
+                        "extra": {"verdict": "inconclusive"}}
+        analysis = {"scenario_id": "SC-1", "run_id": observed["run_id"],
+                    "profiles_evaluated": ["EP-known", "EP-unknown"],
+                    "observations": [observed, inconclusive]}
+        finding = swarm.aggregate([analysis], [known, unknown])[0]
+        self.assertEqual(finding["tested_profiles"], ["EP-known"])
+        self.assertEqual(finding["coverage_label"].split()[0], "1/1")
+        self.assertEqual(finding["profile_specific"], {})
+
+        # An actual observation at the same anchor still counts, even if a
+        # different snapshot of that profile at that anchor was inconclusive.
+        assessment = {**observed, "id": "OB-assessed", "profile_id": "EP-unknown",
+                      "passed": True, "severity": None}
+        analysis["observations"].append(assessment)
+        finding = swarm.aggregate([analysis], [known, unknown])[0]
+        self.assertEqual(finding["tested_profiles"], ["EP-known", "EP-unknown"])
+        self.assertIn("age_band", finding["profile_specific"])
+
     def test_tested_profiles_include_non_triggering_applicable_profiles(self) -> None:
         young = profile("EP-Y")
         old = profile("EP-O", age_band="60s", presbyopia=True)

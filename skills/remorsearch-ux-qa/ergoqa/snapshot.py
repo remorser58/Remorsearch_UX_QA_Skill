@@ -860,8 +860,8 @@ def validate_profile(doc: Any, *, known_device_ids: Iterable[str] | None = None)
         errors.enum(attrs, "age_band", AGE_BANDS, p)
         errors.enum(attrs, "handedness", HANDEDNESS, p)
         errors.enum(attrs, "grip", GRIPS, p)
-        errors.number(attrs, "thumb_length_mm", p, minimum=1)
-        errors.number(attrs, "hand_percentile", p, minimum=0, maximum=100)
+        errors.number(attrs, "thumb_length_mm", p, minimum=1, required=False, nullable=True)
+        errors.number(attrs, "hand_percentile", p, minimum=0, maximum=100, required=False, nullable=True)
         errors.string(attrs, "device_id", p)
         if known_device_ids is None:
             from .devices import list_devices

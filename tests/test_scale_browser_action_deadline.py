@@ -19,6 +19,47 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ActionDeadlineTests(unittest.IsolatedAsyncioTestCase):
+    async def test_drain_and_reply_share_one_exchange_budget(self):
+        async def delayed_reply():
+            await asyncio.sleep(.03)
+            return b'{"id":1,"result":{}}\n'
+        async def delayed_drain():
+            await asyncio.sleep(.03)
+        host, process = lifecycle_fixture.fake_host(AsyncMock(side_effect=delayed_reply))
+        host.EXCHANGE_TIMEOUTS["act"] = .05
+        process.stdin.drain = AsyncMock(side_effect=delayed_drain)
+        with self.assertRaises(TimeoutError) as raised:
+            await host._exchange("context", "act", {})
+        # Python 3.10's asyncio.TimeoutError is not this built-in type.
+        self.assertIs(type(raised.exception), TimeoutError)
+        self.assertIn("context", host.poisoned)
+        process.stdin.write.assert_called_once()
+        process.stdout.readline.assert_awaited_once()
+
+    @patch("uxpersonas.scale_browser_host.asyncio.timeout", None, create=True)
+    async def test_action_completion_does_not_swallow_external_cancellation(self):
+        host, process = lifecycle_fixture.fake_host(AsyncMock(return_value=
+            b'{"id":1,"result":{"text":"ready","facts":{},"captures":[],"checks":[]}}\n'))
+        host.EXCHANGE_TIMEOUTS["act"] = 5
+        original = host._exchange
+        async def exchange(*args):
+            result = await original(*args)
+            asyncio.get_running_loop().call_soon(caller.cancel)
+            return result
+        host._exchange = exchange
+        with tempfile.TemporaryDirectory() as directory:
+            request = dict(operation_id="one-observe", context_id="context", request_sha256="0" * 64,
+                payload=dict(name="observe", arguments={}, evidence_path=str(Path(directory).resolve())))
+            caller = asyncio.create_task(host.call("tool", request))
+            with self.assertRaises(asyncio.CancelledError):
+                await caller
+        self.assertIn("context", host.poisoned)
+        self.assertEqual(host.lifecycle["context"]["error_type"], "CancelledError")
+        self.assertEqual(host.context_observations["context"], [])
+        with self.assertRaisesRegex(RuntimeError, "transport_uncertain"):
+            await original("context", "act", {})
+        process.stdin.write.assert_called_once()
+
     async def test_delayed_single_reply_fits_new_budget_without_redispatch(self):
         # Millisecond-scaled former25s/new90s windows; the same authored reply
         # arrives once after40ms. This is not a claim about R5's blocking step.
@@ -136,6 +177,14 @@ class ActionDeadlineTests(unittest.IsolatedAsyncioTestCase):
         process.stdin.write.assert_called_once()
         self.assertIn("context", host.poisoned)
         self.assertEqual(host.context_observations["context"], [])
+
+
+class Python310ActionDeadlineTests(ActionDeadlineTests):
+    """Exercise the missing-asyncio.timeout path even on newer CI interpreters."""
+    def setUp(self):
+        missing_timeout = patch("uxpersonas.scale_browser_host.asyncio.timeout", None, create=True)
+        missing_timeout.start()
+        self.addCleanup(missing_timeout.stop)
 
 
 class PhaseBudgetContractTests(unittest.TestCase):

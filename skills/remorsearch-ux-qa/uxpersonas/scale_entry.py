@@ -39,7 +39,7 @@ class ScaleLimits:
 def engine_manifest():
     root = Path(__file__).resolve().parent
     files = ("swarm_queue.py", "swarm_providers.py", "model_router.py", "scale_run.py", "scale_entry.py", "scale_report.py", "peekly_criteria.py",
-             "agent_run.py", "swarm.py", "library.py")
+             "agent_run.py", "swarm.py", "library.py", "product_controls.py")
     return {name: byte_digest(read_bytes(root / name)) for name in files}
 
 
@@ -263,7 +263,7 @@ def prepare_scale_goal(library, run_path, providers, tool_host, tools, *, produc
                        target, goal, build, limits=ScaleLimits(), persona_ids=None,
                        assignments=None, credential_scopes=None, reviewed=False,
                        tool_provenance="authored_fixture", billing_reviews=None,
-                       provider_destinations=None):
+                       provider_destinations=None, selection=None):
     if reviewed is not True:
         fail("review_required", "The host must review task fit, current persona sources, data destinations and owned tools.")
     swarm.ident(product_id)
@@ -284,6 +284,8 @@ def prepare_scale_goal(library, run_path, providers, tool_host, tools, *, produc
     if len(modes) != 1 or not modes <= {"fixture", "live"}:
         fail("mixed_provenance", "Fixture and actual-provider execution require separate runs.")
     mode = next(iter(modes))
+    if mode == "live" and selection is None:
+        fail("controls_selection", "New live plans require explicit current persona/model selection before preparation.")
     if host_info["mode"] != ("fixture" if mode == "fixture" else "model_tools"):
         fail("mixed_provenance", "The tool host must disclose the same execution mode as the plan.")
     specs = {}
@@ -330,6 +332,10 @@ def prepare_scale_goal(library, run_path, providers, tool_host, tools, *, produc
     assignments = assignments or {pid: list(specs)[i % len(specs)] for i, pid in enumerate(selected)}
     if set(assignments) != set(selected) or any(key not in specs for key in assignments.values()):
         fail("provider_binding", "Every selected persona needs exactly one reviewed provider assignment.")
+    if selection is not None:
+        from .product_controls import bind_scale
+        selection = bind_scale(selection, product_id=product_id, persona_ids=selected,
+                               assignments=assignments, providers=providers, limits=limits, library=library)
     # Identical profiles retain independent execution but do not become diverse
     # research evidence merely through new IDs or labels.
     behavioral_hashes, jobs = [], []
@@ -356,6 +362,26 @@ def prepare_scale_goal(library, run_path, providers, tool_host, tools, *, produc
             stop_conditions=["Stop at real accounts, payment, unapproved resources, uncertain effects or exhausted limits."],
             requirement_coverage=[dict(requirement_id=r["id"], obligations=[dict(id=f"O-PRD-{i+1}", description=r["excerpt"],
                 criterion_refs=[dict(kind="success", index=i)], exclusion_reason=None)]) for i, r in enumerate(requirements)])
+        if selection is not None:
+            from .product_controls import _task_controls
+            controls = _task_controls(selection["spec"], requirement_ids)
+            task["goal"] += "\n\nReviewed project task goals:\n" + "\n".join(row["goal"] for row in controls)
+            task["actions"] = list(dict.fromkeys([action for row in controls for action in row["actions"]]
+                                                + _criterion_actions(requirement_ids)))
+            task["recovery_criteria"] = [criterion for row in controls for criterion in row["recovery"]]
+            # Native checks bind only the original requirement-index slots.
+            # A selected task may add obligations those checks never evaluate;
+            # keep them separate so a native pass cannot certify the whole task.
+            for control_index, row in enumerate(controls):
+                for success_index, criterion in enumerate(row["success"]):
+                    index = len(task["success_criteria"])
+                    task["success_criteria"].append(f"[{row['id']}] {criterion}")
+                    for requirement_index, coverage in enumerate(task["requirement_coverage"]):
+                        if coverage["requirement_id"] in row["requirement_ids"]:
+                            coverage["obligations"].append(dict(
+                                id=f"O-CONTROL-{control_index+1}-{success_index+1}-{requirement_index+1}",
+                                description=criterion,
+                                criterion_refs=[dict(kind="success", index=index)], exclusion_reason=None))
         # Reuse the existing plan/PRD/research gates in bounded single-task chunks;
         # the new queue, not a raised old eight-worker constant, schedules them.
         prepared = swarm._prepare_plan(library, dict(schema_version=swarm.SCHEMA, product_id=product_id,
@@ -370,6 +396,8 @@ def prepare_scale_goal(library, run_path, providers, tool_host, tools, *, produc
         diversity=dict(distinct_saved_personas=len(jobs), distinct_behavioral_profiles=len(set(behavioral_hashes)),
                        population_representativeness=False),
         evidence_policy="current_sources_own_observations_png_and_native_checks_no_peer_answers")
+    if selection is not None:
+        plan["product_selection"] = copy.deepcopy(selection)
     run = safe_path(run_path)
     # Reservation is held by the caller's Library single-writer context. A new
     # folder cannot silently reset the same goal's unknown effects or budget.
@@ -418,6 +446,8 @@ def preview(queue):
         may_stop_before_all_sessions=maximum > plan["limits"]["budget_microusd"],
         data_sent="Each persona's scrubbed profile, cited requirements, allowed tool schema and own observations only.",
         diversity=plan["diversity"], tool_provenance=plan["tool_provenance"],
+        product_selection_sha256=plan.get("product_selection", {}).get("selection_sha256"),
+        selection_ui_verified=False,
         cost_approval_required=plan["mode"] == "live",
         no_automatic_retry_after_uncertain_send=True,
         next_action="실제 실행은 이 계획과 최대 비용을 확인한 사용자 승인 후 시작합니다." if plan["mode"] == "live"

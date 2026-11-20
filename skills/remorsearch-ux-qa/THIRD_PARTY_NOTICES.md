@@ -89,6 +89,24 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   Playwright MCP or Chrome DevTools MCP, are used through the host. They are not
   part of this folder.
 
+## Included synthetic seed data
+
+`uxpersonas/data/korea-seeds.v1.json` contains a minimized adaptation of the first
+32 adult records from NVIDIA Corporation's **Nemotron-Personas-Korea** (2026),
+licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+Source: https://huggingface.co/datasets/nvidia/Nemotron-Personas-Korea
+Revision: `ada0f5b53a38bb5a30cce09358adde883c1ab63a`.
+The dataset viewer returned this revision on 2026-11-18 UTC. The seed file records
+the request, retrieval time and response SHA-256.
+
+Changes: retained age, province, occupation, education level and family type;
+removed narratives and identifiers; derived local IDs from UUID hashes.
+All records are synthetic. This bounded convenience slice is not a representative
+Korean population sample. Grip, reach, vision, motor conditions and product
+behaviors are not observed from these rows. This attribution implies no NVIDIA
+endorsement. The original CC BY terms apply to the adapted data, not to the
+independently authored Remorsearch implementation.
+
 ## Studied as references only (no code included)
 
 - **OpenAI Swarm / Agents SDK**: examined for runtime selection, not imported.
@@ -101,8 +119,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   MiroFish; reviewed, not used.
 - **OMO** (sisyphuslabs/omo): its goal, checkpoint and continuation design was
   inspected for the loop mode; no OMO code or installation is redistributed.
-- **Nemotron-Personas-Korea** (NVIDIA, CC BY 4.0): persona records may be linked
-  at run time by the user; no dataset rows are included in this folder.
 - **insane-research** (github.com/fivetaku/insane-research, MIT License, Copyright
   (c) 2026 fivetaku). Ideas used in `references/research/audience-pipeline.md` and
   `references/research/source-grading.md`: phase contracts; claim status computed
