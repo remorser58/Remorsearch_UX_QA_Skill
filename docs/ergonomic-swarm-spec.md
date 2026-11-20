@@ -121,6 +121,21 @@ Functions:
 }
 ```
 - `box` is in CSS px relative to the viewport's top-left (visible area).
+- Optional `viewport_alignment` maps viewport-relative points to the active
+  display in the captured orientation. For a verified, unzoomed full virtual
+  viewport use `{"basis":"emulated-full-viewport","origin_css":[0,0]}`; that
+  establishes an emulation condition, not the position of browser chrome on a
+  real device. For a checked capture use
+  `{"basis":"observed-landmarks","origin_css":[0,24],"reference":"..."}`
+  and identify evidence locating the viewport inside the same display (e.g.
+  an accompanying uncropped view with both edges or a verified native frame).
+  Offsets are CSS px from the active display's top-left in the snapshot's
+  orientation; use that orientation's axes, and retain the device and pitch.
+  Missing alignment or `{"basis":"unknown"}` never means zero: RH-01/RH-02
+  and GM-02 are inconclusive, and the GZ-02 thumb-occlusion component is
+  unknown unless the input and feedback share a known frame. Target sizes and
+  relative gaps have no origin. This field does not calibrate the thumb model
+  or convert screenshot raster coordinates to viewport CSS coordinates.
 - `roles` values: `primary`, `destructive`, `irreversible`, `critical_message`, `error_message`,
   `status`, `navigation`, `ad_like`, `hud`, `game_control`, `timed`.
   `irreversible` marks a destructive/payment action that cannot be undone and has no

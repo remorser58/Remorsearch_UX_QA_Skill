@@ -380,6 +380,11 @@ def validate_snapshot(doc: Any) -> list[str]:
             errors.string(surface, key, "$.surface", required=False, nullable=True, nonempty=False)
     _device_block(errors, errors.obj(doc, "device", "$"), "$.device")
     device = doc.get("device")
+    if "viewport_alignment" in doc:
+        from .devices import valid_viewport_alignment
+
+        errors.require(valid_viewport_alignment(doc["viewport_alignment"]), "$.viewport_alignment",
+                       "must be explicit unknown, zero-aligned emulation, or a finite nonnegative CSS origin with an observation reference")
     if "adaptation" in doc or (isinstance(device, dict) and device.get("probe") == "adaptation"):
         meta = errors.obj(doc, "adaptation", "$")
         errors.require(isinstance(device, dict) and device.get("probe") == "adaptation", "$.device.probe", "must identify the auxiliary capture")

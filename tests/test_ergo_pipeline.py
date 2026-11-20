@@ -80,6 +80,7 @@ def make_run(root: Path) -> Path:
             "captured_at": "2026-09-28T12:00:00Z",
             "surface": {"kind": "web", "url": "http://127.0.0.1/checkout.html", "title": "checkout", "app_id": None},
             "device": {"id": "galaxy-s24", "viewport_css": [W, H], "dpr": 1.0, "orientation": "portrait"},
+            "viewport_alignment": {"basis": "emulated-full-viewport", "origin_css": [0, 0]},
             "screenshot": {"path": f"{sid}.png", "sha256": sha, "width_px": W, "height_px": H},
             "elements": elements,
             "focus_point": None if index == 0 else {"x": 55, "y": 272},

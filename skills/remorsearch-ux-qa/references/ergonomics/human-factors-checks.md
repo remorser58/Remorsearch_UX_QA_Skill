@@ -19,6 +19,13 @@ dpr` from the device catalog (`ergoqa/devices.py`), never a nominal dp/pt size.
 
 ## Reach and handedness
 
+Reach uses an explicit viewport origin inside the display, in the snapshot's
+orientation. A full driver-controlled emulation may establish zero offset;
+a real capture needs independent landmarks locating the viewport. Screenshot
+dimensions alone do not locate it. With missing or incompatible alignment,
+RH-01/RH-02 and GM-02 are inconclusive; size/spacing checks remain independent.
+Even with known alignment the thumb model is uncalibrated.
+
 | ID | Basis | Rule | Severity |
 | --- | --- | --- | --- |
 | RH-01 | model | Thumb reach difficulty `D` for the profile's grip (`thumb-reach-v3-uncalibrated`: polar model around a thumb-base pivot, left hand mirrored; zones natural 0 / mild <0.4 / stretch 0.4–1 / out 1). Evaluated for primary, game-control and on-path targets at the **easiest point of the target** (inset 3 mm), not its centre. Tablets and unfolded foldables (short side > 120 mm) never use the one-hand model; their two-thumb pivots sit at mid-height of the sides (HGR-9). | Primary/game control: out → P2, stretch → P2 (D ≥ 0.6) else P3, small target in the cramped near-palm zone → P3. Other on-path controls (fields, tabs): out → P3 only. Never above P2 from the model alone. |
