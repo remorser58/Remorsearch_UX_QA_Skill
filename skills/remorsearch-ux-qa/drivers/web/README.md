@@ -120,6 +120,12 @@ failed run; in a separate run, focus the closed select with Tab, choose with
 arrow keys and Tab away without opening the popup. This can continue page
 measurement, but does not validate the native popup or a whole keyboard task.
 
+Report automated analyzer warnings at P0–P2 as individual findings. Summarize
+lower-priority warnings as one row per rule and screen (`extra.screen`) with
+finding/element counts, examples and observation/snapshot IDs; `swarm` writes
+these `summaries` and `--list-threshold P3` lists everything. Task-state, timing,
+focus and judgment results always stay individual.
+
 Before reporting, check that each reached screen has a measurement snapshot and
 analysis evidence. Missing measurements, capped reflow/focus probes or unsupported
 text remain named coverage gaps, not passed checks. After a confirmation appears,

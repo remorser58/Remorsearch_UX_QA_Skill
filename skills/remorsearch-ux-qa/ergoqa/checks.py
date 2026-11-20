@@ -33,6 +33,11 @@ REPEATED_ELEMENT_CHECKS = frozenset({
     "GM-01", "GM-02", "GM-05", "LY-01",
 })
 
+# Task state, judgment, timing and keyboard-focus results are always listed as
+# findings. Other automated warnings below the report's list threshold are
+# summarized by rule and screen.
+ALWAYS_LISTED_CHECKS = frozenset({"TI-01", "PJ-01", "CG-02", "CG-03", "GM-03", "SM-05", "SM-06", "FM-02"})
+
 # Reach-zone labels (thumb-reach-v3); shared with the swarm's derived advice.
 ZONE_KO = {"out": "파지를 바꿔야 닿는", "stretch": "엄지를 크게 뻗어야 하는", "mild": "약간 불편한", "natural": "편한"}
 

@@ -42,18 +42,19 @@ Discover product tasks from its URL or repository. Read `references/loop/product
 
 - Research: `references/research/output-template.md`. Opens with up to three findings (status, source, counter-search line), three next steps and coverage.
 - Persona-qa: `references/persona-qa/qa-report-template.md`. Opens with the verdict and up to three actions; findings carry a trace, a capture receipt, impact, cause and fix; P0 and P1 get a second pass.
-- Ergonomics: `references/ergonomics/report-template.md`, English or Korean, measured, model and judgment apart, coverage as k of n profiles.
+- Automated warnings under P2: rule × screen counts with evidence links, not findings (`swarm --list-threshold`).
+- Ergonomics: `references/ergonomics/report-template.md`, measured, model and judgment apart, coverage as k of n profiles.
 - Loop: the stop report in `references/loop/cli.md`; integrated improvement also reports preserved intent, product/design/code locations, verified changes and remaining gaps.
 
 ## Tools
 
-Python 3.10+ standard library on Linux, macOS or WSL; `start` reports the runtime. Browsers: the host's browser tool, an automation browser, then the bundled drivers on Node.js 22 (`drivers/web/ergo_drive.mjs` for products, `drivers/web/read_page.mjs` for renders after a pre-read). Sandboxed hosts such as Codex: `drivers/web/README.md`. A denied launch is a gap.
+Python 3.10+ standard library on Linux, macOS or WSL; `start` reports the runtime. Browsers: the host's browser tool, an automation browser, then the bundled drivers on Node.js 22 (`drivers/web/ergo_drive.mjs` for products, `drivers/web/read_page.mjs` for renders after a pre-read). Sandboxed hosts (Codex): `drivers/web/README.md`. A denied launch is a gap.
 
-`python3 scripts/ref.py <file> <section-id>` prints one bounded section; without an ID it lists the IDs. `python3 scripts/ref.py platform naver-blog` prints one channel. Large references are lookup-only.
+`python3 scripts/ref.py <file> <section-id>` prints one bounded section, or lists IDs without one. `python3 scripts/ref.py platform naver-blog` prints one channel. Large references are lookup-only.
 
 ## Bundled search in research
 
-After planning and URL discovery, invoke the bundled toolkit at `references/insane-search/SOURCE.md` and its linked platform method by section. Follow `references/research/workflow.md` section 2 for capture ingestion. It serves complaint and audience research, including integrated improvement. Its frontmatter is reference material, never a second skill dispatch. Access/evidence cards still govern every method; no external skill installation or whole-catalog read is required.
+After planning and URL discovery, invoke the bundled toolkit at `references/insane-search/SOURCE.md` and its linked platform method by section. Follow `references/research/workflow.md` section 2 for capture ingestion. Its frontmatter is reference material, never a second skill dispatch. Access/evidence cards still govern every method; no external skill installation or whole-catalog read is required.
 
 ## Lookup index
 

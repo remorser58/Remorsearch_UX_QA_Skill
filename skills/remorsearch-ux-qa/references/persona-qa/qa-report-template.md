@@ -25,6 +25,8 @@ For Korean reports keep this QA structure. Use 결론, 발견, 수정 전후, �
 
 ## Findings
 
+Automated analyzer warnings below P2 are not cards: give one row per rule and screen with counts, examples and evidence links (`ergo_qa.py swarm` `summaries`). Model-reviewed, state, timing and focus results stay cards.
+
 Order cards by P0, P1, P2, P3, then high, medium, low confidence within each severity. Include verified current-build observations here. Put unreproduced, stale or unverified cards in the annex and state the missing evidence. Severity follows user impact; confidence follows evidence quality. Research gate statuses govern community-derived scenario motivation; they never reduce the severity of an observed product failure.
 
 | ID | Severity and impact rationale | Confidence | Scenario/task | Verification |

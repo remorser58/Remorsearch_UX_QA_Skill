@@ -34,13 +34,16 @@ def render(
     limitations: Iterable[str] = (),
     audience: dict[str, Any] | None = None,
     plan: dict[str, Any] | None = None,
+    list_threshold: str = "P2",
 ) -> str:
     profiles = list(profiles)
     composed = any(p.get("audience_ref") for p in profiles)
+    from .swarm import present
     from .swarm import units as make_units
 
     hypotheses = [f for f in findings if f.get("tier") == "hypothesis"]
-    findings = [f for f in findings if f.get("tier") != "hypothesis"]
+    screened = [f for f in findings if f.get("tier") != "hypothesis"]
+    findings, summaries = present(screened, list_threshold)
     problem_units = make_units(findings)
     ucounts = severity_counts(problem_units)
     analyses = list(analyses)
@@ -52,7 +55,9 @@ def render(
         f"- 실행(run) {len(analyses)}건, 시뮬레이션 프로필 {len(profiles)}개. 문제 단위 {len(problem_units)}건 "
         f"(P0 {ucounts['P0']} · P1 {ucounts['P1']} · P2 {ucounts['P2']} · P3 {ucounts['P3']}), 발견 {len(findings)}건 "
         f"(P0 {counts['P0']} · P1 {counts['P1']} · P2 {counts['P2']} · P3 {counts['P3']}).",
-        "- 반복 요소의 크기·가독성 경고는 같은 화면·컴포넌트 계열·체크별로 묶습니다. 요소 수와 예시를 표시하고 개별 측정은 증거에 보존합니다.",
+        f"- {list_threshold}보다 낮은 자동 참고 경고 {sum(s['finding_count'] for s in summaries)}건은 개별 발견으로 나열하지 않고 체크 × 화면 요약 {len(summaries)}행(4-1절)으로 묶었습니다. "
+        "과업 상태·판단·시간·키보드 초점 결과는 항상 개별 발견입니다(`--list-threshold P3`이면 모두 나열).",
+        "- 반복 요소의 크기·가독성·도달 경고는 같은 화면(경로·제목·제목 요소·기기)·컴포넌트 계열·체크별로 묶습니다. 요소 수와 예시를 표시하고 개별 측정은 증거에 보존합니다.",
         "- 모든 조작은 드라이버가 실제 화면(브라우저/기기)에서 수행한 기록을 분석했습니다. 인간공학 수치는 결정론적 모델이 계산했고, LLM 페르소나가 연기하지 않았습니다.",
         "- 'k/n 시뮬레이션 프로필'은 **커버리지**이며 실제 사용자 비율(유병률·선호)을 뜻하지 않습니다.",
         "- 실측(observed)과 모델 예측(inferred)을 분리해 표기했습니다. 모델 예측은 실제 사용자 테스트로 확인해야 하는 가설입니다.",
@@ -115,12 +120,22 @@ def render(
         if f.get("element_count", 1) > 1:
             target = f"{f['selector_family']} ({f['element_count']}개)"
         lines.append(f"| {f['id']} | {f['severity']} | {f['category']} | {BASIS_KO[f['basis']].split('(')[0]} | {target} | {f['coverage_label'].split(' (')[0]} | {diff} |")
+    if summaries:
+        lines += ["", "### 4-1. 자동 참고 경고 요약 (체크 × 화면)", "",
+                  "| ID | 체크 | 화면 | 최고 심각도 | 발견 | 요소 | 예시 | 증거 |", "|---|---|---|---|---|---|---|---|"]
+        for s in summaries:
+            evidence = ", ".join(s["finding_ids"][:4]) + (" …" if len(s["finding_ids"]) > 4 else "")
+            if s["snapshot_ids"]:
+                evidence += " · 캡처 " + ", ".join(s["snapshot_ids"][:2]) + (" …" if len(s["snapshot_ids"]) > 2 else "")
+            screen = f"{s['heading']} ({s['route']})" if s["route"] else "실행 단위"
+            lines.append(f"| {s['id']} | {s['check_id']} {s['title_ko']} | {screen} | {s['severity']} | {s['finding_count']} | "
+                         f"{s['element_count']} | {', '.join(s['examples'])} | {evidence} |")
     if composed:
         names = {s["segment_id"]: s["name_ko"] for s in (audience or {}).get("segments", [])}
         seg_ids = sorted({(p.get("audience_ref") or {}).get("segment_id") for p in profiles} - {None})
         lines += ["", "### 세그먼트별 발견", "", "| 세그먼트 | P0 | P1 | P2 | P3 | 이 세그먼트에서만 발생 |", "|---|---|---|---|---|---|"]
         for sid in seg_ids:
-            hits = [f for f in findings if sid in f.get("segments_affected", [])]
+            hits = [f for f in screened if sid in f.get("segments_affected", [])]
             only = [f["id"] for f in hits if f.get("segments_affected") == [sid]]
             sev = {k: sum(1 for f in hits if f["severity"] == k) for k in ("P0", "P1", "P2", "P3")}
             lines.append(f"| {names.get(sid, sid)} ({sid}) | {sev['P0']} | {sev['P1']} | {sev['P2']} | {sev['P3']} | {', '.join(only[:8]) or '-'}{' …' if len(only) > 8 else ''} |")

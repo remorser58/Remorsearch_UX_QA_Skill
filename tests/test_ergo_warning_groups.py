@@ -1,13 +1,15 @@
 """Repeated component warnings retain every element's measured evidence."""
 
+import contextlib
 import copy
+import io
 import json
 from pathlib import Path
 import tempfile
 import unittest
 
 import _paths  # noqa: F401
-from ergoqa import analyze, bundle, report, swarm
+from ergoqa import analyze, bundle, cli, report, swarm
 from ergoqa.profiles import sample_profiles
 from test_ergo_pipeline import el, make_run
 
@@ -66,7 +68,7 @@ class WarningGroups(unittest.TestCase):
         self.assertEqual({evidence[oid]["element_key"] for oid in repeated["observation_ids"]},
                          {f"#choice-{i}|{i}" for i in range(47)})
         self.assertTrue(all(evidence[oid]["measurement"] for oid in repeated["observation_ids"]))
-        self.assertIn("47", report.render(findings, profiles, [result]))
+        self.assertIn("47", report.render(findings, profiles, [result], list_threshold="P3"))
 
     def test_different_screens_stay_distinct_even_with_the_same_selectors(self):
         profiles, result = self.capture(different_screen=True)
@@ -155,6 +157,56 @@ class WarningGroups(unittest.TestCase):
         self.assertEqual((reach[0]["selector_family"], reach[0]["element_count"]), ("header > a.account", 1))
         self.assertEqual(reach[0]["screen"], screen)
         self.assertEqual(reach[0]["screen_key"], screen["key"])
+
+    def test_advisory_warnings_are_summarized_by_rule_and_screen(self):
+        profiles, result = self.capture()
+        findings = [f for f in swarm.aggregate([result], profiles) if f.get("tier") != "hypothesis"]
+        advisory = [f for f in findings if f["severity"] == "P3" and f["check_id"] not in {"SM-06", "CG-02"}]
+        self.assertTrue(advisory)
+        focus = dict(advisory[0], id="EF-focus", check_id="SM-06")
+        listed, summaries = swarm.present(findings + [focus])
+        self.assertEqual({f["id"] for f in listed},
+                         {f["id"] for f in findings if f["severity"] in ("P0", "P1", "P2")} | {"EF-focus"})
+        small = next(s for s in summaries if s["check_id"] == "PT-02")
+        members = [f for f in advisory if f["check_id"] == "PT-02"]
+        self.assertEqual(small["finding_ids"], [f["id"] for f in members])
+        self.assertEqual(small["element_count"], 48)
+        self.assertEqual(len(small["observation_ids"]), 48)
+        self.assertEqual(small["route"], "http://127.0.0.1/checkout.html")
+        self.assertEqual(small["heading"], "Choose")
+        self.assertTrue(small["snapshot_ids"])
+        self.assertEqual(sum(s["finding_count"] for s in summaries), len(advisory))
+        everything, none = swarm.present(findings, "P3")
+        self.assertEqual((len(everything), none), (len(findings), []))
+        rendered = report.render(findings, profiles, [result])
+        self.assertIn("4-1. 자동 참고 경고 요약", rendered)
+        self.assertIn(f"| {small['id']} | PT-02 ", rendered)
+        for finding in members:
+            self.assertNotIn(f"### {finding['id']} ", rendered)
+
+    def test_swarm_cli_list_threshold_keeps_data_and_moves_presentation(self):
+        profiles, _ = self.capture()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run_dir = make_run(root)
+            profiles_path = root / "profiles.json"
+            profiles_path.write_text(json.dumps({"profiles": profiles}))
+            outputs = {}
+            for threshold in ("P2", "P3"):
+                out = root / f"out-{threshold}"
+                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                    code = cli.main(["swarm", "--runs", str(run_dir), "--profiles", str(profiles_path), "--no-gaze",
+                                     "--allow-degraded", "--list-threshold", threshold, "--out", str(out)])
+                self.assertEqual(code, cli.EXIT_OK)
+                outputs[threshold] = json.loads((out / "findings.json").read_text())
+        default, full = outputs["P2"], outputs["P3"]
+        self.assertEqual(default["findings"], full["findings"])
+        self.assertEqual(full["summaries"], [])
+        self.assertEqual(full["listed_finding_ids"], [f["id"] for f in full["findings"] if f.get("tier") != "hypothesis"])
+        summarized = {fid for s in default["summaries"] for fid in s["finding_ids"]}
+        self.assertTrue(summarized)
+        self.assertFalse(summarized & set(default["listed_finding_ids"]))
+        self.assertTrue(all(f["severity"] == "P3" for f in default["findings"] if f["id"] in summarized))
 
 
 if __name__ == "__main__":

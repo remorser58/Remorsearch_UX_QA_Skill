@@ -316,6 +316,49 @@ def severity_counts(findings: Iterable[dict[str, Any]]) -> dict[str, int]:
     return counts
 
 
+def present(findings: Iterable[dict[str, Any]], list_threshold: str = "P2") -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Split findings into listed findings and advisory rule × screen summaries.
+
+    Findings at or above ``list_threshold`` and every task-state, judgment, timing
+    or focus result stay listed. Lower-priority automated warnings become one
+    summary per rule and screen with counts, examples and evidence IDs; their
+    findings and observations remain in the data. ``P3`` lists everything.
+    """
+    limit = checks.SEVERITY_ORDER[list_threshold]
+    listed: list[dict[str, Any]] = []
+    groups: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for finding in findings:
+        if finding["check_id"] in checks.ALWAYS_LISTED_CHECKS or checks.SEVERITY_ORDER.get(finding["severity"] or "P3", 3) <= limit:
+            listed.append(finding)
+        else:
+            groups.setdefault((finding["check_id"], (finding.get("screen") or {}).get("key", "")), []).append(finding)
+    summaries = []
+    for (check_id, screen_key), members in groups.items():
+        worst = min(members, key=lambda f: checks.SEVERITY_ORDER.get(f["severity"] or "P3", 3))
+        screen = worst.get("screen") or {}
+        summaries.append({
+            "check_id": check_id,
+            "title_ko": worst["title_ko"],
+            "category": worst["category"],
+            "basis": worst["basis"],
+            "severity": worst["severity"],
+            "screen_key": screen_key,
+            "route": screen.get("route", ""),
+            "heading": screen.get("heading", ""),
+            "finding_count": len(members),
+            "element_count": sum(f.get("element_count", 1) for f in members),
+            "examples": sorted({s for f in members for s in f.get("examples") or []})[:3],
+            "scenario_ids": sorted({f["scenario_id"] for f in members}),
+            "finding_ids": [f["id"] for f in members],
+            "observation_ids": [o for f in members for o in f["observation_ids"]],
+            "snapshot_ids": sorted({s for f in members for s in f.get("snapshot_ids", [])}),
+        })
+    summaries.sort(key=lambda s: (s["check_id"], s["route"], s["heading"], s["screen_key"]))
+    for index, summary in enumerate(summaries, 1):
+        summary["id"] = f"ES-{index:03d}"
+    return listed, summaries
+
+
 def _differential_key(finding: dict[str, Any]) -> str:
     diff = finding.get("profile_specific") or {}
     return ";".join(f"{k}={diff[k]}" for k in sorted(diff)) or "all tested profiles"
