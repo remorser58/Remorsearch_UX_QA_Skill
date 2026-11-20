@@ -368,6 +368,15 @@ class FeedbackFocusRelocation(unittest.TestCase):
         occlusion.assert_not_called()
         self.assertIsNone(result.measurement["occluded_by_thumb"])
         self.assertEqual(result.measurement["action_viewport_alignment"]["basis"], "unknown")
+        self.assertEqual((result.measurement["band"], result.measurement["value"]), ("likely", 1.1))
+        self.assertFalse(result.passed)
+        self.assertIsNone(result.severity)
+        self.assertEqual(result.extra["verdict"], "inconclusive")
+        # A clear angular failure does not depend on the missing thumb evidence.
+        c.previous.pop("focus")
+        far = self.feedback(c)
+        self.assertEqual((far.measurement["band"], far.passed, far.severity), ("likely_missed", False, "P2"))
+        self.assertNotEqual(far.extra.get("verdict"), "inconclusive")
 
     def test_notice_with_unknown_thumb_occlusion_cannot_establish_redundancy(self) -> None:
         c = self.context()

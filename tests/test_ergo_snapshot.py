@@ -324,7 +324,10 @@ class AnnotationDriverTests(unittest.TestCase):
         ann = load("sample_annotation.json")
         ann["viewport_css"][1] -= 24
         ann["viewport_alignment"] = {"basis": "observed-landmarks", "origin_css": [0, 24], "reference": "synthetic landmark"}
+        self.assertNotIn("viewport_raster_reference", annotation_to_snapshot(ann)["screenshot"])
+        ann["viewport_raster_reference"] = "separate synthetic crop-edge record"
         snap = annotation_to_snapshot(ann)
+        self.assertEqual(snap["screenshot"]["viewport_raster_reference"], ann["viewport_raster_reference"])
         self.assertEqual(snap["viewport_alignment"], ann["viewport_alignment"])
         self.assertEqual(snap["geometry_basis"], "estimated")
         ann["box_units"] = "screenshot_px"

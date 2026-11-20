@@ -49,7 +49,7 @@ def ctx(elements, prof=None, device_id="galaxy-s24", previous=None, step=None, f
     prof = prof or profile(device_id=device_id)
     device = get_device(device_id)
     snap = {"snapshot_id": "S-1", "step_index": 1, "surface": {"kind": "web", "url": "http://x/a"},
-            "device": {"id": device_id, "viewport_css": list(device.viewport_css), "orientation": device.orientation},
+            "device": {"id": device_id, "viewport_css": list(device.viewport_css), "orientation": device.orientation, "dpr": device.dpr},
             "elements": elements, "focus_point": focus,
             "viewport_alignment": {"basis": "emulated-full-viewport", "origin_css": [0, 0]}}
     return checks.Context(run=run or {"run_id": "R-1", "steps": []}, snapshot=snap, previous=previous, step=step, profile=prof,
@@ -104,6 +104,13 @@ class CaptureAlignment(unittest.TestCase):
                     self.assertIsNone(obs.severity)
                     self.assertEqual(obs.extra["verdict"], "inconclusive")
                     self.assertEqual(obs.measurement["viewport_alignment"]["reason"], reason)
+
+    def test_explicit_dpr_conflict_cannot_authorize_emulated_reach(self):
+        full = self.context(300, alignment={"basis": "emulated-full-viewport", "origin_css": [0, 0]})
+        full.snapshot["device"]["dpr"] = 1  # iPhone 15 catalog pitch is 3.
+        for obs in checks.check_reach(full):
+            self.assertIsNone(obs.measurement["value"])
+            self.assertEqual(obs.extra["verdict"], "inconclusive")
 
     def test_landscape_game_origin_uses_the_capture_axes(self):
         emulated = {"basis": "emulated-full-viewport", "origin_css": [0, 0]}

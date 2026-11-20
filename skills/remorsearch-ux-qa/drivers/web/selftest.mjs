@@ -457,6 +457,7 @@ function checkScripted(label, runDir, dev, { flash }) {
   check(`${label}: verified unzoomed emulated viewport records a zero origin`,
     s0.viewport_alignment?.basis === 'emulated-full-viewport'
     && s0.viewport_alignment?.origin_css?.join(',') === '0,0', s0.viewport_alignment);
+  check(`${label}: full viewport PNG records its capture basis`, !!s0.screenshot?.viewport_raster_reference);
   const pay = bySel(s0, '#pay');
   check(`${label}: #pay extracted as primary button with geometry, font and colours`,
     pay && pay.roles.join() === 'primary' && pay.interactive && pay.visible && pay.in_viewport && pay.enabled

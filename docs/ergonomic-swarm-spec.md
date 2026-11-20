@@ -136,6 +136,18 @@ Functions:
   unknown unless the input and feedback share a known frame. Target sizes and
   relative gaps have no origin. This field does not calibrate the thumb model
   or convert screenshot raster coordinates to viewport CSS coordinates.
+  Both alignment bases require the catalog DPR; the PNG may separately be at
+  CSS or device scale. For a reach heatmap, `screenshot.viewport_raster_reference`
+  must identify how this exact PNG is known to contain only the whole viewport,
+  edge to edge, without padding, cropping, rotation or distortion. The web
+  driver records its viewport-only capture path for aligned snapshots; an
+  annotator can supply a separate `viewport_raster_reference` identifying that
+  evidence. Dimensions alone are not evidence of content correspondence.
+  The CLI checks the PNG digest and both dimensions and writes no reach overlay
+  without both mappings. Legacy snapshots remain readable; the gaze heatmap
+  does not require physical display alignment.
+  GZ-02 retains its angular band but is inconclusive if unknown thumb occlusion
+  could reverse an otherwise passing verdict.
 - `roles` values: `primary`, `destructive`, `irreversible`, `critical_message`, `error_message`,
   `status`, `navigation`, `ad_like`, `hud`, `game_control`, `timed`.
   `irreversible` marks a destructive/payment action that cannot be undone and has no

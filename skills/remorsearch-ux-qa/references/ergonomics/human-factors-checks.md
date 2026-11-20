@@ -25,6 +25,10 @@ a real capture needs independent landmarks locating the viewport. Screenshot
 dimensions alone do not locate it. With missing or incompatible alignment,
 RH-01/RH-02 and GM-02 are inconclusive; size/spacing checks remain independent.
 Even with known alignment the thumb model is uncalibrated.
+The reach heatmap additionally needs a hash-bound PNG and a
+`screenshot.viewport_raster_reference` identifying independent evidence that
+the entire PNG is the CSS viewport, at CSS or device scale. A CSS origin alone
+does not locate viewport pixels on a letterboxed or cropped image.
 
 | ID | Basis | Rule | Severity |
 | --- | --- | --- | --- |
@@ -97,6 +101,10 @@ layer only adds text and typed measurement fields: pass/fail, severity, tiers,
 counts and thresholds stay computed exactly as above.
 
 ## Gaze and attention
+
+If a one-hand GZ-02 observation lacks the shared display frame needed for
+thumb occlusion, it retains the angular band but cannot pass on that band
+alone. Independently established angular failures remain findings.
 
 | ID | Basis | Rule | Severity |
 | --- | --- | --- | --- |

@@ -83,6 +83,10 @@ def _nonempty_str(value: Any) -> bool:
     return isinstance(value, str) and value.strip() != ""
 
 
+def valid_raster_reference(value: Any) -> bool:
+    return _nonempty_str(value) and len(value) <= 256
+
+
 def _timestamp_ok(value: Any) -> bool:
     if not isinstance(value, str):
         return False
@@ -402,6 +406,9 @@ def validate_snapshot(doc: Any) -> list[str]:
                        "$.screenshot.sha256", "must be 64 lowercase hex characters or null")
         errors.number(shot, "width_px", "$.screenshot", integer=True, minimum=1)
         errors.number(shot, "height_px", "$.screenshot", integer=True, minimum=1)
+        if "viewport_raster_reference" in shot:
+            errors.require(valid_raster_reference(shot["viewport_raster_reference"]), "$.screenshot.viewport_raster_reference",
+                           "must identify the evidence that the PNG covers precisely the full CSS viewport")
     elements = errors.array(doc, "elements", "$")
     if elements is not None:
         seen: set[str] = set()

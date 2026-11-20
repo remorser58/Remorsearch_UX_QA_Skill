@@ -1242,19 +1242,21 @@ def check_gaze(ctx: Context) -> list[Observation]:
                 severity = "P2" if critical else "P3"
             elif band == "uncertain" and critical:
                 severity = "P3"
+            inconclusive = occluded is None and severity is None and not redundant
             sal = {**sal, "redundant_with_noticed_feedback": redundant}
             out.append(Observation(
                 "GZ-02", *base, [element["id"]], element_key(element),
                 {"name": "feedback_eccentricity_deg", "value": round(theta, 1), "unit": "deg",
                  "threshold": [round(v * scale, 1) for v in params.NOTICE_BANDS_DEG["salient" if salient else "non_salient"]],
                  "comparator": "band", "band": band, "salient": salient, "occluded_by_thumb": occluded, "persona_scale": scale, "nearest_feedback_css": list(near_css), **feedback_geometry, **sal},
-                severity is None, severity,
+                severity is None and not inconclusive, severity,
                 f"{'초점이 이동한 입력 칸' if feedback_geometry['anchor_basis'] == 'observed_programmatic_focus_relocation' else '조작 지점'}에서 {theta:.0f}° 떨어진 곳에 {'새' if prior is None else '바뀐'} 메시지 '{(element.get('text') or element.get('name') or '')[:30]}'"
                 + f" ({'돌출' if salient else '비돌출'} 변화, 인지 가능성: {band})" + (", 한 손 파지 엄지에 가려질 위치" if occluded else "")
                 + (". 입력 칸 근처로 주의가 이동한다고 가정했으며 실제 시선은 측정하지 않았습니다." if feedback_geometry['anchor_basis'] == 'observed_programmatic_focus_relocation'
                    else ". 마지막 입력 위치에서 계산했습니다.")
-                + " 눈의 화면 투영점은 화면 중심으로 가정했습니다.",
-                gaze.MODEL_ID,
+                + " 눈의 화면 투영점은 화면 중심으로 가정했습니다."
+                + (" 엄지 가림을 확인할 수 없어 종합 판정을 보류했습니다." if inconclusive else ""),
+                gaze.MODEL_ID, extra={"verdict": "inconclusive"} if inconclusive else {},
             ))
     # GZ-03: banner-blindness proxy on desktop/web.
     if getattr(ctx.device, "form_factor", "phone") in ("desktop", "laptop"):

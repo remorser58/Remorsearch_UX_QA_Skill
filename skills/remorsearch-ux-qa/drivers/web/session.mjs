@@ -2244,6 +2244,7 @@ export class WebSession {
       viewport_alignment: aligned ? { basis: 'emulated-full-viewport', origin_css: [0, 0] } : { basis: 'unknown' },
       screenshot: {
         path: `${id}.png`, sha256: sha256(png), width_px: width, height_px: height,
+        ...(aligned ? { viewport_raster_reference: 'Playwright viewport-only device-scale capture; verified untransformed viewport and PNG bounds' } : {}),
         ...(cssCopy ? { css: { path: `${id}.css.png`, sha256: sha256(cssCopy.png), width_px: cssCopy.width, height_px: cssCopy.height, factor: cssCopy.factor } } : {}),
       },
       elements: ex.elements,

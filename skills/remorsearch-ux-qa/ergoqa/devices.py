@@ -404,14 +404,16 @@ def display_mapping(snapshot: dict[str, Any], device: Device) -> tuple[Device | 
             or not _css_pair(vp) or not all(v > 0 for v in vp)):
         return None, {"basis": "unknown", "reason": "incompatible_device_or_viewport"}
     origin = alignment["origin_css"]
+    # The CSS-to-mm scale comes from the named device, not the saved PNG.
+    if type(block.get("dpr")) not in (float, int) or block["dpr"] != device.dpr:
+        return None, {"basis": "unknown", "reason": "incompatible_display_bounds_or_pitch"}
     if alignment["basis"] == _EMULATED_ORIGIN:
         if tuple(vp) != device.viewport_css:
             return None, {"basis": "unknown", "reason": "not_full_emulated_viewport"}
     else:
         # Actual viewport CSS pitch must match the named panel and orientation.
         # Allow one physical display pixel for rounding at a panel edge.
-        if (block.get("dpr") != device.dpr or
-                any((offset + extent) * device.dpr > panel_px + 1
-                    for offset, extent, panel_px in zip(origin, vp, device.display_px))):
+        if any((offset + extent) * device.dpr > panel_px + 1
+               for offset, extent, panel_px in zip(origin, vp, device.display_px)):
             return None, {"basis": "unknown", "reason": "incompatible_display_bounds_or_pitch"}
     return replace(device, viewport_offset_css=tuple(origin)), dict(alignment)
