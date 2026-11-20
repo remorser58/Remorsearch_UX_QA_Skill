@@ -738,8 +738,11 @@ they belong to (0 = initial load), so a step can own two snapshots.
   `selector_family` (scoped class/structural path, preserving container and shadow
   host boundaries) plus semantic role. They report `element_count` and up to three
   selector `examples`; linked observations retain every element's measurement.
-  Scroll position does not create a new screen. Missing family evidence keeps
-  exact selectors separate; numbered IDs alone never establish a component family.
+  A screen is the surface, title, device, visible headings and route with digit
+  runs masked: scroll position, toasts, changed control lists and record IDs do
+  not create a new screen; reach warnings group the same way. Missing family
+  evidence keeps exact selectors separate; numbered IDs alone never establish a
+  component family.
   Task, timing and multi-element relations are not collapsed by this grouping.
 - **Colours**: the layers under the element's centre (`elementsFromPoint`, or the
   ancestor chain when off-screen) are composited over the page canvas with group

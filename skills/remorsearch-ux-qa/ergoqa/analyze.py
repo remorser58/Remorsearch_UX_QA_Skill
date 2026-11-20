@@ -11,8 +11,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any, Iterable
+from urllib.parse import urlsplit, urlunsplit
 
 from . import checks, png
 from .devices import device_for_snapshot, get_device, rotate
@@ -21,6 +23,31 @@ from .profiles import profile_index
 from .snapshot import load_run_dir, resolve_within
 
 SEVERITY_RANK = checks.SEVERITY_ORDER
+
+
+def _route(url: Any) -> Any:
+    """URL with digit runs in path, query and fragment masked; host and port stay exact."""
+    if not isinstance(url, str):
+        return url
+    parts = urlsplit(url)
+    return urlunsplit((parts.scheme, parts.netloc, *(re.sub(r"\d+", "{n}", p) for p in (parts.path, parts.query, parts.fragment))))
+
+
+def screen_identity(snapshot: dict[str, Any]) -> dict[str, Any]:
+    """Screen a warning belongs to: surface, route, device and visible headings.
+
+    Control lists, toasts, form errors and record IDs in the route change on every
+    state of the same screen, so they never split it. Headings, title and modal
+    layers (the background turns inert) still separate distinct screens.
+    """
+    surface = snapshot.get("surface", {})
+    headings = [(e.get("selector"), e.get("text")) for e in snapshot.get("elements", [])
+                if e.get("visible") and not e.get("inert_by_modal") and e.get("role") == "heading"]
+    route = _route(surface.get("url"))
+    signature = [{**{key: surface.get(key) for key in ("kind", "title", "app_id", "build_id")}, "route": route},
+                 snapshot.get("device"), headings]
+    return {"key": "screen-" + hashlib.sha256(json.dumps(signature, sort_keys=True).encode()).hexdigest()[:16],
+            "route": route, "heading": next((text for _, text in headings if text), "") or surface.get("title") or ""}
 
 
 _CONSPICUITY_CACHE: dict[tuple[str, int], list[list[float]] | None] = {}
@@ -298,26 +325,22 @@ def analyze_run(
                 observations.append(observation)
     # A selector may be reused by a later screen. Preserve that evidence before
     # deduplication, while repeated captures of the same screen keep the worst
-    # per-element observation. Text inputs never enter the screen signature.
+    # per-element observation. Every snapshot observation names its screen so
+    # reports can summarize advisory warnings by rule and screen.
     for snap in live_snapshots:
         elements = snap.get("elements", [])
-        visible = [e for e in elements if e.get("visible") and not e.get("inert_by_modal")]
-        screen = [
-            {key: snap.get("surface", {}).get(key) for key in ("kind", "url", "title", "app_id", "build_id")},
-            snap.get("device"),
-            sorted((e.get("selector") or e["id"], e.get("role", "")) for e in visible),
-            [(e.get("selector"), e.get("text")) for e in visible if e.get("role") == "heading"],
-        ]
-        screen_key = "screen-" + hashlib.sha256(json.dumps(screen, sort_keys=True).encode()).hexdigest()[:16]
+        screen = screen_identity(snap)
         by_id = {e["id"]: e for e in elements}
         for obs in observations:
-            if (obs.snapshot_id != snap["snapshot_id"] or obs.check_id not in checks.REPEATED_ELEMENT_CHECKS
-                    or len(obs.element_ids) != 1):
+            if obs.snapshot_id != snap["snapshot_id"]:
+                continue
+            obs.extra["screen"] = screen
+            if obs.check_id not in checks.REPEATED_ELEMENT_CHECKS or len(obs.element_ids) != 1:
                 continue
             element = by_id[obs.element_ids[0]]
             family = element.get("selector_family") or element.get("selector") or element["id"]
             obs.extra["warning_group"] = {
-                "screen_key": screen_key, "selector_family": family,
+                "screen_key": screen["key"], "selector_family": family,
                 "role": element.get("role", ""), "roles": sorted(element.get("roles") or []),
             }
     observations = _dedupe(observations)

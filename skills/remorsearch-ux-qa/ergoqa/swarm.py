@@ -267,6 +267,7 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
         untriggered = [profiles_by_id[p] for p in sorted(evaluated) if p not in group["triggered"] and p in profiles_by_id]
         differential = {} if check_id == "TI-01" else _differential([profiles_by_id[p] for p in triggered if p in profiles_by_id], untriggered)
         selectors = sorted({sel for o in group["failed"] for sel in o.get("selectors", [])})
+        screen = (worst.get("extra") or {}).get("screen") or {}
         findings.append({
             "check_id": check_id,
             "tier": checks.tier(check_id, worst.get("measurement")),
@@ -274,6 +275,8 @@ def aggregate(analyses: Iterable[dict[str, Any]], profiles: Iterable[dict[str, A
             "scenario_id": scenario_id,
             "element_key": element_key,
             "screen_key": screen_key,
+            "screen": screen,
+            "snapshot_ids": sorted({o["snapshot_id"] for o in group["failed"] if o.get("snapshot_id")}),
             "selector_family": family,
             "component_role": _role,
             "component_roles": list(_roles),

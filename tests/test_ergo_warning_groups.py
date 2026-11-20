@@ -127,6 +127,35 @@ class WarningGroups(unittest.TestCase):
         self.assertIn("요소 3개", rendered)
         self.assertIn("#copy-0, #copy-1, #copy-2", rendered)
 
+    def test_states_and_record_ids_of_one_screen_share_a_reach_group(self):
+        profiles = sample_profiles(1, 7, ["galaxy-s24"])
+        self.assertEqual(profiles[0]["attributes"]["grip"], "one_hand_right")
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = make_run(Path(tmp))
+            for index, path in enumerate(sorted(run_dir.glob("S-*.json"))):
+                snap = json.loads(path.read_text())
+                # Each state of the same booking screen has a new record ID and new controls.
+                snap["surface"]["url"] = f"http://127.0.0.1:4318/booking/{1000 + index}?step=2#NB{77 + index}"
+                snap["elements"] = [
+                    el("heading", "heading", (10, 40, 300, 30), text="Booking"),
+                    dict(el("account", "link", (330, 8, 24, 24), interactive=True, tag="a", text="Me", roles=("primary",)),
+                         selector_family="header > a.account"),
+                    *([el("toast", "status", (10, 700, 300, 40), text="Saved"),
+                       el("undo", "button", (320, 700, 40, 40), interactive=True, tag="button", text="Undo")] if index else []),
+                ]
+                path.write_text(json.dumps(snap))
+            result = analyze.analyze_run(run_dir, profiles, gaze_enabled=False)
+        screens = {json.dumps(o["extra"]["screen"], sort_keys=True) for o in result["observations"] if o["snapshot_id"]}
+        self.assertEqual(len(screens), 1)
+        screen = json.loads(screens.pop())
+        self.assertEqual(screen["route"], "http://127.0.0.1:4318/booking/{n}?step={n}#NB{n}")
+        self.assertEqual(screen["heading"], "Booking")
+        reach = [f for f in swarm.aggregate([result], profiles) if f["check_id"] == "RH-01"]
+        self.assertEqual(len(reach), 1)
+        self.assertEqual((reach[0]["selector_family"], reach[0]["element_count"]), ("header > a.account", 1))
+        self.assertEqual(reach[0]["screen"], screen)
+        self.assertEqual(reach[0]["screen_key"], screen["key"])
+
 
 if __name__ == "__main__":
     unittest.main()
