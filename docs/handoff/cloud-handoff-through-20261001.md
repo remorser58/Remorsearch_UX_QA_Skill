@@ -37,7 +37,7 @@ python3 skills/remorsearch-ux-qa/scripts/smoke_loop.py
   - Python 3.10 이상, 표준 라이브러리만 씁니다.
   - 리더와 루프가 `fcntl`을 쓰므로 macOS나 Linux가 필요합니다. Windows는 WSL을 쓰세요.
   - 드라이버는 Node.js 22와 Playwright가 필요합니다.
-- **커밋 작성자**: remorser58 `<remorser58@naver.com>`입니다. 클라우드에서는 서명 때문에 커미터만 Claude로 두었을 뿐이니, 로컬에서는 평소처럼 본인 이름으로 커밋하면 됩니다.
+- **커밋 작성자**: remorser58 `(private contact removed)`입니다. 클라우드에서는 서명 때문에 커미터만 Claude로 두었을 뿐이니, 로컬에서는 평소처럼 본인 이름으로 커밋하면 됩니다.
 - **테스트 규칙**
   - 테스트는 네트워크를 쓰지 않고, 127.0.0.1의 로컬 서버만 씁니다.
   - 새 테스트는 `tests/`에 두고, 파일 맨 앞에서 `import _paths`를 합니다.
