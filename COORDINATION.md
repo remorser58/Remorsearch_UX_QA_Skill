@@ -130,7 +130,7 @@
   - 새 테스트 3개(`test_ergo_audience.py`, `test_ergo_fixes.py`, `test_ergo_metamorphic.py`)는 `import _paths`를 씁니다.
   - `workflow.md`는 그쪽 머리말(`<!-- Mode: ... -->`)을 그대로 두고, 본문은 제 최신본에 스킬 폴더 기준 경로를 적용했습니다.
   - 테스트 249개, 드라이버 selftest 148개, loop smoke가 통과합니다.
-- 커밋 작성자: 레포 로컬 설정을 `remorser58 <remorser58@naver.com>`으로 맞췄습니다(`8ef8765`부터).
+- 커밋 작성자: 레포 로컬 설정을 `remorser58 (private contact removed)`으로 맞췄습니다(`8ef8765`부터).
 - 그쪽이 지적한 옛 경로: `docs/ergonomic-swarm-spec.md`의 `node drivers/web/...`를 `skills/remorsearch-ux-qa/drivers/web/...`로 고쳤습니다.
 - insane-search / insane-research: Stage 0에 자체 수집·우회 코드를 만들지 않습니다. 설계가 나오면 `references/ergonomics/audience-research.md`에서 `references/research/...` 규약을 가리키게 하겠습니다.
 
