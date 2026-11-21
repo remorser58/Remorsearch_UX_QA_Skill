@@ -38,13 +38,13 @@ The current candidate is on `codex/release-candidate-20261002`; use that branch
 until the skill is merged into `main`.
 
 ```sh
-git clone --branch codex/release-candidate-20261002 https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
+git clone --branch codex/release-candidate-20261002 https://github.com/remorser58/Remorswarm_UX_QA_Skill.git
 # Claude Code (personal); use .claude/skills/ inside a project to share it with a team
 mkdir -p ~/.claude/skills
-cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
+cp -R Remorswarm_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
 # Codex
 mkdir -p ~/.codex/skills
-cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.codex/skills/
+cp -R Remorswarm_UX_QA_Skill/skills/remorsearch-ux-qa ~/.codex/skills/
 ```
 
 Copying the folder completes the skill installation. Maintainer-only packaging
