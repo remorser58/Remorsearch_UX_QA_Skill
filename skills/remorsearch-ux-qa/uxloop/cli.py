@@ -9,6 +9,7 @@ from pathlib import Path
 from .contracts import merge_packet, require_packet, validate_packet
 from .engine import report, run
 from .evidence import Evidence
+from .fill import fill
 from .io import ContractError, GateStop, atomic_bytes, atomic_json, code_snapshot, digest, load_json, within
 from .storage import PHASES, load as load_checkpoint
 
@@ -49,6 +50,11 @@ def main(argv: list[str] | None = None) -> int:
     validator = commands.add_parser("validate", help="Validate packet graph; optional local artifact hash checks")
     validator.add_argument("packet", type=Path)
     validator.add_argument("--evidence-root", type=Path)
+    filler = commands.add_parser("fill", help="Fill explicit bookkeeping sentinels without inferring evidence or permission")
+    filler.add_argument("draft", type=Path)
+    filler.add_argument("--evidence-root", type=Path, required=True)
+    filler.add_argument("--workspace", type=Path)
+    filler.add_argument("--out", type=Path, required=True)
     fresh = commands.add_parser("run", aliases=["improve"], help="Research intake -> plan -> QA -> authorized fixes -> replay -> decision")
     fresh.add_argument("packet", type=Path)
     fresh.add_argument("--checkpoint", type=Path, required=True)
@@ -69,6 +75,10 @@ def main(argv: list[str] | None = None) -> int:
     rev.add_argument("--path", action="append", required=True)
     args = parser.parse_args(argv)
     try:
+        if args.command == "fill":
+            result = fill(args.draft, args.evidence_root, args.out, workspace=args.workspace)
+            emit(result)
+            return 0 if result["valid"] else 1
         if args.command == "revision":
             emit({"code_revision": digest(code_snapshot(args.workspace, args.path)), "code_scope": args.path})
             return 0

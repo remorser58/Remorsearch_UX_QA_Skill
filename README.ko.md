@@ -22,13 +22,10 @@ Remorsearch(리모서치, *ree-mor-search*) UX QA는 어느 정도 완성된 제
 폴더 하나를 스킬 폴더에 복사합니다. 사용자 리서치에서 쓰는 insane-search 원문과
 참조 자료가 안에 들어 있으므로 검색 스킬을 따로 설치할 필요가 없습니다.
 Python 도구는 Python 3.10 이상에서 표준 라이브러리와 POSIX 파일 잠금을 사용합니다.
-macOS, Linux, Windows의 WSL에서 실행할 수 있습니다.
-
-현재 후보는 `codex/release-candidate-20261002` 브랜치에 있습니다.
-`main`에 병합되기 전까지 아래 브랜치로 설치합니다.
+macOS, Linux, Windows의 WSL에서 실행할 수 있습니다. 기본 `python3`가 더 낮으면(macOS 기본 Python은 3.9입니다) 호스트가 스킬 폴더에서 `python3 scripts/find_runtime.py`를 실행합니다. 지원되는 가장 높은 Python, Node.js 22 경로와 공백을 JSON으로 출력하며 아무것도 설치하지 않습니다.
 
 ```sh
-git clone --branch codex/release-candidate-20261002 https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
+git clone https://github.com/remorser58/Remorsearch_UX_QA_Skill.git
 # Claude Code(개인용). 팀과 나누려면 프로젝트 안의 .claude/skills/에 복사합니다
 mkdir -p ~/.claude/skills
 cp -R Remorsearch_UX_QA_Skill/skills/remorsearch-ux-qa ~/.claude/skills/
@@ -71,7 +68,9 @@ Node.js 22를 쓰십시오. 고정된 Playwright 1.56.1에서는 Node.js 24.16 �
 
 요청에 "간단히"가 있으면 가장 중요한 축만 돌립니다. "깊게"가 있으면 기본 축을 모두 돌립니다. "근거 붙여서"가 있으면 모든 주장에 출처 ID를 붙입니다. "간단히"가 다른 말과 함께 나오면 "간단히"를 따릅니다. 어느 경우에도 중단 규칙, 등급 규칙, 확인 표시는 그대로입니다([`overview.md`](skills/remorsearch-ux-qa/references/research/korea/overview.md) 4절).
 
-에이전트는 제품에서 주요 과업과 질문을 찾고, 관련 프로젝트 문서와 접근 가능한 의도 기록을 확인합니다. 확인한 결정은 수정 후에도 항목별로 점검합니다. 필수 접근 정보가 없거나 중요한 결정이 충돌하는 부분만 질문하고, 가능한 작업은 계속합니다. 하위 에이전트는 필요할 때 사용하며 별도의 모델 선택 절차를 시작 조건으로 요구하지 않습니다.
+에이전트는 제품에서 주요 과업과 질문을 찾고, 관련 프로젝트 문서와 접근 가능한 의도 기록을 확인합니다. 확인한 결정은 수정 후에도 항목별로 점검합니다. 필수 접근 정보가 없거나 중요한 결정이 충돌하는 부분만 질문하고, 가능한 작업은 계속합니다. 하위 에이전트는 필요할 때 사용하며 현재 세션의 모델을 그대로 씁니다. 모델을 직접 고르고 싶다고 말할 때만 묻습니다.
+
+요청은 URL이나 저장소 하나로 충분합니다. 에이전트는 먼저 실제로 도달한 과업의 범위를 정한 기준 평가를 작성합니다. 이 평가만으로도 쓸모가 있습니다. 그다음 평가에서 나온 질문만 조사하고, 수정이 정당할 때만 고쳐서 다시 실행합니다. 선택 출처나 도구가 없으면 해당 결과만 제한됩니다. loop 패킷을 만들 때는 호스트가 관찰한 사실을 쓰고 기계적인 필드를 `@auto`로 표시합니다. `python3 scripts/ux_loop.py fill DRAFT.json --evidence-root EVIDENCE [--workspace PRODUCT] --out packet.json`는 해시, 다이제스트, 실행 연결과 수정 리비전만 계산합니다. 맥락, 의도, 권한, 결과, 심각도는 채우지 않으며 거부되거나 유효하지 않은 결과는 승인이 아닙니다. 통과한 과업은 그 과업만 보여 주며 제품 전체 준비 상태나 실제 사용자 이점의 측정이 아닙니다.
 
 기본 조사 후보는 당근, 디시인사이드, 유튜브 댓글, X, 인스타그램, Threads(쓰레드)입니다. 관찰한 과업에 맞는 곳을 선택하며 매번 모두 수집하지는 않습니다. 현재 접근 가능성이나 수집 성공도 보장하지 않습니다. 후보 URL을 찾은 뒤 포함된 insane-search 방법을 사용하되 기존 접근·근거 규칙을 따릅니다. [실행 안내](skills/remorsearch-ux-qa/references/loop/product-improvement.md)에 제품 탐색부터 재검증까지의 절차와 plan·bundle·loop 명령을 정리했습니다.
 
