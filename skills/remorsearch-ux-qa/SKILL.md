@@ -1,6 +1,6 @@
 ---
 name: remorsearch-ux-qa
-description: Improve the UX of an existing product from its URL or repository. Inspect the product and developer intent, discover questions through QA, research relevant user experiences, apply scoped reversible fixes and replay them. Also handles research-only, persona QA, accessibility (KWCAG 2.2, WCAG 2.2), ergonomics and Figma comparison requests (우리 앱 UX 개선해줘, UX 리서치해줘, 사용자 불만 조사해줘, 사용성 테스트해줘, 접근성 점검해줘). Not for general web search, backend-only tests or new-product planning.
+description: Improve existing product UX from a URL/repo. Inspect product and developer intent, find questions via QA, research user experiences, make scoped reversible fixes and replay. Includes research-only, persona QA, accessibility (KWCAG 2.2, WCAG 2.2), ergonomics, Figma comparison and opt-in redesign (우리 앱 UX 개선해줘, UX 리서치해줘, 사용자 불만 조사해줘, 사용성 테스트해줘, 접근성 점검해줘). Not general web search, backend-only tests or new-product planning.
 ---
 
 # Remorsearch UX QA
@@ -15,6 +15,7 @@ For product improvement, discover tasks/questions from the URL or repository. Re
 | persona-qa | Real tasks, recovery, accessibility and Figma | `references/persona-qa/workflow.md` |
 | ergonomics | Experimental reach, perception, timing and layout checks | `references/ergonomics/workflow.md` |
 | loop | Authorized fixes and same-scenario replay | `references/loop/workflow.md` |
+| UX/UI 재설계 | Explicit; not QA alone | [Guide](references/loop/ui-redesign.md) |
 
 ## Phase 0, every run
 
@@ -52,7 +53,7 @@ Python 3.10+ standard library on Linux, macOS or WSL; `start` reports the runtim
 
 ## Bundled search in research
 
-After planning and URL discovery, invoke the bundled toolkit at `references/insane-search/SOURCE.md` and its linked platform method by section. Follow `references/research/workflow.md` section 2 for capture ingestion. It serves complaint and audience research, including integrated improvement. Its frontmatter is reference material, never a second skill dispatch. Access/evidence cards still govern every method; no external skill installation or whole-catalog read is required.
+For complaint and audience research (including integrated improvement), plan and discover URLs, then use bundled `references/insane-search/SOURCE.md` and its linked platform method by section. For capture ingestion, see `references/research/workflow.md` section 2. Toolkit frontmatter is reference-only, not a second skill dispatch. Follow access/evidence cards for every method; no external skill install or whole-catalog read needed.
 
 ## Lookup index
 

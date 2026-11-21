@@ -18,7 +18,8 @@
     "references/persona-qa/workflow.md": 14336,
     "references/ergonomics/workflow.md": 12288,
     "references/loop/workflow.md": 6144,
-    "references/loop/product-improvement.md": 9216
+    "references/loop/product-improvement.md": 9216,
+    "references/loop/ui-redesign.md": 5120
   },
   "research_commands": [
     "start",
@@ -269,6 +270,16 @@
             "research_channels_or_users"
           ],
           "reason": "Whole-product improvement begins with product/intent discovery and baseline QA; research cards and channel guidance load only when research begins."
+        },
+        "ui-redesign": {
+          "files": [
+            "references/loop/ui-redesign.md",
+            "references/persona-qa/workflow.md"
+          ],
+          "defer_switches": [
+            "research_channels_or_users"
+          ],
+          "reason": "Only requested redesign loads this guide; standalone QA does not."
         }
       }
     }
