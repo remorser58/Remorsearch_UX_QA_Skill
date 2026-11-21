@@ -90,6 +90,46 @@ then submitting exposes the address error; `#submit-unassociated` demonstrates
 missing association and unchanged button focus, and `#keep` / `#clear` preserve
 or clear the request during a re-render.
 
+## Task-walk coverage
+
+Before acting, enumerate task × required viewport × input rows, including a
+whole keyboard-only pass, not just a Tab on the entry page. Keep exact CSS sizes.
+For each row record reached screens, run/step/snapshot IDs, measurement output,
+completion and remaining checks. Mark unvisited rows **not checked** (`untested`)
+with the reason; do not remove them from the denominator or claim overall success.
+At mobile widths, ground actions in currently visible controls. If a desktop
+link is hidden, inspect the current mobile navigation rather than retrying that
+hidden selector. A grounding failure is not proof the product task failed.
+
+Measure **every screen reached during the task walk**, including detail views,
+dialogs, saved lists, booking management and error/confirmation states at each
+required viewport. Perform the walk through `serve` or authored `run` steps:
+every action already writes measured geometry and text properties beside its
+PNG. Use `observe` after asynchronous state changes and scroll to expose
+below-fold actions. Analyze the **whole recorded run**, not just the initial
+snapshot. `inspect` alone is not an ergonomic measurement. When a host browser
+drives the task, collect equivalent per-screen measurements or replay those
+transitions through the driver; starting another session at the entry URL does
+not measure the screen the host browser reached. Keep `serve` running in one
+terminal and send client commands from another, as in the quickstart above.
+
+On Chromium 141 / Playwright 1.56.1, capturing an opened native `<select>`
+popup can time out or disturb mobile emulation. If a capture reports a changed
+viewport or pixel mapping, do not treat it as valid geometry. Preserve the
+failed run; in a separate run, focus the closed select with Tab, choose with
+arrow keys and Tab away without opening the popup. This can continue page
+measurement, but does not validate the native popup or a whole keyboard task.
+
+Before reporting, check that each reached screen has a measurement snapshot and
+analysis evidence. Missing measurements, capped reflow/focus probes or unsupported
+text remain named coverage gaps, not passed checks. After a confirmation appears,
+observe whether it disappears and whether the outcome/reference can be recovered.
+For destructive actions on owned test data, check confirmation, undo and persisted
+state. Do not infer irreversibility from a label or click alone. For timed text,
+declare the observed selector as a `transient_text` timing window and replay with
+a wait covering its disappearance (see "What is measured", Timing windows); no measured window
+means timing is not checked, not passed.
+
 ## Editing the generated scenario
 
 `init` validates the URL and catalogued device, includes every required scenario
@@ -215,6 +255,13 @@ npm ci                      # pinned packages from package-lock.json
 npx playwright install chromium
 node selftest.mjs           # a few minutes; expects 0 failed
 ```
+
+If Ubuntu 26.04 x64 reports `does not support chromium on ubuntu26.04-x64`,
+export `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64` before installation
+and keep it exported for driver runs. This selects Playwright 1.56.1's Ubuntu
+24.04 build, not native 26.04 support. Keep Node.js 22: the pinned installer can
+hang after download on Node.js 24.16+ and 26; the platform override does not fix
+that separate issue.
 
 The package is resolved by normal module resolution (so `drivers/web/node_modules`
 or a global install both work), then each `NODE_PATH` entry, then
@@ -637,6 +684,16 @@ they belong to (0 = initial load), so a step can own two snapshots.
   일본어·중국어의 문단 뒤 간격은 적용 범위를 줄입니다.
   스크립트로 바뀌는 배치, 실제 브라우저 확대·키보드 초점 이동, 가림을 모두
   재현하지 않습니다. 이 결과는 기록된 정적 복제의 잘림 관찰입니다.
+  `unsupported_text` identifies excluded native text controls or private-use
+  glyphs; `unsupported_text_metrics` includes computed `line-height: normal`,
+  whose used value is not a numeric CSS metric. These gaps can make analysis
+  health `degraded`; they are neither product failures nor passing spacing
+  checks. Do not substitute a guessed line height or suppress the gaps.
+  Record OS/browser, locale and installed/resolved fonts for comparisons.
+  Korean fallback fonts can differ across hosts (for example, Noto Sans CJK KR
+  versus WenQuanYi Zen Hei), changing glyph widths, wrapping and clipping.
+  Match the font environment before attributing different results to code;
+  a configured CSS font-family alone does not prove which font rendered Hangul.
 - **Console**: `console.error` and uncaught page errors, per snapshot (since the
   previous one) and in `run.json`. Errors caused by the driver's own network block
   are counted separately, not reported as page errors.
@@ -660,12 +717,18 @@ after the initial snapshot. `--port 0` picks a free port.
 | `GET /snapshot` | | new snapshot without acting: `{snapshot, png, snapshot_id, step_index, url, title, result}` |
 | `GET /inspect` | | redacted form state: `{inspection, fields, invalid_fields, focus, reading_order, step_index, last_snapshot_id, observed_at}`; requires an accessibility channel |
 | `POST /act` | one action object (table above) | same plus `result` (`ok`/`no_target`/`error`), `error`, `point`, `target_element_id`, `target_hit`, `feedback_latency_ms`, `feedback_source`, `before`, `auto_scrolled` |
-| `POST /note` | `{intent, expected, observed, confusion: bool, step_index?, severity?}` | `{ok, note_index, step_index}`; stored as `persona_notes` with `basis: "judgment"` |
+| `POST /note` | required `confusion: bool`; optional `intent`, `expected`, `observed`, `step_index`, `failure_class`, `evidence`, `anchor`, `severity`, `corroborated` | `{ok, note_index, step_index}`; stored as `persona_notes` with `basis: "judgment"` |
 | `POST /finish` | `{success?: bool}` | writes run.json, replies `{run, status, success, success_basis, exit_code}`, then exits |
 
 Requests run one at a time in arrival order. A `no_target` action does not end the
 session; the persona can try something else. `status` is `completed` after
 `/finish`, `blocked` after an idle timeout, signal or browser crash.
+
+Unknown fields return HTTP 400 listing allowed keys. `/note.scope` and
+`/finish.task_success_claimed` are not accepted. Send observations to `/note`,
+then `/finish {"success":true|false}` or `{}` for unknown; measured scenario
+criteria take precedence. Copy the exact field types and bounds from
+`references/ergonomics/persona-agent-protocol.md` into the operator prompt.
 
 ## Security and scope
 

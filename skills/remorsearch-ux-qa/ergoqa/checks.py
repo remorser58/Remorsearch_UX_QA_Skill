@@ -586,9 +586,10 @@ def check_target_size(ctx: Context) -> list[Observation]:
                 False, "P1" if critical else "P2",
                 f"'{label}' 크기 {tbox['w']:.0f}×{tbox['h']:.0f}px로 WCAG 2.5.8 최소 24px 미달, 간격 예외도 불충족({reason}).",
             ))
-        if ctx.is_touch and critical and "game_control" not in _roles(element):
-            # Platform size guidance (44 pt / 48 dp / 9.2 mm one-thumb) is applied to the
-            # controls a task depends on; small secondary targets are covered by PT-01.
+        if ctx.is_touch and "game_control" not in _roles(element):
+            # Scan secondary controls too: passing WCAG's 24 px spacing exception
+            # does not imply comfortable touch size. Their platform-size advice is
+            # P3; stronger and one-thumb rules still require a critical/path target.
             w_mm, h_mm = _box_mm(ctx, tbox)
             side = min(w_mm, h_mm)
             severity = None

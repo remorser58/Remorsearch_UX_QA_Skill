@@ -53,6 +53,11 @@ load the source index body and an actual linked platform method body.
 
 Prepare the web driver's pinned dependencies and Chromium using Node.js 22:
 
+On Ubuntu 26.04 x64 with Playwright 1.56.1, first export
+`PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64` for installation and checks
+(the [installation workaround](../README.md#install), not native platform support).
+The override does not fix the Node.js 24.16+/26 install hang; keep Node.js 22.
+
 ```sh
 (cd skills/remorsearch-ux-qa/drivers/web && npm ci && npx playwright install chromium)
 python3 scripts/check_release.py --output dist/release-check

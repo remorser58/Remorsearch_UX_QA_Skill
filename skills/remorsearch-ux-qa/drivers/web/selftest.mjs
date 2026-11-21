@@ -100,6 +100,20 @@ setTimeout(()=>{fetch('/read/cleared');document.getElementById('browser-check').
   '/read/login.html': `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>로그인</title></head>
 <body><form><input name="id" aria-label="아이디"><input type="password" aria-label="비밀번호"><button>로그인</button></form></body></html>`,
   '/read/storage.html': '<!doctype html><html><body>Connection isolation fixture</body></html>',
+  '/task-walk.html': `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Task walk fixture</title><style>
+body { font: 16px/1.5 sans-serif; color: #111; background: white; }
+button { width: 48px; height: 48px; }
+@media (max-width: 640px) { #inner-action { width: 18px; height: 18px; padding: 0; font-size: 12px; } }
+</style></head><body><main id="entry"><h1>Catalog</h1><a id="open-detail" href="/task-walk.html?detail">Open detail</a></main>
+<script>
+if (location.search === '?detail') {
+  document.querySelector('main').innerHTML='<h1>Detail</h1><button id="inner-action">Save</button>';
+  document.getElementById('inner-action').onclick=()=>{
+    document.querySelector('main').innerHTML='<h1>Saved items</h1><button id="remove-saved">Remove saved item</button>';
+  };
+}
+</script></body></html>`,
   '/task-integrity.html': `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>과업 값 검사</title></head><body>
 <label for="memo">요청사항</label><input id="memo" aria-describedby="memo-help"><p id="memo-help">입력 안내</p><p id="summary">없음</p>
 <label><input id="option" type="checkbox">선택</label><input id="masked" type="password"><input id="hidden" type="hidden">
@@ -180,7 +194,7 @@ function startFixtureServer() {
       res.end(html);
       return;
     }
-    if (req.method === 'GET' && (pathname.startsWith('/read/') || pathname === '/task-integrity.html' || pathname === '/task-integrity-timing.html')) {
+    if (req.method === 'GET' && (pathname.startsWith('/read/') || pathname === '/task-walk.html' || pathname === '/task-integrity.html' || pathname === '/task-integrity-timing.html')) {
       readFixture(pathname, res, req);
       return;
     }
@@ -854,6 +868,16 @@ async function serveTest(base, tmp) {
     ['note without confusion flag is rejected (400)', await request(port, 'POST', '/note', { body: { intent: 'x' } }), 400],
   ];
   for (const [name, res, want] of cases) check(`${label}: ${name}`, res.status === want, `${res.status} ${res.text}`);
+  for (const [endpoint, body, allowed] of [
+    ['/note', { confusion: false, scope: 'screen' }, ['intent', 'expected', 'observed', 'confusion', 'step_index', 'severity', 'failure_class', 'evidence', 'corroborated', 'anchor']],
+    ['/finish', { task_success_claimed: true }, ['success']],
+    ['/finish', { success: true, findings: [] }, ['success']],
+  ]) {
+    const rejected = await request(port, 'POST', endpoint, { body });
+    check(`${label}: ${endpoint} extras name the allowed fields without ending the session`,
+      rejected.status === 400 && rejected.json.error.includes(`allowed: ${allowed.join(', ')}`)
+      && (await request(port, 'GET', '/health')).json.finished === false, rejected.text);
+  }
   const note = await request(port, 'POST', '/note', { body: { intent: '결제하기', expected: '결제 완료 화면', observed: '카드 번호 오류가 위쪽에 표시됨', confusion: true } });
   check(`${label}: POST /note records a persona note`, note.status === 200 && note.json.ok === true && note.json.step_index === 1, note.text);
   const type = await request(port, 'POST', '/act', { body: { action: 'type', target: '#card', text: '4242 4242' } });
@@ -889,6 +913,39 @@ async function serveTest(base, tmp) {
   check(`${label}: on-demand snapshot is noted`, [...snaps.values()].some((s) => s.notes.includes('on_demand')));
   checkSnapshotFiles(label, runDir, run, snaps, { id: 'galaxy-s24', orientation: 'portrait', vw: 360, vh: 780, dpr: 3 });
   pythonLoadRun(label, runDir);
+}
+
+async function taskWalkTest(base, tmp) {
+  const sc = { ...scenario(), scenario_id: 'SC-task-walk',
+    surface: { kind: 'web', url: `${base}/task-walk.html` },
+    targets: {}, hotspots: [], timing_windows: [],
+    steps: [{ action: 'tap', target: '#open-detail' }, { action: 'tap', target: '#inner-action' }],
+    success: { selector_visible: '#remove-saved' } };
+  const scPath = path.join(tmp, 'task-walk.json');
+  writeJson(scPath, sc);
+  for (const device of ['galaxy-s24', 'desktop-1920']) {
+    const runId = `R-task-walk-${device}`;
+    const result = await runDriver(['run', '--scenario', scPath, '--device', device,
+      '--out', path.join(tmp, 'runs'), '--run-id', runId]);
+    if (!check(`task-walk ${device}: reaches the final inner screen`, result.code === 0, result.err || result.out)) continue;
+    const { run, snaps } = loadRun(path.join(tmp, 'runs', runId));
+    const initial = snaps.get(run.steps[0].before);
+    const detail = snaps.get(run.steps[0].after);
+    const saved = snaps.get(run.steps[1].after);
+    check(`task-walk ${device}: navigation and same-URL state changes have distinct measured captures`,
+      initial && detail && saved && initial.snapshot_id !== detail.snapshot_id && detail.snapshot_id !== saved.snapshot_id
+      && !bySel(initial, '#inner-action') && !bySel(initial, '#remove-saved')
+      && detail.surface.url.endsWith('?detail') && saved.surface.url === detail.surface.url
+      && !!bySel(saved, '#remove-saved') && run.steps.every((s) => s.result === 'ok'));
+    const action = bySel(detail, '#inner-action');
+    const size = device === 'galaxy-s24' ? 18 : 48;
+    check(`task-walk ${device}: inner target geometry and readable-text metrics are collected`,
+      action && near(action.box.w, size, 0.1) && near(action.box.h, size, 0.1)
+      && typeof action.font_size_px === 'number' && action.font_size_px > 0, action);
+    check(`task-walk ${device}: every reached screen retains its PNG and measured element list`,
+      [initial, detail, saved].every((s) => s?.elements.length
+        && fs.existsSync(path.join(tmp, 'runs', runId, s.screenshot.path))));
+  }
 }
 
 async function exitCodeTests(base, tmp) {
@@ -2386,7 +2443,7 @@ async function typographyTest(base, tmp) {
 async function main() {
   const keep = process.argv.includes('--keep');
   // --only a,b: run just these groups (scripted, actions, layers, focus, focus2, feedback, native-feedback,
-  // read, reflow, reflow-copy, viewport, dialog, serve, tooling, exit, connect) while iterating on one part.
+  // read, reflow, reflow-copy, viewport, dialog, serve, task-walk, tooling, exit, connect) while iterating on one part.
   const oi = process.argv.indexOf('--only');
   const only = oi > 0 && process.argv[oi + 1] ? new Set(process.argv[oi + 1].split(',')) : null;
   const want = (g) => !only || only.has(g);
@@ -2460,6 +2517,7 @@ async function main() {
     if (want('viewport')) await viewportTest(base, tmp);
     if (want('dialog')) await dialogTest(base, tmp);
     if (want('serve')) await serveTest(base, tmp);
+    if (want('task-walk')) await taskWalkTest(base, tmp);
     if (want('tooling')) await toolingTest(base, tmp);
     if (want('exit')) await exitCodeTests(base, tmp);
   } finally {

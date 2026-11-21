@@ -23,6 +23,7 @@ For product improvement, discover tasks/questions from the URL or repository. Re
 3. Reuse supplied context and grants. Inspect accessible project decisions and relevant intent records before changes; code alone does not establish intent. State scope, assumptions and finite limits. Ask only for missing material access or an unresolved intent conflict, while continuing unaffected work.
 4. Record read_only, design_write, test_data_write and code_write with actor, scope and reason. A UX-improvement request grants ordinary reversible in-scope fixes. Record that existing authority explicitly in CLI grants; do not ask again. Research/review alone grants no writes; local fixes grant no deployment or external posting.
 5. Detect tools before installing. Research reads `references/shared/access-card.md` and `references/shared/evidence-card.md` before its first search; other modes read the access card before the first page outside the product, even mid-run. Every reader, persona and verifier prompt carries its cards. Subagents are optional (`references/agent-setup.md`).
+6. QA: check every task × viewport × input, including keyboard; measure each reached screen. Gaps are "not checked".
 
 ## Rules for every mode
 
